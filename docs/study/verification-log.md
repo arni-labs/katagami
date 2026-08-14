@@ -525,3 +525,16 @@ An earlier toy `never(Published)` is not a Katagami property and is not the chec
 **Caught by:** L1/L2/L3 on the real machine's own named properties. Composite does not re-check SeenBeforeSubmit (bools are not in the join vector).
 
 **Cost/saved:** shows the live invariant is not decorative. Weaken the guard, the named property fails.
+
+---
+
+## 2026-08-14 — Composite catches a real drop and a real joint liveness
+
+**Found:** one-actor poisons do not exercise the join. Two copies of live specs, individuals PASS, composite FAIL:
+
+- **no_dropped_reaction** on the real trigger `queue_synthesis_widens_query_barrier`. Only change: `drop_ok` removed. Direction.ConfigureAndQueue increments Query while Query is Submitted (or Organizing/Completed/Failed). 4 named drops. 297 joint states.
+- **AssignmentEventuallyResolved** (HumanCurator). Only change: Human cannot Return/Overdue, Review cannot RecordVerdict. Publish is still abstract in Human L1 (PASS, 8 states) and Review L1 PASS (144 565). Joint: Publish needs Review `VerdictRecorded`, which never happens. Composite FAIL `HumanCurator.AssignmentEventuallyResolved` (6 joint states).
+
+**Caught by:** the composite checker, not the per-entity cascade.
+
+**Cost/saved:** this is the check SeenBeforeSubmit cannot be. The join either reports a dropped reaction or a named leads-to that depends on the other actor.

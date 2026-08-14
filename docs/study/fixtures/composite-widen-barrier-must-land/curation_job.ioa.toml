@@ -1,0 +1,1179 @@
+# CurationJob - I/O Automaton Specification
+#
+# Agent task queue for Katagami curation. New jobs use typed completion
+# actions and reactions for follow-up orchestration. The legacy
+# Complete(output) action remains for one compatibility window so already
+# running sessions can finish safely.
+
+[automaton]
+name = "CurationJob"
+states = ["Queued", "Ready", "Running", "Finalizing", "Completed", "Failed"]
+initial = "Queued"
+allow_indefinite_states = ["Completed", "Failed"]
+
+# --- State Variables ---
+
+[[state]]
+name = "job_type"
+type = "string"
+initial = ""
+
+[[state]]
+name = "design_language_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "direction_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "workspace_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "input"
+type = "string"
+initial = "{}"
+
+[[state]]
+name = "output"
+type = "string"
+initial = "{}"
+
+[[state]]
+name = "followup_job_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "direction_ids"
+type = "string"
+initial = "[]"
+
+# C5: the concrete output lane the source_search agent inferred. Carried on the
+# source_search job so research_completion_advances_query can forward it to the
+# parent query's ResearchComplete (replaces launch_research's WASM normalization).
+[[state]]
+name = "output_type"
+type = "string"
+initial = ""
+
+[[state]]
+name = "design_language_ids"
+type = "string"
+initial = "[]"
+
+# Multi-lane remix: ids of palette/art-style entities created by a sourcing job.
+[[state]]
+name = "palette_system_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "art_style_ids"
+type = "string"
+initial = "[]"
+[[state]]
+name = "writing_style_ids"
+type = "string"
+initial = "[]"
+
+
+[[state]]
+name = "review_input"
+type = "string"
+initial = "{}"
+
+[[state]]
+name = "organize_input"
+type = "string"
+initial = "{}"
+
+[[state]]
+name = "taste_rule_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "report_file_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "progress_log"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "error_message"
+type = "string"
+initial = ""
+
+# --- Repair verdict (ARN-320) ---
+#
+# When the finalizer rejects a repairable job it does NOT create the repair job
+# itself. It records the repair BRIEF here as part of the FailWithRepair verdict,
+# and `failure_spawns_repair_job` mints the job. The verifier decides whether a
+# repair is warranted (budget, resolvable language, repairable job type) and
+# writes what it decided; the spec decides what happens next.
+#
+# repair_job_id is derived by the verifier from the failed job id and the attempt
+# number, so the follow-up is content-addressed rather than randomly minted: the
+# failed job keeps a forward link to its repair, and a redelivered reaction
+# resolves to the same entity instead of a duplicate.
+[[state]]
+name = "repair_job_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "repair_input"
+type = "string"
+initial = "{}"
+
+[[state]]
+name = "repair_job_type"
+type = "string"
+initial = ""
+
+[[state]]
+name = "repair_language_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "repair_model"
+type = "string"
+initial = ""
+
+[[state]]
+name = "repair_provider"
+type = "string"
+initial = ""
+
+[[state]]
+name = "repair_direction_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "query_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "completion_contract"
+type = "string"
+initial = "typed-v1"
+
+[[state]]
+name = "inline_job_docs"
+type = "bool"
+initial = "false"
+
+# --- Session spawning fields ---
+
+[[state]]
+name = "soul_id"
+type = "string"
+initial = "curator"
+
+[[state]]
+name = "model"
+type = "string"
+initial = ""
+
+[[state]]
+name = "provider"
+type = "string"
+initial = ""
+
+[[state]]
+name = "tools_enabled"
+type = "string"
+initial = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch"
+
+[[state]]
+name = "max_turns"
+type = "string"
+initial = "250"
+
+[[state]]
+name = "user_message"
+type = "string"
+initial = ""
+
+[[state]]
+name = "session_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "parent_session_id"
+type = "string"
+initial = ""
+
+# --- Queued ---
+
+[[action]]
+name = "Configure"
+kind = "input"
+from = ["Queued"]
+params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs", "parent_session_id"]
+hint = "Set or update job parameters before execution."
+
+[[action]]
+name = "ConfigureAndSubmit"
+kind = "internal"
+from = ["Queued"]
+to = "Ready"
+params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs", "parent_session_id"]
+hint = "Configure a trigger-created job and start session spawning in one transition."
+effect = [{ type = "trigger", name = "build_session_message" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "build_session_message"
+kind = "wasm"
+module = "build_session_message"
+timeout_secs = "300"
+on_failure = "Fail"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+sandbox_provider = "{secret:sandbox_provider}"
+sandbox_image = "{secret:sandbox_image}"
+llm_model = "{secret:llm_model}"
+llm_provider = "{secret:llm_provider}"
+
+[[action]]
+name = "Submit"
+kind = "input"
+from = ["Queued"]
+to = "Ready"
+hint = "Legacy/manual start path. Triggers message builder WASM."
+effect = [{ type = "trigger", name = "build_session_message" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "build_session_message"
+kind = "wasm"
+module = "build_session_message"
+timeout_secs = "300"
+on_failure = "Fail"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+sandbox_provider = "{secret:sandbox_provider}"
+sandbox_image = "{secret:sandbox_image}"
+llm_model = "{secret:llm_model}"
+llm_provider = "{secret:llm_provider}"
+
+[[action]]
+name = "Start"
+kind = "input"
+from = ["Queued"]
+to = "Running"
+params = []
+hint = "Begin executing this job directly without session spawning."
+
+# --- Ready ---
+
+[[action]]
+name = "SessionSpawned"
+kind = "input"
+from = ["Ready"]
+to = "Running"
+params = ["session_id", "workspace_id"]
+hint = "Session has been created, attached to the shared workspace, and is running."
+
+# --- Running ---
+
+[[action]]
+name = "RecordProgress"
+kind = "input"
+from = ["Running"]
+params = ["progress_log"]
+hint = "Append incremental progress entries during execution."
+
+# SpawnDirection: the source_search agent's ONLY direction-creation call. Callable N
+# times from Running (no `to`, mirroring RecordProgress) — once per discovered movement.
+# Params are ONLY the direction CONTENT the agent decides; the agent never supplies
+# identity. The spawn_direction_creates_direction trigger mints one CurationDirection
+# via ConfigureAndQueue, passing the content through [params]/[params_from] and stamping
+# IDENTITY from this source_search JOB's OWN engine-set fields (query_id, Id,
+# workspace_id) — so the new direction always carries the correct CurationQuery id and
+# the fan-out barrier resolves on a real query instead of a non-existent one.
+[[action]]
+name = "SpawnDirection"
+kind = "input"
+from = ["Running"]
+params = ["task", "scope", "target_direction", "palette_direction", "output_type", "synthesis_job_type", "source_ids", "topic_allowlist", "synth_input"]
+hint = "Mint one CurationDirection for a discovered movement and queue its synthesis. The agent supplies direction content only; the engine stamps query_id/source_search_job_id/workspace_id from this job's own fields. Callable once per movement."
+
+# Mirrors curation_query.ioa.toml's submit_creates_source_search_job and
+# curation_direction.ioa.toml's direction_queue_synthesis_creates_job: resolve_target
+# type="create" mints the entity, [params] passes literals/content through, and
+# [params_from] copies fields from THIS source_search job onto the new direction's
+# ConfigureAndQueue. Identity is stamped from the job's engine-set fields here — query_id
+# and workspace_id are the job's own, source_search_job_id is this job's Id.
+[[action.triggers]]
+name = "spawn_direction_creates_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "ConfigureAndQueue"
+
+[action.triggers.params_from]
+task = "task"
+scope = "scope"
+target_direction = "target_direction"
+palette_direction = "palette_direction"
+output_type = "output_type"
+synthesis_job_type = "synthesis_job_type"
+source_ids = "source_ids"
+topic_allowlist = "topic_allowlist"
+synth_input = "synth_input"
+query_id = "query_id"
+source_search_job_id = "Id"
+workspace_id = "workspace_id"
+
+[action.triggers.resolve_target]
+type = "create"
+
+[[action]]
+name = "Complete"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["output"]
+hint = "Legacy compatibility completion. New jobs should use typed completion actions."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action]]
+name = "CompleteResearch"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["direction_ids", "output_type"]
+hint = "Research completed after creating and queueing CurationDirection records. output_type is the concrete lane the source_search agent inferred (auto -> design_language/palette/art_style); it is forwarded to the parent query so the barrier-scope guard resolves (C5, replaces launch_research's WASM normalization)."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action.triggers]]
+name = "research_completion_advances_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "ResearchComplete"
+# drop_ok: ResearchComplete is from=[Researching] on the query. If the query already
+# left Researching (e.g. timed out to Failed), the advance harmlessly drops rather
+# than re-driving a terminated query. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+source_search_job_id = "Id"
+direction_ids = "direction_ids"
+output_type = "output_type"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+# Empty fan-out fast-fail (ARN-88): if source_search produced zero directions,
+# the barrier's directions_total stays 0 and SynthesisComplete can never open;
+# fail the query immediately instead of hanging until the Synthesizing timeout.
+[[action.triggers]]
+name = "empty_fanout_fails_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "Fail"
+# drop_ok: CurationQuery.Fail is from=[Submitted, Researching, Synthesizing,
+# Organizing] — not from terminal states. If the query already reached Completed or
+# Failed, this empty-fan-out fast-fail harmlessly drops (a terminal query cannot and
+# must not be re-failed). Intentionally conditional, in addition to the
+# direction_ids == "[]" guard.
+drop_ok = true
+
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_ids"
+value = "[]"
+
+[action.triggers.params]
+error_message = "source_search produced zero curation directions; nothing to synthesize."
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+[[action]]
+name = "CompleteSynthesis"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["design_language_ids", "design_language_id", "review_input"]
+# KEYSTONE (correction #1): the synthesize agent drives its OWN completion. Every
+# produced language must already be UnderReview (its in-session SubmitForReview
+# succeeded) before the job may complete. A premature call (any language still
+# Draft) is rejected here, so the self-heal loop in the synthesize-language skill
+# has a real enforced caller and the finalizer no longer needs to own the
+# SubmitForReview walk. entity_id_source is a JSON-list param; the cross_entity_state
+# resolver holds the required_status per id across the list (same list-ref resolution
+# the art_style/palette File guards rely on). design_language_id is the scalar single
+# language id this direction produced, carried through to CurationDirection.Synthesized.
+guard = [
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "design_language_ids", required_status = ["UnderReview", "Published"] }
+]
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+# ARN-88: record the per-direction synthesize job id AND its created language ids
+# on the parent query FIRST — before the barrier-narrowing decrement advances the
+# query out of Synthesizing. Reactions on an edge run in declaration order, each
+# cascading fully before the next; this block is declared ahead of
+# synthesis_completes_direction so RecordSynthesizeJob's append lands while the
+# query is still Synthesizing. (RecordSynthesizeJob is from=[Researching,
+# Synthesizing] with no `to`; if it arrived after the barrier opened it would be
+# from-state-rejected and silently dropped, leaving design_language_ids empty and
+# the barrier-open quality_review unscoped.) Each param is named after the list
+# var RecordSynthesizeJob appends (kernel ListAppend has no value_from; it reads
+# params.get(var)).
+[[action.triggers]]
+name = "synthesis_records_synthesize_job"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "RecordSynthesizeJob"
+# drop_ok: RecordSynthesizeJob is from=[Researching, Synthesizing]. In the real flow
+# it lands while the query is still Synthesizing (it is declared before the
+# direction's Synthesized advance and the barrier narrows only later on review). It
+# drops only for a straggler synthesize job that completes after the query already
+# left Synthesizing — a language that could never have been counted in the still-open
+# barrier — so the organize scope loses nothing. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+synthesize_job_ids = "Id"
+design_language_ids = "design_language_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+# Per-direction synthesis advances its CurationDirection from Synthesizing to
+# Reviewing (Synthesized), which creates THIS direction's per-direction
+# quality_review job and does NOT yet narrow the barrier — the barrier narrows when
+# review terminates (ReviewPassed/FailReview/Fail/Quarantine). The synthesize agent
+# has already driven its language to UnderReview in-session (gated by the
+# CompleteSynthesis cross_entity_state guard above), so design_language_id is the
+# scalar single language id this direction produced; it is recorded on the direction
+# for the Quarantine -> Archive cascade. Declared after synthesis_records_synthesize_job
+# so the query-side record (for organize scope) lands first.
+[[action.triggers]]
+name = "synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "Synthesized"
+# drop_ok: Synthesized is from=[Synthesizing] on the direction. If a Synthesizing
+# state_timeout already fired Quarantine (or the direction otherwise terminated)
+# before the synthesize job committed, this advance must NOT resurrect the direction
+# to Reviewing — it harmlessly drops. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+design_language_ids = "design_language_ids"
+design_language_id = "design_language_id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action]]
+name = "CompleteQualityReview"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["design_language_ids", "organize_input"]
+hint = "Quality review completed and taxonomy organization should be created by trigger."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+# Per-direction review (correction #5): a quality_review job now reviews ONE
+# direction's language and carries that direction_id. Passing review advances the
+# direction Reviewing -> Completed (ReviewPassed), which narrows the fan-out barrier
+# by one. The single organize_taxonomy job is created once on the query side when the
+# barrier opens (SynthesisComplete), NOT per-direction here — N per-direction reviews
+# must not create N organize jobs. Guard direction_id != "" so a genuinely query-level
+# review (none today) would not mis-route.
+[[action.triggers]]
+name = "review_passes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "ReviewPassed"
+# drop_ok: ReviewPassed is from=[Reviewing] on the direction. If the Reviewing
+# state_timeout already fired FailReview (or the direction terminated) before the
+# review job committed, the pass harmlessly drops instead of un-failing the
+# direction. Intentionally conditional (in addition to the direction_id != "" guard).
+drop_ok = true
+
+[action.triggers.guard]
+type = "not"
+
+[action.triggers.guard.guard]
+type = "field_equals"
+field = "direction_id"
+value = ""
+
+[action.triggers.params_from]
+design_language_ids = "design_language_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action]]
+name = "CompleteOrganization"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["output"]
+hint = "Taxonomy organization completed."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action.triggers]]
+name = "organization_completion_finishes_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "OrganizationComplete"
+# drop_ok: OrganizationComplete is from=[Organizing] on the query. If the query
+# already left Organizing (e.g. timed out to Failed), the finish harmlessly drops.
+# Intentionally conditional.
+drop_ok = true
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+[[action]]
+name = "CompleteRegeneration"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["design_language_ids", "output"]
+hint = "Embodiment regeneration completed."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action]]
+name = "CompleteEvolution"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["design_language_ids", "output"]
+hint = "Language evolution completed."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action]]
+name = "CompleteTasteDistillation"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["taste_rule_ids", "report_file_id", "output"]
+hint = "Taste distillation completed after creating proposed TasteRule records and an evidence report."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action]]
+name = "CompletePaletteSynthesis"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["palette_system_ids", "output"]
+hint = "Palette synthesis completed. Finalizer verifies attached artifacts and walks each PaletteSystem to Published. Terminal lane (no quality_review/organize cascade)."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action.triggers]]
+name = "palette_synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "CompletePalette"
+# drop_ok: CompletePalette is from=[Synthesizing] on the direction. If the direction
+# already terminated (Quarantine/Fail via timeout) before the palette job committed,
+# the complete harmlessly drops. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+palette_system_ids = "palette_system_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action]]
+name = "CompleteArtStyleSynthesis"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["art_style_ids", "output"]
+hint = "Art-style synthesis completed. Finalizer verifies attached artifacts and walks each ArtStyle to Published. Terminal lane (no quality_review/organize cascade)."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action.triggers]]
+name = "art_style_synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "CompleteArtStyle"
+# drop_ok: CompleteArtStyle is from=[Synthesizing] on the direction. Same as the
+# palette lane — if the direction already terminated before the art-style job
+# committed, the complete harmlessly drops. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+art_style_ids = "art_style_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action]]
+name = "CompleteConformanceCheck"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["writing_style_ids", "output"]
+hint = "Conformance check: job_type check_conformance with input JSON {writing_style_id, text_file_id}. The finalizer runs the full adherence stack (bands + attribution + fingerprint + margins + verbatim-overlap) over the candidate text against the named voice and returns the report in success_result. Reads only — never mutates the WritingStyle. This is the consumer-facing 'check this draft against voice X' surface (RFC-0002 conformance endpoint)."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action]]
+name = "CompleteWritingStyleSynthesis"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["writing_style_ids", "output"]
+hint = "Writing-style synthesis completed. Finalizer attests consent, proves bands self-consistency against the corpus and exemplars, verifies VOICE.md, publishes public assets, and walks each WritingStyle to Published. Terminal lane (no quality_review/organize cascade)."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action.triggers]]
+name = "writing_style_synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "CompleteWritingStyle"
+# drop_ok: CompleteWritingStyle is from=[Synthesizing] on the direction. Same as the
+# palette and art-style lanes — if the direction already terminated before this job
+# committed, the complete harmlessly drops. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+writing_style_ids = "writing_style_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+# --- Finalizing ---
+
+[[action]]
+name = "PublishResearchCompletion"
+kind = "internal"
+from = ["Finalizing"]
+to = "Completed"
+params = ["followup_job_id"]
+hint = "Legacy compatibility: record first synthesize follow-up and advance parent query."
+
+[[action.triggers]]
+name = "legacy_research_completion_advances_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "ResearchComplete"
+# drop_ok: legacy-format compatibility path (fires from the internal
+# PublishResearchCompletion finalize action) duplicating research_completion_advances_query.
+# ResearchComplete is from=[Researching]; in the common typed-v1 flow the query has
+# already advanced past Researching by the time this legacy path runs, so it
+# harmlessly drops. Intentionally conditional. (Test test_inline_query_advancement_triggers_exist
+# pins this trigger to exist; it is compatibility, not dead code.)
+drop_ok = true
+
+# ARN-88: ResearchComplete no longer carries synthesize_job_id/synthesize_job_ids
+# (the barrier counters, not an id list, gate synthesis), so this legacy
+# compatibility trigger only forwards the params ResearchComplete still declares.
+[action.triggers.params]
+direction_ids = "[]"
+
+[action.triggers.params_from]
+source_search_job_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+[[action]]
+name = "PublishOrganizationCompletion"
+kind = "internal"
+from = ["Finalizing"]
+to = "Completed"
+params = []
+hint = "Legacy compatibility: advance the parent query once organizing finishes."
+
+[[action.triggers]]
+name = "legacy_organization_completion_finishes_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "OrganizationComplete"
+# drop_ok: legacy-format compatibility path (fires from the internal
+# PublishOrganizationCompletion finalize action) duplicating
+# organization_completion_finishes_query. OrganizationComplete is from=[Organizing];
+# when the query has already finished the legacy path harmlessly drops. Intentionally
+# conditional. (Test test_inline_query_advancement_triggers_exist pins this to exist.)
+drop_ok = true
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+[[action]]
+name = "FinalizeCompletion"
+kind = "internal"
+from = ["Finalizing"]
+to = "Completed"
+params = ["followup_job_id", "design_language_ids", "output"]
+hint = "Finalize job completion after session recording and trigger-native follow-up dispatch. For check_conformance jobs, output carries the full conformance report JSON (the job's product)."
+
+[[action]]
+name = "Fail"
+kind = "input"
+from = ["Queued", "Ready", "Running", "Finalizing"]
+to = "Failed"
+params = ["error_message"]
+hint = "Mark job as failed with error details. Spawns nothing: a failure that has earned a repair arrives as FailWithRepair instead."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[state_timeout]]
+state = "Queued"
+after_seconds = 900
+on_timeout = "Fail"
+params = { error_message = "CurationJob remained Queued for 15m without submission." }
+
+[[state_timeout]]
+state = "Ready"
+after_seconds = 900
+on_timeout = "Fail"
+params = { error_message = "CurationJob remained Ready for 15m without a spawned Session." }
+
+[[state_timeout]]
+state = "Running"
+after_seconds = 7200
+on_timeout = "Fail"
+params = { error_message = "CurationJob remained Running for 2h without self-reporting completion." }
+
+[[state_timeout]]
+state = "Finalizing"
+after_seconds = 900
+on_timeout = "Fail"
+params = { error_message = "CurationJob remained Finalizing for 15m without completing finalization." }
+
+[[action.triggers]]
+name = "job_failure_fails_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "Fail"
+# drop_ok: CurationDirection.Fail is from=[Discovered, Synthesizing, Reviewing]. If
+# the direction already reached a terminal state (Completed/Failed/Quarantined) — e.g.
+# it was Quarantined by its own timeout — the job-failure propagation harmlessly drops
+# instead of re-failing a terminal direction. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+error_message = "error_message"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action.triggers]]
+name = "job_failure_fails_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "Fail"
+# drop_ok: CurationQuery.Fail is from=[Submitted, Researching, Synthesizing,
+# Organizing]. If the query already reached Completed or Failed, propagating a
+# non-direction job failure harmlessly drops — a terminal query must not be re-failed.
+# Intentionally conditional, in addition to the direction_id == "" guard below.
+drop_ok = true
+
+# ARN-88: only non-direction jobs (source_search/quality_review/organize, which
+# carry direction_id=="") fail the query directly. A per-direction synthesize
+# job failure routes through job_failure_fails_direction -> CurationDirection.Fail
+# -> DecrementDirectionsPending, draining the barrier instead of racing the query
+# into Failed while sibling directions are still synthesizing.
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_id"
+value = ""
+
+[action.triggers.params_from]
+error_message = "error_message"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+# --- Failure with an earned repair (ARN-320) ---
+#
+# Auto-repair used to be a hand-rolled walk inside the finalizer WASM — POST
+# /tdata/CurationJobs, then Configure, then Submit, minting an entity and driving
+# it Queued -> Ready from inside a verifier. Nothing in the spec said it happened.
+#
+# Now the finalizer only DECIDES — is this failure repairable, is there budget
+# left, which language, which model, what brief — and the DECISION IS WHICH
+# ACTION IT RETURNS. A plain failure comes back as Fail; a failure that earned a
+# repair comes back as FailWithRepair, and the trigger below is what creates the
+# job.
+#
+# The verdict is an action rather than a field on Fail on purpose. A field is
+# sticky: `sync_fields` only writes params PRESENT in the call, so a marker set
+# by one failure survives Retry and would re-arm on the next state_timeout or
+# on_failure Fail — neither of which can carry a clearing param. Binding the
+# trigger to the action instead makes a stale re-arm structurally impossible,
+# and gives Cedar a distinct action name to scope if the blanket CurationJob
+# policy is ever narrowed.
+#
+# Failure propagation is duplicated from Fail below, deliberately: a repairable
+# failure must fail its direction and query exactly as an ordinary one does.
+[[action]]
+name = "FailWithRepair"
+kind = "internal"
+from = ["Queued", "Ready", "Running", "Finalizing"]
+to = "Failed"
+params = ["error_message", "repair_job_id", "repair_job_type", "repair_input", "repair_language_id", "repair_model", "repair_provider", "repair_direction_id"]
+hint = "The finalizer's verdict when a verification failure is repairable and still within the repair budget: fail this job AND mint the follow-up repair job carrying the brief it composed. Only the verifier returns this action; every other failure path (state timeouts, WASM on_failure, manual operator failure) uses Fail and spawns nothing."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action.triggers]]
+name = "repair_failure_fails_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "Fail"
+# drop_ok: identical to job_failure_fails_direction on Fail — a direction that
+# already reached a terminal state must not be re-failed.
+drop_ok = true
+
+[action.triggers.params_from]
+error_message = "error_message"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action.triggers]]
+name = "repair_failure_fails_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "Fail"
+# drop_ok: identical to job_failure_fails_query on Fail.
+drop_ok = true
+
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_id"
+value = ""
+
+[action.triggers.params_from]
+error_message = "error_message"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+# The repair job's id is DERIVED by the verifier from the failed job and the
+# attempt number, so the follow-up is content-addressed: the failed job keeps a
+# forward link (a minted random id is one the source never learns), and a
+# redelivered reaction resolves to the same entity instead of a second agent
+# session — the repeat ConfigureAndSubmit is from-state-rejected on an
+# already-started job and drops.
+#
+# resolve_target is `field`, deliberately NOT `create_if_missing`: that resolver
+# falls back to "{source_id}-derived" on an empty id field, which would turn a
+# FailWithRepair carrying no id into a malformed job with no brief. `field`
+# returns nothing for an empty field, so the rule drops instead. Temper creates
+# the target on dispatch when it does not exist, so the follow-up is still
+# minted — just never from a blank verdict.
+#
+# drop_ok because two paths drop by design: an empty/absent repair_job_id, and a
+# redelivered verdict landing on a repair job that has already started.
+#
+# Note on ordering: reactions on an edge are dispatched in declaration order but
+# run async, so this being declared last does not GUARANTEE the propagation
+# above lands first. Nothing here depends on it — both propagation triggers are
+# drop_ok and the repair job does not touch the barrier.
+[[action.triggers]]
+name = "failure_spawns_repair_job"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationJob"
+target_action = "ConfigureAndSubmit"
+drop_ok = true
+
+# The declared set of lanes a repair may re-enter through. A sanity gate, not
+# the verdict — the verdict is the action. An empty or unknown repair_job_type
+# spawns nothing.
+[action.triggers.guard]
+type = "field_in"
+field = "repair_job_type"
+values = ["regenerate_embodiment"]
+
+[action.triggers.params]
+completion_contract = "typed-v1"
+
+[action.triggers.params_from]
+job_type = "repair_job_type"
+input = "repair_input"
+design_language_id = "repair_language_id"
+model = "repair_model"
+provider = "repair_provider"
+direction_id = "repair_direction_id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "repair_job_id"
+
+# --- Retry ---
+
+[[action]]
+name = "Retry"
+kind = "input"
+from = ["Failed"]
+to = "Queued"
+params = ["error_message"]
+hint = "Retry a failed job. Resets to Queued for re-submission."
+
+# --- Invariants ---
+
+[[invariant]]
+name = "CompletedIsFinal"
+when = ["Completed"]
+assert = "no_further_transitions"

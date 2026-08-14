@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Katagami Curation — Agent Work Layer
+     CurationJob: task queue for bootstrap and curator agents.
+     Structurally identical to koto-wiki WikiJob. -->
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:DataServices>
+    <Schema Namespace="Katagami.Curation" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+
+      <!-- CurationJob: task queue entry for curator agents -->
+      <EntityType Name="CurationJob">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Queued" />
+        <Property Name="JobType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DirectionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="WorkspaceId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Input" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Output" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="FollowupJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DirectionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="OutputType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="PaletteSystemIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ArtStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="WritingStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ReviewInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="OrganizeInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="TasteRuleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ReportFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ProgressLog" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Repair verdict: the finalizer's decision, read by the
+             failure_spawns_repair_job trigger on FailWithRepair. -->
+        <Property Name="RepairJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RepairInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="RepairJobType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RepairLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RepairModel" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RepairProvider" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RepairDirectionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CompletionContract" Type="Edm.String" Nullable="false" DefaultValue="typed-v1" />
+        <Property Name="InlineJobDocs" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Session spawning fields -->
+        <Property Name="SoulId" Type="Edm.String" Nullable="false" DefaultValue="app-agent-bootstrap" />
+        <Property Name="Model" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Provider" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ToolsEnabled" Type="Edm.String" Nullable="false" DefaultValue="temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch" />
+        <Property Name="MaxTurns" Type="Edm.String" Nullable="false" DefaultValue="250" />
+        <Property Name="UserMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ParentSessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="QueryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- CurationDirection: one research-discovered synthesis direction -->
+      <EntityType Name="CurationDirection">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Discovered" />
+        <Property Name="QueryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SourceSearchJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="WorkspaceId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Task" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Scope" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TargetDirection" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="PaletteDirection" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="OutputType" Type="Edm.String" Nullable="false" DefaultValue="design_language" />
+        <Property Name="SynthesisJobType" Type="Edm.String" Nullable="false" DefaultValue="synthesize" />
+        <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="TopicAllowlist" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="SynthInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="PaletteSystemIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ArtStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="WritingStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- CurationJobTemplate: data-owned session bootstrapping config -->
+      <EntityType Name="CurationJobTemplate">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
+        <Property Name="JobType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SkillId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="InstructionPath" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ToolsProfile" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RequiresSandbox" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="MaxTurnsDefault" Type="Edm.String" Nullable="false" DefaultValue="250" />
+        <Property Name="CompletionAction" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CompletionContract" Type="Edm.String" Nullable="false" DefaultValue="typed-v1" />
+        <Property Name="TemplateVersion" Type="Edm.String" Nullable="false" DefaultValue="1" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- CurationQuery: end-to-end pipeline tracker for automated design language creation -->
+      <EntityType Name="CurationQuery">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Submitted" />
+        <Property Name="QueryText" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="OutputType" Type="Edm.String" Nullable="false" DefaultValue="auto" />
+        <Property Name="SourceSearchJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SynthesizeJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DirectionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="SynthesizeJobIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="DirectionsPending" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="DirectionsTotal" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="DirectionsCompleted" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="QualityReviewJobIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="OrganizeJobIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="OrganizeJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="PaletteSystemIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ArtStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="WritingStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="WorkspaceId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- TasteRule: proposed or accepted taste guidance distilled from archive/featured signals -->
+      <EntityType Name="TasteRule">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Proposed" />
+        <Property Name="Title" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Polarity" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="PatternType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RuleText" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Rationale" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EvidenceLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ComparatorLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Confidence" Type="Edm.String" Nullable="false" DefaultValue="medium" />
+        <Property Name="SourceJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ReportFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EvidenceFingerprint" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SupersededByRuleId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- CuratorAgent: one curator principal working the live
+           CurationQuery / CurationDirection / CurationJob / DesignLanguage
+           path (specs/curator_agent.ioa.toml). -->
+      <EntityType Name="CuratorAgent">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Idle" />
+        <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SpecVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Harness" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CaptureRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="JobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HeldJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="QueryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DirectionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SearchesRun" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="SourcesIndexed" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="DirectionsDerived" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="RevisionRounds" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="AbandonReason" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignRulesRead" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ConceptAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="TokensAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="KatagamiSpecAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DesignMdAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LandingAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="EmbodimentAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DashboardAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ShadcnAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ThumbnailAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LandingLooked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="EmbodimentLooked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DashboardLooked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="WideCaptured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DesktopCaptured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="TabletCaptured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="Mobile390Captured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LanguageSubmitted" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- ReviewAgent: one machine review of one curator submission
+           (specs/review_agent.ioa.toml). Its VerdictRecorded state is what
+           HumanCurator.Publish is guarded on. -->
+      <EntityType Name="ReviewAgent">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="SubmissionReceived" />
+        <Property Name="CuratorAgentId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ReviewedEntityId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SubmissionType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SubmissionRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasSubmission" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SpecVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Harness" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RulebookLoaded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="RulebookVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="LoadedRuleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ArtifactsFetched" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DesignMdOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LandingOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="EmbodimentOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DashboardOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ShadcnOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ThumbnailOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LandingRendered" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LandingInspected" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="EmbodimentRendered" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="EmbodimentInspected" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DashboardRendered" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DashboardInspected" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HeroVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ArtStyleId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ArtStyleResolved" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ArtStyleVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="RulesChecked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ClaimsChecked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="Findings" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasFindings" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasRepairs" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="RepairRounds" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="Verdict" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="VerdictRationale" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ReviewedBy" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="AbandonReason" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- HumanCurator: the publishing ROLE and one assignment to it
+           (specs/human_curator.ioa.toml). A role, never a person: identity
+           lives on Member and AssigneeRef is an opaque holder reference. -->
+      <EntityType Name="HumanCurator">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="SubmissionAssigned" />
+        <Property Name="AssigneeRef" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SubmissionType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SubmissionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <!-- What the linked ReviewAgent says it reviewed. Recorded so a review
+             of a different submission is visible as a mismatch; the kernel
+             cannot compare one entity's field with another's, so this is not
+             a machine gate. See human_curator.ioa.toml's Publish hint. -->
+        <Property Name="ReviewedSubmissionIds" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CuratorAgentId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ReviewAgentId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasAssignment" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasReviewVerdict" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasPublishApproval" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ReviewVerdict" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SpecVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Harness" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Critique" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EscalationReason" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EscalationCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- TrajectoryVerdict: one judged trajectory at one layer
+           (specs/trajectory_verdict.ioa.toml). Layer 1 and layer 2 are separate
+           rows so a disagreement stays visible. -->
+      <EntityType Name="TrajectoryVerdict">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Pending" />
+        <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ActorSpec" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SpecVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Layer" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Passed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="Violations" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <!-- What the check could not settle. `Passed` alone reads as "fully
+             checked and fine"; these four record how much was actually
+             covered, so the deterministic result is stored verbatim rather
+             than summarized down to a boolean. -->
+        <Property Name="Unverifiable" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ActionsReplayed" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="EvidenceComplete" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="FinalState" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="JudgedBy" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="JudgedAt" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasVerdict" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <EntityContainer Name="KatagamiCurationContainer">
+        <EntitySet Name="CurationJobs" EntityType="Katagami.Curation.CurationJob" />
+        <EntitySet Name="CurationDirections" EntityType="Katagami.Curation.CurationDirection" />
+        <EntitySet Name="CurationJobTemplates" EntityType="Katagami.Curation.CurationJobTemplate" />
+        <EntitySet Name="CurationQueries" EntityType="Katagami.Curation.CurationQuery" />
+        <EntitySet Name="TasteRules" EntityType="Katagami.Curation.TasteRule" />
+        <EntitySet Name="CuratorAgents" EntityType="Katagami.Curation.CuratorAgent" />
+        <EntitySet Name="ReviewAgents" EntityType="Katagami.Curation.ReviewAgent" />
+        <EntitySet Name="HumanCurators" EntityType="Katagami.Curation.HumanCurator" />
+        <EntitySet Name="TrajectoryVerdicts" EntityType="Katagami.Curation.TrajectoryVerdict" />
+      </EntityContainer>
+
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

@@ -1,0 +1,79 @@
+Running verification cascade...
+  Specs directory: /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/docs/study/fixtures/composite-widen-barrier-must-land
+
+--- /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/docs/study/fixtures/composite-widen-barrier-must-land
+
+  [lint:warn] CurationJob: action_missing_to — action 'Configure' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationJob: action_missing_to — action 'RecordProgress' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationJob: action_missing_to — action 'SpawnDirection' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'Configure' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'SetOutputType' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'IncrementDirectionsPending' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'DecrementDirectionsPending' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'RecordSynthesizeJob' has no `to` target; transition may be dead/no-op
+
+Running IOA verification cascade...
+
+  Verifying CurationJob...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 25 guards satisfiable, 2 invariants inductive, 0 unreachable; approximate model: 1 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 6 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 223 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying CurationDirection...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 10 guards satisfiable, 4 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 6 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 22 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying CurationQuery...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 14 guards satisfiable, 3 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 68 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 43 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying DesignLanguage...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 1 guards satisfiable, 1 invariants inductive, 2 unreachable
+    [PASS] L1 Model Check PASSED: 2 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 15 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+IOA verification cascade: ALL PASSED
+
+Verification Report
+==================================================
+
+Specification Summary:
+  Entity types:    9
+  Actions:         0
+  Functions:       0
+  State machines:  0
+
+==================================================
+Result: PASS -- all cross-validation checks passed.
+
+Note: Full model checking (Stateright) is not yet integrated.
+      Run TLC separately for exhaustive state space exploration.
+
+Running composite cross-entity verification (ADR-0150, status join vector, unique budget 250000)...
+    [FAIL] seed=CurationDirection scope=[CurationDirection, CurationJob, CurationQuery, DesignLanguage] — 297 joint states, 4 dropped reaction(s)
+           - CurationDirection.ConfigureAndQueue fired trigger 'queue_synthesis_widens_query_barrier' targeting CurationQuery.IncrementDirectionsPending, but CurationQuery was in 'Completed' (action not enabled) — reaction DROPPED
+           - CurationDirection.ConfigureAndQueue fired trigger 'queue_synthesis_widens_query_barrier' targeting CurationQuery.IncrementDirectionsPending, but CurationQuery was in 'Failed' (action not enabled) — reaction DROPPED
+           - CurationDirection.ConfigureAndQueue fired trigger 'queue_synthesis_widens_query_barrier' targeting CurationQuery.IncrementDirectionsPending, but CurationQuery was in 'Organizing' (action not enabled) — reaction DROPPED
+           - CurationDirection.ConfigureAndQueue fired trigger 'queue_synthesis_widens_query_barrier' targeting CurationQuery.IncrementDirectionsPending, but CurationQuery was in 'Submitted' (action not enabled) — reaction DROPPED
+Error: composite cross-entity verification failed: 4 dropped reaction(s):
+  - CurationDirection.ConfigureAndQueue fired trigger 'queue_synthesis_widens_query_barrier' targeting CurationQuery.IncrementDirectionsPending, but CurationQuery was in 'Completed' (action not enabled) — reaction DROPPED
+  - CurationDirection.ConfigureAndQueue fired trigger 'queue_synthesis_widens_query_barrier' targeting CurationQuery.IncrementDirectionsPending, but CurationQuery was in 'Failed' (action not enabled) — reaction DROPPED
+  - CurationDirection.ConfigureAndQueue fired trigger 'queue_synthesis_widens_query_barrier' targeting CurationQuery.IncrementDirectionsPending, but CurationQuery was in 'Organizing' (action not enabled) — reaction DROPPED
+  - CurationDirection.ConfigureAndQueue fired trigger 'queue_synthesis_widens_query_barrier' targeting CurationQuery.IncrementDirectionsPending, but CurationQuery was in 'Submitted' (action not enabled) — reaction DROPPED
