@@ -71,10 +71,19 @@ def watchdog(st: dict) -> dict:
             rec["exited_at"] = now
             log(f"pid {pid} exited kind={rec.get('index', rec.get('name', rec.get('language_id')))}")
             continue
-        sl = rec.get("log") or (session_log(rec.get("session_id") or "") if rec.get("session_id") else None)
+        sl = rec.get("log")
+        if not sl and rec.get("session_id"):
+            found = session_log(rec["session_id"])
+            sl = str(found) if found else None
+            rec["log"] = sl
         size = log_size(sl)
+        # First sighting after a supervisor restart must not SIGTERM a live pid.
+        if "log_grow_at" not in rec:
+            rec["log_size"] = size
+            rec["log_grow_at"] = now
+            continue
         last = rec.get("log_size", 0)
-        last_t = rec.get("log_grow_at", now)
+        last_t = rec["log_grow_at"]
         if size > last:
             rec["log_size"] = size
             rec["log_grow_at"] = now
@@ -120,7 +129,8 @@ def count_reviews_done(st: dict) -> int:
 
 def discovered_dirs() -> list[dict]:
     code, body = t.api(
-        "GET", "/tdata/CurationDirections?$filter=Status eq 'Discovered'&$top=50"
+        "GET",
+        "/tdata/CurationDirections?%24filter=Status%20eq%20%27Discovered%27&%24top=50",
     )
     vals = body.get("value", []) if isinstance(body, dict) else []
     out = []
@@ -163,7 +173,7 @@ def maybe_launch(st: dict) -> dict:
             if known.get("language_id") == lang["language_id"]:
                 item.update(known)
         prompt = t.write_review_prompt(item)
-        pid, sid, ident = t.launch_claude(
+        pid, sid, ident, logp = t.launch_claude(
             f"review-{lang['language_id'][-8:]}",
             prompt,
             {
@@ -178,6 +188,7 @@ def maybe_launch(st: dict) -> dict:
             "session_id": sid,
             "trajectory_id": ident.get("trajectory_id"),
             "phase": "claude_running",
+            "log": logp,
             "log_grow_at": time.time(),
             "log_size": 0,
         }
@@ -219,7 +230,7 @@ def maybe_launch(st: dict) -> dict:
             rec = t.setup_research(next_i)
             st.setdefault("researches", []).append(rec)
         rec["prompt"] = str(t.write_research_prompt(rec))
-        pid, sid, ident = t.launch_claude(
+        pid, sid, ident, logp = t.launch_claude(
             f"research-{next_i}",
             Path(rec["prompt"]),
             {
@@ -232,6 +243,7 @@ def maybe_launch(st: dict) -> dict:
         rec["session_id"] = sid
         rec["trajectory_id"] = ident.get("trajectory_id")
         rec["phase"] = "claude_running"
+        rec["log"] = logp
         rec["log_grow_at"] = time.time()
         rec["log_size"] = 0
         log(f"launched research-{next_i} pid={pid} query={rec.get('query_id')}")
@@ -258,7 +270,7 @@ def maybe_launch(st: dict) -> dict:
             item = t.setup_synth(d["direction_id"], qid, brief)
             item["query_id"] = qid
             prompt = t.write_synth_prompt(item)
-            pid, sid, ident = t.launch_claude(
+            pid, sid, ident, logp = t.launch_claude(
                 f"synth-{d['direction_id'][-8:]}",
                 prompt,
                 {
@@ -273,6 +285,7 @@ def maybe_launch(st: dict) -> dict:
                 "session_id": sid,
                 "trajectory_id": ident.get("trajectory_id"),
                 "phase": "claude_running",
+                "log": logp,
                 "log_grow_at": time.time(),
                 "log_size": 0,
             }
@@ -304,9 +317,9 @@ def main() -> None:
         st = watchdog(st)
         try:
             st = maybe_launch(st)
+            snapshot(st)
         except Exception as exc:  # surface, do not die
-            log(f"launch error: {exc!r}")
-        snapshot(st)
+            log(f"tick error: {exc!r}")
         t.save_state(st)
         if count_reviews_done(st) >= TARGET and len(count_under_review()) >= TARGET:
             log("target reached: 10 UnderReview + 10 verdicts")

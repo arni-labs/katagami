@@ -317,7 +317,9 @@ Stop if that fails.
 Language `{item['language_id']}` is UnderReview.
 CuratorAgent `{item.get('curator_agent_id') or ''}` made it.
 
-POST `/tdata/ReviewAgents` `{{}}`.
+If a ReviewAgent already exists for this language in SubmissionReceived/Reviewing, GET it and continue. Do not mint a second ledger.
+
+Otherwise POST `/tdata/ReviewAgents` `{{}}`.
 RecordSubmissionRef with reviewed_entity_id = the language id, submission_type=design_language,
 curator_agent_id if known, plus capture identity.
 AcceptSubmission `{{}}`. 409 unless the language is UnderReview.
@@ -381,7 +383,7 @@ def seed_identity(session_id: str, extra_env: dict) -> dict:
     return json.loads(ident_path.read_text())
 
 
-def launch_claude(kind: str, prompt_path: Path, extra_env: dict) -> tuple[int, str, dict]:
+def launch_claude(kind: str, prompt_path: Path, extra_env: dict) -> tuple[int, str, dict, str]:
     import uuid
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -440,7 +442,7 @@ def launch_claude(kind: str, prompt_path: Path, extra_env: dict) -> tuple[int, s
         json.dumps({"pid": proc.pid, "session_id": session_id, "log": str(log)}) + "\n"
     )
     print(f"launched {kind} pid={proc.pid} session={session_id} log={log}")
-    return proc.pid, session_id, identity
+    return proc.pid, session_id, identity, str(log)
 
 
 def cmd_bootstrap():
@@ -467,7 +469,7 @@ def cmd_launch_research(index: int):
     else:
         rec = recs[0]
         rec["prompt"] = str(write_research_prompt(rec))
-    pid, session_id, identity = launch_claude(
+    pid, session_id, identity, logp = launch_claude(
         f"research-{index}",
         Path(rec["prompt"]),
         {
@@ -479,6 +481,7 @@ def cmd_launch_research(index: int):
     rec["pid"] = pid
     rec["session_id"] = session_id
     rec["trajectory_id"] = identity.get("trajectory_id")
+    rec["log"] = logp
     rec["phase"] = "claude_running"
     save_state(st)
 
@@ -487,7 +490,7 @@ def cmd_launch_review_keyblock():
     st = load_state()
     item = dict(KEYBLOCK)
     prompt = write_review_prompt(item)
-    pid, session_id, identity = launch_claude(
+    pid, session_id, identity, logp = launch_claude(
         "review-keyblock",
         prompt,
         {
@@ -502,6 +505,7 @@ def cmd_launch_review_keyblock():
             "pid": pid,
             "session_id": session_id,
             "trajectory_id": identity.get("trajectory_id"),
+            "log": logp,
             "phase": "claude_running",
         }
     )
