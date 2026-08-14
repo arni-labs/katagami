@@ -1,6 +1,6 @@
 # Katagami as a joint cognitive system
 
-**Branch:** [`grok/jcs-study-setup`](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup) · **PR:** [arni-labs/katagami#213](https://github.com/arni-labs/katagami/pull/213) · **Date:** 2026-08-13
+**Branch:** `[grok/jcs-study-setup](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup)` · **PR:** [arni-labs/katagami#213](https://github.com/arni-labs/katagami/pull/213) · **Date:** 2026-08-13
 
 We are defining Katagami’s live curation pipeline as a joint cognitive system: a human and two agent roles, plus the existing app objects, with conduct specified three ways — a skill (what we tell the agent), a `BEHAVIOR.md` (what a judge reads as prose), and an IOA state machine (what Temper refuses or allows).
 
@@ -12,11 +12,13 @@ The evaluation is: run Claude Code on the live app, capture an ATIF trajectory (
 
 Added "cognitive" actors to the Katagami app:
 
-| Who | Role |
-| --- | --- |
-| **Curator** | Researches directions, then synthesizes a language. Does not review its own work. Does not publish. |
-| **Reviewer** | Examines a language that is already UnderReview and records a verdict. Does not publish. |
-| **Human curator** | Decides whether to publish. An agent may press publish only after that decision. |
+
+| Who               | Role                                                                                                |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| **Curator**       | Researches directions, then synthesizes a language. Does not review its own work. Does not publish. |
+| **Reviewer**      | Examines a language that is already UnderReview and records a verdict. Does not publish.            |
+| **Human curator** | Decides whether to publish. An agent may press publish only after that decision.                    |
+
 
 The overall shape of the Katagami app:
 
@@ -34,6 +36,8 @@ flowchart TB
   R -->|verdict| H
   H -->|ApprovePublish then Publish| L
 ```
+
+
 
 State machines: [CuratorAgent](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/curator_agent.ioa.toml), [ReviewAgent](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/review_agent.ioa.toml), [HumanCurator](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/human_curator.ioa.toml), [CurationQuery](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/curation_query.ioa.toml), [CurationJob](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/curation_job.ioa.toml), [CurationDirection](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/curation_direction.ioa.toml), [DesignLanguage](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-commons/specs/design_language.ioa.toml).
 
@@ -73,13 +77,15 @@ Examples of properties the per-entity checker runs on CuratorAgent (not the full
 
 The judge reads a **trajectory**.
 
-| Format | What it is |
-| --- | --- |
-| Claude Code `.jsonl` | Raw session transcript the harness writes. |
-| **ATIF v1.7** | Harbor’s Agent Trajectory Interchange Format (`steps[]`: messages, tool calls, results). **This is what the judge reads.** |
-| **OTS 0.1.0** | Temper’s stored document (`turns[]`). Same run, persisted on the server. |
 
-We store OTS. The judge does not read `turns[]` directly. Temper exports the same document as ATIF (`GET …/atif`). ATIF is what has the tool calls and results a conduct judge needs — whether the agent searched, opened the rulebook, rendered, looked at images — not only that a ledger field flipped.
+| Format               | What it is                                                                                                                 |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code `.jsonl` | Raw session transcript the harness writes.                                                                                 |
+| **ATIF v1.7**        | Harbor’s Agent Trajectory Interchange Format (`steps[]`: messages, tool calls, results). |
+| **OTS 0.1.0**        | Temper’s stored document (`turns[]`). Same run, persisted on the server. |
+
+
+We store OTS and export ATIF (`GET …/atif`). Eight separate judges ran: each session × each format × behavior vs state machine. They read the trajectory file, not a summary.
 
 Pipeline: Claude Code session → `.jsonl` → [Harbor 0.21.0](https://github.com/harbor-framework/harbor) → ATIF → mapped to OTS → `POST /api/ots/trajectories`. How: [hooks/trajectory-capture/](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup/hooks/trajectory-capture). Converter: [claude_session_to_ots.py](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/scripts/trajectory/claude_session_to_ots.py).
 
@@ -88,10 +94,12 @@ Pipeline: Claude Code session → `.jsonl` → [Harbor 0.21.0](https://github.co
 - Server: `GET http://127.0.0.1:3472/api/ots/trajectories/<id>/atif`
 - Offline: `~/.katagami/trajectory-queue/archive/<id>.json` (OTS) and `<id>.atif.json` (ATIF)
 
-| Session | `trajectory_id` | ATIF | OTS |
-| --- | --- | --- | --- |
-| Research | `traj-98368249db11e01879992cf4` | 49 steps | 49 turns |
+
+| Session             | `trajectory_id`                 | ATIF      | OTS       |
+| ------------------- | ------------------------------- | --------- | --------- |
+| Research            | `traj-98368249db11e01879992cf4` | 49 steps  | 49 turns  |
 | Keyblock synthesize | `traj-1ec04abc2c522975dfc9ac1a` | 103 steps | 103 turns |
+
 
 ---
 
@@ -100,20 +108,21 @@ Pipeline: Claude Code session → `.jsonl` → [Harbor 0.21.0](https://github.co
 **Worked**
 
 - Actor specs, skills, and `BEHAVIOR.md` exist for curator, reviewer, and human.
-- Per-entity L0–L3 in release, both apps: ALL PASSED (CuratorAgent 37 754 states, ReviewAgent 144 608, DesignLanguage 835 728, HumanCurator 50). [temper#420](https://github.com/nerdsane/temper/pull/420) (bound-from-spec).
-- Live guards refuse wrong order (named 409s).
-- Isolated Temper `:3472`. Two Claude Code sessions (research, Keyblock synthesize) captured as ATIF and OTS (table above).
+- Per-entity verification: ALL PASSED (CuratorAgent 37 754 states, ReviewAgent 144 608, DesignLanguage 835 728, HumanCurator 50). 
+- Live guards refuse wrong order of actions.
+- Ran 2 Claude Code sessions (research and synthesize) against local Temper and captured as ATIF and OTS (table above).
+- Research: all four judges fold **true** (behavior and state machine, ATIF and OTS). No disagreement.
+- Keyblock synthesize: state-machine judges fold **true** on both formats. Behavior judges fold **false** on both formats. Same reason: Playwright captured 1440 / 768 / 375 only — no wide, mobile not 390px. The state machine has no such guard, so that unit is na there. [research ATIF](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/judge-research-atif-fold.txt) · [research OTS](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/judge-research-ots-fold.txt) · [Keyblock ATIF](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/judge-synth-atif-fold.txt) · [Keyblock OTS](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/judge-synth-ots-fold.txt).
 
 **Not confirmed**
 
-- Whether the two judges agree when they read those trajectories.
-- Reviewer or human curator driven live.
-- End-to-end through a real human publish decision.
-- A complete composite proof. Joint verify is **INCOMPLETE** (not a pass): one 8-type component, 65 143 unique joint states, no dropped reaction in that prefix. [log](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/temper-verify-both-dirs-release-250k-2026-08-13.txt).
+- Whether that split holds on more than one synthesize session.
+- Reviewer agent has not run.
+- End-to-end through a real human publish decision has not run.
+- A complete composite verification for the entire Katagami app is not done. Joint verify is **INCOMPLETE** (not a pass). [log](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/temper-verify-both-dirs-release-250k-2026-08-13.txt).
 
 **Next**
 
-- Finish the eight judges (ATIF and OTS × both arms × both sessions), then put results here.
 - More samples.
-- Review session, then a real human publish decision.
-- Composite stays Incomplete until the joint encoding can finish (parked).
+- Get Temper to complete composite verification {{what is potentially required for this}}.
+
