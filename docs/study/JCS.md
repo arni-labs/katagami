@@ -124,5 +124,5 @@ Pipeline: Claude Code session → `.jsonl` → [Harbor 0.21.0](https://github.co
 **Next**
 
 - More samples.
-- Get Temper to complete composite verification {{what is potentially required for this}}.
+- Get Temper to complete composite verification. The join is eight types in one product (DesignLanguage alone is 835 728 local states). Completing it likely needs a smaller joint vector — keep only the fields the joins actually read, mostly `status` — and a budget that counts unique joint states, not generated edges. Raising `--composite-budget` on the current encoding will not finish the space. Those Temper changes are parked.
 
