@@ -4,9 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { submitFeedback, type FeedbackAnswers } from "./actions";
 
-// ARN-330: one question per view, tap-only options, everything skippable.
-// Option KEYS are the stored contract (see actions.ts); labels are free to
-// evolve. Q3 (found_language) is the north-star metric.
+// ARN-330: one question per view, tap-only options. Q1–Q5 are required —
+// Next stays disabled until the step is answered, and submit() re-walks the
+// steps in case Back navigation un-answered one. Only the final free-form
+// question is optional. Option KEYS are the stored contract (see actions.ts);
+// labels are free to evolve. Q3 (found_language) is the north-star metric.
 
 interface Option {
   key: string;
@@ -23,6 +25,7 @@ interface Step {
   options?: Option[];
   otherKey?: string;
   freeText?: boolean;
+  optional?: boolean;
 }
 
 const STEPS: Step[] = [
@@ -91,6 +94,7 @@ const STEPS: Step[] = [
     question: "Anything else?",
     note: "optional",
     freeText: true,
+    optional: true,
   },
 ];
 
@@ -130,7 +134,22 @@ export function FeedbackQuestionnaire({ source }: { source: string }) {
     if (!last) advance();
   };
 
+  const stepAnswered = (s: Step) =>
+    Boolean(
+      s.optional ||
+        (s.multi ? (multis[s.id] ?? []).length > 0 : s.id in singles),
+    );
+
   const submit = async () => {
+    // Back navigation lets an earlier multi-select be un-answered after the
+    // user already advanced past it — re-walk the steps before sending.
+    const missing = STEPS.findIndex((s) => !stepAnswered(s));
+    if (missing !== -1) {
+      setStep(missing);
+      setErrorMsg("This one still needs an answer.");
+      setState("error");
+      return;
+    }
     setState("sending");
     const answers: FeedbackAnswers = {
       persona: singles.persona,
@@ -171,10 +190,7 @@ export function FeedbackQuestionnaire({ source }: { source: string }) {
     );
   }
 
-  const answered =
-    current.id in singles ||
-    (multis[current.id]?.length ?? 0) > 0 ||
-    (current.freeText && comments.trim() !== "");
+  const answered = stepAnswered(current);
 
   return (
     <div className="mx-auto max-w-xl">
@@ -283,9 +299,10 @@ export function FeedbackQuestionnaire({ source }: { source: string }) {
           <button
             type="button"
             onClick={advance}
-            className="font-mono text-[12px] font-bold uppercase tracking-[0.18em] transition-colors hover:text-[var(--sakura)]"
+            disabled={!answered}
+            className="font-mono text-[12px] font-bold uppercase tracking-[0.18em] transition-colors hover:text-[var(--sakura)] disabled:cursor-default disabled:text-muted-foreground/50 disabled:hover:text-muted-foreground/50"
           >
-            {answered ? "Next" : "Skip"}
+            Next
           </button>
         )}
       </div>

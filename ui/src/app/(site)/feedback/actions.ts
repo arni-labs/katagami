@@ -69,15 +69,19 @@ export async function submitFeedback(
   const comments = pickText(answers.comments);
   const source = pickKey(answers.source, SOURCE_KEYS) || "direct";
 
-  const answeredAnything =
-    persona ||
-    usefulness.length > 0 ||
-    foundLanguage ||
-    wantNext.length > 0 ||
-    returnIntent ||
-    comments;
-  if (!answeredAnything) {
-    return { ok: false, error: "Answer at least one question to submit." };
+  // Q1–Q5 are required; only the free-form comment is optional. Enforced here
+  // as well as in the stepper UI, since a server action is a public endpoint.
+  const missingRequired =
+    !persona ||
+    usefulness.length === 0 ||
+    !foundLanguage ||
+    wantNext.length === 0 ||
+    !returnIntent;
+  if (missingRequired) {
+    return {
+      ok: false,
+      error: "All questions except the last one need an answer.",
+    };
   }
 
   // Viewer context is derived server-side from the session cookie — a client

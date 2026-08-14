@@ -27,8 +27,8 @@ export default async function FeedbackPage({
           Help shape the library
         </h1>
         <p className="mt-3 text-[17px] leading-relaxed text-muted-foreground">
-          Six questions, all optional, about ninety seconds. What people vote
-          for here decides what the agents research next.
+          Six quick questions, about ninety seconds — only the last one is
+          free-form, and it&rsquo;s optional.
         </p>
       </div>
       <div className="mt-12">
