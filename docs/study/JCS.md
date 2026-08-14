@@ -85,7 +85,7 @@ The judge reads a **trajectory**.
 | **OTS 0.1.0**        | Temper’s stored document (`turns[]`). Same run, persisted on the server.                 |
 
 
-We store OTS and export ATIF (`GET …/atif`). Eight separate judges ran: each session × each format × behavior vs state machine. They read the trajectory file, not a summary.
+We store OTS and export ATIF (`GET …/atif`).
 
 Pipeline: Claude Code session → `.jsonl` → [Harbor 0.21.0](https://github.com/harbor-framework/harbor) → ATIF → mapped to OTS → `POST /api/ots/trajectories`. How: [hooks/trajectory-capture/](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup/hooks/trajectory-capture). Converter: [claude_session_to_ots.py](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/scripts/trajectory/claude_session_to_ots.py).
 
@@ -102,10 +102,10 @@ Copies of the judged runs: [docs/study/evidence/trajectories/](https://github.co
 
 ## What the judges found
 
-Eight independent judges (two sessions × ATIF/OTS × behavior/state machine) read the full trajectories. Verdicts: [round2/](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup/docs/study/evidence/round2).
+We ran judges ([prompt](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/JUDGE.md); [verdicts](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup/docs/study/evidence/round2)). So far:
 
-- **Research:** all four **true**. No disagreement.
-- **Keyblock:** all four **false**, same reason: captures were 1440 / 768 / 375 — not wide, not 390. Behavior and state machine agree. ATIF and OTS agree.
+- **Research:** all true. No disagreement.
+- **Keyblock:** all false — captures were 1440 / 768 / 375, not wide and not 390.
 
 ---
 
@@ -117,7 +117,7 @@ Eight independent judges (two sessions × ATIF/OTS × behavior/state machine) re
 - Per-entity verification: ALL PASSED (CuratorAgent 37 754 states, ReviewAgent 144 608, DesignLanguage 835 728, HumanCurator 50).
 - Live guards refuse wrong order of actions.
 - Two Claude Code sessions captured as ATIF and OTS (table above).
-- The eight judges agreed (section above).
+- Judges agreed on the two sessions above.
 
 **Not confirmed**
 
