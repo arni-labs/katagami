@@ -127,7 +127,12 @@ def count_reviews_done(st: dict) -> int:
     return n
 
 
-def discovered_dirs() -> list[dict]:
+def discovered_dirs(st: dict | None = None) -> list[dict]:
+    named = {}
+    if st:
+        for d in st.get("directions", []):
+            if d.get("direction_id") and d.get("name"):
+                named[d["direction_id"]] = d
     code, body = t.api(
         "GET",
         "/tdata/CurationDirections?%24filter=Status%20eq%20%27Discovered%27&%24top=50",
@@ -136,17 +141,40 @@ def discovered_dirs() -> list[dict]:
     out = []
     for v in vals:
         f = v.get("fields") or v
-        name = f.get("TargetDirection") or f.get("target_direction") or ""
+        did = v.get("entity_id") or f.get("Id")
+        name = (
+            f.get("TargetDirection")
+            or f.get("target_direction")
+            or (named.get(did) or {}).get("name")
+            or ""
+        )
         if not name:
             continue
         out.append(
             {
-                "direction_id": v.get("entity_id") or f.get("Id"),
+                "direction_id": did,
                 "status": f.get("Status") or v.get("status") or "",
                 "name": name,
-                "query_id": f.get("QueryId") or f.get("query_id") or "",
+                "brief": (named.get(did) or {}).get("brief") or name,
+                "query_id": f.get("QueryId")
+                or f.get("query_id")
+                or (named.get(did) or {}).get("query_id")
+                or "",
             }
         )
+    # Fresh-server catalog rows the list call has not returned yet.
+    seen = {d["direction_id"] for d in out}
+    for d in named.values():
+        if d["direction_id"] not in seen and d.get("status", "Discovered") == "Discovered":
+            out.append(
+                {
+                    "direction_id": d["direction_id"],
+                    "status": "Discovered",
+                    "name": d["name"],
+                    "brief": d.get("brief") or d["name"],
+                    "query_id": d.get("query_id") or "",
+                }
+            )
     return out
 
 
@@ -199,7 +227,7 @@ def maybe_launch(st: dict) -> dict:
         return st
 
     # 2. Research until we have enough directions for remaining languages
-    dirs = discovered_dirs()
+    dirs = discovered_dirs(st)
     need_langs = TARGET - len({x.get("language_id") for x in st.get("languages", [])})
     running_research = [
         r
@@ -259,13 +287,13 @@ def maybe_launch(st: dict) -> dict:
         if x.get("phase") == "claude_running" and pid_alive(x.get("pid"))
     ]
     if need_langs > 0 and not synthesizing:
-        dirs = discovered_dirs()
+        dirs = discovered_dirs(st)
         for d in dirs:
             if live_count(st) >= MAX_LIVE:
                 break
             if d["direction_id"] in existing_lang_dirs:
                 continue
-            brief = d.get("name") or "design language from study research"
+            brief = d.get("brief") or d.get("name") or "design language from study research"
             qid = d.get("query_id") or ""
             item = t.setup_synth(d["direction_id"], qid, brief)
             item["query_id"] = qid
@@ -298,7 +326,7 @@ def maybe_launch(st: dict) -> dict:
 
 def snapshot(st: dict) -> None:
     langs = count_under_review()
-    dirs = discovered_dirs()
+    dirs = discovered_dirs(st)
     log(
         f"snapshot live={live_count(st)} researches={len(st.get('researches', []))} "
         f"discovered={len(dirs)} languages_state={len(st.get('languages', []))} "

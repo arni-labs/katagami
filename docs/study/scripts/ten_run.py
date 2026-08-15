@@ -34,6 +34,52 @@ QUERIES = [
     "Night-shift laboratory glass, mercury thermometers, and a language for instrument manuals",
 ]
 
+# Named movements from completed research-0 / research-1 evidence.
+# CurationDirection has no content-only setter; names live here and in BeginSynthesis.
+CATALOG = [
+    {
+        "name": "Kento Rule",
+        "brief": "Swiss modular grid rebuilt as kento registration. Hairline rules, 62-char measure, 1.5x baseline, sumi black, unbleached paper, one vermilion register mark. Reading tool.",
+        "query_text": QUERIES[0],
+    },
+    {
+        "name": "Sumi Keyline",
+        "brief": "Keyblock/colour-block as interface depth: black outline carries structure and type; flat indigo and safflower fields sit behind and never outline themselves. Reading tool.",
+        "query_text": QUERIES[0],
+    },
+    {
+        "name": "Notan Column",
+        "brief": "Figure-ground parity for a reading surface. Empty margin designed as a shape with weight equal to the text block. Near-black text, paper white, one ash accent.",
+        "query_text": QUERIES[0],
+    },
+    {
+        "name": "Edgefall",
+        "brief": "Cropping and truncation as layout mechanic. Content clipped by the frame; diagonals cut the orthogonal grid. Paper white, sumi, one cyan bleed. Reading tool.",
+        "query_text": QUERIES[0],
+    },
+    {
+        "name": "Harbour Watch",
+        "brief": "Chart-cartography operations desk. Buff land / green drying / magenta lights; isobath contour spacing as hierarchy; scale tiers from harbour to open water.",
+        "query_text": QUERIES[1],
+    },
+    {
+        "name": "Beaufort Table",
+        "brief": "Station-model data density. Additive glyph encoding, radial packing, fill-fraction as quantity, tabular figures at 13px. Coastal operations desk.",
+        "query_text": QUERIES[1],
+    },
+    {
+        "name": "Code Flag",
+        "brief": "ICS status board. Five-colour palette black/blue/red/yellow/white, adjacency-contrast, shape as second channel. Coastal operations desk.",
+        "query_text": QUERIES[1],
+    },
+    {
+        "name": "Marline",
+        "brief": "Tarred-rope material register. Stockholm-tar golden-brown to near-black neutrals, natural fibre texture, craft weight against the technical chart grid.",
+        "query_text": QUERIES[1],
+    },
+]
+
+
 # Keyblock already UnderReview from the earlier synth.
 KEYBLOCK = {
     "name": "Keyblock",
@@ -282,6 +328,13 @@ embodiment, dashboard, shadcn, thumbnail). Render in a real browser at
 **wide, desktop, tablet, and 390px mobile** (not 375). Look at each surface
 as images. FixSurfaces if you change bytes, then render and look again.
 
+**ArtStyle is required for review to RecordVerdict.** Create an ArtStyle,
+set medium + prompt_template + proof shots + a Ready/Locked thumbnail File,
+`SubmitForReview` it (UnderReview, do not Publish), then
+`DesignLanguage.SetDefaultArtStyle` with that art_style_id *before*
+SubmitForReview on the language. A language with an empty default_art_style_id
+makes ReviewAgent Abandon.
+
 SubmitForReview on the DesignLanguage when files exist, then ledger SubmitLanguage.
 Then CompleteSynthesis on the job if the guard allows; if 409 print the body.
 
@@ -445,6 +498,33 @@ def launch_claude(kind: str, prompt_path: Path, extra_env: dict) -> tuple[int, s
     return proc.pid, session_id, identity, str(log)
 
 
+def remint_catalog() -> list[dict]:
+    """Mint 8 named Discovered directions on a fresh server.
+
+    One query per research brief. Names are stored in state; BeginSynthesis
+    writes target_direction so the entity is no longer anonymous.
+    """
+    by_text: dict[str, str] = {}
+    out = []
+    for item in CATALOG:
+        text = item["query_text"]
+        if text not in by_text:
+            rec = setup_research(QUERIES.index(text) if text in QUERIES else 0)
+            by_text[text] = rec["query_id"]
+        qid = by_text[text]
+        did = mint_direction(item["name"], qid)
+        out.append(
+            {
+                "direction_id": did,
+                "name": item["name"],
+                "brief": item["brief"],
+                "query_id": qid,
+                "status": "Discovered",
+            }
+        )
+    return out
+
+
 def cmd_bootstrap():
     st = load_state()
     if not any(r.get("index") == 0 for r in st["researches"]):
@@ -533,11 +613,18 @@ def main():
     PROMPT_DIR.mkdir(parents=True, exist_ok=True)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     if len(sys.argv) < 2:
-        print("usage: ten_run.py bootstrap|status|launch-research N|launch-review-keyblock")
+        print("usage: ten_run.py bootstrap|remint|status|launch-research N|launch-review-keyblock")
         sys.exit(2)
     cmd = sys.argv[1]
     if cmd == "bootstrap":
         cmd_bootstrap()
+    elif cmd == "remint":
+        st = load_state()
+        dirs = remint_catalog()
+        st["directions"] = dirs
+        st["notes"].append(f"reminted {len(dirs)} named directions")
+        save_state(st)
+        print(json.dumps(dirs, indent=2))
     elif cmd == "status":
         cmd_status()
     elif cmd == "launch-research":
