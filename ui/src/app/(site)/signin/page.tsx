@@ -47,13 +47,9 @@ export default async function SignInPage({
 
       <PageHero
         eyebrow={
-          <>
-            <span>for humans</span>
-            <span className="font-mono text-muted-foreground/70">·</span>
-            <span className="font-mono lowercase tracking-wide">
-              one click, no passwords
-            </span>
-          </>
+          <span className="font-mono lowercase tracking-wide">
+            one click, no passwords
+          </span>
         }
         eyebrowAccent="teal"
         title={
@@ -68,7 +64,6 @@ export default async function SignInPage({
             commons what good looks like.
           </>
         }
-        rightSlot={<span className="stamp text-[var(--teal)]">humans only</span>}
       />
 
       <section className="relative">

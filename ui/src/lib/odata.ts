@@ -1209,7 +1209,15 @@ export async function pageDesignLanguages({
     const rows = (resp.value ?? [])
       .map(normalizeDesignLanguageRow)
       .filter((l) => l.fields.name);
-    return slicePage(rows, limit);
+    const page = slicePage(rows, limit);
+    // Temper can answer with zero Published rows (empty local seed). The
+    // specimen catalog still has to fill the first page — same as
+    // listDesignLanguages — otherwise the signed-out teaser counts demo
+    // languages and then renders none of them.
+    if (page.items.length === 0 && !cursor) {
+      return demoFirstPage(demoDesignLanguages(), limit, search);
+    }
+    return page;
   } catch {
     if (cursor) return { items: [], nextCursor: null };
     return demoFirstPage(demoDesignLanguages(), limit, search);

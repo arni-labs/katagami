@@ -41,11 +41,11 @@ export async function canViewNonPublished(): Promise<boolean> {
 }
 
 /**
- * ARN-331: does this viewer get the full language gallery (vs the ~10%
- * signed-out teaser)? Anyone signed in does. When sign-in isn't configured
- * (local dev, self-hosters without Google OAuth) the gallery stays fully
- * open — a teaser whose "Sign in" door doesn't exist would lock the catalog
- * for everyone.
+ * ARN-331: does this viewer get the full language gallery (vs the signed-out
+ * teaser of 15 featured + 25 non-featured)? Anyone signed in does. When
+ * sign-in isn't configured (local dev, self-hosters without Google OAuth)
+ * the gallery stays fully open — a teaser whose "Sign in" door doesn't exist
+ * would lock the catalog for everyone.
  */
 export async function hasFullGalleryAccess(): Promise<boolean> {
   if (!isAuthConfigured()) return true;
