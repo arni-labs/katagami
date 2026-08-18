@@ -4,8 +4,8 @@ The complete design of the Katagami **site itself** — every token, ink, motif 
 rule, extracted from the source. This is *not* the contract for the design languages
 Katagami curates (each of those ships its own `DESIGN.md`). This is the style the
 katagami.ai product is built in, so that every surface we add — gallery, language
-detail, studio, palettes, art styles, lineage, compare, lab, bake-off, owner — reads
-as one printed object.
+detail, studio, palettes, art styles, lineage, compare, lab, bake-off, owner,
+feedback — reads as one printed object.
 
 Everything here is extracted from, and must stay in sync with:
 
@@ -40,10 +40,14 @@ tilted rubber stamp, the registration slipping by half a degree on hover.
 
 These are the rules that make it Katagami. Breaking any one of them breaks the look.
 
-1. **Sharp rectangles — never round a card.** `.sticker-card` is `border-radius: 0`.
-   Rounding is reserved for: pills, dots, avatars (`rounded-full` = 9999) and the
-   2–3px corner of a stamp or seal. **Never** put `rounded-xl` / `rounded-[16px]` on
-   a content card. This is the single most common mistake.
+1. **Sharp rectangles. Never round a card, chip, button, input, or textarea.**
+   `.sticker-card` is `border-radius: 0`. The same rule applies to every rectangular
+   surface on katagami.ai, including `/feedback` option cards and the send button.
+   **Never** `rounded-xl`, `rounded-[16px]`, `rounded-2xl`, or `rounded-full` on a
+   rectangle. The generation-contract set `{0, 16, 24, 9999}` is for *curated
+   languages*, not this site. Rounding on katagami.ai is reserved for: ink-dot
+   logo discs, progress ticks that are actually dots, avatars, and the 1–3px
+   corner of a stamp or seal. This is the single most common mistake.
 2. **No borders.** Separation comes from soft shadow (`--shadow-card`), paper tint,
    overprint, a halftone rule, washi tape, or a stamp — **never** a grey 1px border.
    The only hairlines that exist are ink-toned (the status stamp, the featured seal),
@@ -200,10 +204,13 @@ h1, h2, h3, .font-display {
 
 The radius vocabulary is deliberately tiny: **{0, 2–3, 9999}**.
 
-- **Content cards: `0`.** `.sticker-card { border-radius: 0 }`. Sharp corners are the look.
+- **Every rectangular surface: `0`.** Cards, chips, option tiles, buttons, inputs,
+  textareas. `.sticker-card { border-radius: 0 }`. Sharp corners are the look.
+  Do not borrow `16` / `24` / `9999` from the language-generation contract and
+  put them on katagami.ai chrome. That is how `/feedback` grew pill chips.
 - **Stamps / seals / die-cut dashes: `1–3px`.** Just enough to read as a rubber stamp
   or a sticker corner, never as a rounded UI card.
-- **Pills, dots, avatars, the ink-dot logo: `9999`** (`rounded-full`).
+- **Dots, avatars, the ink-dot logo: `9999`** (`rounded-full`). Not buttons.
 - `--radius: 0.375rem` (6px) exists **only** for borrowed shadcn preview chrome and the
   `--radius-*` scale derived from it. Katagami cards do not use it.
 

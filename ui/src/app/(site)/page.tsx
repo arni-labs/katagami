@@ -106,17 +106,50 @@ function HowItWorksFold() {
   );
 }
 
-// ARN-331: the signed-out gallery is a fixed teaser — roughly 10% of the
-// published catalog, newest first — rendered as a static grid with no search,
-// facets, or pagination surface. Signing in unlocks the full infinite gallery.
-// The cap is also enforced inside the gallery server actions, so it cannot be
-// bypassed by invoking them directly.
+// ARN-331: signed-out teaser is a fixed shelf — 15 featured, then 25
+// non-featured — not a percentage of the catalog. No search, facets, or
+// pagination. Signing in unlocks the full infinite gallery. The cap is also
+// enforced inside the gallery server actions, so it cannot be bypassed by
+// invoking them directly.
+const TEASER_FEATURED = 15;
+const TEASER_REST = 25;
+
+function TeaserCardGrid({
+  items,
+  startIndex = 0,
+}: {
+  items: Awaited<ReturnType<typeof pageDesignLanguages>>["items"];
+  startIndex?: number;
+}) {
+  return (
+    <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((l, i) => (
+        <div
+          key={l.entity_id}
+          style={{
+            contentVisibility: "auto",
+            containIntrinsicSize: "auto 220px",
+          }}
+        >
+          <LanguageCard lang={l} index={startIndex + i} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 async function TeaserGallery() {
   const total = await countDesignLanguages("Status eq 'Published'");
-  const cap = Math.max(1, Math.ceil(total / 10));
-  let page: Awaited<ReturnType<typeof pageDesignLanguages>>;
+  let featured: Awaited<ReturnType<typeof listFeaturedDesignLanguages>> = [];
+  let rest: Awaited<ReturnType<typeof pageDesignLanguages>>["items"] = [];
   try {
-    page = await pageDesignLanguages({ limit: cap });
+    const [featuredAll, page] = await Promise.all([
+      listFeaturedDesignLanguages(TEASER_FEATURED),
+      pageDesignLanguages({ limit: TEASER_FEATURED + TEASER_REST }),
+    ]);
+    featured = featuredAll.slice(0, TEASER_FEATURED);
+    const pinned = new Set(featured.map((l) => l.entity_id));
+    rest = page.items.filter((l) => !pinned.has(l.entity_id)).slice(0, TEASER_REST);
   } catch {
     return (
       <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
@@ -125,35 +158,35 @@ async function TeaserGallery() {
       </div>
     );
   }
-  const items = page.items.slice(0, cap);
+  const shown = featured.length + rest.length;
   return (
-    <div>
-      <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((l, i) => (
-          <div
-            key={l.entity_id}
-            style={{
-              contentVisibility: "auto",
-              containIntrinsicSize: "auto 220px",
-            }}
+    <div className="space-y-10">
+      {featured.length > 0 ? (
+        <section className="space-y-3">
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--yuzu)]">
+            Curator&rsquo;s picks
+          </p>
+          <TeaserCardGrid items={featured} />
+        </section>
+      ) : null}
+      <TeaserCardGrid items={rest} startIndex={featured.length} />
+      <div className="pt-2">
+        <span aria-hidden className="sticker-perforation block" />
+        <p className="mt-6 text-center text-[15.5px] leading-relaxed text-muted-foreground sm:text-[17px]">
+          {shown} of {total} design languages.{" "}
+          <Link
+            href="/signin"
+            className="marker relative inline-block text-foreground transition-transform duration-200 hover:-translate-y-[1px]"
           >
-            <LanguageCard lang={l} index={i} />
-          </div>
-        ))}
-      </div>
-      <div className="mx-auto mt-14 max-w-md p-8 text-center">
-        <p className="text-[17px] font-medium">
-          Showing {items.length} of {total} design languages
+            <span
+              aria-hidden
+              className="marker-fill"
+              style={{ background: "var(--yuzu)" }}
+            />
+            <span className="marker-text">Sign in</span>
+          </Link>{" "}
+          to keep exploring.
         </p>
-        <p className="mt-2 text-[15px] text-muted-foreground">
-          Sign in to browse the full library.
-        </p>
-        <Link
-          href="/signin"
-          className="ink-underline mt-5 inline-block font-mono text-[12px] font-bold uppercase tracking-[0.18em]"
-        >
-          Sign in
-        </Link>
       </div>
     </div>
   );
@@ -235,37 +268,9 @@ export default async function GalleryPage({
 
         <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-8 sm:pb-14 sm:pt-12">
           <div className="relative max-w-3xl">
-          <div
-            className="riso-reveal mb-4 flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground"
-            style={{ ["--reveal-i" as string]: 0 }}
-          >
-            <span aria-hidden className="flex gap-[2px]">
-              {["var(--sakura)", "var(--yuzu)", "var(--ramune)"].map((ink) => (
-                <span key={ink} className="h-2.5 w-2.5" style={{ background: ink }} />
-              ))}
-            </span>
-            <span>agent-maintained · ideas by</span>
-            <a
-              href="https://x.com/arni0x9053"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="relative inline-flex items-center text-foreground transition-transform duration-200 hover:-translate-y-[1px]"
-            >
-              <span className="relative z-10">@arni0x9053</span>
-              <span
-                aria-hidden
-                className="absolute inset-x-[-3px] bottom-[1px] z-0 h-[6px] rounded-[1px] bg-[var(--yuzu)] opacity-85"
-                style={{
-                  transform: "rotate(-0.8deg)",
-                  mixBlendMode: "var(--ink-blend)" as never,
-                }}
-              />
-            </a>
-          </div>
-
           <h1
             className="riso-reveal font-display text-[44px] font-bold leading-[0.98] tracking-[-0.03em] sm:text-[64px] lg:text-[76px]"
-            style={{ ["--reveal-i" as string]: 1 }}
+            style={{ ["--reveal-i" as string]: 0 }}
           >
             Design{" "}
             <span className="marker">
@@ -281,7 +286,7 @@ export default async function GalleryPage({
 
           <p
             className="riso-reveal mt-6 font-display text-[22px] font-bold leading-snug tracking-[-0.015em] text-foreground sm:text-[26px]"
-            style={{ ["--reveal-i" as string]: 2 }}
+            style={{ ["--reveal-i" as string]: 1 }}
           >
             Give your agent{" "}
             <span className="marker">

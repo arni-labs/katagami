@@ -29,7 +29,7 @@ Every generated or styled artifact — embodiments, landing pages, dashboards, p
 - **Bright and clean, never muddy.** No pastel background washes. No gradients — use blobs for organic color. Core neutrals are pure `#FFF` / `#000`.
 - **≤3 accent colors**, used like highlighters. Palettes are signature-led; semantic colors (error/warning) stay a small part of the palette, never visually primary.
 - **Typography**: high contrast (no dark-on-dark / light-on-light), body 17px+, table rows 14.5px+, `-0.02em` letter-spacing on display text.
-- **Border-radius** only from {0, 16, 24, 9999}.
+- **Border-radius** for *curated languages* only from {0, 16, 24, 9999}. **katagami.ai itself** follows `ui/DESIGN.md`: rectangular surfaces (cards, chips, buttons, inputs) are radius `0`. Never `16`/`24`/`rounded-full` on a rectangle on the site.
 - **Spacing**: generous; padding/margin above titles — titles never stuck to container tops.
 - **Hero**: landing pages get ONE large full-bleed hero image at top.
 - **Previews are embodiment-grade**, never component galleries. Each design language gets bespoke embodiment + landing + dashboard under the same taste rules.
