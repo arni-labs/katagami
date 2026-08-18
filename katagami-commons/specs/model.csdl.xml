@@ -447,6 +447,30 @@
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
 
+      <!-- FeedbackResponse: one write-once answer set from the katagami.ai
+           feedback questionnaire (ARN-330). Answers are stable option keys;
+           multi-selects are JSON arrays of keys. -->
+      <EntityType Name="FeedbackResponse">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
+        <Property Name="Persona" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Usefulness" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="UsefulnessOther" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="FoundLanguage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="WantNext" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ReturnIntent" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Comments" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SignedIn" Type="Edm.String" Nullable="false" DefaultValue="false" />
+        <Property Name="RespondentSub" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Source" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasAnswers" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
       <!-- Member: durable human account behind Google sign-in (roles, grants, attribution anchor) -->
       <EntityType Name="Member">
         <Key>
@@ -514,6 +538,7 @@
         <EntitySet Name="ArtStyles" EntityType="Katagami.ArtStyle" />
         <EntitySet Name="WritingStyles" EntityType="Katagami.WritingStyle" />
         <EntitySet Name="Remixes" EntityType="Katagami.Remix" />
+        <EntitySet Name="FeedbackResponses" EntityType="Katagami.FeedbackResponse" />
         <EntitySet Name="Directions" EntityType="Katagami.Direction" />
         <EntitySet Name="Members" EntityType="Katagami.Member" />
         <EntitySet Name="OAuthClients" EntityType="Katagami.OAuthClient" />

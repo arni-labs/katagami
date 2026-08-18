@@ -1,0 +1,62 @@
+# FeedbackResponse — I/O Automaton Specification
+#
+# One submitted answer set from the katagami.ai feedback questionnaire
+# (ARN-330). Anonymous-friendly: identity fields are optional context, never a
+# requirement — the questionnaire's whole point is low-friction launch-week
+# feedback. Answers are stored as stable option KEYS (not display labels) so
+# aggregates stay comparable as UI copy evolves; multi-selects are JSON arrays
+# of keys. Q3 (found_language) is the north-star metric; usefulness/want_next
+# votes are ready-made taste-distillation input and CurationQuery seeds.
+#
+# Write-once by design: the UI submits one complete record in a single server
+# action (create -> SetAnswers -> Submit); there is no edit flow, so a response
+# is immutable once Received.
+#
+# Lifecycle: Draft -> Received
+
+[automaton]
+name = "FeedbackResponse"
+states = ["Draft", "Received"]
+initial = "Draft"
+
+# Received is the terminal archive state of a write-once survey record.
+# Draft lives only for the milliseconds between create and Submit inside one
+# server action — indefinite is allowed so a crashed submitter leaves a
+# harmless empty Draft rather than requiring a timeout reaper.
+allow_indefinite_states = ["Draft", "Received"]
+
+# --- State Variables ---
+
+[[state]]
+name = "has_answers"
+type = "bool"
+initial = "false"
+
+# --- Actions ---
+
+[[action]]
+name = "SetAnswers"
+kind = "input"
+from = ["Draft"]
+effect = [{ type = "set_bool", var = "has_answers", value = "true" }]
+params = [
+  "persona",
+  "usefulness",
+  "usefulness_other",
+  "found_language",
+  "want_next",
+  "return_intent",
+  "comments",
+  "signed_in",
+  "respondent_sub",
+  "source",
+]
+hint = "Record the questionnaire answers as stable option keys. persona/found_language/return_intent: single keys (empty = skipped). usefulness/want_next: JSON arrays of keys. usefulness_other + comments: free text. signed_in: 'true'/'false' viewer context. respondent_sub: Google sub when signed in, else empty (never required). source: which entry point served the form (e.g. 'footer', 'launch-banner')."
+
+[[action]]
+name = "Submit"
+kind = "input"
+from = ["Draft"]
+to = "Received"
+guard = [{ type = "is_true", var = "has_answers" }]
+hint = "Seal the response. Guarded on has_answers so an empty record cannot reach Received; there is no edit flow after this — responses are immutable survey data."

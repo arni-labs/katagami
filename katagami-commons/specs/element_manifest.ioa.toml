@@ -11,6 +11,11 @@ name = "ElementManifest"
 states = ["Draft", "Active", "Superseded"]
 initial = "Draft"
 
+# ADR-0050 migration allowlist (same pattern as design_language.ioa.toml):
+# Draft/Active are long-lived catalog states advanced only by curator
+# action; Superseded is terminal.
+allow_indefinite_states = ["Draft", "Active", "Superseded"]
+
 # --- State Variables ---
 
 [[state]]

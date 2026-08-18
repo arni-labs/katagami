@@ -11,6 +11,14 @@ name = "DesignElement"
 states = ["Pending", "Rendered", "Verified", "Failed"]
 initial = "Pending"
 
+# ADR-0050 migration allowlist (same pattern as design_language.ioa.toml):
+# elements advance only when a curation agent session drives them, so no state
+# has an inherent deadline — Pending/Rendered wait on the pipeline, Failed is
+# terminal-with-retry. Revisit with per-state timeouts when the render loop
+# gets a reaper. This was the last commons spec failing
+# TEMPER_LIVENESS_ENFORCE=true verification.
+allow_indefinite_states = ["Pending", "Rendered", "Verified", "Failed"]
+
 # --- State Variables ---
 
 [[state]]

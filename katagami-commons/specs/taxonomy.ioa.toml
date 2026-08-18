@@ -11,6 +11,11 @@ name = "Taxonomy"
 states = ["Draft", "Published", "Archived"]
 initial = "Draft"
 
+# ADR-0050 migration allowlist (same pattern as design_language.ioa.toml):
+# Draft/Published are long-lived catalog states advanced only by the
+# organize pipeline or a curator; Archived is terminal.
+allow_indefinite_states = ["Draft", "Published", "Archived"]
+
 # --- State Variables ---
 
 [[state]]

@@ -240,6 +240,12 @@ export default async function SiteLayout({
                   <GithubIcon />
                 </SocialSticker>
               </div>
+              <Link
+                href="/feedback?from=footer"
+                className="ink-underline font-mono text-[11px] font-bold uppercase tracking-[0.18em]"
+              >
+                Give feedback
+              </Link>
             </div>
           </div>
 
