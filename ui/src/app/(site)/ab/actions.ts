@@ -113,6 +113,8 @@ async function writeVerdicts(fileId: string, content: string): Promise<void> {
 export async function recordAbFeedback(
   records: AbRecord[],
 ): Promise<RecordAbResult> {
+  // File-content writes go through the $value path, which carries no bound
+  // action for the kernel to authorize; the owner check stands alone here.
   await assertOwner();
 
   if (!Array.isArray(records) || records.length === 0) {

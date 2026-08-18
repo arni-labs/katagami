@@ -22,6 +22,14 @@ export const config = {
   temperUrl: req("TEMPER_API_URL", "https://openpaw-production.up.railway.app"),
   temperTenant: req("TEMPER_TENANT", "default"),
   temperApiKey: req("TEMPER_API_KEY", ""),
+  /**
+   * Forward the caller's own access token to Temper instead of swapping to
+   * the shared TEMPER_API_KEY + self-asserted principal headers (RFC-0002
+   * step 2). Requires a kernel that verifies katagami.ai as a TrustedIssuer
+   * (ARN-255 step 1); until that is deployed this stays off, and once the
+   * header path is retired the flag and the legacy branch go with it.
+   */
+  forwardCallerToken: (process.env.KATAGAMI_MCP_FORWARD_CALLER_TOKEN ?? "") === "1",
   /** Public gallery, for handing back human-viewable links. */
   galleryUrl: req("KATAGAMI_GALLERY_URL", "https://katagami.ai"),
 };

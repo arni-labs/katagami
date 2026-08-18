@@ -1,24 +1,29 @@
-// Direction — STANCE: authoring open; opening and closing the brief is gated.
-//
-// SetDirection is authoring: whoever is shaping the brief writes it. Close and
-// Reopen decide whether a creative direction is live, which is the same class
-// of act as Archive and Restore on the artifact types — a lifecycle decision
-// about somebody's work rather than a contribution to it.
+// Direction — base grant; the boundaries below narrow it.
 permit(principal, action, resource is Direction);
 
-// Contributor boundary (ARN-303), matching Archive/Restore on the artifacts.
+// Curator/pipeline-owned actions. Contributor agents never invoke these;
+// a human may only if their verified role is owner or curator. Scoped so
+// the pipeline and operator key (no role, no agent_type) keep working.
 forbid(
   principal,
-  action in [Action::"Close", Action::"Reopen"],
+  action in [
+    Action::"Close",
+    Action::"Reopen",
+    Action::"SetDirection"
+  ],
   resource is Direction
-) when { principal has agent_type && principal.agent_type == "contributor" };
+)
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
 
-// Same omission fix as ARN-302: an agent that declares no type is refused.
+// Generic OData writes bypass the action ladder: PATCH and DELETE authorize
+// as `update`/`delete` and match no named list above. `create` stays open —
+// submissions legitimately create their draft. Reads stay open.
 forbid(
-  principal is Agent,
-  action in [Action::"Close", Action::"Reopen"],
+  principal,
+  action in [
+    Action::"update",
+    Action::"delete"
+  ],
   resource is Direction
-) unless {
-  principal has agent_type ||
-  principal == Agent::"system"
-};
+)
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };

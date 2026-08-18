@@ -1,30 +1,31 @@
-// DesignElement — STANCE: authoring and rendering open; the verification verdict is gated.
-//
-// An element is produced by whoever is building the language, so Configure,
-// Render and Rerender stay open exactly as they were. Verify and RejectRender
-// are different in kind: they are the verdict on whether a render is good
-// enough, which is the same class of act as MarkQualityPassed on the artifact
-// types — an attestation, not a piece of authoring. A producer that could
-// attest its own output would be marking its own homework.
+// DesignElement — base grant; the boundaries below narrow it.
 permit(principal, action, resource is DesignElement);
 
-// Contributor boundary (ARN-303), matching the artifact policies: contributors
-// produce renders, they do not rule on them.
+// Curator/pipeline-owned actions. Contributor agents never invoke these;
+// a human may only if their verified role is owner or curator. Scoped so
+// the pipeline and operator key (no role, no agent_type) keep working.
 forbid(
   principal,
-  action in [Action::"Verify", Action::"RejectRender"],
+  action in [
+    Action::"Configure",
+    Action::"RejectRender",
+    Action::"Render",
+    Action::"Rerender",
+    Action::"Verify"
+  ],
   resource is DesignElement
-) when { principal has agent_type && principal.agent_type == "contributor" };
+)
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
 
-// An agent that will not say what kind of agent it is gets no benefit of the
-// doubt on the verdict. `x-temper-agent-type` is optional, so a rule written
-// only against the attribute above asks the caller whether it applies to it.
-// Same fix as ARN-302 on the artifact policies.
+// Generic OData writes bypass the action ladder: PATCH and DELETE authorize
+// as `update`/`delete` and match no named list above. `create` stays open —
+// submissions legitimately create their draft. Reads stay open.
 forbid(
-  principal is Agent,
-  action in [Action::"Verify", Action::"RejectRender"],
+  principal,
+  action in [
+    Action::"update",
+    Action::"delete"
+  ],
   resource is DesignElement
-) unless {
-  principal has agent_type ||
-  principal == Agent::"system"
-};
+)
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
