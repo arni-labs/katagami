@@ -8,6 +8,7 @@ import {
   VIEW_LABEL,
 } from "@/app/(site)/lab/lab-comparison";
 import type { LabView } from "@/app/(site)/lab/comparisons";
+import { canLinkBakeoffLanguage } from "@/lib/bakeoff-link";
 import type { BakeoffModelSubmission } from "@/lib/bakeoff";
 
 const VIEW_ORDER: LabView[] = [
@@ -147,7 +148,7 @@ function SubmissionCard({
       ) : null}
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.14em]">
-        {m.languageId ? (
+        {m.languageId && canLinkBakeoffLanguage(m.status, false) ? (
           <Link
             href={`/language/${m.languageId}`}
             className="ink-underline text-[var(--ramune)]"

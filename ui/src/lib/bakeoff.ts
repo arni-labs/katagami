@@ -11,7 +11,6 @@ import {
   listDirections,
   getDirection,
   listDesignLanguages,
-  listDesignLanguagesAnyStatus,
   getDesignLanguage,
   getFileUrl,
   parseJson,
@@ -166,7 +165,7 @@ function toModel(lang: DesignLanguage): LabModel {
     wall: fmtWall(m.wall_seconds),
     languageId: lang.entity_id,
     languageName: (f.name || "Untitled").trim(),
-    status: lang.status,
+    status: lang.status || lang.fields.Status,
     thumb:
       (f.landing_thumbnail_asset_url || "").trim() ||
       (f.thumbnail_asset_url || "").trim() ||
@@ -181,40 +180,38 @@ const LIVE_STATUSES = new Set(["UnderReview", "Published"]);
 function isLive(l: DesignLanguage): boolean {
   return LIVE_STATUSES.has(l.status || l.fields.Status || "");
 }
-// ARN-331: public bake-off surfaces list Published submissions only —
-// UnderReview entries are visible solely through the owner variants below
-// (their artifacts aren't fully accessible yet, so showing them to visitors
-// produced broken/incomplete cards). "Pending" = UnderReview included.
-function isPublicStatus(l: DesignLanguage): boolean {
-  return (l.status || l.fields.Status || "") === "Published";
+
+export { canLinkBakeoffLanguage } from "./bakeoff-link";
+
+async function scanLiveLanguages(): Promise<DesignLanguage[]> {
+  const [published, underReview] = await Promise.all([
+    listDesignLanguages("Status eq 'Published'"),
+    listDesignLanguages("Status eq 'UnderReview'"),
+  ]);
+  return [...published, ...underReview];
 }
 
-// Every live language linked to a round. The dynamic-field server filter works
-// today; the client fallback keeps the screen correct if a kernel change ever
-// stops honoring it (a filter that silently returns everything would otherwise
-// mix rounds together).
-async function languagesForRound(
-  id: string,
-  includePending: boolean,
-): Promise<DesignLanguage[]> {
-  let rows: DesignLanguage[] = [];
-  const scan = () =>
-    includePending ? listDesignLanguagesAnyStatus() : listDesignLanguages();
+// Every live language linked to a round. The dynamic-field server filter
+// works today; if the kernel ignores direction_id it can still return a
+// non-empty Published catalog, so an empty match after client-filter MUST
+// fall back to a live-status scan (ARN-97). Draft/Archived stay out.
+async function languagesForRound(id: string): Promise<DesignLanguage[]> {
+  const onRound = (l: DesignLanguage) => (l.fields.direction_id ?? "") === id;
   try {
-    const filtered = await listDesignLanguages(`direction_id eq '${id}'`);
-    rows = filtered.filter((l) => (l.fields.direction_id ?? "") === id);
-    if (rows.length === 0 && filtered.length === 0) {
-      // filter may not have been honored — fall back to a full scan
-      rows = (await scan()).filter(
-        (l) => (l.fields.direction_id ?? "") === id,
-      );
-    }
+    // Status-scoped reads (kernel honors Status; it often ignores direction_id
+    // — ARN-97). Client-filter keeps the round isolated if the id clause is
+    // dropped. Always pull both live statuses so a Published hit cannot hide
+    // UnderReview siblings.
+    const [published, underReview] = await Promise.all([
+      listDesignLanguages(`Status eq 'Published' and direction_id eq '${id}'`),
+      listDesignLanguages(`Status eq 'UnderReview' and direction_id eq '${id}'`),
+    ]);
+    const rows = [...published, ...underReview].filter(onRound).filter(isLive);
+    if (rows.length > 0) return rows;
+    return (await scanLiveLanguages()).filter(onRound).filter(isLive);
   } catch {
-    rows = (await scan()).filter(
-      (l) => (l.fields.direction_id ?? "") === id,
-    );
+    return (await scanLiveLanguages()).filter(onRound).filter(isLive);
   }
-  return rows.filter(includePending ? isLive : isPublicStatus);
 }
 
 // Rounds hidden from non-owners: work-in-progress directions whose submissions
@@ -241,17 +238,16 @@ export interface BakeoffRoundSummary {
 interface SourceInfo {
   name?: string;
   thumb?: string;
+  status?: string;
 }
 
-// The published language a round reimagines: its name + a thumbnail to show it
-// (landing screenshot preferred, else the embodiment thumbnail).
+// The language a round reimagines: name, thumbnail, and status so the
+// "View language" link can stay off when /language/[id] would 404.
 async function sourceInfo(sourceId?: string): Promise<SourceInfo> {
   if (!sourceId) return {};
   try {
-    const f = (await getDesignLanguage(sourceId)).fields as Record<
-      string,
-      string | undefined
-    >;
+    const lang = await getDesignLanguage(sourceId);
+    const f = lang.fields as Record<string, string | undefined>;
     const thumb =
       (f.landing_thumbnail_asset_url || "").trim() ||
       (f.landing_thumbnail_file_id
@@ -259,7 +255,11 @@ async function sourceInfo(sourceId?: string): Promise<SourceInfo> {
         : "") ||
       (f.thumbnail_asset_url || "").trim() ||
       (f.thumbnail_file_id ? getFileUrl(f.thumbnail_file_id) : "");
-    return { name: f.name?.trim() || undefined, thumb: thumb || undefined };
+    return {
+      name: f.name?.trim() || undefined,
+      thumb: thumb || undefined,
+      status: lang.status || f.Status,
+    };
   } catch {
     return {};
   }
@@ -278,10 +278,8 @@ function roundTitle(
   return t || "Untitled round";
 }
 
-/** All bake-off rounds that actually have submissions, newest first. */
-async function buildBakeoffRounds(
-  includePending: boolean,
-): Promise<BakeoffRoundSummary[]> {
+/** All bake-off rounds that actually have live submissions, newest first. */
+async function buildBakeoffRounds(): Promise<BakeoffRoundSummary[]> {
   let dirs: Direction[];
   try {
     dirs = (await listDirections()).filter(isBakeoff);
@@ -290,7 +288,7 @@ async function buildBakeoffRounds(
   }
   const summaries = await Promise.all(
     dirs.map(async (d): Promise<BakeoffRoundSummary | null> => {
-      const langs = await languagesForRound(d.entity_id, includePending);
+      const langs = await languagesForRound(d.entity_id);
       if (langs.length === 0) return null; // hide empty/placeholder rounds
       const f = d.fields;
       const src = await sourceInfo(f.source_language_id);
@@ -315,24 +313,16 @@ async function buildBakeoffRounds(
 // Cache the assembled summaries — building them scans the catalog per round, so
 // it must not re-run on every request. Small payload (ids/titles/counts/source),
 // well under the Data Cache entry cap. Revalidate-window matches the rest of the app.
-// Public and owner variants cache under different keys so the anonymous payload
-// can never serve UnderReview entries (ARN-331).
+// Live = Published + UnderReview. Drafting rounds stay behind HIDDEN_ROUND_IDS.
 export const listBakeoffRounds = unstable_cache(
-  () => buildBakeoffRounds(false),
-  ["bakeoff-rounds-public-v2"],
+  () => buildBakeoffRounds(),
+  ["bakeoff-rounds-live-v3"],
   { revalidate: 60 },
 );
-export const listBakeoffRoundsWithPending = unstable_cache(
-  () => buildBakeoffRounds(true),
-  ["bakeoff-rounds-pending-v1"],
-  { revalidate: 60 },
-);
+export const listBakeoffRoundsWithPending = listBakeoffRounds;
 
 /** One round, shaped for the game component. null if not a bake-off / no entries. */
-async function buildBakeoffRound(
-  id: string,
-  includePending: boolean,
-): Promise<LabComparison | null> {
+async function buildBakeoffRound(id: string): Promise<LabComparison | null> {
   let dir: Direction;
   try {
     dir = await getDirection(id);
@@ -340,7 +330,7 @@ async function buildBakeoffRound(
     return null;
   }
   if (!isBakeoff(dir)) return null;
-  const langs = await languagesForRound(id, includePending);
+  const langs = await languagesForRound(id);
   if (langs.length === 0) return null;
 
   const f = dir.fields;
@@ -367,6 +357,7 @@ async function buildBakeoffRound(
     sourceId: f.source_language_id,
     sourceName: src.name,
     sourceThumb: src.thumb,
+    sourceStatus: src.status,
     views: views.length ? views : ["landing"],
     blindOrder,
     models,
@@ -376,15 +367,11 @@ async function buildBakeoffRound(
 
 // Cache per round id — the round's metadata + preview URLs are small + stable.
 export const getBakeoffRound = unstable_cache(
-  (id: string) => buildBakeoffRound(id, false),
-  ["bakeoff-round-public-v2"],
+  (id: string) => buildBakeoffRound(id),
+  ["bakeoff-round-live-v3"],
   { revalidate: 60 },
 );
-export const getBakeoffRoundWithPending = unstable_cache(
-  (id: string) => buildBakeoffRound(id, true),
-  ["bakeoff-round-pending-v1"],
-  { revalidate: 60 },
-);
+export const getBakeoffRoundWithPending = getBakeoffRound;
 
 // ---- Per-model view: everything one model made across every bake-off round ----
 
@@ -418,25 +405,21 @@ export function bakeoffModelSlug(name: string): string {
 // memory: O(1 scan) instead of O(rounds). Source names come from the same scan
 // (sources are published languages already in it), so there are no per-round
 // fetches either.
-async function buildBakeoffModels(
-  includePending: boolean,
-): Promise<BakeoffModelEntry[]> {
+async function buildBakeoffModels(): Promise<BakeoffModelEntry[]> {
   let dirs: Direction[];
   let allLangs: DesignLanguage[];
   try {
     // Only live statuses can be a submission or a source; the kernel HONORS a
-    // status filter (unlike direction_id), so targeted reads beat the
-    // unfiltered 4-status fan-out. The public variant reads Published only —
-    // UnderReview rows must not reach the anonymous payload at all (ARN-331).
-    const [dirsRaw, ...langReads] = await Promise.all([
+    // status filter (unlike direction_id), so two targeted reads beat the
+    // unfiltered 4-status fan-out. Bake-off shows UnderReview + Published;
+    // Draft/Archived stay out.
+    const [dirsRaw, published, underReview] = await Promise.all([
       listDirections(),
       listDesignLanguages("Status eq 'Published'"),
-      ...(includePending
-        ? [listDesignLanguages("Status eq 'UnderReview'")]
-        : []),
+      listDesignLanguages("Status eq 'UnderReview'"),
     ]);
     dirs = dirsRaw.filter(isBakeoff);
-    allLangs = langReads.flat();
+    allLangs = [...published, ...underReview];
   } catch {
     return [];
   }
@@ -445,7 +428,7 @@ async function buildBakeoffModels(
 
   const byModel = new Map<string, BakeoffModelEntry>();
   for (const lang of allLangs) {
-    if (!(includePending ? isLive(lang) : isPublicStatus(lang))) continue;
+    if (!isLive(lang)) continue;
     const dirId = (lang.fields.direction_id ?? "").trim();
     const dir = dirId ? dirById.get(dirId) : undefined;
     if (!dir) continue; // not a bake-off submission
@@ -478,22 +461,15 @@ async function buildBakeoffModels(
 }
 
 export const listBakeoffModels = unstable_cache(
-  () => buildBakeoffModels(false),
-  ["bakeoff-models-public-v2"],
+  () => buildBakeoffModels(),
+  ["bakeoff-models-live-v3"],
   { revalidate: 60 },
 );
-export const listBakeoffModelsWithPending = unstable_cache(
-  () => buildBakeoffModels(true),
-  ["bakeoff-models-pending-v1"],
-  { revalidate: 60 },
-);
+export const listBakeoffModelsWithPending = listBakeoffModels;
 
 export async function getBakeoffModel(
   slug: string,
-  opts?: { includePending?: boolean },
 ): Promise<BakeoffModelEntry | null> {
-  const all = opts?.includePending
-    ? await listBakeoffModelsWithPending()
-    : await listBakeoffModels();
+  const all = await listBakeoffModels();
   return all.find((m) => m.slug === slug) ?? null;
 }

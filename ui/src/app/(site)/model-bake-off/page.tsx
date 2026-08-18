@@ -19,9 +19,9 @@ export const metadata = {
     "Blind comparison: guess which model reimagined each Katagami design language.",
 };
 
-// Strictly public and static: Published submissions only (the list* defaults)
-// and drafting rounds stripped for everyone — no cookie read, so ISR holds.
-// Owners review pending rounds on /lab, which is dynamic (ARN-331).
+// Public ISR: live submissions (UnderReview + Published). Drafting rounds
+// stripped. No cookie read, so the cache holds. View language is omitted
+// for unpublished languages because this route cannot know the owner.
 export default async function ModelBakeOffPage() {
   const [rounds, models] = await Promise.all([
     listBakeoffRounds(),
