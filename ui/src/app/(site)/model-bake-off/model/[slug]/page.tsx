@@ -1,10 +1,23 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getBakeoffModel } from "@/lib/bakeoff";
+import { HIDDEN_ROUND_IDS, getBakeoffModel } from "@/lib/bakeoff";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { ModelSubmissions } from "./model-submissions";
 
 export const revalidate = 60;
+
+// This route is static (ISR) and strictly public: Published submissions only
+// (getBakeoffModel's default) and drafting rounds stripped for everyone — the
+// owner's window into pending work is /lab, which is dynamic (ARN-331).
+async function publicBakeoffModel(slug: string) {
+  const model = await getBakeoffModel(slug);
+  if (!model) return null;
+  const submissions = model.submissions.filter(
+    (s) => !HIDDEN_ROUND_IDS.has(s.roundId),
+  );
+  if (submissions.length === 0) return null;
+  return { ...model, submissions, count: submissions.length };
+}
 
 export async function generateMetadata({
   params,
@@ -12,7 +25,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const model = await getBakeoffModel(slug);
+  const model = await publicBakeoffModel(slug);
   return {
     title: model
       ? `${model.name} — Model Bake Off — Katagami`
@@ -29,7 +42,7 @@ export default async function BakeoffModelPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const model = await getBakeoffModel(slug);
+  const model = await publicBakeoffModel(slug);
   if (!model) notFound();
 
   return (

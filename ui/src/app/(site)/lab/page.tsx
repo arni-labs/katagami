@@ -1,22 +1,25 @@
 import {
   HIDDEN_ROUND_IDS,
   listBakeoffModels,
+  listBakeoffModelsWithPending,
   listBakeoffRounds,
+  listBakeoffRoundsWithPending,
 } from "@/lib/bakeoff";
 import { isOwner } from "@/lib/owner";
 import { BakeoffIndex } from "./bakeoff-index";
 
 // Unlisted on purpose — not added to header-nav, mobile-nav, or the search
 // index. Reachable only by URL. Mirrors /model-bake-off.
-// Rounds in HIDDEN_ROUND_IDS (active drafting) are stripped for non-owners.
+// Rounds in HIDDEN_ROUND_IDS (active drafting) are stripped for non-owners,
+// and UnderReview submissions are visible to the owner only (ARN-331).
 
 export const dynamic = "force-dynamic";
 
 export default async function LabIndex() {
-  const [rounds, models, owner] = await Promise.all([
-    listBakeoffRounds(),
-    listBakeoffModels(),
-    isOwner(),
+  const owner = await isOwner();
+  const [rounds, models] = await Promise.all([
+    owner ? listBakeoffRoundsWithPending() : listBakeoffRounds(),
+    owner ? listBakeoffModelsWithPending() : listBakeoffModels(),
   ]);
   const visibleRounds = owner
     ? rounds

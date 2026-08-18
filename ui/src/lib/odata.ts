@@ -401,38 +401,17 @@ const DESIGN_LANGUAGE_LIFECYCLE_STATUSES = [
   "Archived",
 ] as const;
 
+// ARN-331: the no-filter call used to fan out over all four lifecycle statuses,
+// which let Draft/UnderReview entities reach public surfaces through any caller
+// that forgot a filter (the bake-off fallback scans did exactly that). Public
+// code paths get Published-only by default; the every-status scan is opt-in via
+// listDesignLanguagesAnyStatus for owner/curator surfaces.
 export async function listDesignLanguages(
   filter?: string,
   orderby?: string,
   select?: readonly string[],
 ): Promise<DesignLanguage[]> {
-  if (!filter) {
-    let rowsByStatus: Record<string, unknown>[][];
-    try {
-      rowsByStatus = await Promise.all(
-        DESIGN_LANGUAGE_LIFECYCLE_STATUSES.map((status) =>
-          collectDesignLanguageRows(`Status eq '${status}'`, orderby, select),
-        ),
-      );
-    } catch (err) {
-      // Offline fallback: the local specimen catalog keeps the library
-      // browsable when the Temper backend is unreachable.
-      const demo = demoDesignLanguages();
-      if (demo.length > 0) return demo;
-      throw err;
-    }
-    const languages = new Map<string, DesignLanguage>();
-    for (const rows of rowsByStatus) {
-      for (const row of rows) {
-        const language = normalizeDesignLanguageRow(row);
-        languages.set(language.entity_id, language);
-      }
-    }
-    for (const demo of demoDesignLanguages()) {
-      if (!languages.has(demo.entity_id)) languages.set(demo.entity_id, demo);
-    }
-    return Array.from(languages.values());
-  }
+  if (!filter) filter = "Status eq 'Published'";
 
   const rows = (await collectDesignLanguageRows(filter, orderby, select)).map(
     normalizeDesignLanguageRow,
@@ -443,6 +422,39 @@ export async function listDesignLanguages(
     (d) => d.status === statusMatch[1],
   );
   return demo.length > 0 ? [...rows, ...demo] : rows;
+}
+
+/** Every lifecycle status, merged. Owner/curator surfaces only — never call
+ *  this from a public code path (ARN-331). */
+export async function listDesignLanguagesAnyStatus(
+  orderby?: string,
+  select?: readonly string[],
+): Promise<DesignLanguage[]> {
+  let rowsByStatus: Record<string, unknown>[][];
+  try {
+    rowsByStatus = await Promise.all(
+      DESIGN_LANGUAGE_LIFECYCLE_STATUSES.map((status) =>
+        collectDesignLanguageRows(`Status eq '${status}'`, orderby, select),
+      ),
+    );
+  } catch (err) {
+    // Offline fallback: the local specimen catalog keeps the library
+    // browsable when the Temper backend is unreachable.
+    const demo = demoDesignLanguages();
+    if (demo.length > 0) return demo;
+    throw err;
+  }
+  const languages = new Map<string, DesignLanguage>();
+  for (const rows of rowsByStatus) {
+    for (const row of rows) {
+      const language = normalizeDesignLanguageRow(row);
+      languages.set(language.entity_id, language);
+    }
+  }
+  for (const demo of demoDesignLanguages()) {
+    if (!languages.has(demo.entity_id)) languages.set(demo.entity_id, demo);
+  }
+  return Array.from(languages.values());
 }
 
 /** Cheap published count via OData `$count` — fetches no rows, so it can run

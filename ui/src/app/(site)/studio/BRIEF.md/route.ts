@@ -8,6 +8,7 @@ import {
 } from "@/lib/odata";
 import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
+import { canViewNonPublished } from "@/lib/entity-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,15 @@ export async function GET(req: NextRequest) {
       getPaletteSystem(palId),
       getArtStyle(artId),
     ]);
+
+    // ARN-331: composing a brief from a non-Published entity in any lane is
+    // owner-only — the ids are guessable and the brief embeds spec content.
+    const allPublished = [lang, pal, art].every(
+      (e) => e.status === "Published",
+    );
+    if (!allPublished && !(await canViewNonPublished())) {
+      return new Response("not found\n", { status: 404 });
+    }
 
     const brief = buildRemixBrief({
       language: {

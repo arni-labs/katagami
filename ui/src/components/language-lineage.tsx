@@ -77,8 +77,7 @@ export async function LanguageLineage({
   const parentIds = parseJson<string[]>(fields.parent_ids) ?? [];
   const lineageType = (fields.lineage_type || "").toLowerCase();
 
-  // Published list drives children; parents are fetched by id directly (a
-  // source parent is often still UnderReview).
+  // Published list drives children; parents are fetched by id directly.
   let published: DesignLanguage[] = [];
   try {
     published = await listDesignLanguages("Status eq 'Published'").catch(
@@ -88,11 +87,19 @@ export async function LanguageLineage({
     /* empty-safe */
   }
 
+  // ARN-331: a source parent is often still UnderReview — its name must not
+  // surface here. Status-filtered without an owner check on purpose: this
+  // renders inside cached Published pages, and a cookies() read would opt
+  // them out of the full-route cache. The chip reappears once the parent
+  // publishes.
   const parents = (
     await Promise.all(
       parentIds.map((pid) => getDesignLanguage(pid).catch(() => null)),
     )
-  ).filter((l): l is DesignLanguage => Boolean(l && l.fields.name));
+  ).filter(
+    (l): l is DesignLanguage =>
+      Boolean(l && l.fields.name) && l?.status === "Published",
+  );
 
   const children = published.filter(
     (l) =>

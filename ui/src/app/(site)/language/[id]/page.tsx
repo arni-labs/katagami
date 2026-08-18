@@ -67,6 +67,12 @@ export async function generateMetadata({
 
   try {
     const lang = await getDesignLanguage(id);
+    // ARN-331: don't leak a non-Published name into <title>/OG — the page body
+    // 404s below, but metadata renders first. Cookie check only on this branch,
+    // same cache invariant as the body gate.
+    if (lang.status !== "Published" && !(await isOwner())) {
+      return { title: pageTitle() };
+    }
     const name = lang.fields.name || "Untitled";
     return {
       title: pageTitle(name),

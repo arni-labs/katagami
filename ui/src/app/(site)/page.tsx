@@ -5,7 +5,10 @@ import {
   listFeaturedDesignLanguages,
   pageDesignLanguages,
 } from "@/lib/odata";
+import Link from "next/link";
 import { InfiniteLanguages } from "@/components/infinite-galleries";
+import { LanguageCard } from "@/components/language-card";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { RisoHeroPress } from "@/components/riso-hero";
 import { RisoInkField } from "@/components/riso-ink-field";
 import { isOwner } from "@/lib/owner";
@@ -103,7 +106,64 @@ function HowItWorksFold() {
   );
 }
 
+// ARN-331: the signed-out gallery is a fixed teaser — roughly 10% of the
+// published catalog, newest first — rendered as a static grid with no search,
+// facets, or pagination surface. Signing in unlocks the full infinite gallery.
+// The cap is also enforced inside the gallery server actions, so it cannot be
+// bypassed by invoking them directly.
+async function TeaserGallery() {
+  const total = await countDesignLanguages("Status eq 'Published'");
+  const cap = Math.max(1, Math.ceil(total / 10));
+  let page: Awaited<ReturnType<typeof pageDesignLanguages>>;
+  try {
+    page = await pageDesignLanguages({ limit: cap });
+  } catch {
+    return (
+      <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
+        Could not load design languages.
+        <div className="mt-1 font-mono text-[11px]">check the Temper server</div>
+      </div>
+    );
+  }
+  const items = page.items.slice(0, cap);
+  return (
+    <div>
+      <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((l, i) => (
+          <div
+            key={l.entity_id}
+            style={{
+              contentVisibility: "auto",
+              containIntrinsicSize: "auto 220px",
+            }}
+          >
+            <LanguageCard lang={l} index={i} />
+          </div>
+        ))}
+      </div>
+      <div className="mx-auto mt-14 max-w-md p-8 text-center">
+        <p className="text-[17px] font-medium">
+          Showing {items.length} of {total} design languages
+        </p>
+        <p className="mt-2 text-[15px] text-muted-foreground">
+          Sign in to browse the full library.
+        </p>
+        <Link
+          href="/signin"
+          className="ink-underline mt-5 inline-block font-mono text-[12px] font-bold uppercase tracking-[0.18em]"
+        >
+          Sign in
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 async function GalleryGrid({ demo }: { demo?: boolean }) {
+  // Teaser applies to anonymous visitors unconditionally — including ?demo=1,
+  // which must not become a sign-in bypass; demo only turns delete controls
+  // off, never widens visibility.
+  if (!(await hasFullGalleryAccess())) return <TeaserGallery />;
   const canDelete = demo ? false : await isOwner();
   let first: Awaited<ReturnType<typeof pageDesignLanguages>>;
   let featured: Awaited<ReturnType<typeof listFeaturedDesignLanguages>>;

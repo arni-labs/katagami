@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDesignLanguage } from "@/lib/odata";
+import { artifactGate } from "@/lib/entity-visibility";
 import { readTemperFileBytes } from "@/lib/temper-files";
 import {
   buildShadcnRegistryTheme,
@@ -24,6 +25,9 @@ export async function GET(
     });
   }
 
+  const gate = await artifactGate(lang.status);
+  if (!gate.allowed) return gate.response;
+
   const f = lang.fields;
   const filename = f.slug ? `${f.slug}-shadcn.json` : "shadcn.json";
   const storedStatus =
@@ -39,7 +43,7 @@ export async function GET(
         headers: {
           "content-type": "application/json; charset=utf-8",
           "content-disposition": `inline; filename="${filename}"`,
-          "cache-control": "public, max-age=60, s-maxage=300",
+          "cache-control": gate.cacheControl,
           "x-katagami-shadcn-status": storedStatus,
         },
       });
@@ -58,7 +62,7 @@ export async function GET(
     headers: {
       "content-type": "application/json; charset=utf-8",
       "content-disposition": `inline; filename="${filename}"`,
-      "cache-control": "public, max-age=60, s-maxage=300",
+      "cache-control": gate.cacheControl,
       "x-katagami-shadcn-status": "generated-preview",
     },
   });
