@@ -1,35 +1,32 @@
-// Taxonomy — STANCE: defining open; publishing, curating and archiving are gated.
-//
-// Define is authoring: drafting a taxonomy entry. Publish and Archive are the
-// literal publish/lifecycle pair this whole boundary exists for.
-// UpdateCharacteristics and UpdateRelations edit the taxonomy the commons is
-// organised by — a curator act, and the same one the artifact policies gate as
-// SetTaxonomy.
-//
-// IncrementLanguageCount stays open: it is a mechanical counter, not a
-// judgement, and the pipeline bumps it as languages land.
+// Taxonomy — base grant; the boundaries below narrow it.
 permit(principal, action, resource is Taxonomy);
 
-// Contributor boundary (ARN-303), matching Publish/Archive/SetTaxonomy on the
-// artifact types.
+// Curator/pipeline-owned actions. Contributor agents never invoke these;
+// a human may only if their verified role is owner or curator. Scoped so
+// the pipeline and operator key (no role, no agent_type) keep working.
 forbid(
   principal,
   action in [
-    Action::"Publish", Action::"Archive",
-    Action::"UpdateCharacteristics", Action::"UpdateRelations"
+    Action::"Archive",
+    Action::"Define",
+    Action::"IncrementLanguageCount",
+    Action::"Publish",
+    Action::"UpdateCharacteristics",
+    Action::"UpdateRelations"
   ],
   resource is Taxonomy
-) when { principal has agent_type && principal.agent_type == "contributor" };
+)
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
 
-// Same omission fix as ARN-302: an agent that declares no type is refused.
+// Generic OData writes bypass the action ladder: PATCH and DELETE authorize
+// as `update`/`delete` and match no named list above. `create` stays open —
+// submissions legitimately create their draft. Reads stay open.
 forbid(
-  principal is Agent,
+  principal,
   action in [
-    Action::"Publish", Action::"Archive",
-    Action::"UpdateCharacteristics", Action::"UpdateRelations"
+    Action::"update",
+    Action::"delete"
   ],
   resource is Taxonomy
-) unless {
-  principal has agent_type ||
-  principal == Agent::"system"
-};
+)
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };

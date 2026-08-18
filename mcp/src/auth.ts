@@ -44,6 +44,10 @@ export function identityFromAuth(auth: AuthInfo): Identity {
     email: extra.email ?? "",
     clientId: auth.clientId,
     grantId: extra.grantId ?? "",
+    // The caller's raw access token, forwarded to Temper when
+    // config.forwardCallerToken is on so the kernel verifies the caller
+    // itself (RFC-0002 step 2).
+    token: auth.token,
   };
 }
 

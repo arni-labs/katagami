@@ -1,65 +1,43 @@
-// ArtStyle — STANCE: authoring open; the review lifecycle and every attestation are the finalizer's.
+// ArtStyle — base grant; the boundaries below narrow it.
 permit(principal, action, resource is ArtStyle);
 
-// The finalizer calls these OData actions as Agent::"system". They are input
-// actions only because governed WASM dispatches through OData; they are not a
-// public attestation surface.
+// Curator/pipeline-owned actions. Contributor agents never invoke these;
+// a human may only if their verified role is owner or curator. Scoped so
+// the pipeline and operator key (no role, no agent_type) keep working.
 forbid(
   principal,
   action in [
-    Action::"SubmitForReview", Action::"Publish",
-    Action::"MarkQualityPassed", Action::"AttachArtStyleReview",
-    Action::"AttachPublishedAssets", Action::"AttachComputedFacets"
+    Action::"AddCuratorNotes",
+    Action::"Archive",
+    Action::"AttachComputedFacets",
+    Action::"AttachPublishedAssets",
+    Action::"AttachTasteVector",
+    Action::"AttachVerifiedThumbnail",
+    Action::"IncrementFork",
+    Action::"IncrementUsage",
+    Action::"MarkQualityPassed",
+    Action::"Publish",
+    Action::"Restore",
+    Action::"ReturnToDraft",
+    Action::"Revise",
+    Action::"SetCreator",
+    Action::"SetFeatured",
+    Action::"SetTaxonomy",
+    Action::"UpdateQuality"
   ],
   resource is ArtStyle
-) when { principal != Agent::"system" };
+)
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
 
-// Contributor boundary (ARN-151): agents submit, humans/pipeline publish.
-// Contributor principals may author (create, Set*, Attach* artifacts,
-// SetLineage, SetCredits/SetModelProvenance) but never attest, advance the
-// review lifecycle, publish, curate, or mint public assets.
+// Generic OData writes bypass the action ladder: PATCH and DELETE authorize
+// as `update`/`delete` and match no named list above. `create` stays open —
+// submissions legitimately create their draft. Reads stay open.
 forbid(
   principal,
   action in [
-    Action::"SubmitForReview", Action::"Publish",
-    Action::"Revise", Action::"Archive", Action::"Restore",
-    Action::"MarkQualityPassed", Action::"UpdateQuality",
-    Action::"SetReviewEvidence", Action::"AttachArtStyleReview",
-    Action::"AttachPublishedAssets", Action::"AttachVerifiedThumbnail",
-    Action::"AttachTasteVector", Action::"AttachComputedFacets",
-    Action::"SetFeatured", Action::"SetTaxonomy", Action::"AddCuratorNotes"
+    Action::"update",
+    Action::"delete"
   ],
   resource is ArtStyle
-) when { principal has agent_type && principal.agent_type == "contributor" };
-
-// An agent that will not say what kind of agent it is gets no benefit of the
-// doubt on the actions above.
-//
-// The contributor boundary can only recognize a contributor by its
-// `agent_type`, and that attribute comes from an OPTIONAL header
-// (`x-temper-agent-type`). Omitting it was therefore a way to stop looking like
-// a contributor: verified with the Cedar evaluator, an Agent principal that
-// sent no agent type was ALLOWED to publish an art style. Every agent that
-// legitimately acts here — the pipeline, the finalizer — knows its own type and
-// sends it, so requiring the declaration costs them nothing and closes the gap
-// for everyone else. `Agent::"system"` is exempt because an identity is
-// stronger evidence than a self-declared attribute, and the finalizer forbid
-// above already names it.
-//
-// Same fix as katagami-curation/policies/human_curator.cedar (ARN-302).
-forbid(
-  principal is Agent,
-  action in [
-    Action::"SubmitForReview", Action::"Publish",
-    Action::"Revise", Action::"Archive", Action::"Restore",
-    Action::"MarkQualityPassed", Action::"UpdateQuality",
-    Action::"SetReviewEvidence", Action::"AttachArtStyleReview",
-    Action::"AttachPublishedAssets", Action::"AttachVerifiedThumbnail",
-    Action::"AttachTasteVector", Action::"AttachComputedFacets",
-    Action::"SetFeatured", Action::"SetTaxonomy", Action::"AddCuratorNotes"
-  ],
-  resource is ArtStyle
-) unless {
-  principal has agent_type ||
-  principal == Agent::"system"
-};
+)
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };

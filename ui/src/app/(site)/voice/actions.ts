@@ -1,15 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertOwner } from "@/lib/owner";
+import { assertOwnerBearer } from "@/lib/owner";
 import { createEntity, dispatchAction, uploadFile } from "@/lib/odata-mutations";
 
 // The curator gate's other half: the finalizer stops writing styles at
 // UnderReview with every Publish guard satisfied; the owner reads the voice
 // and publishes it from the contract page.
 export async function publishWritingStyle(id: string): Promise<void> {
-  await assertOwner();
-  await dispatchAction("WritingStyles", id, "Publish", {});
+  const bearer = await assertOwnerBearer();
+  await dispatchAction("WritingStyles", id, "Publish", {}, { bearer });
   revalidatePath("/voice");
   revalidatePath(`/voice/${id}`);
   revalidatePath("/under-review");
@@ -31,7 +31,7 @@ export async function submitVoiceIntake(
   formData: FormData,
 ): Promise<VoiceIntakeResult> {
   try {
-    await assertOwner();
+    const bearer = await assertOwnerBearer();
     const name = String(formData.get("name") ?? "").trim();
     const author = String(formData.get("author") ?? "").trim();
     const provenance = String(formData.get("provenance") ?? "").trim();
@@ -65,11 +65,12 @@ export async function submitVoiceIntake(
           `/katagami/writing-styles/intake/${slug}/sample-${i + 1}.md`,
           "text/markdown",
           samples[i],
+          { bearer },
         ),
       );
     }
 
-    const created = await createEntity("WritingStyles", {});
+    const created = await createEntity("WritingStyles", {}, { bearer });
     const id = created.entity_id;
     await dispatchAction("WritingStyles", id, "AttachCorpus", {
       corpus_file_ids: fileIds,
@@ -100,7 +101,7 @@ export async function submitVoiceIntake(
         moves: "[]",
         register: "{}",
         refusals: JSON.stringify(refusals),
-      });
+      }, { bearer });
     }
     revalidatePath("/voice");
     return { id };
