@@ -7,12 +7,14 @@
 // Env (with defaults matching ui/.env.local):
 //   TEMPER_URL=http://localhost:3467  TENANT=default  KEY=test-local-key
 //
-// File artifacts (embodiment/thumbnail/tokens/reference images) use placeholder
-// ids — paw-fs writes aren't exposed over plain HTTP, and the publish guards
-// check boolean flags (set by Attach+Verify actions), not file existence. The
-// studio renders palette-tinted placeholder tiles when an image id doesn't
-// resolve, so the demo stays coherent. Token/role/recipe JSON is real, so the
-// live recolor + brief are fully functional.
+// File artifacts (embodiment/thumbnail/tokens/reference images) use seed-named
+// ids, each backed by a real File entity walked to Ready here — the ADR-0015
+// cross_entity_state guards on SubmitForReview/Publish check File status, so
+// the temper-fs specs must be registered on the server (run-local.sh does this).
+// The files carry no blob content; the studio renders palette-tinted placeholder
+// tiles when an image id doesn't resolve, so the demo stays coherent.
+// Token/role/recipe JSON is real, so the live recolor + brief are fully
+// functional.
 
 const BASE = process.env.TEMPER_URL || "http://localhost:3467";
 const TENANT = process.env.TENANT || "default";
@@ -35,7 +37,34 @@ async function create(set) {
   return id;
 }
 
+// ADR-0015 file-ready guards: SubmitForReview/Publish now cross-check that every
+// referenced *_file_id points to a File entity in Ready/Locked state. Placeholder
+// ids are no longer enough — ensure a Ready File exists for each id we reference.
+const ensuredFiles = new Set();
+async function ensureFile(fid) {
+  if (!fid || typeof fid !== "string" || ensuredFiles.has(fid)) return;
+  ensuredFiles.add(fid);
+  const res = await fetch(`${BASE}/tdata/Files`, {
+    method: "POST", headers, body: JSON.stringify({ Id: fid }),
+  });
+  if (!res.ok) throw new Error(`create File ${fid} -> ${res.status}: ${await res.text()}`);
+  const up = await fetch(`${BASE}/tdata/Files('${encodeURIComponent(fid)}')/Temper.StreamUpdated`, {
+    method: "POST", headers,
+    body: JSON.stringify({
+      content_hash: `seed-${fid}`, size_bytes: "1024", mime_type: "text/html",
+      version_number: "1", previous_version_id: "", created_by: "seed-local",
+    }),
+  });
+  if (!up.ok) throw new Error(`ready File ${fid} -> ${up.status}: ${await up.text()}`);
+}
+
 async function act(set, id, action, params = {}) {
+  for (const [k, v] of Object.entries(params)) {
+    if (k.endsWith("_file_id")) await ensureFile(v);
+    else if (k.endsWith("_file_ids") && typeof v === "string") {
+      try { for (const f of JSON.parse(v)) await ensureFile(f); } catch {}
+    }
+  }
   const res = await fetch(`${BASE}/tdata/${set}('${id}')/Temper.${action}`, {
     method: "POST",
     headers,
@@ -62,35 +91,27 @@ async function seedDesignLanguage(d) {
     landing_file_id: `/embodiments/${d.slug}-landing.html`,
     dashboard_file_id: `/embodiments/${d.slug}-dashboard.html`,
   });
-  // Gate the compositions the same way the finalizer does (the seed walks
-  // entities directly, so it stands in for the finalizer's VerifyCompositions).
-  await act("DesignLanguages", id, "VerifyCompositions", {});
   await act("DesignLanguages", id, "AttachEmbodiment", {
     embodiment_file_id: `/embodiments/${d.slug}-embodiment.html`, element_count: "15",
     composition_count: "5", embodiment_format: "html",
   });
-  await act("DesignLanguages", id, "VerifyEmbodiment", {});
   await act("DesignLanguages", id, "AttachVerifiedThumbnail", { thumbnail_file_id: `seed-thumb-${d.slug}` });
   await act("DesignLanguages", id, "AttachDesignMd", {
     design_md_file_id: `seed-designmd-${d.slug}`, design_md_lint_result: J({ errors: 0, warnings: 0 }),
     design_md_format_version: "alpha",
   });
-  await act("DesignLanguages", id, "VerifyDesignMd", {});
   await act("DesignLanguages", id, "AttachShadcnExport", {
     shadcn_export_file_id: `seed-shadcn-${d.slug}`, shadcn_export_format_version: "registry-theme-v1",
     shadcn_export_manifest: J({ seed: true }),
   });
-  await act("DesignLanguages", id, "VerifyShadcnExport", {});
   await act("DesignLanguages", id, "AttachShadcnComponentSpec", {
     shadcn_component_spec_file_id: `seed-shadcn-comp-${d.slug}`,
     shadcn_component_spec_format_version: "component-recipes-v1", shadcn_component_spec_manifest: J({ seed: true }),
   });
-  await act("DesignLanguages", id, "VerifyShadcnComponentSpec", {});
   await act("DesignLanguages", id, "AttachShadcnPreviewShots", {
     shadcn_preview_shots_file_id: `seed-shadcn-shots-${d.slug}`,
     shadcn_preview_shots_format_version: "preview-shots-v1", shadcn_preview_shots_manifest: J({ seed: true }),
   });
-  await act("DesignLanguages", id, "VerifyShadcnPreviewShots", {});
   await act("DesignLanguages", id, "SubmitForReview", {});
   await act("DesignLanguages", id, "AttachPublishedAssets", {
     thumbnail_asset_id: `seed-thumb-${d.slug}`, thumbnail_asset_url: `/thumbs/${d.slug}.png`,
@@ -118,8 +139,6 @@ async function seedPalette(p) {
     tokens_export_manifest: J({ signature_count: p.signature.length, css_var_prefix: "--ds-" }),
   });
   await act("PaletteSystems", id, "AttachThumbnail", { thumbnail_file_id: `seed-pal-thumb-${p.slug}` });
-  await act("PaletteSystems", id, "VerifyTokensExport", {});
-  await act("PaletteSystems", id, "VerifyThumbnail", {});
   await act("PaletteSystems", id, "SubmitForReview", {});
   await act("PaletteSystems", id, "AttachPublishedAssets", {
     thumbnail_asset_id: `seed-pal-thumb-${p.slug}`, thumbnail_asset_url: "",
@@ -154,9 +173,14 @@ async function seedArtStyle(a) {
     proof_shots_manifest: J({ items: proofIds.map((fid) => ({ file_id: fid })) }),
   });
   await act("ArtStyles", id, "AttachThumbnail", { thumbnail_file_id: `/art/${a.slug}-1.png` });
-  await act("ArtStyles", id, "VerifyReferenceImages", {});
-  await act("ArtStyles", id, "VerifyProofShots", {});
-  await act("ArtStyles", id, "VerifyThumbnail", {});
+  // Newer publish invariants: PublishedRequiresCredits + PublishedRequiresModelProvenance.
+  await act("ArtStyles", id, "SetCredits", { credits: J({ curator: "seed-local", sources: [] }) });
+  await act("ArtStyles", id, "SetModelProvenance", { model_provenance: J({ model: "seed-local", provider: "seed" }) });
+  await act("ArtStyles", id, "AttachArtStyleReview", {
+    source_basis: J({ sources: [], summary: "seed-local placeholder" }),
+    prompt_review: J({ reviewed: true, notes: "seed-local placeholder" }),
+    portability_report: J({ scenes: [], notes: "seed-local placeholder" }),
+  });
   await act("ArtStyles", id, "SubmitForReview", {});
   await act("ArtStyles", id, "AttachPublishedAssets", {
     thumbnail_asset_id: `/art/${a.slug}-1.png`, thumbnail_asset_url: "", reference_assets: "{}",
