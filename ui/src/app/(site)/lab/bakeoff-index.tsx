@@ -15,10 +15,7 @@ export function BakeoffIndex({
 }) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:py-14">
-      <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--sakura)]">
-        Katagami · the lab
-      </p>
-      <h1 className="mt-3 font-display text-4xl font-black tracking-[-0.03em] sm:text-5xl">
+      <h1 className="font-display text-4xl font-black tracking-[-0.03em] sm:text-5xl">
         Model bake-offs
       </h1>
 
