@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { canLinkBakeoffLanguage } from "@/lib/bakeoff-link";
 import type { LabComparison as LabComparisonType, LabModel, LabView } from "./comparisons";
 
 const LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -439,6 +440,65 @@ function StatRow({ m }: { m: LabModel }) {
   );
 }
 
+function SourceLanguageCard({
+  name,
+  thumb,
+  href,
+}: {
+  name: string;
+  thumb?: string;
+  href?: string;
+}) {
+  const body = (
+    <>
+      <span
+        className="relative block w-44 shrink-0 overflow-hidden shadow-[var(--shadow-card)] transition-transform group-hover:-translate-y-[2px]"
+        style={{ aspectRatio: "16 / 10" }}
+      >
+        <span aria-hidden className="absolute inset-x-0 top-0 z-10 flex h-[3px]">
+          <span className="h-full flex-1" style={{ background: "var(--sakura)" }} />
+          <span className="h-full flex-1" style={{ background: "var(--yuzu)" }} />
+          <span className="h-full flex-1" style={{ background: "var(--ramune)" }} />
+        </span>
+        {thumb ? (
+          <span
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${thumb})` }}
+          />
+        ) : (
+          <span className="absolute inset-0 bg-muted" />
+        )}
+      </span>
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          Based on the existing language
+        </span>
+        <span className="font-display text-[20px] font-bold leading-tight tracking-[-0.02em] text-foreground">
+          {name}
+        </span>
+        {href && (
+          <span className="ink-underline inline-block w-fit font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ramune)]">
+            View language
+          </span>
+        )}
+      </span>
+    </>
+  );
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="group mt-5 inline-flex items-center gap-4"
+      >
+        {body}
+      </a>
+    );
+  }
+  return <div className="mt-5 inline-flex items-center gap-4">{body}</div>;
+}
+
 function MetaLine({ m }: { m: LabModel }) {
   if (!m.harness && !m.imageModel && !m.tokensThinking) return null;
   return (
@@ -797,6 +857,7 @@ function DetailsGrid({
   answers,
   correct,
   onReplay,
+  linkUnpublishedLanguages,
 }: {
   active: SurfaceSet;
   view: LabView;
@@ -804,6 +865,7 @@ function DetailsGrid({
   answers: Record<string, string>;
   correct: number;
   onReplay: () => void;
+  linkUnpublishedLanguages: boolean;
 }) {
   const order = active.blindOrder;
   const n = order.length;
@@ -960,7 +1022,8 @@ function DetailsGrid({
                     Open {view}
                   </a>
                 )}
-                {m.languageId && (
+                {m.languageId &&
+                  canLinkBakeoffLanguage(m.status, linkUnpublishedLanguages) && (
                   <a
                     href={`/language/${m.languageId}`}
                     target="_blank"
@@ -979,7 +1042,13 @@ function DetailsGrid({
   );
 }
 
-export function LabComparison({ comparison: c }: { comparison: LabComparisonType }) {
+export function LabComparison({
+  comparison: c,
+  linkUnpublishedLanguages = false,
+}: {
+  comparison: LabComparisonType;
+  linkUnpublishedLanguages?: boolean;
+}) {
   const [mode, setMode] = useState<"quiz" | "details">("quiz");
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -1088,44 +1157,17 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
           </>
         )}
       </h1>
-      {/* based on — the existing published language, shown full-frame + linked */}
       {c.sourceName && (
-        <a
-          href={c.sourceId ? `/language/${c.sourceId}` : undefined}
-          target="_blank"
-          rel="noreferrer"
-          className="group mt-5 inline-flex items-center gap-4"
-        >
-          <span
-            className="relative block w-44 shrink-0 overflow-hidden shadow-[var(--shadow-card)] transition-transform group-hover:-translate-y-[2px]"
-            style={{ aspectRatio: "16 / 10" }}
-          >
-            <span aria-hidden className="absolute inset-x-0 top-0 z-10 flex h-[3px]">
-              <span className="h-full flex-1" style={{ background: "var(--sakura)" }} />
-              <span className="h-full flex-1" style={{ background: "var(--yuzu)" }} />
-              <span className="h-full flex-1" style={{ background: "var(--ramune)" }} />
-            </span>
-            {c.sourceThumb ? (
-              <span
-                className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${c.sourceThumb})` }}
-              />
-            ) : (
-              <span className="absolute inset-0 bg-muted" />
-            )}
-          </span>
-          <span className="flex min-w-0 flex-col gap-1">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Based on the existing language
-            </span>
-            <span className="font-display text-[20px] font-bold leading-tight tracking-[-0.02em] text-foreground">
-              {c.sourceName}
-            </span>
-            <span className="ink-underline inline-block w-fit font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ramune)]">
-              View language
-            </span>
-          </span>
-        </a>
+        <SourceLanguageCard
+          name={c.sourceName}
+          thumb={c.sourceThumb}
+          href={
+            c.sourceId &&
+            canLinkBakeoffLanguage(c.sourceStatus, linkUnpublishedLanguages)
+              ? `/language/${c.sourceId}`
+              : undefined
+          }
+        />
       )}
 
       {/* the brief every model was given — pulled verbatim from the Direction.
@@ -1217,6 +1259,7 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
           setView={setView}
           answers={answers}
           correct={correct}
+          linkUnpublishedLanguages={linkUnpublishedLanguages}
           onReplay={() => {
             setAnswers({});
             setStep(0);

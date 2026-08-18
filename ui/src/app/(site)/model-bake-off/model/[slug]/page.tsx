@@ -6,9 +6,8 @@ import { ModelSubmissions } from "./model-submissions";
 
 export const revalidate = 60;
 
-// This route is static (ISR) and strictly public: Published submissions only
-// (getBakeoffModel's default) and drafting rounds stripped for everyone — the
-// owner's window into pending work is /lab, which is dynamic (ARN-331).
+// Public ISR: live submissions (UnderReview + Published), drafting rounds
+// stripped. View language is omitted unless the language is Published.
 async function publicBakeoffModel(slug: string) {
   const model = await getBakeoffModel(slug);
   if (!model) return null;

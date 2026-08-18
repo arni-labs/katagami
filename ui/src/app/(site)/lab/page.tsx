@@ -10,8 +10,8 @@ import { BakeoffIndex } from "./bakeoff-index";
 
 // Unlisted on purpose — not added to header-nav, mobile-nav, or the search
 // index. Reachable only by URL. Mirrors /model-bake-off.
-// Rounds in HIDDEN_ROUND_IDS (active drafting) are stripped for non-owners,
-// and UnderReview submissions are visible to the owner only (ARN-331).
+// Live submissions (UnderReview + Published) show for everyone; drafting
+// rounds in HIDDEN_ROUND_IDS stay owner-only.
 
 export const dynamic = "force-dynamic";
 

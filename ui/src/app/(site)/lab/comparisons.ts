@@ -46,6 +46,7 @@ export interface LabComparison {
   sourceId?: string; // the source language being reimagined (backend rounds)
   sourceName?: string; // its display name, e.g. "Prism Works"
   sourceThumb?: string; // a thumbnail/landing screenshot of the source language
+  sourceStatus?: string; // Published / UnderReview — gates the /language link
   views: LabView[];
   blindOrder: string[]; // model keys in display order -> A, B, C, … (cost descending)
   models: Record<string, LabModel>;
