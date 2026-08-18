@@ -1,31 +1,65 @@
-// Remix — STANCE: authoring, rating and usage open; archiving is gated.
-//
-// A remix is a user's own composition, so building it stays open —
-// SetSelection, SetCreator, SetSlotAssignments, AttachBrief, and Save.
-//
-// Rate and IncrementUsage stay open ON PURPOSE and not by oversight: they are
-// engagement signals that the people using a remix generate, and gating them
-// would stop the thing they exist to measure. If rating is ever abused, the
-// answer is rate limiting or one-rating-per-principal in the spec, not a Cedar
-// forbid — recorded here so the next reader knows it was considered.
-//
-// Archive and Restore decide whether a remix stays in the library, which is the
-// same lifecycle class the artifact policies gate.
+// Remix — base grant; the boundaries below narrow it.
 permit(principal, action, resource is Remix);
 
-// Contributor boundary (ARN-303), matching Archive/Restore on the artifacts.
+// Generic OData writes bypass the action ladder: PATCH and DELETE authorize
+// as `update`/`delete` and match no named list above. `create` stays open —
+// submissions legitimately create their draft. Reads stay open.
 forbid(
   principal,
-  action in [Action::"Archive", Action::"Restore"],
+  action in [
+    Action::"update",
+    Action::"delete"
+  ],
   resource is Remix
-) when { principal has agent_type && principal.agent_type == "contributor" };
+)
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
 
-// Same omission fix as ARN-302: an agent that declares no type is refused.
+// Contributor boundary (ARN-255): agents build and save their own mixes.
+// Ownership matches either the human acting directly (principal.id) or an
+// agent acting for that human (context.actingFor) — an agent's own id is
+// its client id, so comparing only principal.id would deny an agent every
+// action on the very mixes its owner created.
+// Destructive and judgment actions belong to the mix's creator — ownership is
+// the stable Google subject id on the verified principal. Reads stay open.
 forbid(
-  principal is Agent,
-  action in [Action::"Archive", Action::"Restore"],
+  principal,
+  action in [
+    Action::"Archive",
+    Action::"Restore",
+    Action::"Rate",
+    Action::"IncrementUsage",
+    Action::"SetSelection",
+    Action::"SetSlotAssignments",
+    Action::"AttachBrief",
+    Action::"Save"
+  ],
   resource is Remix
-) unless {
-  principal has agent_type ||
-  principal == Agent::"system"
-};
+) when { principal has agent_type && principal.agent_type == "contributor" }
+unless { !(resource has creator_sub) || resource.creator_sub == "" || (resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };
+// Ownership is claimed once, never reassigned: a contributor may set the
+// creator on a mix that has none, and never on one that belongs to someone else.
+forbid(
+  principal,
+  action == Action::"SetCreator",
+  resource is Remix
+) when { principal has agent_type && principal.agent_type == "contributor" }
+unless { !(resource has creator_sub) || resource.creator_sub == "" || (resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };
+// Human ownership (ARN-255): the contributor forbid above never matches a
+// Customer principal, so a signed-in human could otherwise archive or rate any
+// mix. Same rule, expressed for humans acting with their own token.
+forbid(
+  principal,
+  action in [
+    Action::"Archive",
+    Action::"Restore",
+    Action::"Rate",
+    Action::"IncrementUsage",
+    Action::"SetCreator",
+    Action::"SetSelection",
+    Action::"SetSlotAssignments",
+    Action::"AttachBrief",
+    Action::"Save"
+  ],
+  resource is Remix
+) when { principal is Customer }
+unless { !(resource has creator_sub) || resource.creator_sub == "" || (resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };

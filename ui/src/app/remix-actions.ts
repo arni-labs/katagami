@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getRemix } from "@/lib/odata";
 import { createEntity, dispatchAction } from "@/lib/odata-mutations";
 import { requireUser } from "@/lib/user-auth";
+import { humanBearer } from "@/lib/human-bearer";
 
 export interface RemixSelection {
   designLanguageId: string;
@@ -53,7 +54,12 @@ export async function rateRemix(id: string, rating: number): Promise<void> {
     throw new Error("Only the mix's creator can rate it.");
   }
   const clamped = Math.max(1, Math.min(5, Math.round(rating)));
-  await dispatchAction("Remixes", id, "Rate", { rating: clamped });
+  // Carry the human's own token when enabled, so the kernel sees who is rating
+  // and Cedar enforces the creator boundary in katagami-commons/policies/
+  // remix.cedar. Falls back to the shared key (and the check above) until the
+  // kernel deploy lands (ARN-255).
+  const bearer = (await humanBearer()) ?? undefined;
+  await dispatchAction("Remixes", id, "Rate", { rating: clamped }, { bearer });
   revalidatePath("/studio");
   revalidatePath("/account");
 }
