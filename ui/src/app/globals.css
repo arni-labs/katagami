@@ -1101,6 +1101,57 @@
       2px 2px 0 color-mix(in srgb, var(--card-ink, var(--ramune)) 7%, transparent);
   }
 
+  /* Feedback option sheets. Fill the card itself (no overlay): a translucent
+     ::before on 85% paper left a white halo and overflow:hidden clipped the
+     shadow into a hard white line along the bottom. */
+  .sticker-card.feedback-pick {
+    overflow: visible;
+    isolation: auto;
+    background-color: var(--washi);
+    background-image: linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--card-ink, var(--sakura)) 20%, var(--washi)),
+      color-mix(in oklch, var(--card-ink, var(--sakura)) 20%, var(--washi))
+    );
+    background-repeat: no-repeat;
+    background-size: 0% 100%;
+    transition:
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms ease,
+      background-size 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .sticker-card.feedback-pick:hover {
+    transform: translateY(-5px) rotate(-0.7deg);
+    background-color: var(--washi);
+    background-size: 100% 100%;
+    box-shadow:
+      var(--shadow-card-hover),
+      3px 3px 0 color-mix(in oklch, var(--card-ink, var(--sakura)) 22%, transparent);
+  }
+  .sticker-card.feedback-pick:hover .feedback-pick-n {
+    color: var(--card-ink, var(--sakura));
+  }
+  .sticker-card.feedback-pick[aria-pressed="true"] {
+    transform: translateY(-2px) rotate(0.35deg);
+    background-color: var(--washi);
+    background-size: 100% 100%;
+    box-shadow:
+      var(--shadow-card-hover),
+      3px 3px 0 color-mix(in oklch, var(--card-ink, var(--sakura)) 28%, transparent);
+  }
+  .sticker-card.feedback-pick[aria-pressed="true"] .feedback-pick-n {
+    color: var(--card-ink, var(--sakura));
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sticker-card.feedback-pick,
+    .sticker-card.feedback-pick:hover,
+    .sticker-card.feedback-pick[aria-pressed="true"] {
+      transition: none;
+      transform: none;
+      background-size: 100% 100%;
+    }
+  }
+
   /* Marker highlight behind text — the original, with a whisper of
      overprint blend so the ink reads printed, not painted. */
   .marker {

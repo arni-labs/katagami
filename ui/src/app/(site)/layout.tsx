@@ -217,8 +217,7 @@ export default async function SiteLayout({
                 </div>
               </div>
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-                A DESIGN.md-compatible library of design languages — versioned,
-                forked, and curated for agents.
+                A DESIGN.md-compatible library of design languages.
               </p>
             </div>
 
