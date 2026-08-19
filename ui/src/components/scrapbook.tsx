@@ -135,7 +135,7 @@ export function HankoSeal({
   );
 }
 
-/** Stamp-style pill. */
+/** Sharp ink stamp — highlighter wash, hard sticker shadow, radius 0. */
 export function Stamp({
   color = "sumire",
   rotate,

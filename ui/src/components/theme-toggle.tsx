@@ -2,7 +2,7 @@
 
 import { useTheme } from "@/lib/use-theme";
 
-// Scrapbook-style theme toggle: a stamp pill that shows the CURRENT mode
+// Theme toggle: a sharp ink stamp that shows the CURRENT mode
 // (sun + 昼 for day, moon + 夜 for night) and flips on click. Tilts on hover
 // like the other stamps in the header.
 export function ThemeToggle() {
