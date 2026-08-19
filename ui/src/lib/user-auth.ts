@@ -27,40 +27,32 @@ export function sessionCookieDomain(
   return undefined;
 }
 
-type CookieJar = {
-  set: (
-    name: string,
-    value: string,
-    options: {
-      httpOnly: boolean;
-      secure: boolean;
-      sameSite: "lax";
-      path: string;
-      maxAge: number;
-      domain?: string;
-    },
-  ) => void;
-};
+/** One Set-Cookie line per stored variant. Next's `cookies.set` keeps a
+ *  single map entry per name, so calling it four times left only
+ *  Domain=www.katagami.ai and the apex session never died. */
+export function expiredSessionCookieLines(
+  hostname: string,
+  secure: boolean,
+): string[] {
+  const attrs = ["Path=/", "Max-Age=0", "HttpOnly", "SameSite=Lax"];
+  if (secure) attrs.push("Secure");
+  const suffix = attrs.join("; ");
+  const lines = [`${SESSION_COOKIE}=; ${suffix}`];
+  if (sessionCookieDomain(hostname)) {
+    for (const domain of [".katagami.ai", "katagami.ai", "www.katagami.ai"]) {
+      lines.push(`${SESSION_COOKIE}=; ${suffix}; Domain=${domain}`);
+    }
+  }
+  return lines;
+}
 
-/** Expire every katagami_user variant a browser may still hold: host-only
- *  (pre-#234) and Domain=katagami.ai / .katagami.ai / www. Browsers only
- *  drop a cookie when Path + Domain + Secure match the stored one. */
-export function expireSessionCookies(
-  jar: CookieJar,
+export function appendExpiredSessionCookies(
+  headers: Headers,
   hostname: string,
   secure: boolean,
 ): void {
-  const base = {
-    httpOnly: true,
-    secure,
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: 0,
-  };
-  jar.set(SESSION_COOKIE, "", base);
-  if (!sessionCookieDomain(hostname)) return;
-  for (const domain of [".katagami.ai", "katagami.ai", "www.katagami.ai"]) {
-    jar.set(SESSION_COOKIE, "", { ...base, domain });
+  for (const line of expiredSessionCookieLines(hostname, secure)) {
+    headers.append("Set-Cookie", line);
   }
 }
 
