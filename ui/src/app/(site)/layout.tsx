@@ -160,12 +160,12 @@ export default async function SiteLayout({
             </span>
           </Link>
           <HeaderNav />
-          <div className="ml-auto hidden items-center gap-2.5 lg:flex">
+          <div className="header-cluster ml-auto hidden lg:flex">
             <CommandPaletteTrigger />
             <ThemeToggle />
             <UserMenu />
           </div>
-          <div className="ml-auto flex items-center gap-2 lg:hidden">
+          <div className="header-cluster ml-auto lg:hidden">
             <CommandPaletteTrigger />
             <ThemeToggle />
             <UserMenu />

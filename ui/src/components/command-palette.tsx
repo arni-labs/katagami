@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track, trackLanguageClick, trackSearch } from "@/lib/analytics";
+import { CHROME_STAMP, CHROME_STAMP_LABEL } from "@/lib/chrome-stamp";
 
 export interface PaletteIndexItem {
   id: string;
@@ -308,10 +309,9 @@ export function CommandPaletteTrigger({ className = "" }: { className?: string }
       onClick={() => window.dispatchEvent(new Event("katagami:palette"))}
       aria-label="Search the library (⌘K)"
       title="Search the library (⌘K)"
-      className={`group inline-flex h-7 items-center gap-2 px-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/75 transition-all hover:-translate-y-[1px] hover:text-foreground ${className}`}
-      style={{
-        background: "color-mix(in srgb, var(--ramune) 12%, var(--paper-stamp-mix))",
-      }}
+      className={[CHROME_STAMP, "font-mono text-[var(--ramune)]", className]
+        .filter(Boolean)
+        .join(" ")}
     >
       <svg
         viewBox="0 0 14 14"
@@ -319,14 +319,14 @@ export function CommandPaletteTrigger({ className = "" }: { className?: string }
         stroke="currentColor"
         strokeWidth="1.7"
         strokeLinecap="round"
-        className="h-3 w-3"
+        className="h-3.5 w-3.5"
         aria-hidden
       >
         <circle cx="6" cy="6" r="4.2" />
         <path d="M9.4 9.4 L12.6 12.6" />
       </svg>
-      search
-      <kbd className="hidden font-mono text-[9px] tracking-[0.08em] opacity-70 lg:inline">
+      <span className={CHROME_STAMP_LABEL}>search</span>
+      <kbd className={`${CHROME_STAMP_LABEL} font-mono text-[9px] tracking-[0.08em] opacity-70`}>
         ⌘K
       </kbd>
     </button>
