@@ -26,16 +26,22 @@ export function UserMenu() {
   // undefined = still resolving; render a same-size blank so the header
   // doesn't jump when the answer arrives.
   const [user, setUser] = useState<HeaderUser | null | undefined>(undefined);
+  const [owner, setOwner] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { user: null }))
-      .then((d: { user: HeaderUser | null }) => {
-        if (alive) setUser(d.user ?? null);
+    fetch("/api/auth/me", { cache: "no-store", credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : { user: null, owner: false }))
+      .then((d: { user: HeaderUser | null; owner?: boolean }) => {
+        if (!alive) return;
+        setUser(d.user ?? null);
+        setOwner(Boolean(d.owner));
       })
       .catch(() => {
-        if (alive) setUser(null);
+        if (alive) {
+          setUser(null);
+          setOwner(false);
+        }
       });
     return () => {
       alive = false;
@@ -62,6 +68,18 @@ export function UserMenu() {
   }
 
   return (
+    <span className="inline-flex items-center gap-2">
+      {owner ? (
+        <Link
+          href="/owner/visitor-shelf"
+          prefetch={false}
+          aria-label="visitor home"
+          title="Pick languages on the signed-out home"
+          className={`${CHROME_STAMP} whitespace-nowrap text-[var(--yuzu)]`}
+        >
+          <span className={`${CHROME_STAMP_LABEL} font-mono`}>visitor home</span>
+        </Link>
+      ) : null}
     <Dropdown.Root>
       <Dropdown.Trigger asChild>
         <button
@@ -122,6 +140,7 @@ export function UserMenu() {
         </Dropdown.Content>
       </Dropdown.Portal>
     </Dropdown.Root>
+    </span>
   );
 }
 

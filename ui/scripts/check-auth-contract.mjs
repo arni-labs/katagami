@@ -57,7 +57,8 @@ const required = [
   // Owner mode is identity (ARN-144): a signed-in sub on the allowlist —
   // no passphrase, no per-browser unlock cookie, no HMAC grant path.
   ["owner mode keys on the sub allowlist", owner, /KATAGAMI_OWNER_SUBS/],
-  ["owner check reads the signed-in session", owner, /getUser/],
+  ["owner check reads the signed-in session first", owner, /const user = await getUser/],
+  ["session cookie is shared on katagami.ai", session, /sessionCookieDomain/],
   ["no passphrase grant path remains", owner, /^(?![\s\S]*(grantOwnerSession|createHmac|timingSafeEqual|process\.env\.KATAGAMI_OWNER_SECRET))[\s\S]*$/],
 ];
 

@@ -9,6 +9,7 @@ import {
   SESSION_COOKIE,
   SESSION_MAX_AGE,
   safeInternalPath,
+  sessionCookieDomain,
   signSession,
 } from "@/lib/user-auth";
 
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest) {
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_MAX_AGE,
+    domain: sessionCookieDomain(req.nextUrl.hostname),
   });
   res.cookies.delete(OAUTH_STATE_COOKIE);
   res.cookies.delete(OAUTH_VERIFIER_COOKIE);

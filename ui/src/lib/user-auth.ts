@@ -15,6 +15,18 @@ export const OAUTH_VERIFIER_COOKIE = "katagami_oauth_verifier";
 export const OAUTH_NONCE_COOKIE = "katagami_oauth_nonce";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
+/** Share the session between katagami.ai and www.katagami.ai. Host-only
+ *  cookies made "I'm logged in on www" look signed-out on the apex. */
+export function sessionCookieDomain(
+  hostname: string,
+): string | undefined {
+  const host = hostname.toLowerCase();
+  if (host === "katagami.ai" || host === "www.katagami.ai") {
+    return ".katagami.ai";
+  }
+  return undefined;
+}
+
 export type SessionUser = {
   /** Google's stable subject id — survives email/name changes. */
   sub: string;
