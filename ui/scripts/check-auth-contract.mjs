@@ -67,6 +67,7 @@ const required = [
   ["owner check reads the signed-in session first", owner, /const user = await getUser/],
   ["session cookie is shared on katagami.ai", session, /sessionCookieDomain/],
   ["header sign-out is a form POST", userMenu, /action="\/api\/auth\/signout"/],
+  ["header sign-out form is not inside Dropdown.Item", userMenu, /signOutForm\.current\?\.submit/],
   ["no passphrase grant path remains", owner, /^(?![\s\S]*(grantOwnerSession|createHmac|timingSafeEqual|process\.env\.KATAGAMI_OWNER_SECRET))[\s\S]*$/],
 ];
 

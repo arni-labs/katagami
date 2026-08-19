@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
@@ -25,6 +25,7 @@ export function UserMenu() {
   // doesn't jump when the answer arrives.
   const [user, setUser] = useState<HeaderUser | null | undefined>(undefined);
   const [owner, setOwner] = useState(false);
+  const signOutForm = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     let alive = true;
@@ -67,6 +68,13 @@ export function UserMenu() {
 
   return (
     <span className="inline-flex items-center gap-2">
+      <form
+        ref={signOutForm}
+        action="/api/auth/signout"
+        method="post"
+        className="hidden"
+        aria-hidden
+      />
       {owner ? (
         <Link
           href="/owner/visitor-shelf"
@@ -120,13 +128,18 @@ export function UserMenu() {
                 owner
               </Link>
             </Dropdown.Item>
-            <Dropdown.Item asChild>
-              <form action="/api/auth/signout" method="post">
-                <button type="submit" className={MENU_ITEM}>
-                  <LogOut className="h-3.5 w-3.5" aria-hidden />
-                  sign out
-                </button>
-              </form>
+            <Dropdown.Item
+              className={MENU_ITEM}
+              onSelect={(event) => {
+                // Radix preventDefault on the item so the menu does not
+                // swallow the navigation. The form lives outside the
+                // portal — wrapping it in Item asChild blocked submit.
+                event.preventDefault();
+                signOutForm.current?.submit();
+              }}
+            >
+              <LogOut className="h-3.5 w-3.5" aria-hidden />
+              sign out
             </Dropdown.Item>
           </div>
         </Dropdown.Content>
