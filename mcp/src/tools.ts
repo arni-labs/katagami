@@ -24,6 +24,10 @@ import {
   type EntityRow,
   type Identity,
 } from "./temper.js";
+import {
+  designMdArtStyleErrors,
+  pairsWithFromImagery,
+} from "./design-md-art-style.js";
 
 const ART_STYLE_PROOF_CATEGORIES = [
   "human_portrait",
@@ -281,7 +285,7 @@ export function buildServer(auth: AuthInfo): McpServer {
     {
       title: "Get a style",
       description:
-        "Full spec of one entity. For design languages, DESIGN.md lives at <gallery>/language/<id>/DESIGN.md.",
+        "Full spec of one entity. For design languages, DESIGN.md lives at <gallery>/language/<id>/DESIGN.md and binds the paired art style (generate real images from that recipe).",
       inputSchema: { kind: kindSchema, id: z.string() },
     },
     async ({ kind, id: entityId }) => {
@@ -292,7 +296,20 @@ export function buildServer(auth: AuthInfo): McpServer {
         fields: row.fields ?? {},
         url: galleryUrl(kind as Kind, entityId),
       };
-      if (kind === "language") out.design_md_url = `${galleryUrl("language", entityId)}/DESIGN.md`;
+      if (kind === "language") {
+        const fields = row.fields ?? {};
+        out.design_md_url = `${galleryUrl("language", entityId)}/DESIGN.md`;
+        const artId =
+          typeof fields.default_art_style_id === "string"
+            ? fields.default_art_style_id.trim()
+            : "";
+        if (artId) {
+          out.art_style_id = artId;
+          out.art_style_url = galleryUrl("art_style", artId);
+        }
+        const pairs = pairsWithFromImagery(fields.imagery_direction);
+        if (pairs) out.art_style_slug = pairs;
+      }
       return ok(out);
     },
   );
@@ -631,13 +648,19 @@ export function buildServer(auth: AuthInfo): McpServer {
         rules: z.record(z.string(), z.unknown()),
         layout_principles: z.record(z.string(), z.unknown()),
         guidance: z.record(z.string(), z.unknown()),
-        imagery_direction: z.record(z.string(), z.unknown()).optional(),
+        imagery_direction: z
+          .record(z.string(), z.unknown())
+          .describe("Must include pairs_with: the paired art-style slug"),
         embodiment_html: z.string().describe("Self-contained HTML rendering the canonical elements"),
         element_count: z.number().int().min(1),
         composition_count: z.number().int().min(0),
         landing_html: z.string().describe("Palette-swap-ready landing page (role CSS vars, var(--hero-image))"),
         dashboard_html: z.string(),
-        design_md: z.string().describe("Portable DESIGN.md projection with YAML token front matter"),
+        design_md: z
+          .string()
+          .describe(
+            "Portable DESIGN.md with YAML token front matter plus a binding ## Art Style section (art_style url, MUST generate real images)",
+          ),
         shadcn_export: z.string().describe("shadcn theme export (JSON/text)"),
         shadcn_component_spec: z.string(),
         shadcn_preview_shots_url: z.string().describe("https image URL of the shadcn preview shots"),
@@ -650,6 +673,13 @@ export function buildServer(auth: AuthInfo): McpServer {
       },
     },
     async (a) => {
+      if (!pairsWithFromImagery(a.imagery_direction)) {
+        return fail(
+          "imagery_direction.pairs_with is required — DESIGN.md must link a published art-style slug.",
+        );
+      }
+      const designMdError = designMdArtStyleErrors(a.design_md);
+      if (designMdError) return fail(designMdError);
       const set = KINDS.language.set;
       if (a.entity_id && !(await getEntity(id, set, a.entity_id)))
         return fail(`Draft '${a.entity_id}' does not exist.`);

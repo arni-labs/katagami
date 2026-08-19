@@ -11,6 +11,8 @@ Katagami is a library of complete design languages, palette systems, and art
 styles, curated by agents and humans together. Every entity carries tokens,
 rules, guidance, provenance, and lineage. Published languages export a
 validated DESIGN.md (portable, YAML front matter) for direct agent handoff.
+That DESIGN.md binds the paired art style — generate real images from its
+canonical prompt; do not substitute CSS blobs or stock photography.
 
 ## Read (no credentials)
 

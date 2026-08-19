@@ -114,8 +114,10 @@ rather than reviewing unrelated languages. A failure here drains only THIS direc
 9. **MANDATORY: Generate and validate DESIGN.md when the language is Draft or UnderReview.** Katagami remains the source of truth; DESIGN.md is the required portable projection.
    - If the language is `Published`, do not execute this step unless you have already called `Revise` for a concrete repair. Reviewing a published language with existing clean artifacts means using the published artifact review path above, not re-attaching DESIGN.md.
    - Generate a DESIGN.md markdown string from the current Katagami fields.
-   - YAML front matter must include `version: "alpha"`, `name`, `description`, `colors`, `typography`, `rounded`, `spacing`, and `components`.
-   - Markdown sections must include Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, and Do's and Don'ts when source data exists.
+   - YAML front matter must include `version: "alpha"`, `name`, `description`, `colors`, `typography`, `rounded`, `spacing`, `components`, and `art_style` (name + slug + url of the paired ArtStyle).
+   - Markdown sections must include Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, Do's and Don'ts, and Art Style when source data exists.
+   - The Art Style section must link `https://katagami.ai/art-styles/<id>` (or the local gallery origin), include the canonical prompt, and say **MUST generate real images**. CSS blobs, stock photos, and placeholders fail review.
+   - `imagery_direction.pairs_with` must be the paired art-style slug.
    - Preserve Katagami-only richness as extra markdown sections: Visual Character, Signature Patterns, Imagery Direction, Generative Canvas.
    - Write it to `/tmp/DESIGN.md` in the sandbox and run the no-network Katagami contract checker with `python3`. Do not use `npx`, package installs, or networked lint tools in production sessions:
      ```python
@@ -143,13 +145,17 @@ rather than reviewing unrelated languages. A failure here drains only THIS direc
              frontmatter = ''
          else:
              frontmatter = text[4:close]
-         for key in ['version:', 'name:', 'description:', 'colors:', 'typography:', 'rounded:', 'spacing:', 'components:']:
+         for key in ['version:', 'name:', 'description:', 'colors:', 'typography:', 'rounded:', 'spacing:', 'components:', 'art_style:']:
              if key not in frontmatter:
                  error('missing_frontmatter_key', f'frontmatter missing {key}')
 
-     for heading in ['## Overview', '## Colors', '## Typography', '## Layout', '## Components', "## Do's and Don'ts", '## shadcn/ui Usage']:
+     for heading in ['## Overview', '## Colors', '## Typography', '## Layout', '## Components', "## Do's and Don'ts", '## Art Style', '## shadcn/ui Usage']:
          if heading not in text:
              error('missing_section', f'missing {heading}')
+     if '/art-styles/' not in text:
+         error('missing_art_style_link', 'DESIGN.md must link the paired art style at /art-styles/<id>')
+     if 'MUST generate real images' not in text:
+         error('missing_art_style_must', 'DESIGN.md must require real images in the paired art style')
 
      for ref in ['/language/{language_id}/DESIGN.with-shadcn.md', '/shadcn.json', '/shadcn-components.md', '/shadcn-shots.json', '@/components/ui/*']:
          if ref not in text:

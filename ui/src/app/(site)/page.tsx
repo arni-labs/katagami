@@ -30,7 +30,7 @@ const HOW_STEPS = [
     n: "03",
     ink: "yuzu",
     title: "Hand it to your agent",
-    body: "Copy DESIGN.md (or the shadcn/ui kit) and your agent stays on-style, session after session.",
+    body: "Copy DESIGN.md (or the shadcn/ui kit) and your agent stays on-style — tokens and the paired art style, with real images.",
   },
 ] as const;
 
