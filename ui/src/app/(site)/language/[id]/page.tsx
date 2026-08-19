@@ -16,6 +16,7 @@ import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { InlineRemix } from "@/components/remix/inline-remix";
+import { RemixLaneBlurb } from "@/components/remix/remix-lane-blurb";
 import {
   designMdToMarkdown,
   katagamiSpecToMarkdown,
@@ -363,11 +364,7 @@ export default async function LanguageDetailPage({
           <SectionHeading eyebrow="remix lane" eyebrowColor="graphite">
             try a remix
           </SectionHeading>
-          <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
-            Keep <span className="text-foreground">{name}</span> and swap a palette and an art
-            style onto it — the landing &amp; dashboard recolor live. The Studio does the same
-            with all three lanes free.
-          </p>
+          <RemixLaneBlurb name={name} />
           <InlineRemix
             languages={remixLangOpts}
             palettes={remixPalOpts}
