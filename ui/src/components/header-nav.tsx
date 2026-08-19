@@ -17,6 +17,7 @@ export function HeaderNav() {
           <Link
             key={l.href}
             href={l.href}
+            prefetch={l.href.startsWith("/owner") ? false : undefined}
             data-active={active}
             onClick={() => trackNav({ target: l.href, source: "header" })}
             className="ink-underline relative inline-block shrink-0 text-foreground/75 transition-colors hover:text-foreground data-[active=true]:text-foreground"

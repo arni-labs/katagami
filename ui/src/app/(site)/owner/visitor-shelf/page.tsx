@@ -11,6 +11,8 @@ import { Marker, PageHero } from "@/components/page-hero";
 import { SectionHeading, StickyNote, WashiTape } from "@/components/scrapbook";
 import { VisitorShelfPicker } from "./shelf-picker";
 
+export const dynamic = "force-dynamic";
+
 function languageName(lang: DesignLanguage): string {
   return lang.fields.name || lang.fields.slug || lang.entity_id;
 }

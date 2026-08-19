@@ -13,6 +13,8 @@ import { RisoHeroPress } from "@/components/riso-hero";
 import { RisoInkField } from "@/components/riso-ink-field";
 import { isOwner } from "@/lib/owner";
 
+export const dynamic = "force-dynamic";
+
 const HOW_STEPS = [
   {
     n: "01",

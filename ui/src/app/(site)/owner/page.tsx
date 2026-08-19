@@ -36,6 +36,8 @@ import {
   WashiTape,
 } from "@/components/scrapbook";
 
+export const dynamic = "force-dynamic";
+
 type TasteRuleDashboard = {
   proposed: TasteRule[];
   accepted: TasteRule[];
@@ -364,6 +366,9 @@ export default async function OwnerPage() {
                 </p>
                 <p className="mt-0.5 font-mono text-[11px] lowercase tracking-[0.04em] text-muted-foreground">
                   {user.email}
+                </p>
+                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                  google sub …{user.sub.slice(-4)}
                 </p>
               </div>
               <p className="text-sm text-muted-foreground">

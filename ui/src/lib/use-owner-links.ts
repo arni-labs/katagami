@@ -11,7 +11,7 @@ export function useNavLinks(): NavLink[] {
   const [links, setLinks] = useState<NavLink[]>(NAV_LINKS);
   useEffect(() => {
     let alive = true;
-    fetch("/api/auth/me", { cache: "no-store" })
+    fetch("/api/auth/me", { cache: "no-store", credentials: "same-origin" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (alive && data?.owner) setLinks([...NAV_LINKS, ...OWNER_NAV_LINKS]);
