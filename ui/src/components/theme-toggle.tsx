@@ -1,10 +1,11 @@
 "use client";
 
 import { useTheme } from "@/lib/use-theme";
+import { CHROME_STAMP, CHROME_STAMP_LABEL } from "@/lib/chrome-stamp";
 
-// Theme toggle: a sharp ink stamp that shows the CURRENT mode
-// (sun + 昼 for day, moon + 夜 for night) and flips on click. Tilts on hover
-// like the other stamps in the header.
+// Theme toggle: a chrome stamp in the header row. Shows the CURRENT mode
+// (sun + 昼 for day, moon + 夜 for night) and flips on click. No catalog
+// tilt — it sits upright with search / sign-in / menu.
 export function ThemeToggle() {
   const { theme, toggle, mounted } = useTheme();
   const isDark = theme === "dark";
@@ -17,7 +18,7 @@ export function ThemeToggle() {
       aria-label={nextLabel}
       title={nextLabel}
       suppressHydrationWarning
-      className="stamp group inline-flex h-7 items-center gap-1.5 px-2.5 text-[10px] transition-transform duration-200 hover:-translate-y-[1px] hover:rotate-[-6deg]"
+      className={`${CHROME_STAMP} font-mono`}
       style={{
         color: isDark ? "var(--yuzu)" : "var(--ramune)",
       }}
@@ -28,15 +29,7 @@ export function ThemeToggle() {
       >
         {mounted && isDark ? <MoonGlyph /> : <SunGlyph />}
       </span>
-      <span
-        suppressHydrationWarning
-        className="font-mono"
-        style={{
-          fontSize: 11,
-          letterSpacing: "0.08em",
-          lineHeight: 1,
-        }}
-      >
+      <span suppressHydrationWarning className={CHROME_STAMP_LABEL}>
         {mounted && isDark ? "夜" : "昼"}
       </span>
     </button>
