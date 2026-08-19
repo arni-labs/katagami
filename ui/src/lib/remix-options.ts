@@ -8,6 +8,7 @@ import {
   paletteCore,
   paletteDisplayName,
 } from "@/lib/odata";
+import { artStyleImages } from "@/lib/lane-items";
 import { specSummary } from "@/lib/spec-summary";
 import type { LanguageOpt, PaletteOpt, ArtOpt } from "@/components/remix/inline-remix";
 
@@ -16,11 +17,6 @@ type Row = {
   status: string;
   fields: Record<string, string | undefined>;
 };
-
-function refUrls(raw?: string): string[] {
-  const ids = parseJson<string[]>(raw);
-  return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
-}
 
 export function toLanguageOpts(rows: Row[]): LanguageOpt[] {
   // Studio panels swap palette + hero image onto a language's Landing and
@@ -82,9 +78,12 @@ export function toArtOpts(rows: Row[]): ArtOpt[] {
         parseJson<{ verdict?: string }>(a.fields.portability_report)?.verdict === "pass",
     )
     .map((a) => {
-      const refs = refUrls(a.fields.reference_image_file_ids);
-      const proofs = refUrls(a.fields.proof_shots_file_ids);
-      const thumb = a.fields.thumbnail_file_id ? getFileUrl(a.fields.thumbnail_file_id) : "";
+      // ARN-354: CDN-first (published asset URLs) with proxy fallback — the
+      // studio dropdowns fired dozens of eager /api/file hits per open.
+      const images = artStyleImages(a.fields);
+      const refs = images.refs;
+      const proofs = images.proofs;
+      const thumb = images.thumb;
       return {
         id: a.entity_id,
         name: artStyleDisplayName(a.fields),

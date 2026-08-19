@@ -7,10 +7,19 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@xenova/transformers"],
   // Vercel's file tracing misses the dlopen'd onnxruntime shared library, so
   // the embed routes died with "libonnxruntime.so.1.14.0: cannot open shared
-  // object file" in production. Pin the linux-x64 binding into those functions.
+  // object file" in production. Pin the linux-x64 binding into every function
+  // that embeds a query in-process: the taste API routes, /api/search, AND the
+  // pages whose Server Actions run meaning search (actions bundle into the
+  // page's function, so the page route is the tracing key). Missing pins here
+  // were the launch bug where meaning search returned nothing in every lane
+  // while /api/taste/embed kept working.
   outputFileTracingIncludes: {
     "/api/taste/embed": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
     "/api/taste/vectors": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
+    "/api/search": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
+    "/": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
+    "/palettes": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
+    "/art-styles": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
   },
   images: {
     // Optimized variants are keyed by an immutable file-id source (the cache-bust

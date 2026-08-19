@@ -31,32 +31,82 @@ export function toPaletteItem(r: LaneEntity): PaletteItem {
   };
 }
 
-function refUrls(raw?: string): string[] {
-  const ids = parseJson<string[]>(raw);
-  return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
+/** A published asset value from reference_assets / *_asset_url fields — accept
+ *  a plain https URL or an object carrying one. Anything else is unusable. */
+function publishedAssetUrl(value: unknown): string {
+  const url =
+    typeof value === "string"
+      ? value
+      : value && typeof value === "object"
+        ? String((value as { url?: unknown }).url ?? "")
+        : "";
+  return url.startsWith("https://") ? url.trim() : "";
 }
 
-// Build image URLs from the governed File ids -> /api/file proxy. We DON'T use
-// reference_assets VALUES (some are failed-publish CDN urls that 404), and
-// reference_image_file_ids is guard-limited to one id on some styles — so collect
-// file ids from the manifest (full set), the reference_assets KEYS (file ids),
-// and the id field.
-function refImageUrls(fields: Record<string, string | undefined>): string[] {
+// ARN-354: art-style images are CDN-first. Each governed file id resolves to
+// its published assets.katagami.ai URL when one exists (fast, cached at the
+// edge), with the /api/file proxy as the per-image fallback — recorded in a
+// src->proxy map so <CdnImg> can heal the few failed-publish CDN values that
+// 404, instead of the old blanket "proxy everything" workaround that made the
+// whole lane slow.
+export interface ArtStyleImageSet {
+  refs: string[];
+  proofs: string[];
+  thumb: string;
+  /** CDN src -> proxy fallback, for images whose primary is a published URL. */
+  fallbacks: Record<string, string>;
+}
+
+export function artStyleImages(
+  fields: Record<string, string | undefined>,
+): ArtStyleImageSet {
+  const assets = parseJson<Record<string, unknown>>(fields.reference_assets);
+  const assetMap =
+    assets && typeof assets === "object" && !Array.isArray(assets)
+      ? assets
+      : {};
+  const fallbacks: Record<string, string> = {};
+
+  const urlFor = (id: string): string => {
+    const proxy = getFileUrl(id);
+    const cdn = publishedAssetUrl(assetMap[id]);
+    if (!cdn) return proxy;
+    fallbacks[cdn] = proxy;
+    return cdn;
+  };
+
+  // Collect reference file ids from the manifest (full set), the
+  // reference_assets KEYS (file ids), and the guard-limited id field —
+  // reference_image_file_ids alone is capped to one id on some styles.
   const ids: string[] = [];
   const add = (id: unknown) => {
     if (typeof id === "string" && id.startsWith("fl-") && !ids.includes(id))
       ids.push(id);
   };
   const manifest = parseJson<{
-    items?: Array<{ file?: string }>;
-    references?: Array<{ file?: string }>;
+    items?: Array<{ file?: string; file_id?: string }>;
+    references?: Array<{ file?: string; file_id?: string }>;
   }>(fields.reference_manifest);
-  (manifest?.items ?? manifest?.references ?? []).forEach((it) => add(it?.file));
-  const assets = parseJson<Record<string, unknown>>(fields.reference_assets);
-  if (assets && typeof assets === "object" && !Array.isArray(assets))
-    Object.keys(assets).forEach(add);
+  (manifest?.items ?? manifest?.references ?? []).forEach((it) =>
+    add(it?.file_id ?? it?.file),
+  );
+  Object.keys(assetMap).forEach(add);
   (parseJson<string[]>(fields.reference_image_file_ids) ?? []).forEach(add);
-  return ids.map((id) => getFileUrl(id));
+
+  const proofIds = parseJson<string[]>(fields.proof_shots_file_ids) ?? [];
+
+  const thumbCdn = publishedAssetUrl(fields.thumbnail_asset_url);
+  const thumbProxy = fields.thumbnail_file_id
+    ? getFileUrl(fields.thumbnail_file_id)
+    : "";
+  if (thumbCdn && thumbProxy) fallbacks[thumbCdn] = thumbProxy;
+
+  return {
+    refs: ids.map(urlFor),
+    proofs: proofIds.map(urlFor),
+    thumb: thumbCdn || thumbProxy,
+    fallbacks,
+  };
 }
 
 /** The composition line for a voice, derived from its credits: which
@@ -94,6 +144,7 @@ export function toWritingStyleItem(r: LaneEntity): import("@/components/writing-
 
 /** An ArtStyle row -> the item the art-style catalog renders. */
 export function toArtStyleItem(r: LaneEntity): ArtStyleItem {
+  const images = artStyleImages(r.fields);
   return {
     id: r.entity_id,
     name: artStyleDisplayName(r.fields),
@@ -101,11 +152,10 @@ export function toArtStyleItem(r: LaneEntity): ArtStyleItem {
     status: r.status,
     medium: r.fields.medium ?? "",
     promptTemplate: r.fields.prompt_template ?? "",
-    refs: refImageUrls(r.fields),
-    proofs: refUrls(r.fields.proof_shots_file_ids),
-    thumb: r.fields.thumbnail_file_id
-      ? getFileUrl(r.fields.thumbnail_file_id)
-      : "",
+    refs: images.refs,
+    proofs: images.proofs,
+    thumb: images.thumb,
+    imageFallbacks: images.fallbacks,
     tags: parseJson<string[]>(r.fields.tags) ?? [],
     taxonomyIds: parseJson<string[]>(r.fields.taxonomy_ids) ?? [],
   };
