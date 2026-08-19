@@ -20,6 +20,7 @@ const layout = read("src/app/(site)/layout.tsx");
 const studio = read("src/app/(site)/studio/page.tsx");
 const authActions = read("src/app/auth-actions.ts");
 const signout = read("src/app/api/auth/signout/route.ts");
+const userMenu = read("src/components/user-menu.tsx");
 const inlineRemix = read("src/components/remix/inline-remix.tsx");
 const owner = read("src/lib/owner.ts");
 
@@ -40,9 +41,11 @@ const required = [
   ["ID-token nonce must match ours (fail closed)", oidc, /payload\.nonce !== expectedNonce/],
   ["email_verified must be present and true (fail closed)", oidc, /email_verified !== true/],
   ["sign-out is a server action, not a GET route", authActions, /"use server"/],
-  ["sign-out expires host-only and Domain cookies", session, /expireSessionCookies/],
+  ["sign-out emits one Set-Cookie line per domain", session, /expiredSessionCookieLines/],
+  ["sign-out appends Set-Cookie instead of overwriting", session, /headers\.append\("Set-Cookie"/],
   ["sign-out route is POST-only", signout, /export async function POST/],
   ["sign-out route is not a GET", signout, /^(?![\s\S]*export async function GET)[\s\S]*$/],
+  ["sign-out sends Clear-Site-Data", signout, /Clear-Site-Data/],
   // The Studio is a signed-in space for making, open for browsing.
   ["saveRemix requires a signed-in human", actions, /saveRemix[\s\S]*?requireUser/],
   ["saved mixes are attributed via SetCreator", actions, /"SetCreator"/],
@@ -63,6 +66,7 @@ const required = [
   ["owner mode keys on the sub allowlist", owner, /KATAGAMI_OWNER_SUBS/],
   ["owner check reads the signed-in session first", owner, /const user = await getUser/],
   ["session cookie is shared on katagami.ai", session, /sessionCookieDomain/],
+  ["header sign-out is a form POST", userMenu, /action="\/api\/auth\/signout"/],
   ["no passphrase grant path remains", owner, /^(?![\s\S]*(grantOwnerSession|createHmac|timingSafeEqual|process\.env\.KATAGAMI_OWNER_SECRET))[\s\S]*$/],
 ];
 

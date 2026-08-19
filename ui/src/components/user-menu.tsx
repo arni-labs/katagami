@@ -120,25 +120,13 @@ export function UserMenu() {
                 owner
               </Link>
             </Dropdown.Item>
-            <Dropdown.Item
-              className={MENU_ITEM}
-              onSelect={(event) => {
-                event.preventDefault();
-                void (async () => {
-                  await fetch("/api/auth/signout", {
-                    method: "POST",
-                    credentials: "same-origin",
-                    cache: "no-store",
-                  }).catch(() => {});
-                  // Full load: the shared layout keeps the chip mounted
-                  // across a client redirect, and a leftover host-only
-                  // cookie would just sign us back in.
-                  window.location.assign("/");
-                })();
-              }}
-            >
-              <LogOut className="h-3.5 w-3.5" aria-hidden />
-              sign out
+            <Dropdown.Item asChild>
+              <form action="/api/auth/signout" method="post">
+                <button type="submit" className={MENU_ITEM}>
+                  <LogOut className="h-3.5 w-3.5" aria-hidden />
+                  sign out
+                </button>
+              </form>
             </Dropdown.Item>
           </div>
         </Dropdown.Content>
