@@ -237,15 +237,6 @@ export default async function LanguageDetailPage({
       {/* Hero */}
       <PageHero
         eyebrowAccent="graphite"
-        eyebrow={
-          <>
-            <span>design language</span>
-            <span className="font-mono text-muted-foreground/70">·</span>
-            <span className="font-mono lowercase tracking-wide">
-              {f.slug || id.slice(0, 12)}
-            </span>
-          </>
-        }
         title={
           <span className="relative inline-block">
             {name}
