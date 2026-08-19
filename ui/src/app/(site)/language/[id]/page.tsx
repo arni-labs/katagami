@@ -286,10 +286,7 @@ export default async function LanguageDetailPage({
               embodiments
             </SectionHeading>
             {embodimentTabs.length > 0 ? (
-              <EmbodimentTabs
-                tabs={embodimentTabs}
-                slug={f.slug || id.slice(0, 12)}
-              />
+              <EmbodimentTabs tabs={embodimentTabs} />
             ) : f.tokens ? (
               <StickyNote tint="teal" className="p-6">
                 <DesignShowcase tokensRaw={f.tokens} languageName={name} />
