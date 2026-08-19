@@ -20,11 +20,48 @@ export const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 export function sessionCookieDomain(
   hostname: string,
 ): string | undefined {
-  const host = hostname.toLowerCase();
+  const host = hostname.toLowerCase().split(":")[0] ?? "";
   if (host === "katagami.ai" || host === "www.katagami.ai") {
     return ".katagami.ai";
   }
   return undefined;
+}
+
+type CookieJar = {
+  set: (
+    name: string,
+    value: string,
+    options: {
+      httpOnly: boolean;
+      secure: boolean;
+      sameSite: "lax";
+      path: string;
+      maxAge: number;
+      domain?: string;
+    },
+  ) => void;
+};
+
+/** Expire every katagami_user variant a browser may still hold: host-only
+ *  (pre-#234) and Domain=katagami.ai / .katagami.ai / www. Browsers only
+ *  drop a cookie when Path + Domain + Secure match the stored one. */
+export function expireSessionCookies(
+  jar: CookieJar,
+  hostname: string,
+  secure: boolean,
+): void {
+  const base = {
+    httpOnly: true,
+    secure,
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: 0,
+  };
+  jar.set(SESSION_COOKIE, "", base);
+  if (!sessionCookieDomain(hostname)) return;
+  for (const domain of [".katagami.ai", "katagami.ai", "www.katagami.ai"]) {
+    jar.set(SESSION_COOKIE, "", { ...base, domain });
+  }
 }
 
 export type SessionUser = {

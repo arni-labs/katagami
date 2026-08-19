@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, LogOut, Palette } from "lucide-react";
-import { signOut } from "@/app/auth-actions";
 import { getUser } from "@/lib/user-auth";
 import { isOwner } from "@/lib/owner";
 import {
@@ -146,7 +145,7 @@ export default async function AccountPage() {
                 )}
               </p>
             </div>
-            <form action={signOut}>
+            <form action="/api/auth/signout" method="post">
               <button className={KX_BTN_PAPER}>
                 <LogOut className="h-3.5 w-3.5" aria-hidden />
                 sign out
