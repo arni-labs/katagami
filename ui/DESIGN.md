@@ -202,15 +202,14 @@ h1, h2, h3, .font-display {
 
 ### Radius
 
-The radius vocabulary is deliberately tiny: **{0, 2–3, 9999}**.
+The radius vocabulary is deliberately tiny: **{0, 9999}**.
 
-- **Every rectangular surface: `0`.** Cards, chips, option tiles, buttons, inputs,
-  textareas. `.sticker-card { border-radius: 0 }`. Sharp corners are the look.
-  Do not borrow `16` / `24` / `9999` from the language-generation contract and
-  put them on katagami.ai chrome. That is how `/feedback` grew pill chips.
-- **Stamps / seals / die-cut dashes: `1–3px`.** Just enough to read as a rubber stamp
-  or a sticker corner, never as a rounded UI card.
-- **Dots, avatars, the ink-dot logo: `9999`** (`rounded-full`). Not buttons.
+- **Every rectangular surface: `0`.** Cards, chips, stamps, option tiles, buttons,
+  inputs, textareas. `.sticker-card` and `.stamp` / `.ink-stamp` are `border-radius: 0`.
+  Sharp corners are the look. Soft 2–3px “pill badges” read as generic UI chrome,
+  not a sticker. Do not borrow `16` / `24` / `9999` from the language-generation
+  contract and put them on katagami.ai chrome.
+- **Dots, avatars, the ink-dot logo: `9999`** (`rounded-full`). Not buttons or stamps.
 - `--radius: 0.375rem` (6px) exists **only** for borrowed shadcn preview chrome and the
   `--radius-*` scale derived from it. Katagami cards do not use it.
 
@@ -371,8 +370,8 @@ Used on the footer (two strips, ramune + sakura) and the home "today's pull" row
 
 ### Rubber stamps — `.stamp` and `.ink-stamp`
 
-A tilted, grain-inked impression — **no border**. The ink is a soft tint of the color
-plus a whisper of grain, which reads as printed, not boxed. Two variants:
+A tilted, grain-inked **sticker** — **no border**, **radius 0**. The ink is a
+highlighter wash of the color plus grain, lifted with `--shadow-sticker`. Two variants:
 
 - **`.stamp`** keys off `currentColor` — set `style={{ color }}` or a `text-[var(--ink)]` class.
 - **`.ink-stamp`** keys off a `--ink` variable — for when the text color can't carry the ink.
@@ -380,10 +379,10 @@ plus a whisper of grain, which reads as printed, not boxed. Two variants:
 ```css
 .stamp, .ink-stamp {
   display: inline-flex; align-items: center; justify-content: center;
-  border: none; border-radius: 3px; padding: 3px 9px;
-  font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-  transform: rotate(-1.5deg); opacity: 0.95;
-  background: color-mix(in oklch, currentColor 12%, var(--paper-stamp-mix));  /* .ink-stamp uses var(--ink) */
+  border: none; border-radius: 0; padding: 4px 10px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  transform: rotate(-1.5deg); box-shadow: var(--shadow-sticker);
+  background: color-mix(in oklch, currentColor 18%, var(--paper-stamp-mix));  /* .ink-stamp uses var(--ink) */
   background-image: var(--grain-url); background-size: 90px 90px;
   background-blend-mode: var(--ink-blend);
 }
@@ -626,7 +625,7 @@ not to the house style — that's the whole point of it.
 
 ## 13. Checklist before you ship a katagami.ai surface
 
-- [ ] No rounded content cards (radius 0). Rounding only on pills/dots/avatars/stamps.
+- [ ] No rounded content cards or stamps (radius 0). Rounding only on dots/avatars.
 - [ ] No borders. Dividers are `.sticker-perforation`; separation is shadow + tint.
 - [ ] ≤ 3 accents, and they're the trio. Support inks only for data; `--beni` only for destructive.
 - [ ] Paper is `#fff`, text is `--sumi`. No pastel washes, no color gradients.

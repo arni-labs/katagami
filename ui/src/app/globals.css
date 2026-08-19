@@ -1214,30 +1214,31 @@
     box-shadow: 0 1px 2px rgba(30, 35, 45, 0.05);
   }
 
-  /* Stamp pill — tilted ink impression, NO border. A soft tint of the
-     ink + a whisper of grain reads as printed, not boxed. Keyed off
-     currentColor so call sites set `style={{ color }}`. */
+  /* Ink stamp — sharp sticker, NO border. Same radius 0 as .sticker-card.
+     Ink is a highlighter wash + grain; the hard offset is the sticker lift.
+     Keyed off currentColor so call sites set `style={{ color }}`. */
   .stamp {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: none;
-    border-radius: 3px;
-    padding: 3px 9px;
+    border-radius: 0;
+    padding: 4px 10px;
     font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    font-weight: 700;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     transform: rotate(-1.5deg);
-    opacity: 0.95;
-    background: color-mix(in oklch, currentColor 12%, var(--paper-stamp-mix));
+    background: color-mix(in oklch, currentColor 18%, var(--paper-stamp-mix));
     background-image: var(--grain-url);
     background-size: 90px 90px;
     background-blend-mode: var(--ink-blend);
+    box-shadow: var(--shadow-sticker);
     transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
                 background-color 150ms ease,
-                color 150ms ease;
+                color 150ms ease,
+                box-shadow 200ms ease;
   }
 
   /* Same stamp, keyed off `--ink` instead of currentColor — for contexts
@@ -1249,22 +1250,23 @@
     justify-content: center;
     gap: 0.4em;
     border: none;
-    border-radius: 3px;
-    padding: 3px 9px;
+    border-radius: 0;
+    padding: 4px 10px;
     font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    font-weight: 700;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--ink, var(--sumi));
     transform: rotate(-1.5deg);
-    opacity: 0.95;
-    background: color-mix(in oklch, var(--ink, var(--sumi)) 12%, var(--paper-stamp-mix));
+    background: color-mix(in oklch, var(--ink, var(--sumi)) 18%, var(--paper-stamp-mix));
     background-image: var(--grain-url);
     background-size: 90px 90px;
     background-blend-mode: var(--ink-blend);
+    box-shadow: var(--shadow-sticker);
     transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
                 background-color 150ms ease,
-                color 150ms ease;
+                color 150ms ease,
+                box-shadow 200ms ease;
   }
 
   /* Dashed sticker die-cut — the original perforation. */
