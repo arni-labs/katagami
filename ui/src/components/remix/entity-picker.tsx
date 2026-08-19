@@ -16,7 +16,6 @@ export interface PickItem {
   facets?: Record<string, string>; // e.g. { temperature: "warm", medium: "print" }
 }
 
-const RESULT_CAP = 60; // render at most this many; the rest are summarized (thousands-safe)
 // A facet is only a useful filter when it has a small, shared set of values. A
 // key whose values are nearly unique (e.g. a palette's free-text key-hue) is not
 // a facet — it's noise. Surface a facet only when 2..MAX_FACET_VALUES distinct
@@ -224,7 +223,7 @@ export function EntityPicker({
   const current = items.find((i) => i.id === value);
   const facets = useFacets(items);
   const filtered = useFiltered(items, q, active);
-  const visible = filtered.slice(0, RESULT_CAP);
+  const visible = filtered;
   const noun = label.toLowerCase();
 
   function reset() {

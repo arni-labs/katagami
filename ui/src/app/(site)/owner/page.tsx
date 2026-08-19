@@ -387,6 +387,26 @@ export default async function OwnerPage() {
         </StickyNote>
       </section>
 
+      {owner ? (
+        <section className="relative">
+          <WashiTape color="yuzu" rotate={2} className="-right-3 -top-3" width={88} />
+          <StickyNote className="p-5 sm:p-6">
+            <SectionHeading eyebrow="launch shelf" eyebrowColor="yuzu">
+              <Marker color="yuzu">Visitor home</Marker>
+            </SectionHeading>
+            <p className="mt-2 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
+              People who are not signed in only see the languages you pin.
+              There is no random fill from the rest of the catalog.
+            </p>
+            <div className="mt-4">
+              <Link href="/owner/visitor-shelf" className={KX_BTN_PAPER}>
+                Pick visitor languages
+              </Link>
+            </div>
+          </StickyNote>
+        </section>
+      ) : null}
+
       {owner ? <TasteRulesPanel dashboard={tasteRules} /> : null}
     </div>
   );

@@ -32,7 +32,7 @@ export async function loadLanguagePage(input: {
   hue?: string;
   family?: string;
 }): Promise<PageResult<DesignLanguage>> {
-  // ARN-331: language browsing beyond the server-rendered teaser is a
+  // ARN-385: language browsing beyond the owner-picked visitor shelf is a
   // signed-in surface. Enforced here — not just hidden in the UI — because a
   // server action is a public HTTP endpoint anyone can invoke directly.
   if (!(await hasFullGalleryAccess())) return { items: [], nextCursor: null };

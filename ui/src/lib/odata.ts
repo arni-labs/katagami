@@ -1310,7 +1310,7 @@ function displayOrderOf(e: {
 }
 
 export async function listFeaturedDesignLanguages(
-  limit = 100,
+  limit = 500,
 ): Promise<DesignLanguage[]> {
   try {
     const resp = await odata<{ value?: Record<string, unknown>[] }>(

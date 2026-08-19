@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { designMdToMarkdown } from "@/components/spec-panel";
-import { getDesignLanguage } from "@/lib/odata";
+import { getDesignLanguage, listArtStyles } from "@/lib/odata";
 import { artifactGate } from "@/lib/entity-visibility";
+import { bindingForLanguage, withArtStyleContract } from "@/lib/design-md-art-style";
+import { siteBaseFromRequest } from "@/lib/site-url";
 import { readTemperFileText } from "@/lib/temper-files";
 import {
   buildShadcnRegistryTheme,
@@ -25,7 +27,7 @@ function agentAuthoredPreviewShots(raw: string | null): string | null {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -47,18 +49,22 @@ export async function GET(
   const filename = f.slug
     ? `${f.slug}-DESIGN.with-shadcn.md`
     : "DESIGN.with-shadcn.md";
-  const designMd = designMdToMarkdown({
-    languageId: id,
-    name: f.name,
-    slug: f.slug,
-    philosophy: f.philosophy,
-    tokens: f.tokens,
-    rules: f.rules,
-    layout: f.layout_principles,
-    guidance: f.guidance,
-    imageryDirection: f.imagery_direction,
-    generativeCanvas: f.generative_canvas,
-  });
+  const arts = await listArtStyles("Status ne 'Deleted'").catch(() => []);
+  const designMd = withArtStyleContract(
+    designMdToMarkdown({
+      languageId: id,
+      name: f.name,
+      slug: f.slug,
+      philosophy: f.philosophy,
+      tokens: f.tokens,
+      rules: f.rules,
+      layout: f.layout_principles,
+      guidance: f.guidance,
+      imageryDirection: f.imagery_direction,
+      generativeCanvas: f.generative_canvas,
+    }),
+    bindingForLanguage(f, arts, siteBaseFromRequest(req)),
+  );
 
   const [
     storedShadcnTheme,
