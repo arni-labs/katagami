@@ -19,6 +19,13 @@
 export function hueBucket(tokens) {
   const t = typeof tokens === "string" ? safeJson(tokens) : tokens;
   const hex = t?.colors?.primary ?? t?.colors?.accent;
+  return hexHueBucket(hex);
+}
+
+/** The hex → bucket core of hueBucket, reusable for any single color value
+ *  (ARN-354: palette search blobs index the signature colors' hue words).
+ *  Mirrors facets.rs hex_hue_bucket. */
+export function hexHueBucket(hex) {
   if (typeof hex !== "string") return "neutral";
   const m = hex.replace(/^#/, "").toLowerCase();
   if (!/^[0-9a-f]+$/.test(m) || (m.length !== 3 && m.length !== 6)) return "neutral";
