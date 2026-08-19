@@ -76,7 +76,10 @@ export function parseImageryDirection(raw?: string): ImageryDirection {
   if (!rec) return {};
   const subjects = rec.subjects;
   return {
-    pairs_with: asString(rec.pairs_with) ?? null,
+    pairs_with:
+      asString(rec.pairs_with) ??
+      asString(rec.pairs_with_art_style) ??
+      null,
     technique: asString(rec.technique),
     subjects: Array.isArray(subjects)
       ? subjects.map(String).filter(Boolean)

@@ -77,6 +77,7 @@ export async function setLanguageFeatured(
   });
   revalidatePath("/");
   revalidatePath(`/language/${id}`);
+  revalidatePath("/owner/visitor-shelf");
 }
 
 export async function addCuratorNotes(

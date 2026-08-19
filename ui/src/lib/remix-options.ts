@@ -73,14 +73,11 @@ export function toPaletteOpts(rows: Row[]): PaletteOpt[] {
 }
 
 export function toArtOpts(rows: Row[]): ArtOpt[] {
+  // Published catalog is the browse set. The old review-flag + portability
+  // verdict filter hid 149 of 154 live styles (ARN-379). Keep a prompt so
+  // an empty shell cannot be selected as a remix recipe.
   return rows
-    .filter(
-      (a) =>
-        a.fields.has_source_basis_review === "true" &&
-        a.fields.has_prompt_review === "true" &&
-        a.fields.has_portability_evidence === "true" &&
-        parseJson<{ verdict?: string }>(a.fields.portability_report)?.verdict === "pass",
-    )
+    .filter((a) => Boolean((a.fields.prompt_template ?? "").trim()))
     .map((a) => {
       const refs = refUrls(a.fields.reference_image_file_ids);
       const proofs = refUrls(a.fields.proof_shots_file_ids);

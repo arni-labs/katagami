@@ -106,13 +106,9 @@ function HowItWorksFold() {
   );
 }
 
-// ARN-331: signed-out teaser is a fixed shelf — 15 featured, then 25
-// non-featured — not a percentage of the catalog. No search, facets, or
-// pagination. Signing in unlocks the full infinite gallery. The cap is also
-// enforced inside the gallery server actions, so it cannot be bypassed by
-// invoking them directly.
-const TEASER_FEATURED = 15;
-const TEASER_REST = 25;
+// ARN-385: signed-out home is the owner-picked featured set only — no
+// newest-25 filler, no 15-cap. Search, facets, and pagination stay behind
+// sign-in. The same gate is enforced in gallery server actions.
 
 function TeaserCardGrid({
   items,
@@ -141,15 +137,8 @@ function TeaserCardGrid({
 async function TeaserGallery() {
   const total = await countDesignLanguages("Status eq 'Published'");
   let featured: Awaited<ReturnType<typeof listFeaturedDesignLanguages>> = [];
-  let rest: Awaited<ReturnType<typeof pageDesignLanguages>>["items"] = [];
   try {
-    const [featuredAll, page] = await Promise.all([
-      listFeaturedDesignLanguages(TEASER_FEATURED),
-      pageDesignLanguages({ limit: TEASER_FEATURED + TEASER_REST }),
-    ]);
-    featured = featuredAll.slice(0, TEASER_FEATURED);
-    const pinned = new Set(featured.map((l) => l.entity_id));
-    rest = page.items.filter((l) => !pinned.has(l.entity_id)).slice(0, TEASER_REST);
+    featured = await listFeaturedDesignLanguages();
   } catch {
     return (
       <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
@@ -158,18 +147,21 @@ async function TeaserGallery() {
       </div>
     );
   }
-  const shown = featured.length + rest.length;
+  const shown = featured.length;
   return (
     <div className="space-y-10">
-      {featured.length > 0 ? (
+      {shown > 0 ? (
         <section className="space-y-3">
           <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--yuzu)]">
-            Curator&rsquo;s picks
+            Visitor home
           </p>
           <TeaserCardGrid items={featured} />
         </section>
-      ) : null}
-      <TeaserCardGrid items={rest} startIndex={featured.length} />
+      ) : (
+        <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
+          The public shelf is empty until an owner picks languages for visitors.
+        </div>
+      )}
       <div className="pt-2">
         <span aria-hidden className="sticker-perforation block" />
         <p className="mt-6 text-center text-[15.5px] leading-relaxed text-muted-foreground sm:text-[17px]">

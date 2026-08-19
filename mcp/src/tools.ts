@@ -673,13 +673,28 @@ export function buildServer(auth: AuthInfo): McpServer {
       },
     },
     async (a) => {
-      if (!pairsWithFromImagery(a.imagery_direction)) {
+      const pairsWith = pairsWithFromImagery(a.imagery_direction);
+      if (!pairsWith) {
         return fail(
           "imagery_direction.pairs_with is required — DESIGN.md must link a published art-style slug.",
         );
       }
       const designMdError = designMdArtStyleErrors(a.design_md);
       if (designMdError) return fail(designMdError);
+      const artRows = await listEntities(id, KINDS.art_style.set);
+      const pairedArt = artRows.find((row) => {
+        const status = String(row.status ?? "");
+        if (status !== "Published" && status !== "UnderReview") return false;
+        const slug = String(row.fields?.slug ?? "").trim().toLowerCase();
+        const name = String(row.fields?.name ?? "").trim().toLowerCase();
+        const want = pairsWith.toLowerCase();
+        return slug === want || name === want;
+      });
+      if (!pairedArt) {
+        return fail(
+          `No Published or UnderReview ArtStyle matches imagery_direction.pairs_with '${pairsWith}'. Pair a real art style before submit.`,
+        );
+      }
       const set = KINDS.language.set;
       if (a.entity_id && !(await getEntity(id, set, a.entity_id)))
         return fail(`Draft '${a.entity_id}' does not exist.`);
@@ -723,6 +738,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         shadcn_preview_shots_format_version: "v1",
         shadcn_preview_shots_manifest: "",
         thumbnail_file_id: thumbId,
+        default_art_style_id: pairedArt.entity_id,
         parent_ids: a.parent_ids ?? [],
         lineage_type: a.lineage_type ?? (a.parent_ids?.length ? "remix" : "original"),
         generation_number: a.generation_number ?? (a.parent_ids?.length ? 1 : 0),

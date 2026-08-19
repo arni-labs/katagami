@@ -77,8 +77,8 @@ export function FeaturedLanguageButton({
       <button
         type="button"
         aria-pressed={featured}
-        aria-label={`${featured ? "Unfeature" : "Feature"} ${name}`}
-        title={`${featured ? "Unfeature" : "Feature"} ${name}`}
+        aria-label={`${featured ? "Remove from visitor home" : "Show on visitor home"}: ${name}`}
+        title={`${featured ? "On visitor home — click to remove" : "Show on visitor home"}`}
         disabled={isPending}
         onClick={(e) => {
           e.preventDefault();
@@ -108,7 +108,7 @@ export function FeaturedLanguageButton({
           <Star className="h-3.5 w-3.5" />
         )}
         <span className="sr-only">
-          {isPending ? "Saving" : featured ? "Featured" : "Feature"}
+          {isPending ? "Saving" : featured ? "On visitor home" : "Visitor home"}
         </span>
       </button>
       {error ? (

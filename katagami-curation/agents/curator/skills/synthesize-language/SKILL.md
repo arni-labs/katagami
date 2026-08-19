@@ -258,6 +258,7 @@ temper.action('DesignLanguages', eid, 'SubmitDesignLanguage', {
     'shadcn_preview_shots_format_version': 'katagami:shadcn-preview-shots/renderable-v1',
     'shadcn_preview_shots_manifest': json.dumps(shadcn_preview_shots_manifest),
     'thumbnail_file_id': thumbnail_file_id,
+    'default_art_style_id': default_art_style_id,  # Published or UnderReview ArtStyle id; SubmitForReview/Publish require it
     # Lineage. Omit these and a remix publishes as an original — the parent
     # link is lost and nothing downstream can reconstruct it. Arrays go NATIVE
     # here, not json.dumps; scalars are plain.

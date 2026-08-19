@@ -1132,6 +1132,151 @@ fn verify_language_identity(
     Ok(())
 }
 
+fn ensure_language_art_style_paired(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<serde_json::Value, VerificationError> {
+    let fields = entity_fields(language);
+    let existing_id = string_field_any(&fields, "default_art_style_id", "");
+    if !existing_id.is_empty() {
+        let art = load_required_entity(
+            ctx,
+            api_url,
+            headers,
+            "ArtStyles",
+            &existing_id,
+            "missing_paired_art_style",
+        )?;
+        let status = entity_status_value(&art);
+        if status == "Deleted" {
+            return Err(VerificationError::new(
+                "paired_art_style_deleted",
+                format!(
+                    "DesignLanguage '{language_id}' points at deleted ArtStyle '{existing_id}'"
+                ),
+            )
+            .entity("DesignLanguage", language_id)
+            .field("default_art_style_id")
+            .repairable(true));
+        }
+        if entity_bool_any(language, "has_default_art_style") {
+            return Ok(language.clone());
+        }
+        return dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "SetDefaultArtStyle",
+            &json!({ "default_art_style_id": existing_id }),
+        );
+    }
+
+    let hint = imagery_pairs_with(&fields);
+    let resolved = match hint {
+        Some(slug) => resolve_art_style_by_slug(ctx, api_url, headers, &slug)?,
+        None => None,
+    };
+    let Some(art_id) = resolved else {
+        return Err(VerificationError::new(
+            "missing_default_art_style",
+            format!(
+                "DesignLanguage '{language_id}' has no default_art_style_id and imagery_direction.pairs_with does not match a live ArtStyle. Pair one with SetDefaultArtStyle before SubmitForReview or Publish."
+            ),
+        )
+        .entity("DesignLanguage", language_id)
+        .field("default_art_style_id")
+        .repairable(true));
+    };
+
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "SetDefaultArtStyle",
+        &json!({ "default_art_style_id": art_id }),
+    )
+}
+
+fn imagery_pairs_with(fields: &serde_json::Value) -> Option<String> {
+    let raw = string_field_any(fields, "imagery_direction", "");
+    if raw.is_empty() {
+        return None;
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&raw).ok()?;
+    parsed
+        .get("pairs_with")
+        .or_else(|| parsed.get("pairs_with_art_style"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+}
+
+fn resolve_art_style_by_slug(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    slug: &str,
+) -> Result<Option<String>, VerificationError> {
+    let encoded = urlencoding_slug(slug);
+    let url = format!(
+        "{api_url}/tdata/ArtStyles?$filter=slug%20eq%20%27{encoded}%27&$top=8"
+    );
+    let resp = http_call(ctx, "GET", &url, headers, "")?;
+    if !(200..300).contains(&resp.status) {
+        return Err(VerificationError::new(
+            "art_style_lookup_failed",
+            format!(
+                "Failed to look up ArtStyle slug '{slug}': HTTP {}: {}",
+                resp.status,
+                truncate(&resp.body)
+            ),
+        )
+        .field("default_art_style_id")
+        .repairable(true));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body).unwrap_or(json!({}));
+    let rows = parsed
+        .get("value")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    for row in rows {
+        let status = entity_status_value(&row);
+        if status == "Deleted" {
+            continue;
+        }
+        if let Some(id) = row
+            .get("entity_id")
+            .or_else(|| row.get("Id"))
+            .and_then(|v| v.as_str())
+        {
+            return Ok(Some(id.to_string()));
+        }
+    }
+    Ok(None)
+}
+
+fn urlencoding_slug(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    for byte in value.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' => {
+                out.push(byte as char);
+            }
+            _ => out.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    out
+}
+
 fn ensure_language_under_review(
     ctx: &Context,
     api_url: &str,
@@ -1154,7 +1299,14 @@ fn ensure_language_under_review(
         .repairable(false));
     }
 
-    verify_review_ready_state(language_id, language)?;
+    let language = ensure_language_art_style_paired(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        language,
+    )?;
+    verify_review_ready_state(language_id, &language)?;
 
     let submitted = dispatch_action(
         ctx,
@@ -1209,6 +1361,7 @@ fn verify_review_ready_state(
         "has_shadcn_export",
         "has_shadcn_component_spec",
         "has_shadcn_preview_shots",
+        "has_default_art_style",
     ]
     .iter()
     .copied()
@@ -1225,6 +1378,7 @@ fn verify_review_ready_state(
         "shadcn_export_file_id",
         "shadcn_component_spec_file_id",
         "shadcn_preview_shots_file_id",
+        "default_art_style_id",
     ]
     .iter()
     .copied()
@@ -1275,6 +1429,13 @@ fn ensure_language_published(
         .entity("DesignLanguage", language_id));
     }
 
+    let current = ensure_language_art_style_paired(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &current,
+    )?;
     let published = dispatch_action(
         ctx,
         api_url,
