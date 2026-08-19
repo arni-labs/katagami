@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
-import { LogIn, LogOut, UserRound } from "lucide-react";
+import { KeyRound, LogIn, LogOut, UserRound } from "lucide-react";
 import { signOut } from "@/app/auth-actions";
 import { CHROME_STAMP, CHROME_STAMP_LABEL } from "@/lib/chrome-stamp";
 
@@ -96,6 +96,12 @@ export function UserMenu() {
               <Link href="/account" className={MENU_ITEM}>
                 <UserRound className="h-3.5 w-3.5" aria-hidden />
                 account
+              </Link>
+            </Dropdown.Item>
+            <Dropdown.Item asChild>
+              <Link href="/owner" className={MENU_ITEM}>
+                <KeyRound className="h-3.5 w-3.5" aria-hidden />
+                owner
               </Link>
             </Dropdown.Item>
             <Dropdown.Item
