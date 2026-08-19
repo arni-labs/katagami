@@ -131,18 +131,24 @@ the write before attaching.
 
 The DESIGN.md must start with YAML frontmatter containing `version:`,
 `name:`, `description:`, `colors:`, `typography:`, `rounded:`, `spacing:`,
-and `components:`; include the sections `## Overview`, `## Colors`,
-`## Typography`, `## Layout`, `## Components`, `## Do's and Don'ts`, and
-`## shadcn/ui Usage`; reference
+`components:`, and `art_style:` (name, slug, and `/art-styles/<id>` url of
+the paired ArtStyle); include the sections `## Overview`, `## Colors`,
+`## Typography`, `## Layout`, `## Components`, `## Do's and Don'ts`,
+`## Art Style`, and
+`## shadcn/ui Usage`; the Art Style section must link `/art-styles/<id>`,
+include the canonical prompt, and say `MUST generate real images`;
+`imagery_direction.pairs_with` is the paired art-style slug; reference
 `/language/{language_id}/DESIGN.with-shadcn.md`, `/shadcn.json`,
 `/shadcn-components.md`, `/shadcn-shots.json`, and `@/components/ui/*`;
 contain at least eight concrete hex color tokens and the production Google
 Fonts URL; and contain no TBD/TODO/placeholder text.
 
-Write it to `/tmp/DESIGN.md`, then write and run a no-network checker script
-with `python3` from a script FILE that validates exactly the requirements
-above and prints one JSON object. Warnings are blocking. Parse only the JSON
-object the checker emits; never store shell transcript text (anything with
+Write it to `/tmp/DESIGN.md`, then write and run a no-network
+`katagami-design-md-contract` checker script with `python3` from a script
+FILE that validates exactly the requirements above and prints one JSON
+object (`{"tool":"katagami-design-md-contract",...}`). Warnings are blocking.
+The validated projection is stored at `/katagami/design-md/{slug}/DESIGN.md`. Parse only the JSON
+object the checker emits; never store the shell transcript (anything with
 `exit code`, `STDERR`, `command not found`) in `design_md_lint_result`. If
 `summary.errors > 0` or `summary.warnings > 0`, rewrite and rerun before
 attaching:
@@ -283,8 +289,9 @@ Per-slot Attach* ladder for repairing individual artifacts on an existing
 language: AttachEmbodiment (embodiment_file_id, element_count,
 composition_count, embodiment_format) → AttachThumbnail → AttachDesignMd →
 AttachShadcn*. `AttachEmbodiment` invalidates DESIGN.md verification — after
-it, rerun the checker and `AttachDesignMd` again with the latest markdown and
-lint JSON.
+it, the post-embodiment DESIGN.md attachment is mandatory: rerun the checker
+and `AttachDesignMd` again with the latest markdown, lint JSON, and
+`'design_md_format_version': 'alpha'`.
 
 `regenerate_embodiment` jobs: load the existing language with temper.get, fix
 what the job input names, re-attach via the matching Attach* action, finish

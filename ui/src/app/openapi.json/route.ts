@@ -91,7 +91,8 @@ const SPEC = {
     "/language/{id}/DESIGN.md": {
       get: {
         operationId: "getDesignMd",
-        summary: "Portable DESIGN.md export of a published design language",
+        summary:
+          "Portable DESIGN.md export of a published design language, including the paired art-style contract",
         parameters: [
           { name: "id", in: "path", required: true, schema: { type: "string" } },
         ],

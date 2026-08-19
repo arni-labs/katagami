@@ -236,6 +236,11 @@ class DesignMdContractTests(unittest.TestCase):
             "/katagami/design-md/",
             "ZERO lint errors and ZERO lint warnings",
             "Warnings are blocking",
+            "## Art Style",
+            "art_style:",
+            "MUST generate real images",
+            "missing_art_style_link",
+            "pairs_with",
         ]:
             self.assertIn(fragment, review_skill)
         self.assertRegex(review_skill, r"never\s+store the shell transcript")
@@ -259,6 +264,10 @@ class DesignMdContractTests(unittest.TestCase):
             "Warnings are blocking",
             "AttachEmbodiment` invalidates DESIGN.md",
             "post-embodiment DESIGN.md attachment is mandatory",
+            "## Art Style",
+            "art_style:",
+            "MUST generate real images",
+            "pairs_with",
         ]:
             self.assertIn(fragment, synth_skill)
         self.assertRegex(synth_skill, r"never\s+store the shell transcript")
@@ -271,6 +280,8 @@ class DesignMdContractTests(unittest.TestCase):
         ).read_text()
 
         self.assertIn("katagami-design-md-contract", quality_standards)
+        self.assertIn("MUST generate real images", quality_standards)
+        self.assertIn("art_style", quality_standards)
         self.assertNotIn("npx @google/design.md", quality_standards)
 
     def test_csdl_exposes_design_md_fields(self):
