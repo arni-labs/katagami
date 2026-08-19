@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, LogOut, Palette } from "lucide-react";
 import { signOut } from "@/app/auth-actions";
 import { getUser } from "@/lib/user-auth";
+import { isOwner } from "@/lib/owner";
 import {
   listArtStyles,
   listDesignLanguages,
@@ -39,6 +40,7 @@ type MixRow = {
 export default async function AccountPage() {
   const user = await getUser();
   if (!user) redirect("/signin?next=/account");
+  const owner = await isOwner();
 
   // Reads are catalog-wide and filtered here in app code on purpose: OData
   // projected reads can silently omit entities (ARN-97), and creator fields
@@ -112,6 +114,36 @@ export default async function AccountPage() {
               </p>
               <p className="mt-0.5 font-mono text-[12px] lowercase tracking-[0.04em] text-muted-foreground">
                 {user.email}
+              </p>
+              <p className="mt-2 text-[15px] text-muted-foreground">
+                {owner ? (
+                  <>
+                    Owner access is on.{" "}
+                    <Link
+                      href="/owner/visitor-shelf"
+                      className="text-foreground underline decoration-transparent underline-offset-4 transition-colors hover:decoration-foreground"
+                    >
+                      Pick visitor languages
+                    </Link>
+                    {" · "}
+                    <Link
+                      href="/owner"
+                      className="text-foreground underline decoration-transparent underline-offset-4 transition-colors hover:decoration-foreground"
+                    >
+                      Owner mode
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    Signed in, not on the owner list.{" "}
+                    <Link
+                      href="/owner"
+                      className="text-foreground underline decoration-transparent underline-offset-4 transition-colors hover:decoration-foreground"
+                    >
+                      Check owner access
+                    </Link>
+                  </>
+                )}
               </p>
             </div>
             <form action={signOut}>

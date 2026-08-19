@@ -20,6 +20,8 @@ export const NAV_LINKS: NavLink[] = [
 // client-side owner check (from /api/auth/me). Deliberately NOT in NAV_LINKS
 // so the public menu and the search index never advertise them.
 export const OWNER_NAV_LINKS: NavLink[] = [
+  { href: "/owner", label: "Owner" },
+  { href: "/owner/visitor-shelf", label: "Visitor home" },
   { href: "/voice", label: "Writing Styles" },
   { href: "/under-review", label: "Under Review" },
 ];
