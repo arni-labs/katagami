@@ -205,10 +205,10 @@ h1, h2, h3, .font-display {
 The radius vocabulary is deliberately tiny: **{0, 9999}**.
 
 - **Every rectangular surface: `0`.** Cards, chips, stamps, option tiles, buttons,
-  inputs, textareas. `.sticker-card` and `.stamp` / `.ink-stamp` are `border-radius: 0`.
-  Sharp corners are the look. Soft 2–3px “pill badges” read as generic UI chrome,
-  not a sticker. Do not borrow `16` / `24` / `9999` from the language-generation
-  contract and put them on katagami.ai chrome.
+  inputs, textareas. `.sticker-card`, `.stamp` / `.ink-stamp`, and `.chrome-stamp`
+  are `border-radius: 0`. Sharp corners are the look. Soft 2–3px “pill badges”
+  read as generic UI chrome, not a sticker. Do not borrow `16` / `24` / `9999`
+  from the language-generation contract and put them on katagami.ai chrome.
 - **Dots, avatars, the ink-dot logo: `9999`** (`rounded-full`). Not buttons or stamps.
 - `--radius: 0.375rem` (6px) exists **only** for borrowed shadcn preview chrome and the
   `--radius-*` scale derived from it. Katagami cards do not use it.
@@ -395,6 +395,26 @@ highlighter wash of the color plus grain, lifted with `--shadow-sticker`. Two va
 
 Use for status, section asides ("details inside"), contact ("say hi"). Tilt is part of
 the look — never set it upright.
+
+### Header chrome stamps — `.chrome-stamp` + `.header-cluster`
+
+The header row (search, theme, sign in, mobile menu) uses the **same ink wash**
+as `.stamp` — highlighter + grain + `--shadow-sticker`, radius 0 — but **stays
+upright**. A row of catalog-tilted stamps next to an untilted search or hamburger
+reads as leftover widgets.
+
+```css
+.chrome-stamp {
+  height: 28px; min-width: 28px; border: none; border-radius: 0;
+  padding: 0 10px; transform: none; box-shadow: var(--shadow-sticker);
+  background: color-mix(in oklch, currentColor 18%, var(--paper-stamp-mix));
+}
+.header-cluster { display: flex; align-items: center; gap: 6px; }
+```
+
+Hover lifts 1px (no extra rotate). Below `lg`, `.header-cluster` hides labels so
+every control is a 28×28 square. Do not put `.stamp` or a custom wash on header
+controls; import `CHROME_STAMP` from `src/lib/chrome-stamp.ts`.
 
 ### Dashed line — `.sticker-perforation`  *(the die-cut / dashed rule)*
 

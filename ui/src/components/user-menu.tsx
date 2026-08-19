@@ -6,8 +6,9 @@ import Link from "next/link";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { LogIn, LogOut, UserRound } from "lucide-react";
 import { signOut } from "@/app/auth-actions";
+import { CHROME_STAMP, CHROME_STAMP_LABEL } from "@/lib/chrome-stamp";
 
-// Header identity chip — the human counterpart of the theme stamp next to it.
+// Header identity chip — same chrome-stamp as search / theme / menu.
 // Signed out it's a "sign in" stamp; signed in it's your avatar opening a
 // small paper menu (account, sign out). Owner mode stays separate at /owner.
 //
@@ -42,8 +43,8 @@ export function UserMenu() {
   }, []);
 
   if (user === undefined) {
-    // Sized to the signed-in avatar button so returning users see no shift.
-    return <span aria-hidden className="inline-block h-8 w-8" />;
+    // Sized to the chrome-stamp / avatar so the header doesn't jump.
+    return <span aria-hidden className="inline-block h-7 w-7" />;
   }
 
   if (!user) {
@@ -52,16 +53,10 @@ export function UserMenu() {
         href="/signin"
         aria-label="sign in"
         title="sign in"
-        className="stamp inline-flex h-7 items-center gap-1.5 whitespace-nowrap px-2.5 text-[var(--teal)] transition-transform duration-200 hover:-translate-y-[1px] hover:rotate-[-6deg]"
+        className={`${CHROME_STAMP} whitespace-nowrap text-[var(--ramune)]`}
       >
         <LogIn className="h-3.5 w-3.5" aria-hidden />
-        {/* icon-only below sm — the mobile header row is already full */}
-        <span
-          className="hidden font-mono sm:inline"
-          style={{ fontSize: 11, letterSpacing: "0.08em", lineHeight: 1 }}
-        >
-          sign in
-        </span>
+        <span className={`${CHROME_STAMP_LABEL} font-mono`}>sign in</span>
       </Link>
     );
   }
@@ -73,9 +68,9 @@ export function UserMenu() {
           type="button"
           aria-label={`Account — ${user.name || user.email}`}
           title={user.name || user.email}
-          className="inline-flex h-8 w-8 items-center justify-center transition-transform duration-200 hover:-translate-y-[1px] data-[state=open]:-translate-y-[1px]"
+          className="inline-flex h-7 w-7 items-center justify-center transition-transform duration-200 hover:-translate-y-[1px] data-[state=open]:-translate-y-[1px]"
         >
-          <UserAvatar user={user} size={26} />
+          <UserAvatar user={user} size={28} />
         </button>
       </Dropdown.Trigger>
       <Dropdown.Portal>

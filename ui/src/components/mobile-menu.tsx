@@ -8,6 +8,7 @@ import { Menu, X } from "lucide-react";
 import { trackNav } from "@/lib/analytics";
 import { isActiveNav } from "@/lib/nav";
 import { useNavLinks } from "@/lib/use-owner-links";
+import { CHROME_STAMP } from "@/lib/chrome-stamp";
 
 /**
  * Mobile "everything" menu — a slide-in drawer reachable from the header that
@@ -55,9 +56,9 @@ export function MobileMenu() {
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className="inline-flex h-9 w-9 items-center justify-center text-foreground/80 transition-colors hover:text-foreground lg:hidden"
+        className={`${CHROME_STAMP} text-[var(--ramune)] lg:hidden`}
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-3.5 w-3.5" />
       </button>
 
       {/* Portal to <body>: the header has backdrop-filter + overflow-x-clip,
