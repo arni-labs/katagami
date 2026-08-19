@@ -18,10 +18,8 @@ export type EmbodimentTab = {
  */
 export function EmbodimentTabs({
   tabs,
-  slug,
 }: {
   tabs: EmbodimentTab[];
-  slug?: string;
 }) {
   const [active, setActive] = useState(0);
   if (tabs.length === 0) return null;
@@ -44,14 +42,9 @@ export function EmbodimentTabs({
         </div>
       </div>
 
-      <div className="relative min-w-0">
-        <div className="sticker-card relative p-2 pb-9 sm:p-3 sm:pb-10">
-          {/* key=url → remount on tab switch so height re-measures */}
-          <EmbodimentViewer key={cur.url} src={cur.url} />
-          <span className="absolute bottom-3 left-2 right-2 truncate text-center font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/80 sm:text-[10px] sm:tracking-[0.22em]">
-            {cur.label.toLowerCase()} · {slug || "preview"}
-          </span>
-        </div>
+      <div className="relative min-w-0 overflow-hidden shadow-[var(--shadow-card)]">
+        {/* key=url → remount on tab switch so height re-measures */}
+        <EmbodimentViewer key={cur.url} src={cur.url} />
       </div>
     </div>
   );
