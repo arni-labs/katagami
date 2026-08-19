@@ -171,13 +171,6 @@ for (const meta of [
   null,
   {},
   { fields: { Status: "Ready", WorkspaceId: CONTRIB } }, // no path
-  {
-    fields: {
-      Status: "Ready",
-      Path: "languages/x.html",
-      WorkspaceId: CONTRIB,
-    },
-  }, // relative
 ]) {
   assert.equal(
     classifyFileVisibility(meta),
@@ -185,6 +178,47 @@ for (const meta of [
     `unclassifiable metadata must fail closed: ${JSON.stringify(meta)}`,
   );
 }
+
+// ARN-378: writers that omit the leading slash still serve when the healed
+// path is already canonical and public. Deny trees stay denied.
+for (const [stored, want] of [
+  ["contrib/ticker/thumbnail.jpg", "public"],
+  ["impression/landing_thumb_repair.jpg", "public"],
+  ["contrib/ticker/landing-thumb.jpg", "public"],
+  ["languages/x.html", "public"],
+  ["agents/curator/skills/review-quality/SKILL.md", "denied"],
+  ["system/knowledge/design-principles.md", "denied"],
+  ["iterate/run.jsonl", "owner"],
+]) {
+  assert.equal(
+    classifyFileVisibility({ fields: { Status: "Ready", path: stored } }),
+    want,
+    `missing leading slash ${stored} must classify ${want}`,
+  );
+}
+
+// Other rewrites are still not judged on the cleaned-up form.
+assert.equal(
+  classifyFileVisibility({
+    fields: { Status: "Ready", path: "foo/../../agents/secret.md" },
+  }),
+  "denied",
+  "dot-dot after a missing slash must stay denied",
+);
+assert.equal(
+  classifyFileVisibility({
+    fields: { Status: "Ready", path: "/foo/../contrib/x.jpg" },
+  }),
+  "denied",
+  "dot-dot with a leading slash must stay denied",
+);
+assert.equal(
+  classifyFileVisibility({
+    fields: { Status: "Ready", path: "//contrib/x.jpg" },
+  }),
+  "denied",
+  "double-slash stored paths must stay denied",
+);
 
 // 34 of the 1,273 ids carry NO workspace field at all — not a projection
 // artifact: absent from the single-entity read too, in every casing. They are
@@ -570,7 +604,6 @@ for (const p of [
   "/Projects/p/skills/x/SKILL.md",
   "/languages/a/../../agents/curator/SKILL.md",
   "\\agents\\curator\\SKILL.md",
-  "relative/agents/x.md",
   "/languages/bad%ZZescape.html",
 ]) {
   assert.equal(

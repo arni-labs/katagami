@@ -304,13 +304,15 @@ export function classifyFileVisibility(value: unknown): FileVisibility {
 
   const stored = readString(fields, projection, ["Path", "path"]);
   if (!stored) return "denied";
-  const path = canonicalPath(stored);
+  // ARN-378: some PawFS writers persist `contrib/…` instead of `/contrib/…`.
+  // Heal that one missing prefix slash, then require the result to already
+  // be canonical. `..`, `//`, percent-escapes and other rewrites still deny —
+  // those are not a forgotten slash, and classifying the cleaned-up form
+  // would be guessing at a path the writer did not store.
+  const healed = stored.startsWith("/") ? stored : `/${stored}`;
+  const path = canonicalPath(healed);
   if (!path) return "denied";
-  // A stored path that is not already canonical is refused outright rather than
-  // classified on its cleaned-up form. Something wrote it oddly, and this is a
-  // security decision — the safe answer to "why does this path need rewriting
-  // before I can judge it?" is not to judge it.
-  if (path !== stored) return "denied";
+  if (path !== healed) return "denied";
 
   // Both the tree and the bare form: every prefix ends in `/`, so `/agents`,
   // `/apps` and `/tmp` with no trailing slash matched nothing and classified

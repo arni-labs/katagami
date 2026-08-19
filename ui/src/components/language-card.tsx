@@ -5,6 +5,7 @@ import { parseJson } from "@/lib/odata";
 import { LanguageCardOwnerControls } from "@/components/language-card-owner-controls";
 import { ThumbnailPreview } from "@/components/thumbnail-preview";
 import { ProvenanceBadge } from "@/components/provenance-badge";
+import { thumbnailPreviewSources } from "@/lib/thumbnail-sources";
 
 const statusFallbackTone: Record<string, string> = {
   Draft: "var(--muted-foreground)",
@@ -179,10 +180,14 @@ function FullCard({
   const thumbnailProxyFileId = isPublished ? undefined : thumbnailFileId;
   // Prefer a static screenshot of the bespoke landing when present; else the
   // embodiment thumbnail. Both are plain images — no live rendering on the card.
+  // Pass both URLs: a 404 on the landing thumb must not be a dead end (ARN-378).
   const landingThumbUrl = (f.landing_thumbnail_asset_url || "").trim();
-  const previewSrc = landingThumbUrl || thumbnailAssetUrl;
-  const previewFileId = landingThumbUrl ? undefined : thumbnailProxyFileId;
-  const hasThumbnailPreview = Boolean(previewSrc || previewFileId);
+  const previewSrcs = thumbnailPreviewSources(
+    landingThumbUrl,
+    thumbnailAssetUrl,
+  );
+  const previewFileId = previewSrcs.length > 0 ? undefined : thumbnailProxyFileId;
+  const hasThumbnailPreview = Boolean(previewSrcs.length > 0 || previewFileId);
 
 
   return (
@@ -205,7 +210,7 @@ function FullCard({
         {hasThumbnailPreview ? (
           <ThumbnailPreview
             fileId={previewFileId}
-            src={previewSrc}
+            srcs={previewSrcs}
             alt={`${f.name || "Design language"} preview`}
             eager={eagerThumbnail}
             placeholderTint={stickyTint}
