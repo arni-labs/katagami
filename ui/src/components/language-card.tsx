@@ -246,7 +246,7 @@ function FullCard({
 
         {(tags.length > 0 || isHumanProvenance) && (
           <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1">
-            <ProvenanceBadge tier={f.provenance_tier} variant="card" />
+            <ProvenanceBadge tier={f.provenance_tier} />
             {tags.slice(0, 3).map((t, i) => (
               <span
                 key={t}

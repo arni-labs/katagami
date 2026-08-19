@@ -353,7 +353,7 @@ export default async function LanguageDetailPage({
 
       <Credits raw={f.credits} />
 
-      <ProvenanceBadge tier={f.provenance_tier} variant="detail" />
+      <ProvenanceBadge tier={f.provenance_tier} />
 
       <ModelProvenance raw={f.model_provenance} />
 
