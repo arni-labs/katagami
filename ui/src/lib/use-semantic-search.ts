@@ -14,9 +14,13 @@ export function useSemanticSearch<T>(
   loader: SemanticLoader<T>,
   query: string,
   enabled: boolean,
-): { results: T[]; loading: boolean } {
+): { results: T[]; loading: boolean; failed: boolean } {
   const [results, setResults] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
+  // ARN-354 launch fix: a rejected action (search infrastructure down) must
+  // render differently from a genuine zero-hit answer — the old catch->[]
+  // made a production outage read as "Nothing found".
+  const [failed, setFailed] = useState(false);
   const seq = useRef(0);
 
   useEffect(() => {
@@ -26,6 +30,7 @@ export function useSemanticSearch<T>(
       seq.current += 1;
       setResults([]);
       setLoading(false);
+      setFailed(false);
       return;
     }
     const mine = ++seq.current;
@@ -35,8 +40,12 @@ export function useSemanticSearch<T>(
         const items = await loader({ query: q });
         if (mine !== seq.current) return;
         setResults(items);
+        setFailed(false);
       } catch {
-        if (mine === seq.current) setResults([]);
+        if (mine === seq.current) {
+          setResults([]);
+          setFailed(true);
+        }
       } finally {
         if (mine === seq.current) setLoading(false);
       }
@@ -44,5 +53,5 @@ export function useSemanticSearch<T>(
     return () => clearTimeout(timer);
   }, [loader, query, enabled]);
 
-  return { results, loading };
+  return { results, loading, failed };
 }

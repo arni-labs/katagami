@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { CdnImg } from "@/components/cdn-img";
 import { CatalogCardOwnerControls } from "@/components/catalog-card-owner-controls";
 import { ArchivedStamp } from "@/components/archived-stamp";
 
@@ -14,6 +15,8 @@ export interface ArtStyleItem {
   /** Proof shots: the same subjects rendered in-style (portrait/object/scene). */
   proofs: string[];
   thumb: string;
+  /** CDN src -> /api/file proxy fallback for published asset URLs (ARN-354). */
+  imageFallbacks?: Record<string, string>;
   tags: string[];
   /** Canonical taxonomy category ids (for shelving the lane by category). */
   taxonomyIds?: string[];
@@ -36,11 +39,14 @@ function GalleryImg({
   alt,
   sizes,
   className = "",
+  fallbackSrc,
 }: {
   src: string;
   alt: string;
   sizes: string;
   className?: string;
+  /** Proxy URL to swap in if a published CDN URL 404s (ARN-354). */
+  fallbackSrc?: string;
 }) {
   if (src.startsWith("/")) {
     return (
@@ -48,12 +54,10 @@ function GalleryImg({
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <CdnImg
       src={src}
+      fallbackSrc={fallbackSrc}
       alt={alt}
-      loading="lazy"
-      decoding="async"
       className={`absolute inset-0 h-full w-full ${className}`}
     />
   );
@@ -111,6 +115,7 @@ export function ArtStyleCard({
         {hero ? (
           <GalleryImg
             src={hero}
+            fallbackSrc={art.imageFallbacks?.[hero]}
             alt={`${art.name} — hero reference`}
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.03]"
@@ -122,7 +127,7 @@ export function ArtStyleCard({
           <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
             {stripShots.slice(0, 3).map((src, i) => (
               <div key={i} className="relative h-8 w-8 shrink-0 overflow-hidden bg-muted shadow-[0_1px_3px_rgba(0,0,0,0.25)]">
-                <GalleryImg src={src} alt={`${art.name} proof ${i + 1}`} sizes="48px" className="object-cover" />
+                <GalleryImg src={src} fallbackSrc={art.imageFallbacks?.[src]} alt={`${art.name} proof ${i + 1}`} sizes="48px" className="object-cover" />
               </div>
             ))}
             {overflow > 0 && (

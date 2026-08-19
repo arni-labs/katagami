@@ -11,6 +11,7 @@ import {
   parseJson,
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
+import { artStyleImages } from "@/lib/lane-items";
 import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
 import { CopyButton } from "@/components/copy-button";
@@ -23,27 +24,9 @@ export const dynamic = "force-dynamic";
 
 const CHIP = "bg-[color-mix(in_srgb,var(--foreground)_4%,var(--card))]";
 
-function refUrls(raw?: string): string[] {
-  const ids = parseJson<string[]>(raw);
-  return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
-}
-
-// Build image URLs from File ids -> /api/file proxy (reliable). Avoid
-// reference_assets VALUES (some are assets.katagami.ai CDN urls that 404) and
-// the guard-limited reference_image_file_ids; collect ids from the manifest
-// (full set), the reference_assets KEYS (file ids), and the id field.
-function refImageUrls(fields: Record<string, string | undefined>): string[] {
-  const ids: string[] = [];
-  const add = (id: unknown) => {
-    if (typeof id === "string" && id.startsWith("fl-") && !ids.includes(id)) ids.push(id);
-  };
-  const manifest = parseJson<{ items?: Array<{ file?: string; file_id?: string }>; references?: Array<{ file?: string; file_id?: string }> }>(fields.reference_manifest);
-  (manifest?.items ?? manifest?.references ?? []).forEach((it) => add(it?.file_id ?? it?.file));
-  const assets = parseJson<Record<string, unknown>>(fields.reference_assets);
-  if (assets && typeof assets === "object" && !Array.isArray(assets)) Object.keys(assets).forEach(add);
-  (parseJson<string[]>(fields.reference_image_file_ids) ?? []).forEach(add);
-  return ids.map((id) => getFileUrl(id));
-}
+// Image URL resolution is shared with the catalog cards (lib/lane-items
+// artStyleImages): CDN-first from published asset URLs, /api/file proxy
+// fallback per image (ARN-354).
 
 /** Render a parsed-JSON value as text. These maps are typed as string values,
  *  but contributor-submitted data can carry nested objects/arrays — handing a
@@ -83,9 +66,10 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   const guidance = parseJson<{ do?: string[]; dont?: string[] }>(f.guidance);
   const tags = parseJson<string[]>(f.tags) ?? [];
 
-  const refs = refImageUrls(f);
-  const proofs = refUrls(f.proof_shots_file_ids);
-  const thumb = f.thumbnail_file_id ? getFileUrl(f.thumbnail_file_id) : "";
+  const images = artStyleImages(f);
+  const refs = images.refs;
+  const proofs = images.proofs;
+  const thumb = images.thumb;
   const { hero, gallery } = artStyleGallerySources({
     status: art.status,
     promptVerified,

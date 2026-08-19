@@ -62,23 +62,66 @@ export interface SearchHit {
 
 const MAX_QUERY_CHARS = 400;
 
-/** Embed a raw query into the taste space. Returns null for an empty query or
- *  when the local model fails to load — callers treat null as "no semantic
- *  answer" and fall back rather than erroring the surface. */
+/** Infrastructure failure (embed model or vector query down) — deliberately
+ *  distinct from a genuine zero-hit result. Surfaces catch this to show
+ *  "search unavailable" instead of the misleading "Nothing found" that hid
+ *  the launch-week outage. */
+export class SearchUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SearchUnavailableError";
+  }
+}
+
+/** Fallback embedder: POST the query to /api/taste/embed — the one function
+ *  whose onnxruntime binding has been production-proven since the taste
+ *  pipeline shipped. Used when the in-process model fails (e.g. a function
+ *  bundle missing the native binding), so meaning search degrades to one
+ *  extra same-region hop instead of dying. */
+async function embedViaService(text: string): Promise<number[] | null> {
+  const base =
+    process.env.KATAGAMI_EMBED_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+  if (!base) return null;
+  const key = (process.env.TEMPER_API_KEY ?? "").trim();
+  const res = await fetch(`${base.replace(/\/$/, "")}/api/taste/embed`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(key ? { Authorization: `Bearer ${key}` } : {}),
+    },
+    body: JSON.stringify({ doc: text }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`embed service responded ${res.status}`);
+  const j = (await res.json()) as { vector?: number[] };
+  return Array.isArray(j.vector) ? j.vector : null;
+}
+
+/** Embed a raw query into the taste space. Returns null only for an empty
+ *  query; an embedding-infrastructure failure throws SearchUnavailableError
+ *  (after trying the service fallback) so it can never masquerade as
+ *  "no results". */
 async function embedQuery(query: string): Promise<number[] | null> {
   const text = query.trim().slice(0, MAX_QUERY_CHARS);
   if (!text) return null;
   try {
     return await embedDocument(text);
-  } catch (err) {
-    console.error("search: query embed failed:", err);
-    return null;
+  } catch (localErr) {
+    console.error("search: in-process embed failed, trying service:", localErr);
+    try {
+      const vector = await embedViaService(text);
+      if (vector) return vector;
+    } catch (serviceErr) {
+      console.error("search: embed service fallback failed:", serviceErr);
+    }
+    throw new SearchUnavailableError("query embedding unavailable");
   }
 }
 
 /** Rank one lane by meaning, returning the raw ranked rows + scores (the shape
- *  the UI card mappers want). `[]` on any soft failure (empty query, embed down,
- *  vector path unavailable) so both surfaces degrade cleanly. */
+ *  the UI card mappers want). `[]` means a genuine zero-hit answer (or empty
+ *  query); infrastructure failure throws SearchUnavailableError. */
 export async function searchLaneRaw(
   lane: SearchLane,
   query: string,
@@ -93,7 +136,10 @@ export async function searchLaneRaw(
     k,
     filter: "Status eq 'Published'",
   });
-  return hits ?? [];
+  if (hits === null) {
+    throw new SearchUnavailableError("vector ranking unavailable");
+  }
+  return hits;
 }
 
 function round(score: number): number {
