@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { KeyRound, LogIn, LogOut, UserRound } from "lucide-react";
-import { signOut } from "@/app/auth-actions";
 import { CHROME_STAMP, CHROME_STAMP_LABEL } from "@/lib/chrome-stamp";
 
 // Header identity chip — same chrome-stamp as search / theme / menu.
@@ -22,7 +21,6 @@ const MENU_ITEM =
   "flex w-full cursor-pointer items-center gap-2 px-2.5 py-2 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground/80 outline-none transition-colors data-[highlighted]:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] data-[highlighted]:text-foreground";
 
 export function UserMenu() {
-  const [, startTransition] = useTransition();
   // undefined = still resolving; render a same-size blank so the header
   // doesn't jump when the answer arrives.
   const [user, setUser] = useState<HeaderUser | null | undefined>(undefined);
@@ -124,14 +122,20 @@ export function UserMenu() {
             </Dropdown.Item>
             <Dropdown.Item
               className={MENU_ITEM}
-              onSelect={() =>
-                startTransition(async () => {
-                  // The layout persists through the action's client-side
-                  // redirect, so flip the chip ourselves.
-                  setUser(null);
-                  await signOut();
-                })
-              }
+              onSelect={(event) => {
+                event.preventDefault();
+                void (async () => {
+                  await fetch("/api/auth/signout", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    cache: "no-store",
+                  }).catch(() => {});
+                  // Full load: the shared layout keeps the chip mounted
+                  // across a client redirect, and a leftover host-only
+                  // cookie would just sign us back in.
+                  window.location.assign("/");
+                })();
+              }}
             >
               <LogOut className="h-3.5 w-3.5" aria-hidden />
               sign out

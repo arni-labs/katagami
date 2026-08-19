@@ -19,6 +19,7 @@ const account = read("src/app/(site)/account/page.tsx");
 const layout = read("src/app/(site)/layout.tsx");
 const studio = read("src/app/(site)/studio/page.tsx");
 const authActions = read("src/app/auth-actions.ts");
+const signout = read("src/app/api/auth/signout/route.ts");
 const inlineRemix = read("src/components/remix/inline-remix.tsx");
 const owner = read("src/lib/owner.ts");
 
@@ -39,6 +40,9 @@ const required = [
   ["ID-token nonce must match ours (fail closed)", oidc, /payload\.nonce !== expectedNonce/],
   ["email_verified must be present and true (fail closed)", oidc, /email_verified !== true/],
   ["sign-out is a server action, not a GET route", authActions, /"use server"/],
+  ["sign-out expires host-only and Domain cookies", session, /expireSessionCookies/],
+  ["sign-out route is POST-only", signout, /export async function POST/],
+  ["sign-out route is not a GET", signout, /^(?![\s\S]*export async function GET)[\s\S]*$/],
   // The Studio is a signed-in space for making, open for browsing.
   ["saveRemix requires a signed-in human", actions, /saveRemix[\s\S]*?requireUser/],
   ["saved mixes are attributed via SetCreator", actions, /"SetCreator"/],
