@@ -34,6 +34,10 @@ deeply empty specs should fail with a concrete error.
 - Every publishable language needs a generated `DESIGN.md` artifact.
 - `DESIGN.md` must pass the no-network `katagami-design-md-contract` checker
   with zero errors and zero warnings.
+- `DESIGN.md` must bind the paired art style: YAML `art_style` (name, slug,
+  `/art-styles/<id>` url), an `## Art Style` section, the canonical prompt,
+  and **MUST generate real images**. `imagery_direction.pairs_with` is
+  required. CSS-only / stock / placeholder imagery fails review.
 - Katagami source fields remain the source of truth; repair source fields, then
   regenerate projections.
 - Embodiments must be self-contained HTML and render cleanly at desktop,

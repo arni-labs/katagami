@@ -22,7 +22,8 @@ const PREAMBLE: Record<Format, string> = {
     "Follow its philosophy, tokens, rules, layout guidance, and do/don't guardrails.",
   "design-md":
     "Use the following DESIGN.md as the portable design-system source of truth for every UI we build. " +
-    "Follow its YAML tokens, component guidance, layout rules, and do/don't guardrails.",
+    "Honor its YAML tokens AND its paired Art Style: generate real images with the canonical prompt. " +
+    "Do not substitute CSS blobs, stock photography, Unsplash, placeholders, or emoji.",
   "shadcn-md":
     "Use the following DESIGN.md for a shadcn/ui project. It includes the Katagami design language plus shadcn/ui install, theme, component recipe, preview-shot, and starter TSX guidance.",
 };
@@ -92,20 +93,20 @@ export function SpecActions({
     return `${window.location.origin}${path}/${suffix}`;
   };
 
-  // katagami + design-md are inlined; the shadcn DESIGN.md is generated on demand
-  // by its route (kept off the page's critical-path render), so fetch it only
-  // when the user actually copies/downloads it.
+  // Fetch the live artifact routes on copy/download so the stored file plus
+  // the injected Art Style contract is what the agent actually receives.
+  // Inlined markdown is the fallback if the route is unreachable.
   const resolveMarkdown = async (f: Format): Promise<string> => {
     if (f === "katagami") return katagamiSpec;
-    if (f === "design-md") return designMd;
     if (!languageId) return designMd;
+    const suffix = URL_SUFFIX[f === "shadcn-md" ? "shadcn-md" : "design-md"];
     try {
       const res = await fetch(
-        `/language/${encodeURIComponent(languageId)}/${URL_SUFFIX["shadcn-md"]}`,
+        `/language/${encodeURIComponent(languageId)}/${suffix}`,
       );
       if (res.ok) return await res.text();
     } catch {
-      /* fall back to the plain DESIGN.md below */
+      /* fall back to the inlined DESIGN.md below */
     }
     return designMd;
   };
@@ -196,7 +197,7 @@ export function SpecActions({
                     ? "For shadcn/ui projects: the same DESIGN.md source plus install, theme, recipes, preview contract, and starter TSX in one Markdown file."
                     : format === "katagami"
                         ? "Native Katagami source spec with the richest token and language context."
-                        : "Portable DESIGN.md source of truth for most agents and apps."}
+                        : "Portable DESIGN.md — tokens plus the paired art style. Agents must generate real images."}
                 </p>
               </div>
             </div>

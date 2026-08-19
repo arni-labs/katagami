@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { getDesignLanguage } from "@/lib/odata";
+import { getDesignLanguage, listArtStyles } from "@/lib/odata";
 import { artifactGate } from "@/lib/entity-visibility";
 import { designMdToMarkdown } from "@/components/spec-panel";
+import {
+  bindingForLanguage,
+  withArtStyleContract,
+} from "@/lib/design-md-art-style";
+import { siteBaseFromRequest } from "@/lib/site-url";
 import {
   buildShadcnRegistryTheme,
   shadcnUsageMarkdown,
@@ -58,8 +63,33 @@ function withCurrentShadcnUsage(
   return `${trimmed}\n\n${usage}\n`;
 }
 
+async function finalizeDesignMd(
+  markdown: string,
+  req: Request,
+  language: {
+    name?: string;
+    slug?: string;
+    default_art_style_id?: string;
+    imagery_direction?: string;
+    tokens?: string;
+  },
+  languageId: string,
+): Promise<string> {
+  const withShadcn = withCurrentShadcnUsage(markdown, {
+    languageId,
+    name: language.name,
+    slug: language.slug,
+    tokens: language.tokens,
+  });
+  const arts = await listArtStyles("Status ne 'Deleted'").catch(() => []);
+  return withArtStyleContract(
+    withShadcn,
+    bindingForLanguage(language, arts, siteBaseFromRequest(req)),
+  );
+}
+
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -88,12 +118,12 @@ export async function GET(
   if (f.design_md_file_id) {
     const stored = await readStoredFile(f.design_md_file_id);
     if (stored) {
-      const markdown = withCurrentShadcnUsage(new TextDecoder().decode(stored), {
-        languageId: id,
-        name: f.name,
-        slug: f.slug,
-        tokens: f.tokens,
-      });
+      const markdown = await finalizeDesignMd(
+        new TextDecoder().decode(stored),
+        req,
+        f,
+        id,
+      );
       return new NextResponse(markdown, {
         status: 200,
         headers: {
@@ -106,23 +136,23 @@ export async function GET(
     }
   }
 
-  const markdown = withCurrentShadcnUsage(designMdToMarkdown({
-    languageId: id,
-    name: f.name,
-    slug: f.slug,
-    philosophy: f.philosophy,
-    tokens: f.tokens,
-    rules: f.rules,
-    layout: f.layout_principles,
-    guidance: f.guidance,
-    imageryDirection: f.imagery_direction,
-    generativeCanvas: f.generative_canvas,
-  }), {
-    languageId: id,
-    name: f.name,
-    slug: f.slug,
-    tokens: f.tokens,
-  });
+  const markdown = await finalizeDesignMd(
+    designMdToMarkdown({
+      languageId: id,
+      name: f.name,
+      slug: f.slug,
+      philosophy: f.philosophy,
+      tokens: f.tokens,
+      rules: f.rules,
+      layout: f.layout_principles,
+      guidance: f.guidance,
+      imageryDirection: f.imagery_direction,
+      generativeCanvas: f.generative_canvas,
+    }),
+    req,
+    f,
+    id,
+  );
 
   return new NextResponse(markdown, {
     status: 200,
