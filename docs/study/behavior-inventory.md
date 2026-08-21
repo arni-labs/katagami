@@ -30,94 +30,88 @@ it back.
 
 ---
 
-# CuratorAgent — the run that makes the work
+# CuratorAgent — one curator principal in the live app
 
-One record per curator run against one brief.
+One ledger for the curator while it works the existing path:
+`CurationQuery` → `CurationDirection` → typed `CurationJob` → `DesignLanguage`.
+This phase the accepted jobs are `source_search` and `synthesize`.
 Source: `katagami-curation/specs/curator_agent.ioa.toml`,
 `katagami-curation/policies/curator_agent.cedar`.
 
-Its life: `BriefReceived` → `Drafting` → `SelfReviewed` → `Submitted`, or
-`Abandoned` from anywhere along the way.
+Its life: take the query, search, index sources, derive 3–5 directions; then
+take the direction, read design-language.md, author every named part, render,
+look at each surface, fix or submit. `Abandoned` from any working act.
 
 ### Order of work
 
-**C1. A run records the brief it is answering before it starts.** — machine
-`ReceiveBrief` is the only action available in the opening state, and it is what
-sets `has_brief`.
-*Source: spec, action `ReceiveBrief`.*
+**C1. A run records its capture identity before it takes a query.** — machine
+`RecordCapture` is the one-shot store of session, trajectory, spec version
+and harness. `TakeQuery` is guarded on that bit.
+*Source: spec, action `RecordCapture`; `TakeQuery` guard `is_true capture_recorded`.*
 
-**C2. A run cannot start drafting against a brief it never received.** — machine
-`BeginDrafting` is guarded on `has_brief`, and the invariant `DraftingRequiresBrief`
-says the same thing about the state itself.
-*Source: spec, action `BeginDrafting` guard `is_true has_brief`; invariant `DraftingRequiresBrief`.*
+**C2. The agent takes the live query before searching.** — machine
+`TakeQuery` requires a running `CurationJob` and a `CurationQuery` in
+`Researching`. Search is not reachable from `Idle`.
+*Source: spec, action `TakeQuery`.*
 
-**C3. All the making happens in one state.** — machine
-Recording drafts, and recording each artifact produced, are legal only while
-`Drafting`.
-*Source: spec, actions `RecordDraft`, `RecordDesignLanguage`, `RecordArtStyle`, `RecordPaletteSystem`, `RecordWritingStyle` — all `from = ["Drafting"]`.*
+**C3. The agent searches the web before it indexes sources.** — machine
+`SearchTheWeb` is the only edge into `Searching`. `IndexSources` requires at
+least one search.
+*Source: spec, action `SearchTheWeb`; `IndexSources` guard `min_count searches_run 1`.*
 
-**C4. A run reviews its own work before submitting, and that is the only route to
-submission.** — machine
-`SelfReview` is the single edge into `SelfReviewed`, and `SelfReviewed` is the
-single source state for every submit action. Submission is additionally guarded
-on `self_review_complete`, and the invariant `SubmittedRequiresSelfReview` holds
-it at the state.
-*Source: spec, action `SelfReview`; every `Submit*` action `from = ["SelfReviewed"]` + guard `is_true self_review_complete`; invariant `SubmittedRequiresSelfReview`.*
+**C4. The agent indexes sources before it derives directions.** — machine
+`DeriveDirections` requires at least one indexed source.
+*Source: spec, action `IndexSources`; `DeriveDirections` guard `min_count sources_indexed 1`.*
 
-**C5. A run submits once.** — machine
-Every submit lands in `Submitted`, which is terminal, so a second submission of
-any lane has no legal source state.
-*Source: spec, invariant `SubmittedIsFinal`; every `Submit*` action `to = "Submitted"`.*
+**C5. The agent derives three to five directions before completing research.** — machine
+`CompleteResearch` is only from `DirectionsReady` and requires
+`directions_derived >= 3` plus the job already `Finalizing` or `Completed`.
+`DeriveDirections` is capped at five.
+*Source: spec, action `DeriveDirections`; action `CompleteResearch`.*
 
-### What may be submitted
+**C6. The agent takes the live direction before authoring a language.** — machine
+`TakeDirection` requires a running synthesize job and a `CurationDirection`
+in `Synthesizing`.
+*Source: spec, action `TakeDirection`.*
 
-**C6. A run can only submit a kind of work it actually produced.** — machine
-Each lane's submit is guarded on that lane's `has_*_ids` flag, which is only set
-by recording an id. Without it, the entity-graph check below would be vacuously
-true over an empty list, and a run that produced nothing would submit
-successfully.
-*Source: spec, e.g. `SubmitDesignLanguages` guard `is_true has_design_language_ids`.*
+**C7. The agent authors every named language part before rendering pages.** — machine
+`ReadDesignRules` is the only edge out of `ReadingDirection`. `AuthorLanguage`
+is one mark after every named part exists — many file writes or one
+`SubmitDesignLanguage` call is fine. `RenderSurfaces` requires the parts.
+Invariant `LanguageHasEveryPart` fences the submit.
+*Source: spec, action `AuthorLanguage`; invariant `LanguageHasEveryPart`.*
 
-**C7. A run can only submit work that already passed its own artifact gate.** — machine
-Every recorded id must already be `UnderReview` or `Published`, read off the
-entity graph rather than off the run's claim about it. Those states are only
-reachable through each artifact's own submission guard, which is where the real
-requirements live (DESIGN.md, embodiment, landing, thumbnail and shadcn export
-for a design language; medium, portable prompt and proof shots for an art style;
-corpus, bands and VOICE.md for a writing style).
-*Source: spec, e.g. `SubmitDesignLanguages` guard `cross_entity_state` on `DesignLanguage`, `required_status = ["UnderReview", "Published"]`.*
+**C8. Surfaces, shadcn and the thumbnail are among those named parts.** — machine
+`AuthorLanguage` sets landing, embodiment, dashboard, shadcn and thumbnail
+together with concept, tokens, spec and DESIGN.md.
+*Source: spec, action `AuthorLanguage` effects.*
 
-**C8. A run names the kind of thing it submitted.** — machine
-*Source: spec, every `Submit*` action `params = ["submitted_entity_type"]`.*
+**C9. The agent looks at each surface before submitting.** — machine
+`LookAtLanding`, `LookAtEmbodiment` and `LookAtDashboard` are the only edges
+into `Looking`. `SubmitLanguage` is only from `Looking`, requires all three
+current looks, and requires the language already `UnderReview`.
+*Source: spec, actions `LookAtLanding`, `LookAtEmbodiment`, `LookAtDashboard`; action `SubmitLanguage`; invariant `SeenBeforeSubmit`.*
 
-### Budget
-
-**C9. A run holds at most ten curation jobs at once.** — machine
-`ClaimJob` is guarded at ten, strictly, which is the standing batch cap.
-*Source: spec, action `ClaimJob` guard `max_count jobs_in_flight max = 10`.*
-
-**C10. A run releases every claimed job before it submits.** — machine
-Submission is guarded on fewer than one job in flight, which means zero: a run
-cannot submit while work is still outstanding.
-*Source: spec, every `Submit*` action guard `max_count jobs_in_flight max = 1`.*
+**C10. Research and synthesize are two holds from Idle, not one mixed state.** — machine
+`TakeQuery` and `TakeDirection` both leave `Idle`. There is no edge from a
+research state into a synthesize state without completing or abandoning.
+*Source: spec, `TakeQuery` / `TakeDirection` `from = ["Idle"]`.*
 
 ### What this actor may never do
 
 **C11. Publishing is not in this actor's vocabulary at all.** — machine
 There is no `Publish` action on `CuratorAgent`. Publishing belongs to
-`HumanCurator`. This is a stronger statement than forbidding it: there is
-nothing to forbid.
+`HumanCurator`.
 *Source: spec, action list — no `Publish` action exists.*
 
 **C12. An action that is not on the list is refused.** — policy
-The Cedar permit names the alphabet rather than granting everything, so an action
-added to the spec later arrives denied and has to be admitted deliberately.
+The Cedar permit names the alphabet rather than granting everything.
 *Source: `policies/curator_agent.cedar`, the enumerated `permit(...)`.*
 
-**C13. `CuratorSubmittedEvent` is announced, never called.** — policy
-It is an output action, emitted by the platform when a run submits, and is
-deliberately absent from the permit list.
-*Source: spec, action `CuratorSubmittedEvent` (`kind = "output"`); `policies/curator_agent.cedar` omits it from the permit.*
+**C13. Quality review is not in this actor's vocabulary.** — machine
+There is no `CompleteQualityReview` action on `CuratorAgent`. Review belongs
+to `ReviewAgent` and to the `quality_review` job type.
+*Source: spec, action list — no quality-review completion exists.*
 
 **C14. A caller with no identity gets nothing.** — policy
 *Source: `policies/curator_agent.cedar`, forbid on `principal.id == "anonymous"`.*
@@ -125,30 +119,28 @@ deliberately absent from the permit list.
 ### Giving up, and running out of time
 
 **C15. A run that gives up says so, and that ending is final.** — machine
-`Abandon` is available from every working state, carries a reason, and lands in
-`Abandoned`, which is terminal. A stalled run is still a judgeable record rather
-than a silence.
+`Abandon` is available from both working states, carries a reason, and lands
+in `Abandoned`, which is terminal.
 *Source: spec, action `Abandon`; invariant `AbandonedIsFinal`.*
 
-**C16. A run that stops making progress is abandoned automatically.** — machine
-Fifteen minutes holding the brief without starting, two hours drafting without
-self-reviewing, fifteen minutes self-reviewed without submitting.
-*Source: spec, `[[state_timeout]]` on `BriefReceived` (900s), `Drafting` (7200s), `SelfReviewed` (900s), each `on_timeout = "Abandon"`.*
+**C16. A hold that stops making progress is abandoned automatically.** — machine
+Every working conduct state carries a timeout onto `Abandon`.
+*Source: spec, `[[state_timeout]]` on every working state.*
 
 ### The record it leaves
 
 **C17. A run records the identity its trajectory is captured under.** — machine
-Session id, trajectory id, the version of this spec it ran under, and which
-harness drove it — all on the opening action, so a verdict can point back at the
-exact run.
-*Source: spec, action `ReceiveBrief` params `session_id`, `trajectory_id`, `spec_version`, `harness`.*
+Session id, trajectory id, spec version and harness live on `RecordCapture`.
+*Source: spec, action `RecordCapture` params.*
 
-**C18. A submitted run has a submission recorded.** — machine
-*Source: spec, invariant `SubmittedRequiresSubmission`.*
+**C18. A look of old bytes cannot carry a submit.** — machine
+`FixSurfaces` returns to `Authoring` and clears every look, so render and
+look must happen again. `SubmitLanguage` is only from `Looking`.
+*Source: spec, action `FixSurfaces` `to = "Authoring"`; invariant `SeenBeforeSubmit`.*
 
-**C19. Drafting revisions are counted, not gated.** — machine
-The count is the run's visible work; nothing depends on its value.
-*Source: spec, action `RecordDraft` effect `increment draft_revision`.*
+**C19. Fix rounds are counted and gated at twelve.** — machine
+`FixSurfaces` increments `revision_rounds` under `max_count 12`.
+*Source: spec, action `FixSurfaces`; invariant `FixRoundsBounded`.*
 
 ### What only a person can judge
 
@@ -190,146 +182,9 @@ scrimmed, with no scroll cues and no oversized italic serif headline.** — judg
 decoration.** — judgment
 *Source: same file, Motion rule 34.*
 
-**C28. The self-review is a real critique against the taste rules and the brief,
-and what it found is what gets recorded.** — convention
-The machine checks that a self-review happened. It cannot check that it was any
-good, and a one-word note satisfies the guard.
-*Source: spec, action `SelfReview` hint; `mcp/skills/katagami-contributor/SKILL.md`, "Give `RecordDraft` and `SelfReview` real content".*
-
-### How the work is actually done
-
-Everything above is the protocol — the order of the run — and the standard the
-output is held to. This section is the work itself: how a contributor orients,
-where a style's authority comes from, and what has to be proved before anything
-is submitted.
-
-It is drawn from the skill that drives this actor
-(`mcp/skills/katagami-contributor/SKILL.md`), which is where the craft is
-written down. Almost none of it is machine-checkable, and that is the point of
-listing it: a run can satisfy every guard above while doing none of this.
-
-**C29. Know who you are, and read the tool's current schema before contributing.** — convention
-Call `whoami` first. Read the input schema of the submit tool about to be used,
-and never carry fields forward from a previous version of it — the MCP tool
-schemas are the source of truth for payload mechanics, not anyone's memory of
-them.
-*Source: `mcp/skills/katagami-contributor/SKILL.md`, "Before contributing" items 1 and 4; opening paragraph, "Its current tool schemas are the source of truth for payload mechanics".*
-
-**C30. Search the published commons for overlap before making something new.** — convention
-The existing library is the context. Making a language that already exists is a
-failure of research rather than of taste.
-*Source: same file, "Before contributing" item 2.*
-
-**C31. A remix begins with the remix tool and keeps the id it returns; lineage is
-preserved rather than reconstructed afterwards.** — convention
-*Source: same file, "Before contributing" item 3; "Palettes and design languages", "Preserve lineage for remixes".*
-
-#### Where a style's authority comes from
-
-**C32. An art style is a transferable technique expressed at the level of a
-tradition — never an imitation of a living or unlicensed artist.** — judgment
-The prompt may not name a living artist, a studio, or any other impersonation
-target, and the recipe has to be attested as tradition-level rather than
-person-level.
-*Source: same file, "ArtStyle contract" opening; "One canonical prompt" exclusions; "Rights and source review".*
-
-**C33. An independent source-basis review checks every named person and every
-hidden attribution target, and is written by someone other than whoever wrote
-the prompt.** — convention
-It records authoritative sources for the public-domain traditions and techniques
-the style draws on, and rejects living or unlicensed artist imitation.
-*Source: same file, "Rights and source review".*
-
-**C34. Credits name the traditions and sources actually used. The catalog name is
-metadata, not evidence.** — convention
-An evocative name is not a citation and cannot stand in for one.
-*Source: same file, "Rights and source review", closing paragraph.*
-
-#### The canonical prompt
-
-**C35. One paste-ready paragraph, made only of observable aesthetic facts, that
-works with no reference image — carrying medium and material, marks and edges,
-depiction grammar, tonal logic, colour roles, composition, signature process
-details, and exclusions.** — judgment
-Eight named dimensions, in style-appropriate language. Whether a paragraph
-actually carries them is a reading judgement, not a check.
-*Source: same file, "One canonical prompt", the eight numbered requirements.*
-
-**C36. The prompt carries no placeholders, no catalog name, no negative-prompt or
-model-specific variants, no dependency on a reference image, and no instruction
-to preserve what the technique exists to replace.** — convention
-*Source: same file, "One canonical prompt", the "Do not include" list.*
-
-**C37. Every model receives the same aesthetic facts; adapters translate API
-mechanics only.** — convention
-Where an API places inline exclusions, or whether an edit endpoint exposes
-strength, may differ between models. The aesthetic content may not.
-*Source: same file, "One canonical prompt", closing paragraph.*
-
-#### Proving the style actually transfers
-
-**C38. Portability is proved across four subject roles and four distinct source
-media, with the identical files and the exact prompt sent to two distinct image
-models — eight outputs.** — convention
-A single source across two models checks cross-model consistency and proves
-nothing about transfer across subjects or media, which is the property being
-claimed.
-*Source: same file, "Portability evidence", the four roles, the four source media, and the two-model requirement.*
-
-**C39. Style-reference images are never the backbone of the matrix.** — convention
-They are an optional supplement outside this gate.
-*Source: same file, "Portability evidence".*
-
-**C40. Every source and every output is imported, and its locked file id and
-SHA-256 preserved and bound to the generation record** — with the canonical
-prompt hash, the model, and the provider request id where the provider gives
-one. — convention
-*Source: same file, "Portability evidence", the three numbered steps.*
-
-**C41. Exactly eight proof items — two models for each of the four categories —
-with both model rows pointing at the same source id and hash, and the strongest
-output chosen as the thumbnail.** — convention
-No subject role is privileged in that choice.
-*Source: same file, "Portability evidence", final paragraph.*
-
-#### Reviewing the work before submitting it
-
-**C42. An independent prompt review quotes substantive, non-overlapping evidence
-for each of the eight dimensions, and attests that the style is independent of
-its source medium.** — convention
-*Source: same file, "Independent prompt and visual review", first paragraph.*
-
-**C43. A blind portability review scores every anonymous output on the eight
-dimensions against fixed thresholds — content preserved, source medium fully
-replaced, medium and depiction grammar at full marks, average at least 1.5 — and
-one model may not hide behind the other's average.** — convention
-*Source: same file, "Independent prompt and visual review", the scoring list and thresholds.*
-
-**C44. The verdict follows the deterministic formula after the semantic review,
-and any contradiction between the prose, the booleans, the scores and the
-verdict is resolved explicitly — never by quietly flipping a score or a label.** — convention
-The rejected review is preserved when that happens.
-*Source: same file, "Independent prompt and visual review", final paragraph.*
-
-#### Who owns what
-
-**C45. The contributor authors the work and owns its source and proof images.** — convention
-Katagami stores, hashes and verifies imported images; it does not generate or
-edit images for outside contributors. TemperPaw contributors may create images
-with PawMedia before importing them; everyone else uses their own tools.
-*Source: same file, "Ownership boundary", first three bullets.*
-
-**C46. Contributors never call the finalizer-owned verification, quality, review,
-published-asset or publish actions.** — policy
-A successful art-style submission comes back `VerificationQueued`, and the
-curator finalizer alone advances or publishes it. Unlike most of this section
-this one is not merely expected — the commons policies refuse it.
-*Source: same file, "Ownership boundary", last two bullets, and "Submit"; enforced by `katagami-commons/policies/art_style.cedar` (the contributor forbid, and the `Agent::"system"` finalizer forbid).*
-
-**C47. Report the status the tool returned, not the status you expected.** — convention
-The lanes do not all behave the same way, and predicting a transition instead of
-reading it is how a submission gets reported as further along than it is.
-*Source: same file, "Palettes and design languages", closing sentence.*
+**C28. The agent reads design-language.md and never lists Accepted TasteRule entities.** — machine
+`ReadDesignRules` is the only way into `Authoring`. The hint names the file.
+*Source: spec, action `ReadDesignRules`; `knowledge/rules/design-language.md`.*
 
 ---
 
@@ -389,18 +244,18 @@ That is the safe direction: no verdict means no publish.
 *Source: spec, action `Abandon`; invariant `AbandonedIsFinal`.*
 
 **R12. A review that stalls is abandoned automatically** — fifteen minutes before
-starting, one hour without a verdict. — machine
-*Source: spec, `[[state_timeout]]` on `SubmissionReceived` (900s) and `Reviewing` (3600s).*
+starting, two hours without a verdict. — machine
+*Source: spec, `[[state_timeout]]` on `SubmissionReceived` (900s) and `Reviewing` (7200s).*
 
 ### The record it leaves
 
 **R13. A review records its own capture identity, the same way a curator run
 does.** — machine
-*Source: spec, action `ReceiveSubmission` params `session_id`, `trajectory_id`, `spec_version`, `harness`.*
+*Source: spec, action `RecordSubmissionRef` params `session_id`, `trajectory_id`, `spec_version`, `harness`.*
 
-**R14. A review names the curator run and the specific submissions it is ruling
+**R14. A review names the curator run and the specific artifact it is ruling
 on.** — machine
-*Source: spec, action `ReceiveSubmission` params `curator_agent_id`, `submission_type`, `submission_ids`.*
+*Source: spec, action `RecordSubmissionRef` params `curator_agent_id`, `submission_type`, `reviewed_entity_id`.*
 
 ### What only a person can judge
 
@@ -415,6 +270,12 @@ supports it.** — convention
 The three values are the documented vocabulary; nothing rejects a fourth string,
 and nothing checks that the rationale matches the verdict.
 *Source: spec, action `RecordVerdict` hint; `verdict` is a free string state var.*
+
+**R17. The reviewer opens every listed artifact before ruling.** — machine
+DESIGN.md, landing, embodiment, dashboard, shadcn, thumbnail. `RecordVerdict`
+requires each open flag. `LoadRulebook` reads `design-language.md`, not
+Accepted TasteRule entities.
+*Source: spec, actions `OpenDesignMd`, `OpenLanding`, `OpenEmbodiment`, `OpenDashboard`, `OpenShadcn`, `OpenThumbnail`; invariant `VerdictRequiresArtifactsOpened`.*
 
 ---
 
@@ -439,7 +300,8 @@ not from the queue.** — machine
 *Source: spec, actions `Publish` and `ReturnWithCritique`, both `from = ["Reviewing"]`.*
 
 **H3. A submission is published once, or returned once, and that is the end.** — machine
-*Source: spec, invariants `PublishedIsFinal` and `ReturnedIsFinal`.*
+A return reopens the work on the language; this assignment is finished.
+*Source: spec, invariants `PublishedIsFinal` and `CritiqueReopens`.*
 
 ### The publish gate
 
@@ -464,12 +326,12 @@ Not "any authenticated human" — the named holder. An assignment with no holder
 not publishable at all.
 *Source: `policies/human_curator.cedar`, forbid unless `resource.assignee_ref != "" && principal.id == resource.assignee_ref`.*
 
-**H7. No agent publishes or returns with critique, whatever kind of agent it
-says it is.** — policy
-Excluded by the principal's **type**, not by an attribute it declares about
-itself. The attribute version was evadable: the agent-type header is optional, so
-an agent that simply omitted it was allowed to publish.
-*Source: `policies/human_curator.cedar`, `forbid(principal is Agent, action in [Publish, ReturnWithCritique], ...)`.*
+**H7. No agent decides to publish or return; an agent may execute Publish after ApprovePublish.** — policy
+`ApprovePublish` and `ReturnWithCritique` are excluded by the principal's
+**type**. `Publish` is allowed for a declared non-contributor agent only after
+`has_publish_approval`. The attribute version was evadable: the agent-type
+header is optional, so an agent that simply omitted it was allowed to decide.
+*Source: `policies/human_curator.cedar`, `forbid(principal is Agent, action in [ApprovePublish, ReturnWithCritique])`; Publish unless holder or approved agent; spec action `ApprovePublish`; invariant `HumanDecidesPublish`.*
 
 **H8. An agent that will not declare what kind of agent it is gets nothing on this
 record.** — policy
@@ -574,10 +436,10 @@ pipeline finalizer is named by id, so neither pays for it.
 
 | Actor | Items | machine | policy | judgment | convention |
 |---|---|---|---|---|---|
-| CuratorAgent | 47 (C1–C47) | 16 | 4 | 10 | 17 |
-| ReviewAgent | 16 (R1–R16) | 10 | 4 | 0 | 2 |
+| CuratorAgent | 28 (C1–C28) | 18 | 2 | 8 | 0 |
+| ReviewAgent | 17 (R1–R17) | 11 | 4 | 0 | 2 |
 | HumanCurator | 22 (H1–H22) | 8 | 9 | 1 | 4 |
-| **Total** | **85** | **34** | **17** | **11** | **23** |
+| **Total** | **67** | **37** | **15** | **9** | **6** |
 
 These counts are recomputed from the items themselves by
 `katagami-curation/tests/test_behavior_inventory_contract.py`, so the table
@@ -620,26 +482,9 @@ pass/revise/reject, but nothing rejects a fourth value. Worth constraining in th
 spec, or worth leaving as a convention item the study can measure? Constraining it
 is a spec change, not a documentation change.
 
-**6. The deep research craft belongs to a different actor, and is not in this
-inventory.** C29–C47 are the work as the **contributor** path describes it,
-because that is the path that drives a `CuratorAgent` record. The pipeline's own
-curator does far more research than this — `agents/curator/skills/research-direction`
-runs web searches, holds sources to a quality bar (official design system docs,
-academic references for established movements; reject SEO filler and category
-pages), targets 5–8 strong sources per movement, and indexes each one as a
-`DesignSource`. None of it appears here, because those skills drive
-`CurationJob`, `CurationDirection` and `DesignSource` — verified: the string
-`CuratorAgent` appears nowhere under `katagami-curation/agents/`.
+**6. ~~C29–C47 were the old contributor path.~~ DECIDED (D32):** dropped.
+whoami, remix, and art-style portability were copied from the old
+`katagami-contributor` skill. This phase is source_search + synthesize.
+Research conduct is C1–C5. Taste judgment is C20–C27.
 
-That is a real scoping decision, not a gap I can close by writing more items. If
-the study is about the contributor path, this inventory is complete. If it is
-about how Katagami actually makes languages day to day, the pipeline actor needs
-its own section — and probably its own actor spec, since it currently has no JCS
-record at all. My read is that a fourth section would roughly double the
-document and is worth doing only if the study is meant to cover the internal
-pipeline; but it is your call, and it changes what the study can claim.
-
-**5. Escalation has no ceiling.** `escalation_count` increments and nothing reads
-it, so an assignment can escalate and be reassigned indefinitely. That may be
-correct — a submission should not be published just because it has been bounced
-around — but it means "nobody ever answers" has no terminal state.
+**5. ~~Escalation has no ceiling.~~ DECIDED:** bounded at 3 (`EscalationLoopBounded`).

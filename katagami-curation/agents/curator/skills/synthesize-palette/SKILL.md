@@ -19,17 +19,15 @@ finalizer-owned internal actions.
 Read the knowledge files for taste orientation:
 - `/system/knowledge/design-principles.md`
 - `/system/knowledge/quality-standards.md`
+- `knowledge/rules/design-language.md`
+
+That last file is the rulebook. Do **not** list `TasteRules` entities.
 
 Check what already exists so your palette is distinct:
 ```python
 existing = temper.list('PaletteSystems', '')
 ```
 Note existing hues, temperatures, and moods. Your palette must be distinct.
-
-Load accepted taste rules and apply only `Accepted` ones:
-```python
-accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")
-```
 
 ## Execution Discipline
 

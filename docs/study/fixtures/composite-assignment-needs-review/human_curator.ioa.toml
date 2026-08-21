@@ -1,0 +1,306 @@
+# HumanCurator - I/O Automaton Specification
+#
+# The ROLE of publishing curator (ARN-294). This entity models the role and
+# one assignment of work to it — never a person. It carries no name, no email,
+# no account: identity lives on Member (katagami-commons/specs/member.ioa.toml)
+# and the role record points at whoever currently holds it via an opaque
+# `assignee_ref`. Deleting or reassigning the role never touches a human's
+# record, and reading the role never discloses one.
+#
+# The human decides; an agent may execute Publish after that decision (D28).
+# ApprovePublish is the decision. Publish is the execution. Cedar forbids
+# any agent from ApprovePublish. Cedar allows a declared non-contributor
+# agent to Publish only after has_publish_approval is true.
+#
+# The artifact-side boundary is still commons policy, and this spec does
+# NOT restate or relax it:
+#
+#   - katagami-commons/policies/design_language.cedar forbids contributor
+#     agents from Publish (and Revise/Archive/MarkQualityPassed/... ) on
+#     DesignLanguage.
+#   - katagami-commons/policies/art_style.cedar forbids contributor agents from
+#     SubmitForReview/Publish/... on ArtStyle, and restricts the finalizer
+#     actions to Agent::"system".
+#   - policies/human_curator.cedar (this app) forbids ANY agent principal from
+#     ApprovePublish and ReturnWithCritique on this role record, and binds
+#     ApprovePublish to the assignment's own holder (`principal.id ==
+#     assignee_ref`). Publish may be executed by that holder or by a
+#     declared non-contributor agent after ApprovePublish.
+#
+# Two orderings hold by construction:
+#
+# 1. A machine review must have ruled before publishing is available: Publish
+#    is guarded on `cross_entity_state` requiring the linked ReviewAgent to be
+#    in VerdictRecorded (review_agent.ioa.toml).
+# 2. The human is never a silent single point of failure: both working states
+#    carry a state timeout onto ReviewOverdue -> Escalated, so an assignment
+#    nobody picks up surfaces as an escalation instead of stalling the queue
+#    forever. Escalated is recoverable at most three times — Reassign returns
+#    it to SubmissionAssigned under a new holder. After the third escalation
+#    Reassign is blocked and the assignment stops circulating.
+#
+# Lifecycle: SubmissionAssigned -> Reviewing -> Published | ReturnedWithCritique
+#            SubmissionAssigned | Reviewing -> Escalated -> SubmissionAssigned
+
+[automaton]
+name = "HumanCurator"
+states = [
+  "SubmissionAssigned",
+  "Reviewing",
+  "Published",
+  "ReturnedWithCritique",
+  "Escalated",
+]
+initial = "SubmissionAssigned"
+allow_indefinite_states = ["Published", "ReturnedWithCritique", "Escalated"]
+
+# --- The assignment ---
+
+# Opaque reference to whoever holds the role right now. Never a name, never an
+# address — the role is the subject here.
+#
+# It carries the holder's PRINCIPAL ID, because policies/human_curator.cedar
+# binds ApprovePublish and ReturnWithCritique to `principal.id == resource.assignee_ref`
+# — without that binding any authenticated human could publish somebody else's
+# assignment. A rota handle is resolved to the current holder's principal id
+# before AssignSubmission is called; an assignment whose assignee_ref is empty
+# or unresolvable is not publishable, which is the safe direction.
+[[state]]
+name = "assignee_ref"
+type = "string"
+initial = ""
+
+# "DesignLanguage" | "ArtStyle" | "PaletteSystem" | "WritingStyle"
+[[state]]
+name = "submission_type"
+type = "string"
+initial = ""
+
+[[state]]
+name = "submission_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "curator_agent_id"
+type = "string"
+initial = ""
+
+# The ReviewAgent run whose verdict gates Publish.
+[[state]]
+name = "review_agent_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "has_assignment"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_review_verdict"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_publish_approval"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "review_verdict"
+type = "string"
+initial = ""
+
+# --- Capture identity (ARN-293) ---
+
+[[state]]
+name = "session_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "trajectory_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "spec_version"
+type = "string"
+initial = ""
+
+[[state]]
+name = "harness"
+type = "string"
+initial = ""
+
+# --- Outcome ---
+
+[[state]]
+name = "critique"
+type = "string"
+initial = ""
+
+[[state]]
+name = "curator_notes"
+type = "string"
+initial = ""
+
+[[state]]
+name = "escalation_reason"
+type = "string"
+initial = ""
+
+[[state]]
+name = "escalation_count"
+type = "counter"
+initial = 0
+
+# The submission ids the linked ReviewAgent says it reviewed, copied from that
+# record at assignment time.
+#
+# It exists so the mismatch is VISIBLE: Publish's cross-entity guard can check
+# that the linked review reached VerdictRecorded, but the kernel cannot compare
+# one entity's field with another's, so it cannot check that the review was of
+# THIS submission. Recording both sides means a reader — or a conformance
+# judge — can see whether they agree, instead of the question being unaskable.
+# Making it a machine gate needs a field-equality guard in the kernel.
+[[state]]
+name = "reviewed_submission_ids"
+type = "string"
+initial = ""
+
+# --- SubmissionAssigned ---
+
+[[action]]
+name = "AssignSubmission"
+kind = "input"
+from = ["SubmissionAssigned"]
+params = ["assignee_ref", "submission_type", "submission_ids", "reviewed_submission_ids", "curator_agent_id", "review_agent_id", "session_id", "trajectory_id", "spec_version", "harness"]
+effect = [{ type = "set_bool", var = "has_assignment", value = "true" }]
+hint = "Route one reviewed submission to the publishing role. assignee_ref is the current holder's principal id — an opaque reference, never a person's name or address — and Cedar binds Publish and ReturnWithCritique to it, so an empty or stale assignee_ref makes the assignment unpublishable. review_agent_id links the machine review whose verdict gates Publish; set reviewed_submission_ids from THAT record's own submission_ids, so a review of some other submission is visible as a mismatch rather than passing as a review of this one."
+
+[[action]]
+name = "RecordReviewVerdict"
+kind = "input"
+from = ["SubmissionAssigned", "Reviewing"]
+params = ["review_verdict"]
+effect = [{ type = "set_bool", var = "has_review_verdict", value = "true" }]
+hint = "Carry the ReviewAgent verdict (pass/revise/reject) onto the assignment so the human sees it before deciding. Reaction target for ReviewVerdictRecordedEvent."
+
+[[action]]
+name = "BeginReview"
+kind = "input"
+from = ["SubmissionAssigned"]
+to = "Reviewing"
+guard = [{ type = "is_true", var = "has_assignment" }]
+hint = "The role holder picks the assignment up."
+
+# --- Reviewing ---
+
+[[action]]
+name = "ApprovePublish"
+kind = "input"
+from = ["Reviewing"]
+params = ["curator_notes"]
+guard = [
+  { type = "is_true", var = "has_assignment" },
+  { type = "is_true", var = "has_review_verdict" },
+  { type = "is_false", var = "has_publish_approval" },
+  { type = "cross_entity_state", entity_type = "ReviewAgent", entity_id_source = "review_agent_id", required_status = ["VerdictRecorded"], required = true },
+]
+effect = [{ type = "set_bool", var = "has_publish_approval", value = "true" }]
+hint = "The human decides to publish. Cedar forbids every agent from this action. After this, Publish may be executed by the holder or by an agent on the human's decision."
+
+[[action]]
+name = "Publish"
+kind = "input"
+from = ["Reviewing"]
+to = "Published"
+params = ["curator_notes"]
+guard = [
+  { type = "is_true", var = "has_assignment" },
+  { type = "is_true", var = "has_review_verdict" },
+  { type = "is_true", var = "has_publish_approval" },
+  # `required = true` is load-bearing. The kernel resolves a cross-entity guard
+  # over an ABSENT ref as vacuously true (Guard::CrossEntityState, `required`
+  # defaults to false), so without it an assignment that simply never recorded
+  # a review_agent_id satisfied "the machine review acted first" by having no
+  # machine review at all — and `has_review_verdict` is set by an unguarded
+  # action, so nothing else stood in the way.
+  { type = "cross_entity_state", entity_type = "ReviewAgent", entity_id_source = "review_agent_id", required_status = ["VerdictRecorded"], required = true },
+]
+hint = "Execute the publish. Reachable only from Reviewing, only once (Published is terminal), only after ApprovePublish, and only after the ReviewAgent named by review_agent_id exists and reached VerdictRecorded. WHAT IS NOT MACHINE-CHECKED: that the linked review reviewed THIS submission. The kernel's guard vocabulary can compare a related entity's STATUS but not its fields, so linking any ReviewAgent that has recorded a verdict satisfies this guard. AssignSubmission records reviewed_submission_ids for exactly that comparison; making it a guard needs a field-equality guard in the kernel. Until then the match is the caller's obligation, checked in review, not by construction. Cedar lets the named holder or a declared non-contributor agent execute this after ApprovePublish; the artifact-side Publish stays governed by the existing commons policies, which this spec neither restates nor relaxes."
+
+# POISON: ReturnWithCritique removed. AssignmentEventuallyResolved still declared.
+
+[[action]]
+name = "CuratorPublishedEvent"
+kind = "output"
+hint = "Emitted when the role publishes a submission."
+
+[[action]]
+name = "CuratorReturnedEvent"
+kind = "output"
+hint = "Emitted when the role returns a submission with critique."
+
+# --- Escalation: the human is never a silent single point of failure ---
+
+# POISON: ReviewOverdue removed.
+
+# POISON: Reassign removed (Escalated is unreachable without ReviewOverdue;
+# leaving it made L1 fail on a dead transition before composite ran).
+
+[[action]]
+name = "ReviewEscalatedEvent"
+kind = "output"
+hint = "Emitted when an assignment escalates, so the human channel is told."
+
+# --- Stall detection ---
+# POISON: ReviewOverdue timeouts removed with the action.
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = "ReviewingRequiresAssignment"
+when = ["Reviewing"]
+assert = "has_assignment"
+
+[[invariant]]
+name = "OneHolder"
+when = ["Reviewing", "Published"]
+assert = "has_assignment"
+
+[[invariant]]
+name = "HumanDecidesPublish"
+when = ["Published"]
+assert = "has_publish_approval && has_review_verdict"
+
+[[invariant]]
+name = "PublishedRequiresReviewVerdict"
+when = ["Published"]
+assert = "has_review_verdict"
+
+[[invariant]]
+name = "PublishedIsFinal"
+when = ["Published"]
+assert = "no_further_transitions"
+
+[[invariant]]
+name = "CritiqueReopens"
+when = ["ReturnedWithCritique"]
+assert = "no_further_transitions"
+
+# (a) FALSIFIABLE by a widened ReviewOverdue or Reassign guard. After three
+# unanswered escalations the assignment is parked.
+[[invariant]]
+name = "EscalationLoopBounded"
+assert = "escalation_count <= 3"
+
+# Weak liveness: the graph cannot trap an assignment in a live state with no
+# exit. Escalated is a legal terminal after the third overdue. Exactly one
+# ReachesState property — the checker merges them.
+[[liveness]]
+name = "AssignmentEventuallyResolved"
+from = ["SubmissionAssigned"]
+reaches = ["Published", "ReturnedWithCritique", "Escalated"]

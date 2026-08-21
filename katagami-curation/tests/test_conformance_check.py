@@ -93,8 +93,8 @@ def trajectory(turns, *, version=None):
 
 
 CONFORMING = [
-    call(1, "ReceiveBrief"),
-    call(2, "BeginDrafting"),
+    call(1, "RecordBriefRef"),
+    call(2, "AcceptBrief"),
     call(3, "RecordDesignLanguage"),
     call(4, "SelfReview"),
     call(5, "SubmitDesignLanguages"),
@@ -168,8 +168,8 @@ class ReplayTest(unittest.TestCase):
 
     def test_submitting_without_self_review_is_an_illegal_transition(self):
         turns = [
-            call(1, "ReceiveBrief"),
-            call(2, "BeginDrafting"),
+            call(1, "RecordBriefRef"),
+            call(2, "AcceptBrief"),
             call(3, "RecordDesignLanguage"),
             call(4, "SubmitDesignLanguages"),
         ]
@@ -186,8 +186,8 @@ class ReplayTest(unittest.TestCase):
 
     def test_a_lane_that_produced_nothing_trips_its_guard(self):
         turns = [
-            call(1, "ReceiveBrief"),
-            call(2, "BeginDrafting"),
+            call(1, "RecordBriefRef"),
+            call(2, "AcceptBrief"),
             call(3, "SelfReview"),
             call(4, "SubmitDesignLanguages"),
         ]
@@ -198,7 +198,7 @@ class ReplayTest(unittest.TestCase):
         self.assertIn("has_design_language_ids", violation["detail"])
 
     def test_the_concurrency_budget_is_enforced_at_eleven_claims(self):
-        turns = [call(1, "ReceiveBrief"), call(2, "BeginDrafting")]
+        turns = [call(1, "RecordBriefRef"), call(2, "AcceptBrief")]
         turns += [call(3 + i, "ClaimJob") for i in range(11)]
         verdict = self._check(turns)
         self.assertFalse(verdict["passed"])
@@ -206,7 +206,7 @@ class ReplayTest(unittest.TestCase):
         self.assertIn("jobs_in_flight", violation["detail"])
 
     def test_ten_claims_are_within_budget(self):
-        turns = [call(1, "ReceiveBrief"), call(2, "BeginDrafting")]
+        turns = [call(1, "RecordBriefRef"), call(2, "AcceptBrief")]
         turns += [call(3 + i, "ClaimJob") for i in range(10)]
         self.assertTrue(self._check(turns)["passed"])
 
@@ -215,7 +215,7 @@ class ReplayTest(unittest.TestCase):
         self.assertEqual(verdict["violations"][0]["kind"], "unknown_action")
 
     def test_an_output_action_cannot_be_invoked(self):
-        verdict = self._check([call(1, "ReceiveBrief"), call(2, "CuratorSubmittedEvent")])
+        verdict = self._check([call(1, "RecordBriefRef"), call(2, "CuratorSubmittedEvent")])
         kinds = {v["kind"] for v in verdict["violations"]}
         self.assertIn("output_action_invoked", kinds)
 
@@ -241,9 +241,9 @@ class ReplayTest(unittest.TestCase):
 
     def test_a_rejected_call_changes_nothing(self):
         turns = [
-            call(1, "ReceiveBrief"),
+            call(1, "RecordBriefRef"),
             call(2, "SubmitDesignLanguages", success=False),
-            call(3, "BeginDrafting"),
+            call(3, "AcceptBrief"),
         ]
         verdict = self._check(turns)
         self.assertTrue(verdict["passed"], verdict["violations"])
@@ -256,7 +256,7 @@ class ReplayTest(unittest.TestCase):
         self.assertIn("cross_entity_state", kinds)
 
     def test_calls_are_recognized_from_an_explicit_argument_pair_too(self):
-        turns = [call(1, "ReceiveBrief", url=False), call(2, "BeginDrafting", url=False)]
+        turns = [call(1, "RecordBriefRef", url=False), call(2, "AcceptBrief", url=False)]
         verdict = self._check(turns)
         self.assertEqual(verdict["final_state"], "Drafting")
 
@@ -295,7 +295,7 @@ class ReplayTest(unittest.TestCase):
                             "action": "Bash",
                             "arguments": {
                                 "command": "curl -X POST "
-                                "https://temper/tdata/CuratorAgents('r')/ReceiveBrief"
+                                "https://temper/tdata/CuratorAgents('r')/RecordBriefRef"
                             },
                         },
                         "consequence": {"success": True},
@@ -365,8 +365,8 @@ class PerEntityReplayTest(unittest.TestCase):
         # submits having done nothing at all. Merged, the machine was sitting
         # in SelfReviewed and called it legal.
         turns = [
-            call(1, "ReceiveBrief", entity="run-a"),
-            call(2, "BeginDrafting", entity="run-a"),
+            call(1, "RecordBriefRef", entity="run-a"),
+            call(2, "AcceptBrief", entity="run-a"),
             call(3, "RecordDesignLanguage", entity="run-a"),
             call(4, "SelfReview", entity="run-a"),
             call(5, "SubmitDesignLanguages", entity="run-b"),
@@ -387,8 +387,8 @@ class PerEntityReplayTest(unittest.TestCase):
         turn_id = 0
         for entity in ("run-a", "run-b"):
             for action in (
-                "ReceiveBrief",
-                "BeginDrafting",
+                "RecordBriefRef",
+                "AcceptBrief",
                 "RecordDesignLanguage",
                 "SelfReview",
                 "SubmitDesignLanguages",
@@ -408,8 +408,8 @@ class PerEntityReplayTest(unittest.TestCase):
         turns = []
         turn_id = 0
         for action in (
-            "ReceiveBrief",
-            "BeginDrafting",
+            "RecordBriefRef",
+            "AcceptBrief",
             "RecordDesignLanguage",
             "SelfReview",
             "SubmitDesignLanguages",
@@ -428,15 +428,15 @@ class PerEntityReplayTest(unittest.TestCase):
 
     def test_several_entities_report_no_single_final_state(self):
         turns = [
-            call(1, "ReceiveBrief", entity="run-a"),
-            call(2, "ReceiveBrief", entity="run-b"),
+            call(1, "RecordBriefRef", entity="run-a"),
+            call(2, "RecordBriefRef", entity="run-b"),
         ]
         verdict = self._check(turns)
         self.assertEqual(verdict["final_state"], "")
         self.assertEqual(len(verdict["final_states"]), 2)
 
     def test_calls_naming_no_entity_are_flagged_as_unverifiable(self):
-        turns = [call(1, "ReceiveBrief", url=False, entity="")]
+        turns = [call(1, "RecordBriefRef", url=False, entity="")]
         verdict = self._check(turns)
         kinds = {u["kind"] for u in verdict["unverifiable"]}
         self.assertIn("unidentified_entity", kinds)
@@ -479,7 +479,7 @@ class RequestTargetTest(unittest.TestCase):
         return conformance.extract_actor_calls(
             trajectory([self._tool_call(tool, arguments)]),
             "CuratorAgent",
-            frozenset({"SubmitDesignLanguages", "ReceiveBrief"}),
+            frozenset({"SubmitDesignLanguages", "RecordBriefRef"}),
         )
 
     def test_writing_a_file_that_mentions_an_action_is_not_performing_it(self):

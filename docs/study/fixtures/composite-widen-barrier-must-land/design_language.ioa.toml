@@ -1,0 +1,13 @@
+# Stub so Direction's quarantine trigger has a target. Not the commons
+# DesignLanguage. The poison under test is queue_synthesis_widens_query_barrier.
+
+[automaton]
+name = "DesignLanguage"
+states = ["Draft", "UnderReview", "Published", "Archived"]
+initial = "Draft"
+allow_indefinite_states = ["Draft", "UnderReview", "Published", "Archived"]
+
+[[action]]
+name = "Archive"
+from = ["Draft", "UnderReview", "Published"]
+to = "Archived"

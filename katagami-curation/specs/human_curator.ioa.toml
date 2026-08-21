@@ -7,8 +7,13 @@
 # `assignee_ref`. Deleting or reassigning the role never touches a human's
 # record, and reading the role never discloses one.
 #
-# Publish is exclusively this actor's. That boundary is enforced in Cedar, not
-# here, and this spec does NOT restate or relax it:
+# The human decides; an agent may execute Publish after that decision (D28).
+# ApprovePublish is the decision. Publish is the execution. Cedar forbids
+# any agent from ApprovePublish. Cedar allows a declared non-contributor
+# agent to Publish only after has_publish_approval is true.
+#
+# The artifact-side boundary is still commons policy, and this spec does
+# NOT restate or relax it:
 #
 #   - katagami-commons/policies/design_language.cedar forbids contributor
 #     agents from Publish (and Revise/Archive/MarkQualityPassed/... ) on
@@ -17,9 +22,10 @@
 #     SubmitForReview/Publish/... on ArtStyle, and restricts the finalizer
 #     actions to Agent::"system".
 #   - policies/human_curator.cedar (this app) forbids ANY agent principal from
-#     the Publish and ReturnWithCritique actions on this role record, and binds
-#     both to the assignment's own holder (`principal.id == assignee_ref`), so
-#     one named human answers for the decision rather than any human at all.
+#     ApprovePublish and ReturnWithCritique on this role record, and binds
+#     ApprovePublish to the assignment's own holder (`principal.id ==
+#     assignee_ref`). Publish may be executed by that holder or by a
+#     declared non-contributor agent after ApprovePublish.
 #
 # Two orderings hold by construction:
 #
@@ -29,8 +35,9 @@
 # 2. The human is never a silent single point of failure: both working states
 #    carry a state timeout onto ReviewOverdue -> Escalated, so an assignment
 #    nobody picks up surfaces as an escalation instead of stalling the queue
-#    forever. Escalated is recoverable — Reassign returns it to
-#    SubmissionAssigned under a new holder.
+#    forever. Escalated is recoverable at most three times — Reassign returns
+#    it to SubmissionAssigned under a new holder. After the third escalation
+#    Reassign is blocked and the assignment stops circulating.
 #
 # Lifecycle: SubmissionAssigned -> Reviewing -> Published | ReturnedWithCritique
 #            SubmissionAssigned | Reviewing -> Escalated -> SubmissionAssigned
@@ -53,7 +60,7 @@ allow_indefinite_states = ["Published", "ReturnedWithCritique", "Escalated"]
 # address — the role is the subject here.
 #
 # It carries the holder's PRINCIPAL ID, because policies/human_curator.cedar
-# binds Publish and ReturnWithCritique to `principal.id == resource.assignee_ref`
+# binds ApprovePublish and ReturnWithCritique to `principal.id == resource.assignee_ref`
 # — without that binding any authenticated human could publish somebody else's
 # assignment. A rota handle is resolved to the current holder's principal id
 # before AssignSubmission is called; an assignment whose assignee_ref is empty
@@ -92,6 +99,11 @@ initial = "false"
 
 [[state]]
 name = "has_review_verdict"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_publish_approval"
 type = "bool"
 initial = "false"
 
@@ -187,6 +199,20 @@ hint = "The role holder picks the assignment up."
 # --- Reviewing ---
 
 [[action]]
+name = "ApprovePublish"
+kind = "input"
+from = ["Reviewing"]
+params = ["curator_notes"]
+guard = [
+  { type = "is_true", var = "has_assignment" },
+  { type = "is_true", var = "has_review_verdict" },
+  { type = "is_false", var = "has_publish_approval" },
+  { type = "cross_entity_state", entity_type = "ReviewAgent", entity_id_source = "review_agent_id", required_status = ["VerdictRecorded"], required = true },
+]
+effect = [{ type = "set_bool", var = "has_publish_approval", value = "true" }]
+hint = "The human decides to publish. Cedar forbids every agent from this action. After this, Publish may be executed by the holder or by an agent on the human's decision."
+
+[[action]]
 name = "Publish"
 kind = "input"
 from = ["Reviewing"]
@@ -195,6 +221,7 @@ params = ["curator_notes"]
 guard = [
   { type = "is_true", var = "has_assignment" },
   { type = "is_true", var = "has_review_verdict" },
+  { type = "is_true", var = "has_publish_approval" },
   # `required = true` is load-bearing. The kernel resolves a cross-entity guard
   # over an ABSENT ref as vacuously true (Guard::CrossEntityState, `required`
   # defaults to false), so without it an assignment that simply never recorded
@@ -203,7 +230,7 @@ guard = [
   # action, so nothing else stood in the way.
   { type = "cross_entity_state", entity_type = "ReviewAgent", entity_id_source = "review_agent_id", required_status = ["VerdictRecorded"], required = true },
 ]
-hint = "The human publishes. Reachable only from Reviewing, only once (Published is terminal), and only after the ReviewAgent named by review_agent_id exists and reached VerdictRecorded. WHAT IS NOT MACHINE-CHECKED: that the linked review reviewed THIS submission. The kernel's guard vocabulary can compare a related entity's STATUS but not its fields, so linking any ReviewAgent that has recorded a verdict satisfies this guard. AssignSubmission records reviewed_submission_ids for exactly that comparison; making it a guard needs a field-equality guard in the kernel. Until then the match is the caller's obligation, checked in review, not by construction. Cedar keeps this action off every agent principal; the artifact-side Publish stays governed by the existing commons policies, which this spec neither restates nor relaxes."
+hint = "Execute the publish. Reachable only from Reviewing, only once (Published is terminal), only after ApprovePublish, and only after the ReviewAgent named by review_agent_id exists and reached VerdictRecorded. WHAT IS NOT MACHINE-CHECKED: that the linked review reviewed THIS submission. The kernel's guard vocabulary can compare a related entity's STATUS but not its fields, so linking any ReviewAgent that has recorded a verdict satisfies this guard. AssignSubmission records reviewed_submission_ids for exactly that comparison; making it a guard needs a field-equality guard in the kernel. Until then the match is the caller's obligation, checked in review, not by construction. Cedar lets the named holder or a declared non-contributor agent execute this after ApprovePublish; the artifact-side Publish stays governed by the existing commons policies, which this spec neither restates nor relaxes."
 
 [[action]]
 name = "ReturnWithCritique"
@@ -232,8 +259,9 @@ kind = "input"
 from = ["SubmissionAssigned", "Reviewing"]
 to = "Escalated"
 params = ["escalation_reason"]
+guard = [{ type = "max_count", var = "escalation_count", max = 3 }]
 effect = [{ type = "increment", var = "escalation_count" }]
-hint = "The assignment went unanswered past its window. Fired by the state timeouts below, or by hand. Escalated is visible and countable, so a queue waiting on an absent human is a surfaced condition rather than silence."
+hint = "The assignment went unanswered past its window. Fired by the state timeouts below, or by hand. Escalated is visible and countable, so a queue waiting on an absent human is a surfaced condition rather than silence. Bounded at 3: after the third escalation the assignment stops circulating."
 
 [[action]]
 name = "Reassign"
@@ -241,7 +269,8 @@ kind = "input"
 from = ["Escalated"]
 to = "SubmissionAssigned"
 params = ["assignee_ref"]
-hint = "Hand the escalated assignment to another holder of the role. The submission stays unpublished until someone reviews it; escalation is a re-route, not a bypass."
+guard = [{ type = "max_count", var = "escalation_count", max = 3 }]
+hint = "Hand the escalated assignment to another holder of the role. The submission stays unpublished until someone reviews it; escalation is a re-route, not a bypass. Blocked once escalation_count has reached 3, so a neglected assignment becomes a parked human problem rather than an infinite rota."
 
 [[action]]
 name = "ReviewEscalatedEvent"
@@ -270,6 +299,16 @@ when = ["Reviewing"]
 assert = "has_assignment"
 
 [[invariant]]
+name = "OneHolder"
+when = ["Reviewing", "Published"]
+assert = "has_assignment"
+
+[[invariant]]
+name = "HumanDecidesPublish"
+when = ["Published"]
+assert = "has_publish_approval && has_review_verdict"
+
+[[invariant]]
 name = "PublishedRequiresReviewVerdict"
 when = ["Published"]
 assert = "has_review_verdict"
@@ -280,6 +319,20 @@ when = ["Published"]
 assert = "no_further_transitions"
 
 [[invariant]]
-name = "ReturnedIsFinal"
+name = "CritiqueReopens"
 when = ["ReturnedWithCritique"]
 assert = "no_further_transitions"
+
+# (a) FALSIFIABLE by a widened ReviewOverdue or Reassign guard. After three
+# unanswered escalations the assignment is parked.
+[[invariant]]
+name = "EscalationLoopBounded"
+assert = "escalation_count <= 3"
+
+# Weak liveness: the graph cannot trap an assignment in a live state with no
+# exit. Escalated is a legal terminal after the third overdue. Exactly one
+# ReachesState property — the checker merges them.
+[[liveness]]
+name = "AssignmentEventuallyResolved"
+from = ["SubmissionAssigned"]
+reaches = ["Published", "ReturnedWithCritique", "Escalated"]

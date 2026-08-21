@@ -2,8 +2,9 @@
 // identity lives on Member, and this record points at its current holder
 // through an opaque assignee_ref.
 //
-// Publish is exclusively the human's. This file TIGHTENS that boundary for the
-// role record and never relaxes the existing artifact-side one:
+// The human decides (ApprovePublish). An agent may execute Publish after
+// that decision. This file TIGHTENS that boundary for the role record and
+// never relaxes the existing artifact-side one:
 // katagami-commons/policies/design_language.cedar and art_style.cedar already
 // forbid contributor agents from Publish on DesignLanguage and ArtStyle, and
 // art_style.cedar restricts the finalizer actions to Agent::"system". Those
@@ -19,6 +20,7 @@ permit(
     Action::"AssignSubmission",
     Action::"RecordReviewVerdict",
     Action::"BeginReview",
+    Action::"ApprovePublish",
     Action::"Publish",
     Action::"ReturnWithCritique",
     Action::"ReviewOverdue",
@@ -27,39 +29,53 @@ permit(
   resource is HumanCurator
 );
 
-// No agent principal takes the two decisions that are the human's: publishing,
-// and returning with critique.
+// No agent principal takes the two decisions that are the human's:
+// ApprovePublish, and returning with critique. Publish is execution and may
+// be done by a declared non-contributor agent after approval (D28).
 //
 // Written against the principal's TYPE, the way wasm.cedar does it, and NOT
 // against `principal has agent_type`. That earlier spelling made the boundary
 // depend on an attribute the caller supplies: `x-temper-agent-type` is
 // optional, so an agent that simply omitted it shed the attribute, failed the
-// `has` test, and was allowed to Publish. A principal cannot decline to be an
+// `has` test, and was allowed to decide. A principal cannot decline to be an
 // Agent.
 forbid(
   principal is Agent,
-  action in [Action::"Publish", Action::"ReturnWithCritique"],
+  action in [Action::"ApprovePublish", Action::"ReturnWithCritique"],
   resource is HumanCurator
 );
 
-// The assignment is bound to its holder. "Not an agent" is not enough: any
-// authenticated human could otherwise publish somebody else's assigned
-// submission, and the whole point of assignee_ref is that one named holder
-// answers for this decision. Publishing therefore requires the principal to BE
-// the holder the record names, and an assignment with no holder is not
-// publishable at all.
-//
-// assignee_ref must carry the holder's principal id for this to bind. That is
-// stated on the spec (human_curator.ioa.toml) rather than left to convention:
-// a rota handle is resolved to the holder before AssignSubmission is called.
+// ApprovePublish and ReturnWithCritique are bound to the named holder.
+// An assignment with no holder is not decidable at all.
 forbid(
   principal,
-  action in [Action::"Publish", Action::"ReturnWithCritique"],
+  action in [Action::"ApprovePublish", Action::"ReturnWithCritique"],
   resource is HumanCurator
 ) unless {
   resource has assignee_ref &&
   resource.assignee_ref != "" &&
   principal.id == resource.assignee_ref
+};
+
+// Publish executes an already-made decision. The named holder may do it,
+// or a declared non-contributor agent may do it after ApprovePublish.
+// Contributor agents are still refused by the blanket contributor forbid
+// below. An undeclared agent is refused by the agent_type declaration rule.
+forbid(
+  principal,
+  action == Action::"Publish",
+  resource is HumanCurator
+) unless {
+  resource has assignee_ref &&
+  resource.assignee_ref != "" &&
+  resource has has_publish_approval &&
+  resource.has_publish_approval &&
+  (
+    principal.id == resource.assignee_ref ||
+    (principal is Agent &&
+     principal has agent_type &&
+     principal.agent_type != "contributor")
+  )
 };
 
 // --- Escalation is not a way around the binding above ---

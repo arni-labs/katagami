@@ -53,127 +53,124 @@ def guards(action):
     return guard if isinstance(guard, list) else [guard]
 
 
-SUBMIT_LANES = {
-    "SubmitDesignLanguages": ("DesignLanguage", "design_language_ids", "RecordDesignLanguage"),
-    "SubmitArtStyles": ("ArtStyle", "art_style_ids", "RecordArtStyle"),
-    "SubmitPaletteSystems": ("PaletteSystem", "palette_system_ids", "RecordPaletteSystem"),
-    "SubmitWritingStyles": ("WritingStyle", "writing_style_ids", "RecordWritingStyle"),
-}
-
-
 class CuratorAgentSpecTest(unittest.TestCase):
     def setUp(self):
         self.spec = load("curator_agent")
         self.actions = actions(self.spec)
         self.states = states(self.spec)
 
-    def _submit_actions(self):
-        return {
-            name: action
-            for name, action in self.actions.items()
-            if name.startswith("Submit")
-        }
-
-    def test_the_protocol_states_are_present_in_order(self):
+    def test_the_protocol_states_are_present(self):
         self.assertEqual(self.spec["automaton"]["name"], "CuratorAgent")
-        self.assertEqual(self.spec["automaton"]["initial"], "BriefReceived")
-        for state in ("BriefReceived", "Drafting", "SelfReviewed", "Submitted"):
+        self.assertEqual(self.spec["automaton"]["initial"], "Idle")
+        for state in (
+            "Idle",
+            "ReadingQuery",
+            "Searching",
+            "SourcesReady",
+            "DirectionsReady",
+            "ReadingDirection",
+            "Authoring",
+            "SurfacesRendered",
+            "Looking",
+            "LanguageUnderReview",
+            "Abandoned",
+        ):
             self.assertIn(state, self.spec["automaton"]["states"])
 
-    def test_there_is_one_submit_action_per_lane(self):
-        self.assertEqual(sorted(self._submit_actions()), sorted(SUBMIT_LANES))
+    def test_research_is_take_query_then_search_then_index_then_derive(self):
+        self.assertEqual(self.actions["TakeQuery"]["from"], ["Idle"])
+        self.assertEqual(self.actions["TakeQuery"]["to"], "ReadingQuery")
+        self.assertEqual(self.actions["SearchTheWeb"]["to"], "Searching")
+        self.assertEqual(self.actions["IndexSources"]["to"], "SourcesReady")
+        self.assertEqual(self.actions["DeriveDirections"]["to"], "DirectionsReady")
+        self.assertEqual(self.actions["CompleteResearch"]["from"], ["DirectionsReady"])
 
-    def test_submit_is_only_reachable_after_self_review(self):
-        # The ordering is structural: SelfReviewed is the only source state for
-        # every submit, and SelfReview is the only edge into it.
-        for name, action in self._submit_actions().items():
-            self.assertEqual(action["from"], ["SelfReviewed"], name)
-        self.assertEqual(self.actions["SelfReview"]["to"], "SelfReviewed")
-        into_self_reviewed = [
-            name
-            for name, action in self.actions.items()
-            if action.get("to") == "SelfReviewed"
-        ]
-        self.assertEqual(into_self_reviewed, ["SelfReview"])
+    def test_take_query_requires_the_live_query_and_job(self):
+        types = {
+            g["entity_type"]
+            for g in guards(self.actions["TakeQuery"])
+            if g.get("type") == "cross_entity_state"
+        }
+        self.assertEqual(types, {"CurationJob", "CurationQuery"})
 
-    def test_submit_is_also_guarded_on_the_self_review_flag(self):
-        for name, action in self._submit_actions().items():
-            self.assertIn(
-                {"type": "is_true", "var": "self_review_complete"},
-                guards(action),
-                name,
-            )
-
-    def test_submit_happens_at_most_once_per_run(self):
-        # Every lane lands in the same terminal state, so no second submission
-        # of any lane has a legal source state.
-        for name, action in self._submit_actions().items():
-            self.assertEqual(action["to"], "Submitted", name)
-        self.assertEqual(
-            invariants(self.spec)["SubmittedIsFinal"]["assert"],
-            "no_further_transitions",
+    def test_cannot_index_before_searching(self):
+        self.assertIn(
+            {"type": "min_count", "var": "searches_run", "min": 1},
+            guards(self.actions["IndexSources"]),
         )
-        from_submitted = [
-            name
-            for name, action in self.actions.items()
-            if "Submitted" in action.get("from", [])
+
+    def test_cannot_derive_before_indexing(self):
+        self.assertIn(
+            {"type": "min_count", "var": "sources_indexed", "min": 1},
+            guards(self.actions["DeriveDirections"]),
+        )
+
+    def test_synthesize_is_direction_then_parts_then_look(self):
+        self.assertEqual(self.actions["TakeDirection"]["to"], "ReadingDirection")
+        self.assertEqual(self.actions["ReadDesignRules"]["to"], "Authoring")
+        self.assertEqual(self.actions["AuthorLanguage"]["from"], ["Authoring"])
+        self.assertEqual(self.actions["RenderSurfaces"]["from"], ["Authoring"])
+        self.assertEqual(self.actions["LookAtLanding"]["to"], "Looking")
+        self.assertEqual(self.actions["LookAtEmbodiment"]["to"], "Looking")
+        self.assertEqual(self.actions["LookAtDashboard"]["to"], "Looking")
+        self.assertEqual(self.actions["SubmitLanguage"]["from"], ["Looking"])
+
+    def test_research_refuses_fewer_than_three_directions(self):
+        self.assertIn(
+            {"type": "min_count", "var": "directions_derived", "min": 3},
+            guards(self.actions["CompleteResearch"]),
+        )
+        self.assertIn(
+            {"type": "max_count", "var": "directions_derived", "max": 5},
+            guards(self.actions["DeriveDirections"]),
+        )
+
+    def test_render_requires_every_named_part(self):
+        required = {
+            "design_rules_read",
+            "concept_authored",
+            "tokens_authored",
+            "katagami_spec_authored",
+            "design_md_authored",
+            "landing_authored",
+            "embodiment_authored",
+            "dashboard_authored",
+            "shadcn_authored",
+            "thumbnail_authored",
+        }
+        got = {
+            g["var"]
+            for g in guards(self.actions["RenderSurfaces"])
+            if g.get("type") == "is_true"
+        }
+        self.assertEqual(required, got)
+
+    def test_take_direction_requires_the_live_direction_and_job(self):
+        types = {
+            g["entity_type"]
+            for g in guards(self.actions["TakeDirection"])
+            if g.get("type") == "cross_entity_state"
+        }
+        self.assertEqual(types, {"CurationJob", "CurationDirection"})
+
+    def test_submit_language_requires_under_review_after_every_look(self):
+        action = self.actions["SubmitLanguage"]
+        self.assertEqual(action["from"], ["Looking"])
+        language = [
+            g
+            for g in guards(action)
+            if g.get("type") == "cross_entity_state"
         ]
-        self.assertEqual(from_submitted, [])
+        self.assertEqual(language[0]["entity_type"], "DesignLanguage")
+        self.assertEqual(language[0]["required_status"], ["UnderReview"])
+        required = {g["var"] for g in guards(action) if g.get("type") == "is_true"}
+        self.assertTrue(
+            {"landing_looked", "embodiment_looked", "dashboard_looked"} <= required
+        )
 
-    def test_each_lane_checks_its_own_work_against_the_entity_graph(self):
-        # The artifact requirements (DESIGN.md, embodiment, landing, proof
-        # shots, corpus, ...) are not restated here — they are read off the
-        # entity graph, because reaching UnderReview means the entity's own
-        # SubmitForReview guard already proved them.
-        for name, (entity_type, id_field, _) in SUBMIT_LANES.items():
-            action = self.actions[name]
-            self.assertIn(
-                {
-                    "type": "cross_entity_state",
-                    "entity_type": entity_type,
-                    "entity_id_source": id_field,
-                    "required_status": ["UnderReview", "Published"],
-                },
-                guards(action),
-                name,
-            )
-            self.assertIn(id_field, self.states, id_field)
-
-    def test_a_lane_that_produced_nothing_cannot_be_submitted(self):
-        # The kernel resolves a cross-entity guard over an empty list as
-        # vacuous truth, so the cross-entity guard alone would let a run submit
-        # nothing at all and pass. The companion bool is what closes that.
-        for name, (_, id_field, record_action) in SUBMIT_LANES.items():
-            flag = f"has_{id_field}"
-            self.assertIn(flag, self.states, flag)
-            self.assertEqual(self.states[flag]["type"], "bool")
-            self.assertEqual(self.states[flag]["initial"], "false")
-            self.assertIn({"type": "is_true", "var": flag}, guards(self.actions[name]), name)
-
-            # And the only thing that flips it also appends the id, so the flag
-            # cannot be true while the list is empty.
-            recorder = self.actions[record_action]
-            self.assertEqual(recorder["from"], ["Drafting"], record_action)
-            self.assertIn(id_field, recorder["params"], record_action)
-            self.assertIn(
-                {"type": "list_append", "var": id_field}, recorder["effect"], record_action
-            )
-            self.assertIn(
-                {"type": "set_bool", "var": flag, "value": "true"},
-                recorder["effect"],
-                record_action,
-            )
-            setters = [
-                other
-                for other, action in self.actions.items()
-                if any(
-                    isinstance(e, dict)
-                    and e.get("type") == "set_bool"
-                    and e.get("var") == flag
-                    for e in action.get("effect", [])
-                )
-            ]
-            self.assertEqual(setters, [record_action], flag)
+    def test_a_fix_returns_to_authoring_so_the_look_must_happen_again(self):
+        self.assertEqual(self.actions["FixSurfaces"]["from"], ["Looking"])
+        self.assertEqual(self.actions["FixSurfaces"]["to"], "Authoring")
 
     def test_the_referenced_commons_guards_are_where_the_requirements_live(self):
         commons_specs = CURATION_ROOT.parent / "katagami-commons" / "specs"
@@ -194,42 +191,41 @@ class CuratorAgentSpecTest(unittest.TestCase):
         ):
             self.assertIn(expected, required, expected)
 
-    def test_the_curator_has_no_publish_action(self):
-        # Publishing belongs to HumanCurator. Not "should not be called" —
-        # not present.
+    def test_the_curator_has_no_publish_or_quality_review_action(self):
         for name in self.actions:
             self.assertNotIn("publish", name.lower(), f"{name} is a publish action")
-
-    def test_the_concurrency_budget_caps_the_run_at_ten_jobs(self):
-        claim = self.actions["ClaimJob"]
-        # max_count is strict (val < max), so max=10 admits ten held claims.
-        self.assertIn(
-            {"type": "max_count", "var": "jobs_in_flight", "max": 10}, guards(claim)
-        )
-        self.assertIn(
-            {"type": "increment", "var": "jobs_in_flight"}, claim.get("effect", [])
-        )
-        self.assertIn("jobs_in_flight", self.states)
-        self.assertEqual(self.states["jobs_in_flight"]["type"], "counter")
-
-    def test_a_run_cannot_submit_with_work_still_outstanding(self):
-        for name, action in self._submit_actions().items():
-            self.assertIn(
-                {"type": "max_count", "var": "jobs_in_flight", "max": 1},
-                guards(action),
-                name,
-            )
+            self.assertNotIn("quality", name.lower(), f"{name} is a quality-review action")
 
     def test_capture_identity_is_recorded_on_the_run(self):
         for field in ("session_id", "trajectory_id", "spec_version", "harness"):
             self.assertIn(field, self.states)
-            self.assertIn(field, self.actions["ReceiveBrief"]["params"])
+            self.assertIn(field, self.actions["RecordCapture"]["params"])
 
-    def test_a_stalled_run_is_abandoned_rather_than_left_hanging(self):
+    def test_a_stalled_hold_is_abandoned_rather_than_left_hanging(self):
+        live = set(self.spec["automaton"]["states"]) - {"Idle", "Abandoned"}
         timed_out = {t["state"] for t in self.spec["state_timeout"]}
-        self.assertEqual(timed_out, {"BriefReceived", "Drafting", "SelfReviewed"})
+        self.assertEqual(timed_out, live)
         for timeout in self.spec["state_timeout"]:
             self.assertEqual(timeout["on_timeout"], "Abandon")
+
+    def test_revision_rounds_are_bounded(self):
+        self.assertIn(
+            {"type": "max_count", "var": "revision_rounds", "max": 12},
+            guards(self.actions["FixSurfaces"]),
+        )
+        self.assertEqual(
+            invariants(self.spec)["FixRoundsBounded"]["assert"],
+            "revision_rounds <= 12",
+        )
+        self.assertIn("SeenBeforeSubmit", invariants(self.spec))
+        self.assertIn("OneLanguageOneSubmit", invariants(self.spec))
+        self.assertIn("LanguageHasEveryPart", invariants(self.spec))
+
+    def test_cedar_permit_enumerates_every_input_action(self):
+        policy = (POLICIES / "curator_agent.cedar").read_text()
+        for name, action in self.actions.items():
+            if action.get("kind") == "input":
+                self.assertIn(f'Action::"{name}"', policy, name)
 
 
 class ReviewAgentSpecTest(unittest.TestCase):
@@ -251,14 +247,56 @@ class ReviewAgentSpecTest(unittest.TestCase):
             "no_further_transitions",
         )
 
+    def test_accept_submission_requires_the_language_under_review(self):
+        cross = [
+            g
+            for g in guards(self.actions["AcceptSubmission"])
+            if g.get("type") == "cross_entity_state"
+        ]
+        self.assertEqual(cross[0]["entity_type"], "DesignLanguage")
+        self.assertEqual(cross[0]["required_status"], ["UnderReview"])
+        self.assertTrue(cross[0].get("required"))
+
     def test_the_review_agent_has_no_publish_action(self):
         for name in self.actions:
             self.assertNotIn("publish", name.lower(), f"{name} is a publish action")
 
     def test_capture_identity_is_recorded_on_the_review(self):
-        params = self.actions["ReceiveSubmission"]["params"]
+        params = self.actions["RecordSubmissionRef"]["params"]
         for field in ("session_id", "trajectory_id", "spec_version", "harness"):
             self.assertIn(field, params)
+
+    def test_verdict_requires_the_examination(self):
+        required = {
+            "artifacts_fetched",
+            "design_md_opened",
+            "landing_opened",
+            "embodiment_opened",
+            "dashboard_opened",
+            "shadcn_opened",
+            "thumbnail_opened",
+            "landing_inspected",
+            "embodiment_inspected",
+            "dashboard_inspected",
+            "hero_verified",
+            "art_style_verified",
+            "rules_checked",
+            "claims_checked",
+        }
+        got = {g["var"] for g in guards(self.actions["RecordVerdict"]) if g.get("type") == "is_true"}
+        self.assertTrue(required <= got)
+
+    def test_repair_rounds_are_bounded(self):
+        self.assertIn(
+            {"type": "max_count", "var": "repair_rounds", "max": 6},
+            guards(self.actions["RecordRepair"]),
+        )
+
+    def test_cedar_permit_enumerates_every_input_action(self):
+        policy = (POLICIES / "review_agent.cedar").read_text()
+        for name, action in self.actions.items():
+            if action.get("kind") == "input":
+                self.assertIn(f'Action::"{name}"', policy, name)
 
 
 class HumanCuratorSpecTest(unittest.TestCase):
@@ -291,6 +329,7 @@ class HumanCuratorSpecTest(unittest.TestCase):
     def test_publish_requires_the_machine_review_to_have_ruled_first(self):
         publish_guards = guards(self.actions["Publish"])
         self.assertIn({"type": "is_true", "var": "has_review_verdict"}, publish_guards)
+        self.assertIn({"type": "is_true", "var": "has_publish_approval"}, publish_guards)
         self.assertIn(
             {
                 "type": "cross_entity_state",
@@ -321,10 +360,20 @@ class HumanCuratorSpecTest(unittest.TestCase):
 
     def test_publish_is_reachable_only_from_reviewing_and_only_once(self):
         self.assertEqual(self.actions["Publish"]["from"], ["Reviewing"])
+        self.assertEqual(self.actions["ApprovePublish"]["from"], ["Reviewing"])
         self.assertEqual(
             invariants(self.spec)["PublishedIsFinal"]["assert"],
             "no_further_transitions",
         )
+        self.assertEqual(
+            invariants(self.spec)["HumanDecidesPublish"]["assert"],
+            "has_publish_approval && has_review_verdict",
+        )
+        self.assertEqual(
+            invariants(self.spec)["CritiqueReopens"]["assert"],
+            "no_further_transitions",
+        )
+        self.assertIn("OneHolder", invariants(self.spec))
 
     def test_an_unanswered_assignment_escalates_instead_of_stalling(self):
         overdue = self.actions["ReviewOverdue"]
@@ -340,6 +389,15 @@ class HumanCuratorSpecTest(unittest.TestCase):
             self.assertEqual(timeout["on_timeout"], "ReviewOverdue")
         # Escalation re-routes; it never bypasses the review.
         self.assertEqual(self.actions["Reassign"]["to"], "SubmissionAssigned")
+
+    def test_escalation_stops_after_three(self):
+        bound = {"type": "max_count", "var": "escalation_count", "max": 3}
+        self.assertIn(bound, guards(self.actions["ReviewOverdue"]))
+        self.assertIn(bound, guards(self.actions["Reassign"]))
+        self.assertEqual(
+            invariants(self.spec)["EscalationLoopBounded"]["assert"],
+            "escalation_count <= 3",
+        )
 
     def test_returning_a_submission_requires_a_written_critique(self):
         self.assertIn("critique", self.actions["ReturnWithCritique"]["params"])
@@ -524,8 +582,10 @@ class ActorPolicyBoundaryTest(unittest.TestCase):
     def test_no_agent_principal_may_publish_on_the_role_record(self):
         policy = (POLICIES / "human_curator.cedar").read_text()
         self.assertIn('forbid(', policy)
+        self.assertIn('Action::"ApprovePublish"', policy)
         self.assertIn('Action::"Publish"', policy)
         self.assertIn('Action::"ReturnWithCritique"', policy)
+        self.assertIn("has_publish_approval", policy)
         # Written against `has agent_type` rather than one value, so a new
         # agent type cannot quietly inherit the human's authority.
         self.assertIn("principal has agent_type", policy)

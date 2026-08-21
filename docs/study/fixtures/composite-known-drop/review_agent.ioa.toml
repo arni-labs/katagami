@@ -1,0 +1,22 @@
+# Pair to design_language.ioa.toml in this folder. RecordVerdict is only
+# legal from Reviewing. The sibling Language fires it from SubmitForReview,
+# while this machine is still SubmissionReceived.
+
+[automaton]
+name = "ReviewAgent"
+states = ["SubmissionReceived", "Reviewing", "VerdictRecorded", "Abandoned"]
+initial = "SubmissionReceived"
+allow_indefinite_states = ["VerdictRecorded", "Abandoned"]
+
+[[action]]
+name = "BeginReview"
+from = ["SubmissionReceived"]
+to = "Reviewing"
+guard = [
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "reviewed_entity_id", required_status = ["UnderReview"] },
+]
+
+[[action]]
+name = "RecordVerdict"
+from = ["Reviewing"]
+to = "VerdictRecorded"

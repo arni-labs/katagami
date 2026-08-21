@@ -27,8 +27,11 @@ or a person caught it, what it cost or saved.
 ## What this log is not evidence of, yet
 
 The entry this study most wants — *Temper flagged an invariant violation on a
-real run, so we changed the state machine* — **does not exist here.** Nothing is
-wired: no invariant has yet been checked against a governed run doing real work.
+real run, so we changed the state machine* — still does not exist as an
+*invariant* trip. What now exists is a **live guard refusal**: Claude's
+`TakeQuery` on `CuratorAgent` `en-019ffcc3-09ce-7700-af9f-e271c904bd55`
+returned 409 because the job_id it sent was not a `CurationJob` in
+`Running`. See the 2026-08-13 live-run entry.
 
 What the entries below actually are:
 
@@ -38,12 +41,249 @@ What the entries below actually are:
 - **two cases of the instrument being wrong** — a conformance report that can be
   made to pass by a caller-supplied value, and a checker that produced 81 false
   violations on a clean run;
-- **one withdrawn conclusion**, kept in place.
+- **one withdrawn conclusion**, kept in place;
+- **one checker-vs-join finding** (2026-08-13): CuratorAgent cannot finish
+  research as a closed machine, and the cascade aborts before the joint proof;
+- **one instrument fix** (same day): the cascade now inhabits the spec's own
+  `min_count` / `max_count`, and CuratorAgent then passes locally. Composite
+  on the joint graph is still running / not yet a pass.
 
 That is worth having, and it is not the same claim. A reader should leave this
 file knowing the machinery has been probed and found to have holes — not that it
 has been proven to catch things in flight. Every entry so far is a person
 driving the machine on purpose; none is the machine catching a real run.
+
+---
+
+## 2026-08-13 — Live TakeQuery 409: the job was not Running under the id sent
+
+**Checked:** Claude Code trial against isolated Temper `:3472`, ledger
+`CuratorAgent` `en-019ffcc3-09ce-7700-af9f-e271c904bd55`. A source_search
+job `en-019ffcc1-e540-73f3-a6cc-6d2545ff642a` was `Running` and query
+`en-019ffcc1-42f6-7ca0-8f49-34abe81d35f0` was `Researching`.
+
+**Found:** `POST .../Temper.TakeQuery` returned **409**. Server:
+
+`guard cross_entity_state on 'job_id' requires CurationJob status in [Running], found <unsatisfied>`
+
+First reading (same day) blamed the caller’s ids. The clean research
+session (ledger `en-019ffcef-eddd-76b1-9f8b-d1a7923e720b`) reproduced the
+409 **with the correct Running job and Researching query in the payload**.
+The runtime resolves `cross_entity_state` from the entity’s **persisted
+fields**, not from action params. A ledger created with `POST {}` has
+empty `job_id`, so the guard cannot see the payload. Creating the ledger
+with `job_id`/`query_id` set made every later guard pass in order.
+
+That is a real governed refusal, and the first diagnosis was wrong. The
+useful Temper fact is the field-vs-payload contract.
+
+**Who caught it:** the machine (runtime guard), 2026-08-13T20:15:17Z,
+twice (Claude retried 10s later, same 409).
+
+**What it costs:** the trial is paused on a caller mistake the spec is
+supposed to catch. If Claude retries with
+`job_id=en-019ffcc1-e540-73f3-a6cc-6d2545ff642a` it should pass.
+
+**What it is not:** an invariant failure, and not a reason to loosen
+TakeQuery.
+
+Same session, 20:18:57Z: Claude then called `IndexSources` from `Idle`.
+409: `Action 'IndexSources' not valid from state 'Idle'`. The order is
+TakeQuery → SearchTheWeb → IndexSources. Skipping is refused.
+
+Later the same ledger finished research (CompleteResearch 200, job
+Completed). `TakeDirection` then 409'd: the guard reads state `job_id`,
+which still names the **search** job (Completed), not the synthesize job
+in the payload. One curator doing search then synthesize cannot leave
+Idle. Spec fix: `TakeDirection` guards on param `held_job_id`.
+
+Also: `POST DesignSources` was 423 until DesignSource was merge-loaded
+alone (full commons load-dir stuck on DesignLanguage). `load-dir`
+without `merge` replaces the tenant map. Engine synthesize jobs fail
+without an Active `CurationJobTemplate` and without TemperFS skill
+docs — study path uses `CurationJob.Start`.
+
+---
+
+## 2026-08-13 — Checker universe smaller than the story; bound-from-spec makes CuratorAgent inhabit
+
+**Checked:** same `curator_agent.ioa.toml` as the FAIL below, after changing
+the verifier (temper `grok/composite-budget`, uncommitted `cascade.rs` on
+top of `c2af92b2`). Command:
+
+```
+temper verify --specs-dir katagami-curation/specs --composite-budget 250000
+```
+
+Full stdout: `docs/study/evidence/temper-verify-curator-boundfix-2026-08-13.txt`.
+
+**Found:** the previous FAIL was the instrument, not the machine. Cascade
+defaulted `max_counter: 2`. `CompleteResearch` needs `directions_derived >= 3`.
+`counter_bound_from_ioa` now scans `MinCount` / `MaxCount` / `ListLengthMin`
+on the spec and uses `max(2, those)`. CuratorAgent then:
+
+| Machine | L0 | L1 | L2 | L3 |
+|---|---|---|---|---|
+| CuratorAgent | PASS (17 guards, 6 invariants inductive, 10 unreachable, 6 abstract cross-entity) | PASS 37 754 states | PASS | PASS |
+| ReviewAgent | PASS | PASS 144 608 | PASS | PASS |
+| HumanCurator | PASS | PASS 50 | PASS | PASS |
+| CurationQuery | PASS | PASS 68 | PASS | PASS |
+| CurationJob | PASS (1 abstract cross-entity) | PASS 6 | PASS | PASS |
+
+Curation-only cascade: **ALL PASSED** (9 entity types). Composite then
+ran and is **INCOMPLETE**, not a pass — see the next entry. Liveness on
+the curator machine is declared and locally inhabited:
+`QueryEventuallyResolves`, `DirectionEventuallyResolves`,
+`LanguageEventuallyResolves`. Invariants that are actually about the craft
+(not "look"): `SeenBeforeSubmit`, `OneLanguageOneSubmit`,
+`LanguageHasEveryPart`, `FixRoundsBounded`, `AbandonedIsFinal`.
+
+**Who caught it:** a person, after the machine's earlier dead-guard report.
+The useful Temper feedback was the dead `CompleteResearch` edge. The
+wrong first reading (blaming the job join) is kept in the next entry.
+
+**What it costs:** we now have a local closed-machine proof of the three
+actor specs plus the curation objects. We still do not have a finished
+composite proof of Curator ⋈ Job ⋈ Language. Commons DesignLanguage
+alone already exhausted 250 000 joint states earlier today.
+
+**What it is not:** a live run. Entity sets still only appear after
+`POST /api/specs/load-dir`. `temper serve --app` verifies and does not
+register OData.
+
+A follow-up both-dirs run at `--composite-budget 2000000` is in
+`docs/study/evidence/temper-verify-both-dirs-2m-2026-08-13.txt`. 250k was
+not enough to finish the DesignLanguage join. 2M is the budget we are
+actually waiting on.
+
+---
+
+## 2026-08-13 — DesignLanguage L1 is 835 728 states; debug made it look like hours
+
+**Checked:** why per-entity verify felt unusable. Isolated
+`DesignLanguage` only (commons CSDL + that one IOA). Release
+`target/release/temper` @ 15:00, command timed with `/usr/bin/time -p`.
+Stdout: `/tmp/jcs-dl-release-verify.txt`.
+
+**Found:** L1 explores **835 728** states and PASSES in **118s** release
+(`real 118.11`, `user 91.95`). The same L1 in the **debug** both-dirs
+run sat on `Verifying DesignLanguage...` for **~51 minutes** and had
+not finished. That is the same machine, same 835 728 states.
+
+Why 835k at all: the spec has **20 independent bools** (has_tokens,
+has_embodiment, has_design_md, …) plus 6 counters. Naive product is
+billions; reachable is ~2^20. Stateright stores each state as
+`BTreeMap<String, bool>` + `BTreeMap<String, usize>` + a `String`
+status, cloned on every edge. After that BFS, `find_dead_transitions`
+walks the same graph **again**. TLC fingerprints a compact tuple;
+Temper hashes fat maps. So even release is ~7k states/s, not TLC's
+hundreds of thousands — but two minutes, not an hour.
+
+The 2M debug run was therefore the wrong experiment: it had not
+started composite. It was re-proving a local L1 we already had
+(commons-only, same day, 835 728 PASS).
+
+**Who caught it:** a person, after Rita said individual verify should
+not take this long. She is right about debug. Release is the binary
+the cascade should run.
+
+**What it costs:** `temper verify` from a debug tree is not evidence
+about the method. Use release. A remaining instrument limit: 20
+authoring flags in the L1 vector, and L1 paying for two full BFS.
+
+**What it is not:** a reason to skip per-entity cascade before
+composite. Individual proof of DesignLanguage is two minutes in
+release, then the join can run.
+
+---
+
+## 2026-08-13 — Composite said "budget exhausted" when the plan could not build
+
+**Checked:** the same curation-only `temper verify --specs-dir katagami-curation/specs --composite-budget 250000` after CuratorAgent passed. Full stdout is now the rest of `docs/study/evidence/temper-verify-curator-boundfix-2026-08-13.txt`.
+
+**Found:** composite is **INCOMPLETE**. The printed lines:
+
+| Seed | Scope | States | What the printer said | What it actually was |
+|---|---|---|---|---|
+| CurationDirection | `[CurationDirection]` | 0 | BFS budget exhausted | Plan build failed. Direction triggers a commons type (`DesignLanguage` / `ArtStyle`) that is not in this `--specs-dir`. `verify_all_with_budget` records `other_violations = ["plan build failed (unknown trigger target?)"]` and the CLI printed the budget sentence for every Incomplete. |
+| HumanCurator | `[HumanCurator, ReviewAgent]` | 61 109 | BFS budget exhausted | This one really did hit 250 000. Review and human live in the same trigger/guard component; they compose. |
+| CurationJobTemplate, TasteRule, TrajectoryVerdict | themselves | 2–4 | PASS | Tiny closed machines. |
+
+CuratorAgent does not appear as its own seed. `seed_cover` picks the lexicographically smallest member of each connected component. Curator, Query, Job, and Direction sit in one component; the root is **CurationDirection**. So the failed Direction plan *is* the curator/job joint proof, and it never started.
+
+**Who caught it:** a person reading `verify.rs:241-254` after the printer blamed the budget. The machine did surface Incomplete; it named the wrong reason.
+
+**What it costs:** a curation-only composite cannot prove the study graph. The machines join commons. The next run has to pass both `--specs-dir`s. The CLI must print `other_violations` on Incomplete (fix on `grok/composite-budget`).
+
+**What it is not:** a broken actor invariant. Direction is supposed to queue a language. The checker just did not have the language spec in the room.
+
+---
+
+## 2026-08-13 — CuratorAgent is not a closed machine; verify never reaches the join
+
+**Checked:** `temper verify` on the current study machines, with the rebuilt
+binary from temper `grok/composite-budget` @ `c2af92b2` (the one that accepts
+repeated `--specs-dir`). Command:
+
+```
+temper verify \
+  --specs-dir katagami-curation/specs \
+  --specs-dir katagami-commons/specs \
+  --composite-budget 250000
+```
+
+Full stdout: `docs/study/evidence/temper-verify-2026-08-13.txt`.
+
+**Found:** Temper refused to certify `CuratorAgent`. First reading (same
+day, earlier paragraph) blamed the `CurationJob` join. That was wrong.
+The cascade default `max_counter` is **2**. `CompleteResearch` requires
+`directions_derived >= 3`. In a universe that only has 0, 1, 2, that
+guard is unsatisfiable. L0: `dead guards: CompleteResearch`. L1: 190
+states, dead `CompleteResearch [DirectionsReady → Idle]`.
+
+The job-status join is a separate, abstract cross-entity guard (one of
+six). It is *not* what made the edge dead. The checker universe was
+smaller than the story (D26: 3–5 directions).
+
+The cascade then **stops**. Commons is never opened. Composite never
+runs. Liveness properties stay declared, not proved.
+
+That is useful: we wrote a machine the default checker cannot inhabit.
+The fix is not to require fewer directions. It is to verify in a bound
+at least as large as the spec's own `min_count` / `max_count`.
+
+HumanCurator and ReviewAgent *did* pass locally on this same run:
+
+| Machine | L0 | L1 | L2 | L3 |
+|---|---|---|---|---|
+| ReviewAgent | PASS (23 548 states; 4 abstract cross-entity guards) | PASS | PASS | PASS |
+| HumanCurator | PASS (45 states; 2 abstract cross-entity guards; 1 unreachable) | PASS | PASS | PASS |
+| CurationQuery | PASS (68 states) | PASS | PASS | PASS |
+| CurationDirection | PASS (6 states) | PASS | PASS | PASS |
+| CuratorAgent | FAIL dead `CompleteResearch` | FAIL | PASS | PASS |
+
+Why Human/Review pass with the same kind of join and Curator does not:
+their cross-entity guards are treated as *abstract* and dropped from local
+induction. `CompleteResearch`'s job-status guard is treated as a *concrete
+unsatisfied* guard, so the whole edge is dead. Same idea, two checker
+behaviours.
+
+**Who caught it:** the machine (L0/L1), against the current `curator_agent.ioa.toml`.
+
+**What it costs:** we do not have a VERIFIED joint proof of the study graph.
+A scored trial that claims "the machine was verified" would be false.
+
+**What it is not:** an invariant violation on a real run. Still nobody has
+driven a live research or synthesize job against this ledger.
+
+Commons-only verify (same binary, same day,
+`docs/study/evidence/temper-verify-commons-2026-08-13.txt`): every commons
+entity passed L0–L3 locally, including DesignLanguage at 835 728 L1 states.
+Composite then **INCOMPLETE** at budget 250 000 on
+`seed=DesignLanguage scope=[DesignLanguage]` (29 879 joint states, BFS
+exhausted). So even if CuratorAgent had not aborted the cascade, the live
+language machine alone would have exhausted today's joint budget. That is a
+limit of the instrument on this graph, not a new actor-design finding.
 
 ---
 
@@ -248,3 +488,53 @@ What the original entry said, for the record:
 
 The last sentence is the one to keep, pointed the other way: a probe that
 retires a standing doubt has to hit the branch the doubt is about.
+
+---
+
+## 2026-08-14 — Composite of the live Katagami app completed
+
+**Found:** a joint BFS over the 8-type actor/catalog join (ArtStyle seed: ArtStyle, CurationDirection, CurationJob, CurationQuery, CuratorAgent, DesignLanguage, HumanCurator, ReviewAgent) is now **VERIFIED**: 342 176 unique status states, no dropped reactions. Isolated types each finished in 2–4 states. Per-entity cascade still ALL PASSED.
+
+The previous INCOMPLETE (65 143 unique / 250k generated-edge budget, fat bool encoding) was the verifier counting the wrong vector, not a property failure. Composite now projects each entity to the fields the join actually reads (`status`) and budgets unique joint states.
+
+**Caught by:** the verifier, once the join vector matched the question.
+
+**Cost/saved:** one Temper change (PR nerdsane/temper#420). The 8-type proof is ~seconds after the individual L1s. Local bools (width flags, file-ready, counters) stay a per-entity proof; the join does not re-prove them.
+
+---
+
+## 2026-08-14 — Composite catch is not vacuous
+
+**Found:** adding one illegal trigger `DesignLanguage.SubmitForReview → ReviewAgent.RecordVerdict` (RecordVerdict only enabled from `Reviewing`) makes composite **FAIL**. Individuals still PASS. On the live 8-type join the checker named three drops: reviewer in `SubmissionReceived`, `VerdictRecorded`, or `Abandoned`. A missing guard would not show up this way — it would only enable more paths.
+
+**Caught by:** the composite checker, on a fixture and on a poisoned copy of the real specs. Production specs were not left poisoned.
+
+**Cost/saved:** cheap. Without this, a clean VERIFIED could have been "the join never fires a reaction the target cannot take" or "the join does not look."
+
+---
+
+## 2026-08-14 — Real CuratorAgent properties fail when the spec is weakened
+
+**Found:** the properties the briefing already names, on copies of the live CuratorAgent spec:
+
+- **SeenBeforeSubmit** — SubmitLanguage allowed from SurfacesRendered without LookAt*. L1 FAIL (113 544 states, 1 counterexample), L2 FAIL (2 violations), L3 FAIL: `invariant 'SeenBeforeSubmit' violated after 8 actions`. L0 still PASS (the bool conjunction is not what SMT proves here).
+- **QueryEventuallyResolves** — SearchTheWeb and Abandon no longer leave ReadingQuery, timeout removed. L1 FAIL (341 states), L2 FAIL (8 liveness violations). L3 does not check liveness. Unpoisoned CuratorAgent still PASSES (39 015).
+
+An earlier toy `never(Published)` is not a Katagami property and is not the check. These two are.
+
+**Caught by:** L1/L2/L3 on the real machine's own named properties. Composite does not re-check SeenBeforeSubmit (bools are not in the join vector).
+
+**Cost/saved:** shows the live invariant is not decorative. Weaken the guard, the named property fails.
+
+---
+
+## 2026-08-14 — Composite catches a real drop and a real joint liveness
+
+**Found:** one-actor poisons do not exercise the join. Two copies of live specs, individuals PASS, composite FAIL:
+
+- **no_dropped_reaction** on the real trigger `queue_synthesis_widens_query_barrier`. Only change: `drop_ok` removed. Direction.ConfigureAndQueue increments Query while Query is Submitted (or Organizing/Completed/Failed). 4 named drops. 297 joint states.
+- **AssignmentEventuallyResolved** (HumanCurator). Only change: Human cannot Return/Overdue, Review cannot RecordVerdict. Publish is still abstract in Human L1 (PASS, 8 states) and Review L1 PASS (144 565). Joint: Publish needs Review `VerdictRecorded`, which never happens. Composite FAIL `HumanCurator.AssignmentEventuallyResolved` (6 joint states).
+
+**Caught by:** the composite checker, not the per-entity cascade.
+
+**Cost/saved:** this is the check SeenBeforeSubmit cannot be. The join either reports a dropped reaction or a named leads-to that depends on the other actor.

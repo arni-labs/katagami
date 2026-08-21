@@ -1,0 +1,137 @@
+{
+  "session": "research",
+  "format": "atif",
+  "reference": "curator-agent/BEHAVIOR.md",
+  "units": [
+    {
+      "name": "capture_before_hold",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "2",
+          "reason": "step 2 ran capture.py identity (session 02f32c00…, traj-98368249…, spec sha256:f11d964e…, harness claude-code); those ids were RecordCaptured at 4 then 29 while Idle, before any TakeQuery"
+        }
+      ]
+    },
+    {
+      "name": "take_live_query",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "29",
+          "reason": "step 6 GET showed job en-019ffcec-69ba… Running and query en-019ffcec-6991… Researching; step 29 TakeQuery 200 to ReadingQuery; first WebSearch is step 32"
+        }
+      ]
+    },
+    {
+      "name": "search_before_index",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "32",
+          "reason": "three WebSearch calls at 32 returned the six later-indexed URLs (artstory, printmag, smashing, asianart, designyourway, uswds); SearchTheWeb marks at 33; first DesignSource Index at 36"
+        }
+      ]
+    },
+    {
+      "name": "index_before_direction",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "36",
+          "reason": "step 36 create/Submit/Index 200 for 6 DesignSources (en-019ffcf1-cb4d… through en-019ffcf1-ccf9…) before any SpawnDirection at 38"
+        }
+      ]
+    },
+    {
+      "name": "three_to_five_directions",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "38",
+          "reason": "step 38 SpawnDirection 200 x4 (Keyblock Grid, Nishiki Modernism, Ukiyo Measure, Flat Wave Rationalism); job CompleteResearch 409 then 200 at 40; ledger CompleteResearch 200 at 41 after job Completed, directions_derived=4"
+        }
+      ]
+    },
+    {
+      "name": "take_queued_direction",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no TakeDirection HTTP"
+        }
+      ]
+    },
+    {
+      "name": "read_rulebook",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no read of knowledge/rules/design-language.md"
+        }
+      ]
+    },
+    {
+      "name": "author_named_parts",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no named language parts written"
+        }
+      ]
+    },
+    {
+      "name": "look_before_submit",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no LookAt* of landing, embodiment, or dashboard"
+        }
+      ]
+    },
+    {
+      "name": "four_widths",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no browser render at wide/desktop/tablet/390"
+        }
+      ]
+    },
+    {
+      "name": "fix_and_relook",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no fix/look loop"
+        }
+      ]
+    },
+    {
+      "name": "no_publish",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "49",
+          "reason": "no Temper.Publish or quality-review act in 49 steps; step 49 stops after CompleteResearch and names that synthesize was not started"
+        }
+      ]
+    },
+    {
+      "name": "abandon_honestly",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research hold completed to Idle at 41; Abandon never called (ledger 1 stayed Idle and never entered a hold)"
+        }
+      ]
+    }
+  ]
+}

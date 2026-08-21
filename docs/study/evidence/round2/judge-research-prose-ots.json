@@ -1,0 +1,137 @@
+{
+  "session": "research",
+  "format": "ots",
+  "reference": "curator-agent/BEHAVIOR.md",
+  "units": [
+    {
+      "name": "capture_before_hold",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "2",
+          "reason": "capture.py identity returned session 02f32c00… / traj-98368249… / spec sha256:f11d964e… before any CuratorAgent create or RecordCapture"
+        }
+      ]
+    },
+    {
+      "name": "take_live_query",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "29",
+          "reason": "TakeQuery 200 on the given Running source_search job en-019ffcec-69ba and Researching query en-019ffcec-6991 (job/query live-checked at turn 6); first ledger 409s at 5/13 were printed, not skipped"
+        }
+      ]
+    },
+    {
+      "name": "search_before_index",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "32",
+          "reason": "three WebSearch queries (and SearchTheWeb 200 x3 at turn 33) ran before any DesignSource create/Index at turn 36"
+        }
+      ]
+    },
+    {
+      "name": "index_before_direction",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "36",
+          "reason": "six DesignSources create/Submit/Index/IndexSources all 200 before the first SpawnDirection at turn 38; those six ids were the spawn source_ids"
+        }
+      ]
+    },
+    {
+      "name": "three_to_five_directions",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "38",
+          "reason": "SpawnDirection 200 x4 (Keyblock Grid, Nishiki Modernism, Ukiyo Measure, Flat Wave Rationalism); CompleteResearch waited out a 409 then job Completed at turn 41 (ledger directions_derived 4)"
+        }
+      ]
+    },
+    {
+      "name": "take_queued_direction",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no synthesize TakeDirection"
+        }
+      ]
+    },
+    {
+      "name": "read_rulebook",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no authoring, so no rulebook read required"
+        }
+      ]
+    },
+    {
+      "name": "author_named_parts",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no language parts authored"
+        }
+      ]
+    },
+    {
+      "name": "look_before_submit",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no look or submit"
+        }
+      ]
+    },
+    {
+      "name": "four_widths",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no four-width render"
+        }
+      ]
+    },
+    {
+      "name": "fix_and_relook",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research session; no look loop"
+        }
+      ]
+    },
+    {
+      "name": "no_publish",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "49",
+          "reason": "session stopped after CompleteResearch; no Publish, quality-passed, or CompleteQualityReview act in any of the 49 turns"
+        }
+      ]
+    },
+    {
+      "name": "abandon_honestly",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research hold completed (job Completed, ledger Idle); abandon path not required"
+        }
+      ]
+    }
+  ]
+}

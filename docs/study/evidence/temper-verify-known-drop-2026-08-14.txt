@@ -1,0 +1,43 @@
+Running verification cascade...
+  Specs directory: /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/docs/study/fixtures/composite-known-drop
+
+--- /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/docs/study/fixtures/composite-known-drop
+
+Running IOA verification cascade...
+
+  Verifying DesignLanguage...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 2 guards satisfiable, 1 invariants inductive, 1 unreachable
+    [PASS] L1 Model Check PASSED: 3 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 31 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying ReviewAgent...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 2 guards satisfiable, 1 invariants inductive, 3 unreachable; approximate model: 1 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 3 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 31 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+IOA verification cascade: ALL PASSED
+
+Verification Report
+==================================================
+
+Specification Summary:
+  Entity types:    2
+  Actions:         0
+  Functions:       0
+  State machines:  0
+
+==================================================
+Result: PASS -- all cross-validation checks passed.
+
+Note: Full model checking (Stateright) is not yet integrated.
+      Run TLC separately for exhaustive state space exploration.
+
+Running composite cross-entity verification (ADR-0150, status join vector, unique budget 10000)...
+    [FAIL] seed=DesignLanguage scope=[DesignLanguage, ReviewAgent] — 7 joint states, 1 dropped reaction(s)
+           - DesignLanguage.SubmitForReview fired trigger 'submit_records_verdict_too_soon' targeting ReviewAgent.RecordVerdict, but ReviewAgent was in 'SubmissionReceived' (action not enabled) — reaction DROPPED
+Error: composite cross-entity verification failed: 1 dropped reaction(s):
+  - DesignLanguage.SubmitForReview fired trigger 'submit_records_verdict_too_soon' targeting ReviewAgent.RecordVerdict, but ReviewAgent was in 'SubmissionReceived' (action not enabled) — reaction DROPPED

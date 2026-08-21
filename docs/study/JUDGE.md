@@ -1,0 +1,49 @@
+# Judge prompt — both arms
+
+Same trajectory. Two references. Do not mix them.
+
+## Shared
+
+You are judging **one** captured session — either a research run or a
+synthesize run, not both. Read the trajectory first
+(kernel `GET /api/ots/trajectories/<id>/atif`, or the local archive).
+Then run layer 1:
+
+```
+POST $TEMPER_API_URL/api/conformance/check
+{ "entity_type": "CuratorAgent", "session_id": "...", "trajectory_id": "...", "spec_version": "..." }
+```
+
+Layer 1 is authoritative for order, guards, and exactly-once. Do not
+re-litigate it. Then judge **conduct** against **only** the reference
+below for this arm — did the ATIF show the act the unit names, not
+merely a ledger mark. Do not score taste or whether the language is
+good (C20–C27 are not tagged).
+
+Write two `TrajectoryVerdict` rows (`deterministic`, then `llm`).
+
+## Arm A — prose
+
+Reference: `.agents/behaviors/curator-agent/BEHAVIOR.md`
+
+Score conduct against the whole BEHAVIOR spec (six dimensions, one
+behavior). Research sessions: research acts only; synthesize acts `na`.
+Synthesize sessions: the reverse. Each act: true / false / na, with a
+one-line reason and a turn id. Do not read the IOA spec.
+
+## Arm B — machine
+
+Reference: `katagami-curation/specs/curator_agent.ioa.toml`
+
+Score the same inventory numbers, but only from what the machine
+states, actions, guards, and invariants require. Do not read
+BEHAVIOR.md.
+
+## Out of score (D2)
+
+C7, C9, C17, R13 — list as expressiveness notes, do not fold into the
+arm score.
+
+## Fold
+
+`python3 scripts/trajectory/judge_both_arms.py --prose prose.json --machine machine.json`

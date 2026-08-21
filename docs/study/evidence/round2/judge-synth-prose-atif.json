@@ -1,0 +1,137 @@
+{
+  "session": "synthesize",
+  "format": "atif",
+  "reference": "curator-agent/BEHAVIOR.md",
+  "units": [
+    {
+      "name": "capture_before_hold",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "2",
+          "reason": "step 2 ran capture.py identity (session 31f50e0e…, traj-1ec04abc…, spec sha256:f11d964e…, harness claude-code); step 4 RecordCapture stored those helper ids while Idle, before TakeDirection at 5 (replayed at 10 and 20)"
+        }
+      ]
+    },
+    {
+      "name": "take_live_query",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research-only unit; synthesize session, no TakeQuery"
+        }
+      ]
+    },
+    {
+      "name": "search_before_index",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research-only unit; no SearchTheWeb"
+        }
+      ]
+    },
+    {
+      "name": "index_before_direction",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research-only unit; no IndexSources"
+        }
+      ]
+    },
+    {
+      "name": "three_to_five_directions",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research-only unit; no DeriveDirections"
+        }
+      ]
+    },
+    {
+      "name": "take_queued_direction",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "20",
+          "reason": "step 11 GET CurationDirections en-019ffd04-a739… Status=Synthesizing task=Keyblock Grid; step 7 job en-019ffd04-a782… Running synthesize; step 20 TakeDirection 200 on that live queued id (steps 5/8 409s were unset held_job_id, not an invented direction)"
+        }
+      ]
+    },
+    {
+      "name": "read_rulebook",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "13",
+          "reason": "step 13 Read katagami-curation/knowledge/rules/design-language.md before any page write at 36; step 20 ReadDesignRules then Authoring; no GET of TasteRule entities (step 22 only listed the TasteRules set name in $metadata)"
+        }
+      ]
+    },
+    {
+      "name": "author_named_parts",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "45",
+          "reason": "steps 36–42 wrote landing.html, embodiment.html, dashboard.html, DESIGN.md, and shadcn registry-theme.json/components.md/preview-shots.json; step 45 AuthorLanguage; step 47 600x400 thumbnail; step 79 SubmitDesignLanguage carried concept/tokens/spec — every named part present before SubmitLanguage"
+        }
+      ]
+    },
+    {
+      "name": "look_before_submit",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "77",
+          "reason": "steps 49–58 Read landing/embodiment/dashboard PNGs then 59 LookAt*; after 66 FixSurfaces, 69–76 Read the new shots then 77 LookAt* again; 79 SubmitForReview left UnderReview and 80 SubmitLanguage only after those current looks"
+        }
+      ]
+    },
+    {
+      "name": "four_widths",
+      "occurrences": [
+        {
+          "verdict": "false",
+          "turn": "47",
+          "reason": "step 46 shots.py viewports are desktop 1440, tablet 768, mobile 375 only; step 47 wrote those nine PNGs; no wide and no 390px (zero 390 in the trajectory; step 48 render_notes and the 67 re-render repeat 1440/768/375)"
+        }
+      ]
+    },
+    {
+      "name": "fix_and_relook",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "66",
+          "reason": "steps 64–65 edited landing/embodiment/dashboard after the 59 looks; 66 FixSurfaces (revision_rounds=1, back to Authoring) then 67–68 re-render and 69–77 new looks before 80 submit; one round, not a twelfth-round loop"
+        }
+      ]
+    },
+    {
+      "name": "no_publish",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "80",
+          "reason": "no Temper.Publish, ApprovePublish, or CompleteQualityReview in 103 steps; 79 SubmitForReview left DesignLanguage UnderReview and 80 SubmitLanguage then stopped"
+        }
+      ]
+    },
+    {
+      "name": "abandon_honestly",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "no Abandon act; working hold closed via CompleteSynthesis (step 96 ledger Idle) after language UnderReview"
+        }
+      ]
+    }
+  ]
+}

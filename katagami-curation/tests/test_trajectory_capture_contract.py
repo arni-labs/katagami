@@ -451,7 +451,7 @@ class CaptureIdentityTest(unittest.TestCase):
         `_load_converter` returns None when the script is missing, so without
         this the command printed `"trajectory_id": null` and exited 0. A caller
         doing `derive $SID | jq -r .trajectory_id` captured the string "null",
-        wrote it onto ReceiveBrief, and the ledger pointed at a document that
+        wrote it onto RecordBriefRef, and the ledger pointed at a document that
         will never exist — the exact failure this subcommand exists to prevent.
         """
         result = self._derive(
@@ -695,8 +695,8 @@ class ContributorDrivesTheActorLedgerTest(unittest.TestCase):
         # The lifecycle spine. An action missing here is a state the ledger
         # never reaches, and a guard the replay can never satisfy.
         for action in (
-            "ReceiveBrief",
-            "BeginDrafting",
+            "RecordBriefRef",
+            "AcceptBrief",
             "RecordDraft",
             "SelfReview",
             "SubmitDesignLanguages",

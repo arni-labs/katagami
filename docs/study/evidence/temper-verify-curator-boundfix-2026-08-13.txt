@@ -1,0 +1,170 @@
+Running verification cascade...
+  Specs directory: /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/katagami-curation/specs
+
+--- /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/katagami-curation/specs
+
+  [lint:warn] CurationQuery: action_missing_to — action 'Configure' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'SetOutputType' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'IncrementDirectionsPending' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'DecrementDirectionsPending' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'RecordSynthesizeJob' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CuratorAgent: action_missing_to — action 'RecordCapture' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CuratorAgent: action_missing_to — action 'AuthorLanguage' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RecordSubmissionRef' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'AcceptSubmission' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'LoadRulebook' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'FetchArtifacts' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenDesignMd' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenLanding' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenEmbodiment' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenDashboard' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenShadcn' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenThumbnail' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RenderLanding' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'InspectLandingRender' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RenderEmbodiment' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'InspectEmbodimentRender' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RenderDashboard' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'InspectDashboardRender' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'VerifyHeroReplaceable' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'ResolveArtStyle' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'VerifyArtStyleRendered' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'VerifyAgainstRules' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'CheckCuratorClaims' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RecordFinding' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RecordRepair' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] TasteRule: action_missing_to — action 'Define' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationJobTemplate: action_missing_to — action 'Configure' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] HumanCurator: action_missing_to — action 'AssignSubmission' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] HumanCurator: action_missing_to — action 'RecordReviewVerdict' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] HumanCurator: action_missing_to — action 'ApprovePublish' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationJob: action_missing_to — action 'Configure' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationJob: action_missing_to — action 'RecordProgress' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationJob: action_missing_to — action 'SpawnDirection' has no `to` target; transition may be dead/no-op
+
+Running IOA verification cascade...
+
+  Verifying CurationQuery...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 14 guards satisfiable, 3 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 68 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 43 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying CuratorAgent...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 17 guards satisfiable, 6 invariants inductive, 10 unreachable; approximate model: 6 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 37754 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 64 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying ReviewAgent...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 26 guards satisfiable, 16 invariants inductive, 2 unreachable; approximate model: 4 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 144608 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 53 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying TasteRule...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 4 guards satisfiable, 1 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 4 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 21 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying CurationJobTemplate...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 3 guards satisfiable, 2 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 3 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 66 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying HumanCurator...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 8 guards satisfiable, 8 invariants inductive, 1 unreachable; approximate model: 2 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 50 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 137 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying TrajectoryVerdict...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 1 guards satisfiable, 3 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 2 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 15 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying CurationDirection...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 9 guards satisfiable, 4 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 6 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 21 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying CurationJob...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 25 guards satisfiable, 2 invariants inductive, 0 unreachable; approximate model: 1 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 6 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 223 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+IOA verification cascade: ALL PASSED
+
+Verification Report
+==================================================
+
+Specification Summary:
+  Entity types:    9
+  Actions:         0
+  Functions:       0
+  State machines:  0
+
+==================================================
+Result: PASS -- all cross-validation checks passed.
+
+Note: Full model checking (Stateright) is not yet integrated.
+      Run TLC separately for exhaustive state space exploration.
+
+Running composite cross-entity verification (ADR-0150, budget 250000)...
+    [INCOMPLETE] seed=CurationDirection scope=[CurationDirection] — explored 0 joint states; BFS budget exhausted, proof is PARTIAL (not a pass)
+    [PASS] seed=CurationJobTemplate scope=[CurationJobTemplate] — 3 joint states, no dropped reactions
+    [INCOMPLETE] seed=HumanCurator scope=[HumanCurator, ReviewAgent] — explored 61109 joint states; BFS budget exhausted, proof is PARTIAL (not a pass)
+    [PASS] seed=TasteRule scope=[TasteRule] — 4 joint states, no dropped reactions
+    [PASS] seed=TrajectoryVerdict scope=[TrajectoryVerdict] — 2 joint states, no dropped reactions
+Error: composite cross-entity verification INCOMPLETE (budget 250000 exhausted). The joint proof did not finish — raise --composite-budget or narrow the spec. This is not a pass.

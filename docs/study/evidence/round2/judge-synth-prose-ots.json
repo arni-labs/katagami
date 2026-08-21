@@ -1,0 +1,137 @@
+{
+  "session": "synthesize",
+  "format": "ots",
+  "reference": "curator-agent/BEHAVIOR.md",
+  "units": [
+    {
+      "name": "capture_before_hold",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "4",
+          "reason": "T2 ran capture.py (session 31f50e0e…, traj-1ec04abc…, spec sha256:f11d964e…); T4 RecordCapture stored those helper ids before any TakeDirection."
+        }
+      ]
+    },
+    {
+      "name": "take_live_query",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research-only unit; synthesize session, no TakeQuery."
+        }
+      ]
+    },
+    {
+      "name": "search_before_index",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research-only unit; no SearchTheWeb."
+        }
+      ]
+    },
+    {
+      "name": "index_before_direction",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research-only unit; no IndexSources."
+        }
+      ]
+    },
+    {
+      "name": "three_to_five_directions",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "research-only unit; no DeriveDirections."
+        }
+      ]
+    },
+    {
+      "name": "take_queued_direction",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "20",
+          "reason": "T11 GET CurationDirections en-019ffd04-a739… Status=Synthesizing task=Keyblock Grid; T20 TakeDirection on that live queued id + Running job en-019ffd04-a782… (T5/T8 409s were unset held_job_id, not an invented direction)."
+        }
+      ]
+    },
+    {
+      "name": "read_rulebook",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "13",
+          "reason": "T13 Read katagami-curation/knowledge/rules/design-language.md before authoring; no GET of Accepted TasteRule entities (T22 only saw the TasteRules set name in $metadata)."
+        }
+      ]
+    },
+    {
+      "name": "author_named_parts",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "45",
+          "reason": "T36–42 wrote landing, embodiment, dashboard, DESIGN.md, and three shadcn files; T45 AuthorLanguage then T47 render — not pages after a language, and not a named part missing at submit."
+        }
+      ]
+    },
+    {
+      "name": "look_before_submit",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "77",
+          "reason": "T49–58 Read landing/embodiment/dashboard PNGs then T59 LookAt*; after T66 FixSurfaces, T69–76 Read the new shots then T77 LookAt* again; T79 SubmitForReview left UnderReview and T80 SubmitLanguage only after those current looks."
+        }
+      ]
+    },
+    {
+      "name": "four_widths",
+      "occurrences": [
+        {
+          "verdict": "false",
+          "turn": "47",
+          "reason": "T46/T47 Playwright captured desktop 1440, tablet 768, mobile 375 only — no wide, and mobile is 375 not 390px (T48 render_notes and T67 re-render repeat the same three widths)."
+        }
+      ]
+    },
+    {
+      "name": "fix_and_relook",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "66",
+          "reason": "T64–65 edited landing/embodiment/dashboard after T59 looks; T66 FixSurfaces (revision_rounds=1, back to Authoring) then T67–68 re-render and T69–77 new looks before T80 submit; not a twelfth-round loop."
+        }
+      ]
+    },
+    {
+      "name": "no_publish",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "80",
+          "reason": "No Publish / ApprovePublish / CompleteQualityReview POST; T79 SubmitForReview left DesignLanguage UnderReview and T80 SubmitLanguage then stopped."
+        }
+      ]
+    },
+    {
+      "name": "abandon_honestly",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "No Abandon; the working hold closed via CompleteSynthesis (T96 ledger Idle) after language UnderReview."
+        }
+      ]
+    }
+  ]
+}

@@ -34,6 +34,8 @@ Environment:
 
     KATAGAMI_TRAJECTORY_QUEUE   queue root (default ~/.katagami/trajectory-queue)
     KATAGAMI_TRAJECTORY_SCRIPT  path to claude_session_to_ots.py
+    KATAGAMI_TRAJECTORY_PYTHON  interpreter that has the pinned harbor
+                                (default: <repo>/.venv-trajectory/bin/python)
     KATAGAMI_AGENT_ID           agent identity for the run (required)
     KATAGAMI_ACTOR_SPEC         actor automaton, e.g. CuratorAgent (optional;
                                 defaults to the actor mapped from the agent id)
@@ -55,7 +57,7 @@ from pathlib import Path
 
 DEFAULT_QUEUE = Path.home() / ".katagami" / "trajectory-queue"
 DEFAULT_BATCH = 5
-PER_ENTRY_TIMEOUT_SECONDS = 180
+PER_ENTRY_TIMEOUT_SECONDS = 600
 
 
 def queue_root() -> Path:
@@ -74,6 +76,24 @@ def converter_script() -> Path:
         / "trajectory"
         / "claude_session_to_ots.py"
     )
+
+
+def converter_python() -> str:
+    """Python that can import the pinned harbor.
+
+    The Claude Code hook runs with whatever `python3` the hook config names,
+    which usually has no harbor. Conversion then fails and the session sits
+    in failed/ with no ATIF. Prefer the repo trajectory venv when present.
+    """
+    configured = os.environ.get("KATAGAMI_TRAJECTORY_PYTHON")
+    if configured:
+        return configured
+    venv_python = (
+        Path(__file__).resolve().parents[2] / ".venv-trajectory" / "bin" / "python"
+    )
+    if venv_python.is_file():
+        return str(venv_python)
+    return sys.executable
 
 
 def _load_converter():
@@ -394,7 +414,7 @@ def _convert_and_post(entry: dict) -> tuple[bool, str]:
     archive_name = entry.get("trajectory_id") or entry["session_id"]
 
     command = [
-        sys.executable,
+        converter_python(),
         str(script),
         "--transcript",
         str(entry["transcript_path"]),

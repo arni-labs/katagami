@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kento Desk — Harbor Almanac console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF; --surface:#EEF1F8; --text:#131A38; --muted:#5B647F;
+  --border:transparent; --accent:#E23A21; --on-accent:#FFFFFF;
+  --success:#1E7A4F; --warning:#C27A00; --error:#C22F18; --info:#24359E;
+  --hero-image:url('./hero.jpg');
+  --plate-shift:8px;
+  --font-display:'Archivo',sans-serif; --font-body:'Inter',sans-serif;
+  --control-h:48px;
+}
+*{margin:0;padding:0;box-sizing:border-box;min-width:0}
+body{font-family:var(--font-body);font-size:17px;line-height:1.55;color:var(--text);background:var(--bg)}
+
+.kento{position:relative;display:inline-block;padding-left:24px}
+.kento::before{content:"";position:absolute;left:0;top:.34em;width:13px;height:4px;background:var(--accent)}
+.kento::after{content:"";position:absolute;left:0;top:.34em;width:4px;height:13px;background:var(--accent)}
+
+.plate{position:relative}
+.plate::before{content:"";position:absolute;inset:0;background:var(--accent);transform:translate(var(--plate-shift),var(--plate-shift));z-index:0}
+.plate>.plate-face{position:relative;z-index:1;background:var(--surface);height:100%}
+.plate-ink::before{background:var(--text)}
+.plate-info::before{background:var(--info)}
+
+/* shell */
+.shell{display:grid;grid-template-columns:264px minmax(0,1fr);min-height:100vh}
+.side{background:var(--text);color:var(--bg);padding:36px 0;display:flex;flex-direction:column}
+.side .mast{font-family:var(--font-display);font-weight:900;font-size:24px;letter-spacing:-0.02em;padding:0 28px 36px}
+.side .mast span{color:var(--accent)}
+.side nav{display:flex;flex-direction:column}
+.side a{color:var(--bg);text-decoration:none;font-weight:600;font-size:16px;padding:13px 28px;opacity:.66;transition:opacity .15s,background .15s}
+.side a:hover{opacity:1}
+.side a.active{opacity:1;background:var(--accent);color:var(--on-accent)}
+.side .side-foot{margin-top:auto;padding:28px;font-size:14px;opacity:.55}
+
+.main{padding:44px 48px 72px;max-width:1480px}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:44px;flex-wrap:wrap}
+h1{font-family:var(--font-display);font-weight:900;font-size:40px;letter-spacing:-0.02em;line-height:1.05}
+.top-sub{color:var(--muted);margin-top:10px;font-size:16.5px}
+.top-actions{display:flex;gap:14px;flex-wrap:wrap}
+
+.btn{font-weight:700;font-size:16px;height:var(--control-h);padding:0 24px;cursor:pointer;display:inline-flex;align-items:center;border:0;font-family:var(--font-body);transition:transform .2s,box-shadow .2s,background .2s;border-radius:0}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{transform:translate(-3px,-3px);box-shadow:5px 5px 0 0 var(--text)}
+.btn-secondary{background:var(--surface);color:var(--text)}
+.btn-secondary:hover{background:var(--text);color:var(--bg)}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--info);outline-offset:2px}
+
+/* stat cards */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:36px;margin-bottom:56px}
+.stat .plate-face{padding:24px 24px 28px}
+.stat-label{font-size:14.5px;font-weight:600;color:var(--muted)}
+.stat-num{font-family:var(--font-display);font-weight:900;font-size:44px;letter-spacing:-0.02em;line-height:1.1;margin-top:8px}
+.stat-delta{font-size:14.5px;font-weight:700;margin-top:6px}
+.up{color:var(--success)}.down{color:var(--error)}.flat{color:var(--muted)}
+
+/* grid body */
+.cols{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:56px;align-items:start}
+.panel{margin-bottom:56px}
+.panel-title{font-family:var(--font-display);font-weight:900;font-size:24px;letter-spacing:-0.02em;margin-bottom:8px}
+.panel-note{color:var(--muted);font-size:15.5px;margin-bottom:26px}
+
+/* chart */
+.chart-plate .plate-face{padding:32px 32px 28px;background:var(--bg)}
+.chart{display:flex;align-items:flex-end;gap:18px;height:200px}
+.bar{flex:1;position:relative;background:var(--text)}
+.bar::before{content:"";position:absolute;inset:0;background:var(--accent);transform:translate(6px,6px);z-index:-1}
+.bar.today{background:var(--info)}
+.bar span{position:absolute;top:-28px;left:0;right:0;text-align:center;font-weight:700;font-size:13.5px}
+.chart-labels{display:flex;gap:18px;margin-top:12px}
+.chart-labels div{flex:1;text-align:center;font-size:13.5px;color:var(--muted)}
+.chart-legend{display:flex;flex-wrap:wrap;gap:14px 24px;margin-top:20px;font-size:14px;font-weight:600}
+.lg{display:flex;align-items:center;gap:9px}
+.lg i{width:14px;height:14px;display:inline-block}
+
+/* table */
+table{width:100%;border-collapse:collapse;font-size:15.5px}
+thead th{font-family:var(--font-display);font-weight:700;text-align:left;font-size:14px;padding:13px 16px;background:var(--text);color:var(--bg)}
+tbody td{padding:14px 16px}
+tbody tr:nth-child(even){background:var(--surface)}
+tbody tr:hover{background:var(--text);color:var(--bg)}
+tbody tr:hover .b-muted{background:var(--bg);color:var(--text)}
+td.num{font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;font-size:13px;font-weight:700;padding:4px 10px;white-space:nowrap}
+.b-run{background:var(--info);color:var(--on-accent)}
+.b-new{background:var(--accent);color:var(--on-accent)}
+.b-ok{background:var(--success);color:var(--on-accent)}
+.b-warn{background:var(--warning);color:var(--on-accent)}
+.b-muted{background:var(--surface);color:var(--muted)}
+
+/* timeline */
+.timeline{display:flex;flex-direction:column}
+.tl{display:grid;grid-template-columns:64px 20px minmax(0,1fr);gap:0 16px;padding-bottom:26px;position:relative}
+.tl-time{font-size:13.5px;font-weight:700;color:var(--muted);padding-top:2px;text-align:right}
+.tl-notch{position:relative}
+.tl-notch::before{content:"";position:absolute;left:8px;top:8px;bottom:-18px;width:2px;background:var(--surface)}
+.tl:last-child .tl-notch::before{display:none}
+.tl-notch::after{content:"";position:absolute;left:3px;top:3px;width:12px;height:12px;background:var(--accent)}
+.tl.blue .tl-notch::after{background:var(--info)}
+.tl.green .tl-notch::after{background:var(--success)}
+.tl-body strong{font-weight:700}
+.tl-body{font-size:15.5px}
+.tl-body .who{color:var(--muted);font-size:14px;margin-top:3px}
+
+/* form */
+.form-plate .plate-face{background:var(--bg);padding:32px}
+.field{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
+label{font-weight:600;font-size:15px}
+input[type=text],input[type=date],select,textarea{font-family:var(--font-body);font-size:16.5px;color:var(--text);background:var(--surface);border:0;height:var(--control-h);padding:0 16px;width:100%;appearance:none;border-radius:0}
+textarea{height:auto;min-height:96px;padding:12px 16px;resize:vertical}
+select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9'><path d='M1 1l6 6 6-6' stroke='%23131A38' stroke-width='2.5' fill='none'/></svg>");background-repeat:no-repeat;background-position:right 16px center;padding-right:44px}
+input[type=date]{padding-right:12px}
+.form-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.form-foot{display:flex;gap:14px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.form-hint{font-size:14px;color:var(--muted)}
+
+/* responsive */
+@media (max-width:1240px){
+  .cols{grid-template-columns:minmax(0,1fr)}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .side{flex-direction:row;align-items:center;padding:0;overflow-x:auto}
+  .side .mast{padding:18px 24px}
+  .side nav{flex-direction:row}
+  .side a{padding:18px 16px;white-space:nowrap}
+  .side a:nth-child(n+4){display:none}
+  .side .side-foot{display:none}
+  .main{padding:32px 24px 56px}
+}
+@media (max-width:640px){
+  .stats{grid-template-columns:minmax(0,1fr)}
+  .form-row{grid-template-columns:minmax(0,1fr)}
+  h1{font-size:32px}
+  table th:nth-child(2),table td:nth-child(2),table th:nth-child(3),table td:nth-child(3),table th:nth-child(4),table td:nth-child(4){display:none}
+  .chart{gap:8px}.chart-labels{gap:8px}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="side">
+    <div class="mast">Kento <span>Desk</span></div>
+    <nav>
+      <a href="#" class="active">The run</a>
+      <a href="#">Serials</a>
+      <a href="#">Readers</a>
+      <a href="#">Margins</a>
+      <a href="#">Schedule</a>
+      <a href="#">Settings</a>
+    </nav>
+    <div class="side-foot">Harbor Almanac<br>Editor console · v7</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 class="kento">The run — week 32</h1>
+        <div class="top-sub">Harbor Almanac · 4 serials in motion · Wednesday, August 13</div>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-secondary">Export run sheet</button>
+        <button class="btn btn-primary">New installment</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat plate"><div class="plate-face">
+        <div class="stat-label">Readers at the desk now</div>
+        <div class="stat-num">1,418</div>
+        <div class="stat-delta up">+212 vs last Wednesday</div>
+      </div></div>
+      <div class="stat plate plate-ink"><div class="plate-face">
+        <div class="stat-label">Median evening sitting</div>
+        <div class="stat-num">41 min</div>
+        <div class="stat-delta up">+6 min since Part 7 landed</div>
+      </div></div>
+      <div class="stat plate plate-info"><div class="plate-face">
+        <div class="stat-label">Margin notes this week</div>
+        <div class="stat-num">3,204</div>
+        <div class="stat-delta flat">level with week 31</div>
+      </div></div>
+      <div class="stat plate"><div class="plate-face">
+        <div class="stat-label">Season completion</div>
+        <div class="stat-num">83%</div>
+        <div class="stat-delta down">−2 pts · Night Ferry gap</div>
+      </div></div>
+    </div>
+
+    <div class="cols">
+      <div>
+        <div class="panel">
+          <div class="panel-title kento">Evening reading curve</div>
+          <div class="panel-note">Readers seated per evening, week 32. Registration blue marks tonight's run.</div>
+          <div class="chart-plate plate plate-ink"><div class="plate-face">
+            <div class="chart">
+              <div class="bar" style="height:38%"><span>492</span></div>
+              <div class="bar" style="height:52%"><span>661</span></div>
+              <div class="bar today" style="height:100%"><span>1,418</span></div>
+              <div class="bar" style="height:64%"><span>803</span></div>
+              <div class="bar" style="height:47%"><span>598</span></div>
+              <div class="bar" style="height:72%"><span>901</span></div>
+              <div class="bar" style="height:83%"><span>1,044</span></div>
+            </div>
+            <div class="chart-labels"><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div></div>
+            <div class="chart-legend">
+              <span class="lg"><i style="background:var(--text)"></i>Seated readers</span>
+              <span class="lg"><i style="background:var(--info)"></i>Tonight</span>
+              <span class="lg"><i style="background:var(--accent)"></i>Registration plate</span>
+            </div>
+          </div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title kento">Installments on the press</div>
+          <div class="panel-note">Every part in week 32's run, by serial and state.</div>
+          <table>
+            <thead><tr><th>Installment</th><th>Serial</th><th>Author</th><th>Words</th><th>Readers</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Part 7 — The Commission</td><td>The Paper Harbor</td><td>Mirei Okazaki</td><td class="num">9,420</td><td class="num">7,201</td><td><span class="badge b-run">Running</span></td></tr>
+              <tr><td>Part 1 — Chamfer</td><td>Gridlock Republic</td><td>Tomas Ferreira</td><td class="num">11,080</td><td class="num">2,940</td><td><span class="badge b-new">New part</span></td></tr>
+              <tr><td>Part 9 — The Basement</td><td>Vermilion Ledger</td><td>Ada Okonkwo</td><td class="num">8,660</td><td class="num">11,480</td><td><span class="badge b-ok">Complete</span></td></tr>
+              <tr><td>Part 4 — Night Ferry</td><td>The Paper Harbor</td><td>Mirei Okazaki</td><td class="num">10,140</td><td class="num">—</td><td><span class="badge b-warn">On pause</span></td></tr>
+              <tr><td>Part 2 — Superblock</td><td>Gridlock Republic</td><td>Tomas Ferreira</td><td class="num">9,875</td><td class="num">—</td><td><span class="badge b-muted">Draft</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <div class="panel-title kento">Schedule an installment</div>
+          <div class="panel-note">It joins the run sheet and readers' queues at the chosen date.</div>
+          <div class="form-plate plate"><div class="plate-face">
+            <div class="field">
+              <label for="f-title">Installment title</label>
+              <input type="text" id="f-title" value="Part 8 — The Second Proof">
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label for="f-serial">Serial</label>
+                <select id="f-serial"><option>The Paper Harbor</option><option>Gridlock Republic</option><option>Vermilion Ledger</option></select>
+              </div>
+              <div class="field">
+                <label for="f-date">Press date</label>
+                <input type="date" id="f-date" value="2026-08-20">
+              </div>
+            </div>
+            <div class="field">
+              <label for="f-note">Note to readers</label>
+              <textarea id="f-note">The commission goes to proof — and the shop finds out what the client actually ordered.</textarea>
+            </div>
+            <div class="form-foot">
+              <button class="btn btn-primary">Set in register</button>
+              <span class="form-hint">Queues for 1,418 desks</span>
+            </div>
+          </div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title kento">Editorial margins</div>
+          <div class="panel-note">The desk's own notes, latest first.</div>
+          <div class="timeline">
+            <div class="tl">
+              <div class="tl-time">18:04</div><div class="tl-notch"></div>
+              <div class="tl-body"><strong>Part 7 crossed 7,000 seated readers.</strong><div class="who">Run monitor · The Paper Harbor</div></div>
+            </div>
+            <div class="tl blue">
+              <div class="tl-time">16:31</div><div class="tl-notch"></div>
+              <div class="tl-body"><strong>Ferreira filed Part 2 — Superblock</strong> for line edit.<div class="who">Noor Haddad · Gridlock Republic</div></div>
+            </div>
+            <div class="tl green">
+              <div class="tl-time">14:12</div><div class="tl-notch"></div>
+              <div class="tl-body"><strong>Vermilion Ledger bound.</strong> Season record sent to 11,480 readers.<div class="who">Season desk · Field &amp; Folio</div></div>
+            </div>
+            <div class="tl">
+              <div class="tl-time">09:47</div><div class="tl-notch"></div>
+              <div class="tl-body"><strong>Night Ferry pause flagged</strong> — completion dipped 2 points; recap scheduled.<div class="who">Run monitor · The Paper Harbor</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

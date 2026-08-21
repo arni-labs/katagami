@@ -13,16 +13,20 @@ Read the knowledge files in your workspace:
 - `/system/knowledge/quality-standards.md` — quality thresholds
 - `/system/knowledge/feedback-log.md` — human feedback (may contain specific notes about target languages)
 
-Load accepted taste rules before judging any language:
-```python
-accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")
-```
-Use only Accepted rules. Positive rules describe patterns to preserve or
-amplify; negative rules describe archive-derived anti-patterns to avoid.
-Proposed, Rejected, and Superseded rules must have no effect on quality review.
-Accepted TasteRules are the authoritative reusable design tests. The knowledge
-files provide orientation and hard artifact context; do not recreate parallel
-anti-slop checklists from prose.
+Read `knowledge/rules/design-language.md` before judging any language.
+That file is the rulebook. Do **not** list `TasteRules` entities.
+
+Open these artifacts off the language entity, by file id, before ruling:
+
+1. DESIGN.md
+2. Landing
+3. Embodiment
+4. Dashboard
+5. shadcn artifacts (registry theme, components.md, preview shots)
+6. Thumbnail
+
+A path guessed from the slug is not an open. A PNG you wrote and never
+read back is not a look.
 
 ## Process
 
@@ -194,13 +198,12 @@ rather than reviewing unrelated languages. A failure here drains only THIS direc
          'design_md_format_version': 'alpha'
      })
      ```
-10. **Evaluate against the spec and Accepted TasteRules.** Fix every concrete
+10. **Evaluate against the spec and `design-language.md`.** Fix every concrete
     violation before completion. Use the language's `curator_notes` first when
-    present, then apply the Accepted TasteRules as the reusable visual quality
-    bar. Hard artifact defects still require direct repair: missing spec
-    sections, invalid DESIGN.md, unreadable embodiment files, stale shadcn
-    component artifacts, missing responsive CSS, unstyled browser defaults, and
-    broken alignment.
+    present, then apply `knowledge/rules/design-language.md`. Hard artifact
+    defects still require direct repair: missing spec sections, invalid
+    DESIGN.md, unreadable embodiment files, stale shadcn component artifacts,
+    missing responsive CSS, unstyled browser defaults, and broken alignment.
 11. **Regenerate the embodiment as self-contained HTML.** Follow the sandbox visual feedback loop from the `synthesize-language` skill:
    - Write HTML to sandbox
    - Prepare and prove the browser runtime before any screenshot.
@@ -438,9 +441,9 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
     The CurationJob finalizer reads the referenced embodiment and DESIGN.md
     files, verifies the attached shadcn/ui registry theme, verifies
     agent-authored shadcn component recipes and preview-shot manifests, rejects
-    base64 text thumbnail payloads, marks verified fields through internal
-    actions, marks quality as passed, and publishes only if the entity/file
-    world is actually valid.
+    base64 text thumbnail payloads, and marks verified fields through internal
+    actions. It does **not** publish. Publish is a human decision
+    (`ApprovePublish`); an agent may execute `Publish` only after that.
     Never call `Archive` on a `DesignLanguage` during `quality_review` or public
     asset backfill. If a language cannot pass, fail the job with a concrete
     `error_message` so the pipeline can repair it through the normal governed

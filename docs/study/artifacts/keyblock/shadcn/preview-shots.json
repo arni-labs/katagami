@@ -1,0 +1,92 @@
+{
+  "artifact": "katagami:shadcn-preview-shots",
+  "format": "renderable-v1",
+  "renderable": true,
+  "language": "keyblock",
+  "visualProfile": {
+    "family": "flat-print",
+    "material": "paper",
+    "contour": "cut",
+    "border": "none",
+    "underlay": "offset-plate-8to10px",
+    "grain": "none",
+    "stickerBadges": false,
+    "motion": "register-slip-250ms",
+    "density": "airy",
+    "accents": ["#131A38", "#E23A21", "#24359E"]
+  },
+  "componentRecipes": [
+    { "primitive": "button", "recipe": "rounded-none h-12 px-7 font-bold; primary bg #E23A21 on white text, hover lifts -3px with 6px hard ink shadow; secondary washed paper; focus 3px #24359E ring" },
+    { "primitive": "card", "recipe": "rounded-none border-0 bg #EEF1F8 over an offset solid plate (ink/vermillion/registration) translated 10px" },
+    { "primitive": "input", "recipe": "rounded-none border-0 bg #EEF1F8 h-12 px-4 17px text; error = inset 3px #C22F18 plate" },
+    { "primitive": "textarea", "recipe": "as input, min-h 120px, vertical resize" },
+    { "primitive": "select", "recipe": "input trigger + custom ink chevron; ink popover panel, items highlight vermillion" },
+    { "primitive": "dialog", "recipe": "rounded-none borderless paper panel on vermillion offset plate over solid ink overlay, Archivo 900 title with kento mark" },
+    { "primitive": "sheet", "recipe": "borderless paper side panel with a 12px vermillion plate offset behind its leading edge" },
+    { "primitive": "tabs", "recipe": "washed-paper tray p-1; active trigger takes the full ink plate" },
+    { "primitive": "badge", "recipe": "rounded-none solid plates: #24359E running, #E23A21 new, #1E7A4F complete, #C27A00 paused, washed-paper draft" },
+    { "primitive": "separator", "recipe": "never a line — 16px transparent gap, or a 12x4px vermillion kento tick" },
+    { "primitive": "checkbox", "recipe": "square 26px washed-paper fill; checked fills ink with white check" },
+    { "primitive": "switch", "recipe": "square 58x30 washed-paper track; on = vermillion track, white square thumb" },
+    { "primitive": "slider", "recipe": "square thumb #E23A21 on washed-paper rail, ink range" },
+    { "primitive": "tooltip", "recipe": "solid ink block 14.5px white text with cut triangle pointer" },
+    { "primitive": "dropdown-menu", "recipe": "ink panel, white items, focus row vermillion; separators are gaps" },
+    { "primitive": "table", "recipe": "ink header band; rows alternate paper/washed paper; hover row takes full ink plate; numerals bold tabular right" }
+  ],
+  "shots": [
+    {
+      "id": "application-shell",
+      "title": "The desk shell",
+      "viewport": { "width": 1440, "height": 960 },
+      "scene": {
+        "eyebrow": "Kento Desk · Harbor Almanac",
+        "headline": "The run — week 32",
+        "description": "Editor console shell: ink sidebar with vermillion active item, four kento-plate stat tiles, and the evening reading curve printed as ink bars over vermillion plates.",
+        "actions": ["New installment", "Export run sheet"],
+        "stats": [
+          { "label": "Readers at the desk now", "value": "1,418", "delta": "+212 vs last Wednesday" },
+          { "label": "Median evening sitting", "value": "41 min", "delta": "+6 min since Part 7" },
+          { "label": "Margin notes this week", "value": "3,204", "delta": "level with week 31" },
+          { "label": "Season completion", "value": "83%", "delta": "−2 pts · Night Ferry gap" }
+        ]
+      }
+    },
+    {
+      "id": "detail-editor",
+      "title": "The installment editor",
+      "viewport": { "width": 1440, "height": 960 },
+      "scene": {
+        "eyebrow": "The Paper Harbor · Part 8",
+        "headline": "Schedule an installment",
+        "description": "Form plate on a vermillion registration offset: title input, serial select, press date, and a note-to-readers textarea — all borderless washed-paper controls with registration-blue focus.",
+        "actions": ["Set in register", "Save as draft"],
+        "fields": [
+          { "label": "Installment title", "type": "input", "value": "Part 8 — The Second Proof" },
+          { "label": "Serial", "type": "select", "value": "The Paper Harbor" },
+          { "label": "Press date", "type": "date", "value": "2026-08-20" },
+          { "label": "Note to readers", "type": "textarea", "value": "The commission goes to proof — and the shop finds out what the client actually ordered." },
+          { "label": "Fold a recap in after long gaps", "type": "checkbox", "value": "checked" },
+          { "label": "Evening quiet mode", "type": "switch", "value": "on" }
+        ]
+      }
+    },
+    {
+      "id": "data-operations",
+      "title": "The run sheet",
+      "viewport": { "width": 1440, "height": 960 },
+      "scene": {
+        "eyebrow": "Harbor Almanac · Week 32",
+        "headline": "Installments on the press",
+        "description": "Data operations: ink-band table of the week's installments with badge plates, tabs tray (Queue / Margins / Finished), and a dropdown of run actions on the hovered ink row.",
+        "actions": ["Filter serials", "Export CSV"],
+        "rows": [
+          { "installment": "Part 7 — The Commission", "serial": "The Paper Harbor", "author": "Mirei Okazaki", "words": "9,420", "readers": "7,201", "status": "Running" },
+          { "installment": "Part 1 — Chamfer", "serial": "Gridlock Republic", "author": "Tomas Ferreira", "words": "11,080", "readers": "2,940", "status": "New part" },
+          { "installment": "Part 9 — The Basement", "serial": "Vermilion Ledger", "author": "Ada Okonkwo", "words": "8,660", "readers": "11,480", "status": "Complete" },
+          { "installment": "Part 4 — Night Ferry", "serial": "The Paper Harbor", "author": "Mirei Okazaki", "words": "10,140", "readers": "—", "status": "On pause" },
+          { "installment": "Part 2 — Superblock", "serial": "Gridlock Republic", "author": "Tomas Ferreira", "words": "9,875", "readers": "—", "status": "Draft" }
+        ]
+      }
+    }
+  ]
+}

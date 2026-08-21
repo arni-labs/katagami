@@ -1,0 +1,611 @@
+# STUDY POISON of the live CuratorAgent spec. Not production.
+# SubmitLanguage can fire from SurfacesRendered without LookAt*.
+# SeenBeforeSubmit is unchanged and must FAIL.
+#
+# CuratorAgent — expected curator *conduct* on the live Katagami app.
+#
+# This machine encodes what we expect the agent to DO, the same acts as
+# research-direction and synthesize-language. It is not a second pipeline
+# and not a job-status ledger.
+#
+# The live objects stay themselves:
+#   CurationQuery, CurationDirection, CurationJob, DesignLanguage, DesignSource
+# The agent still calls SpawnDirection / CompleteResearch / SetSpec /
+# SubmitForReview / CompleteSynthesis on those objects. This ledger is the
+# ordered behavior we will judge.
+#
+# Research: take the query, search the web, index sources, derive 3–5
+# directions, complete.
+# Synthesize: take the direction, read design-language.md (never TasteRule
+# entities), author every named part (concept, tokens, Katagami spec,
+# DESIGN.md, landing, embodiment, dashboard, shadcn, thumbnail), render,
+# look at each surface, fix, submit.
+#
+# Cross-entity guards are the join to the app. Behavior without the matching
+# object state is refused.
+#
+# Action max_count on search / index / derive is checker fuel so the graph
+# stays finite. It is not a story invariant. Story invariants have names
+# like SeenBeforeSubmit.
+#
+# This phase: source_search + synthesize only (D24).
+#
+# Research:
+#   Idle -> ReadingQuery -> Searching -> SourcesReady -> DirectionsReady -> Idle
+# Synthesize:
+#   Idle -> ReadingDirection -> Authoring -> SurfacesRendered -> Looking
+#        -> LanguageUnderReview -> Idle
+#   Looking -> Authoring   (FixSurfaces — look-fix, max 12)
+# Working states -> Abandoned
+
+[automaton]
+name = "CuratorAgent"
+states = [
+  "Idle",
+  "ReadingQuery",
+  "Searching",
+  "SourcesReady",
+  "DirectionsReady",
+  "ReadingDirection",
+  "Authoring",
+  "SurfacesRendered",
+  "Looking",
+  "LanguageUnderReview",
+  "Abandoned",
+]
+initial = "Idle"
+allow_indefinite_states = ["Idle", "Abandoned"]
+
+[[state]]
+name = "session_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "trajectory_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "spec_version"
+type = "string"
+initial = ""
+
+[[state]]
+name = "harness"
+type = "string"
+initial = ""
+
+[[state]]
+name = "capture_recorded"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "job_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "held_job_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "query_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "direction_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "design_language_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "searches_run"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "sources_indexed"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "directions_derived"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "revision_rounds"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "abandon_reason"
+type = "string"
+initial = ""
+
+# --- Authoring parts (D27) ------------------------------------------------
+
+[[state]]
+name = "design_rules_read"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "concept_authored"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "tokens_authored"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "katagami_spec_authored"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "design_md_authored"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "landing_authored"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "embodiment_authored"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "dashboard_authored"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "shadcn_authored"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "thumbnail_authored"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "landing_looked"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "embodiment_looked"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "dashboard_looked"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "wide_captured"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "desktop_captured"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "tablet_captured"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "mobile_390_captured"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "language_submitted"
+type = "bool"
+initial = "false"
+
+# ============================================================================
+# Idle
+# ============================================================================
+
+[[action]]
+name = "RecordCapture"
+kind = "input"
+from = ["Idle"]
+params = ["session_id", "trajectory_id", "spec_version", "harness"]
+guard = [{ type = "is_false", var = "capture_recorded" }]
+effect = [{ type = "set_bool", var = "capture_recorded", value = "true" }]
+hint = "Store how this run will be found. One-shot. Not work yet."
+
+[[action]]
+name = "TakeQuery"
+kind = "input"
+from = ["Idle"]
+to = "ReadingQuery"
+params = ["job_id", "query_id"]
+guard = [
+  { type = "is_true", var = "capture_recorded" },
+  { type = "cross_entity_state", entity_type = "CurationJob", entity_id_source = "job_id", required_status = ["Running"], required = true },
+  { type = "cross_entity_state", entity_type = "CurationQuery", entity_id_source = "query_id", required_status = ["Researching"], required = true },
+]
+hint = "Take the live query. The source_search job is already Running and the query is Researching. The next act is to search the web, not to invent a direction on this ledger."
+
+# ============================================================================
+# Research conduct — same order as research-direction
+# ============================================================================
+
+[[action]]
+name = "SearchTheWeb"
+kind = "input"
+from = ["ReadingQuery", "Searching"]
+to = "Searching"
+params = ["search_notes"]
+guard = [{ type = "max_count", var = "searches_run", max = 4 }]
+effect = [{ type = "increment", var = "searches_run" }]
+hint = "Search the web for movements and sources. Matches research-direction: varied focused queries, then a shortlist. max_count is checker fuel, not a story about how many searches taste requires."
+
+[[action]]
+name = "IndexSources"
+kind = "input"
+from = ["Searching", "SourcesReady"]
+to = "SourcesReady"
+params = ["source_notes"]
+guard = [
+  { type = "min_count", var = "searches_run", min = 1 },
+  { type = "max_count", var = "sources_indexed", max = 8 },
+]
+effect = [{ type = "increment", var = "sources_indexed" }]
+hint = "Index a source as a DesignSource on the commons. The create/Submit/Index calls live on DesignSource. This records that the agent actually did that work. Cannot run before at least one search."
+
+[[action]]
+name = "DeriveDirections"
+kind = "input"
+from = ["SourcesReady", "DirectionsReady"]
+to = "DirectionsReady"
+params = ["movement_name"]
+guard = [
+  { type = "min_count", var = "sources_indexed", min = 1 },
+  { type = "max_count", var = "directions_derived", max = 5 },
+]
+effect = [{ type = "increment", var = "directions_derived" }]
+hint = "Derive one direction from the research. The mint is CurationJob.SpawnDirection on the held job — this ledger step is the conduct. A finished search yields 3–5 directions (D26). The max is five; CompleteResearch refuses fewer than three."
+
+[[action]]
+name = "CompleteResearch"
+kind = "input"
+from = ["DirectionsReady"]
+to = "Idle"
+guard = [
+  { type = "min_count", var = "directions_derived", min = 3 },
+  { type = "cross_entity_state", entity_type = "CurationJob", entity_id_source = "job_id", required_status = ["Finalizing", "Completed"], required = true },
+]
+hint = "Stop researching only after at least three directions were derived (and at most five) and CurationJob.CompleteResearch has already committed. Completing with fewer than three is the empty-fan-out fail, not a success here."
+
+# ============================================================================
+# Synthesize conduct — granular authoring (D27)
+# ============================================================================
+
+[[action]]
+name = "TakeDirection"
+kind = "input"
+from = ["Idle"]
+to = "ReadingDirection"
+params = ["held_job_id", "job_id", "query_id", "direction_id"]
+guard = [
+  { type = "is_true", var = "capture_recorded" },
+  { type = "cross_entity_state", entity_type = "CurationJob", entity_id_source = "held_job_id", required_status = ["Running"], required = true },
+  { type = "cross_entity_state", entity_type = "CurationDirection", entity_id_source = "direction_id", required_status = ["Synthesizing"], required = true },
+]
+effect = [
+  { type = "set_bool", var = "design_rules_read", value = "false" },
+  { type = "set_bool", var = "concept_authored", value = "false" },
+  { type = "set_bool", var = "tokens_authored", value = "false" },
+  { type = "set_bool", var = "katagami_spec_authored", value = "false" },
+  { type = "set_bool", var = "design_md_authored", value = "false" },
+  { type = "set_bool", var = "landing_authored", value = "false" },
+  { type = "set_bool", var = "embodiment_authored", value = "false" },
+  { type = "set_bool", var = "dashboard_authored", value = "false" },
+  { type = "set_bool", var = "shadcn_authored", value = "false" },
+  { type = "set_bool", var = "thumbnail_authored", value = "false" },
+  { type = "set_bool", var = "landing_looked", value = "false" },
+  { type = "set_bool", var = "embodiment_looked", value = "false" },
+  { type = "set_bool", var = "dashboard_looked", value = "false" },
+  { type = "set_bool", var = "wide_captured", value = "false" },
+  { type = "set_bool", var = "desktop_captured", value = "false" },
+  { type = "set_bool", var = "tablet_captured", value = "false" },
+  { type = "set_bool", var = "mobile_390_captured", value = "false" },
+  { type = "set_bool", var = "language_submitted", value = "false" },
+]
+hint = "Take the direction the pipeline queued. Read the brief from that CurationDirection before authoring. Clears every authoring, look, and width flag so a second hold cannot inherit the last language."
+
+[[action]]
+name = "ReadDesignRules"
+kind = "input"
+from = ["ReadingDirection"]
+to = "Authoring"
+params = ["design_language_id"]
+guard = [
+  { type = "is_false", var = "design_rules_read" },
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "design_language_id", required_status = ["Draft"], required = true },
+]
+effect = [{ type = "set_bool", var = "design_rules_read", value = "true" }]
+hint = "Read knowledge/rules/design-language.md — that file is the rulebook. Do not list Accepted TasteRule entities. The write target is a DesignLanguage still in Draft."
+
+[[action]]
+name = "AuthorLanguage"
+kind = "input"
+from = ["Authoring"]
+params = ["author_notes"]
+guard = [
+  { type = "is_true", var = "design_rules_read" },
+  { type = "is_false", var = "concept_authored" },
+]
+effect = [
+  { type = "set_bool", var = "concept_authored", value = "true" },
+  { type = "set_bool", var = "tokens_authored", value = "true" },
+  { type = "set_bool", var = "katagami_spec_authored", value = "true" },
+  { type = "set_bool", var = "design_md_authored", value = "true" },
+  { type = "set_bool", var = "landing_authored", value = "true" },
+  { type = "set_bool", var = "embodiment_authored", value = "true" },
+  { type = "set_bool", var = "dashboard_authored", value = "true" },
+  { type = "set_bool", var = "shadcn_authored", value = "true" },
+  { type = "set_bool", var = "thumbnail_authored", value = "true" },
+]
+hint = "Author every named part: concept, tokens, Katagami spec, DESIGN.md, landing, embodiment, dashboard, shadcn, thumbnail. One mark is enough — writing the files can be many writes, and SubmitDesignLanguage can be one call. Render is refused until this has run."
+
+[[action]]
+name = "RenderSurfaces"
+kind = "input"
+from = ["Authoring"]
+to = "SurfacesRendered"
+params = ["render_notes"]
+guard = [
+  { type = "is_true", var = "design_rules_read" },
+  { type = "is_true", var = "concept_authored" },
+  { type = "is_true", var = "tokens_authored" },
+  { type = "is_true", var = "katagami_spec_authored" },
+  { type = "is_true", var = "design_md_authored" },
+  { type = "is_true", var = "landing_authored" },
+  { type = "is_true", var = "embodiment_authored" },
+  { type = "is_true", var = "dashboard_authored" },
+  { type = "is_true", var = "shadcn_authored" },
+  { type = "is_true", var = "thumbnail_authored" },
+]
+effect = [
+  { type = "set_bool", var = "wide_captured", value = "true" },
+  { type = "set_bool", var = "desktop_captured", value = "true" },
+  { type = "set_bool", var = "tablet_captured", value = "true" },
+  { type = "set_bool", var = "mobile_390_captured", value = "true" },
+]
+hint = "Render the current bytes in a real browser at wide, desktop, tablet, and 390px mobile. This mark claims those four captures exist. Looking is refused until this has run. The kernel cannot see Playwright; a 375px shot that still posts this action is a lie the ATIF judge must catch until a width param exists."
+
+[[action]]
+name = "LookAtLanding"
+kind = "input"
+from = ["SurfacesRendered", "Looking"]
+to = "Looking"
+params = ["landing_look_notes"]
+guard = [
+  { type = "is_false", var = "landing_looked" },
+  { type = "is_true", var = "wide_captured" },
+  { type = "is_true", var = "desktop_captured" },
+  { type = "is_true", var = "tablet_captured" },
+  { type = "is_true", var = "mobile_390_captured" },
+]
+effect = [{ type = "set_bool", var = "landing_looked", value = "true" }]
+hint = "Look at the landing screenshots as images. Writing a PNG is not this. Refused until RenderSurfaces claimed the four widths."
+
+[[action]]
+name = "LookAtEmbodiment"
+kind = "input"
+from = ["SurfacesRendered", "Looking"]
+to = "Looking"
+params = ["embodiment_look_notes"]
+guard = [
+  { type = "is_false", var = "embodiment_looked" },
+  { type = "is_true", var = "wide_captured" },
+  { type = "is_true", var = "desktop_captured" },
+  { type = "is_true", var = "tablet_captured" },
+  { type = "is_true", var = "mobile_390_captured" },
+]
+effect = [{ type = "set_bool", var = "embodiment_looked", value = "true" }]
+hint = "Look at the embodiment screenshots as images. Refused until RenderSurfaces claimed the four widths."
+
+[[action]]
+name = "LookAtDashboard"
+kind = "input"
+from = ["SurfacesRendered", "Looking"]
+to = "Looking"
+params = ["dashboard_look_notes"]
+guard = [
+  { type = "is_false", var = "dashboard_looked" },
+  { type = "is_true", var = "wide_captured" },
+  { type = "is_true", var = "desktop_captured" },
+  { type = "is_true", var = "tablet_captured" },
+  { type = "is_true", var = "mobile_390_captured" },
+]
+effect = [{ type = "set_bool", var = "dashboard_looked", value = "true" }]
+hint = "Look at the dashboard screenshots as images. Refused until RenderSurfaces claimed the four widths."
+
+[[action]]
+name = "FixSurfaces"
+kind = "input"
+from = ["Looking"]
+to = "Authoring"
+params = ["fix_note"]
+guard = [{ type = "max_count", var = "revision_rounds", max = 12 }]
+effect = [
+  { type = "increment", var = "revision_rounds" },
+  { type = "set_bool", var = "landing_looked", value = "false" },
+  { type = "set_bool", var = "embodiment_looked", value = "false" },
+  { type = "set_bool", var = "dashboard_looked", value = "false" },
+  { type = "set_bool", var = "wide_captured", value = "false" },
+  { type = "set_bool", var = "desktop_captured", value = "false" },
+  { type = "set_bool", var = "tablet_captured", value = "false" },
+  { type = "set_bool", var = "mobile_390_captured", value = "false" },
+]
+hint = "Fix what the look found. Lands back in Authoring so the only way forward is render then look again. Clears every look and width claim. Bounded at twelve."
+
+# POISON (study only): SubmitLanguage is legal from SurfacesRendered,
+# before any LookAt*. SeenBeforeSubmit still requires the three looks
+# when LanguageUnderReview. Production spec is unchanged.
+[[action]]
+name = "SubmitLanguage"
+kind = "input"
+from = ["SurfacesRendered", "Looking"]
+to = "LanguageUnderReview"
+guard = [
+  { type = "is_false", var = "language_submitted" },
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "design_language_id", required_status = ["UnderReview"], required = true },
+]
+effect = [{ type = "set_bool", var = "language_submitted", value = "true" }]
+hint = "Hand the language to review. DesignLanguage.SubmitForReview is the gate; this step is only legal once that entity is already UnderReview and every current look has happened. One language, one submit on this hold."
+
+[[action]]
+name = "CompleteSynthesis"
+kind = "input"
+from = ["LanguageUnderReview"]
+to = "Idle"
+guard = [
+  { type = "cross_entity_state", entity_type = "CurationJob", entity_id_source = "job_id", required_status = ["Finalizing", "Completed"], required = true },
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "design_language_id", required_status = ["UnderReview"], required = true },
+]
+hint = "Put the synthesize job down only after CurationJob.CompleteSynthesis committed and the language is still UnderReview."
+
+# ============================================================================
+# Give up
+# ============================================================================
+
+[[action]]
+name = "Abandon"
+kind = "input"
+from = [
+  "ReadingQuery",
+  "Searching",
+  "SourcesReady",
+  "DirectionsReady",
+  "ReadingDirection",
+  "Authoring",
+  "SurfacesRendered",
+  "Looking",
+  "LanguageUnderReview",
+]
+to = "Abandoned"
+params = ["abandon_reason"]
+hint = "End the work and say which act could not be finished."
+
+[[state_timeout]]
+state = "ReadingQuery"
+after_seconds = 900
+on_timeout = "Abandon"
+params = { abandon_reason = "Took the query and never searched." }
+
+[[state_timeout]]
+state = "Searching"
+after_seconds = 1800
+on_timeout = "Abandon"
+params = { abandon_reason = "Searched and never indexed sources." }
+
+[[state_timeout]]
+state = "SourcesReady"
+after_seconds = 1800
+on_timeout = "Abandon"
+params = { abandon_reason = "Indexed sources and never derived a direction." }
+
+[[state_timeout]]
+state = "DirectionsReady"
+after_seconds = 900
+on_timeout = "Abandon"
+params = { abandon_reason = "Derived directions and never completed research." }
+
+[[state_timeout]]
+state = "ReadingDirection"
+after_seconds = 900
+on_timeout = "Abandon"
+params = { abandon_reason = "Took the direction and never read the design-language rulebook." }
+
+[[state_timeout]]
+state = "Authoring"
+after_seconds = 3600
+on_timeout = "Abandon"
+params = { abandon_reason = "Started authoring and never rendered every named part." }
+
+[[state_timeout]]
+state = "SurfacesRendered"
+after_seconds = 900
+on_timeout = "Abandon"
+params = { abandon_reason = "Rendered and never looked." }
+
+[[state_timeout]]
+state = "Looking"
+after_seconds = 3600
+on_timeout = "Abandon"
+params = { abandon_reason = "Looked and never fixed or submitted." }
+
+[[state_timeout]]
+state = "LanguageUnderReview"
+after_seconds = 900
+on_timeout = "Abandon"
+params = { abandon_reason = "Language under review but synthesize job never completed." }
+
+# ============================================================================
+# Story invariants — named for the conduct, not the checker
+# ============================================================================
+
+[[invariant]]
+name = "SeenBeforeSubmit"
+when = ["LanguageUnderReview"]
+assert = "landing_looked && embodiment_looked && dashboard_looked && wide_captured && desktop_captured && tablet_captured && mobile_390_captured"
+
+[[invariant]]
+name = "OneLanguageOneSubmit"
+when = ["LanguageUnderReview"]
+assert = "language_submitted"
+
+[[invariant]]
+name = "LanguageHasEveryPart"
+when = ["LanguageUnderReview"]
+assert = "design_rules_read && concept_authored && tokens_authored && katagami_spec_authored && design_md_authored && landing_authored && embodiment_authored && dashboard_authored && shadcn_authored && thumbnail_authored"
+
+[[invariant]]
+name = "FixRoundsBounded"
+assert = "revision_rounds <= 12"
+
+[[invariant]]
+name = "AbandonedIsFinal"
+when = ["Abandoned"]
+assert = "no_further_transitions"
+
+[[liveness]]
+name = "QueryEventuallyResolves"
+from = ["ReadingQuery"]
+reaches = ["Idle", "Abandoned"]
+
+[[liveness]]
+name = "DirectionEventuallyResolves"
+from = ["ReadingDirection"]
+reaches = ["Idle", "Abandoned"]
+
+[[liveness]]
+name = "LanguageEventuallyResolves"
+from = ["Authoring"]
+reaches = ["Idle", "Abandoned"]

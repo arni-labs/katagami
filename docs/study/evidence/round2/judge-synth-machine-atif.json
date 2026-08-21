@@ -1,0 +1,142 @@
+{
+  "session": "synthesize",
+  "format": "atif",
+  "reference": "curator_agent.ioa.toml",
+  "units": [
+    {
+      "name": "capture_before_hold",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "20",
+          "reason": "RecordCapture ran from Idle and set capture_recorded before every TakeDirection. Step 4 captured ledger en-019ffd05-4aec-7fe2-b6f9-949858c76cd4 then steps 5/8 TakeDirection were refused on empty held_job_id; step 10 captured ledger en-019ffd06-0548-7342-b0d2-fee702f0fb2b then TakeDirection reached ReadingDirection; step 20 captured working ledger en-019ffd07-7549-7d12-a618-3b985e5155fa then TakeDirection. No hold preceded capture."
+        }
+      ]
+    },
+    {
+      "name": "take_live_query",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "Research-only (TakeQuery / ReadingQuery). This trajectory is synthesize; no TakeQuery."
+        }
+      ]
+    },
+    {
+      "name": "search_before_index",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "Research-only (SearchTheWeb before IndexSources). No web search."
+        }
+      ]
+    },
+    {
+      "name": "index_before_direction",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "Research-only (IndexSources before DeriveDirections). No DesignSource indexing."
+        }
+      ]
+    },
+    {
+      "name": "three_to_five_directions",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "Research-only (DeriveDirections 3–5 then CompleteResearch). No directions derived."
+        }
+      ]
+    },
+    {
+      "name": "take_queued_direction",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "20",
+          "reason": "TakeDirection on the pipeline-queued hold: job en-019ffd04-a782-7050-94f9-34a575005b0e status Running (step 7) and direction en-019ffd04-a739-70c2-a247-413a1357ecfa Keyblock Grid status Synthesizing (step 11). First ledger TakeDirection (steps 5, 8) refused because held_job_id was not persisted; step 10 then step 20 TakeDirection both reached ReadingDirection on ledgers created with held_job_id set. Working ledger en-019ffd07-7549-7d12-a618-3b985e5155fa is the one that authored."
+        }
+      ]
+    },
+    {
+      "name": "read_rulebook",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "13",
+          "reason": "Read katagami-curation/knowledge/rules/design-language.md (step 13) after a missing-path miss at step 11. No TasteRule entity list. Step 14 ReadDesignRules refused (empty persisted design_language_id). Step 18 minted Draft DesignLanguage en-019ffd07-2349-7e22-94f5-174852213c0b; step 20 persisted that id and ReadDesignRules moved the working ledger ReadingDirection→Authoring with design_rules_read=true."
+        }
+      ]
+    },
+    {
+      "name": "author_named_parts",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "45",
+          "reason": "After design_rules_read, step 45 AuthorLanguage set concept/tokens/katagami_spec/design_md/landing/embodiment/dashboard/shadcn/thumbnail. Matching writes exist: DESIGN.md + CSS tokens/concept (39), landing.html (36), embodiment.html (37), dashboard.html (38), shadcn registry-theme.json/components.md/preview-shots.json (40–42), thumbnail 600×400 (47), and SubmitDesignLanguage philosophy/tokens/rules/layout/guidance (79)."
+        }
+      ]
+    },
+    {
+      "name": "look_before_submit",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "77",
+          "reason": "LookAtLanding/Embodiment/Dashboard ran only after RenderSurfaces and after Read of the PNGs as images (not mere writes): steps 49–58 then LookAt* at 59; after FixSurfaces, steps 69–76 then LookAt* at 77. SubmitLanguage (80) is from Looking with landing_looked, embodiment_looked, and dashboard_looked true. Language was already UnderReview via SubmitForReview (79)."
+        }
+      ]
+    },
+    {
+      "name": "four_widths",
+      "occurrences": [
+        {
+          "verdict": "false",
+          "turn": "47",
+          "reason": "RenderSurfaces (48) sets wide_captured, desktop_captured, tablet_captured, and mobile_390_captured. Actual Playwright shots (46–47) are only three viewports: desktop 1440, tablet 768, mobile 375. No wide capture. Mobile is 375px, not 390. Spec hint: a 375px shot that still posts RenderSurfaces is a lie the ATIF judge must catch. Agent notes at 45/48 even say 'three viewports' and 'mobile 375x812'."
+        },
+        {
+          "verdict": "false",
+          "turn": "67",
+          "reason": "Round-2 re-render after FixSurfaces repeats the same three viewports (1440/768/375) and step 68 posts RenderSurfaces again, reclaiming wide_captured and mobile_390_captured with no wide shot and no 390px shot. Round-2 look notes (77) still report 'exactly 375px'."
+        }
+      ]
+    },
+    {
+      "name": "fix_and_relook",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "66",
+          "reason": "After Looking, bytes were edited (64–65). FixSurfaces (66) Looking→Authoring, revision_rounds=1 (≤12), and cleared look/width flags. Then re-render (67), RenderSurfaces (68), image Reads (69–76), and LookAtLanding/Embodiment/Dashboard (77) before SubmitLanguage. One look-fix loop, then submit."
+        }
+      ]
+    },
+    {
+      "name": "no_publish",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "80",
+          "reason": "SubmitLanguage left the ledger LanguageUnderReview; DesignLanguage en-019ffd07-2349-7e22-94f5-174852213c0b stayed UnderReview (97). No ApprovePublish, no Publish, no CompleteQualityReview. Stopped at submit/complete."
+        }
+      ]
+    },
+    {
+      "name": "abandon_honestly",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "No Abandon. Working ledger reached Idle via CompleteSynthesis (96). Unused first ledger stayed Idle (allowed); second ledger was left in ReadingDirection without Abandon, but the hold that authored did not take the abandon path."
+        }
+      ]
+    }
+  ]
+}

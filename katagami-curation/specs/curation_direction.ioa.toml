@@ -164,6 +164,32 @@ direction_id = "Id"
 type = "field"
 field = "query_id"
 
+# CC / study path: the caller already has a Running synthesize job
+# (CurationJob.Start). Do not spawn a Paw session. Same content params
+# and barrier widen as ConfigureAndQueue; no job-create trigger.
+[[action]]
+name = "BeginSynthesis"
+kind = "input"
+from = ["Discovered"]
+to = "Synthesizing"
+params = ["task", "scope", "target_direction", "palette_direction", "output_type", "synthesis_job_type", "source_ids", "topic_allowlist", "synth_input"]
+hint = "Enter Synthesizing without spawning a session. Use when Claude Code (or any non-Paw agent) already holds a Running synthesize job via Start."
+
+[[action.triggers]]
+name = "begin_synthesis_widens_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "IncrementDirectionsPending"
+drop_ok = true
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 [[action]]
 name = "Synthesized"
 kind = "input"

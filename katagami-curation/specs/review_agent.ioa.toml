@@ -1,22 +1,43 @@
-# ReviewAgent - I/O Automaton Specification
+# ReviewAgent — I/O Automaton Specification (craft-level)
 #
-# The review protocol a reviewing agent run must conform to (ARN-294). One
-# entity == one review of one curator submission, in one session. Like
-# CuratorAgent this is an ACTOR spec: layer 1 conformance replays a captured
-# trajectory against it, so "reviewed before the human was asked to publish"
-# is a checkable structural fact.
+# One review record per submitted artifact. Its job is to catch what the curator
+# got wrong by examining the ACTUAL ARTIFACTS rather than the curator's account
+# of them. Rendering an artifact is not reviewing it, and writing a PNG is not
+# looking at one.
 #
-# The ordering property this spec exists to carry: the machine review must act
-# BEFORE a human publish becomes available. HumanCurator.Publish is guarded on
-# `cross_entity_state` requiring this entity to be in `VerdictRecorded`
-# (human_curator.ioa.toml), so a submission no reviewer has ruled on is not
-# publishable — the guard, not a convention, is what holds the order.
+# Four states, and the substance is entirely inside Reviewing, where the acts of
+# examination are self-loops that form a dependency graph RecordVerdict is
+# guarded on. RENDERED IS SEPARATED FROM INSPECTED THROUGHOUT: a browser run
+# that writes a PNG sets `*_rendered`; only the image returning into the agent's
+# context as an image sets `*_inspected`. Those are different facts and the
+# machine treats them as different facts.
 #
-# This actor has no Publish action either. It records a verdict; the human
-# acts on it.
+# Why booleans here and states in CuratorAgent: every act below happens INSIDE
+# one state and can be repeated, undone by a repair, and redone. A boolean set
+# by a self-loop carries information no state does. (In CuratorAgent the same
+# obligations are steps BETWEEN states, so no boolean repeats them there.)
+#
+# WHAT THIS MACHINE GOVERNS: the reviewer's conduct. Properties of the artifact
+# — whether a landing file exists, whether DESIGN.md lints clean, whether an art
+# style is linked — belong to the DesignLanguage entity
+# (katagami-commons/specs/design_language.ioa.toml) and are not restated here.
+#
+# DELIBERATELY NOT ENFORCED, and saying so is the point: nothing checks that the
+# rationale supports the verdict, that `verdict` is one of the three documented
+# words, that a finding is true or useful, or that the rulebook version matches
+# the curator's. The kernel cannot read a string. The machine's claim is that
+# LOOKING HAPPENED, not that the looking was good — the latter is the judge
+# layer's business, and conflating the two is how "the system guarantees
+# quality" gets written down when what is guaranteed is that a named check ran.
+#
+# This actor has NO Publish action and must never gain one. Recording a verdict
+# unlocks the human publish path (HumanCurator.Publish is guarded on this entity
+# reaching VerdictRecorded); it is not itself a publish. It also never marks
+# quality passed, never attaches published assets, and never archives work it
+# could not pass.
 #
 # Lifecycle: SubmissionReceived -> Reviewing -> VerdictRecorded
-#            (any non-terminal state -> Abandoned on give-up or stall)
+#            either live state -> Abandoned (give up, or a state timeout fires)
 
 [automaton]
 name = "ReviewAgent"
@@ -24,31 +45,44 @@ states = ["SubmissionReceived", "Reviewing", "VerdictRecorded", "Abandoned"]
 initial = "SubmissionReceived"
 allow_indefinite_states = ["VerdictRecorded", "Abandoned"]
 
-# --- Submission under review ---
+# --- What is under review ---------------------------------------------------
 
-# The CuratorAgent run that produced this submission.
+# The CuratorAgent run that produced this submission. Also the entity_id_source
+# for AcceptSubmission's cross-entity guard.
 [[state]]
 name = "curator_agent_id"
 type = "string"
 initial = ""
 
-# "DesignLanguage" | "ArtStyle" | "PaletteSystem" | "WritingStyle"
+# The single DesignLanguage this record rules on. Scalar, not a list: an empty
+# scalar ref under required = true fails the guard, so "review with no scope"
+# has no legal path — which is what the behaviour contract's "refuses to invent a
+# review scope" needs from the machine.
+[[state]]
+name = "reviewed_entity_id"
+type = "string"
+initial = ""
+
 [[state]]
 name = "submission_type"
 type = "string"
 initial = ""
 
+# Set by RecordSubmissionRef, which stores and claims nothing. Separate from
+# has_submission so the storing call is one-shot rather than an identical-state
+# self-loop.
 [[state]]
-name = "submission_ids"
-type = "string"
-initial = "[]"
+name = "submission_recorded"
+type = "bool"
+initial = "false"
 
+# Set by AcceptSubmission (zero params, cross-entity guarded).
 [[state]]
 name = "has_submission"
 type = "bool"
 initial = "false"
 
-# --- Capture identity (ARN-293) ---
+# --- Capture identity (ARN-293) ---------------------------------------------
 
 [[state]]
 name = "session_id"
@@ -70,7 +104,122 @@ name = "harness"
 type = "string"
 initial = ""
 
-# --- Review ---
+# --- The standard being judged against --------------------------------------
+
+[[state]]
+name = "rulebook_loaded"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "rulebook_version"
+type = "string"
+initial = ""
+
+[[state]]
+name = "loaded_rule_ids"
+type = "string"
+initial = "[]"
+
+# --- Examination ------------------------------------------------------------
+
+[[state]]
+name = "artifacts_fetched"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "design_md_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "landing_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "embodiment_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "dashboard_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "shadcn_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "thumbnail_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "landing_rendered"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "landing_inspected"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "embodiment_rendered"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "embodiment_inspected"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "dashboard_rendered"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "dashboard_inspected"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "hero_verified"
+type = "bool"
+initial = "false"
+
+# The ArtStyle id read OFF the DesignLanguage entity, not chosen by the agent.
+[[state]]
+name = "art_style_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "art_style_resolved"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "art_style_verified"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "rules_checked"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "claims_checked"
+type = "bool"
+initial = "false"
+
+# --- Findings and repairs ---------------------------------------------------
 
 [[state]]
 name = "findings"
@@ -82,7 +231,24 @@ name = "has_findings"
 type = "bool"
 initial = "false"
 
-# "pass" | "revise" | "reject"
+[[state]]
+name = "has_repairs"
+type = "bool"
+initial = "false"
+
+# Bounded by RecordRepair's max_count guard. Every repair discards the whole
+# examination, so an unbounded repair loop is a review that never rules.
+[[state]]
+name = "repair_rounds"
+type = "counter"
+initial = 0
+
+# --- Outcome ----------------------------------------------------------------
+
+# "pass" | "revise" | "reject". A free string: the kernel cannot compare it to a
+# literal, so which of the three words it holds is a judge-layer question. What
+# the machine holds is that a verdict was recorded exactly once, downstream of
+# the whole examination.
 [[state]]
 name = "verdict"
 type = "string"
@@ -94,11 +260,6 @@ type = "string"
 initial = ""
 
 [[state]]
-name = "has_verdict"
-type = "bool"
-initial = "false"
-
-[[state]]
 name = "reviewed_by"
 type = "string"
 initial = ""
@@ -108,36 +269,331 @@ name = "abandon_reason"
 type = "string"
 initial = ""
 
-# --- SubmissionReceived ---
+# ============================================================================
+# SubmissionReceived — the record names what it is ruling on. Nothing fetched,
+# rendered or judged. The accepted rulebook is loaded here, before any
+# judgement can form.
+# ============================================================================
 
 [[action]]
-name = "ReceiveSubmission"
+name = "RecordSubmissionRef"
 kind = "input"
 from = ["SubmissionReceived"]
-params = ["curator_agent_id", "submission_type", "submission_ids", "session_id", "trajectory_id", "spec_version", "harness"]
+params = ["curator_agent_id", "reviewed_entity_id", "submission_type", "session_id", "trajectory_id", "spec_version", "harness"]
+guard = [{ type = "is_false", var = "submission_recorded" }]
+effect = [{ type = "set_bool", var = "submission_recorded", value = "true" }]
+hint = "Record which curator run produced this submission, the single entity id under review, and this run's own capture identity, so a verdict can be traced back to the exact run that formed it. Stores only; claims nothing. This is the action CuratorAgent's submission trigger dispatches with a create resolver — the review record comes into existence because a curator submitted, so a verdict against something nobody handed over has no record to live in. One-shot: the scope of a review cannot be re-pointed once examination has begun."
+
+[[action]]
+name = "AcceptSubmission"
+kind = "input"
+from = ["SubmissionReceived"]
+params = []
+guard = [
+  { type = "is_true", var = "submission_recorded" },
+  { type = "is_false", var = "has_submission" },
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "reviewed_entity_id", required_status = ["UnderReview"], required = true },
+]
 effect = [{ type = "set_bool", var = "has_submission", value = "true" }]
-hint = "Record the curator submission to review plus this review run's capture identity (session id on every Temper call, trajectory id of the captured OTS document, the actor spec version in force, and the harness)."
+hint = "Accept the submission. ZERO PARAMETERS: the guard means the DesignLanguage named by reviewed_entity_id exists and is UnderReview — the state only DesignLanguage.SubmitForReview can reach. required = true: an empty ref cannot pretend a language was handed over."
+
+[[action]]
+name = "LoadRulebook"
+kind = "input"
+from = ["SubmissionReceived"]
+params = ["rulebook_version", "loaded_rule_ids"]
+guard = [{ type = "is_false", var = "rulebook_loaded" }]
+effect = [
+  { type = "list_append", var = "loaded_rule_ids" },
+  { type = "set_bool", var = "rulebook_loaded", value = "true" },
+]
+hint = "Read knowledge/rules/design-language.md — that file is the rulebook. Stamp its version. Do not list Accepted TasteRule entities. A run whose only rule source is the model's own prose has nothing to show here. The stamp is what makes two verdicts comparable; a rulebook recited from memory is exactly what BeginReview's guard refuses."
 
 [[action]]
 name = "BeginReview"
 kind = "input"
 from = ["SubmissionReceived"]
 to = "Reviewing"
-guard = [{ type = "is_true", var = "has_submission" }]
-hint = "Start reviewing. Guarded on has_submission so a review cannot open against a submission it never received."
+guard = [
+  { type = "is_true", var = "has_submission" },
+  { type = "is_true", var = "rulebook_loaded" },
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "reviewed_entity_id", required_status = ["UnderReview", "Published"], required = true },
+]
+hint = "Open the examination. Three preconditions, none of them a formality: a curator actually submitted (AcceptSubmission's own cross-entity guard), the standard was loaded before any judgement could form, and the reviewed entity is in a state reachable only through its own submission gate — so a Draft the curator is still editing, or an Archived record, cannot be ruled on. required = true means a missing link BLOCKS rather than passes, which is the difference between a guard and a decoration."
 
-# --- Reviewing ---
+# ============================================================================
+# Reviewing — the examination. Everything the review consists of happens here
+# as self-loops; a repair returns this state to an unexamined condition rather
+# than moving it forward.
+# ============================================================================
+
+[[action]]
+name = "FetchArtifacts"
+kind = "input"
+from = ["Reviewing"]
+params = ["fetched_file_ids"]
+guard = [{ type = "is_false", var = "artifacts_fetched" }]
+effect = [{ type = "set_bool", var = "artifacts_fetched", value = "true" }]
+hint = "Resolve every artifact file id OFF THE ENTITY. Then OpenDesignMd, OpenLanding, OpenEmbodiment, OpenDashboard, OpenShadcn and OpenThumbnail to actually read them. A body that is not what its declared format claims is a finding, not an artifact. RecordRepair clears this bit so a repaired artifact must be re-fetched."
+
+[[action]]
+name = "OpenDesignMd"
+kind = "input"
+from = ["Reviewing"]
+params = ["design_md_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "design_md_opened" },
+]
+effect = [{ type = "set_bool", var = "design_md_opened", value = "true" }]
+hint = "Open DESIGN.md and read the bytes. Listed so the expectation names the artifact."
+
+[[action]]
+name = "OpenLanding"
+kind = "input"
+from = ["Reviewing"]
+params = ["landing_file_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "landing_opened" },
+]
+effect = [{ type = "set_bool", var = "landing_opened", value = "true" }]
+hint = "Open the landing file and read the bytes."
+
+[[action]]
+name = "OpenEmbodiment"
+kind = "input"
+from = ["Reviewing"]
+params = ["embodiment_file_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "embodiment_opened" },
+]
+effect = [{ type = "set_bool", var = "embodiment_opened", value = "true" }]
+hint = "Open the embodiment file and read the bytes."
+
+[[action]]
+name = "OpenDashboard"
+kind = "input"
+from = ["Reviewing"]
+params = ["dashboard_file_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "dashboard_opened" },
+]
+effect = [{ type = "set_bool", var = "dashboard_opened", value = "true" }]
+hint = "Open the dashboard file and read the bytes."
+
+[[action]]
+name = "OpenShadcn"
+kind = "input"
+from = ["Reviewing"]
+params = ["shadcn_file_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "shadcn_opened" },
+]
+effect = [{ type = "set_bool", var = "shadcn_opened", value = "true" }]
+hint = "Open the shadcn artifacts (registry theme, components.md, preview shots) and read the bytes."
+
+[[action]]
+name = "OpenThumbnail"
+kind = "input"
+from = ["Reviewing"]
+params = ["thumbnail_file_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "thumbnail_opened" },
+]
+effect = [{ type = "set_bool", var = "thumbnail_opened", value = "true" }]
+hint = "Open the thumbnail and look at it as an image."
+
+[[action]]
+name = "RenderLanding"
+kind = "input"
+from = ["Reviewing"]
+params = ["landing_render_manifest"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_true", var = "landing_opened" },
+  { type = "is_false", var = "landing_rendered" },
+]
+effect = [{ type = "set_bool", var = "landing_rendered", value = "true" }]
+hint = "Launch the browser and screenshot the landing FROM THE FETCHED BYTES at desktop 1440x960, tablet 768 and mobile 375, recording the output paths and exit status. This produces evidence; it does not consume any."
+
+[[action]]
+name = "InspectLandingRender"
+kind = "input"
+from = ["Reviewing"]
+params = ["landing_observation"]
+guard = [
+  { type = "is_true", var = "landing_rendered" },
+  { type = "is_false", var = "landing_inspected" },
+]
+effect = [{ type = "set_bool", var = "landing_inspected", value = "true" }]
+hint = "Read the landing screenshots back into context as images and write an observation naming something only visible in the image — a clipped edge, an overlap, a truncated label, the signature mechanic present or absent. A run that wrote the PNG and never read it back cannot reach this bit, and an observation phrased from the spec fields ('tokens are applied') is not one."
+
+[[action]]
+name = "RenderEmbodiment"
+kind = "input"
+from = ["Reviewing"]
+params = ["embodiment_render_manifest"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_true", var = "embodiment_opened" },
+  { type = "is_false", var = "embodiment_rendered" },
+]
+effect = [{ type = "set_bool", var = "embodiment_rendered", value = "true" }]
+hint = "Screenshot the embodiment from the fetched bytes at the same three viewports."
+
+[[action]]
+name = "InspectEmbodimentRender"
+kind = "input"
+from = ["Reviewing"]
+params = ["embodiment_observation"]
+guard = [
+  { type = "is_true", var = "embodiment_rendered" },
+  { type = "is_false", var = "embodiment_inspected" },
+]
+effect = [{ type = "set_bool", var = "embodiment_inspected", value = "true" }]
+hint = "Read the embodiment screenshots back as images and write an observation about the composed specimen that could not have been made from the spec fields — whether every primitive appears in every state, whether the signature mechanic actually recolours through them."
+
+[[action]]
+name = "RenderDashboard"
+kind = "input"
+from = ["Reviewing"]
+params = ["dashboard_render_manifest"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_true", var = "dashboard_opened" },
+  { type = "is_false", var = "dashboard_rendered" },
+]
+effect = [{ type = "set_bool", var = "dashboard_rendered", value = "true" }]
+hint = "Screenshot the dashboard from the fetched bytes at the same three viewports. This is the surface most often skipped, which is exactly why RecordVerdict refuses without it."
+
+[[action]]
+name = "InspectDashboardRender"
+kind = "input"
+from = ["Reviewing"]
+params = ["dashboard_observation"]
+guard = [
+  { type = "is_true", var = "dashboard_rendered" },
+  { type = "is_false", var = "dashboard_inspected" },
+]
+effect = [{ type = "set_bool", var = "dashboard_inspected", value = "true" }]
+hint = "Read the dashboard screenshots back as images and write an observation about the real product content — nav, stat cards, the chart drawn in the language's own graphic system, the table, the form — rather than about whether a dashboard file exists."
+
+[[action]]
+name = "VerifyHeroReplaceable"
+kind = "input"
+from = ["Reviewing"]
+params = ["hero_swap_report"]
+guard = [
+  { type = "is_true", var = "landing_inspected" },
+  { type = "is_false", var = "hero_verified" },
+]
+effect = [{ type = "set_bool", var = "hero_verified", value = "true" }]
+hint = "Render the same landing file id twice with different --hero-image values, read both screenshots back into context, and confirm the imagery changed while composition, display type and choreography did not. Guarded on landing_inspected because the agent must have SEEN the original hero before it can say the replacement changed anything. No write to the landing file between the two renders — editing the markup to make the swap work is a rebuild, not a swap — and a single render or a CSS grep cannot produce this pair."
+
+[[action]]
+name = "ResolveArtStyle"
+kind = "input"
+from = ["Reviewing"]
+params = ["art_style_id"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "art_style_resolved" },
+]
+effect = [{ type = "set_bool", var = "art_style_resolved", value = "true" }]
+hint = "Read default_art_style_id OFF the DesignLanguage, then get that ArtStyle and its canonical prompt. The art_style_id recorded here must be the id the entity returned, not one the agent chose — NOT ENFORCED by the kernel (no field-equality guard across entities); the trajectory must show the read that produced it."
+
+[[action]]
+name = "VerifyArtStyleRendered"
+kind = "input"
+from = ["Reviewing"]
+params = ["art_style_judgement"]
+guard = [
+  { type = "is_true", var = "art_style_resolved" },
+  { type = "is_true", var = "landing_inspected" },
+  { type = "is_false", var = "art_style_verified" },
+  { type = "cross_entity_state", entity_type = "ArtStyle", entity_id_source = "art_style_id", required_status = ["UnderReview", "Published"], required = true },
+]
+effect = [{ type = "set_bool", var = "art_style_verified", value = "true" }]
+hint = "Judge the hero AS IT RENDERS against the linked style's canonical prompt: quote the prompt's observable aesthetic facts — medium and material, marks and edges, tonal logic, colour roles — and say, against the image in front of you, whether the hero was made in that style or merely near it. The cross-entity guard refuses an attestation pointing at a draft or at nothing: required = true plus a status allowlist means an absent or unpublished style BLOCKS the claim outright, which is how a language stops being able to claim an art style it does not wear."
+
+[[action]]
+name = "VerifyAgainstRules"
+kind = "input"
+from = ["Reviewing"]
+params = ["rule_results"]
+guard = [
+  { type = "is_true", var = "rulebook_loaded" },
+  { type = "is_true", var = "landing_inspected" },
+  { type = "is_true", var = "embodiment_inspected" },
+  { type = "is_true", var = "dashboard_inspected" },
+  { type = "is_false", var = "rules_checked" },
+]
+effect = [{ type = "set_bool", var = "rules_checked", value = "true" }]
+hint = "Hold each rendered surface against the LOADED rulebook, rule by rule and viewport by viewport: borders, accent count and rationing, radius set, body size, spacing above titles, contrast, light-mode default, no emoji on buttons, responsive reflow with no horizontal overflow, one full-bleed hero, motion that carries meaning. Every failure names the rule id, the surface and the viewport screenshot it was seen in. A rule list derived from the spec fields rather than the renders is visible because it cites no image; a global impression is not a rule list; and passing a rule at desktop without testing it at 375 is how mobile-only breakage ships."
+
+[[action]]
+name = "CheckCuratorClaims"
+kind = "input"
+from = ["Reviewing"]
+params = ["claim_results"]
+guard = [
+  { type = "is_true", var = "landing_inspected" },
+  { type = "is_true", var = "embodiment_inspected" },
+  { type = "is_true", var = "dashboard_inspected" },
+  { type = "is_false", var = "claims_checked" },
+]
+effect = [{ type = "set_bool", var = "claims_checked", value = "true" }]
+hint = "Quote the curator's self-review and curator_notes claim by claim and mark each confirmed or contradicted against a NAMED screenshot or file read, turning every contradicted claim into a finding. Guarded on all three surfaces having been inspected, because a claim can only be tested against something the agent has seen. This is where the reviewer stops inheriting the curator's blind spots — the specific failure where a run says 'the hero is replaceable and the dashboard is responsive' and the review's only source for both statements is that sentence."
 
 [[action]]
 name = "RecordFinding"
 kind = "input"
 from = ["Reviewing"]
 params = ["findings"]
+guard = [{ type = "is_true", var = "artifacts_fetched" }]
 effect = [
   { type = "list_append", var = "findings" },
   { type = "set_bool", var = "has_findings", value = "true" },
 ]
-hint = "Append one finding: what is wrong, where, and how severe. Callable once per finding. The param is named after the list var so kernel ListAppend writes it."
+hint = "Record one finding carrying the surface, the viewport, the located element, the rule id it breaks and a severity, where the subject is visible in something already in context. One call per finding — batching five problems into one string is how a review becomes ceremony. Guarded on artifacts_fetched: a finding must be about something the agent actually has. NOT ENFORCED: that the finding is true or useful; that is the judge's layer."
+
+[[action]]
+name = "RecordRepair"
+kind = "input"
+from = ["Reviewing"]
+params = ["repair_note", "answers_finding_id", "new_file_id"]
+guard = [
+  { type = "is_true", var = "has_findings" },
+  { type = "max_count", var = "repair_rounds", max = 6 },
+]
+effect = [
+  { type = "increment", var = "repair_rounds" },
+  { type = "set_bool", var = "has_repairs", value = "true" },
+  { type = "set_bool", var = "artifacts_fetched", value = "false" },
+  { type = "set_bool", var = "design_md_opened", value = "false" },
+  { type = "set_bool", var = "landing_opened", value = "false" },
+  { type = "set_bool", var = "embodiment_opened", value = "false" },
+  { type = "set_bool", var = "dashboard_opened", value = "false" },
+  { type = "set_bool", var = "shadcn_opened", value = "false" },
+  { type = "set_bool", var = "thumbnail_opened", value = "false" },
+  { type = "set_bool", var = "landing_rendered", value = "false" },
+  { type = "set_bool", var = "landing_inspected", value = "false" },
+  { type = "set_bool", var = "embodiment_rendered", value = "false" },
+  { type = "set_bool", var = "embodiment_inspected", value = "false" },
+  { type = "set_bool", var = "dashboard_rendered", value = "false" },
+  { type = "set_bool", var = "dashboard_inspected", value = "false" },
+  { type = "set_bool", var = "hero_verified", value = "false" },
+  { type = "set_bool", var = "art_style_resolved", value = "false" },
+  { type = "set_bool", var = "art_style_verified", value = "false" },
+  { type = "set_bool", var = "rules_checked", value = "false" },
+  { type = "set_bool", var = "claims_checked", value = "false" },
+]
+hint = "Fix a defect instead of only reporting it — naming the finding it answers and the new file id it wrote. TWO THINGS MAKE THIS HONEST: it has no legal source without a recorded finding, so the curator always sees what caused the change; and it CLEARS EVERY PERCEPTION FLAG, because all of those perceptions were of bytes that no longer exist. A fresh FetchArtifacts and a complete render / inspect / verify cycle must follow before any verdict, so fix-and-pass in one motion is structurally impossible. Re-read the entity afterwards and report the state the platform returned, not the state the call was expected to produce. Bounded at 6 rounds: an unbounded repair loop is a review that never rules."
 
 [[action]]
 name = "RecordVerdict"
@@ -145,15 +601,33 @@ kind = "input"
 from = ["Reviewing"]
 to = "VerdictRecorded"
 params = ["verdict", "verdict_rationale", "reviewed_by"]
-effect = [{ type = "set_bool", var = "has_verdict", value = "true" }]
-hint = "Rule on the submission: verdict is pass, revise, or reject, with the rationale and the reviewing identity. Exactly once per review — VerdictRecorded is terminal. Recording a verdict is what unlocks the human publish path; it is not itself a publish."
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_true", var = "design_md_opened" },
+  { type = "is_true", var = "landing_opened" },
+  { type = "is_true", var = "embodiment_opened" },
+  { type = "is_true", var = "dashboard_opened" },
+  { type = "is_true", var = "shadcn_opened" },
+  { type = "is_true", var = "thumbnail_opened" },
+  { type = "is_true", var = "landing_inspected" },
+  { type = "is_true", var = "embodiment_inspected" },
+  { type = "is_true", var = "dashboard_inspected" },
+  { type = "is_true", var = "hero_verified" },
+  { type = "is_true", var = "art_style_verified" },
+  { type = "is_true", var = "rules_checked" },
+  { type = "is_true", var = "claims_checked" },
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "reviewed_entity_id", required_status = ["UnderReview", "Published"], required = true },
+]
+hint = "Rule once — pass, revise or reject — with a rationale citing findings by id and naming at least one per-surface observation traceable to an image that was in context, and with the reviewing identity attached. EIGHT RECORDED ACTS OF EXAMINATION STAND BETWEEN A SUBMISSION AND THIS CALL; a verdict that follows the submission directly is a signature, not a claim. The cross-entity guard is re-checked here as well as on BeginReview, so a verdict cannot land against an artifact that left review while the examination ran. VerdictRecorded is terminal: a second or amended verdict has no source state, which matters because HumanCurator.Publish is guarded on exactly this state. NOT ENFORCED: that the rationale supports the verdict, or that `verdict` is one of the three documented words."
 
 [[action]]
 name = "ReviewVerdictRecordedEvent"
 kind = "output"
-hint = "Emitted when a verdict lands. HumanCurator.AssignSubmission consumes it; HumanCurator.Publish is separately guarded on this entity reaching VerdictRecorded."
+hint = "Emitted by the platform when a verdict lands; deliberately absent from the Cedar permit, so no agent can call it — an agent-issued call appears in the trajectory as a policy denial. Being kind = output it is dropped from the transition table and the trigger graph, so nothing in this spec relies on it: the ordering it used to imply is carried instead by HumanCurator.Publish's own cross_entity_state guard on this entity reaching VerdictRecorded."
 
-# --- Give-up / stall ---
+# ============================================================================
+# Give up — always available, and fired by both live states' timeouts.
+# ============================================================================
 
 [[action]]
 name = "Abandon"
@@ -161,34 +635,129 @@ kind = "input"
 from = ["SubmissionReceived", "Reviewing"]
 to = "Abandoned"
 params = ["abandon_reason"]
-hint = "End the review without a verdict: the agent gave up, or a state timeout fired. An abandoned review leaves the submission unpublishable, which is the safe direction."
+hint = "End the review without a verdict, naming the step that could not complete — 'chromium would not launch', 'landing_file_id resolved to a non-HTML body', 'the submission carried no artifact id' — rather than leaving the platform to write a generic stall record. An abandoned review leaves the submission unpublishable, which is the safe direction. This is also the only correct answer to an empty review scope: enumerating the commons to find something to rule on is how a review returns a verdict against a submission it never examined."
 
-# --- Stall detection ---
+# --- Stall detection --------------------------------------------------------
 
 [[state_timeout]]
 state = "SubmissionReceived"
 after_seconds = 900
 on_timeout = "Abandon"
-params = { abandon_reason = "ReviewAgent held SubmissionReceived for 15m without beginning the review." }
+params = { abandon_reason = "ReviewAgent held SubmissionReceived for 15m without loading the rulebook and beginning the review." }
 
+# Two hours, not one: three surfaces x three viewports, plus a hero swap, plus
+# an art-style judgement, plus a post-repair re-examination does not fit in one.
+# Shipping the demand without the budget would only convert rubber stamps into
+# stall records.
 [[state_timeout]]
 state = "Reviewing"
-after_seconds = 3600
+after_seconds = 7200
 on_timeout = "Abandon"
-params = { abandon_reason = "ReviewAgent held Reviewing for 1h without recording a verdict." }
+params = { abandon_reason = "ReviewAgent held Reviewing for 2h without recording a verdict." }
 
-# --- Safety Invariants ---
+# ============================================================================
+# Safety invariants
+#
+# Labelled by what they actually prove, per the audit. (a) = falsifiable by a
+# reachable path in this machine; (b) = a regression fence over a fact the
+# from-lists and guards already force.
+# ============================================================================
 
+# (a) FALSIFIABLE, and the most useful line in this file. RecordRepair must
+# clear a rendered flag whenever it clears the matching inspected flag; if a
+# future edit drops one clear, or a new repair-like action clears only half the
+# pairs, the machine ends up claiming an inspection of a render that no longer
+# exists and this fires. Checked in EVERY reachable state, not just one.
+# The kernel cannot bind a boolean to the artifact it witnesses, so this
+# invalidation discipline is hand-written per action and needs a checker.
 [[invariant]]
-name = "ReviewingRequiresSubmission"
-when = ["Reviewing"]
-assert = "has_submission"
+name = "InspectionRequiresRender"
+assert = "(landing_rendered || !landing_inspected) && (embodiment_rendered || !embodiment_inspected) && (dashboard_rendered || !dashboard_inspected)"
 
+# (a) FALSIFIABLE, and added because a mutation test showed the invariant below
+# it was one-directional. `InspectionRequiresRender` catches an inspection that
+# outlives its render; it does NOT catch a RENDER flag that survives a repair —
+# and that is the dangerous half, because InspectLandingRender is guarded only on
+# landing_rendered, so a stale render flag lets the agent "inspect" bytes that no
+# longer exist. Every perception flag is cleared by RecordRepair together with
+# artifacts_fetched, and every render action requires artifacts_fetched, so no
+# perception may exist while the agent does not hold the current bytes. A repair
+# that forgets ANY clear breaks this line.
 [[invariant]]
-name = "VerdictRecordedRequiresVerdict"
+name = "PerceptionRequiresCurrentBytes"
+assert = "artifacts_fetched || (!design_md_opened && !landing_opened && !embodiment_opened && !dashboard_opened && !shadcn_opened && !thumbnail_opened && !landing_rendered && !landing_inspected && !embodiment_rendered && !embodiment_inspected && !dashboard_rendered && !dashboard_inspected && !hero_verified && !art_style_resolved && !art_style_verified && !rules_checked && !claims_checked)"
+
+# (a) FALSIFIABLE by the same class of edit: a judgement may never outlive the
+# perception it rests on. rules_checked and claims_checked both require all
+# three inspections, and art_style_verified requires the landing inspection.
+[[invariant]]
+name = "JudgementRequiresInspection"
+assert = "(!rules_checked || (landing_inspected && embodiment_inspected && dashboard_inspected)) && (!claims_checked || (landing_inspected && embodiment_inspected && dashboard_inspected)) && (!art_style_verified || landing_inspected) && (!hero_verified || landing_inspected)"
+
+# (a) FALSIFIABLE by an unbounded repair edge. Without the bound the examination
+# can be discarded and restarted forever and no termination property holds.
+[[invariant]]
+name = "RepairLoopBounded"
+assert = "repair_rounds <= 6"
+
+# (b) FENCES on the terminal state. RecordVerdict is the only edge in and
+# carries every one of these as a guard conjunct; they are declared so that an
+# added edge that forgets one fails verification instead of passing quietly.
+# Named per surface rather than as one conjunction so a failure says WHICH
+# perception was missing.
+[[invariant]]
+name = "VerdictRequiresArtifactsOpened"
 when = ["VerdictRecorded"]
-assert = "has_verdict"
+assert = "design_md_opened && landing_opened && embodiment_opened && dashboard_opened && shadcn_opened && thumbnail_opened"
 
+[[invariant]]
+name = "VerdictRequiresLandingInspected"
+when = ["VerdictRecorded"]
+assert = "landing_inspected"
+
+[[invariant]]
+name = "VerdictRequiresEmbodimentInspected"
+when = ["VerdictRecorded"]
+assert = "embodiment_inspected"
+
+[[invariant]]
+name = "VerdictRequiresDashboardInspected"
+when = ["VerdictRecorded"]
+assert = "dashboard_inspected"
+
+[[invariant]]
+name = "VerdictRequiresHeroVerified"
+when = ["VerdictRecorded"]
+assert = "hero_verified"
+
+[[invariant]]
+name = "VerdictRequiresArtStyleVerified"
+when = ["VerdictRecorded"]
+assert = "art_style_verified"
+
+[[invariant]]
+name = "VerdictRequiresRulesChecked"
+when = ["VerdictRecorded"]
+assert = "rules_checked"
+
+[[invariant]]
+name = "VerdictRequiresClaimsChecked"
+when = ["VerdictRecorded"]
+assert = "claims_checked"
+
+# (b) FENCE: no review is open against something it never received, and the
+# standard was loaded before any judgement began rather than recalled while
+# forming one.
+[[invariant]]
+name = "ReviewingRequiresSubmissionAndRulebook"
+when = ["Reviewing"]
+assert = "has_submission && rulebook_loaded"
+
+# (b) FENCES over the from-lists. Same known blind spot as CuratorAgent:
+# check_no_further_transitions treats a CrossEntityState guard as not locally
+# enabled, so an added cross-entity-guarded edge out of a terminal state would
+# be invisible to these. One review, one verdict, and an abandoned review is
+# never resumed.
 [[invariant]]
 name = "VerdictRecordedIsFinal"
 when = ["VerdictRecorded"]
@@ -198,3 +767,25 @@ assert = "no_further_transitions"
 name = "AbandonedIsFinal"
 when = ["Abandoned"]
 assert = "no_further_transitions"
+
+# RepairsRequireFindings is deliberately NOT declared as an invariant. It is an
+# implication between two variables at the moment of a transition, and the
+# kernel's invariant form asserts one expression in one state — the property is
+# carried by RecordRepair's own guard (is_true has_findings) plus its clearing
+# effect, which is where it belongs.
+
+# --- Liveness ---------------------------------------------------------------
+#
+# Declared for the same reason as CuratorAgent's: nothing in the previous
+# generation of these specs said any run ever finishes. It holds weakly (Abandon
+# is always available), and it is provable only because every cycle is bounded:
+# the two intake self-loops and LoadRulebook are one-shot, and RecordRepair —
+# the one action that genuinely rewinds the examination — advances a monotone
+# counter under a max_count guard.
+#
+# Exactly one ReachesState property, deliberately: the checker merges them.
+
+[[liveness]]
+name = "EveryReviewEventuallyRules"
+from = ["SubmissionReceived"]
+reaches = ["VerdictRecorded", "Abandoned"]

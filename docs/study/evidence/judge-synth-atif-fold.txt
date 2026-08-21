@@ -1,0 +1,30 @@
+{
+  "prose": {
+    "fold": "false",
+    "score": 0.0,
+    "units": 25,
+    "exempted": [
+      "C7",
+      "C9",
+      "C17",
+      "C7",
+      "C9",
+      "C17"
+    ]
+  },
+  "machine": {
+    "fold": "true",
+    "score": 1.0,
+    "units": 25
+  },
+  "policy": {
+    "comparison_exempt": [
+      "C17",
+      "C7",
+      "C9",
+      "R13"
+    ],
+    "truncation": "split-by-unit, never drop a tail",
+    "complete_flag": "terminal actor state or explicit Abandon"
+  }
+}

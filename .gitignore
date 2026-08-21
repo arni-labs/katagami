@@ -8,6 +8,7 @@ __pycache__/
 *.pyc
 # The virtualenv `make test-integration` builds to install cedarpy.
 katagami-curation/.venv/
+.venv-trajectory/
 
 # Local database
 .data/

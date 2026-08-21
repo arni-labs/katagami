@@ -19,7 +19,22 @@ design language and build three surfaces that all use it — a marketing landing
 page, an element-showcase embodiment, and a product dashboard. One language,
 one name, consistent across everything.
 
-Obey EVERY rule in the taste rulebook inlined in this prompt — it governs
+Read `knowledge/rules/design-language.md` before authoring. That file is the
+rulebook. Do **not** list `TasteRules` entities.
+
+Author every named part before you render. Writing many files, then
+attaching them in one `SubmitDesignLanguage` call, is fine — as long as
+all of these exist:
+
+1. Concept — one ownable idea and signature mechanic
+2. Tokens — color, type, spacing, radius, surfaces, motion
+3. Katagami spec — SetSpec (rules, layout, guidance)
+4. DESIGN.md — portable projection, lint-clean
+5. Landing, embodiment, dashboard
+6. shadcn artifacts — registry-theme.json, components.md, preview-shots.json
+7. Thumbnail — 600x400 JPEG from the embodiment
+
+Obey EVERY rule in `knowledge/rules/design-language.md` — it governs
 palette, type, accents, radius, spacing, contrast, and naming.
 
 ## THE LANGUAGE
@@ -56,11 +71,13 @@ carries the page.
 
 ## Render, look, fix — like any designer
 
-Every surface is finished work: render it, LOOK at the screenshots, fix what
-you see, render again. `sandbox.read` of a PNG returns the actual image into
-your context — you will SEE it. Judge each viewport like a design review:
-nothing clipped at the viewport edges, nothing overlapping, no truncated
-labels, hierarchy clear, tokens applied, responsive reflow correct. Pages that
+Every surface is finished work: render it, see the screenshots of the
+landing, the embodiment, and the dashboard as images, fix what you see,
+render again. A change kills the previous seeing — you must see the new
+bytes before you submit. `sandbox.read` of a PNG returns the actual image
+into your context. Judge each viewport like a design review: nothing
+clipped at the viewport edges, nothing overlapping, no truncated labels,
+hierarchy clear, tokens applied, responsive reflow correct. Pages that
 ship clipped text, overlapping elements, or truncated labels are failures.
 
 ```python

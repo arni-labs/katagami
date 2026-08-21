@@ -1,0 +1,8 @@
+query=en-019ffcec-6991-78c1-b882-bce38b08f578
+direction=en-019ffd04-a739-70c2-a247-413a1357ecfa
+direction_name=Keyblock Grid
+direction_status=Synthesizing
+job=en-019ffd04-a782-7050-94f9-34a575005b0e
+job_status=Running
+job_type=synthesize
+note=BeginSynthesis + CurationJob.Start — no engine WASM spawn

@@ -147,7 +147,7 @@ class TasteDistillationContractTests(unittest.TestCase):
         self.assertIn("'CompleteTasteDistillation'", skill)
         self.assertNotIn("temper.action('TasteRules', rule['entity_id'], 'Accept'", skill)
 
-    def test_curator_jobs_load_only_accepted_taste_rules(self):
+    def test_curator_jobs_read_design_language_md_not_taste_rule_entities(self):
         synthesize = (
             self.root
             / "agents"
@@ -166,12 +166,11 @@ class TasteDistillationContractTests(unittest.TestCase):
         ).read_text()
 
         for skill in [synthesize, review]:
-            self.assertIn("temper.list('TasteRules', \"Status eq 'Accepted'\")", skill)
-            self.assertIn("Use only Accepted rules", skill)
-            self.assertIn("authoritative reusable design tests", skill)
-            self.assertIn("Proposed", skill)
-            self.assertIn("Rejected", skill)
-            self.assertIn("Superseded", skill)
+            self.assertIn("knowledge/rules/design-language.md", skill)
+            self.assertIn("Do **not** list `TasteRules` entities", skill)
+            self.assertNotIn(
+                "temper.list('TasteRules', \"Status eq 'Accepted'\")", skill
+            )
 
     def test_foundation_knowledge_delegates_reusable_tests_to_taste_rules(self):
         quality = (self.root / "system" / "knowledge" / "quality-standards.md").read_text()
@@ -182,7 +181,8 @@ class TasteDistillationContractTests(unittest.TestCase):
             self.assertIn("TasteRule", doc)
 
         self.assertIn("Do not duplicate the full taste checklist", quality)
-        self.assertIn("Use Accepted\n`TasteRules` for concrete pass/fail design guidance", principles)
+        self.assertIn("knowledge/rules/design-language.md", principles)
+        self.assertIn("Do not list Accepted `TasteRule` entities", principles)
         self.assertIn("Foundation TasteRules Extracted", feedback)
 
 

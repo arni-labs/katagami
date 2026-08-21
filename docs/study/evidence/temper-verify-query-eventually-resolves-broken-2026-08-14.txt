@@ -1,0 +1,18 @@
+Running verification cascade...
+  Specs directory: /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/docs/study/fixtures/query-eventually-resolves-broken
+
+--- /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/docs/study/fixtures/query-eventually-resolves-broken
+
+  [lint:warn] CuratorAgent: action_missing_to — action 'RecordCapture' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CuratorAgent: action_missing_to — action 'AuthorLanguage' has no `to` target; transition may be dead/no-op
+
+Running IOA verification cascade...
+
+  Verifying CuratorAgent...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 17 guards satisfiable, 6 invariants inductive, 10 unreachable; approximate model: 6 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [FAIL] L1 Model Check FAILED: 341 states explored, 1 counterexample(s); 4 dead transition(s): SearchTheWeb [Searching -> Searching], IndexSources [Searching|SourcesReady -> SourcesReady], DeriveDirections [SourcesReady|DirectionsReady -> DirectionsReady], CompleteResearch [DirectionsReady -> Idle]
+    [FAIL] L2 Simulation FAILED: 8 liveness violation(s) across 5 seeds
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+Error: IOA verification failed for entity 'CuratorAgent'

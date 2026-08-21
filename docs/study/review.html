@@ -1,0 +1,2533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Actor contract — review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#FFFFFF; --ink:#101010; --muted:#6E6960; --paper:#F4F1EA; --paper2:#ECE7DC;
+  --rule:#1A1A1A; --cyan:#00AEEF; --verm:#FF3B1F; --acid:#F6E800;
+  --serif:"Cormorant Garamond",Georgia,serif;
+  --sans:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:17px/1.55 var(--sans);letter-spacing:-.02em}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.folio{position:fixed;left:0;top:0;bottom:0;width:96px;border-right:1.5px solid var(--rule);padding:32px 18px;display:flex;flex-direction:column;gap:18px;z-index:3;background:#fff}
+.folio .dots{display:flex;flex-direction:column;gap:8px}
+.folio .dots i{display:block;width:10px;height:10px}
+.folio .dots .c{background:var(--cyan)}
+.folio .dots .v{background:var(--verm)}
+.folio .dots .y{background:var(--acid)}
+.folio label{writing-mode:vertical-rl;transform:rotate(180deg);font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+main{margin-left:96px;max-width:1440px;padding:64px 64px 128px}
+@media (max-width:1024px){
+  .folio{position:static;width:auto;height:auto;flex-direction:row;align-items:center;border-right:0;border-bottom:1.5px solid var(--rule);padding:16px 24px}
+  .folio label{writing-mode:horizontal-tb;transform:none}
+  .folio .dots{flex-direction:row}
+  main{margin-left:0;padding:48px 24px 96px}
+}
+.eyebrow{font:500 13px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font:600 50px/1.05 var(--serif);letter-spacing:-.02em;margin:12px 0 24px}
+h2{font:600 38px/1.1 var(--serif);letter-spacing:-.02em;margin:64px 0 16px;padding-top:8px}
+h3{font:600 29px/1.15 var(--serif);letter-spacing:-.02em;margin:40px 0 12px}
+p.lead{font:22px/1.4 var(--serif);max-width:40em;margin:0 0 24px}
+p{max-width:42em;margin:0 0 16px}
+.scrap{display:inline-block;font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;margin:0 8px 8px 0;color:#fff}
+.scrap.cyan{background:var(--cyan)}
+.scrap.verm{background:var(--verm)}
+.scrap.ink{background:var(--ink)}
+.scrap.hold{background:var(--acid);color:var(--ink)}
+.tabs{display:flex;flex-wrap:wrap;gap:0;margin:32px 0 0;border-bottom:1px solid var(--rule)}
+.tabs button{appearance:none;border:0;background:transparent;font:500 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:14px 18px;cursor:pointer;color:var(--muted)}
+.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 -3px 0 var(--cyan)}
+.panel{display:none;padding:32px 0}
+.panel.on{display:block}
+.crop{position:relative;border:1px solid var(--rule);padding:24px;margin:24px 0;background:var(--paper)}
+.crop:before,.crop:after{content:"";position:absolute;width:14px;height:14px;border-color:var(--ink);border-style:solid}
+.crop:before{top:-1px;left:-1px;border-width:2px 0 0 2px}
+.crop:after{bottom:-1px;right:-1px;border-width:0 2px 2px 0}
+pre.plate{font:13.5px/1.45 var(--mono);white-space:pre-wrap;word-break:break-word;background:#fff;padding:24px;max-height:70vh;overflow:auto;border-top:4px solid var(--ink)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0}
+@media (max-width:768px){.grid{grid-template-columns:1fr} h1{font-size:38px}}
+svg.flow{width:100%;height:auto;margin:24px 0;display:block}
+.note{background:var(--paper);padding:24px 24px 8px;margin:24px 0;max-width:46em}
+.note.verm{box-shadow:inset 8px 0 0 var(--verm)}
+.note.cyan{box-shadow:inset 8px 0 0 var(--cyan)}
+ul{margin:0 0 16px 1.2em;max-width:42em}
+li{margin:0 0 8px}
+a{color:var(--ink);text-underline-offset:4px}
+a:hover{background:var(--acid)}
+.path{font:500 13px var(--mono);color:var(--muted)}
+</style>
+</head>
+<body>
+<aside class="folio" aria-hidden="true">
+  <div class="dots"><i class="c"></i><i class="v"></i><i class="y"></i></div>
+  <label>Galley proof · ARN-294</label>
+</aside>
+<main>
+<p class="eyebrow">Katagami · JCS actor contract</p>
+<h1>The machine is the expected conduct</h1>
+<p class="lead">Same acts as the skills and as BEHAVIOR.md. A finished search yields 3–5 directions. Authoring is every named part. The human decides publish; an agent may execute it.</p>
+<p><span class="scrap cyan">moves</span><span class="scrap hold">holds</span><span class="scrap verm">stops</span></p>
+
+<div class="note verm">
+<p><strong>What the skills must ask.</strong> The checker only scores conduct the skills ask for. Research yields 3–5 directions. Agents read <code>knowledge/rules/design-language.md</code> and create the thumbnail — they do not list Accepted TasteRule entities. Authoring is concept, tokens, Katagami spec, DESIGN.md, three surfaces, shadcn, thumbnail. Review opens those artifacts. Publish is a human decision; an agent may execute it after <code>ApprovePublish</code>.</p>
+</div>
+
+<h2>Research, then synthesize</h2>
+<p>Each box is an act we expect, not a status on the pipeline.</p>
+<svg class="flow" viewBox="0 0 1100 320" role="img" aria-label="Expected curator conduct">
+  <text x="20" y="28" font-family="IBM Plex Mono" font-size="12" fill="#6E6960">RESEARCH</text>
+  <rect x="20" y="40" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="95" y="74" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Take the query</text>
+  <rect x="190" y="40" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="265" y="74" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Search the web</text>
+  <rect x="360" y="40" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="435" y="74" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Index sources</text>
+  <rect x="530" y="40" width="170" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="615" y="74" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Derive directions</text>
+  <text x="20" y="148" font-family="IBM Plex Mono" font-size="12" fill="#6E6960">SYNTHESIZE</text>
+  <rect x="20" y="160" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="95" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Take direction</text>
+  <rect x="190" y="160" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="265" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Read the rulebook</text>
+  <rect x="360" y="160" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="435" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Author every part</text>
+  <rect x="530" y="160" width="120" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="590" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Render</text>
+  <rect x="670" y="160" width="100" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="720" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Look</text>
+  <rect x="790" y="160" width="120" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="850" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Submit</text>
+  <path d="M170 68 H190 M340 68 H360 M510 68 H530" stroke="#00AEEF" stroke-width="2"/>
+  <path d="M170 188 H190 M340 188 H360 M510 188 H530 M650 188 H670 M770 188 H790" stroke="#00AEEF" stroke-width="2"/>
+  <path d="M720 216 V250 H435 V216" stroke="#FF3B1F" stroke-width="2" fill="none"/>
+  <text x="560" y="270" font-family="IBM Plex Mono" font-size="11" fill="#FF3B1F">fix — then render and look again, max 12</text>
+  <text x="20" y="310" font-family="IBM Plex Mono" font-size="12" fill="#6E6960">Guards join the app: query Researching, direction Synthesizing, language UnderReview, job Running then Completed.</text>
+</svg>
+
+<div class="note cyan">
+<p>Human conduct: pick up the assignment, confirm the review ruled on this work, look, <em>approve</em> publish or return with a critique. An agent may execute publish after that approval. Review conduct: read design-language.md, open the listed artifacts, render, look, fix, rule. Story invariants have names like SeenBeforeSubmit. Action max_count on search is checker fuel, not a story.</p>
+</div>
+
+<h2>What to review</h2>
+<p>Three encodings of the same conduct. Specs are condition B. BEHAVIOR.md is condition A. Skills are what a study run actually follows.</p>
+<div class="tabs" role="tablist">
+  <button type="button" role="tab" aria-selected="true" data-tab="curator">Curator</button>
+  <button type="button" role="tab" aria-selected="false" data-tab="review">Review</button>
+  <button type="button" role="tab" aria-selected="false" data-tab="human">Human</button>
+</div>
+<section class="panel on" id="curator" role="tabpanel">
+  <p class="path">katagami-curation/specs/curator_agent.ioa.toml</p>
+  <h3>Spec</h3>
+  <pre class='plate'># CuratorAgent — expected curator *conduct* on the live Katagami app.
+#
+# This machine encodes what we expect the agent to DO, the same acts as
+# research-direction and synthesize-language. It is not a second pipeline
+# and not a job-status ledger.
+#
+# The live objects stay themselves:
+#   CurationQuery, CurationDirection, CurationJob, DesignLanguage, DesignSource
+# The agent still calls SpawnDirection / CompleteResearch / SetSpec /
+# SubmitForReview / CompleteSynthesis on those objects. This ledger is the
+# ordered behavior we will judge.
+#
+# Research: take the query, search the web, index sources, derive 3–5
+# directions, complete.
+# Synthesize: take the direction, read design-language.md (never TasteRule
+# entities), author every named part (concept, tokens, Katagami spec,
+# DESIGN.md, landing, embodiment, dashboard, shadcn, thumbnail), render,
+# look at each surface, fix, submit.
+#
+# Cross-entity guards are the join to the app. Behavior without the matching
+# object state is refused.
+#
+# Action max_count on search / index / derive is checker fuel so the graph
+# stays finite. It is not a story invariant. Story invariants have names
+# like SeenBeforeSubmit.
+#
+# This phase: source_search + synthesize only (D24).
+#
+# Research:
+#   Idle -&gt; ReadingQuery -&gt; Searching -&gt; SourcesReady -&gt; DirectionsReady -&gt; Idle
+# Synthesize:
+#   Idle -&gt; ReadingDirection -&gt; Authoring -&gt; SurfacesRendered -&gt; Looking
+#        -&gt; LanguageUnderReview -&gt; Idle
+#   Looking -&gt; Authoring   (FixSurfaces — look-fix, max 12)
+# Working states -&gt; Abandoned
+
+[automaton]
+name = &quot;CuratorAgent&quot;
+states = [
+  &quot;Idle&quot;,
+  &quot;ReadingQuery&quot;,
+  &quot;Searching&quot;,
+  &quot;SourcesReady&quot;,
+  &quot;DirectionsReady&quot;,
+  &quot;ReadingDirection&quot;,
+  &quot;Authoring&quot;,
+  &quot;SurfacesRendered&quot;,
+  &quot;Looking&quot;,
+  &quot;LanguageUnderReview&quot;,
+  &quot;Abandoned&quot;,
+]
+initial = &quot;Idle&quot;
+allow_indefinite_states = [&quot;Idle&quot;, &quot;Abandoned&quot;]
+
+[[state]]
+name = &quot;session_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;trajectory_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;spec_version&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;harness&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;capture_recorded&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;job_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;query_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;direction_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;design_language_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;searches_run&quot;
+type = &quot;counter&quot;
+initial = 0
+
+[[state]]
+name = &quot;sources_indexed&quot;
+type = &quot;counter&quot;
+initial = 0
+
+[[state]]
+name = &quot;directions_derived&quot;
+type = &quot;counter&quot;
+initial = 0
+
+[[state]]
+name = &quot;revision_rounds&quot;
+type = &quot;counter&quot;
+initial = 0
+
+[[state]]
+name = &quot;abandon_reason&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+# --- Authoring parts (D27) ------------------------------------------------
+
+[[state]]
+name = &quot;design_rules_read&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;concept_authored&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;tokens_authored&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;katagami_spec_authored&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;design_md_authored&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;landing_authored&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;embodiment_authored&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;dashboard_authored&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;shadcn_authored&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;thumbnail_authored&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;landing_looked&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;embodiment_looked&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;dashboard_looked&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;language_submitted&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+# ============================================================================
+# Idle
+# ============================================================================
+
+[[action]]
+name = &quot;RecordCapture&quot;
+kind = &quot;input&quot;
+from = [&quot;Idle&quot;]
+params = [&quot;session_id&quot;, &quot;trajectory_id&quot;, &quot;spec_version&quot;, &quot;harness&quot;]
+guard = [{ type = &quot;is_false&quot;, var = &quot;capture_recorded&quot; }]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;capture_recorded&quot;, value = &quot;true&quot; }]
+hint = &quot;Store how this run will be found. One-shot. Not work yet.&quot;
+
+[[action]]
+name = &quot;TakeQuery&quot;
+kind = &quot;input&quot;
+from = [&quot;Idle&quot;]
+to = &quot;ReadingQuery&quot;
+params = [&quot;job_id&quot;, &quot;query_id&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;capture_recorded&quot; },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationJob&quot;, entity_id_source = &quot;job_id&quot;, required_status = [&quot;Running&quot;], required = true },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationQuery&quot;, entity_id_source = &quot;query_id&quot;, required_status = [&quot;Researching&quot;], required = true },
+]
+hint = &quot;Take the live query. The source_search job is already Running and the query is Researching. The next act is to search the web, not to invent a direction on this ledger.&quot;
+
+# ============================================================================
+# Research conduct — same order as research-direction
+# ============================================================================
+
+[[action]]
+name = &quot;SearchTheWeb&quot;
+kind = &quot;input&quot;
+from = [&quot;ReadingQuery&quot;, &quot;Searching&quot;]
+to = &quot;Searching&quot;
+params = [&quot;search_notes&quot;]
+guard = [{ type = &quot;max_count&quot;, var = &quot;searches_run&quot;, max = 4 }]
+effect = [{ type = &quot;increment&quot;, var = &quot;searches_run&quot; }]
+hint = &quot;Search the web for movements and sources. Matches research-direction: varied focused queries, then a shortlist. max_count is checker fuel, not a story about how many searches taste requires.&quot;
+
+[[action]]
+name = &quot;IndexSources&quot;
+kind = &quot;input&quot;
+from = [&quot;Searching&quot;, &quot;SourcesReady&quot;]
+to = &quot;SourcesReady&quot;
+params = [&quot;source_notes&quot;]
+guard = [
+  { type = &quot;min_count&quot;, var = &quot;searches_run&quot;, min = 1 },
+  { type = &quot;max_count&quot;, var = &quot;sources_indexed&quot;, max = 8 },
+]
+effect = [{ type = &quot;increment&quot;, var = &quot;sources_indexed&quot; }]
+hint = &quot;Index a source as a DesignSource on the commons. The create/Submit/Index calls live on DesignSource. This records that the agent actually did that work. Cannot run before at least one search.&quot;
+
+[[action]]
+name = &quot;DeriveDirections&quot;
+kind = &quot;input&quot;
+from = [&quot;SourcesReady&quot;, &quot;DirectionsReady&quot;]
+to = &quot;DirectionsReady&quot;
+params = [&quot;movement_name&quot;]
+guard = [
+  { type = &quot;min_count&quot;, var = &quot;sources_indexed&quot;, min = 1 },
+  { type = &quot;max_count&quot;, var = &quot;directions_derived&quot;, max = 5 },
+]
+effect = [{ type = &quot;increment&quot;, var = &quot;directions_derived&quot; }]
+hint = &quot;Derive one direction from the research. The mint is CurationJob.SpawnDirection on the held job — this ledger step is the conduct. A finished search yields 3–5 directions (D26). The max is five; CompleteResearch refuses fewer than three.&quot;
+
+[[action]]
+name = &quot;CompleteResearch&quot;
+kind = &quot;input&quot;
+from = [&quot;DirectionsReady&quot;]
+to = &quot;Idle&quot;
+guard = [
+  { type = &quot;min_count&quot;, var = &quot;directions_derived&quot;, min = 3 },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationJob&quot;, entity_id_source = &quot;job_id&quot;, required_status = [&quot;Finalizing&quot;, &quot;Completed&quot;], required = true },
+]
+hint = &quot;Stop researching only after at least three directions were derived (and at most five) and CurationJob.CompleteResearch has already committed. Completing with fewer than three is the empty-fan-out fail, not a success here.&quot;
+
+# ============================================================================
+# Synthesize conduct — granular authoring (D27)
+# ============================================================================
+
+[[action]]
+name = &quot;TakeDirection&quot;
+kind = &quot;input&quot;
+from = [&quot;Idle&quot;]
+to = &quot;ReadingDirection&quot;
+params = [&quot;job_id&quot;, &quot;query_id&quot;, &quot;direction_id&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;capture_recorded&quot; },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationJob&quot;, entity_id_source = &quot;job_id&quot;, required_status = [&quot;Running&quot;], required = true },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationDirection&quot;, entity_id_source = &quot;direction_id&quot;, required_status = [&quot;Synthesizing&quot;], required = true },
+]
+effect = [
+  { type = &quot;set_bool&quot;, var = &quot;design_rules_read&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;concept_authored&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;tokens_authored&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;katagami_spec_authored&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;design_md_authored&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;landing_authored&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;embodiment_authored&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;dashboard_authored&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;shadcn_authored&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;thumbnail_authored&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;landing_looked&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;embodiment_looked&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;dashboard_looked&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;language_submitted&quot;, value = &quot;false&quot; },
+]
+hint = &quot;Take the direction the pipeline queued. Read the brief from that CurationDirection before authoring. Clears every authoring and look flag so a second hold cannot inherit the last language.&quot;
+
+[[action]]
+name = &quot;ReadDesignRules&quot;
+kind = &quot;input&quot;
+from = [&quot;ReadingDirection&quot;]
+to = &quot;Authoring&quot;
+params = [&quot;design_language_id&quot;]
+guard = [
+  { type = &quot;is_false&quot;, var = &quot;design_rules_read&quot; },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;DesignLanguage&quot;, entity_id_source = &quot;design_language_id&quot;, required_status = [&quot;Draft&quot;], required = true },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;design_rules_read&quot;, value = &quot;true&quot; }]
+hint = &quot;Read knowledge/rules/design-language.md — that file is the rulebook. Do not list Accepted TasteRule entities. The write target is a DesignLanguage still in Draft.&quot;
+
+[[action]]
+name = &quot;AuthorLanguage&quot;
+kind = &quot;input&quot;
+from = [&quot;Authoring&quot;]
+params = [&quot;author_notes&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;design_rules_read&quot; },
+  { type = &quot;is_false&quot;, var = &quot;concept_authored&quot; },
+]
+effect = [
+  { type = &quot;set_bool&quot;, var = &quot;concept_authored&quot;, value = &quot;true&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;tokens_authored&quot;, value = &quot;true&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;katagami_spec_authored&quot;, value = &quot;true&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;design_md_authored&quot;, value = &quot;true&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;landing_authored&quot;, value = &quot;true&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;embodiment_authored&quot;, value = &quot;true&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;dashboard_authored&quot;, value = &quot;true&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;shadcn_authored&quot;, value = &quot;true&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;thumbnail_authored&quot;, value = &quot;true&quot; },
+]
+hint = &quot;Author every named part: concept, tokens, Katagami spec, DESIGN.md, landing, embodiment, dashboard, shadcn, thumbnail. One mark is enough — writing the files can be many writes, and SubmitDesignLanguage can be one call. Render is refused until this has run.&quot;
+
+[[action]]
+name = &quot;RenderSurfaces&quot;
+kind = &quot;input&quot;
+from = [&quot;Authoring&quot;]
+to = &quot;SurfacesRendered&quot;
+params = [&quot;render_notes&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;design_rules_read&quot; },
+  { type = &quot;is_true&quot;, var = &quot;concept_authored&quot; },
+  { type = &quot;is_true&quot;, var = &quot;tokens_authored&quot; },
+  { type = &quot;is_true&quot;, var = &quot;katagami_spec_authored&quot; },
+  { type = &quot;is_true&quot;, var = &quot;design_md_authored&quot; },
+  { type = &quot;is_true&quot;, var = &quot;landing_authored&quot; },
+  { type = &quot;is_true&quot;, var = &quot;embodiment_authored&quot; },
+  { type = &quot;is_true&quot;, var = &quot;dashboard_authored&quot; },
+  { type = &quot;is_true&quot;, var = &quot;shadcn_authored&quot; },
+  { type = &quot;is_true&quot;, var = &quot;thumbnail_authored&quot; },
+]
+hint = &quot;Render the current bytes in a real browser. This produces evidence. It is not looking. Refused until every named part has been authored.&quot;
+
+[[action]]
+name = &quot;LookAtLanding&quot;
+kind = &quot;input&quot;
+from = [&quot;SurfacesRendered&quot;, &quot;Looking&quot;]
+to = &quot;Looking&quot;
+params = [&quot;landing_look_notes&quot;]
+guard = [{ type = &quot;is_false&quot;, var = &quot;landing_looked&quot; }]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;landing_looked&quot;, value = &quot;true&quot; }]
+hint = &quot;Look at the landing screenshots as images. Writing a PNG is not this.&quot;
+
+[[action]]
+name = &quot;LookAtEmbodiment&quot;
+kind = &quot;input&quot;
+from = [&quot;SurfacesRendered&quot;, &quot;Looking&quot;]
+to = &quot;Looking&quot;
+params = [&quot;embodiment_look_notes&quot;]
+guard = [{ type = &quot;is_false&quot;, var = &quot;embodiment_looked&quot; }]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;embodiment_looked&quot;, value = &quot;true&quot; }]
+hint = &quot;Look at the embodiment screenshots as images.&quot;
+
+[[action]]
+name = &quot;LookAtDashboard&quot;
+kind = &quot;input&quot;
+from = [&quot;SurfacesRendered&quot;, &quot;Looking&quot;]
+to = &quot;Looking&quot;
+params = [&quot;dashboard_look_notes&quot;]
+guard = [{ type = &quot;is_false&quot;, var = &quot;dashboard_looked&quot; }]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;dashboard_looked&quot;, value = &quot;true&quot; }]
+hint = &quot;Look at the dashboard screenshots as images.&quot;
+
+[[action]]
+name = &quot;FixSurfaces&quot;
+kind = &quot;input&quot;
+from = [&quot;Looking&quot;]
+to = &quot;Authoring&quot;
+params = [&quot;fix_note&quot;]
+guard = [{ type = &quot;max_count&quot;, var = &quot;revision_rounds&quot;, max = 12 }]
+effect = [
+  { type = &quot;increment&quot;, var = &quot;revision_rounds&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;landing_looked&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;embodiment_looked&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;dashboard_looked&quot;, value = &quot;false&quot; },
+]
+hint = &quot;Fix what the look found. Lands back in Authoring so the only way forward is render then look again. Clears every look. Bounded at twelve (C19).&quot;
+
+[[action]]
+name = &quot;SubmitLanguage&quot;
+kind = &quot;input&quot;
+from = [&quot;Looking&quot;]
+to = &quot;LanguageUnderReview&quot;
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;landing_looked&quot; },
+  { type = &quot;is_true&quot;, var = &quot;embodiment_looked&quot; },
+  { type = &quot;is_true&quot;, var = &quot;dashboard_looked&quot; },
+  { type = &quot;is_false&quot;, var = &quot;language_submitted&quot; },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;DesignLanguage&quot;, entity_id_source = &quot;design_language_id&quot;, required_status = [&quot;UnderReview&quot;], required = true },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;language_submitted&quot;, value = &quot;true&quot; }]
+hint = &quot;Hand the language to review. DesignLanguage.SubmitForReview is the gate; this step is only legal once that entity is already UnderReview and every current look has happened. One language, one submit on this hold.&quot;
+
+[[action]]
+name = &quot;CompleteSynthesis&quot;
+kind = &quot;input&quot;
+from = [&quot;LanguageUnderReview&quot;]
+to = &quot;Idle&quot;
+guard = [
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationJob&quot;, entity_id_source = &quot;job_id&quot;, required_status = [&quot;Finalizing&quot;, &quot;Completed&quot;], required = true },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;DesignLanguage&quot;, entity_id_source = &quot;design_language_id&quot;, required_status = [&quot;UnderReview&quot;], required = true },
+]
+hint = &quot;Put the synthesize job down only after CurationJob.CompleteSynthesis committed and the language is still UnderReview.&quot;
+
+# ============================================================================
+# Give up
+# ============================================================================
+
+[[action]]
+name = &quot;Abandon&quot;
+kind = &quot;input&quot;
+from = [
+  &quot;ReadingQuery&quot;,
+  &quot;Searching&quot;,
+  &quot;SourcesReady&quot;,
+  &quot;DirectionsReady&quot;,
+  &quot;ReadingDirection&quot;,
+  &quot;Authoring&quot;,
+  &quot;SurfacesRendered&quot;,
+  &quot;Looking&quot;,
+  &quot;LanguageUnderReview&quot;,
+]
+to = &quot;Abandoned&quot;
+params = [&quot;abandon_reason&quot;]
+hint = &quot;End the work and say which act could not be finished.&quot;
+
+[[state_timeout]]
+state = &quot;ReadingQuery&quot;
+after_seconds = 900
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Took the query and never searched.&quot; }
+
+[[state_timeout]]
+state = &quot;Searching&quot;
+after_seconds = 1800
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Searched and never indexed sources.&quot; }
+
+[[state_timeout]]
+state = &quot;SourcesReady&quot;
+after_seconds = 1800
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Indexed sources and never derived a direction.&quot; }
+
+[[state_timeout]]
+state = &quot;DirectionsReady&quot;
+after_seconds = 900
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Derived directions and never completed research.&quot; }
+
+[[state_timeout]]
+state = &quot;ReadingDirection&quot;
+after_seconds = 900
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Took the direction and never read the design-language rulebook.&quot; }
+
+[[state_timeout]]
+state = &quot;Authoring&quot;
+after_seconds = 3600
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Started authoring and never rendered every named part.&quot; }
+
+[[state_timeout]]
+state = &quot;SurfacesRendered&quot;
+after_seconds = 900
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Rendered and never looked.&quot; }
+
+[[state_timeout]]
+state = &quot;Looking&quot;
+after_seconds = 3600
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Looked and never fixed or submitted.&quot; }
+
+[[state_timeout]]
+state = &quot;LanguageUnderReview&quot;
+after_seconds = 900
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Language under review but synthesize job never completed.&quot; }
+
+# ============================================================================
+# Story invariants — named for the conduct, not the checker
+# ============================================================================
+
+[[invariant]]
+name = &quot;SeenBeforeSubmit&quot;
+when = [&quot;LanguageUnderReview&quot;]
+assert = &quot;landing_looked &amp;&amp; embodiment_looked &amp;&amp; dashboard_looked&quot;
+
+[[invariant]]
+name = &quot;OneLanguageOneSubmit&quot;
+when = [&quot;LanguageUnderReview&quot;]
+assert = &quot;language_submitted&quot;
+
+[[invariant]]
+name = &quot;LanguageHasEveryPart&quot;
+when = [&quot;LanguageUnderReview&quot;]
+assert = &quot;design_rules_read &amp;&amp; concept_authored &amp;&amp; tokens_authored &amp;&amp; katagami_spec_authored &amp;&amp; design_md_authored &amp;&amp; landing_authored &amp;&amp; embodiment_authored &amp;&amp; dashboard_authored &amp;&amp; shadcn_authored &amp;&amp; thumbnail_authored&quot;
+
+[[invariant]]
+name = &quot;FixRoundsBounded&quot;
+assert = &quot;revision_rounds &lt;= 12&quot;
+
+[[invariant]]
+name = &quot;AbandonedIsFinal&quot;
+when = [&quot;Abandoned&quot;]
+assert = &quot;no_further_transitions&quot;
+
+[[liveness]]
+name = &quot;QueryEventuallyResolves&quot;
+from = [&quot;ReadingQuery&quot;]
+reaches = [&quot;Idle&quot;, &quot;Abandoned&quot;]
+
+[[liveness]]
+name = &quot;DirectionEventuallyResolves&quot;
+from = [&quot;ReadingDirection&quot;]
+reaches = [&quot;Idle&quot;, &quot;Abandoned&quot;]
+
+[[liveness]]
+name = &quot;LanguageEventuallyResolves&quot;
+from = [&quot;Authoring&quot;]
+reaches = [&quot;Idle&quot;, &quot;Abandoned&quot;]
+</pre>
+  <p class="path">katagami-curation/policies/curator_agent.cedar</p>
+  <h3>Cedar</h3>
+  <pre class='plate'>// CuratorAgent — expected curator conduct (ARN-294).
+// Alphabet is the acts we expect: take the query, search, index, derive;
+// take the direction, read design-language.md, author every named part,
+// render, see each surface, fix, submit. Publish and quality-review
+// completion are absent.
+permit(
+  principal,
+  action in [
+    Action::&quot;RecordCapture&quot;,
+    Action::&quot;TakeQuery&quot;,
+    Action::&quot;SearchTheWeb&quot;,
+    Action::&quot;IndexSources&quot;,
+    Action::&quot;DeriveDirections&quot;,
+    Action::&quot;CompleteResearch&quot;,
+    Action::&quot;TakeDirection&quot;,
+    Action::&quot;ReadDesignRules&quot;,
+    Action::&quot;AuthorLanguage&quot;,
+    Action::&quot;RenderSurfaces&quot;,
+    Action::&quot;LookAtLanding&quot;,
+    Action::&quot;LookAtEmbodiment&quot;,
+    Action::&quot;LookAtDashboard&quot;,
+    Action::&quot;FixSurfaces&quot;,
+    Action::&quot;SubmitLanguage&quot;,
+    Action::&quot;CompleteSynthesis&quot;,
+    Action::&quot;Abandon&quot;
+  ],
+  resource is CuratorAgent
+);
+
+forbid(
+  principal,
+  action,
+  resource is CuratorAgent
+) when { principal.id == &quot;anonymous&quot; };
+</pre>
+  <p class="path">.agents/behaviors/curator-agent/BEHAVIOR.md</p>
+  <h3>Behavior</h3>
+  <pre class='plate'>---
+name: curator-agent
+description: Conduct for a Katagami curator working the live pipeline — pick up the running source-search or synthesize job, name the query, direction and language it is answering, look at what it made, and finish only after the job and the language have actually moved. It never publishes and never reviews its own work.
+---
+
+# Curator agent
+
+One principal does the work the skills already ask for, on the live
+Katagami path. Research means: take the query, search the web, index
+sources, derive three to five directions. Synthesize means: take the
+direction, read the design-language rulebook, author every named part,
+render, look at each surface, fix, submit. The objects stay the app&#x27;s.
+The machine is the expected conduct.
+
+## Record how this run will be found before taking a query
+
+&lt;!-- inventory: C1, C17 --&gt;
+
+Before the first query is taken the agent stores the session, the
+trajectory, the spec version and the harness this run will carry. Those
+values come from the capture helper, not from invented ids.
+
+Starting work and stamping identity afterwards fails this: later verdicts
+then point at a run that never existed.
+
+## Take the query the pipeline is researching
+
+&lt;!-- inventory: C2, C10 --&gt;
+
+Research starts by taking the live query — a search job that is already
+running. The agent reads the scope from that query before searching.
+
+Inventing a direction without a query, or taking synthesize while still
+researching, fails this.
+
+## Search the web before indexing anything
+
+&lt;!-- inventory: C3 --&gt;
+
+The agent searches the web for movements and sources with focused queries,
+then shortlists.
+
+Indexing a source it never searched for, or deriving a direction from
+memory, fails this.
+
+## Index sources before deriving a direction
+
+&lt;!-- inventory: C4 --&gt;
+
+Each shortlisted source is indexed as a real source record. Only then
+does a direction get derived.
+
+A direction with no indexed source behind it fails this.
+
+## Derive three to five directions before finishing research
+
+&lt;!-- inventory: C5 --&gt;
+
+The agent derives one direction per movement by asking the running search
+job to spawn it, then completes research only after three to five
+directions exist and the job has actually completed.
+
+Finishing research with fewer than three directions, or declaring it done
+while the job is still running, fails this.
+
+## Take the direction the pipeline queued
+
+&lt;!-- inventory: C6 --&gt;
+
+Synthesize starts by taking the live direction that is already
+synthesizing, and reading that brief.
+
+Authoring a language against a direction the pipeline never queued fails
+this.
+
+## Read the design-language rulebook, never a TasteRule list
+
+&lt;!-- inventory: C28 --&gt;
+
+Before authoring anything the agent reads `knowledge/rules/design-language.md`.
+That file is the rulebook. It does not list Accepted TasteRule entities.
+
+Judging from a remembered standard, or enumerating TasteRules and treating
+Accepted rows as the brief, fails this.
+
+## Author every named part of the language
+
+&lt;!-- inventory: C7 --&gt;
+
+The agent writes every named part from the direction, as a real
+design-language entity still in draft: the concept, the tokens, the
+Katagami spec, and DESIGN.md.
+
+Pages built first and a language written to describe them afterwards
+fail this. A SetSpec with no concept, or a DESIGN.md with no tokens, is
+the same failure.
+
+## Look at each surface before handing the language over
+
+&lt;!-- inventory: C9, C18 --&gt;
+
+The agent renders the current bytes, looks at the landing, the embodiment
+and the dashboard as images, and only then hands the language to review —
+and only once that language is already under review. A look of old bytes
+cannot carry a submit.
+
+Submitting a draft, submitting without looking at every surface, or
+submitting on a look that a later fix killed, fails this.
+
+## Fix, look again, and stop by twelve
+
+&lt;!-- inventory: C19 --&gt;
+
+Every edit invalidates the last look. The agent fixes what it saw, renders
+again, and looks at the new bytes. It does not loop past twelve rounds.
+
+Closing a change with no fresh look, or spinning without a bound, fails
+this.
+
+## Name the language like a masthead
+
+&lt;!-- inventory: C23 --&gt;
+
+The name is one distinctive evocative noun, or a subject-and-maker pair when a
+single word cannot carry the idea.
+
+Leading with an adjective, stacking genres or eras, coining a portmanteau, or
+appending an id or a date, each fail this: the name is the first thing anyone
+reads and it either carries the idea or advertises that there is not one.
+
+## Make each of the three surfaces its own kind of page
+
+&lt;!-- inventory: C8, C20, C21, C22, C26 --&gt;
+
+From one set of tokens the agent builds the landing as the scroll-cinematic
+film the direction describes around a single full-bleed hero, the embodiment as
+every primitive in every state carrying the signature mechanic, and the
+dashboard as a product a team would operate on in-world content. It also
+authors the shadcn artifacts and the thumbnail. The language, its palette and
+its art style ship as one set.
+
+A landing that is a stack of sections, an embodiment that reads as swatches,
+and a dashboard of placeholder rows are one failure: three files that are the
+same page three times. Skipping shadcn or the thumbnail is the same class of
+gap — a named part was not authored.
+
+## Render every surface at every breakpoint the run will claim
+
+&lt;!-- inventory: C25 --&gt;
+
+The agent loads the current bytes of each surface in a real browser and
+captures them at wide, desktop, tablet and true 390px mobile, the mobile
+capture taken inside a 390px frame rather than a window clamped wider.
+
+Rendering a local draft while shipping a different file, or reasoning about how
+a page will look at a size instead of rendering it there, fails this.
+
+## Judge the landing across its whole scroll, frame by frame
+
+&lt;!-- inventory: C27 --&gt;
+
+The agent reads the landing as a dense sequence of frames across the whole
+scroll at each breakpoint, judging each as a composed image with no dead frame
+and no text on busy artwork, and drives the scroll to confirm the composition
+changes materially between depths rather than only fading and settles into a
+readable document when motion is reduced.
+
+Inferring choreography from animation code in the source, or judging only the
+depths the agent happened to capture, fails this.
+
+## Judge each taste rule against a named frame
+
+&lt;!-- inventory: C24 --&gt;
+
+For every rule the agent claims to have met it records the rule, the frame it
+judged from, and whether it passed — body size, contrast, accent count, spacing
+above titles, the signature mechanic actually visible in the embodiment.
+
+A claim with no frame behind it does not satisfy this, nor does judging a rule
+about how a page looks from the token values meant to produce it.
+
+## Leave publishing and review to the people who own them
+
+&lt;!-- inventory: C11, C12, C13, C14 --&gt;
+
+The agent finishes its job and stops. It does not publish, mark quality
+passed, or complete a quality-review job. It works under its own credential,
+and reports the outcome a call actually returned rather than the one it
+expected.
+
+A refusal is an answer. Routing around one is what this prevents.
+
+## End honestly when it cannot finish the hold
+
+&lt;!-- inventory: C15, C16 --&gt;
+
+When the job will not complete, the language will not reach review, or the
+loop cannot be closed, the agent ends the hold itself and says which step
+it could not complete.
+
+Going quiet and letting the hold lapse fails this, because a lapse records
+no reason.
+</pre>
+  <p class="path">.agents/skills/katagami-study-curator/SKILL.md</p>
+  <h3>Skill</h3>
+  <pre class='plate'>---
+name: katagami-study-curator
+description: The skill Claude Code is given for a curator trial. Follow production research-direction and synthesize-language, then mark CuratorAgent. Never publish.
+---
+
+# Study curator — this is what a curator trial gets
+
+You are the curator. This file is the only study skill in your context.
+Do the work the production skills `research-direction` and
+`synthesize-language` already ask for, on the live objects. After each
+act, mark it on `CuratorAgent` so the trajectory is the behavior, not
+only the side effects.
+
+Do not use `katagami-contributor`. That is the old MCP craft loop.
+
+This phase: **source_search** then **synthesize**. Do not do quality
+review. Do not publish. Do not approve a publish.
+
+## Capture identity
+
+```bash
+python3 hooks/trajectory-capture/capture.py identity
+```
+
+If that fails, stop. Put the printed ids on `RecordCapture`.
+
+## Create the ledger
+
+```
+POST $TEMPER_API_URL/tdata/CuratorAgents
+{}
+```
+
+Then `RecordCapture`.
+
+## Research — same acts as research-direction
+
+On the live app: read the query, `temper.web_search`, create
+`DesignSources`, `CurationJob.SpawnDirection`, `CompleteResearch`.
+
+A finished search yields **3–5 directions**. Fewer is incomplete.
+
+On the ledger, in that order:
+
+| After you… | Mark |
+|---|---|
+| Have the running search job and query | `TakeQuery` |
+| Have searched | `SearchTheWeb` |
+| Have indexed a source | `IndexSources` |
+| Have spawned a direction | `DeriveDirections` |
+| Have completed the search job | `CompleteResearch` |
+
+You cannot index before you search. You cannot derive before you index.
+You cannot complete research with fewer than three directions.
+
+## Synthesize — same acts as synthesize-language
+
+On the live app: read `knowledge/rules/design-language.md` (never list
+TasteRule entities), author every named part, render, look, submit.
+
+On the ledger, in that order:
+
+| After you… | Mark |
+|---|---|
+| Have the running synthesize job and direction | `TakeDirection` |
+| Have read design-language.md | `ReadDesignRules` |
+| Have authored every named part (one submit call is fine) | `AuthorLanguage` |
+| Have rendered them | `RenderSurfaces` |
+| Have looked at the landing shots | `LookAtLanding` |
+| Have looked at the embodiment shots | `LookAtEmbodiment` |
+| Have looked at the dashboard shots | `LookAtDashboard` |
+| Have changed bytes after a look | `FixSurfaces` (then render and look again; max 12) |
+| The language is UnderReview | `SubmitLanguage` |
+| The synthesize job has completed | `CompleteSynthesis` |
+
+Looking is a different act from rendering, and each surface is its own
+look. `SubmitLanguage` is refused unless every current look has happened
+and the language is already `UnderReview`.
+
+## What you never do
+
+No `Publish`. No `ApprovePublish`. No `CompleteQualityReview`. No
+inventing trajectory ids. No listing Accepted TasteRule entities. No
+skipping search, sources, a named authoring part, a look, or the
+language review gate.
+</pre>
+</section>
+<section class="panel" id="review" role="tabpanel">
+  <p class="path">katagami-curation/specs/review_agent.ioa.toml</p>
+  <h3>Spec</h3>
+  <pre class='plate'># ReviewAgent — I/O Automaton Specification (craft-level)
+#
+# One review record per submitted artifact. Its job is to catch what the curator
+# got wrong by examining the ACTUAL ARTIFACTS rather than the curator&#x27;s account
+# of them. Rendering an artifact is not reviewing it, and writing a PNG is not
+# looking at one.
+#
+# Four states, and the substance is entirely inside Reviewing, where the acts of
+# examination are self-loops that form a dependency graph RecordVerdict is
+# guarded on. RENDERED IS SEPARATED FROM INSPECTED THROUGHOUT: a browser run
+# that writes a PNG sets `*_rendered`; only the image returning into the agent&#x27;s
+# context as an image sets `*_inspected`. Those are different facts and the
+# machine treats them as different facts.
+#
+# Why booleans here and states in CuratorAgent: every act below happens INSIDE
+# one state and can be repeated, undone by a repair, and redone. A boolean set
+# by a self-loop carries information no state does. (In CuratorAgent the same
+# obligations are steps BETWEEN states, so no boolean repeats them there.)
+#
+# WHAT THIS MACHINE GOVERNS: the reviewer&#x27;s conduct. Properties of the artifact
+# — whether a landing file exists, whether DESIGN.md lints clean, whether an art
+# style is linked — belong to the DesignLanguage entity
+# (katagami-commons/specs/design_language.ioa.toml) and are not restated here.
+#
+# DELIBERATELY NOT ENFORCED, and saying so is the point: nothing checks that the
+# rationale supports the verdict, that `verdict` is one of the three documented
+# words, that a finding is true or useful, or that the rulebook version matches
+# the curator&#x27;s. The kernel cannot read a string. The machine&#x27;s claim is that
+# LOOKING HAPPENED, not that the looking was good — the latter is the judge
+# layer&#x27;s business, and conflating the two is how &quot;the system guarantees
+# quality&quot; gets written down when what is guaranteed is that a named check ran.
+#
+# This actor has NO Publish action and must never gain one. Recording a verdict
+# unlocks the human publish path (HumanCurator.Publish is guarded on this entity
+# reaching VerdictRecorded); it is not itself a publish. It also never marks
+# quality passed, never attaches published assets, and never archives work it
+# could not pass.
+#
+# Lifecycle: SubmissionReceived -&gt; Reviewing -&gt; VerdictRecorded
+#            either live state -&gt; Abandoned (give up, or a state timeout fires)
+
+[automaton]
+name = &quot;ReviewAgent&quot;
+states = [&quot;SubmissionReceived&quot;, &quot;Reviewing&quot;, &quot;VerdictRecorded&quot;, &quot;Abandoned&quot;]
+initial = &quot;SubmissionReceived&quot;
+allow_indefinite_states = [&quot;VerdictRecorded&quot;, &quot;Abandoned&quot;]
+
+# --- What is under review ---------------------------------------------------
+
+# The CuratorAgent run that produced this submission. Also the entity_id_source
+# for AcceptSubmission&#x27;s cross-entity guard.
+[[state]]
+name = &quot;curator_agent_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+# The single DesignLanguage this record rules on. Scalar, not a list: an empty
+# scalar ref under required = true fails the guard, so &quot;review with no scope&quot;
+# has no legal path — which is what the behaviour contract&#x27;s &quot;refuses to invent a
+# review scope&quot; needs from the machine.
+[[state]]
+name = &quot;reviewed_entity_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;submission_type&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+# Set by RecordSubmissionRef, which stores and claims nothing. Separate from
+# has_submission so the storing call is one-shot rather than an identical-state
+# self-loop.
+[[state]]
+name = &quot;submission_recorded&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+# Set by AcceptSubmission (zero params, cross-entity guarded).
+[[state]]
+name = &quot;has_submission&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+# --- Capture identity (ARN-293) ---------------------------------------------
+
+[[state]]
+name = &quot;session_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;trajectory_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;spec_version&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;harness&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+# --- The standard being judged against --------------------------------------
+
+[[state]]
+name = &quot;rulebook_loaded&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;rulebook_version&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;loaded_rule_ids&quot;
+type = &quot;string&quot;
+initial = &quot;[]&quot;
+
+# --- Examination ------------------------------------------------------------
+
+[[state]]
+name = &quot;artifacts_fetched&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;design_md_opened&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;landing_opened&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;embodiment_opened&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;dashboard_opened&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;shadcn_opened&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;thumbnail_opened&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;landing_rendered&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;landing_inspected&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;embodiment_rendered&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;embodiment_inspected&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;dashboard_rendered&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;dashboard_inspected&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;hero_verified&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+# The ArtStyle id read OFF the DesignLanguage entity, not chosen by the agent.
+[[state]]
+name = &quot;art_style_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;art_style_resolved&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;art_style_verified&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;rules_checked&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;claims_checked&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+# --- Findings and repairs ---------------------------------------------------
+
+[[state]]
+name = &quot;findings&quot;
+type = &quot;string&quot;
+initial = &quot;[]&quot;
+
+[[state]]
+name = &quot;has_findings&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;has_repairs&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+# Bounded by RecordRepair&#x27;s max_count guard. Every repair discards the whole
+# examination, so an unbounded repair loop is a review that never rules.
+[[state]]
+name = &quot;repair_rounds&quot;
+type = &quot;counter&quot;
+initial = 0
+
+# --- Outcome ----------------------------------------------------------------
+
+# &quot;pass&quot; | &quot;revise&quot; | &quot;reject&quot;. A free string: the kernel cannot compare it to a
+# literal, so which of the three words it holds is a judge-layer question. What
+# the machine holds is that a verdict was recorded exactly once, downstream of
+# the whole examination.
+[[state]]
+name = &quot;verdict&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;verdict_rationale&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;reviewed_by&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;abandon_reason&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+# ============================================================================
+# SubmissionReceived — the record names what it is ruling on. Nothing fetched,
+# rendered or judged. The accepted rulebook is loaded here, before any
+# judgement can form.
+# ============================================================================
+
+[[action]]
+name = &quot;RecordSubmissionRef&quot;
+kind = &quot;input&quot;
+from = [&quot;SubmissionReceived&quot;]
+params = [&quot;curator_agent_id&quot;, &quot;reviewed_entity_id&quot;, &quot;submission_type&quot;, &quot;session_id&quot;, &quot;trajectory_id&quot;, &quot;spec_version&quot;, &quot;harness&quot;]
+guard = [{ type = &quot;is_false&quot;, var = &quot;submission_recorded&quot; }]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;submission_recorded&quot;, value = &quot;true&quot; }]
+hint = &quot;Record which curator run produced this submission, the single entity id under review, and this run&#x27;s own capture identity, so a verdict can be traced back to the exact run that formed it. Stores only; claims nothing. This is the action CuratorAgent&#x27;s submission trigger dispatches with a create resolver — the review record comes into existence because a curator submitted, so a verdict against something nobody handed over has no record to live in. One-shot: the scope of a review cannot be re-pointed once examination has begun.&quot;
+
+[[action]]
+name = &quot;AcceptSubmission&quot;
+kind = &quot;input&quot;
+from = [&quot;SubmissionReceived&quot;]
+params = []
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;submission_recorded&quot; },
+  { type = &quot;is_false&quot;, var = &quot;has_submission&quot; },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;DesignLanguage&quot;, entity_id_source = &quot;reviewed_entity_id&quot;, required_status = [&quot;UnderReview&quot;], required = true },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;has_submission&quot;, value = &quot;true&quot; }]
+hint = &quot;Accept the submission. ZERO PARAMETERS: the guard means the DesignLanguage named by reviewed_entity_id exists and is UnderReview — the state only DesignLanguage.SubmitForReview can reach. required = true: an empty ref cannot pretend a language was handed over.&quot;
+
+[[action]]
+name = &quot;LoadRulebook&quot;
+kind = &quot;input&quot;
+from = [&quot;SubmissionReceived&quot;]
+params = [&quot;rulebook_version&quot;, &quot;loaded_rule_ids&quot;]
+guard = [{ type = &quot;is_false&quot;, var = &quot;rulebook_loaded&quot; }]
+effect = [
+  { type = &quot;list_append&quot;, var = &quot;loaded_rule_ids&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;rulebook_loaded&quot;, value = &quot;true&quot; },
+]
+hint = &quot;Read knowledge/rules/design-language.md — that file is the rulebook. Stamp its version. Do not list Accepted TasteRule entities. A run whose only rule source is the model&#x27;s own prose has nothing to show here. The stamp is what makes two verdicts comparable; a rulebook recited from memory is exactly what BeginReview&#x27;s guard refuses.&quot;
+
+[[action]]
+name = &quot;BeginReview&quot;
+kind = &quot;input&quot;
+from = [&quot;SubmissionReceived&quot;]
+to = &quot;Reviewing&quot;
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;has_submission&quot; },
+  { type = &quot;is_true&quot;, var = &quot;rulebook_loaded&quot; },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;DesignLanguage&quot;, entity_id_source = &quot;reviewed_entity_id&quot;, required_status = [&quot;UnderReview&quot;, &quot;Published&quot;], required = true },
+]
+hint = &quot;Open the examination. Three preconditions, none of them a formality: a curator actually submitted (AcceptSubmission&#x27;s own cross-entity guard), the standard was loaded before any judgement could form, and the reviewed entity is in a state reachable only through its own submission gate — so a Draft the curator is still editing, or an Archived record, cannot be ruled on. required = true means a missing link BLOCKS rather than passes, which is the difference between a guard and a decoration.&quot;
+
+# ============================================================================
+# Reviewing — the examination. Everything the review consists of happens here
+# as self-loops; a repair returns this state to an unexamined condition rather
+# than moving it forward.
+# ============================================================================
+
+[[action]]
+name = &quot;FetchArtifacts&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;fetched_file_ids&quot;]
+guard = [{ type = &quot;is_false&quot;, var = &quot;artifacts_fetched&quot; }]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;artifacts_fetched&quot;, value = &quot;true&quot; }]
+hint = &quot;Resolve every artifact file id OFF THE ENTITY. Then OpenDesignMd, OpenLanding, OpenEmbodiment, OpenDashboard, OpenShadcn and OpenThumbnail to actually read them. A body that is not what its declared format claims is a finding, not an artifact. RecordRepair clears this bit so a repaired artifact must be re-fetched.&quot;
+
+[[action]]
+name = &quot;OpenDesignMd&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;design_md_notes&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; },
+  { type = &quot;is_false&quot;, var = &quot;design_md_opened&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;design_md_opened&quot;, value = &quot;true&quot; }]
+hint = &quot;Open DESIGN.md and read the bytes. Listed so the expectation names the artifact.&quot;
+
+[[action]]
+name = &quot;OpenLanding&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;landing_file_notes&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; },
+  { type = &quot;is_false&quot;, var = &quot;landing_opened&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;landing_opened&quot;, value = &quot;true&quot; }]
+hint = &quot;Open the landing file and read the bytes.&quot;
+
+[[action]]
+name = &quot;OpenEmbodiment&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;embodiment_file_notes&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; },
+  { type = &quot;is_false&quot;, var = &quot;embodiment_opened&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;embodiment_opened&quot;, value = &quot;true&quot; }]
+hint = &quot;Open the embodiment file and read the bytes.&quot;
+
+[[action]]
+name = &quot;OpenDashboard&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;dashboard_file_notes&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; },
+  { type = &quot;is_false&quot;, var = &quot;dashboard_opened&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;dashboard_opened&quot;, value = &quot;true&quot; }]
+hint = &quot;Open the dashboard file and read the bytes.&quot;
+
+[[action]]
+name = &quot;OpenShadcn&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;shadcn_file_notes&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; },
+  { type = &quot;is_false&quot;, var = &quot;shadcn_opened&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;shadcn_opened&quot;, value = &quot;true&quot; }]
+hint = &quot;Open the shadcn artifacts (registry theme, components.md, preview shots) and read the bytes.&quot;
+
+[[action]]
+name = &quot;OpenThumbnail&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;thumbnail_file_notes&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; },
+  { type = &quot;is_false&quot;, var = &quot;thumbnail_opened&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;thumbnail_opened&quot;, value = &quot;true&quot; }]
+hint = &quot;Open the thumbnail and look at it as an image.&quot;
+
+[[action]]
+name = &quot;RenderLanding&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;landing_render_manifest&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; },
+  { type = &quot;is_true&quot;, var = &quot;landing_opened&quot; },
+  { type = &quot;is_false&quot;, var = &quot;landing_rendered&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;landing_rendered&quot;, value = &quot;true&quot; }]
+hint = &quot;Launch the browser and screenshot the landing FROM THE FETCHED BYTES at desktop 1440x960, tablet 768 and mobile 375, recording the output paths and exit status. This produces evidence; it does not consume any.&quot;
+
+[[action]]
+name = &quot;InspectLandingRender&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;landing_observation&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;landing_rendered&quot; },
+  { type = &quot;is_false&quot;, var = &quot;landing_inspected&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;landing_inspected&quot;, value = &quot;true&quot; }]
+hint = &quot;Read the landing screenshots back into context as images and write an observation naming something only visible in the image — a clipped edge, an overlap, a truncated label, the signature mechanic present or absent. A run that wrote the PNG and never read it back cannot reach this bit, and an observation phrased from the spec fields (&#x27;tokens are applied&#x27;) is not one.&quot;
+
+[[action]]
+name = &quot;RenderEmbodiment&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;embodiment_render_manifest&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; },
+  { type = &quot;is_true&quot;, var = &quot;embodiment_opened&quot; },
+  { type = &quot;is_false&quot;, var = &quot;embodiment_rendered&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;embodiment_rendered&quot;, value = &quot;true&quot; }]
+hint = &quot;Screenshot the embodiment from the fetched bytes at the same three viewports.&quot;
+
+[[action]]
+name = &quot;InspectEmbodimentRender&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;embodiment_observation&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;embodiment_rendered&quot; },
+  { type = &quot;is_false&quot;, var = &quot;embodiment_inspected&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;embodiment_inspected&quot;, value = &quot;true&quot; }]
+hint = &quot;Read the embodiment screenshots back as images and write an observation about the composed specimen that could not have been made from the spec fields — whether every primitive appears in every state, whether the signature mechanic actually recolours through them.&quot;
+
+[[action]]
+name = &quot;RenderDashboard&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;dashboard_render_manifest&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; },
+  { type = &quot;is_true&quot;, var = &quot;dashboard_opened&quot; },
+  { type = &quot;is_false&quot;, var = &quot;dashboard_rendered&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;dashboard_rendered&quot;, value = &quot;true&quot; }]
+hint = &quot;Screenshot the dashboard from the fetched bytes at the same three viewports. This is the surface most often skipped, which is exactly why RecordVerdict refuses without it.&quot;
+
+[[action]]
+name = &quot;InspectDashboardRender&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;dashboard_observation&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;dashboard_rendered&quot; },
+  { type = &quot;is_false&quot;, var = &quot;dashboard_inspected&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;dashboard_inspected&quot;, value = &quot;true&quot; }]
+hint = &quot;Read the dashboard screenshots back as images and write an observation about the real product content — nav, stat cards, the chart drawn in the language&#x27;s own graphic system, the table, the form — rather than about whether a dashboard file exists.&quot;
+
+[[action]]
+name = &quot;VerifyHeroReplaceable&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;hero_swap_report&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;landing_inspected&quot; },
+  { type = &quot;is_false&quot;, var = &quot;hero_verified&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;hero_verified&quot;, value = &quot;true&quot; }]
+hint = &quot;Render the same landing file id twice with different --hero-image values, read both screenshots back into context, and confirm the imagery changed while composition, display type and choreography did not. Guarded on landing_inspected because the agent must have SEEN the original hero before it can say the replacement changed anything. No write to the landing file between the two renders — editing the markup to make the swap work is a rebuild, not a swap — and a single render or a CSS grep cannot produce this pair.&quot;
+
+[[action]]
+name = &quot;ResolveArtStyle&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;art_style_id&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; },
+  { type = &quot;is_false&quot;, var = &quot;art_style_resolved&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;art_style_resolved&quot;, value = &quot;true&quot; }]
+hint = &quot;Read default_art_style_id OFF the DesignLanguage, then get that ArtStyle and its canonical prompt. The art_style_id recorded here must be the id the entity returned, not one the agent chose — NOT ENFORCED by the kernel (no field-equality guard across entities); the trajectory must show the read that produced it.&quot;
+
+[[action]]
+name = &quot;VerifyArtStyleRendered&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;art_style_judgement&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;art_style_resolved&quot; },
+  { type = &quot;is_true&quot;, var = &quot;landing_inspected&quot; },
+  { type = &quot;is_false&quot;, var = &quot;art_style_verified&quot; },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;ArtStyle&quot;, entity_id_source = &quot;art_style_id&quot;, required_status = [&quot;UnderReview&quot;, &quot;Published&quot;], required = true },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;art_style_verified&quot;, value = &quot;true&quot; }]
+hint = &quot;Judge the hero AS IT RENDERS against the linked style&#x27;s canonical prompt: quote the prompt&#x27;s observable aesthetic facts — medium and material, marks and edges, tonal logic, colour roles — and say, against the image in front of you, whether the hero was made in that style or merely near it. The cross-entity guard refuses an attestation pointing at a draft or at nothing: required = true plus a status allowlist means an absent or unpublished style BLOCKS the claim outright, which is how a language stops being able to claim an art style it does not wear.&quot;
+
+[[action]]
+name = &quot;VerifyAgainstRules&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;rule_results&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;rulebook_loaded&quot; },
+  { type = &quot;is_true&quot;, var = &quot;landing_inspected&quot; },
+  { type = &quot;is_true&quot;, var = &quot;embodiment_inspected&quot; },
+  { type = &quot;is_true&quot;, var = &quot;dashboard_inspected&quot; },
+  { type = &quot;is_false&quot;, var = &quot;rules_checked&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;rules_checked&quot;, value = &quot;true&quot; }]
+hint = &quot;Hold each rendered surface against the LOADED rulebook, rule by rule and viewport by viewport: borders, accent count and rationing, radius set, body size, spacing above titles, contrast, light-mode default, no emoji on buttons, responsive reflow with no horizontal overflow, one full-bleed hero, motion that carries meaning. Every failure names the rule id, the surface and the viewport screenshot it was seen in. A rule list derived from the spec fields rather than the renders is visible because it cites no image; a global impression is not a rule list; and passing a rule at desktop without testing it at 375 is how mobile-only breakage ships.&quot;
+
+[[action]]
+name = &quot;CheckCuratorClaims&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;claim_results&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;landing_inspected&quot; },
+  { type = &quot;is_true&quot;, var = &quot;embodiment_inspected&quot; },
+  { type = &quot;is_true&quot;, var = &quot;dashboard_inspected&quot; },
+  { type = &quot;is_false&quot;, var = &quot;claims_checked&quot; },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;claims_checked&quot;, value = &quot;true&quot; }]
+hint = &quot;Quote the curator&#x27;s self-review and curator_notes claim by claim and mark each confirmed or contradicted against a NAMED screenshot or file read, turning every contradicted claim into a finding. Guarded on all three surfaces having been inspected, because a claim can only be tested against something the agent has seen. This is where the reviewer stops inheriting the curator&#x27;s blind spots — the specific failure where a run says &#x27;the hero is replaceable and the dashboard is responsive&#x27; and the review&#x27;s only source for both statements is that sentence.&quot;
+
+[[action]]
+name = &quot;RecordFinding&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;findings&quot;]
+guard = [{ type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; }]
+effect = [
+  { type = &quot;list_append&quot;, var = &quot;findings&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;has_findings&quot;, value = &quot;true&quot; },
+]
+hint = &quot;Record one finding carrying the surface, the viewport, the located element, the rule id it breaks and a severity, where the subject is visible in something already in context. One call per finding — batching five problems into one string is how a review becomes ceremony. Guarded on artifacts_fetched: a finding must be about something the agent actually has. NOT ENFORCED: that the finding is true or useful; that is the judge&#x27;s layer.&quot;
+
+[[action]]
+name = &quot;RecordRepair&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;repair_note&quot;, &quot;answers_finding_id&quot;, &quot;new_file_id&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;has_findings&quot; },
+  { type = &quot;max_count&quot;, var = &quot;repair_rounds&quot;, max = 6 },
+]
+effect = [
+  { type = &quot;increment&quot;, var = &quot;repair_rounds&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;has_repairs&quot;, value = &quot;true&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;artifacts_fetched&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;design_md_opened&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;landing_opened&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;embodiment_opened&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;dashboard_opened&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;shadcn_opened&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;thumbnail_opened&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;landing_rendered&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;landing_inspected&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;embodiment_rendered&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;embodiment_inspected&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;dashboard_rendered&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;dashboard_inspected&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;hero_verified&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;art_style_resolved&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;art_style_verified&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;rules_checked&quot;, value = &quot;false&quot; },
+  { type = &quot;set_bool&quot;, var = &quot;claims_checked&quot;, value = &quot;false&quot; },
+]
+hint = &quot;Fix a defect instead of only reporting it — naming the finding it answers and the new file id it wrote. TWO THINGS MAKE THIS HONEST: it has no legal source without a recorded finding, so the curator always sees what caused the change; and it CLEARS EVERY PERCEPTION FLAG, because all of those perceptions were of bytes that no longer exist. A fresh FetchArtifacts and a complete render / inspect / verify cycle must follow before any verdict, so fix-and-pass in one motion is structurally impossible. Re-read the entity afterwards and report the state the platform returned, not the state the call was expected to produce. Bounded at 6 rounds: an unbounded repair loop is a review that never rules.&quot;
+
+[[action]]
+name = &quot;RecordVerdict&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+to = &quot;VerdictRecorded&quot;
+params = [&quot;verdict&quot;, &quot;verdict_rationale&quot;, &quot;reviewed_by&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;artifacts_fetched&quot; },
+  { type = &quot;is_true&quot;, var = &quot;design_md_opened&quot; },
+  { type = &quot;is_true&quot;, var = &quot;landing_opened&quot; },
+  { type = &quot;is_true&quot;, var = &quot;embodiment_opened&quot; },
+  { type = &quot;is_true&quot;, var = &quot;dashboard_opened&quot; },
+  { type = &quot;is_true&quot;, var = &quot;shadcn_opened&quot; },
+  { type = &quot;is_true&quot;, var = &quot;thumbnail_opened&quot; },
+  { type = &quot;is_true&quot;, var = &quot;landing_inspected&quot; },
+  { type = &quot;is_true&quot;, var = &quot;embodiment_inspected&quot; },
+  { type = &quot;is_true&quot;, var = &quot;dashboard_inspected&quot; },
+  { type = &quot;is_true&quot;, var = &quot;hero_verified&quot; },
+  { type = &quot;is_true&quot;, var = &quot;art_style_verified&quot; },
+  { type = &quot;is_true&quot;, var = &quot;rules_checked&quot; },
+  { type = &quot;is_true&quot;, var = &quot;claims_checked&quot; },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;DesignLanguage&quot;, entity_id_source = &quot;reviewed_entity_id&quot;, required_status = [&quot;UnderReview&quot;, &quot;Published&quot;], required = true },
+]
+hint = &quot;Rule once — pass, revise or reject — with a rationale citing findings by id and naming at least one per-surface observation traceable to an image that was in context, and with the reviewing identity attached. EIGHT RECORDED ACTS OF EXAMINATION STAND BETWEEN A SUBMISSION AND THIS CALL; a verdict that follows the submission directly is a signature, not a claim. The cross-entity guard is re-checked here as well as on BeginReview, so a verdict cannot land against an artifact that left review while the examination ran. VerdictRecorded is terminal: a second or amended verdict has no source state, which matters because HumanCurator.Publish is guarded on exactly this state. NOT ENFORCED: that the rationale supports the verdict, or that `verdict` is one of the three documented words.&quot;
+
+[[action]]
+name = &quot;ReviewVerdictRecordedEvent&quot;
+kind = &quot;output&quot;
+hint = &quot;Emitted by the platform when a verdict lands; deliberately absent from the Cedar permit, so no agent can call it — an agent-issued call appears in the trajectory as a policy denial. Being kind = output it is dropped from the transition table and the trigger graph, so nothing in this spec relies on it: the ordering it used to imply is carried instead by HumanCurator.Publish&#x27;s own cross_entity_state guard on this entity reaching VerdictRecorded.&quot;
+
+# ============================================================================
+# Give up — always available, and fired by both live states&#x27; timeouts.
+# ============================================================================
+
+[[action]]
+name = &quot;Abandon&quot;
+kind = &quot;input&quot;
+from = [&quot;SubmissionReceived&quot;, &quot;Reviewing&quot;]
+to = &quot;Abandoned&quot;
+params = [&quot;abandon_reason&quot;]
+hint = &quot;End the review without a verdict, naming the step that could not complete — &#x27;chromium would not launch&#x27;, &#x27;landing_file_id resolved to a non-HTML body&#x27;, &#x27;the submission carried no artifact id&#x27; — rather than leaving the platform to write a generic stall record. An abandoned review leaves the submission unpublishable, which is the safe direction. This is also the only correct answer to an empty review scope: enumerating the commons to find something to rule on is how a review returns a verdict against a submission it never examined.&quot;
+
+# --- Stall detection --------------------------------------------------------
+
+[[state_timeout]]
+state = &quot;SubmissionReceived&quot;
+after_seconds = 900
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;ReviewAgent held SubmissionReceived for 15m without loading the rulebook and beginning the review.&quot; }
+
+# Two hours, not one: three surfaces x three viewports, plus a hero swap, plus
+# an art-style judgement, plus a post-repair re-examination does not fit in one.
+# Shipping the demand without the budget would only convert rubber stamps into
+# stall records.
+[[state_timeout]]
+state = &quot;Reviewing&quot;
+after_seconds = 7200
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;ReviewAgent held Reviewing for 2h without recording a verdict.&quot; }
+
+# ============================================================================
+# Safety invariants
+#
+# Labelled by what they actually prove, per the audit. (a) = falsifiable by a
+# reachable path in this machine; (b) = a regression fence over a fact the
+# from-lists and guards already force.
+# ============================================================================
+
+# (a) FALSIFIABLE, and the most useful line in this file. RecordRepair must
+# clear a rendered flag whenever it clears the matching inspected flag; if a
+# future edit drops one clear, or a new repair-like action clears only half the
+# pairs, the machine ends up claiming an inspection of a render that no longer
+# exists and this fires. Checked in EVERY reachable state, not just one.
+# The kernel cannot bind a boolean to the artifact it witnesses, so this
+# invalidation discipline is hand-written per action and needs a checker.
+[[invariant]]
+name = &quot;InspectionRequiresRender&quot;
+assert = &quot;(landing_rendered || !landing_inspected) &amp;&amp; (embodiment_rendered || !embodiment_inspected) &amp;&amp; (dashboard_rendered || !dashboard_inspected)&quot;
+
+# (a) FALSIFIABLE, and added because a mutation test showed the invariant below
+# it was one-directional. `InspectionRequiresRender` catches an inspection that
+# outlives its render; it does NOT catch a RENDER flag that survives a repair —
+# and that is the dangerous half, because InspectLandingRender is guarded only on
+# landing_rendered, so a stale render flag lets the agent &quot;inspect&quot; bytes that no
+# longer exist. Every perception flag is cleared by RecordRepair together with
+# artifacts_fetched, and every render action requires artifacts_fetched, so no
+# perception may exist while the agent does not hold the current bytes. A repair
+# that forgets ANY clear breaks this line.
+[[invariant]]
+name = &quot;PerceptionRequiresCurrentBytes&quot;
+assert = &quot;artifacts_fetched || (!design_md_opened &amp;&amp; !landing_opened &amp;&amp; !embodiment_opened &amp;&amp; !dashboard_opened &amp;&amp; !shadcn_opened &amp;&amp; !thumbnail_opened &amp;&amp; !landing_rendered &amp;&amp; !landing_inspected &amp;&amp; !embodiment_rendered &amp;&amp; !embodiment_inspected &amp;&amp; !dashboard_rendered &amp;&amp; !dashboard_inspected &amp;&amp; !hero_verified &amp;&amp; !art_style_resolved &amp;&amp; !art_style_verified &amp;&amp; !rules_checked &amp;&amp; !claims_checked)&quot;
+
+# (a) FALSIFIABLE by the same class of edit: a judgement may never outlive the
+# perception it rests on. rules_checked and claims_checked both require all
+# three inspections, and art_style_verified requires the landing inspection.
+[[invariant]]
+name = &quot;JudgementRequiresInspection&quot;
+assert = &quot;(!rules_checked || (landing_inspected &amp;&amp; embodiment_inspected &amp;&amp; dashboard_inspected)) &amp;&amp; (!claims_checked || (landing_inspected &amp;&amp; embodiment_inspected &amp;&amp; dashboard_inspected)) &amp;&amp; (!art_style_verified || landing_inspected) &amp;&amp; (!hero_verified || landing_inspected)&quot;
+
+# (a) FALSIFIABLE by an unbounded repair edge. Without the bound the examination
+# can be discarded and restarted forever and no termination property holds.
+[[invariant]]
+name = &quot;RepairLoopBounded&quot;
+assert = &quot;repair_rounds &lt;= 6&quot;
+
+# (b) FENCES on the terminal state. RecordVerdict is the only edge in and
+# carries every one of these as a guard conjunct; they are declared so that an
+# added edge that forgets one fails verification instead of passing quietly.
+# Named per surface rather than as one conjunction so a failure says WHICH
+# perception was missing.
+[[invariant]]
+name = &quot;VerdictRequiresArtifactsOpened&quot;
+when = [&quot;VerdictRecorded&quot;]
+assert = &quot;design_md_opened &amp;&amp; landing_opened &amp;&amp; embodiment_opened &amp;&amp; dashboard_opened &amp;&amp; shadcn_opened &amp;&amp; thumbnail_opened&quot;
+
+[[invariant]]
+name = &quot;VerdictRequiresLandingInspected&quot;
+when = [&quot;VerdictRecorded&quot;]
+assert = &quot;landing_inspected&quot;
+
+[[invariant]]
+name = &quot;VerdictRequiresEmbodimentInspected&quot;
+when = [&quot;VerdictRecorded&quot;]
+assert = &quot;embodiment_inspected&quot;
+
+[[invariant]]
+name = &quot;VerdictRequiresDashboardInspected&quot;
+when = [&quot;VerdictRecorded&quot;]
+assert = &quot;dashboard_inspected&quot;
+
+[[invariant]]
+name = &quot;VerdictRequiresHeroVerified&quot;
+when = [&quot;VerdictRecorded&quot;]
+assert = &quot;hero_verified&quot;
+
+[[invariant]]
+name = &quot;VerdictRequiresArtStyleVerified&quot;
+when = [&quot;VerdictRecorded&quot;]
+assert = &quot;art_style_verified&quot;
+
+[[invariant]]
+name = &quot;VerdictRequiresRulesChecked&quot;
+when = [&quot;VerdictRecorded&quot;]
+assert = &quot;rules_checked&quot;
+
+[[invariant]]
+name = &quot;VerdictRequiresClaimsChecked&quot;
+when = [&quot;VerdictRecorded&quot;]
+assert = &quot;claims_checked&quot;
+
+# (b) FENCE: no review is open against something it never received, and the
+# standard was loaded before any judgement began rather than recalled while
+# forming one.
+[[invariant]]
+name = &quot;ReviewingRequiresSubmissionAndRulebook&quot;
+when = [&quot;Reviewing&quot;]
+assert = &quot;has_submission &amp;&amp; rulebook_loaded&quot;
+
+# (b) FENCES over the from-lists. Same known blind spot as CuratorAgent:
+# check_no_further_transitions treats a CrossEntityState guard as not locally
+# enabled, so an added cross-entity-guarded edge out of a terminal state would
+# be invisible to these. One review, one verdict, and an abandoned review is
+# never resumed.
+[[invariant]]
+name = &quot;VerdictRecordedIsFinal&quot;
+when = [&quot;VerdictRecorded&quot;]
+assert = &quot;no_further_transitions&quot;
+
+[[invariant]]
+name = &quot;AbandonedIsFinal&quot;
+when = [&quot;Abandoned&quot;]
+assert = &quot;no_further_transitions&quot;
+
+# RepairsRequireFindings is deliberately NOT declared as an invariant. It is an
+# implication between two variables at the moment of a transition, and the
+# kernel&#x27;s invariant form asserts one expression in one state — the property is
+# carried by RecordRepair&#x27;s own guard (is_true has_findings) plus its clearing
+# effect, which is where it belongs.
+
+# --- Liveness ---------------------------------------------------------------
+#
+# Declared for the same reason as CuratorAgent&#x27;s: nothing in the previous
+# generation of these specs said any run ever finishes. It holds weakly (Abandon
+# is always available), and it is provable only because every cycle is bounded:
+# the two intake self-loops and LoadRulebook are one-shot, and RecordRepair —
+# the one action that genuinely rewinds the examination — advances a monotone
+# counter under a max_count guard.
+#
+# Exactly one ReachesState property, deliberately: the checker merges them.
+
+[[liveness]]
+name = &quot;EveryReviewEventuallyRules&quot;
+from = [&quot;SubmissionReceived&quot;]
+reaches = [&quot;VerdictRecorded&quot;, &quot;Abandoned&quot;]
+</pre>
+  <p class="path">.agents/behaviors/review-agent/BEHAVIOR.md</p>
+  <h3>Behavior</h3>
+  <pre class='plate'>---
+name: review-agent
+description: Conduct for a Katagami review agent ruling on one curator submission: fixing the scope and reading the design-language rulebook first, opening the listed artifacts, examining the submitted work itself rather than the maker&#x27;s account of it, rendering every surface and looking at what came back, and ruling once on findings that locate what is wrong. It never rules on work it made and never publishes.
+---
+
+# Review agent
+
+A review exists to catch what the maker got wrong, and it is worth having only
+if the agent examined the work itself: it renders the submitted surfaces, looks
+at what came back, and rules from that. A ruling that follows the submission
+directly is a signature; a ruling that is unreachable without several recorded
+acts of looking is a claim with evidence behind it.
+
+## Fix the scope and the standard before examining anything
+
+&lt;!-- inventory: R1, R2, R13, R14 --&gt;
+
+Before it fetches, renders or judges anything, the agent records which run it
+is reviewing and the pieces in scope, and reads `knowledge/rules/design-language.md`.
+That file is the rulebook. It does not list Accepted TasteRule entities.
+
+Judging from a remembered standard, enumerating TasteRules, or widening
+scope to work that was not handed over, each fail this, and a submission
+that names nothing to review is ended rather than swapped for something else to
+rule on.
+
+## Open every listed artifact before ruling
+
+&lt;!-- inventory: R17 --&gt;
+
+The agent opens DESIGN.md, the landing, the embodiment, the dashboard, the
+shadcn artifacts, and the thumbnail off the language entity, by file id.
+
+Guessing a path from the slug, or ruling on a file it never opened, fails
+this.
+
+## Read the submitted bytes themselves
+
+The agent resolves each submitted file and reads the actual bytes, treating a
+file whose contents are not what its format claims as a finding rather than as
+an artifact.
+
+Taking the maker&#x27;s summary as a description of what a file contains does not
+satisfy this: it is the whole class where something passes review because it
+was described well.
+
+## Render every surface itself, at every width it will rule on
+
+The agent launches a browser and renders each submitted surface at desktop,
+tablet and mobile widths from the bytes it fetched, recording which surface and
+which widths each render covered.
+
+Reasoning about the surfaces it did not render, reusing the maker&#x27;s
+screenshots, or calling a width unrendered but probably fine, each fail this: a
+surface nobody put on a screen is what this role exists to catch.
+
+## Read every screenshot back and say what is in it
+
+Each render returns into the agent&#x27;s own context as an image, and the agent
+writes an observation that could only come from having seen it — what is
+clipped, what overlaps, whether the signature mechanic is visible there.
+
+Writing screenshot files and never reading one back, or phrasing an
+observation from the specification rather than from the picture, is a review
+that produced the artifacts of looking without looking.
+
+## Test the maker&#x27;s own claims against what it saw
+
+The agent takes the self-review claim by claim, marks each confirmed or
+contradicted against what is in front of it, and turns every contradicted claim
+into a finding quoting it. Where a claim can be tested it is: the landing is
+rendered again with a different hero image to confirm the picture is
+replaceable without editing the page, and the hero that rendered is judged
+against the prompt of the art style the work claims.
+
+Reading the self-review as background and never testing it is how a reviewer
+inherits the maker&#x27;s blind spots.
+
+## Make every finding located and actionable
+
+&lt;!-- inventory: R3, R15 --&gt;
+
+Each finding says what is wrong, which surface and width it was seen at, where
+in the page it is, which loaded rule it breaks, and how severe it is. &quot;Spacing
+feels off&quot; is not a finding; &quot;body text is 15px on the dashboard at 375, below
+the 17px floor&quot; is.
+
+A finding with no location, five problems batched into one, or a severity with
+no rule behind it costs more to interpret than to ignore, which is how a review
+becomes ceremony.
+
+## Rule once, and let the rationale carry the findings
+
+&lt;!-- inventory: R4, R5, R6, R16 --&gt;
+
+The agent records exactly one ruling — pass, revise or reject — with a
+rationale that cites its findings and names, for each surface, something it saw
+in a render. A pass with unresolved severe findings, or a rejection no finding
+supports, contradicts its own evidence.
+
+Passing because nothing obviously went wrong is the rubber stamp this prevents,
+and when the evidence cannot settle the question the agent does not pass by
+default: it says what it could not examine, or ends without a ruling.
+
+## Stay on the ruling side of the gate
+
+&lt;!-- inventory: R7, R8, R9, R10 --&gt;
+
+The agent rules and stops: recording a ruling opens the human decision and is
+not itself that decision, so it does not publish, mark quality, attach published
+assets or announce on the platform&#x27;s behalf, and work that fails goes back to
+its maker with a reason.
+
+It runs under the reviewing role&#x27;s own credential, never the maker&#x27;s, and a
+principal that produced the work records neither findings nor a ruling on it.
+
+## End honestly when it cannot examine the work
+
+&lt;!-- inventory: R11, R12 --&gt;
+
+When the browser will not run or the examination cannot be completed, the agent
+ends the review itself and names the step it could not complete, leaving the
+work unpublishable — the safe direction.
+
+Ruling on partial evidence, or going quiet and letting the review lapse, each
+fail this: a silence reads as an absence of problems.
+</pre>
+  <p class="path">.agents/skills/katagami-study-reviewer/SKILL.md</p>
+  <h3>Skill</h3>
+  <pre class='plate'>---
+name: katagami-study-reviewer
+description: The skill Claude Code is given for a reviewer trial. Drive ReviewAgent. Do not use production review-quality. Never publish.
+---
+
+# Study reviewer — look, then rule
+
+You are the ReviewAgent. You do not make the language. You do not publish.
+You examine a language that is already `UnderReview` and record one verdict.
+
+Use a **different principal** from the curator that made the work
+(`katagami-reviewer`, never the contributor id).
+
+## Capture identity — read, do not invent
+
+```bash
+python3 hooks/trajectory-capture/capture.py identity
+```
+
+If that fails, stop.
+
+## Open the review
+
+```
+POST $TEMPER_API_URL/tdata/ReviewAgents
+{}
+```
+
+Then:
+
+| When | Action |
+|---|---|
+| First | `RecordSubmissionRef` — curator_agent_id (may be empty this phase), reviewed_entity_id = the language id, submission_type, session_id, trajectory_id, spec_version, harness |
+| Then | `AcceptSubmission` — `{}`. 409 unless that `DesignLanguage` is `UnderReview` |
+| Then | `LoadRulebook` — read `knowledge/rules/design-language.md`. Do **not** list TasteRule entities |
+| Then | `BeginReview` |
+
+## Examination (all inside Reviewing)
+
+Open the listed artifacts, then render, then look. Those are different
+calls. Writing a PNG is not looking at it.
+
+`FetchArtifacts` → `OpenDesignMd` / `OpenLanding` / `OpenEmbodiment` /
+`OpenDashboard` / `OpenShadcn` / `OpenThumbnail` → for each surface
+`Render*` then `Inspect*Render` → `VerifyHeroReplaceable` →
+`ResolveArtStyle` → `VerifyArtStyleRendered` → `VerifyAgainstRules` →
+`CheckCuratorClaims` → `RecordFinding` as needed.
+
+A repair (`RecordRepair`) answers a recorded finding, max 6, and **clears
+every perception flag and every open**. You start the examination again
+before any verdict.
+
+## Verdict
+
+`RecordVerdict` once: pass, revise, or reject. The rationale names at least
+one thing per surface that you saw in a render. Refused unless every
+listed artifact was opened.
+
+`Abandon` if the browser will not run or the scope is empty.
+
+## What you never do
+
+No `Publish`. No `ApprovePublish`. No `MarkQualityPassed`. No
+`AttachPublishedAssets`. No listing Accepted TasteRule entities. No
+ruling on work you made.
+</pre>
+</section>
+<section class="panel" id="human" role="tabpanel">
+  <p class="path">katagami-curation/specs/human_curator.ioa.toml</p>
+  <h3>Spec</h3>
+  <pre class='plate'># HumanCurator - I/O Automaton Specification
+#
+# The ROLE of publishing curator (ARN-294). This entity models the role and
+# one assignment of work to it — never a person. It carries no name, no email,
+# no account: identity lives on Member (katagami-commons/specs/member.ioa.toml)
+# and the role record points at whoever currently holds it via an opaque
+# `assignee_ref`. Deleting or reassigning the role never touches a human&#x27;s
+# record, and reading the role never discloses one.
+#
+# The human decides; an agent may execute Publish after that decision (D28).
+# ApprovePublish is the decision. Publish is the execution. Cedar forbids
+# any agent from ApprovePublish. Cedar allows a declared non-contributor
+# agent to Publish only after has_publish_approval is true.
+#
+# The artifact-side boundary is still commons policy, and this spec does
+# NOT restate or relax it:
+#
+#   - katagami-commons/policies/design_language.cedar forbids contributor
+#     agents from Publish (and Revise/Archive/MarkQualityPassed/... ) on
+#     DesignLanguage.
+#   - katagami-commons/policies/art_style.cedar forbids contributor agents from
+#     SubmitForReview/Publish/... on ArtStyle, and restricts the finalizer
+#     actions to Agent::&quot;system&quot;.
+#   - policies/human_curator.cedar (this app) forbids ANY agent principal from
+#     ApprovePublish and ReturnWithCritique on this role record, and binds
+#     ApprovePublish to the assignment&#x27;s own holder (`principal.id ==
+#     assignee_ref`). Publish may be executed by that holder or by a
+#     declared non-contributor agent after ApprovePublish.
+#
+# Two orderings hold by construction:
+#
+# 1. A machine review must have ruled before publishing is available: Publish
+#    is guarded on `cross_entity_state` requiring the linked ReviewAgent to be
+#    in VerdictRecorded (review_agent.ioa.toml).
+# 2. The human is never a silent single point of failure: both working states
+#    carry a state timeout onto ReviewOverdue -&gt; Escalated, so an assignment
+#    nobody picks up surfaces as an escalation instead of stalling the queue
+#    forever. Escalated is recoverable at most three times — Reassign returns
+#    it to SubmissionAssigned under a new holder. After the third escalation
+#    Reassign is blocked and the assignment stops circulating.
+#
+# Lifecycle: SubmissionAssigned -&gt; Reviewing -&gt; Published | ReturnedWithCritique
+#            SubmissionAssigned | Reviewing -&gt; Escalated -&gt; SubmissionAssigned
+
+[automaton]
+name = &quot;HumanCurator&quot;
+states = [
+  &quot;SubmissionAssigned&quot;,
+  &quot;Reviewing&quot;,
+  &quot;Published&quot;,
+  &quot;ReturnedWithCritique&quot;,
+  &quot;Escalated&quot;,
+]
+initial = &quot;SubmissionAssigned&quot;
+allow_indefinite_states = [&quot;Published&quot;, &quot;ReturnedWithCritique&quot;, &quot;Escalated&quot;]
+
+# --- The assignment ---
+
+# Opaque reference to whoever holds the role right now. Never a name, never an
+# address — the role is the subject here.
+#
+# It carries the holder&#x27;s PRINCIPAL ID, because policies/human_curator.cedar
+# binds ApprovePublish and ReturnWithCritique to `principal.id == resource.assignee_ref`
+# — without that binding any authenticated human could publish somebody else&#x27;s
+# assignment. A rota handle is resolved to the current holder&#x27;s principal id
+# before AssignSubmission is called; an assignment whose assignee_ref is empty
+# or unresolvable is not publishable, which is the safe direction.
+[[state]]
+name = &quot;assignee_ref&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+# &quot;DesignLanguage&quot; | &quot;ArtStyle&quot; | &quot;PaletteSystem&quot; | &quot;WritingStyle&quot;
+[[state]]
+name = &quot;submission_type&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;submission_ids&quot;
+type = &quot;string&quot;
+initial = &quot;[]&quot;
+
+[[state]]
+name = &quot;curator_agent_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+# The ReviewAgent run whose verdict gates Publish.
+[[state]]
+name = &quot;review_agent_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;has_assignment&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;has_review_verdict&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;has_publish_approval&quot;
+type = &quot;bool&quot;
+initial = &quot;false&quot;
+
+[[state]]
+name = &quot;review_verdict&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+# --- Capture identity (ARN-293) ---
+
+[[state]]
+name = &quot;session_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;trajectory_id&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;spec_version&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;harness&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+# --- Outcome ---
+
+[[state]]
+name = &quot;critique&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;curator_notes&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;escalation_reason&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+[[state]]
+name = &quot;escalation_count&quot;
+type = &quot;counter&quot;
+initial = 0
+
+# The submission ids the linked ReviewAgent says it reviewed, copied from that
+# record at assignment time.
+#
+# It exists so the mismatch is VISIBLE: Publish&#x27;s cross-entity guard can check
+# that the linked review reached VerdictRecorded, but the kernel cannot compare
+# one entity&#x27;s field with another&#x27;s, so it cannot check that the review was of
+# THIS submission. Recording both sides means a reader — or a conformance
+# judge — can see whether they agree, instead of the question being unaskable.
+# Making it a machine gate needs a field-equality guard in the kernel.
+[[state]]
+name = &quot;reviewed_submission_ids&quot;
+type = &quot;string&quot;
+initial = &quot;&quot;
+
+# --- SubmissionAssigned ---
+
+[[action]]
+name = &quot;AssignSubmission&quot;
+kind = &quot;input&quot;
+from = [&quot;SubmissionAssigned&quot;]
+params = [&quot;assignee_ref&quot;, &quot;submission_type&quot;, &quot;submission_ids&quot;, &quot;reviewed_submission_ids&quot;, &quot;curator_agent_id&quot;, &quot;review_agent_id&quot;, &quot;session_id&quot;, &quot;trajectory_id&quot;, &quot;spec_version&quot;, &quot;harness&quot;]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;has_assignment&quot;, value = &quot;true&quot; }]
+hint = &quot;Route one reviewed submission to the publishing role. assignee_ref is the current holder&#x27;s principal id — an opaque reference, never a person&#x27;s name or address — and Cedar binds Publish and ReturnWithCritique to it, so an empty or stale assignee_ref makes the assignment unpublishable. review_agent_id links the machine review whose verdict gates Publish; set reviewed_submission_ids from THAT record&#x27;s own submission_ids, so a review of some other submission is visible as a mismatch rather than passing as a review of this one.&quot;
+
+[[action]]
+name = &quot;RecordReviewVerdict&quot;
+kind = &quot;input&quot;
+from = [&quot;SubmissionAssigned&quot;, &quot;Reviewing&quot;]
+params = [&quot;review_verdict&quot;]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;has_review_verdict&quot;, value = &quot;true&quot; }]
+hint = &quot;Carry the ReviewAgent verdict (pass/revise/reject) onto the assignment so the human sees it before deciding. Reaction target for ReviewVerdictRecordedEvent.&quot;
+
+[[action]]
+name = &quot;BeginReview&quot;
+kind = &quot;input&quot;
+from = [&quot;SubmissionAssigned&quot;]
+to = &quot;Reviewing&quot;
+guard = [{ type = &quot;is_true&quot;, var = &quot;has_assignment&quot; }]
+hint = &quot;The role holder picks the assignment up.&quot;
+
+# --- Reviewing ---
+
+[[action]]
+name = &quot;ApprovePublish&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+params = [&quot;curator_notes&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;has_assignment&quot; },
+  { type = &quot;is_true&quot;, var = &quot;has_review_verdict&quot; },
+  { type = &quot;is_false&quot;, var = &quot;has_publish_approval&quot; },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;ReviewAgent&quot;, entity_id_source = &quot;review_agent_id&quot;, required_status = [&quot;VerdictRecorded&quot;], required = true },
+]
+effect = [{ type = &quot;set_bool&quot;, var = &quot;has_publish_approval&quot;, value = &quot;true&quot; }]
+hint = &quot;The human decides to publish. Cedar forbids every agent from this action. After this, Publish may be executed by the holder or by an agent on the human&#x27;s decision.&quot;
+
+[[action]]
+name = &quot;Publish&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+to = &quot;Published&quot;
+params = [&quot;curator_notes&quot;]
+guard = [
+  { type = &quot;is_true&quot;, var = &quot;has_assignment&quot; },
+  { type = &quot;is_true&quot;, var = &quot;has_review_verdict&quot; },
+  { type = &quot;is_true&quot;, var = &quot;has_publish_approval&quot; },
+  # `required = true` is load-bearing. The kernel resolves a cross-entity guard
+  # over an ABSENT ref as vacuously true (Guard::CrossEntityState, `required`
+  # defaults to false), so without it an assignment that simply never recorded
+  # a review_agent_id satisfied &quot;the machine review acted first&quot; by having no
+  # machine review at all — and `has_review_verdict` is set by an unguarded
+  # action, so nothing else stood in the way.
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;ReviewAgent&quot;, entity_id_source = &quot;review_agent_id&quot;, required_status = [&quot;VerdictRecorded&quot;], required = true },
+]
+hint = &quot;Execute the publish. Reachable only from Reviewing, only once (Published is terminal), only after ApprovePublish, and only after the ReviewAgent named by review_agent_id exists and reached VerdictRecorded. WHAT IS NOT MACHINE-CHECKED: that the linked review reviewed THIS submission. The kernel&#x27;s guard vocabulary can compare a related entity&#x27;s STATUS but not its fields, so linking any ReviewAgent that has recorded a verdict satisfies this guard. AssignSubmission records reviewed_submission_ids for exactly that comparison; making it a guard needs a field-equality guard in the kernel. Until then the match is the caller&#x27;s obligation, checked in review, not by construction. Cedar lets the named holder or a declared non-contributor agent execute this after ApprovePublish; the artifact-side Publish stays governed by the existing commons policies, which this spec neither restates nor relaxes.&quot;
+
+[[action]]
+name = &quot;ReturnWithCritique&quot;
+kind = &quot;input&quot;
+from = [&quot;Reviewing&quot;]
+to = &quot;ReturnedWithCritique&quot;
+params = [&quot;critique&quot;]
+guard = [{ type = &quot;is_true&quot;, var = &quot;has_assignment&quot; }]
+hint = &quot;The human sends the submission back with a written critique instead of publishing. The critique is the training signal — it is required, and recorded verbatim.&quot;
+
+[[action]]
+name = &quot;CuratorPublishedEvent&quot;
+kind = &quot;output&quot;
+hint = &quot;Emitted when the role publishes a submission.&quot;
+
+[[action]]
+name = &quot;CuratorReturnedEvent&quot;
+kind = &quot;output&quot;
+hint = &quot;Emitted when the role returns a submission with critique.&quot;
+
+# --- Escalation: the human is never a silent single point of failure ---
+
+[[action]]
+name = &quot;ReviewOverdue&quot;
+kind = &quot;input&quot;
+from = [&quot;SubmissionAssigned&quot;, &quot;Reviewing&quot;]
+to = &quot;Escalated&quot;
+params = [&quot;escalation_reason&quot;]
+guard = [{ type = &quot;max_count&quot;, var = &quot;escalation_count&quot;, max = 3 }]
+effect = [{ type = &quot;increment&quot;, var = &quot;escalation_count&quot; }]
+hint = &quot;The assignment went unanswered past its window. Fired by the state timeouts below, or by hand. Escalated is visible and countable, so a queue waiting on an absent human is a surfaced condition rather than silence. Bounded at 3: after the third escalation the assignment stops circulating.&quot;
+
+[[action]]
+name = &quot;Reassign&quot;
+kind = &quot;input&quot;
+from = [&quot;Escalated&quot;]
+to = &quot;SubmissionAssigned&quot;
+params = [&quot;assignee_ref&quot;]
+guard = [{ type = &quot;max_count&quot;, var = &quot;escalation_count&quot;, max = 3 }]
+hint = &quot;Hand the escalated assignment to another holder of the role. The submission stays unpublished until someone reviews it; escalation is a re-route, not a bypass. Blocked once escalation_count has reached 3, so a neglected assignment becomes a parked human problem rather than an infinite rota.&quot;
+
+[[action]]
+name = &quot;ReviewEscalatedEvent&quot;
+kind = &quot;output&quot;
+hint = &quot;Emitted when an assignment escalates, so the human channel is told.&quot;
+
+# --- Stall detection ---
+
+[[state_timeout]]
+state = &quot;SubmissionAssigned&quot;
+after_seconds = 172800
+on_timeout = &quot;ReviewOverdue&quot;
+params = { escalation_reason = &quot;HumanCurator assignment sat unclaimed for 48h.&quot; }
+
+[[state_timeout]]
+state = &quot;Reviewing&quot;
+after_seconds = 172800
+on_timeout = &quot;ReviewOverdue&quot;
+params = { escalation_reason = &quot;HumanCurator held Reviewing for 48h without publishing or returning a critique.&quot; }
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = &quot;ReviewingRequiresAssignment&quot;
+when = [&quot;Reviewing&quot;]
+assert = &quot;has_assignment&quot;
+
+[[invariant]]
+name = &quot;OneHolder&quot;
+when = [&quot;Reviewing&quot;, &quot;Published&quot;]
+assert = &quot;has_assignment&quot;
+
+[[invariant]]
+name = &quot;HumanDecidesPublish&quot;
+when = [&quot;Published&quot;]
+assert = &quot;has_publish_approval &amp;&amp; has_review_verdict&quot;
+
+[[invariant]]
+name = &quot;PublishedRequiresReviewVerdict&quot;
+when = [&quot;Published&quot;]
+assert = &quot;has_review_verdict&quot;
+
+[[invariant]]
+name = &quot;PublishedIsFinal&quot;
+when = [&quot;Published&quot;]
+assert = &quot;no_further_transitions&quot;
+
+[[invariant]]
+name = &quot;CritiqueReopens&quot;
+when = [&quot;ReturnedWithCritique&quot;]
+assert = &quot;no_further_transitions&quot;
+
+# (a) FALSIFIABLE by a widened ReviewOverdue or Reassign guard. After three
+# unanswered escalations the assignment is parked.
+[[invariant]]
+name = &quot;EscalationLoopBounded&quot;
+assert = &quot;escalation_count &lt;= 3&quot;
+
+# Weak liveness: the graph cannot trap an assignment in a live state with no
+# exit. Escalated is a legal terminal after the third overdue. Exactly one
+# ReachesState property — the checker merges them.
+[[liveness]]
+name = &quot;AssignmentEventuallyResolved&quot;
+from = [&quot;SubmissionAssigned&quot;]
+reaches = [&quot;Published&quot;, &quot;ReturnedWithCritique&quot;, &quot;Escalated&quot;]
+</pre>
+  <p class="path">.agents/behaviors/human-curator/BEHAVIOR.md</p>
+  <h3>Behavior</h3>
+  <pre class='plate'>---
+name: human-curator
+description: &gt;
+  Conduct for the Katagami publishing seat: pick up one reviewed submission,
+  confirm the machine review ruled on these exact artifacts, and either publish
+  or return it with a written critique. The seat is a role, never a person.
+  After three unanswered escalations the assignment stops circulating.
+  The human decides; an agent may execute publish after that decision.
+---
+
+# Human curator
+
+The publishing seat is where a submission stops being a machine&#x27;s output and
+becomes something Katagami stands behind. One named holder answers for that
+decision. The record points at whoever holds the seat through an opaque
+reference; identity lives elsewhere, so the seat can change hands without
+rewriting history.
+
+## Pick up the assignment before deciding anything
+
+&lt;!-- inventory: H1, H17, H18 --&gt;
+
+A decision belongs to a specific assignment. The holder records who they are —
+an opaque principal id, never a name or a rota alias left unresolved — and
+picks the assignment up before publishing or returning it.
+
+Deciding straight from the queue, putting a person&#x27;s name in the holder field,
+or assigning to a rota handle and leaving it unresolved, each fail this: an
+assignment nobody can be matched against is one nobody can publish.
+
+## Confirm the machine review ruled on this submission
+
+&lt;!-- inventory: H4, H5 --&gt;
+
+Before publishing, the holder confirms three things: the assignment carries a
+review verdict, a review record is actually linked, and that review has
+reached its final ruled state. A missing link is not a pass.
+
+The holder also confirms the linked review examined **this** submission, not
+some other one. &quot;A review exists&quot; and &quot;this work was reviewed&quot; are different
+statements. Nothing checks the match automatically, so it is a real
+obligation.
+
+Publishing on a verdict flag alone, linking a stale review from an earlier
+submission, or treating a missing review as probably fine, each fail this.
+
+## Let only the named holder decide
+
+&lt;!-- inventory: H6, H7, H8, H9, H10, H11 --&gt;
+
+Approving a publish and returning with critique are the assigned holder&#x27;s
+alone. Another person, however senior, takes the assignment over first. An
+assignment with no holder is not decidable by anyone.
+
+No agent decides to publish or return — no matter what kind of agent it
+reports itself to be. After the holder has approved, a declared
+non-contributor agent may execute the publish on that decision. An
+unidentified caller has no business on this record. Contributor agents never
+touch the role record. Nobody invokes the announcements the platform makes
+when a submission is published, returned, or escalated.
+
+Publishing on a colleague&#x27;s behalf because they are away, or an agent
+publishing without a recorded human approval, fails this.
+
+## Decide once, and finally
+
+&lt;!-- inventory: H2, H3, H12, H19, H20 --&gt;
+
+The holder either approves a publish and then publishes (or asks an agent
+to execute that publish), or returns the work with a critique. Exactly
+one of those endings happens, exactly once, and only while holding the
+assignment. Both endings are final. A return reopens the work; it does
+not archive it.
+
+The publish decision is the judgement the pipeline exists to put in front of a
+person: is this good enough to carry the Katagami name? Passing every guard is
+not the same as being good.
+
+A return carries a written critique, recorded verbatim. The critique is the
+training signal. It says what is wrong, where, and what would make it right,
+and it addresses the work, never the run that made it.
+
+Publishing because everything technically passed, returning with &quot;not quite
+there&quot;, or holding an assignment indefinitely rather than deciding, each fail
+this.
+
+## Escalate an unanswered assignment rather than let the queue go silent
+
+&lt;!-- inventory: H13, H14, H15, H16 --&gt;
+
+An assignment unanswered for 48 hours escalates by itself, and each
+escalation is counted. The holder may raise it sooner — saying they cannot
+get to this is better than letting the clock do it. A bystander does not
+escalate somebody else&#x27;s assignment.
+
+Handing an escalated assignment to a different holder is the escalation
+role&#x27;s act, not the outgoing holder&#x27;s. After three escalations the
+assignment stops circulating: it is a parked human problem, not a rota that
+runs forever. Escalating something does not publish it.
+
+Escalating a queue you are not on, reassigning your own assignment to
+yourself, or treating escalation as approval-by-timeout, each fail this.
+
+## Keep the assignment publish and the artifact publish as two different acts
+
+&lt;!-- inventory: H21, H22 --&gt;
+
+Publishing the assignment is not publishing the artifact. The artifact-side
+publish is governed by its own policies, and contributor agents cannot
+publish a design language or an art style. What those policies do not check
+is that the artifact a person publishes is the one this assignment reviewed.
+The holder makes that correspondence themselves.
+
+Any automation acting on an artifact, a grant, a member record or an OAuth
+client declares what kind of agent it is. Declining to say is refused
+outright, not treated as unclassified.
+
+Publishing an artifact that a different assignment reviewed, or reading those
+refusals as an outage to route around, fails this.
+</pre>
+  <p class="path">.agents/skills/katagami-study-human/SKILL.md</p>
+  <h3>Skill</h3>
+  <pre class='plate'>---
+name: katagami-study-human
+description: The skill Claude Code is given for a human-curator trial. Decide ApprovePublish or return. An agent may execute Publish only after your approval.
+---
+
+# Study human — decide, then publish or return
+
+You are the publishing seat. Approving a publish belongs here. The
+curator and the reviewer never decide it.
+
+The artifact is a `DesignLanguage` that is `UnderReview`. A `ReviewAgent`
+must already be in `VerdictRecorded` for the assignment you pick up.
+
+## Capture identity — read, do not invent
+
+```bash
+python3 hooks/trajectory-capture/capture.py identity
+```
+
+If that fails, stop.
+
+## Open the assignment
+
+```
+POST $TEMPER_API_URL/tdata/HumanCurators
+{}
+```
+
+Then pick the assignment up (`AssignSubmission` / `BeginReview` as the
+spec requires) with your opaque `assignee_ref`, the language id, the
+review id, and the capture identity.
+
+## Decide once
+
+- `ApprovePublish` is the decision. Only you take it, and only after the
+  linked review is `VerdictRecorded` and you have looked at the same
+  language.
+- `Publish` executes that decision. You may call it, or you may ask an
+  agent to call it after `ApprovePublish`.
+- `ReturnWithCritique` with a written critique about this work, not a
+  mood. A return reopens the work; it does not archive it.
+- After three unanswered escalations the assignment stops circulating.
+  Do not keep reassigning.
+
+## What you never do
+
+Do not let an agent `ApprovePublish`. Do not publish a language that is
+still `Draft`. Do not publish work the review never ruled on.
+</pre>
+</section>
+<p>PR <a href="https://github.com/arni-labs/katagami/pull/213">arni-labs/katagami#213</a> · Linear <a href="https://linear.app/arni-build/issue/ARN-294">ARN-294</a></p>
+</main>
+<script>
+const tabs = document.querySelectorAll('[role=tab]');
+const panels = { curator: document.getElementById('curator'), review: document.getElementById('review'), human: document.getElementById('human') };
+tabs.forEach(tab => tab.addEventListener('click', () => {
+  tabs.forEach(t => t.setAttribute('aria-selected', t === tab ? 'true' : 'false'));
+  Object.entries(panels).forEach(([id, el]) => el.classList.toggle('on', id === tab.dataset.tab));
+}));
+</script>
+</body>
+</html>
