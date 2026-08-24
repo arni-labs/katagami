@@ -688,6 +688,23 @@ assert.match(mozAnyLink, /:root:-moz-any-link \{ --blue:#f00 \}/);
 assert.deepEqual(extractRootDecls(mozAnyLink).map(([name]) => name), ["blue"]);
 assert.match(compositionBindDecls(mozAnyLink, roles, hero).join(";"), /--blue:#FF3D9E/);
 
+const mozAnyBefore = ":root:-moz-any(:before) { --blue:#f00 }";
+assert.equal(
+  mozAnyBefore,
+  ":root:-moz-any(:before) { --blue:#f00 }",
+  "replay must keep :-moz-any(:before); do not hide by rewriting to :is(:before)",
+);
+assert.match(mozAnyBefore, /:root:-moz-any\(:before\) \{ --blue:#f00 \}/);
+assert.ok(
+  /:-moz-any\(:before\)/.test(mozAnyBefore),
+  "today's recurse set has -webkit-any but not -moz-any",
+);
+assert.deepEqual(extractRootDecls(mozAnyBefore), []);
+assert.doesNotMatch(
+  compositionBindDecls(mozAnyBefore, roles, hero).join(";"),
+  /--blue:/,
+);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

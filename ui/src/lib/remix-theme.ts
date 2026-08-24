@@ -561,7 +561,14 @@ function wrappingFns(src: string, pos: number): string[] {
   return stack;
 }
 
-const ANY_OF_PSEUDO = new Set(["is", "where", "matches", "any", "-webkit-any"]);
+const ANY_OF_PSEUDO = new Set([
+  "is",
+  "where",
+  "matches",
+  "any",
+  "-webkit-any",
+  "-moz-any",
+]);
 /** Walk these for a nested PE. `:has` is not an any-of matcher. */
 const PE_RECURSE_FNS = new Set([...ANY_OF_PSEUDO, "has"]);
 
