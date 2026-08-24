@@ -12,10 +12,14 @@ import {
 import { RelatedLanguages } from "@/components/related-languages";
 import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
-import { LanguageRemixSection } from "@/components/language-remix-section";
+import {
+  LanguageRemixSection,
+  loadLanguageRemixCatalogs,
+} from "@/components/language-remix-section";
 import { LanguageSectionSkeleton } from "@/components/gallery-skeleton";
 import {
   identityStreamOutcome,
+  languageHasRemixComposition,
   remixStreamOutcome,
   streamShowsPulse,
 } from "@/lib/language-detail-stream";
@@ -199,11 +203,16 @@ export default async function LanguageDetailPage({
   };
   const katagamiMarkdown = katagamiSpecToMarkdown(specProps);
   const designMd = designMdToMarkdown(specProps);
-  // Remix: remixStreamOutcome(lang) with no catalogs is pending when
-  // landing+dashboard exist (Bluet) — pulse while the remix island loads.
-  // No landing, or empty catalogs, is empty — do not mount / do not pulse.
+  // Remix catalogs (and their catch-to-`[]`) must be known before this page
+  // chooses a remix Suspense fallback. Omitted catalogs are pending — a pulse
+  // that the island later returns null for. Await them here, outside that
+  // boundary. No landing/dashboard: do not fetch, do not mount. While the
+  // await is in flight, language `loading.tsx` is the Bluet pending pulse.
   const identityOutcome = identityStreamOutcome(f);
-  const remixOutcome = remixStreamOutcome(lang);
+  const remixCatalogs = languageHasRemixComposition(lang)
+    ? await loadLanguageRemixCatalogs()
+    : undefined;
+  const remixOutcome = remixStreamOutcome(lang, remixCatalogs);
   // The shadcn implementation kit (3 stored-file reads + markdown generation) is
   // rendered in a streamed <ShadcnKitSection> Suspense island below — it no
   // longer blocks the page's TTFB. The shadcn download is served on demand by
@@ -364,7 +373,7 @@ export default async function LanguageDetailPage({
             streamShowsPulse(remixOutcome) ? <LanguageSectionSkeleton /> : null
           }
         >
-          <LanguageRemixSection lang={lang} />
+          <LanguageRemixSection lang={lang} catalogs={remixCatalogs} />
         </Suspense>
       )}
 

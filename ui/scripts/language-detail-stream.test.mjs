@@ -6,6 +6,7 @@ import {
   canRemixLanguage,
   identityStreamOutcome,
   languageHasRemixComposition,
+  resolveRemixCatalogs,
   remixStreamOutcome,
   streamShowsPulse,
 } from "../src/lib/language-detail-stream.ts";
@@ -85,6 +86,79 @@ assert.equal(
 );
 assert.equal(streamShowsPulse(remixStreamOutcome(bluet, { palettes, arts })), true);
 
+async function pageRemixDecision(language, listPalettes, listArts) {
+  if (!languageHasRemixComposition(language)) {
+    const outcome = remixStreamOutcome(language);
+    return {
+      outcome,
+      pulse: streamShowsPulse(outcome),
+      mount: outcome !== "empty",
+    };
+  }
+  const catalogs = await resolveRemixCatalogs(listPalettes, listArts);
+  const outcome = remixStreamOutcome(language, catalogs);
+  return {
+    outcome,
+    pulse: streamShowsPulse(outcome),
+    mount: outcome !== "empty",
+  };
+}
+
+const caughtEmpty = await pageRemixDecision(
+  bluet,
+  async () => {
+    throw new Error("listPaletteSystems failed");
+  },
+  async () => {
+    throw new Error("listArtStyles failed");
+  },
+);
+assert.deepEqual(
+  await resolveRemixCatalogs(
+    async () => {
+      throw new Error("listPaletteSystems failed");
+    },
+    async () => {
+      throw new Error("listArtStyles failed");
+    },
+  ),
+  { palettes: [], arts: [] },
+  "listArtStyles / listPaletteSystems catch to [] — replay the catch, not omitted catalogs",
+);
+assert.equal(caughtEmpty.outcome, "empty");
+assert.equal(
+  caughtEmpty.pulse,
+  false,
+  "catch-to-[] on Bluet must not pulse — the page saw [] before any shell",
+);
+assert.equal(caughtEmpty.mount, false, "do not keep a fake remix lane after []");
+
+let catalogLoads = 0;
+const noLandingDecision = await pageRemixDecision(
+  noLanding,
+  async () => {
+    catalogLoads += 1;
+    return palettes;
+  },
+  async () => {
+    catalogLoads += 1;
+    return arts;
+  },
+);
+assert.equal(noLandingDecision.outcome, "empty");
+assert.equal(noLandingDecision.pulse, false, "no landingUrl must not pulse");
+assert.equal(noLandingDecision.mount, false);
+assert.equal(catalogLoads, 0, "no-landing must not fetch remix catalogs");
+
+const ready = await pageRemixDecision(
+  bluet,
+  async () => palettes,
+  async () => arts,
+);
+assert.equal(ready.outcome, "render");
+assert.equal(ready.pulse, true);
+assert.equal(ready.mount, true);
+
 assert.equal(identityStreamOutcome({}), "empty");
 assert.equal(
   identityStreamOutcome({
@@ -117,6 +191,10 @@ const pageSrc = fs.readFileSync(
 );
 const remixSrc = fs.readFileSync(
   path.join(here, "../src/components/language-remix-section.tsx"),
+  "utf8",
+);
+const loadingSrc = fs.readFileSync(
+  path.join(here, "../src/app/(site)/language/[id]/loading.tsx"),
   "utf8",
 );
 const remixOpts = fs.readFileSync(
@@ -154,15 +232,36 @@ assert.match(streamSrc, /prompt_template/);
 assert.match(identitySrc, /colors\.primary, colors\.accent, colors\.secondary/);
 assert.match(streamSrc, /colors\.primary, colors\.accent, colors\.secondary/);
 
-assert.match(pageSrc, /remixStreamOutcome\(lang\)/);
+assert.match(
+  pageSrc,
+  /languageHasRemixComposition\(lang\)/,
+  "no-landing must not start a catalog fetch",
+);
+assert.match(
+  pageSrc,
+  /await loadLanguageRemixCatalogs\(\)/,
+  "catalogs — including catch-to-[] — must resolve outside remix Suspense",
+);
+assert.match(
+  pageSrc,
+  /remixStreamOutcome\(lang, remixCatalogs\)/,
+  "the page must pass resolved catalogs, not omit them as pending",
+);
 assert.doesNotMatch(
   pageSrc,
-  /remixStreamOutcome\(lang,/,
-  "the page must pass lang only — omitted catalogs is pending, not empty",
+  /remixStreamOutcome\(lang\)/,
+  "omitted catalogs on the page pulses, then the island's catch-to-[] collapses",
+);
+assert.match(
+  loadingSrc,
+  /LanguageDetailSkeleton/,
+  "Bluet pending (catalogs in flight) pulses via the #245 route shell",
 );
 assert.match(pageSrc, /identityStreamOutcome/);
 assert.match(pageSrc, /streamShowsPulse/);
 assert.match(remixSrc, /canRemixLanguage/);
+assert.match(remixSrc, /loadLanguageRemixCatalogs/);
+assert.match(remixSrc, /catalogs \?\? \(await loadLanguageRemixCatalogs\(\)\)/);
 
 assert.doesNotMatch(
   streamSrc,
@@ -212,4 +311,6 @@ assert.doesNotMatch(
   /<Suspense fallback=\{null\}>\s*<LanguageRemixSection/,
 );
 
-console.log("language-detail stream: Bluet pending vs no-landing; collapse hold ok");
+console.log(
+  "language-detail stream: catch-to-[] replayed; Bluet pending is the route shell",
+);

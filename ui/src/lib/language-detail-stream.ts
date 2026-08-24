@@ -8,7 +8,13 @@
  *
  * Remix: landing+dashboard (same filter as toLanguageOpts) is known before
  * Suspense. Omitted catalogs = pending, not empty. `{ palettes: [], arts: [] }`
- * is empty. Missing landing/dashboard is empty (do not mount).
+ * is empty — including listArtStyles / listPaletteSystems catch-to-`[]`.
+ * Missing landing/dashboard is empty (do not mount).
+ *
+ * The language page must await `resolveRemixCatalogs` *before* choosing the
+ * remix Suspense fallback. Omitted catalogs on that page would pulse, then
+ * the island's catch-to-`[]` would collapse the lane. While that await is
+ * in flight, `loading.tsx` (`LanguageDetailSkeleton`) is the Bluet pulse.
  *
  * Lineage / related: no field on this page proves they will render.
  * parent_ids may be unpublished (ARN-331); children and neighbours need a
@@ -55,13 +61,32 @@ export function canRemixLanguage(
   );
 }
 
+export type RemixCatalogs = { palettes: LangRow[]; arts: LangRow[] };
+export type RemixCatalogLoader = () => Promise<LangRow[]>;
+
+/**
+ * `listArtStyles` / `listPaletteSystems` catch to `[]`. That empty result
+ * has to be known before a remix pulse paints, or Bluet-class pages
+ * pulse then collapse. Call this outside the remix Suspense.
+ */
+export async function resolveRemixCatalogs(
+  listPalettes: RemixCatalogLoader,
+  listArts: RemixCatalogLoader,
+): Promise<RemixCatalogs> {
+  const [palettes, arts] = await Promise.all([
+    listPalettes().catch(() => []),
+    listArts().catch(() => []),
+  ]);
+  return { palettes, arts };
+}
+
 /**
  * `catalogs` omitted = listArtStyles / listPaletteSystems still pending.
  * That is not the same as passing empty arrays.
  */
 export function remixStreamOutcome(
   lang: LangRow,
-  catalogs?: { palettes: LangRow[]; arts: LangRow[] },
+  catalogs?: RemixCatalogs,
 ): StreamOutcome {
   if (!languageHasRemixComposition(lang)) return "empty";
   if (!catalogs) return "pending";
