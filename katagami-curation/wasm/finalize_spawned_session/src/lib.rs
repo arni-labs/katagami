@@ -2072,16 +2072,6 @@ fn skip_css_url(src: &str, i: usize) -> usize {
     i
 }
 
-fn skip_css_construct(src: &str, i: usize) -> Option<usize> {
-    if let Some(next) = skip_css_comment_or_string(src, i) {
-        return Some(next);
-    }
-    if starts_css_url(src, i) {
-        return Some(skip_css_url(src, i));
-    }
-    None
-}
-
 fn skip_css_comment_or_string(src: &str, i: usize) -> Option<usize> {
     let bytes = src.as_bytes();
     if src.get(i..).is_some_and(|s| s.starts_with("<!--")) {
@@ -2230,13 +2220,34 @@ fn extract_css_consumption_surfaces(html_lower: &str) -> Vec<&str> {
     surfaces
 }
 
+fn url_argument_start(src: &str, i: usize) -> usize {
+    let Some(open) = src.get(i..).and_then(|s| s.find('(')) else {
+        return (i + 4).min(src.len());
+    };
+    let mut j = i + open + 1;
+    let bytes = src.as_bytes();
+    while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+        j += 1;
+    }
+    j
+}
+
 fn css_contains_custom_property(css: &str, name: &str) -> bool {
     let bytes = css.as_bytes();
     let name_bytes = name.as_bytes();
     let mut i = 0;
     while i < bytes.len() {
-        if let Some(next) = skip_css_construct(css, i) {
+        if let Some(next) = skip_css_comment_or_string(css, i) {
             i = next;
+            continue;
+        }
+        if starts_css_url(css, i) {
+            let arg = url_argument_start(css, i);
+            if css.get(arg..).is_some_and(|s| s.starts_with("var(")) {
+                i = arg;
+                continue;
+            }
+            i = skip_css_url(css, i);
             continue;
         }
         if css.get(i..).is_some_and(|s| s.starts_with("var(")) {
@@ -2269,7 +2280,8 @@ fn css_contains_custom_property(css: &str, name: &str) -> bool {
 /// True only when CSS actually consumes the custom property: `var(--bg)`,
 /// `var(--bg,`, `var(--bg )`. A prefix of `--bg-alt` must not green `--bg`.
 /// A comment (`/* var(--bg) */`), string (`content:"var(--bg)"`), or
-/// token inside `url()` is not consume.
+/// token buried in a data-URI / svg / string inside `url()` is not consume.
+/// `url(var(--bg))` is consume.
 fn consumes_custom_property(html_lower: &str, name: &str) -> bool {
     let surfaces = extract_css_consumption_surfaces(html_lower);
     if surfaces.is_empty() {
@@ -6382,14 +6394,19 @@ mod page_quality_tests {
             r#"<style>.x{content:"var(--bg)"} body{background:var(--paper)}</style>"#,
             "bg"
         ));
-        const URL_REPLAY: &str =
+        const URL_DATA_URI: &str =
             "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>";
+        const URL_VAR: &str =
+            "<style>body{background-image:url(var(--bg));color:var(--paper)}</style>";
         assert_eq!(
-            URL_REPLAY,
-            "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>"
+            URL_DATA_URI,
+            "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>",
+            "replay must keep var(--bg) inside the svg; do not hide by deleting it"
         );
-        assert!(!consumes_custom_property(URL_REPLAY, "bg"));
-        assert!(consumes_custom_property(URL_REPLAY, "paper"));
+        assert!(!consumes_custom_property(URL_DATA_URI, "bg"));
+        assert!(consumes_custom_property(URL_DATA_URI, "paper"));
+        assert!(consumes_custom_property(URL_VAR, "bg"));
+        assert!(consumes_custom_property("url(var(--hero-image))", "hero-image"));
     }
 
     #[test]
@@ -6429,6 +6446,18 @@ mod page_quality_tests {
         let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
             .expect_err("comment or string var(--bg) must not green var(--bg)");
         assert_eq!(err.code, "composition_remix_vars_not_consumed");
+    }
+
+    #[test]
+    fn landing_that_paints_bg_via_url_var_passes_consume_gate() {
+        let mut body = page("Url var bg", "url-var-bg", 30_000);
+        body = body.replace("background:var(--bg)", "background-image:url(var(--bg))");
+        body = body.replace(
+            "</head>",
+            "<style>.hero{background-image:url(var(--hero-image,url(https://katagami.ai/api/file/fl-x)))}</style></head>",
+        );
+        verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect("url(var(--bg)) and url(var(--hero-image)) are consume");
     }
 
     #[test]

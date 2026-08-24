@@ -271,12 +271,29 @@ function extractCssConsumptionSurfaces(html: string): string[] {
   return surfaces;
 }
 
+function urlArgumentStart(src: string, i: number): number {
+  const open = src.indexOf("(", i);
+  if (open === -1) return Math.min(i + 4, src.length);
+  let j = open + 1;
+  while (j < src.length && /\s/.test(src[j])) j += 1;
+  return j;
+}
+
 function cssContainsCustomProperty(css: string, ident: string): boolean {
   let i = 0;
   while (i < css.length) {
-    const skipped = skipCssConstruct(css, i);
-    if (skipped !== null) {
-      i = skipped;
+    const ignored = skipCssCommentOrString(css, i);
+    if (ignored !== null) {
+      i = ignored;
+      continue;
+    }
+    if (startsCssUrl(css, i)) {
+      const arg = urlArgumentStart(css, i);
+      if (css.startsWith("var(", arg)) {
+        i = arg;
+        continue;
+      }
+      i = skipCssUrl(css, i);
       continue;
     }
     if (css.startsWith("var(", i)) {
@@ -434,7 +451,8 @@ export function compositionBindDecls(
  * True only when CSS actually consumes the custom property: `var(--bg)`,
  * `var(--bg,`, `var(--bg )`. A prefix of `--bg-alt` must not green `--bg`.
  * A comment (`/* var(--bg) *\/`), string (`content:"var(--bg)"`), or
- * token inside `url()` is not consume.
+ * token buried in a data-URI / svg / string inside `url()` is not consume.
+ * `url(var(--bg))` is consume.
  */
 export function consumesCustomProperty(html: string, name: string): boolean {
   const src = html.toLowerCase();

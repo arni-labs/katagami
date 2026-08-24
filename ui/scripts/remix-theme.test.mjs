@@ -202,15 +202,23 @@ assert.equal(
   false,
 );
 
-const urlReplay =
+const urlDataUriReplay =
   "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>";
+const urlVarReplay =
+  "<style>body{background-image:url(var(--bg));color:var(--paper)}</style>";
 assert.equal(
-  urlReplay,
+  urlDataUriReplay,
   "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>",
 );
-assert.match(urlReplay, /url\(data:image\/svg\+xml,<svg>var\(--bg\)<\/svg>\)/);
-assert.equal(consumesCustomProperty(urlReplay, "bg"), false);
-assert.equal(consumesCustomProperty(urlReplay, "paper"), true);
+assert.match(
+  urlDataUriReplay,
+  /url\(data:image\/svg\+xml,<svg>var\(--bg\)<\/svg>\)/,
+  "replay must keep var(--bg) inside the svg; do not hide by deleting it",
+);
+assert.equal(consumesCustomProperty(urlDataUriReplay, "bg"), false);
+assert.equal(consumesCustomProperty(urlDataUriReplay, "paper"), true);
+assert.equal(consumesCustomProperty(urlVarReplay, "bg"), true);
+assert.equal(consumesCustomProperty("url(var(--hero-image))", "hero-image"), true);
 
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
