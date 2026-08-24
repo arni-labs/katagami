@@ -123,7 +123,22 @@ assert.doesNotMatch(
 assert.doesNotMatch(
   languageCard,
   /prefetch=\{false\}/,
-  "language cards must prefetch the detail route so a click is not a 1–3s blank",
+  "do not disable Link prefetch — hover still warms the detail route",
+);
+assert.doesNotMatch(
+  languageCard,
+  /\bprefetch(?:=\{true\})?\s/,
+  "do not force-prefetch every card — 60 language RSC payloads starve the thumbs",
+);
+assert.doesNotMatch(
+  languageCard,
+  /contentVisibility/,
+  "content-visibility hid lazy thumbs from the loader and they timed out on dots",
+);
+assert.match(
+  readFileSync(resolve("src/lib/gallery-image.ts"), "utf8"),
+  /420px/,
+  "language card sizes must cap below 1920w so a 250px card is not a 1920 fetch",
 );
 
 const languagePage = readFileSync(

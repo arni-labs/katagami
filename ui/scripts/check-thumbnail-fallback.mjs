@@ -64,6 +64,16 @@ assert.match(
   "a hung source must advance in 8s, not sit on a blank image",
 );
 assert.match(
+  preview,
+  /IntersectionObserver/,
+  "the 8s hang clock must wait until the card is near the viewport",
+);
+assert.match(
+  preview,
+  /rootMargin/,
+  "near-viewport load must start before the card is on screen",
+);
+assert.match(
   card,
   /getFileUrl\(thumbnailFileId\)/,
   "a missing published asset URL must still have the file-id fallback",

@@ -346,18 +346,14 @@ export function InfiniteLanguages({
         <CuratorsPicks>
           <div className={LANGUAGE_GRID}>
             {featured.map((l, i) => (
-              <div key={l.entity_id} style={CARD_CV}>
-                <LanguageCard lang={l} index={i} canDelete={canDelete} />
-              </div>
+              <LanguageCard key={l.entity_id} lang={l} index={i} canDelete={canDelete} />
             ))}
           </div>
         </CuratorsPicks>
       ) : null}
       <div className={LANGUAGE_GRID}>
         {gridItems.map((l, i) => (
-          <div key={l.entity_id} style={CARD_CV}>
-            <LanguageCard lang={l} index={i} canDelete={canDelete} />
-          </div>
+          <LanguageCard key={l.entity_id} lang={l} index={i} canDelete={canDelete} />
         ))}
       </div>
     </InfiniteShell>

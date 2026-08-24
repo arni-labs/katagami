@@ -122,15 +122,7 @@ function TeaserCardGrid({
   return (
     <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((l, i) => (
-        <div
-          key={l.entity_id}
-          style={{
-            contentVisibility: "auto",
-            containIntrinsicSize: "auto 220px",
-          }}
-        >
-          <LanguageCard lang={l} index={startIndex + i} />
-        </div>
+        <LanguageCard key={l.entity_id} lang={l} index={startIndex + i} />
       ))}
     </div>
   );

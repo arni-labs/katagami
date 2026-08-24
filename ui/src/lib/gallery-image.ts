@@ -7,7 +7,7 @@
  */
 
 export const LANGUAGE_CARD_SIZES =
-  "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw";
+  "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 420px";
 
 export const ART_STYLE_CARD_SIZES =
   "(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw";
