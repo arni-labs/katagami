@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/lib/user-auth";
+import { forgetCachedGeneration, requireUser } from "@/lib/user-auth";
 import {
+  bumpGeneration,
   createGrant,
   grantById,
+  grantsForMember,
   issueRefreshToken,
   revokeGrant,
 } from "@/lib/oauth-as";
@@ -56,4 +58,36 @@ export async function revokeAgentGrant(formData: FormData): Promise<void> {
 
   await revokeGrant(grantId, "revoked by owner from Agents & access");
   revalidatePath("/account/agents");
+}
+
+/** Sign out everywhere: end this human's sessions on every device and stop
+ *  every agent acting for them (ARN-255).
+ *
+ *  Two steps, because tokens and grants expire differently:
+ *  1. Bump the human's kernel generation — kills existing session cookies and
+ *     any outstanding access token stamped with an older generation.
+ *  2. Revoke their live grants — otherwise an agent simply refreshes and gets
+ *     a fresh token stamped with the NEW generation, resuming within minutes.
+ */
+export async function signOutEverywhere(): Promise<void> {
+  const user = await requireUser();
+
+  await bumpGeneration(user.sub);
+  // Drop the cached counter so this process stops honouring the old sessions
+  // now, rather than trailing the cache window.
+  forgetCachedGeneration(user.sub);
+
+  const grants = await grantsForMember(user.sub);
+  for (const grant of grants.filter((g) => g.status === "Active")) {
+    try {
+      await revokeGrant(grant.grantId, "signed out everywhere by owner");
+    } catch (err) {
+      // Surface, never silently leave an agent live.
+      console.error(`[auth] failed to revoke grant ${grant.grantId}`, err);
+      throw new Error("Could not stop every agent. Try again.");
+    }
+  }
+
+  revalidatePath("/account/agents");
+  revalidatePath("/account");
 }
