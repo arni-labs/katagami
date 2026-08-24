@@ -1,0 +1,4 @@
+# Host imports (host_log, host_http_call, …) are provided by Temper at
+# load time. rust-lld 1.8x+ errors on them unless they stay undefined.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "link-arg=--allow-undefined"]

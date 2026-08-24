@@ -1978,8 +1978,339 @@ fn page_redundancy_ratio(s: &str) -> f64 {
     raw.len() as f64 / compressed.len() as f64
 }
 
+fn is_custom_property_ident_char(c: u8) -> bool {
+    c.is_ascii_alphanumeric() || c == b'_' || c == b'-'
+}
+
+fn is_css_value_attr(name: &str) -> bool {
+    matches!(
+        name,
+        "style"
+            | "fill"
+            | "stroke"
+            | "color"
+            | "stop-color"
+            | "flood-color"
+            | "lighting-color"
+            | "background"
+            | "background-color"
+            | "background-image"
+    )
+}
+
+fn skip_quoted(src: &str, start: usize) -> usize {
+    let bytes = src.as_bytes();
+    let quote = bytes[start];
+    let mut i = start + 1;
+    while i < bytes.len() {
+        if bytes[i] == b'\\' {
+            i += 2;
+            continue;
+        }
+        if bytes[i] == quote {
+            return i + 1;
+        }
+        i += 1;
+    }
+    bytes.len()
+}
+
+fn is_css_ident_continue(c: u8) -> bool {
+    c.is_ascii_alphanumeric() || c == b'_' || c == b'-'
+}
+
+fn starts_css_url(src: &str, i: usize) -> bool {
+    let Some(rest) = src.get(i..) else {
+        return false;
+    };
+    if !rest.starts_with("url(") {
+        return false;
+    }
+    i == 0
+        || !src
+            .as_bytes()
+            .get(i - 1)
+            .is_some_and(|&c| is_css_ident_continue(c))
+}
+
+fn skip_css_url(src: &str, i: usize) -> usize {
+    let bytes = src.as_bytes();
+    let Some(open) = src.get(i..).and_then(|s| s.find('(')) else {
+        return (i + 4).min(src.len());
+    };
+    let mut i = i + open + 1;
+    while i < bytes.len() && bytes[i].is_ascii_whitespace() {
+        i += 1;
+    }
+    if bytes.get(i).is_some_and(|&c| c == b'"' || c == b'\'') {
+        i = skip_quoted(src, i);
+        return src[i..]
+            .find(')')
+            .map(|p| i + p + 1)
+            .unwrap_or(src.len());
+    }
+    let mut depth = 1i32;
+    while i < bytes.len() {
+        if bytes[i] == b'\\' {
+            i += 2;
+            continue;
+        }
+        if bytes[i] == b'"' || bytes[i] == b'\'' {
+            i = skip_quoted(src, i);
+            continue;
+        }
+        if bytes[i] == b'(' {
+            depth += 1;
+        } else if bytes[i] == b')' {
+            depth -= 1;
+            if depth == 0 {
+                return i + 1;
+            }
+        }
+        i += 1;
+    }
+    i
+}
+
+fn skip_css_comment_or_string(src: &str, i: usize) -> Option<usize> {
+    let bytes = src.as_bytes();
+    if src.get(i..).is_some_and(|s| s.starts_with("<!--")) {
+        return Some(
+            src[i + 4..]
+                .find("-->")
+                .map(|p| i + 4 + p + 3)
+                .unwrap_or(src.len()),
+        );
+    }
+    if i + 1 < bytes.len() && bytes[i] == b'/' && bytes[i + 1] == b'*' {
+        return Some(
+            src[i + 2..]
+                .find("*/")
+                .map(|p| i + 2 + p + 2)
+                .unwrap_or(src.len()),
+        );
+    }
+    if bytes.get(i).is_some_and(|&c| c == b'"' || c == b'\'') {
+        return Some(skip_quoted(src, i));
+    }
+    None
+}
+
+fn find_html_tag_close(src: &str, mut i: usize) -> Option<usize> {
+    let bytes = src.as_bytes();
+    while i < bytes.len() {
+        if bytes[i] == b'"' || bytes[i] == b'\'' {
+            i = skip_quoted(src, i);
+            continue;
+        }
+        if bytes[i] == b'>' {
+            return Some(i);
+        }
+        i += 1;
+    }
+    None
+}
+
+fn extract_css_consumption_surfaces(html_lower: &str) -> Vec<&str> {
+    let bytes = html_lower.as_bytes();
+    let mut surfaces = Vec::new();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] != b'<' {
+            i += 1;
+            continue;
+        }
+        if html_lower.get(i..).is_some_and(|s| s.starts_with("<!--")) {
+            i = skip_css_comment_or_string(html_lower, i).unwrap_or(i + 1);
+            continue;
+        }
+        let tag_start = i + 1;
+        if bytes.get(tag_start) == Some(&b'/') {
+            i = find_html_tag_close(html_lower, tag_start)
+                .map(|gt| gt + 1)
+                .unwrap_or(bytes.len());
+            continue;
+        }
+        let mut tag_end = tag_start;
+        while tag_end < bytes.len()
+            && (bytes[tag_end].is_ascii_alphanumeric()
+                || bytes[tag_end] == b':'
+                || bytes[tag_end] == b'-')
+        {
+            tag_end += 1;
+        }
+        let tag = &html_lower[tag_start..tag_end];
+        if tag == "script" {
+            let Some(gt) = find_html_tag_close(html_lower, tag_end) else {
+                break;
+            };
+            i = html_lower[gt + 1..]
+                .find("</script>")
+                .map(|p| gt + 1 + p + 9)
+                .unwrap_or(bytes.len());
+            continue;
+        }
+        if tag == "style" {
+            let Some(gt) = find_html_tag_close(html_lower, tag_end) else {
+                break;
+            };
+            let close = html_lower[gt + 1..].find("</style>");
+            let end = close.map(|p| gt + 1 + p).unwrap_or(bytes.len());
+            surfaces.push(&html_lower[gt + 1..end]);
+            i = close.map(|p| gt + 1 + p + 8).unwrap_or(bytes.len());
+            continue;
+        }
+        i = tag_end;
+        while i < bytes.len() && bytes[i] != b'>' {
+            if bytes[i] == b'/' && bytes.get(i + 1) == Some(&b'>') {
+                break;
+            }
+            if bytes[i].is_ascii_whitespace() {
+                i += 1;
+                continue;
+            }
+            let name_start = i;
+            while i < bytes.len()
+                && !bytes[i].is_ascii_whitespace()
+                && bytes[i] != b'='
+                && bytes[i] != b'>'
+                && bytes[i] != b'/'
+            {
+                i += 1;
+            }
+            let attr_name = &html_lower[name_start..i];
+            while i < bytes.len() && bytes[i].is_ascii_whitespace() {
+                i += 1;
+            }
+            if bytes.get(i) != Some(&b'=') {
+                continue;
+            }
+            i += 1;
+            while i < bytes.len() && bytes[i].is_ascii_whitespace() {
+                i += 1;
+            }
+            let value = if bytes.get(i).is_some_and(|&c| c == b'"' || c == b'\'') {
+                let q = bytes[i];
+                let start = i + 1;
+                match html_lower[start..].find(q as char) {
+                    Some(rel) => {
+                        i = start + rel + 1;
+                        &html_lower[start..start + rel]
+                    }
+                    None => {
+                        i = bytes.len();
+                        &html_lower[start..]
+                    }
+                }
+            } else {
+                let start = i;
+                while i < bytes.len() && !bytes[i].is_ascii_whitespace() && bytes[i] != b'>' {
+                    i += 1;
+                }
+                &html_lower[start..i]
+            };
+            if is_css_value_attr(attr_name) {
+                surfaces.push(value);
+            }
+        }
+        if bytes.get(i) == Some(&b'>') {
+            i += 1;
+        }
+    }
+    surfaces
+}
+
+fn skip_css_trivia(src: &str, mut i: usize) -> usize {
+    let bytes = src.as_bytes();
+    while i < bytes.len() {
+        if bytes[i].is_ascii_whitespace() {
+            i += 1;
+            continue;
+        }
+        if src.get(i..).is_some_and(|s| s.starts_with("<!--")) {
+            i = src[i + 4..]
+                .find("-->")
+                .map(|p| i + 4 + p + 3)
+                .unwrap_or(src.len());
+            continue;
+        }
+        if i + 1 < bytes.len() && bytes[i] == b'/' && bytes[i + 1] == b'*' {
+            i = src[i + 2..]
+                .find("*/")
+                .map(|p| i + 2 + p + 2)
+                .unwrap_or(src.len());
+            continue;
+        }
+        break;
+    }
+    i
+}
+
+fn url_argument_start(src: &str, i: usize) -> usize {
+    let Some(open) = src.get(i..).and_then(|s| s.find('(')) else {
+        return (i + 4).min(src.len());
+    };
+    skip_css_trivia(src, i + open + 1)
+}
+
+fn css_contains_custom_property(css: &str, name: &str) -> bool {
+    let bytes = css.as_bytes();
+    let name_bytes = name.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if let Some(next) = skip_css_comment_or_string(css, i) {
+            i = next;
+            continue;
+        }
+        if starts_css_url(css, i) {
+            let arg = url_argument_start(css, i);
+            if css.get(arg..).is_some_and(|s| s.starts_with("var(")) {
+                i = arg;
+                continue;
+            }
+            i = skip_css_url(css, i);
+            continue;
+        }
+        if css.get(i..).is_some_and(|s| s.starts_with("var(")) {
+            let mut j = i + 4;
+            while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+                j += 1;
+            }
+            if css.get(j..).is_some_and(|s| s.starts_with("--"))
+                && css
+                    .get(j + 2..)
+                    .is_some_and(|s| s.starts_with(name))
+            {
+                let after = j + 2 + name_bytes.len();
+                let boundary = match bytes.get(after) {
+                    None => true,
+                    Some(&c) => !is_custom_property_ident_char(c),
+                };
+                if boundary {
+                    return true;
+                }
+            }
+            i += 4;
+            continue;
+        }
+        i += 1;
+    }
+    false
+}
+
+/// True only when CSS actually consumes the custom property: `var(--bg)`,
+/// `var(--bg,`, `var(--bg )`. A prefix of `--bg-alt` must not green `--bg`.
+/// A comment (`/* var(--bg) */`), string (`content:"var(--bg)"`), or
+/// token buried in a data-URI / svg / string inside `url()` is not consume.
+/// `url(var(--bg))` and `url(/*x*/var(--bg))` are consume.
 fn consumes_custom_property(html_lower: &str, name: &str) -> bool {
-    html_lower.contains(&format!("var(--{name}"))
+    let surfaces = extract_css_consumption_surfaces(html_lower);
+    if surfaces.is_empty() {
+        return css_contains_custom_property(html_lower, name);
+    }
+    surfaces
+        .into_iter()
+        .any(|sheet| css_contains_custom_property(sheet, name))
 }
 
 fn verify_file_body(
@@ -6037,6 +6368,138 @@ mod page_quality_tests {
         let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
             .expect_err("declaring --hero-image without var(--hero-image) must fail");
         assert_eq!(err.code, "landing_hero_not_consumed");
+    }
+
+    #[test]
+    fn consume_gate_is_a_custom_property_boundary_not_a_prefix() {
+        assert!(consumes_custom_property("color:var(--bg)", "bg"));
+        assert!(consumes_custom_property("color:var(--bg,#fff)", "bg"));
+        assert!(consumes_custom_property("color:var(--bg )", "bg"));
+        assert!(consumes_custom_property("color:var( --bg )", "bg"));
+        assert!(!consumes_custom_property("color:var(--bg-alt)", "bg"));
+        assert!(!consumes_custom_property("color:var(--background)", "bg"));
+        assert!(!consumes_custom_property(":root{--bg:#fff}", "bg"));
+        assert!(consumes_custom_property(
+            "background-image:var(--hero-image)",
+            "hero-image"
+        ));
+        assert!(!consumes_custom_property(
+            "background-image:var(--hero-image-alt)",
+            "hero-image"
+        ));
+        assert!(!consumes_custom_property(
+            "/* var(--bg) */ background:var(--paper)",
+            "bg"
+        ));
+        assert!(!consumes_custom_property(
+            "content:\"var(--bg)\";background:var(--paper)",
+            "bg"
+        ));
+        assert!(!consumes_custom_property(
+            "content:'var(--bg)';background:var(--paper)",
+            "bg"
+        ));
+        assert!(consumes_custom_property(
+            "/* var(--bg) */ background:var(--bg)",
+            "bg"
+        ));
+        assert!(consumes_custom_property(
+            r#"<div style="background:var(--bg)"></div>"#,
+            "bg"
+        ));
+        assert!(!consumes_custom_property(
+            r#"<style>/* var(--bg) */ body{background:var(--paper)}</style>"#,
+            "bg"
+        ));
+        assert!(!consumes_custom_property(
+            r#"<style>.x{content:"var(--bg)"} body{background:var(--paper)}</style>"#,
+            "bg"
+        ));
+        const URL_DATA_URI: &str =
+            "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>";
+        const URL_VAR: &str =
+            "<style>body{background-image:url(var(--bg));color:var(--paper)}</style>";
+        assert_eq!(
+            URL_DATA_URI,
+            "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>",
+            "replay must keep var(--bg) inside the svg; do not hide by deleting it"
+        );
+        assert!(!consumes_custom_property(URL_DATA_URI, "bg"));
+        assert!(consumes_custom_property(URL_DATA_URI, "paper"));
+        assert!(consumes_custom_property(URL_VAR, "bg"));
+        assert!(consumes_custom_property("url(var(--hero-image))", "hero-image"));
+        assert!(consumes_custom_property("url(/*x*/var(--bg))", "bg"));
+        assert!(consumes_custom_property("url( /*x*/ var(--bg) )", "bg"));
+    }
+
+    #[test]
+    fn landing_that_only_uses_bg_alt_fails_consume_gate() {
+        let mut body = page("Bg alt", "bg-alt", 30_000);
+        body = body.replace("var(--bg)", "var(--bg-alt)");
+        body = body.replace(
+            "</head>",
+            "<style>.hero{background-image:var(--hero-image,url(https://katagami.ai/api/file/fl-x))}</style></head>",
+        );
+        let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect_err("var(--bg-alt) must not green var(--bg)");
+        assert_eq!(err.code, "composition_remix_vars_not_consumed");
+    }
+
+    #[test]
+    fn landing_that_only_mentions_bg_in_comment_or_string_fails_consume_gate() {
+        let mut body = page("Comment bg", "comment-bg", 30_000);
+        body = body.replace("var(--bg)", "var(--paper)");
+        body = body.replace(
+            "</head>",
+            "<style>/* var(--bg) */ .x{content:\"var(--bg)\"} .hero{background-image:var(--hero-image,url(https://katagami.ai/api/file/fl-x))}</style></head>",
+        );
+        assert!(
+            body.contains("/* var(--bg) */"),
+            "replay must keep the comment; do not hide the hole by deleting it"
+        );
+        assert!(
+            body.contains("content:\"var(--bg)\""),
+            "replay must keep the quoted var(--bg)"
+        );
+        let lower = body.to_ascii_lowercase();
+        assert!(
+            lower.contains("var(--bg)"),
+            "today's raw scan would still see var(--bg) in the comment/string"
+        );
+        let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect_err("comment or string var(--bg) must not green var(--bg)");
+        assert_eq!(err.code, "composition_remix_vars_not_consumed");
+    }
+
+    #[test]
+    fn landing_that_paints_bg_via_url_var_passes_consume_gate() {
+        let mut body = page("Url var bg", "url-var-bg", 30_000);
+        body = body.replace("background:var(--bg)", "background-image:url(var(--bg))");
+        body = body.replace(
+            "</head>",
+            "<style>.hero{background-image:url(var(--hero-image,url(https://katagami.ai/api/file/fl-x)))}</style></head>",
+        );
+        verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect("url(var(--bg)) and url(var(--hero-image)) are consume");
+    }
+
+    #[test]
+    fn landing_that_only_mentions_bg_inside_url_fails_consume_gate() {
+        let mut body = page("Url bg", "url-bg", 30_000);
+        body = body.replace("var(--bg)", "var(--paper)");
+        body = body.replace(
+            "</head>",
+            "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style><style>.hero{background-image:var(--hero-image,url(https://katagami.ai/api/file/fl-x))}</style></head>",
+        );
+        assert!(
+            body.contains(
+                "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>"
+            ),
+            "replay must keep var(--bg) inside url(); do not hide the hole by deleting it"
+        );
+        let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect_err("var(--bg) inside url() must not green var(--bg)");
+        assert_eq!(err.code, "composition_remix_vars_not_consumed");
     }
 
     #[test]
