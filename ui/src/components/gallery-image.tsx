@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import {
+  alignGalleryImageState,
   canOptimizeGallerySrc,
   galleryImageSrc,
 } from "@/lib/gallery-image";
@@ -16,6 +17,7 @@ export function GalleryImage({
   sizes,
   className = "",
   eager = false,
+  attempt = 0,
   onLoad,
   onError,
 }: {
@@ -25,16 +27,40 @@ export function GalleryImage({
   sizes: string;
   className?: string;
   eager?: boolean;
+  /** Parent hop token. Same src + a new attempt clears failed so a
+   *  [dead, dead] retry is not stuck on the previous error. Not a React
+   *  key — key={src} must stay for the grow-list hold. */
+  attempt?: number;
   onLoad?: () => void;
   onError?: () => void;
 }) {
+  const [seenSrc, setSeenSrc] = useState(src);
+  const [seenAttempt, setSeenAttempt] = useState(attempt);
   const [current, setCurrent] = useState(src);
   const [failed, setFailed] = useState(false);
-  const resolved = galleryImageSrc(current);
+  const aligned = alignGalleryImageState(
+    src,
+    seenSrc,
+    current,
+    failed,
+    attempt,
+    seenAttempt,
+  );
+  // Reset during render when the src prop identity changes, or when the
+  // parent hops attempt on the same URL. A useEffect would paint the
+  // previous failed/null frame first. Comparing current to src would
+  // snap a live proxy fallback back to the dead CDN URL.
+  if (aligned.seenSrc !== seenSrc || aligned.seenAttempt !== seenAttempt) {
+    setSeenSrc(aligned.seenSrc);
+    setSeenAttempt(aligned.seenAttempt);
+    setCurrent(aligned.current);
+    setFailed(aligned.failed);
+  }
+  const resolved = galleryImageSrc(aligned.current);
   const optimize = canOptimizeGallerySrc(resolved);
 
   const handleError = () => {
-    if (fallbackSrc && current !== fallbackSrc) {
+    if (fallbackSrc && aligned.current !== fallbackSrc) {
       setCurrent(fallbackSrc);
       return;
     }
@@ -42,7 +68,7 @@ export function GalleryImage({
     onError?.();
   };
 
-  if (failed || !resolved) return null;
+  if (aligned.failed || !resolved) return null;
 
   if (optimize) {
     return (
