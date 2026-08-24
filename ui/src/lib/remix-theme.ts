@@ -153,6 +153,27 @@ function skipCssUrl(src: string, i: number): number {
   return i;
 }
 
+/** Whitespace, block comments, and `<!-- -->`. Not strings — those stay tokens. */
+function skipCssTrivia(src: string, i: number): number {
+  while (i < src.length) {
+    if (/\s/.test(src[i])) {
+      i += 1;
+      continue;
+    }
+    if (src.startsWith("<!--", i)) {
+      const end = src.indexOf("-->", i + 4);
+      i = end === -1 ? src.length : end + 3;
+      continue;
+    }
+    if (src[i] === "/" && src[i + 1] === "*") {
+      i = skipCssComment(src, i);
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
 function skipCssCommentOrString(src: string, i: number): number | null {
   if (src.startsWith("<!--", i)) {
     const end = src.indexOf("-->", i + 4);
@@ -274,9 +295,7 @@ function extractCssConsumptionSurfaces(html: string): string[] {
 function urlArgumentStart(src: string, i: number): number {
   const open = src.indexOf("(", i);
   if (open === -1) return Math.min(i + 4, src.length);
-  let j = open + 1;
-  while (j < src.length && /\s/.test(src[j])) j += 1;
-  return j;
+  return skipCssTrivia(src, open + 1);
 }
 
 function cssContainsCustomProperty(css: string, ident: string): boolean {
@@ -374,22 +393,44 @@ function parseCssDeclarations(body: string): Array<[string, string]> {
   return decls;
 }
 
+/** Real `:root {` only — not one buried in a comment or string. */
+function rootRuleOpenBrace(src: string, i: number): number {
+  if (src.slice(i, i + 5).toLowerCase() !== ":root") return -1;
+  if (i > 0 && src[i - 1] === ":") return -1;
+  if (isCssIdentContinue(src[i + 5])) return -1;
+  const after = skipCssTrivia(src, i + 5);
+  return src[after] === "{" ? after : -1;
+}
+
 /**
- * Pull `--name: value` pairs out of every `:root { … }` block.
+ * Pull `--name: value` pairs out of every real `:root { … }` rule.
  *
  * Must survive `}` inside `url("…<svg></svg>…")`. A `:root { [^}]+ }` regex
- * cuts the block at that brace and never sees tokens after it.
+ * cuts the block at that brace and never sees tokens after it. A `:root`
+ * buried in a block comment, `<!-- -->`, or a string is not a rule.
  */
 export function extractRootDecls(html: string): Array<[string, string]> {
   const decls: Array<[string, string]> = [];
-  const open = /:root\s*\{/gi;
-  let match: RegExpExecArray | null;
-  while ((match = open.exec(html))) {
-    const start = match.index + match[0].length;
-    const end = scanCssBlockEnd(html, start);
-    if (end === -1) break;
-    decls.push(...parseCssDeclarations(html.slice(start, end)));
-    open.lastIndex = end + 1;
+  let i = 0;
+  while (i < html.length) {
+    const skipped = skipCssCommentOrString(html, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (startsCssUrl(html, i)) {
+      i = skipCssUrl(html, i);
+      continue;
+    }
+    const brace = rootRuleOpenBrace(html, i);
+    if (brace !== -1) {
+      const end = scanCssBlockEnd(html, brace + 1);
+      if (end === -1) break;
+      decls.push(...parseCssDeclarations(html.slice(brace + 1, end)));
+      i = end + 1;
+      continue;
+    }
+    i += 1;
   }
   return decls;
 }
@@ -452,7 +493,7 @@ export function compositionBindDecls(
  * `var(--bg,`, `var(--bg )`. A prefix of `--bg-alt` must not green `--bg`.
  * A comment (`/* var(--bg) *\/`), string (`content:"var(--bg)"`), or
  * token buried in a data-URI / svg / string inside `url()` is not consume.
- * `url(var(--bg))` is consume.
+ * `url(var(--bg))` and `url(/* x *\/var(--bg))` are consume.
  */
 export function consumesCustomProperty(html: string, name: string): boolean {
   const src = html.toLowerCase();

@@ -219,6 +219,35 @@ assert.equal(consumesCustomProperty(urlDataUriReplay, "bg"), false);
 assert.equal(consumesCustomProperty(urlDataUriReplay, "paper"), true);
 assert.equal(consumesCustomProperty(urlVarReplay, "bg"), true);
 assert.equal(consumesCustomProperty("url(var(--hero-image))", "hero-image"), true);
+assert.equal(consumesCustomProperty("url(/*x*/var(--bg))", "bg"), true);
+assert.equal(consumesCustomProperty("url( /*x*/ var(--bg) )", "bg"), true);
+
+const commentedRoot = `/* :root { --blue:#2A5BD7; --forged:#00ff00 } */
+<!-- :root { --blue:#2A5BD7 } -->
+.x{content:":root { --blue:#2A5BD7; --forged:#00ff00 }"}`;
+assert.match(
+  commentedRoot,
+  /\/\* :root \{ --blue:#2A5BD7; --forged:#00ff00 \}/,
+  "replay must keep the commented :root; do not hide by deleting it",
+);
+assert.match(commentedRoot, /<!-- :root \{ --blue:#2A5BD7 \}/);
+assert.match(commentedRoot, /content:":root \{ --blue:#2A5BD7; --forged:#00ff00 \}"/);
+assert.ok(
+  [...commentedRoot.matchAll(/:root\s*\{/gi)].length >= 3,
+  "today's :root regex would still see the buried rules",
+);
+assert.deepEqual(extractRootDecls(commentedRoot), []);
+const commentedBind = compositionBindDecls(commentedRoot, roles, hero).join(";");
+assert.doesNotMatch(commentedBind, /--blue:/);
+assert.doesNotMatch(commentedBind, /--forged:/);
+
+const mixedRoot = `/* :root { --forged:#00ff00 } */
+:root { --blue:#2A5BD7 }
+`;
+assert.deepEqual(
+  extractRootDecls(mixedRoot).map(([name]) => name),
+  ["blue"],
+);
 
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),

@@ -2220,16 +2220,37 @@ fn extract_css_consumption_surfaces(html_lower: &str) -> Vec<&str> {
     surfaces
 }
 
+fn skip_css_trivia(src: &str, mut i: usize) -> usize {
+    let bytes = src.as_bytes();
+    while i < bytes.len() {
+        if bytes[i].is_ascii_whitespace() {
+            i += 1;
+            continue;
+        }
+        if src.get(i..).is_some_and(|s| s.starts_with("<!--")) {
+            i = src[i + 4..]
+                .find("-->")
+                .map(|p| i + 4 + p + 3)
+                .unwrap_or(src.len());
+            continue;
+        }
+        if i + 1 < bytes.len() && bytes[i] == b'/' && bytes[i + 1] == b'*' {
+            i = src[i + 2..]
+                .find("*/")
+                .map(|p| i + 2 + p + 2)
+                .unwrap_or(src.len());
+            continue;
+        }
+        break;
+    }
+    i
+}
+
 fn url_argument_start(src: &str, i: usize) -> usize {
     let Some(open) = src.get(i..).and_then(|s| s.find('(')) else {
         return (i + 4).min(src.len());
     };
-    let mut j = i + open + 1;
-    let bytes = src.as_bytes();
-    while j < bytes.len() && bytes[j].is_ascii_whitespace() {
-        j += 1;
-    }
-    j
+    skip_css_trivia(src, i + open + 1)
 }
 
 fn css_contains_custom_property(css: &str, name: &str) -> bool {
@@ -2281,7 +2302,7 @@ fn css_contains_custom_property(css: &str, name: &str) -> bool {
 /// `var(--bg,`, `var(--bg )`. A prefix of `--bg-alt` must not green `--bg`.
 /// A comment (`/* var(--bg) */`), string (`content:"var(--bg)"`), or
 /// token buried in a data-URI / svg / string inside `url()` is not consume.
-/// `url(var(--bg))` is consume.
+/// `url(var(--bg))` and `url(/*x*/var(--bg))` are consume.
 fn consumes_custom_property(html_lower: &str, name: &str) -> bool {
     let surfaces = extract_css_consumption_surfaces(html_lower);
     if surfaces.is_empty() {
@@ -6407,6 +6428,8 @@ mod page_quality_tests {
         assert!(consumes_custom_property(URL_DATA_URI, "paper"));
         assert!(consumes_custom_property(URL_VAR, "bg"));
         assert!(consumes_custom_property("url(var(--hero-image))", "hero-image"));
+        assert!(consumes_custom_property("url(/*x*/var(--bg))", "bg"));
+        assert!(consumes_custom_property("url( /*x*/ var(--bg) )", "bg"));
     }
 
     #[test]
