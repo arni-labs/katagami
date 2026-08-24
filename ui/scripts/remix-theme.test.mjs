@@ -249,6 +249,52 @@ assert.deepEqual(
   ["blue"],
 );
 
+const htmlTextRoot = "<p>:root { --blue:#f00 }</p>";
+assert.equal(
+  htmlTextRoot,
+  "<p>:root { --blue:#f00 }</p>",
+  "replay must keep :root in the paragraph; do not hide by deleting it",
+);
+assert.match(htmlTextRoot, /<p>:root \{ --blue:#f00 \}<\/p>/);
+assert.ok(
+  /:root\s*\{/.test(htmlTextRoot),
+  "today's raw HTML walk would still see :root in the paragraph",
+);
+assert.deepEqual(extractRootDecls(htmlTextRoot), []);
+assert.doesNotMatch(
+  compositionBindDecls(htmlTextRoot, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const selectorListRoot = ":root, :host { --blue:#f00 }";
+assert.equal(
+  selectorListRoot,
+  ":root, :host { --blue:#f00 }",
+  "replay must keep the selector list; do not hide by rewriting to :root {",
+);
+assert.equal(
+  [...selectorListRoot.matchAll(/:root\s*\{/gi)].length,
+  0,
+  "an opener that wants { immediately after :root misses this rule",
+);
+assert.deepEqual(
+  extractRootDecls(selectorListRoot).map(([name]) => name),
+  ["blue"],
+);
+assert.match(
+  compositionBindDecls(selectorListRoot, roles, hero).join(";"),
+  /--blue:#FF3D9E/,
+);
+
+const htmlTextAndStyle =
+  "<p>:root { --forged:#00ff00 }</p><style>:root, :host { --blue:#2A5BD7 }</style>";
+assert.match(htmlTextAndStyle, /<p>:root \{ --forged:#00ff00 \}<\/p>/);
+assert.match(htmlTextAndStyle, /:root, :host \{ --blue:#2A5BD7 \}/);
+assert.deepEqual(
+  extractRootDecls(htmlTextAndStyle).map(([name]) => name),
+  ["blue"],
+);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

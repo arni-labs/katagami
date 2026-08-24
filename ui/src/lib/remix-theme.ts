@@ -203,6 +203,32 @@ function findHtmlTagClose(html: string, i: number): number {
   return -1;
 }
 
+function startsHtmlMarkup(src: string, i: number): boolean {
+  if (src[i] !== "<") return false;
+  let j = i + 1;
+  if (src[j] === "/") j += 1;
+  if (src.startsWith("!--", j)) return true;
+  if (src.slice(j, j + 8).toLowerCase() === "!doctype") return true;
+  if (j >= src.length || !/[A-Za-z]/.test(src[j])) return false;
+  while (j < src.length && /[A-Za-z0-9:-]/.test(src[j])) j += 1;
+  return j >= src.length || /[\s>/]/.test(src[j]);
+}
+
+/** `</style>` that is not inside a comment, string, or url(). */
+function scanStyleEnd(src: string, start: number): number {
+  let i = start;
+  while (i < src.length) {
+    const skipped = skipCssConstruct(src, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (src.slice(i, i + 8).toLowerCase() === "</style>") return i;
+    i += 1;
+  }
+  return -1;
+}
+
 const CSS_VALUE_ATTRS = new Set([
   "style",
   "fill",
@@ -248,7 +274,7 @@ function extractCssConsumptionSurfaces(html: string): string[] {
     if (tag === "style") {
       const gt = findHtmlTagClose(html, tagEnd);
       if (gt === -1) break;
-      const close = html.indexOf("</style>", gt + 1);
+      const close = scanStyleEnd(html, gt + 1);
       const end = close === -1 ? html.length : close;
       surfaces.push(html.slice(gt + 1, end));
       i = close === -1 ? html.length : close + 8;
@@ -290,6 +316,61 @@ function extractCssConsumptionSurfaces(html: string): string[] {
     if (html[i] === ">") i += 1;
   }
   return surfaces;
+}
+
+/**
+ * Style-block text, or the whole input when it is stylesheet text.
+ * HTML body text that merely looks like CSS is not a sheet.
+ */
+function extractStylesheetTexts(html: string): string[] {
+  const sheets: string[] = [];
+  let sawHtml = false;
+  let i = 0;
+  while (i < html.length) {
+    const skipped = skipCssConstruct(html, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (!startsHtmlMarkup(html, i)) {
+      i += 1;
+      continue;
+    }
+    sawHtml = true;
+    if (html.startsWith("<!--", i)) {
+      const end = html.indexOf("-->", i + 4);
+      i = end === -1 ? html.length : end + 3;
+      continue;
+    }
+    const isClose = html[i + 1] === "/";
+    const tagStart = isClose ? i + 2 : i + 1;
+    let tagEnd = tagStart;
+    while (tagEnd < html.length && /[A-Za-z0-9:-]/.test(html[tagEnd])) tagEnd += 1;
+    const tag = html.slice(tagStart, tagEnd).toLowerCase();
+    const gt = findHtmlTagClose(html, tagEnd);
+    if (gt === -1) break;
+    const afterOpen = gt + 1;
+    if (isClose) {
+      i = afterOpen;
+      continue;
+    }
+    if (tag === "script") {
+      const close = html.indexOf("</script>", afterOpen);
+      i = close === -1 ? html.length : close + 9;
+      continue;
+    }
+    if (tag === "style") {
+      const close = scanStyleEnd(html, afterOpen);
+      const end = close === -1 ? html.length : close;
+      sheets.push(html.slice(afterOpen, end));
+      i = close === -1 ? html.length : close + 8;
+      continue;
+    }
+    i = afterOpen;
+  }
+  if (sheets.length > 0) return sheets;
+  if (sawHtml) return [];
+  return [html];
 }
 
 function urlArgumentStart(src: string, i: number): number {
@@ -393,44 +474,77 @@ function parseCssDeclarations(body: string): Array<[string, string]> {
   return decls;
 }
 
-/** Real `:root {` only — not one buried in a comment or string. */
+/**
+ * `{` that opens a rule whose selector includes `:root`.
+ * `:root, :host {` is a real rule. `:not(:root)` is an argument, not a rule.
+ */
 function rootRuleOpenBrace(src: string, i: number): number {
   if (src.slice(i, i + 5).toLowerCase() !== ":root") return -1;
   if (i > 0 && src[i - 1] === ":") return -1;
   if (isCssIdentContinue(src[i + 5])) return -1;
-  const after = skipCssTrivia(src, i + 5);
-  return src[after] === "{" ? after : -1;
+  let j = i + 5;
+  let depth = 0;
+  while (j < src.length) {
+    if (/\s/.test(src[j])) {
+      j += 1;
+      continue;
+    }
+    const skipped = skipCssConstruct(src, j);
+    if (skipped !== null) {
+      j = skipped;
+      continue;
+    }
+    const ch = src[j];
+    if (ch === "(") {
+      depth += 1;
+      j += 1;
+      continue;
+    }
+    if (ch === ")") {
+      if (depth === 0) return -1;
+      depth -= 1;
+      j += 1;
+      continue;
+    }
+    if (depth === 0 && ch === "{") return j;
+    if (depth === 0 && (ch === "}" || ch === ";")) return -1;
+    j += 1;
+  }
+  return -1;
 }
 
 /**
- * Pull `--name: value` pairs out of every real `:root { … }` rule.
- *
- * Must survive `}` inside `url("…<svg></svg>…")`. A `:root { [^}]+ }` regex
- * cuts the block at that brace and never sees tokens after it. A `:root`
- * buried in a block comment, `<!-- -->`, or a string is not a rule.
+ * Pull `--name: value` pairs out of every real `:root` rule in stylesheet
+ * text. HTML body text that looks like `:root { … }` is not a rule. A
+ * selector list (`:root, :host {`) is. A `:root` buried in a comment or
+ * string is not. Must survive `}` inside `url("…<svg></svg>…")`.
  */
-export function extractRootDecls(html: string): Array<[string, string]> {
+function extractRootDeclsFromCss(css: string): Array<[string, string]> {
   const decls: Array<[string, string]> = [];
   let i = 0;
-  while (i < html.length) {
-    const skipped = skipCssCommentOrString(html, i);
+  while (i < css.length) {
+    const skipped = skipCssConstruct(css, i);
     if (skipped !== null) {
       i = skipped;
       continue;
     }
-    if (startsCssUrl(html, i)) {
-      i = skipCssUrl(html, i);
-      continue;
-    }
-    const brace = rootRuleOpenBrace(html, i);
+    const brace = rootRuleOpenBrace(css, i);
     if (brace !== -1) {
-      const end = scanCssBlockEnd(html, brace + 1);
+      const end = scanCssBlockEnd(css, brace + 1);
       if (end === -1) break;
-      decls.push(...parseCssDeclarations(html.slice(brace + 1, end)));
+      decls.push(...parseCssDeclarations(css.slice(brace + 1, end)));
       i = end + 1;
       continue;
     }
     i += 1;
+  }
+  return decls;
+}
+
+export function extractRootDecls(html: string): Array<[string, string]> {
+  const decls: Array<[string, string]> = [];
+  for (const sheet of extractStylesheetTexts(html)) {
+    decls.push(...extractRootDeclsFromCss(sheet));
   }
   return decls;
 }
