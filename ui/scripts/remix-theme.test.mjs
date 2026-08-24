@@ -399,6 +399,49 @@ assert.deepEqual(
   ["blue"],
 );
 
+const rootAsAncestor = ":root > .x { --blue:#f00 }";
+assert.equal(
+  rootAsAncestor,
+  ":root > .x { --blue:#f00 }",
+  "replay must keep :root > .x; do not hide by rewriting to :root {",
+);
+assert.match(rootAsAncestor, /:root > \.x \{ --blue:#f00 \}/);
+assert.ok(
+  /:root\s*>/.test(rootAsAncestor),
+  "today's walk would still treat ancestor :root as the subject",
+);
+assert.deepEqual(extractRootDecls(rootAsAncestor), []);
+assert.doesNotMatch(
+  compositionBindDecls(rootAsAncestor, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const rootDescendantSubject = ":root .foo { --blue:#f00 }";
+assert.equal(
+  rootDescendantSubject,
+  ":root .foo { --blue:#f00 }",
+  "replay must keep :root .foo; do not hide by rewriting to :root {",
+);
+assert.match(rootDescendantSubject, /:root \.foo \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(rootDescendantSubject), []);
+assert.doesNotMatch(
+  compositionBindDecls(rootDescendantSubject, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const isThenIsRoot = ":is(.x) :is(:root) { --blue:#f00 }";
+assert.equal(
+  isThenIsRoot,
+  ":is(.x) :is(:root) { --blue:#f00 }",
+  "replay must keep :is(.x) :is(:root); do not hide by rewriting to :is(:root)",
+);
+assert.match(isThenIsRoot, /:is\(\.x\) :is\(:root\) \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(isThenIsRoot), []);
+assert.doesNotMatch(
+  compositionBindDecls(isThenIsRoot, roles, hero).join(";"),
+  /--blue:/,
+);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

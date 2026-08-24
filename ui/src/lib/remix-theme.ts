@@ -697,6 +697,59 @@ function selectorAlternativeStart(src: string, rootPos: number): number {
   return alt;
 }
 
+function rangeHasCombinator(src: string, start: number, end: number): boolean {
+  let i = skipCssTrivia(src, start);
+  let seenCompound = false;
+  let depth = 0;
+  while (i < end) {
+    i = skipLeadingComments(src, i);
+    if (i >= end) break;
+    if (/\s/.test(src[i])) {
+      const after = skipCssTrivia(src, i);
+      if (
+        depth === 0 &&
+        seenCompound &&
+        after < end &&
+        startsSimpleSelector(src, after)
+      ) {
+        return true;
+      }
+      i = after;
+      continue;
+    }
+    const skipped = skipCssCommentOrString(src, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (src[i] === "(") {
+      depth += 1;
+      i += 1;
+      continue;
+    }
+    if (src[i] === ")") {
+      depth -= 1;
+      i += 1;
+      continue;
+    }
+    if (depth === 0) {
+      const comb = combinatorLength(src, i);
+      if (comb) {
+        if (seenCompound) return true;
+        i += comb;
+        continue;
+      }
+      if (startsSimpleSelector(src, i)) {
+        i = skipSimpleSelector(src, i);
+        seenCompound = true;
+        continue;
+      }
+    }
+    i += 1;
+  }
+  return false;
+}
+
 /**
  * A combinator before `:root` never matches the document root.
  * `.x :root`, `:is(.x) :root`, `.x > :root` do not bind.
@@ -738,9 +791,71 @@ function hasCombinatorBeforeRoot(src: string, rootPos: number): boolean {
 }
 
 /**
+ * Top-level alternative containing this `:root`. A combinator here means
+ * `:root` is an ancestor (`:root > .x`) or a never-matching descendant
+ * subject (`:is(.x) :is(:root)`). Only a single compound that matches
+ * `:root` is the subject.
+ */
+function topLevelAlternativeHasCombinator(src: string, rootPos: number): boolean {
+  const region = selectorRegionStart(src, rootPos);
+  let i = region;
+  let depth = 0;
+  let altStart = region;
+  while (i < rootPos) {
+    const skipped = skipCssConstruct(src, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (src[i] === "(") {
+      depth += 1;
+      i += 1;
+      continue;
+    }
+    if (src[i] === ")") {
+      depth -= 1;
+      i += 1;
+      continue;
+    }
+    if (src[i] === "," && depth === 0) altStart = i + 1;
+    i += 1;
+  }
+  let j = rootPos + 5;
+  let d = wrappingFns(src, rootPos).length;
+  while (j < src.length) {
+    if (/\s/.test(src[j])) {
+      j += 1;
+      continue;
+    }
+    const skipped = skipCssConstruct(src, j);
+    if (skipped !== null) {
+      j = skipped;
+      continue;
+    }
+    if (src[j] === "(") {
+      d += 1;
+      j += 1;
+      continue;
+    }
+    if (src[j] === ")") {
+      d -= 1;
+      if (d < 0) break;
+      j += 1;
+      continue;
+    }
+    if (d === 0 && (src[j] === "{" || src[j] === "," || src[j] === "}" || src[j] === ";")) {
+      return rangeHasCombinator(src, altStart, j);
+    }
+    j += 1;
+  }
+  return rangeHasCombinator(src, altStart, src.length);
+}
+
+/**
  * `{` that opens a rule that matches `:root`.
  * `:root, :host {`, `:is(:root) {`, and `:where(:root, :host) {` bind.
- * `:not(:root) {` and a combinator before `:root` do not.
+ * `:not(:root) {`, a combinator before `:root`, and `:root` as an
+ * ancestor (`:root > .x`) do not.
  */
 function rootRuleOpenBrace(src: string, i: number): number {
   if (src.slice(i, i + 5).toLowerCase() !== ":root") return -1;
@@ -749,6 +864,7 @@ function rootRuleOpenBrace(src: string, i: number): number {
   const fns = wrappingFns(src, i);
   if (!rootTokenMatchesRoot(fns)) return -1;
   if (hasCombinatorBeforeRoot(src, i)) return -1;
+  if (topLevelAlternativeHasCombinator(src, i)) return -1;
   let j = i + 5;
   let depth = fns.length;
   while (j < src.length) {
@@ -784,7 +900,8 @@ function rootRuleOpenBrace(src: string, i: number): number {
  * Pull `--name: value` pairs out of every real `:root` rule in stylesheet
  * text. HTML body text that looks like `:root { … }` is not a rule. A
  * selector list (`:root, :host {`) or functional wrapper (`:is(:root) {`)
- * is. `:not(:root)` and a combinator before `:root` (`.x :root`) are not.
+ * is. `:not(:root)`, a combinator before `:root` (`.x :root`), and
+ * `:root` as an ancestor (`:root > .x`) are not.
  * A `:root` buried in a comment, string, or raw-text `<style>` (textarea)
  * is not. Must survive `}` inside `url("…<svg></svg>…")`.
  */
