@@ -14,10 +14,16 @@ pub fn hue_bucket(tokens_str: &str) -> String {
         .get("colors")
         .and_then(|c| c.get("primary").or_else(|| c.get("accent")))
         .and_then(|v| v.as_str());
-    let hex = match hex {
-        Some(h) => h,
-        None => return "neutral".into(),
-    };
+    match hex {
+        Some(h) => hex_hue_bucket(h),
+        None => "neutral".into(),
+    }
+}
+
+/// The hex → bucket core of `hue_bucket`, reusable for any single color value
+/// (ARN-354: palette search blobs index the signature colors' hue words).
+/// Mirrors ui/scripts/facets.mjs `hexHueBucket`.
+pub fn hex_hue_bucket(hex: &str) -> String {
     let m = hex.trim_start_matches('#').to_lowercase();
     if !m.chars().all(|c| c.is_ascii_hexdigit()) || (m.len() != 3 && m.len() != 6) {
         return "neutral".into();
@@ -148,14 +154,35 @@ pub fn lane_search_blob(set_name: &str, fields: &Value) -> String {
         if let Some(m) = fields.get("medium").and_then(|v| v.as_str()) {
             parts.push(m.to_string());
         }
-    } else if let Some(mood) = fields
-        .get("mood")
-        .and_then(|v| v.as_str())
-        .and_then(|s| serde_json::from_str::<Value>(s).ok())
-    {
-        for k in ["summary", "key_hue", "temperature"] {
-            if let Some(s) = mood.get(k).and_then(|v| v.as_str()) {
-                parts.push(s.to_string());
+    } else {
+        // ARN-354: index what the palette card SHOWS — the signature colors'
+        // given names and their derived hue words. The mood SUMMARY is
+        // deliberately NOT indexed: free prose made "yellow" match palettes
+        // with no visible yellow. key_hue/temperature stay (short descriptors,
+        // not sentences). Mirrors ui/scripts/backfill-lane-search.mjs.
+        if let Some(signature) = fields
+            .get("signature")
+            .and_then(|v| v.as_str())
+            .and_then(|s| serde_json::from_str::<Vec<Value>>(s).ok())
+        {
+            for entry in signature {
+                if let Some(n) = entry.get("name").and_then(|v| v.as_str()) {
+                    parts.push(n.to_string());
+                }
+                if let Some(h) = entry.get("hex").and_then(|v| v.as_str()) {
+                    parts.push(hex_hue_bucket(h));
+                }
+            }
+        }
+        if let Some(mood) = fields
+            .get("mood")
+            .and_then(|v| v.as_str())
+            .and_then(|s| serde_json::from_str::<Value>(s).ok())
+        {
+            for k in ["key_hue", "temperature"] {
+                if let Some(s) = mood.get(k).and_then(|v| v.as_str()) {
+                    parts.push(s.to_string());
+                }
             }
         }
     }
@@ -216,7 +243,17 @@ mod tests {
     fn lane_blobs() {
         let art = json!({ "name": "Risograph Ember", "slug": "risograph-ember", "tags": "[\"riso\"]", "medium": "risograph" });
         assert_eq!(lane_search_blob("ArtStyles", &art), "risograph ember risograph-ember riso risograph");
-        let pal = json!({ "name": "Teal One", "slug": "teal-one", "tags": "[]", "mood": "{\"summary\":\"Cool\",\"key_hue\":\"teal\"}" });
-        assert_eq!(lane_search_blob("PaletteSystems", &pal), "teal one teal-one cool teal");
+        // Signature names + derived hue words are indexed; the mood SUMMARY
+        // prose is not (ARN-354 — "refuses yellow" must not match "yellow";
+        // the signature hex #f5c000 is what makes this palette a yellow hit).
+        let pal = json!({
+            "name": "Teal One", "slug": "teal-one", "tags": "[]",
+            "signature": "[{\"hex\":\"#f5c000\",\"name\":\"Sun ink\"}]",
+            "mood": "{\"summary\":\"A prose line that refuses yellow\",\"key_hue\":\"teal\",\"temperature\":\"cool\"}"
+        });
+        assert_eq!(
+            lane_search_blob("PaletteSystems", &pal),
+            "teal one teal-one sun ink yellow teal cool"
+        );
     }
 }

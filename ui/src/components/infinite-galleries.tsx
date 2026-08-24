@@ -78,6 +78,7 @@ function InfiniteShell({
   loading,
   exhausted,
   empty,
+  searchFailed = false,
   sentinelRef,
   children,
 }: {
@@ -92,6 +93,8 @@ function InfiniteShell({
   loading: boolean;
   exhausted: boolean;
   empty: boolean;
+  /** Search infrastructure failed (vs a genuine zero-hit answer). */
+  searchFailed?: boolean;
   sentinelRef: RefObject<HTMLDivElement | null>;
   children: ReactNode;
 }) {
@@ -124,12 +127,23 @@ function InfiniteShell({
 
       {empty && !loading ? (
         <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
-          Nothing found.
-          <div className="mt-1 font-mono text-[11px]">
-            {meaning
-              ? "try describing the vibe differently"
-              : "try a different search"}
-          </div>
+          {searchFailed ? (
+            <>
+              Search is temporarily unavailable.
+              <div className="mt-1 font-mono text-[11px]">
+                try again in a moment
+              </div>
+            </>
+          ) : (
+            <>
+              Nothing found.
+              <div className="mt-1 font-mono text-[11px]">
+                {meaning
+                  ? "try describing the vibe differently"
+                  : "try a different search"}
+              </div>
+            </>
+          )}
         </div>
       ) : (
         children
@@ -319,6 +333,7 @@ export function InfiniteLanguages({
         )
       }
       loading={meaningActive ? sem.loading : loading}
+      searchFailed={meaningActive ? sem.failed : false}
       exhausted={meaningActive ? true : cursor === null}
       empty={
         meaningActive
@@ -414,6 +429,7 @@ export function InfinitePalettes({
       mode={mode}
       setMode={setMode}
       loading={meaningActive ? sem.loading : loading}
+      searchFailed={meaningActive ? sem.failed : false}
       exhausted={meaningActive ? true : cursor === null}
       empty={
         meaningActive
@@ -465,6 +481,7 @@ export function InfiniteArtStyles({
       mode={mode}
       setMode={setMode}
       loading={meaningActive ? sem.loading : loading}
+      searchFailed={meaningActive ? sem.failed : false}
       exhausted={meaningActive ? true : cursor === null}
       empty={meaningActive ? sem.results.length === 0 : items.length === 0}
       sentinelRef={sentinelRef}

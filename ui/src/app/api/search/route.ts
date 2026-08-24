@@ -4,6 +4,7 @@ import {
   lanePath,
   searchAllLanes,
   searchLane,
+  SearchUnavailableError,
   type SearchHit,
 } from "@/lib/search";
 import { TASTE_EMBEDDING_MODEL } from "@/lib/embeddings";
@@ -56,9 +57,20 @@ export async function GET(request: Request) {
   const k = Number.isFinite(kRaw) ? Math.min(Math.max(kRaw, 1), MAX_K) : DEFAULT_K;
   const detailed = url.searchParams.get("format") === "detailed";
 
-  const hits = lane
-    ? await searchLane(lane, query, k, detailed)
-    : await searchAllLanes(query, k, detailed);
+  let hits;
+  try {
+    hits = lane
+      ? await searchLane(lane, query, k, detailed)
+      : await searchAllLanes(query, k, detailed);
+  } catch (err) {
+    if (err instanceof SearchUnavailableError) {
+      return NextResponse.json(
+        { error: "search temporarily unavailable — try again shortly" },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    throw err;
+  }
 
   const base = siteBase(request);
   const results = hits.map((hit) => withLinks(hit, base, detailed));

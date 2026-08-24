@@ -142,8 +142,19 @@ function ItemMedia({ item }: { item: PickItem }) {
   return (
     <span className={`h-8 w-12 bg-muted ${MEDIA}`}>
       {item.thumb ? (
+        // Lazy + async: the picker renders up to RESULT_CAP rows the moment it
+        // opens, and eager thumbs fired that many /api/file hits in one burst
+        // (ARN-354). Explicit dimensions keep rows from reflowing as they load.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.thumb} alt="" className="h-full w-full object-cover" />
+        <img
+          src={item.thumb}
+          alt=""
+          width={48}
+          height={32}
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+        />
       ) : null}
     </span>
   );

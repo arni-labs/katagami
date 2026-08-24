@@ -3,6 +3,8 @@
 // (the kernel has no tolower/$search). DRY-RUN by default; --apply to write.
 //
 // Env: source .env.katagami-curator.local (openpaw-production).
+import { hexHueBucket } from "./facets.mjs";
+
 const API = requiredEnv("TEMPER_API_URL").replace(/\/+$/, "");
 const KEY = requiredEnv("TEMPER_API_KEY");
 const TENANT = process.env.TEMPER_TENANT || "default";
@@ -59,9 +61,18 @@ function tagsOf(f) {
   return Array.isArray(t) ? t.map(String) : [];
 }
 
+// ARN-354: index what the card SHOWS — the signature colors' given names and
+// their derived hue words — and drop the mood SUMMARY, whose free prose made
+// "yellow" match palettes with no visible yellow ("refuses yellow", "yellowed
+// paper"). key_hue/temperature stay: short mood descriptors, not sentences.
+// Mirrors facets.rs lane_search_blob — keep both producers in lockstep.
 function paletteBlob(f) {
   const mood = safeJson(f.mood) || {};
-  return join([f.name, f.slug, ...tagsOf(f), mood.summary, mood.key_hue, mood.temperature]);
+  const signature = safeJson(f.signature);
+  const sigParts = Array.isArray(signature)
+    ? signature.flatMap((s) => [s?.name, hexHueBucket(s?.hex)])
+    : [];
+  return join([f.name, f.slug, ...tagsOf(f), ...sigParts, mood.key_hue, mood.temperature]);
 }
 
 function artBlob(f) {
