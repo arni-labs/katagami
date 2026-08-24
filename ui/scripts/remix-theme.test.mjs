@@ -295,6 +295,68 @@ assert.deepEqual(
   ["blue"],
 );
 
+const isRoot = ":is(:root) { --blue:#f00 }";
+assert.equal(
+  isRoot,
+  ":is(:root) { --blue:#f00 }",
+  "replay must keep :is(:root); do not hide by rewriting to :root {",
+);
+assert.equal(
+  [...isRoot.matchAll(/:root\s*\{/gi)].length,
+  0,
+  "an opener that dies on ) after :root misses :is(:root)",
+);
+assert.deepEqual(extractRootDecls(isRoot).map(([name]) => name), ["blue"]);
+assert.match(compositionBindDecls(isRoot, roles, hero).join(";"), /--blue:#FF3D9E/);
+
+const whereRoot = ":where(:root, :host) { --blue:#f00 }";
+assert.equal(
+  whereRoot,
+  ":where(:root, :host) { --blue:#f00 }",
+  "replay must keep :where(:root, :host); do not hide by rewriting to :root {",
+);
+assert.deepEqual(extractRootDecls(whereRoot).map(([name]) => name), ["blue"]);
+assert.match(compositionBindDecls(whereRoot, roles, hero).join(";"), /--blue:#FF3D9E/);
+
+const notRoot = ":not(:root) { --blue:#f00 }";
+assert.equal(
+  notRoot,
+  ":not(:root) { --blue:#f00 }",
+  "replay must keep :not(:root); do not hide the opposite case",
+);
+assert.match(notRoot, /:not\(:root\) \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(notRoot), []);
+assert.doesNotMatch(compositionBindDecls(notRoot, roles, hero).join(";"), /--blue:/);
+
+const textareaStyle = "<textarea><style>:root { --blue:#f00 }</style></textarea>";
+assert.equal(
+  textareaStyle,
+  "<textarea><style>:root { --blue:#f00 }</style></textarea>",
+  "replay must keep <style> inside textarea; do not hide by deleting it",
+);
+assert.match(
+  textareaStyle,
+  /<textarea><style>:root \{ --blue:#f00 \}<\/style><\/textarea>/,
+);
+assert.ok(
+  /<style>:root \{ --blue:#f00 \}<\/style>/.test(textareaStyle),
+  "today's style-tag harvest would still see the inner :root",
+);
+assert.deepEqual(extractRootDecls(textareaStyle), []);
+assert.doesNotMatch(
+  compositionBindDecls(textareaStyle, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const textareaAndLive =
+  "<textarea><style>:root { --forged:#00ff00 }</style></textarea><style>:is(:root) { --blue:#2A5BD7 }</style>";
+assert.match(textareaAndLive, /<textarea><style>:root \{ --forged:#00ff00 \}<\/style><\/textarea>/);
+assert.match(textareaAndLive, /:is\(:root\) \{ --blue:#2A5BD7 \}/);
+assert.deepEqual(
+  extractRootDecls(textareaAndLive).map(([name]) => name),
+  ["blue"],
+);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

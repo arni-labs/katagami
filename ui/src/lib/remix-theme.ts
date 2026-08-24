@@ -229,6 +229,31 @@ function scanStyleEnd(src: string, start: number): number {
   return -1;
 }
 
+/** Raw-text / inert markup. Inner `<style>` is not a live stylesheet. */
+const NON_STYLESHEET_TEXT_TAGS = new Set([
+  "script",
+  "textarea",
+  "title",
+  "xmp",
+  "iframe",
+  "noembed",
+  "noscript",
+  "plaintext",
+  "template",
+]);
+
+function skipToCloseTag(html: string, start: number, tag: string): number {
+  const close = `</${tag}>`;
+  let i = start;
+  while (i < html.length) {
+    if (html.slice(i, i + close.length).toLowerCase() === close) {
+      return i + close.length;
+    }
+    i += 1;
+  }
+  return html.length;
+}
+
 const CSS_VALUE_ATTRS = new Set([
   "style",
   "fill",
@@ -262,13 +287,12 @@ function extractCssConsumptionSurfaces(html: string): string[] {
       continue;
     }
     let tagEnd = tagStart;
-    while (tagEnd < html.length && /[a-z0-9:-]/.test(html[tagEnd])) tagEnd += 1;
-    const tag = html.slice(tagStart, tagEnd);
-    if (tag === "script") {
+    while (tagEnd < html.length && /[A-Za-z0-9:-]/.test(html[tagEnd])) tagEnd += 1;
+    const tag = html.slice(tagStart, tagEnd).toLowerCase();
+    if (NON_STYLESHEET_TEXT_TAGS.has(tag)) {
       const gt = findHtmlTagClose(html, tagEnd);
       if (gt === -1) break;
-      const close = html.indexOf("</script>", gt + 1);
-      i = close === -1 ? html.length : close + 9;
+      i = skipToCloseTag(html, gt + 1, tag);
       continue;
     }
     if (tag === "style") {
@@ -354,9 +378,8 @@ function extractStylesheetTexts(html: string): string[] {
       i = afterOpen;
       continue;
     }
-    if (tag === "script") {
-      const close = html.indexOf("</script>", afterOpen);
-      i = close === -1 ? html.length : close + 9;
+    if (NON_STYLESHEET_TEXT_TAGS.has(tag)) {
+      i = skipToCloseTag(html, afterOpen, tag);
       continue;
     }
     if (tag === "style") {
@@ -474,16 +497,99 @@ function parseCssDeclarations(body: string): Array<[string, string]> {
   return decls;
 }
 
+function selectorRegionStart(src: string, pos: number): number {
+  let start = 0;
+  let i = 0;
+  while (i < pos) {
+    const skipped = skipCssConstruct(src, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (src[i] === "{" || src[i] === "}") start = i + 1;
+    i += 1;
+  }
+  return start;
+}
+
+/** Functional wrappers around a `:root` token, innermost last. */
+function wrappingFns(src: string, pos: number): string[] {
+  const stack: string[] = [];
+  let i = selectorRegionStart(src, pos);
+  while (i < pos) {
+    if (/\s/.test(src[i])) {
+      i += 1;
+      continue;
+    }
+    const skipped = skipCssConstruct(src, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (src[i] === ")") {
+      stack.pop();
+      i += 1;
+      continue;
+    }
+    if (src[i] === "(") {
+      stack.push("");
+      i += 1;
+      continue;
+    }
+    let nameStart = i;
+    if (src[i] === ":") {
+      if (src[i + 1] === ":") {
+        i += 2;
+        continue;
+      }
+      nameStart = i + 1;
+      i += 1;
+    }
+    if (i < src.length && /[A-Za-z_-]/.test(src[i])) {
+      while (i < src.length && isCssIdentContinue(src[i])) i += 1;
+      const name = src.slice(nameStart, i).toLowerCase();
+      const after = skipCssTrivia(src, i);
+      if (src[after] === "(") {
+        stack.push(name);
+        i = after + 1;
+        continue;
+      }
+      continue;
+    }
+    i += 1;
+  }
+  return stack;
+}
+
+const ANY_OF_PSEUDO = new Set(["is", "where", "matches", "any", "-webkit-any"]);
+
+/** True when this `:root` token still selects :root after wrappers. */
+function rootTokenMatchesRoot(fns: string[]): boolean {
+  let match = true;
+  for (const fn of fns) {
+    if (!fn || ANY_OF_PSEUDO.has(fn)) continue;
+    if (fn === "not") {
+      match = !match;
+      continue;
+    }
+    return false;
+  }
+  return match;
+}
+
 /**
- * `{` that opens a rule whose selector includes `:root`.
- * `:root, :host {` is a real rule. `:not(:root)` is an argument, not a rule.
+ * `{` that opens a rule that matches `:root`.
+ * `:root, :host {`, `:is(:root) {`, and `:where(:root, :host) {` bind.
+ * `:not(:root) {` does not.
  */
 function rootRuleOpenBrace(src: string, i: number): number {
   if (src.slice(i, i + 5).toLowerCase() !== ":root") return -1;
   if (i > 0 && src[i - 1] === ":") return -1;
   if (isCssIdentContinue(src[i + 5])) return -1;
+  const fns = wrappingFns(src, i);
+  if (!rootTokenMatchesRoot(fns)) return -1;
   let j = i + 5;
-  let depth = 0;
+  let depth = fns.length;
   while (j < src.length) {
     if (/\s/.test(src[j])) {
       j += 1;
@@ -501,8 +607,8 @@ function rootRuleOpenBrace(src: string, i: number): number {
       continue;
     }
     if (ch === ")") {
-      if (depth === 0) return -1;
       depth -= 1;
+      if (depth < 0) return -1;
       j += 1;
       continue;
     }
@@ -516,8 +622,10 @@ function rootRuleOpenBrace(src: string, i: number): number {
 /**
  * Pull `--name: value` pairs out of every real `:root` rule in stylesheet
  * text. HTML body text that looks like `:root { … }` is not a rule. A
- * selector list (`:root, :host {`) is. A `:root` buried in a comment or
- * string is not. Must survive `}` inside `url("…<svg></svg>…")`.
+ * selector list (`:root, :host {`) or functional wrapper (`:is(:root) {`)
+ * is. `:not(:root)` is not. A `:root` buried in a comment, string, or
+ * raw-text `<style>` (textarea) is not. Must survive `}` inside
+ * `url("…<svg></svg>…")`.
  */
 function extractRootDeclsFromCss(css: string): Array<[string, string]> {
   const decls: Array<[string, string]> = [];
