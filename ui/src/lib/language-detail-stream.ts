@@ -6,10 +6,11 @@
  *             is legal from language fields (landing+dashboard). The page
  *             must not await them. This replay is separate from [] / throw.
  * `empty`   — no landing/dashboard: do not mount (page-dark). Resolved
- *             `[]` / throw is also empty: dark, and that result path must
- *             never have painted LanguageSectionSkeleton. Wrapping the
- *             catalog fetch in fallback={skeleton} is leftover — a thrown
- *             list would pulse first.
+ *             `[]` / throw is also empty: dark. That rendered island must
+ *             not contain two h-72. A sibling LanguageSectionSkeleton
+ *             hidden later with :has is leftover — replay 2 still painted
+ *             the pulse. Wrapping the catalog fetch in fallback={skeleton}
+ *             is also leftover — a thrown list would pulse first.
  * `unknown` — page fields cannot tell. A pulse would collapse. No pulse.
  *
  * Remix: landing+dashboard (same filter as toLanguageOpts) is known before
@@ -18,10 +19,11 @@
  * Missing landing/dashboard is empty (do not mount).
  *
  * Catalogs and the pending pulse belong to the remix island so first paint
- * is not held on route `loading.tsx`. The island paints the pending pulse
- * from language fields; the fetch stays fallback={null}. A page-level
- * `fallback={null}` is leftover (2). Awaiting catalogs on
- * LanguageDetailPage is leftover (1).
+ * is not held on route `loading.tsx`. LanguageRemixIsland paints from
+ * remixIslandPaint(outcome): omitted catalogs pulse; [] / throw is null.
+ * Those are two renders of the same island, not one sibling plus a hide.
+ * A page-level remix `fallback={null}` is leftover (2). Awaiting catalogs
+ * on LanguageDetailPage is leftover (1).
  *
  * Lineage / related: no field on this page proves they will render.
  * parent_ids may be unpublished (ARN-331); children and neighbours need a

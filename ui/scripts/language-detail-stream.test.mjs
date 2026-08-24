@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { transform } from "sucrase";
 import {
   canRemixLanguage,
   identityStreamOutcome,
@@ -320,43 +322,36 @@ assert.doesNotMatch(
 );
 assert.match(
   remixSrc,
-  /remixStreamOutcome\(lang\)/,
-  "1: island pending paint uses language fields, not canRemixLanguage",
+  /remixStreamOutcome\(lang, catalogs\)/,
+  "island paint uses catalogs when present — [] / throw is not the pending tree",
 );
 assert.match(
   remixSrc,
-  /data-remix-pulse/,
-  "1: Bluet in-flight paints LanguageSectionSkeleton from language fields",
+  /remixIslandPaint/,
+  "island paint is remixIslandPaint, not a sibling pulse plus a hide",
 );
-assert.ok(
-  remixSrc.indexOf("<LanguageSectionSkeleton") <
-    remixSrc.indexOf("await loadLanguageRemixCatalogs()"),
-  "1: pulse cannot wait until catalogs / canRemixLanguage",
-);
-assert.match(
+assert.doesNotMatch(
   remixSrc,
-  /<Suspense fallback=\{null\}>/,
-  "2: catalog fetch stays dark — [] / throw never enter a pulsing Suspense",
+  /:has\(/,
+  "do not hide two h-72 with :has after [] / throw and call replay 2 closed",
 );
+assert.doesNotMatch(remixSrc, /data-remix-empty/);
+assert.doesNotMatch(remixSrc, /data-remix-pulse/);
 assert.doesNotMatch(
   remixSrc,
   /<Suspense fallback=\{<LanguageSectionSkeleton/,
-  "2: do not wrap the fetch that can resolve empty or throw",
+  "do not wrap the fetch that can resolve empty or throw",
 );
+assert.match(
+  pageSrc,
+  /fallback=\{<LanguageRemixIsland/,
+  "2: Bluet pending is LanguageRemixIsland with catalogs omitted",
+);
+assert.match(pageSrc, /LanguageRemixIslandResolved/);
 assert.match(
   remixSrc,
   /await loadLanguageRemixCatalogs\(\)/,
-  "pending vs empty is decided where the catalog fetch runs",
-);
-assert.doesNotMatch(
-  remixSrc,
-  /return <LanguageSectionSkeleton/,
-  "resolved [] / throw must not keep LanguageSectionSkeleton up",
-);
-assert.match(
-  remixSrc,
-  /data-remix-empty/,
-  "2: [] / throw settle empty — hide the pending pulse, no lane",
+  "lists run in LanguageRemixIslandResolved, not on the page",
 );
 assert.match(
   loadingSrc,
@@ -417,6 +412,120 @@ assert.doesNotMatch(
   "page must not turn remix pending into a page-level LanguageSectionSkeleton",
 );
 
+const nodeRequire = createRequire(import.meta.url);
+const React = nodeRequire("react");
+const { renderToStaticMarkup } = nodeRequire("react-dom/server");
+const jsxRuntime = nodeRequire("react/jsx-runtime");
+
+function loadTsx(filePath, mocks = {}) {
+  const src = fs.readFileSync(filePath, "utf8");
+  const { code } = transform(src, {
+    transforms: ["typescript", "jsx", "imports"],
+    jsxRuntime: "automatic",
+    production: true,
+    filePath,
+  });
+  const mod = { exports: {} };
+  new Function("require", "module", "exports", code)(
+    (spec) => {
+      if (Object.hasOwn(mocks, spec)) return mocks[spec];
+      if (spec === "react/jsx-runtime") return jsxRuntime;
+      if (spec === "react") return React;
+      return nodeRequire(spec);
+    },
+    mod,
+    mod.exports,
+  );
+  return mod.exports;
+}
+
+const skeletonMod = loadTsx(
+  path.join(here, "../src/components/gallery-skeleton.tsx"),
+);
+const streamForIsland = await import("../src/lib/language-detail-stream.ts");
+const islandMod = loadTsx(
+  path.join(here, "../src/components/language-remix-section.tsx"),
+  {
+    "@/lib/odata": {
+      listPaletteSystems: async () => {
+        throw new Error("replay must not fetch to paint");
+      },
+      listArtStyles: async () => {
+        throw new Error("replay must not fetch to paint");
+      },
+    },
+    "@/lib/remix-options": {
+      toLanguageOpts: () => [],
+      toPaletteOpts: () => [],
+      toArtOpts: () => [],
+    },
+    "@/lib/language-detail-stream": streamForIsland,
+    "@/components/gallery-skeleton": skeletonMod,
+    "@/components/remix/inline-remix": { InlineRemix: () => null },
+    "@/components/remix/remix-lane-blurb": { RemixLaneBlurb: () => null },
+    "@/components/scrapbook": {
+      SectionHeading: ({ children }) => children,
+      Perforation: () => null,
+    },
+  },
+);
+
+function renderIsland(language, catalogs) {
+  const props =
+    catalogs === undefined
+      ? { lang: language }
+      : { lang: language, catalogs };
+  return renderToStaticMarkup(
+    React.createElement(islandMod.LanguageRemixIsland, props),
+  );
+}
+
+function h72Count(html) {
+  return (html.match(/h-72/g) || []).length;
+}
+
+const bluetPendingHtml = renderIsland(bluet);
+assert.match(
+  bluetPendingHtml,
+  /h-72/,
+  "replay 1: rendered Bluet in-flight paints LanguageSectionSkeleton",
+);
+assert.equal(
+  h72Count(bluetPendingHtml),
+  2,
+  "replay 1: DetailPulseShell is two h-72 from fields, before canRemixLanguage",
+);
+
+const bluetEmptyHtml = renderIsland(bluet, { palettes: [], arts: [] });
+assert.equal(
+  h72Count(bluetEmptyHtml),
+  0,
+  "replay 2: rendered [] must not paint two h-72",
+);
+assert.doesNotMatch(
+  bluetEmptyHtml,
+  /try a remix/,
+  "do not fake a remix lane after []",
+);
+
+const thrownCatalogs = await resolveRemixCatalogs(
+  async () => {
+    throw new Error("listPaletteSystems failed");
+  },
+  async () => {
+    throw new Error("listArtStyles failed");
+  },
+);
+const bluetThrowHtml = renderIsland(bluet, thrownCatalogs);
+assert.equal(
+  h72Count(bluetThrowHtml),
+  0,
+  "replay 2: rendered throw must not paint two h-72",
+);
+assert.doesNotMatch(bluetThrowHtml, /try a remix/, "do not fake a remix lane after throw");
+
+assert.equal(h72Count(renderIsland(noLanding)), 0, "no landing: rendered island is dark");
+
 console.log(
-  "language-detail stream: replay 1 Bluet in-flight pulses; replay 2 [] / throw never h-72; page unblocked",
+  "language-detail stream: rendered island — replay 1 pulses; replay 2 never h-72; page unblocked",
 );

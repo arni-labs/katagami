@@ -1,4 +1,4 @@
-import { cache, Suspense } from "react";
+import { cache } from "react";
 import {
   listPaletteSystems,
   listArtStyles,
@@ -7,6 +7,8 @@ import {
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import {
   canRemixLanguage,
+  remixIslandPaint,
+  remixPageMountsIsland,
   remixStreamOutcome,
   type RemixCatalogs,
 } from "@/lib/language-detail-stream";
@@ -24,45 +26,45 @@ export const loadLanguageRemixCatalogs = cache(async () => {
 });
 
 /**
- * Sync: page first paint is not blocked. Pending pulse is painted from
- * language fields (landing + dashboard) — it does not wait for
- * canRemixLanguage. The catalog fetch stays behind fallback={null} so
- * [] / throw never enter a pulsing Suspense (that leftover is closed).
+ * Sync island paint. Catalogs omitted = pending: LanguageSectionSkeleton
+ * from landing+dashboard, before canRemixLanguage. Catalogs `[]` / throw
+ * (catch-to-`[]`) = empty: null — no sibling pulse, no two h-72.
  *
- * Settled empty hides the pending pulse. Settled lane replaces it.
- * Those are separate replays from the in-flight pulse.
+ * The page does not pass catalogs. It streams LanguageRemixIslandResolved
+ * behind fallback={this} so Bluet in-flight still pulses without awaiting
+ * on LanguageDetailPage.
  */
-export function LanguageRemixIsland({ lang }: { lang: DesignLanguage }) {
-  if (remixStreamOutcome(lang) === "empty") return null;
-
-  return (
-    <div data-remix-island="">
-      <style>{`[data-remix-island]:has([data-remix-empty]){display:none}[data-remix-island]:has([data-remix-ready]) [data-remix-pulse]{display:none}`}</style>
-      <div data-remix-pulse>
-        <LanguageSectionSkeleton />
-      </div>
-      <Suspense fallback={null}>
-        <RemixCatalogGate lang={lang} />
-      </Suspense>
-    </div>
+export function LanguageRemixIsland({
+  lang,
+  catalogs,
+}: {
+  lang: DesignLanguage;
+  catalogs?: RemixCatalogs;
+}) {
+  const pageOutcome = remixStreamOutcome(lang);
+  const outcome = remixStreamOutcome(lang, catalogs);
+  const paint = remixIslandPaint(
+    outcome,
+    remixPageMountsIsland(pageOutcome),
   );
+  if (paint === "dark") return null;
+  if (paint === "pulse") return <LanguageSectionSkeleton />;
+  return <LanguageRemixSection lang={lang} catalogs={catalogs} />;
 }
 
-async function RemixCatalogGate({ lang }: { lang: DesignLanguage }) {
+/** Lists, then the same island. Empty / throw paints dark — not a hide. */
+export async function LanguageRemixIslandResolved({
+  lang,
+}: {
+  lang: DesignLanguage;
+}) {
   let catalogs: RemixCatalogs;
   try {
     catalogs = await loadLanguageRemixCatalogs();
   } catch {
-    return <span data-remix-empty hidden />;
+    catalogs = { palettes: [], arts: [] };
   }
-  if (!canRemixLanguage(lang, catalogs.palettes, catalogs.arts)) {
-    return <span data-remix-empty hidden />;
-  }
-  return (
-    <div data-remix-ready>
-      <LanguageRemixSection lang={lang} catalogs={catalogs} />
-    </div>
-  );
+  return <LanguageRemixIsland lang={lang} catalogs={catalogs} />;
 }
 
 export async function LanguageRemixSection({
