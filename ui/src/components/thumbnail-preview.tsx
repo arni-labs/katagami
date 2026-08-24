@@ -28,7 +28,9 @@ let activeLoads = 0;
 let activePreloads = 0;
 const MAX_CONCURRENT_THUMBNAILS = 6;
 const MAX_CONCURRENT_PRELOADS = 4;
-const THUMBNAIL_LOAD_TIMEOUT_MS = 30000;
+// A cold `/api/file` 404 has been measured at ~12s. Holding a queue slot that
+// long stalls the rest of the gallery. Working thumbs are 350–600ms.
+const THUMBNAIL_LOAD_TIMEOUT_MS = 8000;
 // Load ~one viewport ahead, prefetch ~two. The previous 3200px/12000px margins
 // eagerly decoded/fetched dozens of off-screen thumbnails during a scroll,
 // churning memory for images the user might never reach.
@@ -87,7 +89,9 @@ function drainPreloadQueue() {
     const url = preloadQueue.shift();
     if (!url || preloadedUrls.has(url)) continue;
     activePreloads += 1;
-    fetch(url, { cache: "force-cache" })
+    const ac = new AbortController();
+    const timer = window.setTimeout(() => ac.abort(), THUMBNAIL_LOAD_TIMEOUT_MS);
+    fetch(url, { cache: "force-cache", signal: ac.signal })
       .then(async (res) => {
         if (res.ok) {
           await res.arrayBuffer();
@@ -96,6 +100,7 @@ function drainPreloadQueue() {
       })
       .catch(() => undefined)
       .finally(() => {
+        window.clearTimeout(timer);
         preloadingUrls.delete(url);
         activePreloads = Math.max(0, activePreloads - 1);
         drainPreloadQueue();
@@ -155,6 +160,7 @@ function getThumbnailPreloadObserver(): IntersectionObserver | null {
 export function ThumbnailPreview({
   fileId,
   src: assetSrc,
+  srcs,
   alt,
   placeholderTint,
   paletteColors = [],
@@ -162,6 +168,7 @@ export function ThumbnailPreview({
 }: {
   fileId?: string;
   src?: string;
+  srcs?: string[];
   alt: string;
   placeholderTint: string;
   paletteColors?: string[];
@@ -172,7 +179,32 @@ export function ThumbnailPreview({
   const queuedRef = useRef(false);
   const [shouldLoad, setShouldLoad] = useState(eager);
   const [failed, setFailed] = useState(false);
-  const src = assetSrc ?? (fileId ? getFileUrl(fileId) : "");
+  const [loaded, setLoaded] = useState(false);
+  const [srcIndex, setSrcIndex] = useState(0);
+  const sources =
+    srcs && srcs.length > 0
+      ? srcs
+      : assetSrc
+        ? [assetSrc]
+        : fileId
+          ? [getFileUrl(fileId)]
+          : [];
+  const src = sources[srcIndex] ?? "";
+
+  const finishThumbnailLoad = () => {
+    loadTicketRef.current?.finish();
+    loadTicketRef.current = null;
+  };
+
+  const advanceOrFail = () => {
+    finishThumbnailLoad();
+    setLoaded(false);
+    if (srcIndex + 1 < sources.length) {
+      setSrcIndex((i) => i + 1);
+      return;
+    }
+    setFailed(true);
+  };
 
   useEffect(() => {
     if (!src) return;
@@ -226,10 +258,11 @@ export function ThumbnailPreview({
     };
   }, [eager, src]);
 
-  const finishThumbnailLoad = () => {
-    loadTicketRef.current?.finish();
-    loadTicketRef.current = null;
-  };
+  useEffect(() => {
+    if (!src || !shouldLoad || failed || loaded) return;
+    const timer = window.setTimeout(advanceOrFail, THUMBNAIL_LOAD_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [src, shouldLoad, failed, loaded, srcIndex]);
 
   return (
     <div ref={rootRef} className="absolute inset-0">
@@ -243,6 +276,7 @@ export function ThumbnailPreview({
         // draft/admin previews where governed file access is still expected.
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          key={src}
           src={src}
           alt={alt}
           width={600}
@@ -256,11 +290,9 @@ export function ThumbnailPreview({
           onLoad={() => {
             preloadedUrls.add(src);
             finishThumbnailLoad();
+            setLoaded(true);
           }}
-          onError={() => {
-            finishThumbnailLoad();
-            setFailed(true);
-          }}
+          onError={advanceOrFail}
         />
       )}
     </div>

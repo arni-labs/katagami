@@ -186,7 +186,32 @@ async function TeaserGallery() {
   );
 }
 
-async function GalleryGrid({ demo }: { demo?: boolean }) {
+type HomeSearch = Promise<{
+  status?: string;
+  taxonomy?: string;
+  q?: string;
+  tag?: string;
+  hue?: string;
+  src?: string;
+  demo?: string;
+}>;
+
+async function PublishedLanguageCount() {
+  const languageCount = await countDesignLanguages("Status eq 'Published'");
+  return (
+    <span className="font-bold tabular-nums text-foreground">
+      {languageCount}
+    </span>
+  );
+}
+
+async function GalleryGrid({
+  searchParams,
+}: {
+  searchParams: HomeSearch;
+}) {
+  const sp = await searchParams;
+  const demo = sp.demo !== undefined && sp.demo !== "0" && sp.demo !== "false";
   // Teaser applies to anonymous visitors unconditionally — including ?demo=1,
   // which must not become a sign-in bypass; demo only turns delete controls
   // off, never widens visibility.
@@ -231,25 +256,11 @@ async function GalleryGrid({ demo }: { demo?: boolean }) {
 }
 
 
-export default async function GalleryPage({
+export default function GalleryPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    status?: string;
-    taxonomy?: string;
-    q?: string;
-    tag?: string;
-    hue?: string;
-    src?: string;
-    demo?: string;
-  }>;
+  searchParams: HomeSearch;
 }) {
-  const sp = await searchParams;
-  const demo = sp.demo !== undefined && sp.demo !== "0" && sp.demo !== "false";
-  // The published-language count uses OData $count (no rows), so the Gallery
-  // header's figure renders immediately without waiting on the streamed gallery.
-  const languageCount = await countDesignLanguages("Status eq 'Published'");
-
   return (
     <div className="w-full overflow-x-hidden">
       {/* ── Hero: full-bleed print bed — the ink connects to the header
@@ -335,9 +346,15 @@ export default async function GalleryPage({
               Gallery
             </h2>
             <span className="font-mono text-[12px] uppercase tracking-[0.16em] text-muted-foreground">
-              <span className="font-bold tabular-nums text-foreground">
-                {languageCount}
-              </span>{" "}
+              <Suspense
+                fallback={
+                  <span className="font-bold tabular-nums text-foreground">
+                    …
+                  </span>
+                }
+              >
+                <PublishedLanguageCount />
+              </Suspense>{" "}
               languages
             </span>
           </div>
@@ -356,7 +373,7 @@ export default async function GalleryPage({
             </div>
           }
         >
-          <GalleryGrid demo={demo} />
+          <GalleryGrid searchParams={searchParams} />
         </Suspense>
       </section>
       </div>
