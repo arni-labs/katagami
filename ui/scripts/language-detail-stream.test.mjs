@@ -7,6 +7,7 @@ import {
   identityStreamOutcome,
   languageHasRemixComposition,
   resolveRemixCatalogs,
+  remixIslandEverSkeleton,
   remixIslandPaint,
   remixPageMountsIsland,
   remixStreamOutcome,
@@ -122,6 +123,7 @@ async function islandAfterLists(language, listPalettes, listArts) {
     showLane: paint === "lane",
     fetch: true,
     foreverSkeleton: paint === "pulse" && outcome !== "pending",
+    everSkeleton: remixIslandEverSkeleton(failed ? "empty" : outcome, true),
   };
 }
 
@@ -159,14 +161,28 @@ const caught = await islandAfterLists(
     throw new Error("listArtStyles failed");
   },
 );
-assert.equal(caught.showLane, false, "3: do not invent a fake remix lane after []");
-assert.equal(caught.paint, "dark", "5: throw listArtStyles → slot goes dark");
-assert.equal(caught.foreverSkeleton, false, "5: resolved throw is not a forever skeleton");
+assert.equal(caught.showLane, false, "do not invent a fake remix lane after []");
+assert.equal(caught.paint, "dark", "throw listArtStyles → slot goes dark");
+assert.equal(caught.foreverSkeleton, false, "throw is not a forever skeleton");
+assert.equal(
+  caught.everSkeleton,
+  false,
+  "throw must never have painted two h-72",
+);
 
 const emptyLists = await islandAfterLists(bluet, async () => [], async () => []);
-assert.equal(emptyLists.showLane, false, "3: [] is not a remix lane");
-assert.equal(emptyLists.paint, "dark", "5: resolved [] → slot goes dark");
-assert.equal(emptyLists.foreverSkeleton, false, "5: resolved [] is not a forever skeleton");
+assert.equal(emptyLists.showLane, false, "[] is not a remix lane");
+assert.equal(emptyLists.paint, "dark", "resolved [] → slot goes dark");
+assert.equal(emptyLists.foreverSkeleton, false);
+assert.equal(
+  emptyLists.everSkeleton,
+  false,
+  "[] must never have painted two h-72",
+);
+
+assert.equal(remixIslandEverSkeleton("pending", true), true, "Bluet in-flight may pulse");
+assert.equal(remixIslandEverSkeleton("empty", true), false, "empty path never painted a skeleton");
+assert.equal(remixIslandEverSkeleton("render", true), true);
 
 assert.equal(
   remixIslandPaint("pending", true),
@@ -300,8 +316,13 @@ assert.doesNotMatch(
 );
 assert.match(
   remixSrc,
+  /<Suspense fallback=\{null\}>/,
+  "catalog fetch must be dark — empty/throw never show LanguageSectionSkeleton",
+);
+assert.match(
+  remixSrc,
   /<Suspense fallback=\{<LanguageSectionSkeleton/,
-  "2: island paints the #245 pulse while listArtStyles is in flight",
+  "2: after catalogs prove a lane, in-flight lane work still pulses",
 );
 assert.match(
   remixSrc,
@@ -311,17 +332,17 @@ assert.match(
 assert.doesNotMatch(
   remixSrc,
   /return <LanguageSectionSkeleton/,
-  "5: resolved [] / throw must not keep LanguageSectionSkeleton up",
+  "resolved [] / throw must not keep LanguageSectionSkeleton up",
 );
-assert.match(
-  remixSrc,
-  /\} catch \{\s*\/\/ Resolved throw[\s\S]*return null;/,
-  "5: throw after the fetch settles to dark",
+assert.ok(
+  remixSrc.indexOf("await loadLanguageRemixCatalogs()") <
+    remixSrc.indexOf("fallback={<LanguageSectionSkeleton"),
+  "do not pulse the fetch that can resolve empty or throw",
 );
-assert.match(
-  remixSrc,
-  /if \(!canRemixLanguage\([^)]*\)\) \{\s*\/\/ Resolved \[\][\s\S]*return null;/,
-  "5: resolved [] goes dark after the fetch, not during pending",
+assert.ok(
+  remixSrc.indexOf("if (!canRemixLanguage") <
+    remixSrc.indexOf("fallback={<LanguageSectionSkeleton"),
+  "LanguageSectionSkeleton is only on the path that already excluded [] / throw",
 );
 assert.match(
   loadingSrc,
@@ -383,5 +404,5 @@ assert.doesNotMatch(
 );
 
 console.log(
-  "language-detail stream: five holds — first paint, island pulse, no fake lane, no-landing, resolved empty is dark",
+  "language-detail stream: no h-72 on throw/[]; Bluet in-flight still pulses; page unblocked",
 );

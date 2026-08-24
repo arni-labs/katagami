@@ -2,11 +2,11 @@
  * When a language-detail Suspense island may paint a pulse.
  *
  * `render`  — the island will produce UI. Pulse is legal.
- * `pending` — catalogs are in flight. The remix island pulses. The page
- *             must not await them and must not use fallback={null} for remix.
- * `empty`   — no landing/dashboard: do not mount (page-dark). Inside a
- *             mounted island, resolved `[]` / throw is also empty: go
- *             dark (no lane, no skeleton). A forever pulse is a lying shell.
+ * `pending` — catalogs are in flight and have not resolved empty. Pulse
+ *             is legal on the lane path. The page must not await them.
+ * `empty`   — no landing/dashboard: do not mount (page-dark). Resolved
+ *             `[]` / throw is also empty: dark, and must never have
+ *             painted LanguageSectionSkeleton. Pulse-then-unmount is leftover.
  * `unknown` — page fields cannot tell. A pulse would collapse. No pulse.
  *
  * Remix: landing+dashboard (same filter as toLanguageOpts) is known before
@@ -42,8 +42,7 @@ export function remixPageMountsIsland(outcome: StreamOutcome): boolean {
 
 /**
  * Paint inside a mounted remix island.
- * Pending (fetch in flight) pulses. Render is the lane. Resolved empty
- * (`[]` or throw) is dark — not a forever skeleton, not a fake lane.
+ * Pending pulses. Render is the lane. Resolved empty is dark.
  * Unmounted (no landing) is dark.
  */
 export function remixIslandPaint(
@@ -54,6 +53,19 @@ export function remixIslandPaint(
   if (outcome === "render") return "lane";
   if (outcome === "pending") return "pulse";
   return "dark";
+}
+
+/**
+ * Whether LanguageSectionSkeleton may ever paint on this outcome.
+ * Pending / render: yes (in-flight, then lane). Empty / throw: no —
+ * that path must not flash two h-72 then go dark.
+ */
+export function remixIslandEverSkeleton(
+  outcome: StreamOutcome,
+  mounted: boolean,
+): boolean {
+  if (!mounted) return false;
+  return outcome === "pending" || outcome === "render";
 }
 
 function parseJson<T = unknown>(raw?: unknown): T | null {
