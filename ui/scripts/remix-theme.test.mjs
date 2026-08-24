@@ -552,6 +552,67 @@ assert.doesNotMatch(
   /--blue:/,
 );
 
+const isBefore = ":root:is(:before) { --blue:#f00 }";
+assert.equal(
+  isBefore,
+  ":root:is(:before) { --blue:#f00 }",
+  "replay must keep :root:is(:before); do not hide by rewriting to :root:before",
+);
+assert.match(isBefore, /:root:is\(:before\) \{ --blue:#f00 \}/);
+assert.ok(
+  /:is\(:before\)/.test(isBefore),
+  "today's gate would still miss a PE nested in :is()",
+);
+assert.deepEqual(extractRootDecls(isBefore), []);
+assert.doesNotMatch(compositionBindDecls(isBefore, roles, hero).join(";"), /--blue:/);
+
+const isDblBefore = ":root:is(::before) { --blue:#f00 }";
+assert.equal(
+  isDblBefore,
+  ":root:is(::before) { --blue:#f00 }",
+  "replay must keep :root:is(::before); do not hide by rewriting to :root::before",
+);
+assert.match(isDblBefore, /:root:is\(::before\) \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(isDblBefore), []);
+assert.doesNotMatch(
+  compositionBindDecls(isDblBefore, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const rootSelection = ":root:selection { --blue:#f00 }";
+assert.equal(
+  rootSelection,
+  ":root:selection { --blue:#f00 }",
+  "replay must keep :root:selection; do not hide by rewriting to :root::selection",
+);
+assert.match(rootSelection, /:root:selection \{ --blue:#f00 \}/);
+assert.doesNotMatch(rootSelection, /::selection/);
+assert.deepEqual(extractRootDecls(rootSelection), []);
+assert.doesNotMatch(
+  compositionBindDecls(rootSelection, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const rootCue = ":root:cue { --blue:#f00 }";
+assert.equal(rootCue, ":root:cue { --blue:#f00 }");
+assert.match(rootCue, /:root:cue \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(rootCue), []);
+assert.doesNotMatch(compositionBindDecls(rootCue, roles, hero).join(";"), /--blue:/);
+
+const rootDblSelection = ":root::selection { --blue:#f00 }";
+assert.equal(rootDblSelection, ":root::selection { --blue:#f00 }");
+assert.match(rootDblSelection, /:root::selection \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(rootDblSelection), []);
+assert.doesNotMatch(
+  compositionBindDecls(rootDblSelection, roles, hero).join(";"),
+  /--blue:/,
+);
+
+assert.deepEqual(
+  extractRootDecls(":root:is(:hover) { --blue:#f00 }").map(([name]) => name),
+  ["blue"],
+);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

@@ -860,17 +860,43 @@ function topLevelAlternativeHasCombinator(src: string, rootPos: number): boolean
   return rangeHasCombinator(src, start, end);
 }
 
-const CSS2_PSEUDO_ELEMENTS = new Set([
+const PSEUDO_ELEMENTS = new Set([
   "before",
   "after",
   "first-line",
   "first-letter",
+  "selection",
+  "cue",
+  "cue-region",
+  "marker",
+  "placeholder",
+  "backdrop",
+  "file-selector-button",
+  "part",
+  "slotted",
+  "grammar-error",
+  "spelling-error",
+  "target-text",
+  "highlight",
+  "view-transition",
+  "view-transition-group",
+  "view-transition-image-pair",
+  "view-transition-old",
+  "view-transition-new",
+  "details-content",
+  "picker",
+  "picker-icon",
+  "checkmark",
+  "column",
+  "scroll-marker",
+  "scroll-marker-group",
 ]);
 
 /**
- * `::before` or a CSS2 single-colon pseudo-element (`:before`, `:after`,
- * `:first-line`, `:first-letter`) on the subject sits on the
- * pseudo-element, not on `:root`. `:hover` is a class and still matches.
+ * A pseudo-element on the subject sits on the PE, not on `:root`.
+ * `::` is always a PE. Single-colon PE names (`:before`, `:selection`,
+ * `:cue`) are too. `:is(:before)` / `:where(::before)` still select a PE.
+ * `:hover` is a class. `:is(:root)` as the subject still matches :root.
  */
 function rangeHasPseudoElement(src: string, start: number, end: number): boolean {
   let i = start;
@@ -896,8 +922,14 @@ function rangeHasPseudoElement(src: string, start: number, end: number): boolean
       let k = i + 1;
       if (k < end && /[A-Za-z_-]/.test(src[k])) {
         while (k < end && isCssIdentContinue(src[k])) k += 1;
-        if (CSS2_PSEUDO_ELEMENTS.has(src.slice(i + 1, k).toLowerCase())) {
-          return true;
+        const name = src.slice(i + 1, k).toLowerCase();
+        if (PSEUDO_ELEMENTS.has(name)) return true;
+        const after = skipCssTrivia(src, k);
+        if (ANY_OF_PSEUDO.has(name) && src[after] === "(") {
+          const close = skipParenGroup(src, after);
+          if (rangeHasPseudoElement(src, after + 1, close - 1)) return true;
+          i = close;
+          continue;
         }
         i = k;
         continue;
@@ -927,7 +959,8 @@ function subjectHasPseudoElement(src: string, rootPos: number): boolean {
  * `:root, :host {`, `:is(:root) {`, and `:where(:root, :host) {` bind.
  * `:not(:root) {`, a combinator before `:root`, `:root` as an ancestor,
  * a combinator inside `:is(:root > .x)`, and a pseudo-element on the
- * subject (`:root::before`, `:root:before`) do not.
+ * subject (`:root::before`, `:root:selection`, `:root:is(:before)`)
+ * do not.
  */
 function rootRuleOpenBrace(src: string, i: number): number {
   if (src.slice(i, i + 5).toLowerCase() !== ":root") return -1;
