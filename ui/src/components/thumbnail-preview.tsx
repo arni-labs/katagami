@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getFileUrl } from "@/lib/odata";
+import {
+  advanceThumbnailPreviewState,
+  alignThumbnailPreviewState,
+  thumbnailSourcesKey,
+} from "@/lib/thumbnail-sources";
 
 type Callback = () => void;
 type LoadTicket = {
@@ -189,7 +194,27 @@ export function ThumbnailPreview({
         : fileId
           ? [getFileUrl(fileId)]
           : [];
-  const src = sources[srcIndex] ?? "";
+  const [seenSourcesKey, setSeenSourcesKey] = useState(() =>
+    thumbnailSourcesKey(sources),
+  );
+  const aligned = alignThumbnailPreviewState(sources, {
+    sourcesKey: seenSourcesKey,
+    failed,
+    loaded,
+    srcIndex,
+  });
+  // Reset during render when the src list identity changes. A useEffect would
+  // also unstick, but this render already has to show sources[0] — otherwise
+  // a reused card paints the palette-dot placeholder for a frame (or forever
+  // if the effect is omitted). First-src + length is not the key: see
+  // thumbnailSourcesKey.
+  if (aligned.sourcesKey !== seenSourcesKey) {
+    setSeenSourcesKey(aligned.sourcesKey);
+    setFailed(aligned.failed);
+    setLoaded(aligned.loaded);
+    setSrcIndex(aligned.srcIndex);
+  }
+  const src = aligned.src;
 
   const finishThumbnailLoad = () => {
     loadTicketRef.current?.finish();
@@ -198,12 +223,16 @@ export function ThumbnailPreview({
 
   const advanceOrFail = () => {
     finishThumbnailLoad();
-    setLoaded(false);
-    if (srcIndex + 1 < sources.length) {
-      setSrcIndex((i) => i + 1);
-      return;
-    }
-    setFailed(true);
+    const next = advanceThumbnailPreviewState(sources, {
+      sourcesKey: aligned.sourcesKey,
+      failed: aligned.failed,
+      loaded: aligned.loaded,
+      srcIndex: aligned.srcIndex,
+    });
+    setSeenSourcesKey(next.sourcesKey);
+    setFailed(next.failed);
+    setLoaded(next.loaded);
+    setSrcIndex(next.srcIndex);
   };
 
   useEffect(() => {
@@ -259,14 +288,14 @@ export function ThumbnailPreview({
   }, [eager, src]);
 
   useEffect(() => {
-    if (!src || !shouldLoad || failed || loaded) return;
+    if (!src || !shouldLoad || aligned.failed || aligned.loaded) return;
     const timer = window.setTimeout(advanceOrFail, THUMBNAIL_LOAD_TIMEOUT_MS);
     return () => window.clearTimeout(timer);
-  }, [src, shouldLoad, failed, loaded, srcIndex]);
+  }, [src, shouldLoad, aligned.failed, aligned.loaded, aligned.srcIndex]);
 
   return (
     <div ref={rootRef} className="absolute inset-0">
-      {failed || !shouldLoad || !src ? (
+      {aligned.failed || !shouldLoad || !src ? (
         <ThumbnailPlaceholder
           paletteColors={paletteColors}
           placeholderTint={placeholderTint}
