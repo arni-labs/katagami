@@ -613,6 +613,44 @@ assert.deepEqual(
   ["blue"],
 );
 
+const hasBefore = ":root:has(::before) { --blue:#f00 }";
+assert.equal(
+  hasBefore,
+  ":root:has(::before) { --blue:#f00 }",
+  "replay must keep :root:has(::before); do not hide by rewriting to :root:has(.foo)",
+);
+assert.match(hasBefore, /:root:has\(::before\) \{ --blue:#f00 \}/);
+assert.ok(
+  /:has\(::before\)/.test(hasBefore),
+  "today's :is/:where-only walk would still miss a PE inside :has()",
+);
+assert.deepEqual(extractRootDecls(hasBefore), []);
+assert.doesNotMatch(compositionBindDecls(hasBefore, roles, hero).join(";"), /--blue:/);
+
+const hasFoo = ":root:has(.foo) { --blue:#f00 }";
+assert.equal(
+  hasFoo,
+  ":root:has(.foo) { --blue:#f00 }",
+  "control: :root:has(.foo) is still a :root rule",
+);
+assert.match(hasFoo, /:root:has\(\.foo\) \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(hasFoo).map(([name]) => name), ["blue"]);
+assert.match(compositionBindDecls(hasFoo, roles, hero).join(";"), /--blue:#FF3D9E/);
+
+const webkitScrollbar = ":root:-webkit-scrollbar { --blue:#f00 }";
+assert.equal(
+  webkitScrollbar,
+  ":root:-webkit-scrollbar { --blue:#f00 }",
+  "replay must keep :-webkit-scrollbar; do not hide by rewriting to ::-webkit-scrollbar",
+);
+assert.match(webkitScrollbar, /:root:-webkit-scrollbar \{ --blue:#f00 \}/);
+assert.doesNotMatch(webkitScrollbar, /::-webkit-scrollbar/);
+assert.deepEqual(extractRootDecls(webkitScrollbar), []);
+assert.doesNotMatch(
+  compositionBindDecls(webkitScrollbar, roles, hero).join(";"),
+  /--blue:/,
+);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

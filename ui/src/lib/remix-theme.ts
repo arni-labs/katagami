@@ -562,6 +562,8 @@ function wrappingFns(src: string, pos: number): string[] {
 }
 
 const ANY_OF_PSEUDO = new Set(["is", "where", "matches", "any", "-webkit-any"]);
+/** Walk these for a nested PE. `:has` is not an any-of matcher. */
+const PE_RECURSE_FNS = new Set([...ANY_OF_PSEUDO, "has"]);
 
 /** True when this `:root` token still selects :root after wrappers. */
 function rootTokenMatchesRoot(fns: string[]): boolean {
@@ -890,13 +892,38 @@ const PSEUDO_ELEMENTS = new Set([
   "column",
   "scroll-marker",
   "scroll-marker-group",
+  "-webkit-input-placeholder",
+  "-moz-placeholder",
+  "-ms-input-placeholder",
+  "-webkit-file-upload-button",
+  "-webkit-search-cancel-button",
+  "-webkit-search-decoration",
+  "-webkit-inner-spin-button",
+  "-webkit-outer-spin-button",
+  "-moz-focus-inner",
+  "-webkit-progress-bar",
+  "-webkit-progress-value",
+  "-webkit-slider-thumb",
+  "-webkit-slider-runnable-track",
+  "-moz-range-thumb",
+  "-moz-range-track",
+  "-webkit-details-marker",
+  "-webkit-calendar-picker-indicator",
 ]);
+
+function isPseudoElementName(name: string): boolean {
+  if (PSEUDO_ELEMENTS.has(name)) return true;
+  if (name.startsWith("-webkit-scrollbar")) return true;
+  if (name.startsWith("-moz-scrollbar")) return true;
+  return false;
+}
 
 /**
  * A pseudo-element on the subject sits on the PE, not on `:root`.
  * `::` is always a PE. Single-colon PE names (`:before`, `:selection`,
- * `:cue`) are too. `:is(:before)` / `:where(::before)` still select a PE.
- * `:hover` is a class. `:is(:root)` as the subject still matches :root.
+ * `:cue`) are too. `:is(:before)` / `:has(::before)` still nest a PE.
+ * `:root:has(.foo)` does not. Vendor PEs (`:-webkit-scrollbar`) sit on
+ * the PE. `:hover` is a class. `:is(:root)` still matches :root.
  */
 function rangeHasPseudoElement(src: string, start: number, end: number): boolean {
   let i = start;
@@ -923,9 +950,9 @@ function rangeHasPseudoElement(src: string, start: number, end: number): boolean
       if (k < end && /[A-Za-z_-]/.test(src[k])) {
         while (k < end && isCssIdentContinue(src[k])) k += 1;
         const name = src.slice(i + 1, k).toLowerCase();
-        if (PSEUDO_ELEMENTS.has(name)) return true;
+        if (isPseudoElementName(name)) return true;
         const after = skipCssTrivia(src, k);
-        if (ANY_OF_PSEUDO.has(name) && src[after] === "(") {
+        if (PE_RECURSE_FNS.has(name) && src[after] === "(") {
           const close = skipParenGroup(src, after);
           if (rangeHasPseudoElement(src, after + 1, close - 1)) return true;
           i = close;
@@ -1009,7 +1036,7 @@ function rootRuleOpenBrace(src: string, i: number): number {
  * is. `:not(:root)`, a combinator before `:root` (`.x :root`),
  * `:root` as an ancestor (`:root > .x`), and a combinator inside a
  * wrapper (`:is(:root > .x)`), and a pseudo-element on the subject
- * (`:root::before`, `:root:before`) are not.
+ * (`:root::before`, `:root:selection`, `:root:is(:before)`) are not.
  * A `:root` buried in a comment, string, or raw-text `<style>` (textarea)
  * is not. Must survive `}` inside `url("…<svg></svg>…")`.
  */
