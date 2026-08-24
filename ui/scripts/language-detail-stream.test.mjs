@@ -121,7 +121,7 @@ async function islandAfterLists(language, listPalettes, listArts) {
     paint,
     showLane: paint === "lane",
     fetch: true,
-    collapsedToNull: paint === "dark",
+    foreverSkeleton: paint === "pulse" && outcome !== "pending",
   };
 }
 
@@ -147,7 +147,7 @@ assert.deepEqual(
     },
   ),
   { palettes: [], arts: [] },
-  "catch-to-[] helper still exists — the island must not settle it to null",
+  "catch-to-[] helper still exists — the island settles that empty to dark",
 );
 
 const caught = await islandAfterLists(
@@ -160,12 +160,24 @@ const caught = await islandAfterLists(
   },
 );
 assert.equal(caught.showLane, false, "3: do not invent a fake remix lane after []");
-assert.equal(caught.paint, "pulse", "3: catch-to-[] keeps the pulse — returning null is collapse");
-assert.equal(caught.collapsedToNull, false);
+assert.equal(caught.paint, "dark", "5: throw listArtStyles → slot goes dark");
+assert.equal(caught.foreverSkeleton, false, "5: resolved throw is not a forever skeleton");
 
 const emptyLists = await islandAfterLists(bluet, async () => [], async () => []);
-assert.equal(emptyLists.showLane, false);
-assert.equal(emptyLists.paint, "pulse", "3: successful [] after pulse must not collapse");
+assert.equal(emptyLists.showLane, false, "3: [] is not a remix lane");
+assert.equal(emptyLists.paint, "dark", "5: resolved [] → slot goes dark");
+assert.equal(emptyLists.foreverSkeleton, false, "5: resolved [] is not a forever skeleton");
+
+assert.equal(
+  remixIslandPaint("pending", true),
+  "pulse",
+  "2: still in flight still pulses",
+);
+assert.equal(
+  remixIslandPaint("empty", true),
+  "dark",
+  "5: resolved empty is dark, not a lying shell",
+);
 
 const noLandingIsland = await islandAfterLists(
   noLanding,
@@ -296,15 +308,20 @@ assert.match(
   /await loadLanguageRemixCatalogs\(\)/,
   "pending vs empty is decided where the catalog fetch runs",
 );
-assert.match(
-  remixSrc,
-  /return <LanguageSectionSkeleton \/>/,
-  "3: catch-to-[] / [] after pulse keep the shell — do not return null",
-);
 assert.doesNotMatch(
   remixSrc,
-  /if \(!canRemixLanguage\([^)]*\)\) \{\s*return null/,
-  "3: [] after pulse must not collapse the shell",
+  /return <LanguageSectionSkeleton/,
+  "5: resolved [] / throw must not keep LanguageSectionSkeleton up",
+);
+assert.match(
+  remixSrc,
+  /\} catch \{\s*\/\/ Resolved throw[\s\S]*return null;/,
+  "5: throw after the fetch settles to dark",
+);
+assert.match(
+  remixSrc,
+  /if \(!canRemixLanguage\([^)]*\)\) \{\s*\/\/ Resolved \[\][\s\S]*return null;/,
+  "5: resolved [] goes dark after the fetch, not during pending",
 );
 assert.match(
   loadingSrc,
@@ -366,5 +383,5 @@ assert.doesNotMatch(
 );
 
 console.log(
-  "language-detail stream: all four holds — first paint, island pulse, no collapse, no-landing",
+  "language-detail stream: five holds — first paint, island pulse, no fake lane, no-landing, resolved empty is dark",
 );

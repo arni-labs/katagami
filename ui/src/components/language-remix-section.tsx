@@ -44,13 +44,12 @@ export async function LanguageRemixSection({
     paletteRows = catalogs.palettes;
     artRows = catalogs.arts;
   } catch {
-    // Catch must not collapse the shell — that is pulse-then-gone.
-    return <LanguageSectionSkeleton />;
+    // Resolved throw: slot goes dark. Pending already pulsed via Suspense.
+    return null;
   }
   if (!canRemixLanguage(lang, paletteRows, artRows)) {
-    // [] after a pulse: keep the #245 shell. Do not collapse. Do not
-    // invent InlineRemix with empty catalogs.
-    return <LanguageSectionSkeleton />;
+    // Resolved []: dark. Not a lane. Not a lying skeleton.
+    return null;
   }
 
   return (

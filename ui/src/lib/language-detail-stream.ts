@@ -5,8 +5,8 @@
  * `pending` — catalogs are in flight. The remix island pulses. The page
  *             must not await them and must not use fallback={null} for remix.
  * `empty`   — no landing/dashboard: do not mount (page-dark). Inside a
- *             mounted island, empty after a pulse must not return null
- *             (that is collapse) and must not become a remix lane.
+ *             mounted island, resolved `[]` / throw is also empty: go
+ *             dark (no lane, no skeleton). A forever pulse is a lying shell.
  * `unknown` — page fields cannot tell. A pulse would collapse. No pulse.
  *
  * Remix: landing+dashboard (same filter as toLanguageOpts) is known before
@@ -41,9 +41,10 @@ export function remixPageMountsIsland(outcome: StreamOutcome): boolean {
 }
 
 /**
- * Paint inside a mounted remix island. Pending pulses. Render is the lane.
- * Empty after mount (catch-to-`[]`) stays pulse — returning dark is the
- * collapse; a remix lane would be fake. Unmounted (no landing) is dark.
+ * Paint inside a mounted remix island.
+ * Pending (fetch in flight) pulses. Render is the lane. Resolved empty
+ * (`[]` or throw) is dark — not a forever skeleton, not a fake lane.
+ * Unmounted (no landing) is dark.
  */
 export function remixIslandPaint(
   outcome: StreamOutcome,
@@ -51,7 +52,8 @@ export function remixIslandPaint(
 ): RemixIslandPaint {
   if (!mounted) return "dark";
   if (outcome === "render") return "lane";
-  return "pulse";
+  if (outcome === "pending") return "pulse";
+  return "dark";
 }
 
 function parseJson<T = unknown>(raw?: unknown): T | null {
@@ -88,8 +90,8 @@ export type RemixCatalogs = { palettes: LangRow[]; arts: LangRow[] };
 export type RemixCatalogLoader = () => Promise<LangRow[]>;
 
 /**
- * Catch-to-`[]` helper for tests and callers that need empty arrays.
- * The pulsing remix island must not settle that result to `return null`.
+ * Catch-to-`[]` helper. The island treats this resolved empty as dark,
+ * not as a forever `LanguageSectionSkeleton`.
  */
 export async function resolveRemixCatalogs(
   listPalettes: RemixCatalogLoader,
