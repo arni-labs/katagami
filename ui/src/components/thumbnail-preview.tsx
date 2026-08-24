@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GalleryImage } from "@/components/gallery-image";
 import { LANGUAGE_CARD_SIZES } from "@/lib/gallery-image";
 import { getFileUrl } from "@/lib/odata";
@@ -10,10 +10,12 @@ import {
   thumbnailSourcesKey,
 } from "@/lib/thumbnail-sources";
 
-// A hung source must not pin the card on a blank image. Advance to the next
-// URL (CDN → file id) or the swatch. 8s, not 30s — measured /api/file 404s
-// used to sit that long.
+// A hung source must not pin a *visible* card on a blank image. Advance to
+// the next URL (CDN → file id) or the swatch. Never start this clock for a
+// card the browser has not approached — that is what left 51/60 language
+// cards on the palette dots after 8s of being off-screen.
 const THUMBNAIL_LOAD_TIMEOUT_MS = 8000;
+const LOAD_AHEAD_MARGIN = "400px 0px";
 
 export function ThumbnailPreview({
   fileId,
@@ -32,6 +34,8 @@ export function ThumbnailPreview({
   paletteColors?: string[];
   eager?: boolean;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(eager);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [srcIndex, setSrcIndex] = useState(0);
@@ -79,18 +83,37 @@ export function ThumbnailPreview({
   };
 
   useEffect(() => {
-    if (!src || aligned.failed || aligned.loaded) return;
+    if (near) return;
+    const el = rootRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setNear(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setNear(true);
+        io.disconnect();
+      },
+      { rootMargin: LOAD_AHEAD_MARGIN },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near]);
+
+  useEffect(() => {
+    if (!src || aligned.failed || aligned.loaded || !near) return;
     const timer = window.setTimeout(advanceOrFail, THUMBNAIL_LOAD_TIMEOUT_MS);
     return () => window.clearTimeout(timer);
-  }, [src, aligned.failed, aligned.loaded, aligned.srcIndex]);
+  }, [src, aligned.failed, aligned.loaded, aligned.srcIndex, near]);
 
   return (
-    <div className="absolute inset-0">
+    <div ref={rootRef} className="absolute inset-0">
       <ThumbnailPlaceholder
         paletteColors={paletteColors}
         placeholderTint={placeholderTint}
       />
-      {aligned.failed || !src ? null : (
+      {aligned.failed || !src || !near ? null : (
         <GalleryImage
           key={src}
           src={src}

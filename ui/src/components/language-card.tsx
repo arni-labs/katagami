@@ -106,18 +106,14 @@ export function LanguageCard({
   const featured = isFeaturedLanguage(lang);
 
   return (
-    <div
-      className="group relative min-w-0 max-w-full"
-      style={cardVisibilityStyle}
-    >
+    <div className="group relative min-w-0 max-w-full">
       <TrackedLink
         href={`/language/${id}`}
-        prefetch
         className="block h-full"
         event="language_click"
         data={{ language_id: id, language_name: name, source: "card" }}
       >
-        <FullCard lang={lang} stickyTint={stickyTint} eagerThumbnail={index < 6} />
+        <FullCard lang={lang} stickyTint={stickyTint} eagerThumbnail={index < 12} />
       </TrackedLink>
       {canDelete ? (
         <LanguageCardOwnerControls
@@ -137,16 +133,6 @@ interface FullCardProps {
   stickyTint: string;
   eagerThumbnail: boolean;
 }
-
-// content-visibility skips off-screen cards for scroll perf. The intrinsic
-// size is the placeholder reserved while a card is off-screen; the `auto`
-// keyword makes the browser remember each card's real rendered height after
-// it first paints, so the reservation self-corrects across breakpoints and
-// never leaves a stale empty gap. The length is only the first-paint fallback.
-const cardVisibilityStyle = {
-  contentVisibility: "auto",
-  containIntrinsicBlockSize: "auto 220px",
-} as CSSProperties;
 
 function FullCard({
   lang,
