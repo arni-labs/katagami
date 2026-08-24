@@ -86,7 +86,7 @@ function Thumb({ src }: { src?: string }) {
     <span className={`h-8 w-12 bg-muted ${MEDIA}`}>
       {src ? (
         // Lazy + async + fixed dimensions — same burst-of-proxy-hits fix as
-        // the entity picker rows (ARN-354).
+        // the entity picker rows.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
