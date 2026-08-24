@@ -18,11 +18,25 @@ export const GALLERY_REMOTE_HOSTS = [
 ] as const;
 
 /** Strip the cache-bust query from local /api/file URLs. File ids are
- *  immutable; next/image rejects query strings on local paths. */
+ *  immutable; next/image rejects query strings on local paths. Absolute
+ *  same-origin /api/file URLs (what the browser serializes) become relative
+ *  so they take the optimizer path instead of the raw original. */
 export function galleryImageSrc(url: string): string {
   const trimmed = url.trim();
   if (!trimmed) return "";
   if (trimmed.startsWith("/")) return trimmed.split("?")[0] ?? trimmed;
+  try {
+    const parsed = new URL(trimmed);
+    if (
+      (parsed.hostname === "katagami.ai" ||
+        parsed.hostname === "www.katagami.ai") &&
+      parsed.pathname.startsWith("/api/file/")
+    ) {
+      return parsed.pathname;
+    }
+  } catch {
+    /* not a URL */
+  }
   return trimmed;
 }
 

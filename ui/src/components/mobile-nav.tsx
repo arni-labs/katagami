@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGrid, Palette, Brush, Wand2 } from "lucide-react";
 import { trackNav } from "@/lib/analytics";
+import { LinkPending } from "@/components/link-pending";
 
 const tabs = [
   {
@@ -110,6 +111,7 @@ export function MobileNav() {
                     style={{ background: `var(--${accent})` }}
                   />
                 )}
+                <LinkPending className="pointer-events-none absolute inset-x-2 inset-y-1 -z-0 animate-pulse bg-foreground/8" />
               </Link>
             </li>
           );

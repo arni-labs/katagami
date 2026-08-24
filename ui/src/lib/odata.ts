@@ -1086,6 +1086,24 @@ export const getArtStyle = (id: string) =>
   getDemoArtStyle(id)
     ? Promise.resolve(getDemoArtStyle(id)!)
     : getLane("ArtStyles", id);
+
+/** One published art style by slug — used by language identity. Never list
+ *  the whole lane to find a single pair (that is what made /language/:id wait). */
+export async function getArtStyleBySlug(
+  slug: string,
+): Promise<LaneEntity | undefined> {
+  const demo = demoArtStyles().find((d) => d.fields.slug === slug);
+  try {
+    const resp = await odata<{ value?: Record<string, unknown>[] }>(
+      `ArtStyles?$filter=Status eq 'Published' and slug eq '${odataLiteral(slug)}'&$top=1`,
+    );
+    const row = resp.value?.[0];
+    if (row) return normalizeLaneRow(row, "ArtStyles");
+  } catch {
+    /* fall through to demo */
+  }
+  return demo;
+}
 /** Read a governed File's text content server-side (corpus excerpts on the
  *  voice contract pages). Returns "" on any failure — a missing excerpt
  *  degrades to nothing rather than a 500. */

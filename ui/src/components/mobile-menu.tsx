@@ -9,6 +9,7 @@ import { trackNav } from "@/lib/analytics";
 import { isActiveNav } from "@/lib/nav";
 import { useNavLinks } from "@/lib/use-owner-links";
 import { CHROME_STAMP } from "@/lib/chrome-stamp";
+import { LinkPending } from "@/components/link-pending";
 
 /**
  * Mobile "everything" menu — a slide-in drawer reachable from the header that
@@ -120,6 +121,7 @@ export function MobileMenu() {
                     className="ink-underline relative inline-flex w-fit items-center py-2.5 font-display text-[24px] font-bold leading-tight tracking-[-0.02em] text-foreground/80 transition-colors data-[active=true]:text-foreground"
                   >
                     {l.label}
+                    <LinkPending className="pointer-events-none absolute inset-x-0 -bottom-1 h-0.5 animate-pulse bg-foreground/40" />
                   </Link>
                 );
               })}

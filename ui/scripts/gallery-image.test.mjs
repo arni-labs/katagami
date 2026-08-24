@@ -24,6 +24,16 @@ assert.equal(
   "CDN URLs stay intact",
 );
 assert.equal(galleryImageSrc("  "), "", "blank src is empty");
+assert.equal(
+  galleryImageSrc("https://katagami.ai/api/file/fl-abc?v=asset-cdn-v3"),
+  "/api/file/fl-abc",
+  "absolute same-origin file URLs become relative so next/image can resize them",
+);
+assert.equal(
+  galleryImageSrc("https://www.katagami.ai/api/file/fl-abc"),
+  "/api/file/fl-abc",
+  "www host is treated as same-origin",
+);
 
 assert.equal(canOptimizeGallerySrc("/api/file/fl-abc"), true);
 assert.equal(
@@ -109,6 +119,64 @@ assert.doesNotMatch(
   languageCard,
   /isPublished \? undefined : thumbnailFileId/,
   "published status must not hide the file-id fallback",
+);
+assert.doesNotMatch(
+  languageCard,
+  /prefetch=\{false\}/,
+  "language cards must prefetch the detail route so a click is not a 1–3s blank",
+);
+
+const languagePage = readFileSync(
+  resolve("src/app/(site)/language/[id]/page.tsx"),
+  "utf8",
+);
+assert.doesNotMatch(
+  languagePage,
+  /listArtStyles|listPaletteSystems/,
+  "language first paint must not wait on the full remix catalogs",
+);
+assert.match(
+  languagePage,
+  /LanguageRemixSection/,
+  "remix catalogs stream in after the language itself paints",
+);
+
+const identity = readFileSync(
+  resolve("src/components/language-identity.tsx"),
+  "utf8",
+);
+assert.doesNotMatch(
+  identity,
+  /listArtStyles/,
+  "identity resolves one art style — never the whole published lane",
+);
+assert.match(identity, /getArtStyle\b/, "identity fetches the paired style by id");
+
+const artStylesPage = readFileSync(
+  resolve("src/app/(site)/art-styles/page.tsx"),
+  "utf8",
+);
+assert.match(
+  artStylesPage,
+  /unstable_cache/,
+  "the art-style first page is a slim cached card list, not a live 4s collection",
+);
+assert.match(
+  readFileSync(resolve("src/app/(site)/art-styles/loading.tsx"), "utf8"),
+  /CardGridSkeleton/,
+  "Art Styles nav must paint a shell immediately",
+);
+assert.match(
+  readFileSync(resolve("src/app/(site)/language/[id]/loading.tsx"), "utf8"),
+  /LanguageDetailSkeleton/,
+  "language detail clicks must paint a shell immediately",
+);
+
+const homepage = readFileSync(resolve("src/app/(site)/page.tsx"), "utf8");
+assert.doesNotMatch(
+  homepage,
+  /Browse gallery/,
+  "the homepage hero no longer carries a Browse gallery button",
 );
 
 console.log("gallery image contract: ok");

@@ -76,7 +76,6 @@ export async function RelatedLanguages({
             <TrackedLink
               key={lang.entity_id}
               href={`/language/${lang.entity_id}`}
-              prefetch={false}
               className="group relative flex items-center gap-3 bg-card/80 px-4 py-3.5 transition-all duration-200 hover:-translate-y-[2px]"
               style={{
                 boxShadow: "var(--shadow-card)",

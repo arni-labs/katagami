@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ComponentProps, MouseEvent, ReactNode } from "react";
 import { track } from "@/lib/analytics";
+import { LinkPending } from "@/components/link-pending";
 
 type LinkProps = ComponentProps<typeof Link>;
 
@@ -24,12 +25,14 @@ export function TrackedLink({
   return (
     <Link
       {...rest}
+      className={["relative", rest.className].filter(Boolean).join(" ")}
       onClick={(e: MouseEvent<HTMLAnchorElement>) => {
         track(event, data ?? {});
         onClick?.(e);
       }}
     >
       {children}
+      <LinkPending />
     </Link>
   );
 }

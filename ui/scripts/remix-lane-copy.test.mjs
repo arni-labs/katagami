@@ -29,7 +29,17 @@ const pageSrc = fs.readFileSync(
   path.join(here, "../src/app/(site)/language/[id]/page.tsx"),
   "utf8",
 );
-assert.match(pageSrc, /RemixLaneBlurb/, "language detail must render RemixLaneBlurb");
+const remixSrc = fs.readFileSync(
+  path.join(here, "../src/components/language-remix-section.tsx"),
+  "utf8",
+);
+assert.match(
+  pageSrc,
+  /LanguageRemixSection/,
+  "language detail streams remix after first paint",
+);
+assert.match(remixSrc, /RemixLaneBlurb/, "remix section must render RemixLaneBlurb");
 assert.doesNotMatch(pageSrc, /Studio does the same/);
+assert.doesNotMatch(remixSrc, /Studio does the same/);
 
 console.log("remix-lane copy: space, period, no studio sentence");

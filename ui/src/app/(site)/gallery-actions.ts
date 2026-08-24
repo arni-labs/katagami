@@ -18,6 +18,9 @@ import type { PaletteItem } from "@/components/palette-card";
 import type { ArtStyleItem } from "@/components/art-style-card";
 
 const LIMIT = 48;
+/** Art-style heroes are often multi-MB originals. Keep each page small so
+ *  the first screen and each scroll step do not compete for 48 downloads. */
+const ART_STYLE_LIMIT = 24;
 // Semantic search returns one ranked, un-paginated set — a generous first-page
 // worth of the most relevant matches (the kernel clamps to its own budget).
 const MEANING_LIMIT = 48;
@@ -64,7 +67,7 @@ export async function loadArtStylePage(input: {
   const page = await pageArtStyles({
     cursor: input.cursor ?? undefined,
     search: input.search,
-    limit: LIMIT,
+    limit: ART_STYLE_LIMIT,
   });
   return { items: page.items.map(toArtStyleItem), nextCursor: page.nextCursor };
 }

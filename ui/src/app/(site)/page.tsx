@@ -314,19 +314,6 @@ export default function GalleryPage({
             </span>
             .
           </p>
-
-          <div
-            className="riso-reveal mt-8 flex flex-wrap items-center gap-3"
-            style={{ ["--reveal-i" as string]: 3 }}
-          >
-            <a
-              href="#gallery"
-              className="group relative inline-flex items-center gap-2 border border-foreground bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
-            >
-              Browse gallery
-              <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
-            </a>
-          </div>
           </div>
         </div>
       </section>
