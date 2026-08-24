@@ -860,7 +860,18 @@ function topLevelAlternativeHasCombinator(src: string, rootPos: number): boolean
   return rangeHasCombinator(src, start, end);
 }
 
-/** `::before` on the subject sits on the pseudo-element, not on `:root`. */
+const CSS2_PSEUDO_ELEMENTS = new Set([
+  "before",
+  "after",
+  "first-line",
+  "first-letter",
+]);
+
+/**
+ * `::before` or a CSS2 single-colon pseudo-element (`:before`, `:after`,
+ * `:first-line`, `:first-letter`) on the subject sits on the
+ * pseudo-element, not on `:root`. `:hover` is a class and still matches.
+ */
 function rangeHasPseudoElement(src: string, start: number, end: number): boolean {
   let i = start;
   let depth = 0;
@@ -880,7 +891,18 @@ function rangeHasPseudoElement(src: string, start: number, end: number): boolean
       i += 1;
       continue;
     }
-    if (depth === 0 && src[i] === ":" && src[i + 1] === ":") return true;
+    if (depth === 0 && src[i] === ":") {
+      if (src[i + 1] === ":") return true;
+      let k = i + 1;
+      if (k < end && /[A-Za-z_-]/.test(src[k])) {
+        while (k < end && isCssIdentContinue(src[k])) k += 1;
+        if (CSS2_PSEUDO_ELEMENTS.has(src.slice(i + 1, k).toLowerCase())) {
+          return true;
+        }
+        i = k;
+        continue;
+      }
+    }
     i += 1;
   }
   return false;
@@ -904,8 +926,8 @@ function subjectHasPseudoElement(src: string, rootPos: number): boolean {
  * `{` that opens a rule that matches `:root`.
  * `:root, :host {`, `:is(:root) {`, and `:where(:root, :host) {` bind.
  * `:not(:root) {`, a combinator before `:root`, `:root` as an ancestor,
- * a combinator inside `:is(:root > .x)`, and a `::` pseudo-element on
- * the subject (`:root::before`) do not.
+ * a combinator inside `:is(:root > .x)`, and a pseudo-element on the
+ * subject (`:root::before`, `:root:before`) do not.
  */
 function rootRuleOpenBrace(src: string, i: number): number {
   if (src.slice(i, i + 5).toLowerCase() !== ":root") return -1;
@@ -953,8 +975,8 @@ function rootRuleOpenBrace(src: string, i: number): number {
  * selector list (`:root, :host {`) or functional wrapper (`:is(:root) {`)
  * is. `:not(:root)`, a combinator before `:root` (`.x :root`),
  * `:root` as an ancestor (`:root > .x`), and a combinator inside a
- * wrapper (`:is(:root > .x)`), and a `::` pseudo-element on the
- * subject (`:root::before`) are not.
+ * wrapper (`:is(:root > .x)`), and a pseudo-element on the subject
+ * (`:root::before`, `:root:before`) are not.
  * A `:root` buried in a comment, string, or raw-text `<style>` (textarea)
  * is not. Must survive `}` inside `url("…<svg></svg>…")`.
  */

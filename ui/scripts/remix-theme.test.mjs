@@ -507,6 +507,51 @@ assert.deepEqual(
   ["blue"],
 );
 
+const css2Before = ":root:before { --blue:#f00 }";
+assert.equal(
+  css2Before,
+  ":root:before { --blue:#f00 }",
+  "replay must keep :root:before; do not hide by rewriting to :root::before or :root {",
+);
+assert.match(css2Before, /:root:before \{ --blue:#f00 \}/);
+assert.doesNotMatch(css2Before, /::before/);
+assert.ok(
+  /:root:before/.test(css2Before),
+  "today's ::-only gate would still treat CSS2 :before as a :root rule",
+);
+assert.deepEqual(extractRootDecls(css2Before), []);
+assert.doesNotMatch(
+  compositionBindDecls(css2Before, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const css2After = ":root:after { --blue:#f00 }";
+assert.equal(css2After, ":root:after { --blue:#f00 }");
+assert.match(css2After, /:root:after \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(css2After), []);
+assert.doesNotMatch(
+  compositionBindDecls(css2After, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const css2FirstLine = ":root:first-line { --blue:#f00 }";
+assert.equal(css2FirstLine, ":root:first-line { --blue:#f00 }");
+assert.match(css2FirstLine, /:root:first-line \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(css2FirstLine), []);
+assert.doesNotMatch(
+  compositionBindDecls(css2FirstLine, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const css2FirstLetter = ":root:first-letter { --blue:#f00 }";
+assert.equal(css2FirstLetter, ":root:first-letter { --blue:#f00 }");
+assert.match(css2FirstLetter, /:root:first-letter \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(css2FirstLetter), []);
+assert.doesNotMatch(
+  compositionBindDecls(css2FirstLetter, roles, hero).join(";"),
+  /--blue:/,
+);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",
