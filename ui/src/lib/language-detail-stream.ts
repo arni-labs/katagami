@@ -1,23 +1,28 @@
 /**
  * When a language-detail Suspense island may paint a pulse.
  *
- * `render` — the island will produce UI. A #245 / DetailPulseShell pulse is legal.
- * `empty` — the island will return null. Do not mount it (no pulse, no fetch).
- * `unknown` — still waiting on a catalog. A pulse would collapse if the
- * island then returns null; fallback={null} is required.
+ * `render`  — the island will produce UI. Pulse is legal.
+ * `pending` — the language already qualifies; catalogs are not here yet. Pulse is legal.
+ * `empty`   — the island will return null. Do not mount it (no pulse).
+ * `unknown` — page fields cannot tell. A pulse would collapse. No pulse.
  *
- * Remix: missing landing/dashboard is known before Suspense (same filter as
- * toLanguageOpts). Empty listArtStyles / listPaletteSystems is only known
- * after those calls — treat that as empty, never as a successful pulse.
+ * Remix: landing+dashboard (same filter as toLanguageOpts) is known before
+ * Suspense. Omitted catalogs = pending, not empty. `{ palettes: [], arts: [] }`
+ * is empty. Missing landing/dashboard is empty (do not mount).
+ *
+ * Lineage / related: no field on this page proves they will render.
+ * parent_ids may be unpublished (ARN-331); children and neighbours need a
+ * catalog that can be empty. Those islands keep fallback={null} — that
+ * leftover is not closed by a constant-unknown gate.
  */
 
 type FieldBag = Record<string, string | undefined>;
 type LangRow = { entity_id: string; status: string; fields: FieldBag };
 
-export type StreamOutcome = "render" | "empty" | "unknown";
+export type StreamOutcome = "render" | "pending" | "empty" | "unknown";
 
 export function streamShowsPulse(outcome: StreamOutcome): boolean {
-  return outcome === "render";
+  return outcome === "render" || outcome === "pending";
 }
 
 function parseJson<T = unknown>(raw?: unknown): T | null {
@@ -50,13 +55,16 @@ export function canRemixLanguage(
   );
 }
 
-/** `catalogs` omitted = listArtStyles / listPaletteSystems still pending. */
+/**
+ * `catalogs` omitted = listArtStyles / listPaletteSystems still pending.
+ * That is not the same as passing empty arrays.
+ */
 export function remixStreamOutcome(
   lang: LangRow,
   catalogs?: { palettes: LangRow[]; arts: LangRow[] },
 ): StreamOutcome {
   if (!languageHasRemixComposition(lang)) return "empty";
-  if (!catalogs) return "unknown";
+  if (!catalogs) return "pending";
   return canRemixLanguage(lang, catalogs.palettes, catalogs.arts)
     ? "render"
     : "empty";
@@ -82,16 +90,4 @@ export function identityStreamOutcome(fields: FieldBag): StreamOutcome {
   if (identityAppliedSignature(fields)) return "render";
   if (identityArtPointer(fields) || fields.default_palette_id) return "unknown";
   return "empty";
-}
-
-export function lineageStreamOutcome(): StreamOutcome {
-  // Children need a published-catalog scan. Declared parent_ids may all be
-  // unpublished (ARN-331) — the section still returns null.
-  return "unknown";
-}
-
-export function relatedStreamOutcome(): StreamOutcome {
-  // Taste neighbours and tag-overlap both resolve after fetch; either can
-  // be empty. A pulse would collapse on a language with no peers.
-  return "unknown";
 }

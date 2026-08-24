@@ -6,8 +6,6 @@ import {
   canRemixLanguage,
   identityStreamOutcome,
   languageHasRemixComposition,
-  lineageStreamOutcome,
-  relatedStreamOutcome,
   remixStreamOutcome,
   streamShowsPulse,
 } from "../src/lib/language-detail-stream.ts";
@@ -21,8 +19,9 @@ const landingOnly = lang({
   name: "Landing only",
   landing_file_id: "fl-land",
 });
-const withComposition = lang({
-  name: "Galley",
+// Bluet: published language with landing + dashboard (ARN-380 class).
+const bluet = lang({
+  name: "Bluet",
   landing_file_id: "fl-land",
   dashboard_file_id: "fl-dash",
 });
@@ -40,51 +39,51 @@ const artsNoPrompt = [
 
 assert.equal(languageHasRemixComposition(noLanding), false);
 assert.equal(languageHasRemixComposition(landingOnly), false);
-assert.equal(languageHasRemixComposition(withComposition), true);
+assert.equal(languageHasRemixComposition(bluet), true);
 
 assert.equal(remixStreamOutcome(noLanding), "empty");
 assert.equal(remixStreamOutcome(landingOnly), "empty");
 assert.equal(
-  remixStreamOutcome(withComposition),
-  "unknown",
-  "catalogs pending — remix is not known to render",
+  remixStreamOutcome(bluet),
+  "pending",
+  "omitted catalogs is pending, not empty — Bluet must pulse while listArtStyles loads",
 );
 assert.equal(
-  remixStreamOutcome(withComposition, { palettes: [], arts: [] }),
+  remixStreamOutcome(bluet, { palettes: [], arts: [] }),
   "empty",
   "listArtStyles / listPaletteSystems catch to [] is a legal no-remix lane",
 );
 assert.equal(
-  remixStreamOutcome(withComposition, { palettes, arts: artsNoPrompt }),
+  remixStreamOutcome(bluet, { palettes, arts: artsNoPrompt }),
   "empty",
 );
-assert.equal(
-  remixStreamOutcome(withComposition, { palettes, arts }),
-  "render",
-);
+assert.equal(remixStreamOutcome(bluet, { palettes, arts }), "render");
 
-assert.equal(canRemixLanguage(withComposition, [], []), false);
-assert.equal(canRemixLanguage(withComposition, palettes, arts), true);
+assert.equal(canRemixLanguage(bluet, [], []), false);
+assert.equal(canRemixLanguage(bluet, palettes, arts), true);
 assert.equal(canRemixLanguage(noLanding, palettes, arts), false);
 
-for (const [label, outcome] of [
-  ["no landingUrl", remixStreamOutcome(noLanding)],
-  ["no dashboard", remixStreamOutcome(landingOnly)],
-  ["catalogs pending", remixStreamOutcome(withComposition)],
-  ["catalogs empty", remixStreamOutcome(withComposition, { palettes: [], arts: [] })],
-]) {
-  assert.equal(
-    streamShowsPulse(outcome),
-    false,
-    `${label} must not paint a remix pulse (that pulse would then vanish)`,
-  );
-}
-
 assert.equal(
-  streamShowsPulse(remixStreamOutcome(withComposition, { palettes, arts })),
-  true,
-  "a language that will remix may show the loading.tsx pulse",
+  streamShowsPulse(remixStreamOutcome(noLanding)),
+  false,
+  "no landingUrl must not pulse",
 );
+assert.equal(
+  streamShowsPulse(remixStreamOutcome(landingOnly)),
+  false,
+  "landing without dashboard must not pulse",
+);
+assert.equal(
+  streamShowsPulse(remixStreamOutcome(bluet)),
+  true,
+  "Bluet pending (landing+dashboard, catalogs omitted) must pulse",
+);
+assert.equal(
+  streamShowsPulse(remixStreamOutcome(bluet, { palettes: [], arts: [] })),
+  false,
+  "catalogs [] must not pulse",
+);
+assert.equal(streamShowsPulse(remixStreamOutcome(bluet, { palettes, arts })), true);
 
 assert.equal(identityStreamOutcome({}), "empty");
 assert.equal(
@@ -111,19 +110,6 @@ assert.equal(
   true,
 );
 
-assert.equal(lineageStreamOutcome(), "unknown");
-assert.equal(relatedStreamOutcome(), "unknown");
-assert.equal(
-  streamShowsPulse(lineageStreamOutcome()),
-  false,
-  "lineage can return null (unpublished parents, no children)",
-);
-assert.equal(
-  streamShowsPulse(relatedStreamOutcome()),
-  false,
-  "related can return null (no neighbours / no tag overlap)",
-);
-
 const here = path.dirname(fileURLToPath(import.meta.url));
 const pageSrc = fs.readFileSync(
   path.join(here, "../src/app/(site)/language/[id]/page.tsx"),
@@ -145,6 +131,15 @@ const streamSrc = fs.readFileSync(
   path.join(here, "../src/lib/language-detail-stream.ts"),
   "utf8",
 );
+const lineageSrc = fs.readFileSync(
+  path.join(here, "../src/components/language-lineage.tsx"),
+  "utf8",
+);
+const relatedSrc = fs.readFileSync(
+  path.join(here, "../src/components/related-languages.tsx"),
+  "utf8",
+);
+
 assert.match(
   remixOpts,
   /Boolean\(l\.fields\.landing_file_id\) && Boolean\(l\.fields\.dashboard_file_id\)/,
@@ -159,12 +154,44 @@ assert.match(streamSrc, /prompt_template/);
 assert.match(identitySrc, /colors\.primary, colors\.accent, colors\.secondary/);
 assert.match(streamSrc, /colors\.primary, colors\.accent, colors\.secondary/);
 
-assert.match(pageSrc, /remixStreamOutcome/);
+assert.match(pageSrc, /remixStreamOutcome\(lang\)/);
+assert.doesNotMatch(
+  pageSrc,
+  /remixStreamOutcome\(lang,/,
+  "the page must pass lang only — omitted catalogs is pending, not empty",
+);
 assert.match(pageSrc, /identityStreamOutcome/);
-assert.match(pageSrc, /lineageStreamOutcome/);
-assert.match(pageSrc, /relatedStreamOutcome/);
 assert.match(pageSrc, /streamShowsPulse/);
 assert.match(remixSrc, /canRemixLanguage/);
+
+assert.doesNotMatch(
+  streamSrc,
+  /export function lineageStreamOutcome/,
+  "a constant-unknown lineage gate is not a fix",
+);
+assert.doesNotMatch(
+  streamSrc,
+  /export function relatedStreamOutcome/,
+  "a constant-unknown related gate is not a fix",
+);
+assert.doesNotMatch(pageSrc, /lineageStreamOutcome/);
+assert.doesNotMatch(pageSrc, /relatedStreamOutcome/);
+
+assert.match(
+  lineageSrc,
+  /if \(parents\.length === 0 && children\.length === 0\) return null/,
+);
+assert.match(relatedSrc, /if \(scored\.length === 0\) return null/);
+assert.match(
+  pageSrc,
+  /<Suspense fallback=\{null\}>\s*<LanguageLineage/,
+  "lineage has no legal pulse from page fields — leftover not closed by a gate",
+);
+assert.match(
+  pageSrc,
+  /<Suspense fallback=\{null\}>\s*<RelatedLanguages/,
+  "related has no legal pulse from page fields — leftover not closed by a gate",
+);
 
 assert.doesNotMatch(
   pageSrc,
@@ -182,15 +209,7 @@ assert.doesNotMatch(
 );
 assert.doesNotMatch(
   pageSrc,
-  /<Suspense fallback=\{null\}>\s*<LanguageLineage/,
-);
-assert.doesNotMatch(
-  pageSrc,
-  /<Suspense fallback=\{null\}>\s*<RelatedLanguages/,
-);
-assert.doesNotMatch(
-  pageSrc,
   /<Suspense fallback=\{null\}>\s*<LanguageRemixSection/,
 );
 
-console.log("language-detail stream: collapse replay ok");
+console.log("language-detail stream: Bluet pending vs no-landing; collapse hold ok");

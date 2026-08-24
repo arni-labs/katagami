@@ -16,8 +16,6 @@ import { LanguageRemixSection } from "@/components/language-remix-section";
 import { LanguageSectionSkeleton } from "@/components/gallery-skeleton";
 import {
   identityStreamOutcome,
-  lineageStreamOutcome,
-  relatedStreamOutcome,
   remixStreamOutcome,
   streamShowsPulse,
 } from "@/lib/language-detail-stream";
@@ -201,13 +199,11 @@ export default async function LanguageDetailPage({
   };
   const katagamiMarkdown = katagamiSpecToMarkdown(specProps);
   const designMd = designMdToMarkdown(specProps);
-  // Pulse only when the island is known to render. `unknown` (pending
-  // catalogs / unpublished parents / no peers) must not paint a shell that
-  // then collapses — that is the #246 leftover. See language-detail-stream.
+  // Remix: remixStreamOutcome(lang) with no catalogs is pending when
+  // landing+dashboard exist (Bluet) — pulse while the remix island loads.
+  // No landing, or empty catalogs, is empty — do not mount / do not pulse.
   const identityOutcome = identityStreamOutcome(f);
   const remixOutcome = remixStreamOutcome(lang);
-  const lineageOutcome = lineageStreamOutcome();
-  const relatedOutcome = relatedStreamOutcome();
   // The shadcn implementation kit (3 stored-file reads + markdown generation) is
   // rendered in a streamed <ShadcnKitSection> Suspense island below — it no
   // longer blocks the page's TTFB. The shadcn download is served on demand by
@@ -372,32 +368,22 @@ export default async function LanguageDetailPage({
         </Suspense>
       )}
 
-      {lineageOutcome === "empty" ? null : (
-        <Suspense
-          fallback={
-            streamShowsPulse(lineageOutcome) ? (
-              <LanguageSectionSkeleton />
-            ) : null
-          }
-        >
-          <LanguageLineage currentId={id} fields={f} />
-        </Suspense>
-      )}
+      {/* Lineage / related cannot take a pulse from fields on this page.
+          parent_ids may be unpublished (ARN-331); children and neighbours
+          need a catalog that can be empty. LanguageLineage and
+          RelatedLanguages return null in those cases. A shell would
+          collapse. This leftover is not closed — fallback is null on
+          purpose, not via a constant-unknown gate. */}
+      <Suspense fallback={null}>
+        <LanguageLineage currentId={id} fields={f} />
+      </Suspense>
 
-      {relatedOutcome === "empty" ? null : (
-        <Suspense
-          fallback={
-            streamShowsPulse(relatedOutcome) ? (
-              <LanguageSectionSkeleton />
-            ) : null
-          }
-        >
-          <RelatedLanguages
-            currentId={id}
-            currentTags={parseJson<string[]>(f.tags) ?? []}
-          />
-        </Suspense>
-      )}
+      <Suspense fallback={null}>
+        <RelatedLanguages
+          currentId={id}
+          currentTags={parseJson<string[]>(f.tags) ?? []}
+        />
+      </Suspense>
     </div>
   );
 }
