@@ -160,6 +160,48 @@ assert.equal(
   false,
 );
 
+const commentOrStringReplay = `<style>/* var(--bg) */ .x{content:"var(--bg)"} body{background:var(--paper)}</style>`;
+assert.match(
+  commentOrStringReplay,
+  /\/\* var\(--bg\) \*\//,
+  "replay must keep the comment; do not hide the hole by deleting it",
+);
+assert.match(commentOrStringReplay, /content:"var\(--bg\)"/);
+assert.match(
+  commentOrStringReplay,
+  /var\(--bg\)/,
+  "today's raw scan would still see var(--bg) in the comment/string",
+);
+assert.equal(consumesCustomProperty(commentOrStringReplay, "bg"), false);
+assert.equal(consumesCustomProperty(commentOrStringReplay, "paper"), true);
+assert.equal(
+  consumesCustomProperty("/* var(--bg) */ background:var(--paper)", "bg"),
+  false,
+);
+assert.equal(
+  consumesCustomProperty('content:"var(--bg)";background:var(--paper)', "bg"),
+  false,
+);
+assert.equal(
+  consumesCustomProperty("content:'var(--bg)';background:var(--paper)", "bg"),
+  false,
+);
+assert.equal(
+  consumesCustomProperty("/* var(--bg) */ background:var(--bg)", "bg"),
+  true,
+);
+assert.equal(
+  consumesCustomProperty(`<div style="background:var(--bg)"></div>`, "bg"),
+  true,
+);
+assert.equal(
+  consumesCustomProperty(
+    `<div style="content:'var(--bg)';background:var(--paper)"></div>`,
+    "bg",
+  ),
+  false,
+);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

@@ -153,11 +153,147 @@ function skipCssUrl(src: string, i: number): number {
   return i;
 }
 
-function skipCssConstruct(src: string, i: number): number | null {
+function skipCssCommentOrString(src: string, i: number): number | null {
+  if (src.startsWith("<!--", i)) {
+    const end = src.indexOf("-->", i + 4);
+    return end === -1 ? src.length : end + 3;
+  }
   if (src[i] === "/" && src[i + 1] === "*") return skipCssComment(src, i);
   if (src[i] === '"' || src[i] === "'") return skipCssString(src, i);
+  return null;
+}
+
+function skipCssConstruct(src: string, i: number): number | null {
+  const ignored = skipCssCommentOrString(src, i);
+  if (ignored !== null) return ignored;
   if (startsCssUrl(src, i)) return skipCssUrl(src, i);
   return null;
+}
+
+function findHtmlTagClose(html: string, i: number): number {
+  while (i < html.length) {
+    if (html[i] === '"' || html[i] === "'") {
+      i = skipCssString(html, i);
+      continue;
+    }
+    if (html[i] === ">") return i;
+    i += 1;
+  }
+  return -1;
+}
+
+const CSS_VALUE_ATTRS = new Set([
+  "style",
+  "fill",
+  "stroke",
+  "color",
+  "stop-color",
+  "flood-color",
+  "lighting-color",
+  "background",
+  "background-color",
+  "background-image",
+]);
+
+/** `<style>` bodies and CSS-valued attributes. A comment or string is not a surface. */
+function extractCssConsumptionSurfaces(html: string): string[] {
+  const surfaces: string[] = [];
+  let i = 0;
+  while (i < html.length) {
+    if (html[i] !== "<") {
+      i += 1;
+      continue;
+    }
+    if (html.startsWith("<!--", i)) {
+      i = skipCssCommentOrString(html, i) ?? i + 1;
+      continue;
+    }
+    const tagStart = i + 1;
+    if (html[tagStart] === "/") {
+      const gt = findHtmlTagClose(html, tagStart);
+      i = gt === -1 ? html.length : gt + 1;
+      continue;
+    }
+    let tagEnd = tagStart;
+    while (tagEnd < html.length && /[a-z0-9:-]/.test(html[tagEnd])) tagEnd += 1;
+    const tag = html.slice(tagStart, tagEnd);
+    if (tag === "script") {
+      const gt = findHtmlTagClose(html, tagEnd);
+      if (gt === -1) break;
+      const close = html.indexOf("</script>", gt + 1);
+      i = close === -1 ? html.length : close + 9;
+      continue;
+    }
+    if (tag === "style") {
+      const gt = findHtmlTagClose(html, tagEnd);
+      if (gt === -1) break;
+      const close = html.indexOf("</style>", gt + 1);
+      const end = close === -1 ? html.length : close;
+      surfaces.push(html.slice(gt + 1, end));
+      i = close === -1 ? html.length : close + 8;
+      continue;
+    }
+    i = tagEnd;
+    while (i < html.length && html[i] !== ">") {
+      if (html[i] === "/" && html[i + 1] === ">") break;
+      if (/\s/.test(html[i])) {
+        i += 1;
+        continue;
+      }
+      const nameStart = i;
+      while (i < html.length && /[^\s=>/]/.test(html[i])) i += 1;
+      const attrName = html.slice(nameStart, i);
+      while (i < html.length && /\s/.test(html[i])) i += 1;
+      if (html[i] !== "=") continue;
+      i += 1;
+      while (i < html.length && /\s/.test(html[i])) i += 1;
+      let value = "";
+      if (html[i] === '"' || html[i] === "'") {
+        const q = html[i];
+        const start = i + 1;
+        const end = html.indexOf(q, start);
+        if (end === -1) {
+          value = html.slice(start);
+          i = html.length;
+        } else {
+          value = html.slice(start, end);
+          i = end + 1;
+        }
+      } else {
+        const start = i;
+        while (i < html.length && !/[\s>]/.test(html[i])) i += 1;
+        value = html.slice(start, i);
+      }
+      if (CSS_VALUE_ATTRS.has(attrName)) surfaces.push(value);
+    }
+    if (html[i] === ">") i += 1;
+  }
+  return surfaces;
+}
+
+function cssContainsCustomProperty(css: string, ident: string): boolean {
+  let i = 0;
+  while (i < css.length) {
+    const skipped = skipCssCommentOrString(css, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (css.startsWith("var(", i)) {
+      let j = i + 4;
+      while (j < css.length && /\s/.test(css[j])) j += 1;
+      if (css.startsWith("--", j)) {
+        j += 2;
+        if (css.startsWith(ident, j) && !isCssIdentContinue(css[j + ident.length])) {
+          return true;
+        }
+      }
+      i += 4;
+      continue;
+    }
+    i += 1;
+  }
+  return false;
 }
 
 /** Matching `}` for a `:root {` opener, ignoring braces inside strings/url()/comments. */
@@ -295,27 +431,16 @@ export function compositionBindDecls(
 }
 
 /**
- * True only at a custom-property boundary: `var(--bg)`, `var(--bg,`,
- * `var(--bg )`. A prefix of `--bg-alt` must not green `--bg`.
+ * True only when CSS actually consumes the custom property: `var(--bg)`,
+ * `var(--bg,`, `var(--bg )`. A prefix of `--bg-alt` must not green `--bg`.
+ * A comment (`/* var(--bg) *\/`) or string (`content:"var(--bg)"`) is not consume.
  */
 export function consumesCustomProperty(html: string, name: string): boolean {
-  const lower = html.toLowerCase();
+  const src = html.toLowerCase();
   const ident = name.toLowerCase();
-  let i = 0;
-  while (i < lower.length) {
-    const open = lower.indexOf("var(", i);
-    if (open === -1) return false;
-    let j = open + 4;
-    while (j < lower.length && /\s/.test(lower[j])) j += 1;
-    if (lower.startsWith("--", j)) {
-      j += 2;
-      if (lower.startsWith(ident, j) && !isCssIdentContinue(lower[j + ident.length])) {
-        return true;
-      }
-    }
-    i = open + 4;
-  }
-  return false;
+  const surfaces = extractCssConsumptionSurfaces(src);
+  const sheets = surfaces.length > 0 ? surfaces : [src];
+  return sheets.some((sheet) => cssContainsCustomProperty(sheet, ident));
 }
 
 function consumesHeroVar(html: string): boolean {
