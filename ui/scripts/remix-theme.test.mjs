@@ -442,6 +442,36 @@ assert.doesNotMatch(
   /--blue:/,
 );
 
+const isRootAsAncestor = ":is(:root > .x) { --blue:#f00 }";
+assert.equal(
+  isRootAsAncestor,
+  ":is(:root > .x) { --blue:#f00 }",
+  "replay must keep :is(:root > .x); do not hide by rewriting to :is(:root)",
+);
+assert.match(isRootAsAncestor, /:is\(:root > \.x\) \{ --blue:#f00 \}/);
+assert.ok(
+  /:is\(:root\s*>/.test(isRootAsAncestor),
+  "today's wrapper walk would still treat this as a :root subject",
+);
+assert.deepEqual(extractRootDecls(isRootAsAncestor), []);
+assert.doesNotMatch(
+  compositionBindDecls(isRootAsAncestor, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const whereRootAsAncestor = ":where(:root .foo) { --blue:#f00 }";
+assert.equal(
+  whereRootAsAncestor,
+  ":where(:root .foo) { --blue:#f00 }",
+  "replay must keep :where(:root .foo); do not hide by rewriting to :where(:root)",
+);
+assert.match(whereRootAsAncestor, /:where\(:root \.foo\) \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(whereRootAsAncestor), []);
+assert.doesNotMatch(
+  compositionBindDecls(whereRootAsAncestor, roles, hero).join(";"),
+  /--blue:/,
+);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

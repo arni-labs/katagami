@@ -750,44 +750,45 @@ function rangeHasCombinator(src: string, start: number, end: number): boolean {
   return false;
 }
 
-/**
- * A combinator before `:root` never matches the document root.
- * `.x :root`, `:is(.x) :root`, `.x > :root` do not bind.
- */
-function hasCombinatorBeforeRoot(src: string, rootPos: number): boolean {
-  let i = skipCssTrivia(src, selectorAlternativeStart(src, rootPos));
-  let seenCompound = false;
-  while (i < rootPos) {
-    i = skipLeadingComments(src, i);
-    if (i >= rootPos) break;
-    if (/\s/.test(src[i])) {
-      const after = skipCssTrivia(src, i);
-      if (seenCompound && after <= rootPos && startsSimpleSelector(src, after)) {
-        return true;
-      }
-      i = after;
-      continue;
-    }
-    const skipped = skipCssCommentOrString(src, i);
+/** End of the comma-separated argument / alternative that holds this `:root`. */
+function innermostAlternativeEnd(src: string, rootPos: number): number {
+  const wrapDepth = wrappingFns(src, rootPos).length;
+  let j = rootPos;
+  let d = wrapDepth;
+  while (j < src.length) {
+    const skipped = skipCssConstruct(src, j);
     if (skipped !== null) {
-      i = skipped;
+      j = skipped;
       continue;
     }
-    const comb = combinatorLength(src, i);
-    if (comb) {
-      if (seenCompound) return true;
-      i += comb;
+    if (src[j] === "(") {
+      d += 1;
+      j += 1;
       continue;
     }
-    if (startsSimpleSelector(src, i)) {
-      if (i === rootPos) break;
-      i = skipSimpleSelector(src, i);
-      seenCompound = true;
+    if (src[j] === ")") {
+      if (wrapDepth > 0 && d === wrapDepth) return j;
+      d -= 1;
+      j += 1;
       continue;
     }
-    i += 1;
+    if (d === wrapDepth && (src[j] === "," || src[j] === "{")) return j;
+    if (d === 0 && (src[j] === "}" || src[j] === ";")) return j;
+    j += 1;
   }
-  return false;
+  return src.length;
+}
+
+/**
+ * Combinator in the argument that holds `:root` — before or after.
+ * `:is(:root > .x)` and `:where(:root .foo)` put decls on `.x` / `.foo`.
+ */
+function innermostAlternativeHasCombinator(src: string, rootPos: number): boolean {
+  return rangeHasCombinator(
+    src,
+    selectorAlternativeStart(src, rootPos),
+    innermostAlternativeEnd(src, rootPos),
+  );
 }
 
 /**
@@ -854,8 +855,8 @@ function topLevelAlternativeHasCombinator(src: string, rootPos: number): boolean
 /**
  * `{` that opens a rule that matches `:root`.
  * `:root, :host {`, `:is(:root) {`, and `:where(:root, :host) {` bind.
- * `:not(:root) {`, a combinator before `:root`, and `:root` as an
- * ancestor (`:root > .x`) do not.
+ * `:not(:root) {`, a combinator before `:root`, `:root` as an ancestor,
+ * and a combinator inside `:is(:root > .x)` do not.
  */
 function rootRuleOpenBrace(src: string, i: number): number {
   if (src.slice(i, i + 5).toLowerCase() !== ":root") return -1;
@@ -863,7 +864,7 @@ function rootRuleOpenBrace(src: string, i: number): number {
   if (isCssIdentContinue(src[i + 5])) return -1;
   const fns = wrappingFns(src, i);
   if (!rootTokenMatchesRoot(fns)) return -1;
-  if (hasCombinatorBeforeRoot(src, i)) return -1;
+  if (innermostAlternativeHasCombinator(src, i)) return -1;
   if (topLevelAlternativeHasCombinator(src, i)) return -1;
   let j = i + 5;
   let depth = fns.length;
@@ -900,8 +901,9 @@ function rootRuleOpenBrace(src: string, i: number): number {
  * Pull `--name: value` pairs out of every real `:root` rule in stylesheet
  * text. HTML body text that looks like `:root { … }` is not a rule. A
  * selector list (`:root, :host {`) or functional wrapper (`:is(:root) {`)
- * is. `:not(:root)`, a combinator before `:root` (`.x :root`), and
- * `:root` as an ancestor (`:root > .x`) are not.
+ * is. `:not(:root)`, a combinator before `:root` (`.x :root`),
+ * `:root` as an ancestor (`:root > .x`), and a combinator inside a
+ * wrapper (`:is(:root > .x)`) are not.
  * A `:root` buried in a comment, string, or raw-text `<style>` (textarea)
  * is not. Must survive `}` inside `url("…<svg></svg>…")`.
  */
