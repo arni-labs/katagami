@@ -37,7 +37,7 @@ const remixSrc = fs.readFileSync(
 );
 assert.match(
   pageSrc,
-  /LanguageRemixIsland/,
+  /LanguageRemixPageSlot/,
   "language detail streams remix after first paint",
 );
 assert.match(remixSrc, /RemixLaneBlurb/, "remix section must render RemixLaneBlurb");

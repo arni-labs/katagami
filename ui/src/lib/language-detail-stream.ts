@@ -18,12 +18,13 @@
  * is empty — including listArtStyles / listPaletteSystems catch-to-`[]`.
  * Missing landing/dashboard is empty (do not mount).
  *
- * Catalogs and the pending pulse belong to the remix island so first paint
- * is not held on route `loading.tsx`. LanguageRemixIsland paints from
- * remixIslandPaint(outcome): omitted catalogs pulse; [] / throw is null.
- * Those are two renders of the same island, not one sibling plus a hide.
- * A page-level remix `fallback={null}` is leftover (2). Awaiting catalogs
- * on LanguageDetailPage is leftover (1).
+ * Catalogs and the pending pulse belong to the remix page slot so first
+ * paint is not held on route `loading.tsx`. Pending pulse and empty/throw
+ * dark cannot share one page Suspense fallback. Omitted catalogs: pulse
+ * fallback. `[]` / throw: no pulse in the fallback and none in the
+ * resolved tree — dark from the first paint. A page-level remix
+ * `fallback={null}` on the pending path is leftover (2). Awaiting
+ * catalogs on LanguageDetailPage is leftover (1).
  *
  * Lineage / related: no field on this page proves they will render.
  * parent_ids may be unpublished (ARN-331); children and neighbours need a
@@ -137,6 +138,17 @@ export function remixStreamOutcome(
   return canRemixLanguage(lang, catalogs.palettes, catalogs.arts)
     ? "render"
     : "empty";
+}
+
+/**
+ * Page remix Suspense fallback. Pending (catalogs omitted) may pulse.
+ * Empty / throw must not — that replay cannot share the pending fallback.
+ */
+export function remixPageFallback(
+  lang: LangRow,
+  catalogs?: RemixCatalogs,
+): "pulse" | null {
+  return remixStreamOutcome(lang, catalogs) === "empty" ? null : "pulse";
 }
 
 function identityArtPointer(fields: FieldBag): boolean {

@@ -11,6 +11,7 @@ import {
   resolveRemixCatalogs,
   remixIslandEverSkeleton,
   remixIslandPaint,
+  remixPageFallback,
   remixPageMountsIsland,
   remixStreamOutcome,
   streamShowsPulse,
@@ -312,24 +313,31 @@ assert.match(
 );
 assert.match(
   pageSrc,
-  /<LanguageRemixIsland/,
-  "2: remix pending lives in the island, not page fallback={null}",
+  /<LanguageRemixPageSlot/,
+  "2: remix pending lives in the page slot, not page fallback={null}",
 );
 assert.doesNotMatch(
   pageSrc,
   /<Suspense fallback=\{null\}>\s*<LanguageRemix/,
   "2: do not solve pending with remix fallback={null}",
 );
-assert.match(
-  remixSrc,
-  /remixStreamOutcome\(lang, catalogs\)/,
-  "island paint uses catalogs when present — [] / throw is not the pending tree",
+assert.doesNotMatch(
+  pageSrc,
+  /fallback=\{<LanguageRemixIsland/,
+  "pending pulse and empty/throw must not share one page-level fallback",
 );
 assert.match(
   remixSrc,
-  /remixIslandPaint/,
-  "island paint is remixIslandPaint, not a sibling pulse plus a hide",
+  /fallback: <LanguageRemixIsland lang=\{lang\} \/>/,
+  "2: Bluet pending fallback is LanguageRemixIsland from fields",
 );
+assert.match(
+  remixSrc,
+  /<Suspense fallback=\{fallback\}>/,
+  "2: pending pulse is the slot fallback, not a shared empty/throw fallback",
+);
+assert.match(remixSrc, /languageRemixPageBoundary/);
+assert.match(remixSrc, /remixPageFallback/);
 assert.doesNotMatch(
   remixSrc,
   /:has\(/,
@@ -342,12 +350,6 @@ assert.doesNotMatch(
   /<Suspense fallback=\{<LanguageSectionSkeleton/,
   "do not wrap the fetch that can resolve empty or throw",
 );
-assert.match(
-  pageSrc,
-  /fallback=\{<LanguageRemixIsland/,
-  "2: Bluet pending is LanguageRemixIsland with catalogs omitted",
-);
-assert.match(pageSrc, /LanguageRemixIslandResolved/);
 assert.match(
   remixSrc,
   /await loadLanguageRemixCatalogs\(\)/,
@@ -470,43 +472,69 @@ const islandMod = loadTsx(
   },
 );
 
-function renderIsland(language, catalogs) {
-  const props =
-    catalogs === undefined
-      ? { lang: language }
-      : { lang: language, catalogs };
-  return renderToStaticMarkup(
-    React.createElement(islandMod.LanguageRemixIsland, props),
-  );
+function renderNode(node) {
+  if (node == null || node === false) return "";
+  return renderToStaticMarkup(node);
 }
 
 function h72Count(html) {
   return (html.match(/h-72/g) || []).length;
 }
 
-const bluetPendingHtml = renderIsland(bluet);
-assert.match(
-  bluetPendingHtml,
-  /h-72/,
-  "replay 1: rendered Bluet in-flight paints LanguageSectionSkeleton",
+/** The page remix tree: fallback and resolved as separate paints. */
+function renderPageSwap(language, catalogs) {
+  const props =
+    catalogs === undefined
+      ? { lang: language }
+      : { lang: language, catalogs };
+  const boundary = islandMod.languageRemixPageBoundary(language, catalogs);
+  const fallbackHtml = renderNode(boundary.fallback);
+  const resolvedHtml =
+    remixPageFallback(language, catalogs) === null
+      ? renderNode(boundary.resolved)
+      : "";
+  return {
+    fallbackHtml,
+    resolvedHtml,
+    slotHtml: renderToStaticMarkup(
+      React.createElement(islandMod.LanguageRemixPageSlot, props),
+    ),
+  };
+}
+
+assert.equal(remixPageFallback(bluet), "pulse");
+assert.equal(remixPageFallback(bluet, { palettes: [], arts: [] }), null);
+assert.equal(remixPageFallback(noLanding), null);
+
+const pendingSwap = renderPageSwap(bluet);
+assert.equal(
+  h72Count(pendingSwap.fallbackHtml),
+  2,
+  "replay 1: page fallback is two h-72 from fields, before canRemixLanguage",
 );
 assert.equal(
-  h72Count(bluetPendingHtml),
+  h72Count(pendingSwap.slotHtml),
   2,
-  "replay 1: DetailPulseShell is two h-72 from fields, before canRemixLanguage",
+  "replay 1: page slot first paint is the pending pulse",
 );
 
-const bluetEmptyHtml = renderIsland(bluet, { palettes: [], arts: [] });
+const emptySwap = renderPageSwap(bluet, { palettes: [], arts: [] });
 assert.equal(
-  h72Count(bluetEmptyHtml),
+  h72Count(emptySwap.fallbackHtml),
   0,
-  "replay 2: rendered [] must not paint two h-72",
+  "replay 2: Bluet + [] must not put h-72 in the fallback",
 );
-assert.doesNotMatch(
-  bluetEmptyHtml,
-  /try a remix/,
-  "do not fake a remix lane after []",
+assert.equal(
+  h72Count(emptySwap.resolvedHtml),
+  0,
+  "replay 2: Bluet + [] resolved tree is dark",
 );
+assert.equal(
+  h72Count(emptySwap.slotHtml),
+  0,
+  "replay 2: page slot first paint has no h-72",
+);
+assert.doesNotMatch(emptySwap.slotHtml, /try a remix/, "do not fake a remix lane after []");
 
 const thrownCatalogs = await resolveRemixCatalogs(
   async () => {
@@ -516,16 +544,24 @@ const thrownCatalogs = await resolveRemixCatalogs(
     throw new Error("listArtStyles failed");
   },
 );
-const bluetThrowHtml = renderIsland(bluet, thrownCatalogs);
+const throwSwap = renderPageSwap(bluet, thrownCatalogs);
 assert.equal(
-  h72Count(bluetThrowHtml),
+  h72Count(throwSwap.fallbackHtml),
   0,
-  "replay 2: rendered throw must not paint two h-72",
+  "replay 2: throw must not put h-72 in the fallback",
 );
-assert.doesNotMatch(bluetThrowHtml, /try a remix/, "do not fake a remix lane after throw");
+assert.equal(
+  h72Count(throwSwap.resolvedHtml),
+  0,
+  "replay 2: throw resolved tree is dark",
+);
+assert.equal(h72Count(throwSwap.slotHtml), 0, "replay 2: throw page slot is dark from first paint");
+assert.doesNotMatch(throwSwap.slotHtml, /try a remix/, "do not fake a remix lane after throw");
 
-assert.equal(h72Count(renderIsland(noLanding)), 0, "no landing: rendered island is dark");
+const noLandSwap = renderPageSwap(noLanding);
+assert.equal(h72Count(noLandSwap.fallbackHtml), 0);
+assert.equal(h72Count(noLandSwap.slotHtml), 0);
 
 console.log(
-  "language-detail stream: rendered island — replay 1 pulses; replay 2 never h-72; page unblocked",
+  "language-detail stream: page swap — replay 1 pulses; replay 2 never h-72 in fallback or resolved",
 );

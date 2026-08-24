@@ -12,10 +12,7 @@ import {
 import { RelatedLanguages } from "@/components/related-languages";
 import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
-import {
-  LanguageRemixIsland,
-  LanguageRemixIslandResolved,
-} from "@/components/language-remix-section";
+import { LanguageRemixPageSlot } from "@/components/language-remix-section";
 import { LanguageSectionSkeleton } from "@/components/gallery-skeleton";
 import {
   identityStreamOutcome,
@@ -202,9 +199,9 @@ export default async function LanguageDetailPage({
   };
   const katagamiMarkdown = katagamiSpecToMarkdown(specProps);
   const designMd = designMdToMarkdown(specProps);
-  // Remix catalogs live in LanguageRemixIslandResolved. Pending pulse is
-  // LanguageRemixIsland with catalogs omitted (fields only). Do not await
-  // catalogs here (#245 leftover). Do not wrap remix in fallback={null}.
+  // Remix slot decides pending pulse vs empty/throw dark. Do not await
+  // catalogs here (#245 leftover). Do not pass catalogs — first paint is
+  // lang only. Do not wrap pending remix in fallback={null}.
   const identityOutcome = identityStreamOutcome(f);
   const remixOutcome = remixStreamOutcome(lang);
   // The shadcn implementation kit (3 stored-file reads + markdown generation) is
@@ -362,9 +359,7 @@ export default async function LanguageDetailPage({
       <ModelProvenance raw={f.model_provenance} />
 
       {remixOutcome === "empty" ? null : (
-        <Suspense fallback={<LanguageRemixIsland lang={lang} />}>
-          <LanguageRemixIslandResolved lang={lang} />
-        </Suspense>
+        <LanguageRemixPageSlot lang={lang} />
       )}
 
       {/* Lineage / related cannot take a pulse from fields on this page.

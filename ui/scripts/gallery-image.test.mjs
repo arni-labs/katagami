@@ -177,7 +177,7 @@ assert.doesNotMatch(
 );
 assert.match(
   languagePage,
-  /LanguageRemixIsland/,
+  /LanguageRemixPageSlot/,
   "remix catalogs stream in after the language itself paints",
 );
 
