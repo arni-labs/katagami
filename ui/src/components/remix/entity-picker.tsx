@@ -142,9 +142,8 @@ function ItemMedia({ item }: { item: PickItem }) {
   return (
     <span className={`h-8 w-12 bg-muted ${MEDIA}`}>
       {item.thumb ? (
-        // Lazy + async: the picker renders up to RESULT_CAP rows the moment it
-        // opens, and eager thumbs fired that many /api/file hits in one burst
-        // (ARN-354). Explicit dimensions keep rows from reflowing as they load.
+        // Lazy + async: opening the picker used to fire a burst of eager
+        // /api/file hits. Explicit dimensions keep rows from reflowing.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={item.thumb}
