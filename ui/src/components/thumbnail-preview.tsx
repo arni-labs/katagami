@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { GalleryImage } from "@/components/gallery-image";
 import { LANGUAGE_CARD_SIZES } from "@/lib/gallery-image";
 import { getFileUrl } from "@/lib/odata";
+import {
+  advanceThumbnailPreviewState,
+  alignThumbnailPreviewState,
+  thumbnailSourcesKey,
+} from "@/lib/thumbnail-sources";
 
 // A hung source must not pin a *visible* card on a blank image. Advance to
 // the next URL (CDN → file id) or the swatch. Never start this clock for a
@@ -42,15 +47,39 @@ export function ThumbnailPreview({
         : fileId
           ? [getFileUrl(fileId)]
           : [];
-  const src = sources[srcIndex] ?? "";
+  const [seenSourcesKey, setSeenSourcesKey] = useState(() =>
+    thumbnailSourcesKey(sources),
+  );
+  const aligned = alignThumbnailPreviewState(sources, {
+    sourcesKey: seenSourcesKey,
+    failed,
+    loaded,
+    srcIndex,
+  });
+  // Align during render. A new first URL, or a same-landing replace of an
+  // exhausted set, resets failed/srcIndex/loaded. Growing the list while
+  // [0] is already loaded must keep `loaded` — otherwise the 8s hang
+  // timer swaps a working thumb to the new fallback. First-src + length
+  // is not the key: see thumbnailSourcesKey.
+  if (aligned.sourcesKey !== seenSourcesKey) {
+    setSeenSourcesKey(aligned.sourcesKey);
+    setFailed(aligned.failed);
+    setLoaded(aligned.loaded);
+    setSrcIndex(aligned.srcIndex);
+  }
+  const src = aligned.src;
 
   const advanceOrFail = () => {
-    setLoaded(false);
-    if (srcIndex + 1 < sources.length) {
-      setSrcIndex((i) => i + 1);
-      return;
-    }
-    setFailed(true);
+    const next = advanceThumbnailPreviewState(sources, {
+      sourcesKey: aligned.sourcesKey,
+      failed: aligned.failed,
+      loaded: aligned.loaded,
+      srcIndex: aligned.srcIndex,
+    });
+    setSeenSourcesKey(next.sourcesKey);
+    setFailed(next.failed);
+    setLoaded(next.loaded);
+    setSrcIndex(next.srcIndex);
   };
 
   useEffect(() => {
@@ -73,10 +102,10 @@ export function ThumbnailPreview({
   }, [near]);
 
   useEffect(() => {
-    if (!src || failed || loaded || !near) return;
+    if (!src || aligned.failed || aligned.loaded || !near) return;
     const timer = window.setTimeout(advanceOrFail, THUMBNAIL_LOAD_TIMEOUT_MS);
     return () => window.clearTimeout(timer);
-  }, [src, failed, loaded, srcIndex, near]);
+  }, [src, aligned.failed, aligned.loaded, aligned.srcIndex, near]);
 
   return (
     <div ref={rootRef} className="absolute inset-0">
@@ -84,10 +113,11 @@ export function ThumbnailPreview({
         paletteColors={paletteColors}
         placeholderTint={placeholderTint}
       />
-      {failed || !src || !near ? null : (
+      {aligned.failed || !src || !near ? null : (
         <GalleryImage
           key={src}
           src={src}
+          attempt={aligned.srcIndex}
           alt={alt}
           sizes={LANGUAGE_CARD_SIZES}
           eager={eager}
