@@ -472,6 +472,41 @@ assert.doesNotMatch(
   /--blue:/,
 );
 
+const rootBefore = ":root::before { --blue:#f00 }";
+assert.equal(
+  rootBefore,
+  ":root::before { --blue:#f00 }",
+  "replay must keep :root::before; do not hide by rewriting to :root {",
+);
+assert.match(rootBefore, /:root::before \{ --blue:#f00 \}/);
+assert.ok(
+  /:root::before/.test(rootBefore),
+  "today's walk would still treat a pseudo-element as a :root rule",
+);
+assert.deepEqual(extractRootDecls(rootBefore), []);
+assert.doesNotMatch(
+  compositionBindDecls(rootBefore, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const isRootBefore = ":is(:root)::before { --blue:#f00 }";
+assert.equal(
+  isRootBefore,
+  ":is(:root)::before { --blue:#f00 }",
+  "replay must keep :is(:root)::before; do not hide by rewriting to :is(:root)",
+);
+assert.match(isRootBefore, /:is\(:root\)::before \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(isRootBefore), []);
+assert.doesNotMatch(
+  compositionBindDecls(isRootBefore, roles, hero).join(";"),
+  /--blue:/,
+);
+
+assert.deepEqual(
+  extractRootDecls(":root:hover { --blue:#f00 }").map(([name]) => name),
+  ["blue"],
+);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

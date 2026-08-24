@@ -791,13 +791,10 @@ function innermostAlternativeHasCombinator(src: string, rootPos: number): boolea
   );
 }
 
-/**
- * Top-level alternative containing this `:root`. A combinator here means
- * `:root` is an ancestor (`:root > .x`) or a never-matching descendant
- * subject (`:is(.x) :is(:root)`). Only a single compound that matches
- * `:root` is the subject.
- */
-function topLevelAlternativeHasCombinator(src: string, rootPos: number): boolean {
+function topLevelAlternativeRange(
+  src: string,
+  rootPos: number,
+): [number, number] {
   const region = selectorRegionStart(src, rootPos);
   let i = region;
   let depth = 0;
@@ -845,18 +842,70 @@ function topLevelAlternativeHasCombinator(src: string, rootPos: number): boolean
       continue;
     }
     if (d === 0 && (src[j] === "{" || src[j] === "," || src[j] === "}" || src[j] === ";")) {
-      return rangeHasCombinator(src, altStart, j);
+      return [altStart, j];
     }
     j += 1;
   }
-  return rangeHasCombinator(src, altStart, src.length);
+  return [altStart, src.length];
+}
+
+/**
+ * Top-level alternative containing this `:root`. A combinator here means
+ * `:root` is an ancestor (`:root > .x`) or a never-matching descendant
+ * subject (`:is(.x) :is(:root)`). Only a single compound that matches
+ * `:root` is the subject.
+ */
+function topLevelAlternativeHasCombinator(src: string, rootPos: number): boolean {
+  const [start, end] = topLevelAlternativeRange(src, rootPos);
+  return rangeHasCombinator(src, start, end);
+}
+
+/** `::before` on the subject sits on the pseudo-element, not on `:root`. */
+function rangeHasPseudoElement(src: string, start: number, end: number): boolean {
+  let i = start;
+  let depth = 0;
+  while (i < end) {
+    const skipped = skipCssConstruct(src, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (src[i] === "(") {
+      depth += 1;
+      i += 1;
+      continue;
+    }
+    if (src[i] === ")") {
+      depth -= 1;
+      i += 1;
+      continue;
+    }
+    if (depth === 0 && src[i] === ":" && src[i + 1] === ":") return true;
+    i += 1;
+  }
+  return false;
+}
+
+function subjectHasPseudoElement(src: string, rootPos: number): boolean {
+  if (
+    rangeHasPseudoElement(
+      src,
+      selectorAlternativeStart(src, rootPos),
+      innermostAlternativeEnd(src, rootPos),
+    )
+  ) {
+    return true;
+  }
+  const [start, end] = topLevelAlternativeRange(src, rootPos);
+  return rangeHasPseudoElement(src, start, end);
 }
 
 /**
  * `{` that opens a rule that matches `:root`.
  * `:root, :host {`, `:is(:root) {`, and `:where(:root, :host) {` bind.
  * `:not(:root) {`, a combinator before `:root`, `:root` as an ancestor,
- * and a combinator inside `:is(:root > .x)` do not.
+ * a combinator inside `:is(:root > .x)`, and a `::` pseudo-element on
+ * the subject (`:root::before`) do not.
  */
 function rootRuleOpenBrace(src: string, i: number): number {
   if (src.slice(i, i + 5).toLowerCase() !== ":root") return -1;
@@ -866,6 +915,7 @@ function rootRuleOpenBrace(src: string, i: number): number {
   if (!rootTokenMatchesRoot(fns)) return -1;
   if (innermostAlternativeHasCombinator(src, i)) return -1;
   if (topLevelAlternativeHasCombinator(src, i)) return -1;
+  if (subjectHasPseudoElement(src, i)) return -1;
   let j = i + 5;
   let depth = fns.length;
   while (j < src.length) {
@@ -903,7 +953,8 @@ function rootRuleOpenBrace(src: string, i: number): number {
  * selector list (`:root, :host {`) or functional wrapper (`:is(:root) {`)
  * is. `:not(:root)`, a combinator before `:root` (`.x :root`),
  * `:root` as an ancestor (`:root > .x`), and a combinator inside a
- * wrapper (`:is(:root > .x)`) are not.
+ * wrapper (`:is(:root > .x)`), and a `::` pseudo-element on the
+ * subject (`:root::before`) are not.
  * A `:root` buried in a comment, string, or raw-text `<style>` (textarea)
  * is not. Must survive `}` inside `url("…<svg></svg>…")`.
  */
