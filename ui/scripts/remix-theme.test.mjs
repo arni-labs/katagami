@@ -357,6 +357,48 @@ assert.deepEqual(
   ["blue"],
 );
 
+const descendantRoot = ".x :root { --blue:#f00 }";
+assert.equal(
+  descendantRoot,
+  ".x :root { --blue:#f00 }",
+  "replay must keep the descendant combinator; do not hide by rewriting to :root {",
+);
+assert.match(descendantRoot, /\.x :root \{ --blue:#f00 \}/);
+assert.ok(
+  /:root\s*\{/.test(descendantRoot),
+  "today's walk would still treat this as a :root rule",
+);
+assert.deepEqual(extractRootDecls(descendantRoot), []);
+assert.doesNotMatch(
+  compositionBindDecls(descendantRoot, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const isThenRoot = ":is(.x) :root { --blue:#f00 }";
+assert.equal(
+  isThenRoot,
+  ":is(.x) :root { --blue:#f00 }",
+  "replay must keep :is(.x) :root; do not hide by rewriting to :is(:root)",
+);
+assert.match(isThenRoot, /:is\(\.x\) :root \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(isThenRoot), []);
+assert.doesNotMatch(
+  compositionBindDecls(isThenRoot, roles, hero).join(";"),
+  /--blue:/,
+);
+
+assert.deepEqual(extractRootDecls(".x > :root { --blue:#f00 }"), []);
+assert.deepEqual(extractRootDecls(".x + :root { --blue:#f00 }"), []);
+assert.deepEqual(extractRootDecls(".x ~ :root { --blue:#f00 }"), []);
+assert.deepEqual(
+  extractRootDecls("html:root { --blue:#f00 }").map(([name]) => name),
+  ["blue"],
+);
+assert.deepEqual(
+  extractRootDecls(":is(.x, :root) { --blue:#f00 }").map(([name]) => name),
+  ["blue"],
+);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

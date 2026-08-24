@@ -577,10 +577,170 @@ function rootTokenMatchesRoot(fns: string[]): boolean {
   return match;
 }
 
+function skipParenGroup(src: string, i: number): number {
+  let depth = 1;
+  i += 1;
+  while (i < src.length && depth > 0) {
+    const skipped = skipCssConstruct(src, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (src[i] === "(") depth += 1;
+    else if (src[i] === ")") depth -= 1;
+    i += 1;
+  }
+  return i;
+}
+
+function skipBracketGroup(src: string, i: number): number {
+  i += 1;
+  while (i < src.length) {
+    const skipped = skipCssConstruct(src, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (src[i] === "]") return i + 1;
+    i += 1;
+  }
+  return i;
+}
+
+function startsSimpleSelector(src: string, i: number): boolean {
+  const ch = src[i];
+  return (
+    ch === "." ||
+    ch === "#" ||
+    ch === "[" ||
+    ch === "*" ||
+    ch === ":" ||
+    ch === "|" ||
+    /[A-Za-z_-]/.test(ch)
+  );
+}
+
+function skipSimpleSelector(src: string, i: number): number {
+  if (src[i] === "[") return skipBracketGroup(src, i);
+  if (src[i] === "*") {
+    i += 1;
+    if (src[i] === "|") i += 1;
+    return i;
+  }
+  if (src[i] === "." || src[i] === "#") {
+    i += 1;
+    while (i < src.length && isCssIdentContinue(src[i])) i += 1;
+    return i;
+  }
+  if (src[i] === ":") {
+    i += 1;
+    if (src[i] === ":") i += 1;
+    while (i < src.length && isCssIdentContinue(src[i])) i += 1;
+    const after = skipCssTrivia(src, i);
+    if (src[after] === "(") return skipParenGroup(src, after);
+    return i;
+  }
+  if (src[i] === "|") i += 1;
+  while (i < src.length && isCssIdentContinue(src[i])) i += 1;
+  return i;
+}
+
+function combinatorLength(src: string, i: number): number {
+  if (src[i] === ">" || src[i] === "+" || src[i] === "~") return 1;
+  if (src[i] === "|" && src[i + 1] === "|") return 2;
+  return 0;
+}
+
+function skipLeadingComments(src: string, i: number): number {
+  while (i < src.length) {
+    if (src.startsWith("<!--", i)) {
+      const end = src.indexOf("-->", i + 4);
+      i = end === -1 ? src.length : end + 3;
+      continue;
+    }
+    if (src[i] === "/" && src[i + 1] === "*") {
+      i = skipCssComment(src, i);
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
+/** Start of this comma-separated alternative at the paren depth of `:root`. */
+function selectorAlternativeStart(src: string, rootPos: number): number {
+  const wrapDepth = wrappingFns(src, rootPos).length;
+  const region = selectorRegionStart(src, rootPos);
+  let i = region;
+  let depth = 0;
+  let alt = region;
+  while (i < rootPos) {
+    const skipped = skipCssConstruct(src, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (src[i] === "(") {
+      depth += 1;
+      if (depth === wrapDepth) alt = i + 1;
+      i += 1;
+      continue;
+    }
+    if (src[i] === ")") {
+      depth -= 1;
+      i += 1;
+      continue;
+    }
+    if (src[i] === "," && depth === wrapDepth) alt = i + 1;
+    i += 1;
+  }
+  return alt;
+}
+
+/**
+ * A combinator before `:root` never matches the document root.
+ * `.x :root`, `:is(.x) :root`, `.x > :root` do not bind.
+ */
+function hasCombinatorBeforeRoot(src: string, rootPos: number): boolean {
+  let i = skipCssTrivia(src, selectorAlternativeStart(src, rootPos));
+  let seenCompound = false;
+  while (i < rootPos) {
+    i = skipLeadingComments(src, i);
+    if (i >= rootPos) break;
+    if (/\s/.test(src[i])) {
+      const after = skipCssTrivia(src, i);
+      if (seenCompound && after <= rootPos && startsSimpleSelector(src, after)) {
+        return true;
+      }
+      i = after;
+      continue;
+    }
+    const skipped = skipCssCommentOrString(src, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    const comb = combinatorLength(src, i);
+    if (comb) {
+      if (seenCompound) return true;
+      i += comb;
+      continue;
+    }
+    if (startsSimpleSelector(src, i)) {
+      if (i === rootPos) break;
+      i = skipSimpleSelector(src, i);
+      seenCompound = true;
+      continue;
+    }
+    i += 1;
+  }
+  return false;
+}
+
 /**
  * `{` that opens a rule that matches `:root`.
  * `:root, :host {`, `:is(:root) {`, and `:where(:root, :host) {` bind.
- * `:not(:root) {` does not.
+ * `:not(:root) {` and a combinator before `:root` do not.
  */
 function rootRuleOpenBrace(src: string, i: number): number {
   if (src.slice(i, i + 5).toLowerCase() !== ":root") return -1;
@@ -588,6 +748,7 @@ function rootRuleOpenBrace(src: string, i: number): number {
   if (isCssIdentContinue(src[i + 5])) return -1;
   const fns = wrappingFns(src, i);
   if (!rootTokenMatchesRoot(fns)) return -1;
+  if (hasCombinatorBeforeRoot(src, i)) return -1;
   let j = i + 5;
   let depth = fns.length;
   while (j < src.length) {
@@ -623,9 +784,9 @@ function rootRuleOpenBrace(src: string, i: number): number {
  * Pull `--name: value` pairs out of every real `:root` rule in stylesheet
  * text. HTML body text that looks like `:root { … }` is not a rule. A
  * selector list (`:root, :host {`) or functional wrapper (`:is(:root) {`)
- * is. `:not(:root)` is not. A `:root` buried in a comment, string, or
- * raw-text `<style>` (textarea) is not. Must survive `}` inside
- * `url("…<svg></svg>…")`.
+ * is. `:not(:root)` and a combinator before `:root` (`.x :root`) are not.
+ * A `:root` buried in a comment, string, or raw-text `<style>` (textarea)
+ * is not. Must survive `}` inside `url("…<svg></svg>…")`.
  */
 function extractRootDeclsFromCss(css: string): Array<[string, string]> {
   const decls: Array<[string, string]> = [];
