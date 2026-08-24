@@ -202,6 +202,16 @@ assert.equal(
   false,
 );
 
+const urlReplay =
+  "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>";
+assert.equal(
+  urlReplay,
+  "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>",
+);
+assert.match(urlReplay, /url\(data:image\/svg\+xml,<svg>var\(--bg\)<\/svg>\)/);
+assert.equal(consumesCustomProperty(urlReplay, "bg"), false);
+assert.equal(consumesCustomProperty(urlReplay, "paper"), true);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

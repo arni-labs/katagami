@@ -2015,6 +2015,73 @@ fn skip_quoted(src: &str, start: usize) -> usize {
     bytes.len()
 }
 
+fn is_css_ident_continue(c: u8) -> bool {
+    c.is_ascii_alphanumeric() || c == b'_' || c == b'-'
+}
+
+fn starts_css_url(src: &str, i: usize) -> bool {
+    let Some(rest) = src.get(i..) else {
+        return false;
+    };
+    if !rest.starts_with("url(") {
+        return false;
+    }
+    i == 0
+        || !src
+            .as_bytes()
+            .get(i - 1)
+            .is_some_and(|&c| is_css_ident_continue(c))
+}
+
+fn skip_css_url(src: &str, i: usize) -> usize {
+    let bytes = src.as_bytes();
+    let Some(open) = src.get(i..).and_then(|s| s.find('(')) else {
+        return (i + 4).min(src.len());
+    };
+    let mut i = i + open + 1;
+    while i < bytes.len() && bytes[i].is_ascii_whitespace() {
+        i += 1;
+    }
+    if bytes.get(i).is_some_and(|&c| c == b'"' || c == b'\'') {
+        i = skip_quoted(src, i);
+        return src[i..]
+            .find(')')
+            .map(|p| i + p + 1)
+            .unwrap_or(src.len());
+    }
+    let mut depth = 1i32;
+    while i < bytes.len() {
+        if bytes[i] == b'\\' {
+            i += 2;
+            continue;
+        }
+        if bytes[i] == b'"' || bytes[i] == b'\'' {
+            i = skip_quoted(src, i);
+            continue;
+        }
+        if bytes[i] == b'(' {
+            depth += 1;
+        } else if bytes[i] == b')' {
+            depth -= 1;
+            if depth == 0 {
+                return i + 1;
+            }
+        }
+        i += 1;
+    }
+    i
+}
+
+fn skip_css_construct(src: &str, i: usize) -> Option<usize> {
+    if let Some(next) = skip_css_comment_or_string(src, i) {
+        return Some(next);
+    }
+    if starts_css_url(src, i) {
+        return Some(skip_css_url(src, i));
+    }
+    None
+}
+
 fn skip_css_comment_or_string(src: &str, i: usize) -> Option<usize> {
     let bytes = src.as_bytes();
     if src.get(i..).is_some_and(|s| s.starts_with("<!--")) {
@@ -2168,7 +2235,7 @@ fn css_contains_custom_property(css: &str, name: &str) -> bool {
     let name_bytes = name.as_bytes();
     let mut i = 0;
     while i < bytes.len() {
-        if let Some(next) = skip_css_comment_or_string(css, i) {
+        if let Some(next) = skip_css_construct(css, i) {
             i = next;
             continue;
         }
@@ -2201,7 +2268,8 @@ fn css_contains_custom_property(css: &str, name: &str) -> bool {
 
 /// True only when CSS actually consumes the custom property: `var(--bg)`,
 /// `var(--bg,`, `var(--bg )`. A prefix of `--bg-alt` must not green `--bg`.
-/// A comment (`/* var(--bg) */`) or string (`content:"var(--bg)"`) is not consume.
+/// A comment (`/* var(--bg) */`), string (`content:"var(--bg)"`), or
+/// token inside `url()` is not consume.
 fn consumes_custom_property(html_lower: &str, name: &str) -> bool {
     let surfaces = extract_css_consumption_surfaces(html_lower);
     if surfaces.is_empty() {
@@ -6314,6 +6382,14 @@ mod page_quality_tests {
             r#"<style>.x{content:"var(--bg)"} body{background:var(--paper)}</style>"#,
             "bg"
         ));
+        const URL_REPLAY: &str =
+            "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>";
+        assert_eq!(
+            URL_REPLAY,
+            "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>"
+        );
+        assert!(!consumes_custom_property(URL_REPLAY, "bg"));
+        assert!(consumes_custom_property(URL_REPLAY, "paper"));
     }
 
     #[test]
@@ -6352,6 +6428,25 @@ mod page_quality_tests {
         );
         let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
             .expect_err("comment or string var(--bg) must not green var(--bg)");
+        assert_eq!(err.code, "composition_remix_vars_not_consumed");
+    }
+
+    #[test]
+    fn landing_that_only_mentions_bg_inside_url_fails_consume_gate() {
+        let mut body = page("Url bg", "url-bg", 30_000);
+        body = body.replace("var(--bg)", "var(--paper)");
+        body = body.replace(
+            "</head>",
+            "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style><style>.hero{background-image:var(--hero-image,url(https://katagami.ai/api/file/fl-x))}</style></head>",
+        );
+        assert!(
+            body.contains(
+                "<style>body{background:url(data:image/svg+xml,<svg>var(--bg)</svg>);color:var(--paper)}</style>"
+            ),
+            "replay must keep var(--bg) inside url(); do not hide the hole by deleting it"
+        );
+        let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect_err("var(--bg) inside url() must not green var(--bg)");
         assert_eq!(err.code, "composition_remix_vars_not_consumed");
     }
 

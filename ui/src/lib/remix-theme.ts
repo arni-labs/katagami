@@ -274,7 +274,7 @@ function extractCssConsumptionSurfaces(html: string): string[] {
 function cssContainsCustomProperty(css: string, ident: string): boolean {
   let i = 0;
   while (i < css.length) {
-    const skipped = skipCssCommentOrString(css, i);
+    const skipped = skipCssConstruct(css, i);
     if (skipped !== null) {
       i = skipped;
       continue;
@@ -433,7 +433,8 @@ export function compositionBindDecls(
 /**
  * True only when CSS actually consumes the custom property: `var(--bg)`,
  * `var(--bg,`, `var(--bg )`. A prefix of `--bg-alt` must not green `--bg`.
- * A comment (`/* var(--bg) *\/`) or string (`content:"var(--bg)"`) is not consume.
+ * A comment (`/* var(--bg) *\/`), string (`content:"var(--bg)"`), or
+ * token inside `url()` is not consume.
  */
 export function consumesCustomProperty(html: string, name: string): boolean {
   const src = html.toLowerCase();
