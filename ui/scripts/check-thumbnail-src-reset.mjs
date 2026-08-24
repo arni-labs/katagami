@@ -220,4 +220,96 @@ await act(() => {
   root.unmount();
 });
 
+// ── Same reuse class: CdnImg keeps useState(src) across src changes ──
+const { CdnImg, alignCdnImgCurrent } = loadModule(
+  resolve(uiRoot, "src/components/cdn-img.tsx"),
+);
+
+{
+  const cdnA = "https://assets.katagami.ai/a.jpg";
+  const cdnB = "https://assets.katagami.ai/b.jpg";
+  const proxy = "/api/file/fl-a";
+
+  let view = alignCdnImgCurrent(cdnA, "", "");
+  assert.equal(view.current, cdnA);
+
+  view = alignCdnImgCurrent(cdnA, view.seenSrc, proxy);
+  assert.equal(
+    view.current,
+    proxy,
+    "a 404 fallback must not snap back to the dead CDN URL",
+  );
+
+  view = alignCdnImgCurrent(cdnB, view.seenSrc, view.current);
+  assert.equal(view.seenSrc, cdnB);
+  assert.equal(view.current, cdnB, "src identity change must reset current");
+}
+
+function CdnHarness({ src, fallbackSrc }) {
+  return React.createElement(CdnImg, {
+    src,
+    fallbackSrc,
+    alt: "art",
+  });
+}
+
+const cdnA = "https://assets.katagami.ai/a.jpg";
+const cdnB = "https://assets.katagami.ai/b.jpg";
+const proxyA = "/api/file/fl-a";
+
+const cdnRoot = createRoot(container);
+
+await act(() => {
+  cdnRoot.render(React.createElement(CdnHarness, { src: cdnA, fallbackSrc: proxyA }));
+});
+
+let cdnImg = container.querySelector("img");
+assert.ok(cdnImg);
+assert.equal(cdnImg.getAttribute("src"), cdnA);
+
+await act(() => {
+  cdnRoot.render(React.createElement(CdnHarness, { src: cdnB, fallbackSrc: proxyA }));
+});
+
+cdnImg = container.querySelector("img");
+assert.ok(cdnImg);
+assert.equal(
+  cdnImg.getAttribute("src"),
+  cdnB,
+  "reused CdnImg must show the new src, not the previous current",
+);
+
+await act(() => {
+  cdnRoot.render(React.createElement(CdnHarness, { src: cdnA, fallbackSrc: proxyA }));
+});
+cdnImg = container.querySelector("img");
+assert.equal(cdnImg.getAttribute("src"), cdnA);
+
+await act(() => {
+  cdnImg.dispatchEvent(new window.Event("error", { bubbles: true }));
+});
+cdnImg = container.querySelector("img");
+assert.equal(cdnImg.getAttribute("src"), proxyA, "404 must heal to the proxy");
+
+await act(() => {
+  cdnRoot.render(React.createElement(CdnHarness, { src: cdnA, fallbackSrc: proxyA }));
+});
+cdnImg = container.querySelector("img");
+assert.equal(
+  cdnImg.getAttribute("src"),
+  proxyA,
+  "same src after fallback must keep the proxy, not retry the dead CDN URL",
+);
+
+await act(() => {
+  cdnRoot.render(React.createElement(CdnHarness, { src: cdnB, fallbackSrc: "/api/file/fl-b" }));
+});
+cdnImg = container.querySelector("img");
+assert.equal(cdnImg.getAttribute("src"), cdnB);
+
+await act(() => {
+  cdnRoot.unmount();
+});
+
 console.log("thumbnail src reset: ok");
+console.log("cdn-img src reset: ok");
