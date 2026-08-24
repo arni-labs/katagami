@@ -2,7 +2,9 @@
  * When a language-detail Suspense island may paint a pulse.
  *
  * `render`  — the island will produce UI. Pulse is legal.
- * `pending` — the language already qualifies; catalogs are not here yet. Pulse is legal.
+ * `pending` — catalogs are not here yet. Pulse is not legal: pending can
+ *             become empty (catch-to-`[]`). The remix island decides after
+ *             the fetch. The language page must not await that fetch.
  * `empty`   — the island will return null. Do not mount it (no pulse).
  * `unknown` — page fields cannot tell. A pulse would collapse. No pulse.
  *
@@ -11,10 +13,9 @@
  * is empty — including listArtStyles / listPaletteSystems catch-to-`[]`.
  * Missing landing/dashboard is empty (do not mount).
  *
- * The language page must await `resolveRemixCatalogs` *before* choosing the
- * remix Suspense fallback. Omitted catalogs on that page would pulse, then
- * the island's catch-to-`[]` would collapse the lane. While that await is
- * in flight, `loading.tsx` (`LanguageDetailSkeleton`) is the Bluet pulse.
+ * Catalogs belong to the remix island. Awaiting them on LanguageDetailPage
+ * holds hero / spec / embodiments on route `loading.tsx` (#245 leftover).
+ * A page-level pulse around the island is catch-to-`[]` pulse-then-null.
  *
  * Lineage / related: no field on this page proves they will render.
  * parent_ids may be unpublished (ARN-331); children and neighbours need a
@@ -28,7 +29,7 @@ type LangRow = { entity_id: string; status: string; fields: FieldBag };
 export type StreamOutcome = "render" | "pending" | "empty" | "unknown";
 
 export function streamShowsPulse(outcome: StreamOutcome): boolean {
-  return outcome === "render" || outcome === "pending";
+  return outcome === "render";
 }
 
 function parseJson<T = unknown>(raw?: unknown): T | null {
@@ -65,9 +66,9 @@ export type RemixCatalogs = { palettes: LangRow[]; arts: LangRow[] };
 export type RemixCatalogLoader = () => Promise<LangRow[]>;
 
 /**
- * `listArtStyles` / `listPaletteSystems` catch to `[]`. That empty result
- * has to be known before a remix pulse paints, or Bluet-class pages
- * pulse then collapse. Call this outside the remix Suspense.
+ * `listArtStyles` / `listPaletteSystems` catch to `[]`. Call this inside
+ * the remix island — not on LanguageDetailPage. The island returns null
+ * on empty so a parent `fallback={null}` never pulse-then-collapses.
  */
 export async function resolveRemixCatalogs(
   listPalettes: RemixCatalogLoader,

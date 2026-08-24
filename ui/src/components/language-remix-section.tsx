@@ -20,16 +20,14 @@ export async function loadLanguageRemixCatalogs(): Promise<RemixCatalogs> {
   );
 }
 
-/** Catalogs are resolved on the language page before this island mounts. */
+/** Catalogs stay in this island so language first paint is not blocked. */
 export async function LanguageRemixSection({
   lang,
-  catalogs,
 }: {
   lang: DesignLanguage;
-  catalogs?: RemixCatalogs;
 }) {
   const { palettes: paletteRows, arts: artRows } =
-    catalogs ?? (await loadLanguageRemixCatalogs());
+    await loadLanguageRemixCatalogs();
   const remixLangOpts = toLanguageOpts([lang]);
   const remixPalOpts = toPaletteOpts(paletteRows);
   const remixArtOpts = toArtOpts(artRows);

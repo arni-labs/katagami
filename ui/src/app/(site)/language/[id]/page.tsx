@@ -12,14 +12,10 @@ import {
 import { RelatedLanguages } from "@/components/related-languages";
 import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
-import {
-  LanguageRemixSection,
-  loadLanguageRemixCatalogs,
-} from "@/components/language-remix-section";
+import { LanguageRemixSection } from "@/components/language-remix-section";
 import { LanguageSectionSkeleton } from "@/components/gallery-skeleton";
 import {
   identityStreamOutcome,
-  languageHasRemixComposition,
   remixStreamOutcome,
   streamShowsPulse,
 } from "@/lib/language-detail-stream";
@@ -203,16 +199,13 @@ export default async function LanguageDetailPage({
   };
   const katagamiMarkdown = katagamiSpecToMarkdown(specProps);
   const designMd = designMdToMarkdown(specProps);
-  // Remix catalogs (and their catch-to-`[]`) must be known before this page
-  // chooses a remix Suspense fallback. Omitted catalogs are pending — a pulse
-  // that the island later returns null for. Await them here, outside that
-  // boundary. No landing/dashboard: do not fetch, do not mount. While the
-  // await is in flight, language `loading.tsx` is the Bluet pending pulse.
+  // Remix catalogs stay in LanguageRemixSection. Awaiting them here held
+  // hero / spec / embodiments on route loading.tsx (#245 leftover).
+  // No landing/dashboard: do not mount. Pending: fallback is null — the
+  // island decides empty vs render after the fetch, so catch-to-[] cannot
+  // flash two h-72 pulses then vanish.
   const identityOutcome = identityStreamOutcome(f);
-  const remixCatalogs = languageHasRemixComposition(lang)
-    ? await loadLanguageRemixCatalogs()
-    : undefined;
-  const remixOutcome = remixStreamOutcome(lang, remixCatalogs);
+  const remixOutcome = remixStreamOutcome(lang);
   // The shadcn implementation kit (3 stored-file reads + markdown generation) is
   // rendered in a streamed <ShadcnKitSection> Suspense island below — it no
   // longer blocks the page's TTFB. The shadcn download is served on demand by
@@ -368,12 +361,8 @@ export default async function LanguageDetailPage({
       <ModelProvenance raw={f.model_provenance} />
 
       {remixOutcome === "empty" ? null : (
-        <Suspense
-          fallback={
-            streamShowsPulse(remixOutcome) ? <LanguageSectionSkeleton /> : null
-          }
-        >
-          <LanguageRemixSection lang={lang} catalogs={remixCatalogs} />
+        <Suspense fallback={null}>
+          <LanguageRemixSection lang={lang} />
         </Suspense>
       )}
 
