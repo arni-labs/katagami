@@ -46,10 +46,13 @@ export function LanguageDetailSkeleton() {
 }
 
 /** Same pulse language as `LanguageDetailSkeleton`, without the route chrome. */
-export function RemixLaneSkeleton() {
+export function LanguageSectionSkeleton() {
   return (
     <section aria-hidden className="space-y-6">
       <DetailPulseShell />
     </section>
   );
 }
+
+/** Alias kept for the #246 remix-shell look — same pulse, no new style. */
+export const RemixLaneSkeleton = LanguageSectionSkeleton;

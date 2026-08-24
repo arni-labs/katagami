@@ -44,15 +44,15 @@ assert.match(remixSrc, /RemixLaneBlurb/, "remix section must render RemixLaneBlu
 assert.doesNotMatch(pageSrc, /Studio does the same/);
 assert.doesNotMatch(remixSrc, /Studio does the same/);
 
-assert.doesNotMatch(
-  pageSrc,
-  /<Suspense fallback=\{null\}>\s*<LanguageRemixSection/,
-  "remix lane must not vanish (fallback=null) while listArtStyles is pending",
-);
 assert.match(
   pageSrc,
-  /fallback=\{<RemixLaneSkeleton/,
-  "remix Suspense must use the loading.tsx pulse shell, not a new look",
+  /remixStreamOutcome/,
+  "language detail must gate the remix island on the stream outcome",
+);
+assert.match(
+  remixSrc,
+  /canRemixLanguage/,
+  "remix section must share the canRemix helper so empty catalogs stay null",
 );
 const skeletonSrc = fs.readFileSync(
   path.join(here, "../src/components/gallery-skeleton.tsx"),
@@ -60,8 +60,13 @@ const skeletonSrc = fs.readFileSync(
 );
 assert.match(
   skeletonSrc,
-  /export function RemixLaneSkeleton/,
-  "remix fallback lives next to the #245 loading shells",
+  /export function LanguageSectionSkeleton/,
+  "in-page shells live next to the #245 loading shells",
+);
+assert.match(
+  skeletonSrc,
+  /RemixLaneSkeleton = LanguageSectionSkeleton/,
+  "remix alias must keep the same pulse, not a new look",
 );
 assert.match(
   skeletonSrc,
@@ -105,7 +110,7 @@ const detailMarkup = renderToStaticMarkup(
   React.createElement(skeletonMod.exports.LanguageDetailSkeleton),
 );
 const remixMarkup = renderToStaticMarkup(
-  React.createElement(skeletonMod.exports.RemixLaneSkeleton),
+  React.createElement(skeletonMod.exports.LanguageSectionSkeleton),
 );
 assert.match(detailMarkup, /animate-pulse/);
 assert.match(remixMarkup, /animate-pulse/);
@@ -123,4 +128,4 @@ assert.ok(
 );
 
 console.log("remix-lane copy: space, period, no studio sentence");
-console.log("remix-lane shell: RemixLaneSkeleton, not fallback=null");
+console.log("remix-lane shell: LanguageSectionSkeleton matches loading.tsx pulses");

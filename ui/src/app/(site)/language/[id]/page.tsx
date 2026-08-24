@@ -13,7 +13,14 @@ import { RelatedLanguages } from "@/components/related-languages";
 import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
 import { LanguageRemixSection } from "@/components/language-remix-section";
-import { RemixLaneSkeleton } from "@/components/gallery-skeleton";
+import { LanguageSectionSkeleton } from "@/components/gallery-skeleton";
+import {
+  identityStreamOutcome,
+  lineageStreamOutcome,
+  relatedStreamOutcome,
+  remixStreamOutcome,
+  streamShowsPulse,
+} from "@/lib/language-detail-stream";
 import {
   designMdToMarkdown,
   katagamiSpecToMarkdown,
@@ -194,6 +201,13 @@ export default async function LanguageDetailPage({
   };
   const katagamiMarkdown = katagamiSpecToMarkdown(specProps);
   const designMd = designMdToMarkdown(specProps);
+  // Pulse only when the island is known to render. `unknown` (pending
+  // catalogs / unpublished parents / no peers) must not paint a shell that
+  // then collapses — that is the #246 leftover. See language-detail-stream.
+  const identityOutcome = identityStreamOutcome(f);
+  const remixOutcome = remixStreamOutcome(lang);
+  const lineageOutcome = lineageStreamOutcome();
+  const relatedOutcome = relatedStreamOutcome();
   // The shadcn implementation kit (3 stored-file reads + markdown generation) is
   // rendered in a streamed <ShadcnKitSection> Suspense island below — it no
   // longer blocks the page's TTFB. The shadcn download is served on demand by
@@ -330,9 +344,17 @@ export default async function LanguageDetailPage({
       {/* Identity — what the language is BUILT WITH: its art style + palette.
           Sits UNDER the embodiment, never above it. One style / one palette,
           never a full-lane list (that is what made this page wait 1–3s). */}
-      <Suspense fallback={null}>
-        <LanguageIdentity fields={f} />
-      </Suspense>
+      {identityOutcome === "empty" ? null : (
+        <Suspense
+          fallback={
+            streamShowsPulse(identityOutcome) ? (
+              <LanguageSectionSkeleton />
+            ) : null
+          }
+        >
+          <LanguageIdentity fields={f} />
+        </Suspense>
+      )}
 
       <Credits raw={f.credits} />
 
@@ -340,20 +362,42 @@ export default async function LanguageDetailPage({
 
       <ModelProvenance raw={f.model_provenance} />
 
-      <Suspense fallback={<RemixLaneSkeleton />}>
-        <LanguageRemixSection lang={lang} />
-      </Suspense>
+      {remixOutcome === "empty" ? null : (
+        <Suspense
+          fallback={
+            streamShowsPulse(remixOutcome) ? <LanguageSectionSkeleton /> : null
+          }
+        >
+          <LanguageRemixSection lang={lang} />
+        </Suspense>
+      )}
 
-      <Suspense fallback={null}>
-        <LanguageLineage currentId={id} fields={f} />
-      </Suspense>
+      {lineageOutcome === "empty" ? null : (
+        <Suspense
+          fallback={
+            streamShowsPulse(lineageOutcome) ? (
+              <LanguageSectionSkeleton />
+            ) : null
+          }
+        >
+          <LanguageLineage currentId={id} fields={f} />
+        </Suspense>
+      )}
 
-      <Suspense fallback={null}>
-        <RelatedLanguages
-          currentId={id}
-          currentTags={parseJson<string[]>(f.tags) ?? []}
-        />
-      </Suspense>
+      {relatedOutcome === "empty" ? null : (
+        <Suspense
+          fallback={
+            streamShowsPulse(relatedOutcome) ? (
+              <LanguageSectionSkeleton />
+            ) : null
+          }
+        >
+          <RelatedLanguages
+            currentId={id}
+            currentTags={parseJson<string[]>(f.tags) ?? []}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
