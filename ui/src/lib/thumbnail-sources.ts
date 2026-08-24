@@ -38,8 +38,10 @@ function sourcesFromKey(key: string): string[] {
 }
 
 /** Reset failed/srcIndex/loaded only when the identity that matters changes:
- *  a new first URL, or a same-landing replace of an exhausted/failed set.
- *  An array that grew while [0] is the same loaded URL is not a remount. */
+ *  a new first URL, a same-landing replace of an exhausted/failed set, or
+ *  the slot we were showing is gone (shrink while srcIndex is past the
+ *  new list). An array that grew while [0] is the same loaded URL is not
+ *  a remount. */
 export function thumbnailSourcesNeedReset(
   sources: readonly string[],
   state: ThumbnailPreviewSourceState,
@@ -49,7 +51,8 @@ export function thumbnailSourcesNeedReset(
   const prevFirst = sourcesFromKey(state.sourcesKey)[0] ?? "";
   const first = sources[0] ?? "";
   if (prevFirst !== first) return true;
-  return state.failed;
+  if (state.failed) return true;
+  return state.srcIndex >= sources.length;
 }
 
 export function alignThumbnailPreviewState(

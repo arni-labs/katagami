@@ -94,6 +94,11 @@ assert.match(
   /key=\{src\}/,
   "key={src} keeps a loaded first URL mounted when the fallback list grows",
 );
+assert.match(
+  preview,
+  /attempt=\{aligned\.srcIndex\}/,
+  "srcIndex hops must reset GalleryImage failed without changing key={src}",
+);
 assert.doesNotMatch(
   preview,
   /srcIndex\}:\$\{src/,
@@ -175,6 +180,26 @@ function initial(sources) {
   assert.equal(view.srcIndex, 0);
   assert.equal(view.src, good);
   assert.equal(view.failed, false);
+}
+
+{
+  const landing = "https://example.com/landing.jpg";
+  const emb = "https://example.com/emb.jpg";
+  let view = initial([landing, emb]);
+  view = advanceThumbnailPreviewState([landing, emb], view);
+  view = { ...view, loaded: true };
+  assert.equal(view.srcIndex, 1);
+  assert.equal(view.src, emb);
+  assert.equal(
+    thumbnailSourcesNeedReset([landing], view),
+    true,
+    "shrink that drops the showing slot must reset — srcIndex is past the new list",
+  );
+  view = alignThumbnailPreviewState([landing], view);
+  assert.equal(view.srcIndex, 0, "shrink while showing a later source must retry landing");
+  assert.equal(view.src, landing);
+  assert.equal(view.failed, false);
+  assert.equal(view.loaded, false, "the loaded flag belonged to the dropped URL");
 }
 
 // ── Same sequence on a mounted ThumbnailPreview instance ───────────
@@ -286,16 +311,15 @@ flush(() => {
   flush(() => {
     img.dispatchEvent(new window.Event("error", { bubbles: true }));
   });
-  // key={src} reuses GalleryImage when both slots are the same URL, so the
-  // second hop may not paint. The 8s hang timer finishes the exhaust so
-  // the replace below is against a failed set.
   img = currentImg(container);
-  if (img) {
-    flush(() => {
-      img.dispatchEvent(new window.Event("error", { bubbles: true }));
-    });
-  }
-  fireLoadTimeouts();
+  assert.ok(
+    img,
+    "identical dead URLs must hop/retry immediately, not sit on GalleryImage.failed until the 8s timer",
+  );
+  assert.equal(img.getAttribute("src"), deadUrl);
+  flush(() => {
+    img.dispatchEvent(new window.Event("error", { bubbles: true }));
+  });
   assert.equal(
     isPlaceholder(container),
     true,
@@ -363,6 +387,73 @@ flush(() => {
 
   flush(() => {
     growRoot.unmount();
+  });
+}
+
+// Leftover 1: [dead, dead] same URL twice. First error must not pin the
+// card on a stale GalleryImage failed flag just because slot 1 equals slot 0.
+{
+  const dupRoot = createRoot(container);
+  flush(() => {
+    dupRoot.render(React.createElement(Harness, { srcs: [deadUrl, deadUrl] }));
+  });
+  img = currentImg(container);
+  assert.ok(img);
+  assert.equal(img.getAttribute("src"), deadUrl);
+  flush(() => {
+    img.dispatchEvent(new window.Event("error", { bubbles: true }));
+  });
+  img = currentImg(container);
+  assert.ok(
+    img,
+    "same-URL hop must retry without waiting on the 8s hang timer",
+  );
+  assert.equal(img.getAttribute("src"), deadUrl);
+  assert.equal(
+    pendingLoadTimeouts.length > 0,
+    true,
+    "a hang timer may still be armed for the retry, but the hop itself already painted",
+  );
+  flush(() => {
+    dupRoot.unmount();
+  });
+}
+
+// Leftover 2: showing a later source, then the list shrinks. Must retry
+// landing — not sit on sources[1] === undefined forever.
+{
+  const landing = "https://example.com/landing.jpg";
+  const emb = "https://example.com/emb.jpg";
+  const shrinkRoot = createRoot(container);
+  flush(() => {
+    shrinkRoot.render(React.createElement(Harness, { srcs: [landing, emb] }));
+  });
+  img = currentImg(container);
+  assert.ok(img);
+  assert.equal(img.getAttribute("src"), landing);
+  flush(() => {
+    img.dispatchEvent(new window.Event("error", { bubbles: true }));
+  });
+  img = currentImg(container);
+  assert.ok(img, "404 landing must try the embodiment");
+  assert.equal(img.getAttribute("src"), emb);
+  flush(() => {
+    img.dispatchEvent(new window.Event("load", { bubbles: true }));
+  });
+
+  flush(() => {
+    shrinkRoot.render(React.createElement(Harness, { srcs: [landing] }));
+  });
+  img = currentImg(container);
+  assert.ok(
+    img,
+    "shrink while showing embodiment must retry landing, not sit on an empty src",
+  );
+  assert.equal(img.getAttribute("src"), landing);
+  assert.equal(isPlaceholder(container), false);
+
+  flush(() => {
+    shrinkRoot.unmount();
   });
 }
 

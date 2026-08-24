@@ -17,10 +17,25 @@ export const GALLERY_REMOTE_HOSTS = [
   "temperpaw-assets.katagami.ai",
 ] as const;
 
+/** Absolute /api/file URLs the browser serializes on production and on
+ *  Vercel preview/deploy hosts. next/image only takes the relative form
+ *  (canOptimizeGallerySrc is true for `/…` and for allowlisted CDN hosts —
+ *  not for *.vercel.app). */
+export function isGalleryFileProxyHost(hostname: string): boolean {
+  return (
+    hostname === "katagami.ai" ||
+    hostname === "www.katagami.ai" ||
+    hostname === "vercel.app" ||
+    hostname.endsWith(".vercel.app")
+  );
+}
+
 /** Strip the cache-bust query from local /api/file URLs. File ids are
  *  immutable; next/image rejects query strings on local paths. Absolute
  *  same-origin /api/file URLs (what the browser serializes) become relative
- *  so they take the optimizer path instead of the raw original. */
+ *  so they take the optimizer path instead of the raw original. Preview
+ *  hosts must rewrite the same way — a leftover *.vercel.app URL stays
+ *  absolute and skips next/image. */
 export function galleryImageSrc(url: string): string {
   const trimmed = url.trim();
   if (!trimmed) return "";
@@ -28,8 +43,7 @@ export function galleryImageSrc(url: string): string {
   try {
     const parsed = new URL(trimmed);
     if (
-      (parsed.hostname === "katagami.ai" ||
-        parsed.hostname === "www.katagami.ai") &&
+      isGalleryFileProxyHost(parsed.hostname) &&
       parsed.pathname.startsWith("/api/file/")
     ) {
       return parsed.pathname;
@@ -62,17 +76,21 @@ export function artStyleCardHero(input: {
   return (input.thumb ?? "").trim() || (input.refs?.[0] ?? "").trim();
 }
 
-/** Reset current/failed when the src *prop* identity changes. Comparing
+/** Reset current/failed when the src *prop* identity changes, or when
+ *  `attempt` hops (a parent retry of the same URL). Comparing
  *  `current !== src` is wrong: after a 404 fallback those already differ,
- *  and that check would snap back to the dead CDN URL on every render. */
+ *  and that check would snap back to the dead CDN URL on every render.
+ *  `attempt` is not a remount key — ThumbnailPreview keeps key={src}. */
 export function alignGalleryImageState(
   src: string,
   seenSrc: string,
   current: string,
   failed: boolean,
-): { seenSrc: string; current: string; failed: boolean } {
-  if (seenSrc !== src) {
-    return { seenSrc: src, current: src, failed: false };
+  attempt = 0,
+  seenAttempt = 0,
+): { seenSrc: string; current: string; failed: boolean; seenAttempt: number } {
+  if (seenSrc !== src || attempt !== seenAttempt) {
+    return { seenSrc: src, current: src, failed: false, seenAttempt: attempt };
   }
-  return { seenSrc, current, failed };
+  return { seenSrc, current, failed, seenAttempt };
 }

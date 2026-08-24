@@ -34,6 +34,21 @@ assert.equal(
   "/api/file/fl-abc",
   "www host is treated as same-origin",
 );
+assert.equal(
+  galleryImageSrc("https://katagami-abc.vercel.app/api/file/fl-abc?v=asset-cdn-v3"),
+  "/api/file/fl-abc",
+  "preview/deploy hosts must rewrite /api/file like production so next/image can resize them",
+);
+assert.equal(
+  canOptimizeGallerySrc("https://katagami-abc.vercel.app/api/file/fl-abc"),
+  true,
+  "a rewritten vercel.app file URL must take the optimizer path",
+);
+assert.equal(
+  galleryImageSrc("https://katagami-abc.vercel.app/other.jpg"),
+  "https://katagami-abc.vercel.app/other.jpg",
+  "non-file vercel URLs stay absolute",
+);
 
 assert.equal(canOptimizeGallerySrc("/api/file/fl-abc"), true);
 assert.equal(
@@ -218,6 +233,12 @@ const { alignGalleryImageState } = mod.exports;
   assert.equal(view.seenSrc, cdnB);
   assert.equal(view.current, cdnB, "src identity change must reset current");
   assert.equal(view.failed, false, "src identity change must clear failed");
+
+  view = alignGalleryImageState(cdnA, cdnA, cdnA, true, 0, 0);
+  assert.equal(view.failed, true, "same src + same attempt keeps failed");
+  view = alignGalleryImageState(cdnA, view.seenSrc, view.current, view.failed, 1, view.seenAttempt);
+  assert.equal(view.failed, false, "same src + attempt hop must clear failed");
+  assert.equal(view.current, cdnA);
 }
 
 const galleryImageSrcFile = readFileSync(
@@ -235,10 +256,11 @@ const { loadUiModule, createFlush } = await import("./react-harness.mjs");
 const { GalleryImage } = loadUiModule("src/components/gallery-image.tsx");
 const { React, createRoot, flush } = createFlush();
 
-function GalleryHarness({ src, fallbackSrc }) {
+function GalleryHarness({ src, fallbackSrc, attempt }) {
   return React.createElement(GalleryImage, {
     src,
     fallbackSrc,
+    attempt,
     alt: "art",
     sizes: "25vw",
     eager: true,
@@ -309,6 +331,35 @@ assert.equal(
 flush(() => {
   root.unmount();
 });
+
+// Same src string, new attempt: parent hop after an error must retry,
+// not stay null on the stale failed flag (key={src} does not remount).
+{
+  const hopRoot = createRoot(container);
+  flush(() => {
+    hopRoot.render(React.createElement(GalleryHarness, { src: cdnA, attempt: 0 }));
+  });
+  img = container.querySelector("img");
+  assert.ok(img);
+  flush(() => {
+    img.dispatchEvent(new window.Event("error", { bubbles: true }));
+  });
+  assert.equal(container.querySelector("img"), null, "first error with no fallback returns null");
+
+  flush(() => {
+    hopRoot.render(React.createElement(GalleryHarness, { src: cdnA, attempt: 1 }));
+  });
+  img = container.querySelector("img");
+  assert.ok(
+    img,
+    "attempt hop on the same src must clear failed without remounting via a new key",
+  );
+  assert.equal(img.getAttribute("src"), cdnA);
+
+  flush(() => {
+    hopRoot.unmount();
+  });
+}
 
 console.log("gallery image contract: ok");
 console.log("gallery image src reset: ok");

@@ -94,6 +94,7 @@ export function ThumbnailPreview({
         <GalleryImage
           key={src}
           src={src}
+          attempt={aligned.srcIndex}
           alt={alt}
           sizes={LANGUAGE_CARD_SIZES}
           eager={eager}
