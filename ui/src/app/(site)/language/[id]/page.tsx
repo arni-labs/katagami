@@ -200,8 +200,9 @@ export default async function LanguageDetailPage({
   const katagamiMarkdown = katagamiSpecToMarkdown(specProps);
   const designMd = designMdToMarkdown(specProps);
   // Remix catalogs and the pending pulse live in LanguageRemixIsland.
-  // Do not await catalogs here (#245 leftover). Do not wrap remix in
-  // fallback={null} (empty slot until the island's lists resolve).
+  // The island paints the pulse from language fields while catalogs
+  // are in flight. Do not await catalogs here (#245 leftover). Do not
+  // wrap remix in fallback={null} (empty slot until the lists resolve).
   const identityOutcome = identityStreamOutcome(f);
   const remixOutcome = remixStreamOutcome(lang);
   // The shadcn implementation kit (3 stored-file reads + markdown generation) is

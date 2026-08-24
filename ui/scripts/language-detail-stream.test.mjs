@@ -180,8 +180,12 @@ assert.equal(
   "[] must never have painted two h-72",
 );
 
-assert.equal(remixIslandEverSkeleton("pending", true), true, "Bluet in-flight may pulse");
-assert.equal(remixIslandEverSkeleton("empty", true), false, "empty path never painted a skeleton");
+assert.equal(remixIslandEverSkeleton("pending", true), true, "replay 1: Bluet in-flight may pulse");
+assert.equal(
+  remixIslandEverSkeleton("empty", true),
+  false,
+  "replay 2: empty / throw result path never painted a skeleton",
+);
 assert.equal(remixIslandEverSkeleton("render", true), true);
 
 assert.equal(
@@ -316,13 +320,28 @@ assert.doesNotMatch(
 );
 assert.match(
   remixSrc,
-  /<Suspense fallback=\{null\}>/,
-  "catalog fetch must be dark — empty/throw never show LanguageSectionSkeleton",
+  /remixStreamOutcome\(lang\)/,
+  "1: island pending paint uses language fields, not canRemixLanguage",
 );
 assert.match(
   remixSrc,
+  /data-remix-pulse/,
+  "1: Bluet in-flight paints LanguageSectionSkeleton from language fields",
+);
+assert.ok(
+  remixSrc.indexOf("<LanguageSectionSkeleton") <
+    remixSrc.indexOf("await loadLanguageRemixCatalogs()"),
+  "1: pulse cannot wait until catalogs / canRemixLanguage",
+);
+assert.match(
+  remixSrc,
+  /<Suspense fallback=\{null\}>/,
+  "2: catalog fetch stays dark — [] / throw never enter a pulsing Suspense",
+);
+assert.doesNotMatch(
+  remixSrc,
   /<Suspense fallback=\{<LanguageSectionSkeleton/,
-  "2: after catalogs prove a lane, in-flight lane work still pulses",
+  "2: do not wrap the fetch that can resolve empty or throw",
 );
 assert.match(
   remixSrc,
@@ -334,15 +353,10 @@ assert.doesNotMatch(
   /return <LanguageSectionSkeleton/,
   "resolved [] / throw must not keep LanguageSectionSkeleton up",
 );
-assert.ok(
-  remixSrc.indexOf("await loadLanguageRemixCatalogs()") <
-    remixSrc.indexOf("fallback={<LanguageSectionSkeleton"),
-  "do not pulse the fetch that can resolve empty or throw",
-);
-assert.ok(
-  remixSrc.indexOf("if (!canRemixLanguage") <
-    remixSrc.indexOf("fallback={<LanguageSectionSkeleton"),
-  "LanguageSectionSkeleton is only on the path that already excluded [] / throw",
+assert.match(
+  remixSrc,
+  /data-remix-empty/,
+  "2: [] / throw settle empty — hide the pending pulse, no lane",
 );
 assert.match(
   loadingSrc,
@@ -404,5 +418,5 @@ assert.doesNotMatch(
 );
 
 console.log(
-  "language-detail stream: no h-72 on throw/[]; Bluet in-flight still pulses; page unblocked",
+  "language-detail stream: replay 1 Bluet in-flight pulses; replay 2 [] / throw never h-72; page unblocked",
 );

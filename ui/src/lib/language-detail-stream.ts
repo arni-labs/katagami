@@ -3,10 +3,13 @@
  *
  * `render`  — the island will produce UI. Pulse is legal.
  * `pending` — catalogs are in flight and have not resolved empty. Pulse
- *             is legal on the lane path. The page must not await them.
+ *             is legal from language fields (landing+dashboard). The page
+ *             must not await them. This replay is separate from [] / throw.
  * `empty`   — no landing/dashboard: do not mount (page-dark). Resolved
- *             `[]` / throw is also empty: dark, and must never have
- *             painted LanguageSectionSkeleton. Pulse-then-unmount is leftover.
+ *             `[]` / throw is also empty: dark, and that result path must
+ *             never have painted LanguageSectionSkeleton. Wrapping the
+ *             catalog fetch in fallback={skeleton} is leftover — a thrown
+ *             list would pulse first.
  * `unknown` — page fields cannot tell. A pulse would collapse. No pulse.
  *
  * Remix: landing+dashboard (same filter as toLanguageOpts) is known before
@@ -15,8 +18,10 @@
  * Missing landing/dashboard is empty (do not mount).
  *
  * Catalogs and the pending pulse belong to the remix island so first paint
- * is not held on route `loading.tsx`. A page-level `fallback={null}` is
- * leftover (2). Awaiting catalogs on LanguageDetailPage is leftover (1).
+ * is not held on route `loading.tsx`. The island paints the pending pulse
+ * from language fields; the fetch stays fallback={null}. A page-level
+ * `fallback={null}` is leftover (2). Awaiting catalogs on
+ * LanguageDetailPage is leftover (1).
  *
  * Lineage / related: no field on this page proves they will render.
  * parent_ids may be unpublished (ARN-331); children and neighbours need a
@@ -57,8 +62,9 @@ export function remixIslandPaint(
 
 /**
  * Whether LanguageSectionSkeleton may ever paint on this outcome.
- * Pending / render: yes (in-flight, then lane). Empty / throw: no —
- * that path must not flash two h-72 then go dark.
+ * Pending / render: yes (in-flight from language fields, then lane).
+ * Empty / throw: no — that result path is a separate replay and must
+ * not have shown two h-72. Do not fold pending→empty into one journey.
  */
 export function remixIslandEverSkeleton(
   outcome: StreamOutcome,

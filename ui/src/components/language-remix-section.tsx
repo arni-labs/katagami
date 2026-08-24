@@ -7,6 +7,7 @@ import {
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import {
   canRemixLanguage,
+  remixStreamOutcome,
   type RemixCatalogs,
 } from "@/lib/language-detail-stream";
 import { LanguageSectionSkeleton } from "@/components/gallery-skeleton";
@@ -23,15 +24,27 @@ export const loadLanguageRemixCatalogs = cache(async () => {
 });
 
 /**
- * Sync: page first paint is not blocked. The catalog fetch uses a dark
- * fallback so [] / throw never paint two h-72. After catalogs prove a
- * lane, pending UI is LanguageSectionSkeleton.
+ * Sync: page first paint is not blocked. Pending pulse is painted from
+ * language fields (landing + dashboard) — it does not wait for
+ * canRemixLanguage. The catalog fetch stays behind fallback={null} so
+ * [] / throw never enter a pulsing Suspense (that leftover is closed).
+ *
+ * Settled empty hides the pending pulse. Settled lane replaces it.
+ * Those are separate replays from the in-flight pulse.
  */
 export function LanguageRemixIsland({ lang }: { lang: DesignLanguage }) {
+  if (remixStreamOutcome(lang) === "empty") return null;
+
   return (
-    <Suspense fallback={null}>
-      <RemixCatalogGate lang={lang} />
-    </Suspense>
+    <div data-remix-island="">
+      <style>{`[data-remix-island]:has([data-remix-empty]){display:none}[data-remix-island]:has([data-remix-ready]) [data-remix-pulse]{display:none}`}</style>
+      <div data-remix-pulse>
+        <LanguageSectionSkeleton />
+      </div>
+      <Suspense fallback={null}>
+        <RemixCatalogGate lang={lang} />
+      </Suspense>
+    </div>
   );
 }
 
@@ -40,15 +53,15 @@ async function RemixCatalogGate({ lang }: { lang: DesignLanguage }) {
   try {
     catalogs = await loadLanguageRemixCatalogs();
   } catch {
-    return null;
+    return <span data-remix-empty hidden />;
   }
   if (!canRemixLanguage(lang, catalogs.palettes, catalogs.arts)) {
-    return null;
+    return <span data-remix-empty hidden />;
   }
   return (
-    <Suspense fallback={<LanguageSectionSkeleton />}>
+    <div data-remix-ready>
       <LanguageRemixSection lang={lang} catalogs={catalogs} />
-    </Suspense>
+    </div>
   );
 }
 
