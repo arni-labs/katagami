@@ -2,10 +2,11 @@
  * When a language-detail Suspense island may paint a pulse.
  *
  * `render`  — the island will produce UI. Pulse is legal.
- * `pending` — catalogs are not here yet. Pulse is not legal: pending can
- *             become empty (catch-to-`[]`). The remix island decides after
- *             the fetch. The language page must not await that fetch.
- * `empty`   — the island will return null. Do not mount it (no pulse).
+ * `pending` — catalogs are in flight. The remix island pulses. The page
+ *             must not await them and must not use fallback={null} for remix.
+ * `empty`   — no landing/dashboard: do not mount (page-dark). Inside a
+ *             mounted island, empty after a pulse must not return null
+ *             (that is collapse) and must not become a remix lane.
  * `unknown` — page fields cannot tell. A pulse would collapse. No pulse.
  *
  * Remix: landing+dashboard (same filter as toLanguageOpts) is known before
@@ -13,9 +14,9 @@
  * is empty — including listArtStyles / listPaletteSystems catch-to-`[]`.
  * Missing landing/dashboard is empty (do not mount).
  *
- * Catalogs belong to the remix island. Awaiting them on LanguageDetailPage
- * holds hero / spec / embodiments on route `loading.tsx` (#245 leftover).
- * A page-level pulse around the island is catch-to-`[]` pulse-then-null.
+ * Catalogs and the pending pulse belong to the remix island so first paint
+ * is not held on route `loading.tsx`. A page-level `fallback={null}` is
+ * leftover (2). Awaiting catalogs on LanguageDetailPage is leftover (1).
  *
  * Lineage / related: no field on this page proves they will render.
  * parent_ids may be unpublished (ARN-331); children and neighbours need a
@@ -29,7 +30,28 @@ type LangRow = { entity_id: string; status: string; fields: FieldBag };
 export type StreamOutcome = "render" | "pending" | "empty" | "unknown";
 
 export function streamShowsPulse(outcome: StreamOutcome): boolean {
-  return outcome === "render";
+  return outcome === "render" || outcome === "pending";
+}
+
+export type RemixIslandPaint = "dark" | "pulse" | "lane";
+
+/** Page first paint: mount the island only when remix is not page-empty. */
+export function remixPageMountsIsland(outcome: StreamOutcome): boolean {
+  return outcome !== "empty";
+}
+
+/**
+ * Paint inside a mounted remix island. Pending pulses. Render is the lane.
+ * Empty after mount (catch-to-`[]`) stays pulse — returning dark is the
+ * collapse; a remix lane would be fake. Unmounted (no landing) is dark.
+ */
+export function remixIslandPaint(
+  outcome: StreamOutcome,
+  mounted: boolean,
+): RemixIslandPaint {
+  if (!mounted) return "dark";
+  if (outcome === "render") return "lane";
+  return "pulse";
 }
 
 function parseJson<T = unknown>(raw?: unknown): T | null {
@@ -66,9 +88,8 @@ export type RemixCatalogs = { palettes: LangRow[]; arts: LangRow[] };
 export type RemixCatalogLoader = () => Promise<LangRow[]>;
 
 /**
- * `listArtStyles` / `listPaletteSystems` catch to `[]`. Call this inside
- * the remix island — not on LanguageDetailPage. The island returns null
- * on empty so a parent `fallback={null}` never pulse-then-collapses.
+ * Catch-to-`[]` helper for tests and callers that need empty arrays.
+ * The pulsing remix island must not settle that result to `return null`.
  */
 export async function resolveRemixCatalogs(
   listPalettes: RemixCatalogLoader,

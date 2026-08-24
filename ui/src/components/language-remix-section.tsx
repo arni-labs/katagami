@@ -1,37 +1,57 @@
+import { Suspense } from "react";
 import {
   listPaletteSystems,
   listArtStyles,
   type DesignLanguage,
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
-import {
-  canRemixLanguage,
-  resolveRemixCatalogs,
-  type RemixCatalogs,
-} from "@/lib/language-detail-stream";
+import { canRemixLanguage } from "@/lib/language-detail-stream";
+import { LanguageSectionSkeleton } from "@/components/gallery-skeleton";
 import { InlineRemix } from "@/components/remix/inline-remix";
 import { RemixLaneBlurb } from "@/components/remix/remix-lane-blurb";
 import { SectionHeading, Perforation } from "@/components/scrapbook";
 
-export async function loadLanguageRemixCatalogs(): Promise<RemixCatalogs> {
-  return resolveRemixCatalogs(
-    () => listPaletteSystems(),
-    () => listArtStyles(),
+/** Throws on list failure — do not catch-to-`[]` under a painted pulse. */
+export async function loadLanguageRemixCatalogs() {
+  const [palettes, arts] = await Promise.all([
+    listPaletteSystems(),
+    listArtStyles(),
+  ]);
+  return { palettes, arts };
+}
+
+/**
+ * Sync wrapper: page first paint is not blocked. Pending pulse lives here,
+ * not on LanguageDetailPage and not on route loading.tsx.
+ */
+export function LanguageRemixIsland({ lang }: { lang: DesignLanguage }) {
+  return (
+    <Suspense fallback={<LanguageSectionSkeleton />}>
+      <LanguageRemixSection lang={lang} />
+    </Suspense>
   );
 }
 
-/** Catalogs stay in this island so language first paint is not blocked. */
 export async function LanguageRemixSection({
   lang,
 }: {
   lang: DesignLanguage;
 }) {
-  const { palettes: paletteRows, arts: artRows } =
-    await loadLanguageRemixCatalogs();
-  const remixLangOpts = toLanguageOpts([lang]);
-  const remixPalOpts = toPaletteOpts(paletteRows);
-  const remixArtOpts = toArtOpts(artRows);
-  if (!canRemixLanguage(lang, paletteRows, artRows)) return null;
+  let paletteRows;
+  let artRows;
+  try {
+    const catalogs = await loadLanguageRemixCatalogs();
+    paletteRows = catalogs.palettes;
+    artRows = catalogs.arts;
+  } catch {
+    // Catch must not collapse the shell — that is pulse-then-gone.
+    return <LanguageSectionSkeleton />;
+  }
+  if (!canRemixLanguage(lang, paletteRows, artRows)) {
+    // [] after a pulse: keep the #245 shell. Do not collapse. Do not
+    // invent InlineRemix with empty catalogs.
+    return <LanguageSectionSkeleton />;
+  }
 
   return (
     <section>
@@ -41,9 +61,9 @@ export async function LanguageRemixSection({
       </SectionHeading>
       <RemixLaneBlurb name={lang.fields.name || "Untitled"} />
       <InlineRemix
-        languages={remixLangOpts}
-        palettes={remixPalOpts}
-        art={remixArtOpts}
+        languages={toLanguageOpts([lang])}
+        palettes={toPaletteOpts(paletteRows)}
+        art={toArtOpts(artRows)}
         fixed={{ language: lang.entity_id }}
       />
     </section>

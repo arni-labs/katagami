@@ -7,6 +7,8 @@ import {
   identityStreamOutcome,
   languageHasRemixComposition,
   resolveRemixCatalogs,
+  remixIslandPaint,
+  remixPageMountsIsland,
   remixStreamOutcome,
   streamShowsPulse,
 } from "../src/lib/language-detail-stream.ts";
@@ -76,45 +78,63 @@ assert.equal(
 );
 assert.equal(
   streamShowsPulse(remixStreamOutcome(bluet)),
-  false,
-  "Bluet pending must not pulse at the page — that is catch-to-[] flash or #245 hold",
+  true,
+  "Bluet pending pulses inside the remix island, not on the page",
 );
 assert.equal(
   streamShowsPulse(remixStreamOutcome(bluet, { palettes: [], arts: [] })),
   false,
-  "catalogs [] must not pulse",
+  "catalogs [] is not a remix lane",
 );
 assert.equal(streamShowsPulse(remixStreamOutcome(bluet, { palettes, arts })), true);
 
 function pageFirstPaint(language) {
   const outcome = remixStreamOutcome(language);
+  const mountIsland = remixPageMountsIsland(outcome);
   return {
     chromeReady: true,
     awaitsCatalogs: false,
-    mountIsland: outcome !== "empty",
-    pagePulse: streamShowsPulse(outcome),
+    mountIsland,
+    pageRemixFallbackNull: false,
+    islandPaint: remixIslandPaint(outcome, mountIsland),
   };
 }
 
-async function remixIslandDecision(language, listPalettes, listArts) {
-  const catalogs = await resolveRemixCatalogs(listPalettes, listArts);
+async function islandAfterLists(language, listPalettes, listArts) {
+  const mounted = remixPageMountsIsland(remixStreamOutcome(language));
+  if (!mounted) {
+    return { paint: remixIslandPaint("empty", false), showLane: false, fetch: false };
+  }
+  let catalogs;
+  let failed = false;
+  try {
+    catalogs = await Promise.all([listPalettes(), listArts()]).then(
+      ([p, a]) => ({ palettes: p, arts: a }),
+    );
+  } catch {
+    failed = true;
+    catalogs = { palettes: [], arts: [] };
+  }
   const outcome = remixStreamOutcome(language, catalogs);
+  const paint = remixIslandPaint(failed ? "empty" : outcome, true);
   return {
-    outcome,
-    showLane: outcome === "render",
-    pulseThenNull: false,
+    paint,
+    showLane: paint === "lane",
+    fetch: true,
+    collapsedToNull: paint === "dark",
   };
 }
 
 const bluetPaint = pageFirstPaint(bluet);
-assert.equal(bluetPaint.chromeReady, true, "hero/spec/embodiments paint before catalogs");
-assert.equal(bluetPaint.awaitsCatalogs, false);
-assert.equal(bluetPaint.mountIsland, true, "Bluet mounts the remix island");
-assert.equal(bluetPaint.pagePulse, false, "page remix fallback is not two h-72 pulses");
+assert.equal(bluetPaint.chromeReady, true, "1: hero/spec/embodiments paint before catalogs");
+assert.equal(bluetPaint.awaitsCatalogs, false, "1: LanguageDetailPage must not await catalogs");
+assert.equal(bluetPaint.mountIsland, true, "2: Bluet mounts the remix island");
+assert.equal(bluetPaint.pageRemixFallbackNull, false, "2: remix pending is not page fallback={null}");
+assert.equal(bluetPaint.islandPaint, "pulse", "2: island paints the #245 pulse while catalogs are in flight");
 
 const noLandingPaint = pageFirstPaint(noLanding);
-assert.equal(noLandingPaint.mountIsland, false, "no-landing stays dark");
-assert.equal(noLandingPaint.pagePulse, false);
+assert.equal(noLandingPaint.mountIsland, false, "4: no-landing stays dark");
+assert.equal(noLandingPaint.islandPaint, "dark");
 assert.equal(pageFirstPaint(landingOnly).mountIsland, false);
 
 assert.deepEqual(
@@ -127,10 +147,10 @@ assert.deepEqual(
     },
   ),
   { palettes: [], arts: [] },
-  "listArtStyles / listPaletteSystems catch to [] — replay the catch, not omitted catalogs",
+  "catch-to-[] helper still exists — the island must not settle it to null",
 );
 
-const caughtEmpty = await remixIslandDecision(
+const caught = await islandAfterLists(
   bluet,
   async () => {
     throw new Error("listPaletteSystems failed");
@@ -139,22 +159,28 @@ const caughtEmpty = await remixIslandDecision(
     throw new Error("listArtStyles failed");
   },
 );
-assert.equal(caughtEmpty.outcome, "empty");
-assert.equal(caughtEmpty.showLane, false, "do not keep a fake remix lane after []");
-assert.equal(caughtEmpty.pulseThenNull, false, "island decides after fetch — no pulse-then-null");
+assert.equal(caught.showLane, false, "3: do not invent a fake remix lane after []");
+assert.equal(caught.paint, "pulse", "3: catch-to-[] keeps the pulse — returning null is collapse");
+assert.equal(caught.collapsedToNull, false);
 
-assert.equal(
-  languageHasRemixComposition(noLanding),
-  false,
-  "no-landing never reaches the island fetch",
+const emptyLists = await islandAfterLists(bluet, async () => [], async () => []);
+assert.equal(emptyLists.showLane, false);
+assert.equal(emptyLists.paint, "pulse", "3: successful [] after pulse must not collapse");
+
+const noLandingIsland = await islandAfterLists(
+  noLanding,
+  async () => palettes,
+  async () => arts,
 );
+assert.equal(noLandingIsland.fetch, false, "4: no-landing must not fetch catalogs");
+assert.equal(noLandingIsland.paint, "dark");
 
-const ready = await remixIslandDecision(
+const ready = await islandAfterLists(
   bluet,
   async () => palettes,
   async () => arts,
 );
-assert.equal(ready.outcome, "render");
+assert.equal(ready.paint, "lane");
 assert.equal(ready.showLane, true);
 
 assert.equal(identityStreamOutcome({}), "empty");
@@ -233,27 +259,52 @@ assert.match(streamSrc, /colors\.primary, colors\.accent, colors\.secondary/);
 assert.doesNotMatch(
   pageSrc,
   /await loadLanguageRemixCatalogs/,
-  "LanguageDetailPage must not await catalogs — that holds first paint on loading.tsx",
+  "1: LanguageDetailPage must not await catalogs",
 );
 assert.doesNotMatch(
   pageSrc,
   /await resolveRemixCatalogs/,
-  "catalog await belongs in the remix island, not the page",
+  "1: catalog await belongs in the remix island, not the page",
 );
 assert.doesNotMatch(
   pageSrc,
   /remixStreamOutcome\(lang,/,
-  "the page must not pass catalogs — it does not have them at first paint",
+  "1: the page must not pass catalogs — it does not have them at first paint",
 );
 assert.match(
   pageSrc,
   /remixStreamOutcome\(lang\)/,
-  "page mount gate uses lang only so no-landing stays unmounted",
+  "4: page mount gate uses lang only so no-landing stays unmounted",
+);
+assert.match(
+  pageSrc,
+  /<LanguageRemixIsland/,
+  "2: remix pending lives in the island, not page fallback={null}",
+);
+assert.doesNotMatch(
+  pageSrc,
+  /<Suspense fallback=\{null\}>\s*<LanguageRemix/,
+  "2: do not solve pending with remix fallback={null}",
+);
+assert.match(
+  remixSrc,
+  /<Suspense fallback=\{<LanguageSectionSkeleton/,
+  "2: island paints the #245 pulse while listArtStyles is in flight",
 );
 assert.match(
   remixSrc,
   /await loadLanguageRemixCatalogs\(\)/,
   "pending vs empty is decided where the catalog fetch runs",
+);
+assert.match(
+  remixSrc,
+  /return <LanguageSectionSkeleton \/>/,
+  "3: catch-to-[] / [] after pulse keep the shell — do not return null",
+);
+assert.doesNotMatch(
+  remixSrc,
+  /if \(!canRemixLanguage\([^)]*\)\) \{\s*return null/,
+  "3: [] after pulse must not collapse the shell",
 );
 assert.match(
   loadingSrc,
@@ -308,17 +359,12 @@ assert.doesNotMatch(
   pageSrc,
   /<Suspense fallback=\{null\}>\s*<LanguageIdentity/,
 );
-assert.match(
-  pageSrc,
-  /<Suspense fallback=\{null\}>\s*<LanguageRemixSection/,
-  "remix pending is not a page pulse — island fetches, then render or null",
-);
 assert.doesNotMatch(
   pageSrc,
   /streamShowsPulse\(remixOutcome\)/,
-  "page must not turn remix pending into LanguageSectionSkeleton",
+  "page must not turn remix pending into a page-level LanguageSectionSkeleton",
 );
 
 console.log(
-  "language-detail stream: first paint vs catalog await; catch-to-[] stays in the island",
+  "language-detail stream: all four holds — first paint, island pulse, no collapse, no-landing",
 );

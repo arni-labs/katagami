@@ -12,7 +12,7 @@ import {
 import { RelatedLanguages } from "@/components/related-languages";
 import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
-import { LanguageRemixSection } from "@/components/language-remix-section";
+import { LanguageRemixIsland } from "@/components/language-remix-section";
 import { LanguageSectionSkeleton } from "@/components/gallery-skeleton";
 import {
   identityStreamOutcome,
@@ -199,11 +199,9 @@ export default async function LanguageDetailPage({
   };
   const katagamiMarkdown = katagamiSpecToMarkdown(specProps);
   const designMd = designMdToMarkdown(specProps);
-  // Remix catalogs stay in LanguageRemixSection. Awaiting them here held
-  // hero / spec / embodiments on route loading.tsx (#245 leftover).
-  // No landing/dashboard: do not mount. Pending: fallback is null — the
-  // island decides empty vs render after the fetch, so catch-to-[] cannot
-  // flash two h-72 pulses then vanish.
+  // Remix catalogs and the pending pulse live in LanguageRemixIsland.
+  // Do not await catalogs here (#245 leftover). Do not wrap remix in
+  // fallback={null} (empty slot until listArtStyles — this PR's leftover).
   const identityOutcome = identityStreamOutcome(f);
   const remixOutcome = remixStreamOutcome(lang);
   // The shadcn implementation kit (3 stored-file reads + markdown generation) is
@@ -361,9 +359,7 @@ export default async function LanguageDetailPage({
       <ModelProvenance raw={f.model_provenance} />
 
       {remixOutcome === "empty" ? null : (
-        <Suspense fallback={null}>
-          <LanguageRemixSection lang={lang} />
-        </Suspense>
+        <LanguageRemixIsland lang={lang} />
       )}
 
       {/* Lineage / related cannot take a pulse from fields on this page.
