@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { transform } from "sucrase";
 import { languageRemixLaneVisibleText } from "../src/lib/remix-lane-copy.ts";
 
 const visible = languageRemixLaneVisibleText("Galley");
@@ -78,6 +80,47 @@ for (const token of [
     `remix shell must keep the loading.tsx pulse token: ${token}`,
   );
 }
+
+const nodeRequire = createRequire(import.meta.url);
+const React = nodeRequire("react");
+const { renderToStaticMarkup } = nodeRequire("react-dom/server");
+const jsxRuntime = nodeRequire("react/jsx-runtime");
+const { code: skeletonCode } = transform(skeletonSrc, {
+  transforms: ["typescript", "jsx", "imports"],
+  jsxRuntime: "automatic",
+  production: true,
+  filePath: path.join(here, "../src/components/gallery-skeleton.tsx"),
+});
+const skeletonMod = { exports: {} };
+new Function("require", "module", "exports", skeletonCode)(
+  (spec) => {
+    if (spec === "react/jsx-runtime") return jsxRuntime;
+    if (spec === "react") return React;
+    return nodeRequire(spec);
+  },
+  skeletonMod,
+  skeletonMod.exports,
+);
+const detailMarkup = renderToStaticMarkup(
+  React.createElement(skeletonMod.exports.LanguageDetailSkeleton),
+);
+const remixMarkup = renderToStaticMarkup(
+  React.createElement(skeletonMod.exports.RemixLaneSkeleton),
+);
+assert.match(detailMarkup, /animate-pulse/);
+assert.match(remixMarkup, /animate-pulse/);
+assert.doesNotMatch(
+  remixMarkup,
+  /max-w-7xl/,
+  "in-page remix shell must not nest the route loading chrome",
+);
+const remixInner = remixMarkup
+  .replace(/^<section[^>]*>/, "")
+  .replace(/<\/section>$/, "");
+assert.ok(
+  remixInner.includes("animate-pulse") && detailMarkup.includes(remixInner),
+  "RemixLaneSkeleton must render the same pulse blocks as language loading.tsx",
+);
 
 console.log("remix-lane copy: space, period, no studio sentence");
 console.log("remix-lane shell: RemixLaneSkeleton, not fallback=null");
