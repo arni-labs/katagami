@@ -2,6 +2,11 @@
 // with --paper/--ink/--plate-* (ARN-380, the Bluet class). This loads the
 // real injectTheme and asserts the override binds those names.
 //
+// Fixture only — not live fl-019f9b09-9f91-73e2-8817-2446e25e8dfe.
+// --blue and --pink both classify as accent, so they share one hex after
+// bind. That is not "two marks remixed." Do not call a live file bound
+// unless those two stay distinct.
+//
 // Run: node ui/scripts/remix-theme.test.mjs
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -11,7 +16,8 @@ import { transform } from "sucrase";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const src = path.join(here, "../src/lib/remix-theme.ts");
-const { code } = transform(fs.readFileSync(src, "utf8"), {
+const themeSrc = fs.readFileSync(src, "utf8");
+const { code } = transform(themeSrc, {
   transforms: ["typescript", "imports"],
   production: true,
   filePath: src,
@@ -23,6 +29,8 @@ const {
   classifyColorToken,
   compositionBindDecls,
   bindLiteralHero,
+  extractRootDecls,
+  consumesCustomProperty,
 } = mod.exports;
 
 const roles = {
@@ -35,8 +43,58 @@ const roles = {
 };
 const hero = "https://katagami.ai/api/file/fl-remix-hero";
 
+// Grain with a literal `}` sits BEFORE --blue. #241's `:root { [^}]+ }`
+// cuts the block at the svg close and never binds --blue. A greedier
+// `[\s\S]+` to the last `}` would also pick up --forged from .later.
+const GRAIN_URL = `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><style>rect{opacity:.35}</style></svg>")`;
+const grainCutsAtSvg = `:root{
+  --grain:${GRAIN_URL};
+  --blue:#2A5BD7;
+  --pink:#FF3D9E;
+}
+.later{--forged:#00ff00}`;
+
+const cutBy241 = [...grainCutsAtSvg.matchAll(/:root\s*\{([^}]+)\}/gi)];
+const names241 = [...(cutBy241[0]?.[1] ?? "").matchAll(/--([a-zA-Z0-9_-]+)/g)].map(
+  (m) => m[1],
+);
+assert.deepEqual(
+  names241,
+  ["grain"],
+  "today's [^}]+ regex must miss --blue so this fixture cannot pass by accident",
+);
+
+const greedy = [...grainCutsAtSvg.matchAll(/:root\s*\{([\s\S]+)\}/gi)];
+const namesGreedy = [...(greedy[0]?.[1] ?? "").matchAll(/--([a-zA-Z0-9_-]+)/g)].map(
+  (m) => m[1],
+);
+assert.deepEqual(
+  namesGreedy,
+  ["grain", "blue", "pink", "forged"],
+  "a greedier [\\s\\S]+ pull includes .later — not a real parse",
+);
+
+assert.ok(
+  !themeSrc.includes(String.raw`:root\s*\{([^}]+)\}`),
+  "extractRootDecls must not go back to :root { [^}]+ }",
+);
+
+const parsed = extractRootDecls(grainCutsAtSvg);
+assert.deepEqual(
+  parsed.map(([name]) => name),
+  ["grain", "blue", "pink"],
+);
+assert.match(parsed[0][1], /rect\{opacity:\.35\}/);
+
+const grainFirstBind = compositionBindDecls(grainCutsAtSvg, roles, hero).join(";");
+assert.match(grainFirstBind, /--blue:#FF3D9E/);
+assert.match(grainFirstBind, /--pink:#FF3D9E/);
+assert.doesNotMatch(grainFirstBind, /--forged:/);
+assert.doesNotMatch(grainFirstBind, /--grain:/);
+
 const bluetShaped = `<!doctype html><html><head><style>
 :root{
+  --grain:${GRAIN_URL};
   --paper:#FFFFFF; --bg:#FFFFFF; --surface:#FFFFFF;
   --ink:#14173A; --text:#14173A; --muted:#4A4E75;
   --primary:#2A5BD7; --accent:#FF3D9E; --secondary:#5B2D9C;
@@ -45,12 +103,13 @@ const bluetShaped = `<!doctype html><html><head><style>
   --hero-image:url(https://katagami.ai/api/file/fl-old);
   --plate-hero:url(https://katagami.ai/api/file/fl-old);
   --plate-seed:url(https://katagami.ai/api/file/fl-seed);
-  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3C/svg%3E");
 }
 body{background:var(--paper);color:var(--ink)}
 .mark{color:var(--blue)}
 .hero{background-image:var(--plate-seed)}
 </style></head><body></body></html>`;
+
+assert.doesNotMatch(bluetShaped, /fl-019f9b09-9f91-73e2-8817-2446e25e8dfe/);
 
 assert.equal(classifyColorToken("paper"), "bg");
 assert.equal(classifyColorToken("ink"), "text");
@@ -86,6 +145,28 @@ const literalOnly = `<style>.hero{background-image:url(https://katagami.ai/api/f
 assert.match(
   bindLiteralHero(literalOnly, hero),
   /background-image:url\('https:\/\/katagami.ai\/api\/file\/fl-remix-hero'\)/,
+);
+
+assert.equal(consumesCustomProperty("color:var(--bg)", "bg"), true);
+assert.equal(consumesCustomProperty("color:var(--bg,#fff)", "bg"), true);
+assert.equal(consumesCustomProperty("color:var(--bg )", "bg"), true);
+assert.equal(consumesCustomProperty("color:var( --bg )", "bg"), true);
+assert.equal(consumesCustomProperty("color:var(--bg-alt)", "bg"), false);
+assert.equal(consumesCustomProperty("color:var(--background)", "bg"), false);
+assert.equal(consumesCustomProperty(":root{--bg:#fff}", "bg"), false);
+assert.equal(consumesCustomProperty("background-image:var(--hero-image)", "hero-image"), true);
+assert.equal(
+  consumesCustomProperty("background-image:var(--hero-image-alt)", "hero-image"),
+  false,
+);
+
+const rustGate = fs.readFileSync(
+  path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
+  "utf8",
+);
+assert.ok(
+  !rustGate.includes(String.raw`html_lower.contains(&format!("var(--{name}"))`),
+  "consume-gate must not substring-match var(--{name}",
 );
 
 console.log("remix-theme.test.mjs: ok");

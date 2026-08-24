@@ -95,15 +95,148 @@ export function classifyColorToken(name: string): PaletteRole | null {
   return null;
 }
 
-/** Pull `--name: value` pairs out of every `:root { … }` block. */
+function isCssIdentContinue(ch: string | undefined): boolean {
+  return !!ch && /[A-Za-z0-9_-]/.test(ch);
+}
+
+function skipCssString(src: string, i: number): number {
+  const quote = src[i];
+  i += 1;
+  while (i < src.length) {
+    if (src[i] === "\\") {
+      i += 2;
+      continue;
+    }
+    if (src[i] === quote) return i + 1;
+    i += 1;
+  }
+  return i;
+}
+
+function skipCssComment(src: string, i: number): number {
+  const end = src.indexOf("*/", i + 2);
+  return end === -1 ? src.length : end + 2;
+}
+
+function startsCssUrl(src: string, i: number): boolean {
+  if (src.slice(i, i + 4).toLowerCase() !== "url(") return false;
+  return i === 0 || !isCssIdentContinue(src[i - 1]);
+}
+
+function skipCssUrl(src: string, i: number): number {
+  const open = src.indexOf("(", i);
+  if (open === -1) return Math.min(i + 4, src.length);
+  i = open + 1;
+  while (i < src.length && /\s/.test(src[i])) i += 1;
+  if (src[i] === '"' || src[i] === "'") {
+    i = skipCssString(src, i);
+    const close = src.indexOf(")", i);
+    return close === -1 ? src.length : close + 1;
+  }
+  let depth = 1;
+  while (i < src.length) {
+    if (src[i] === "\\") {
+      i += 2;
+      continue;
+    }
+    if (src[i] === '"' || src[i] === "'") {
+      i = skipCssString(src, i);
+      continue;
+    }
+    if (src[i] === "(") depth += 1;
+    else if (src[i] === ")") {
+      depth -= 1;
+      if (depth === 0) return i + 1;
+    }
+    i += 1;
+  }
+  return i;
+}
+
+function skipCssConstruct(src: string, i: number): number | null {
+  if (src[i] === "/" && src[i + 1] === "*") return skipCssComment(src, i);
+  if (src[i] === '"' || src[i] === "'") return skipCssString(src, i);
+  if (startsCssUrl(src, i)) return skipCssUrl(src, i);
+  return null;
+}
+
+/** Matching `}` for a `:root {` opener, ignoring braces inside strings/url()/comments. */
+function scanCssBlockEnd(src: string, start: number): number {
+  let depth = 1;
+  let i = start;
+  while (i < src.length) {
+    const skipped = skipCssConstruct(src, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (src[i] === "{") depth += 1;
+    else if (src[i] === "}") {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+    i += 1;
+  }
+  return -1;
+}
+
+function parseCssDeclarations(body: string): Array<[string, string]> {
+  const decls: Array<[string, string]> = [];
+  let i = 0;
+  while (i < body.length) {
+    const skipped = skipCssConstruct(body, i);
+    if (skipped !== null) {
+      i = skipped;
+      continue;
+    }
+    if (body.startsWith("--", i)) {
+      let nameEnd = i + 2;
+      while (nameEnd < body.length && isCssIdentContinue(body[nameEnd])) {
+        nameEnd += 1;
+      }
+      const name = body.slice(i + 2, nameEnd);
+      let j = nameEnd;
+      while (j < body.length && /\s/.test(body[j])) j += 1;
+      if (body[j] !== ":") {
+        i = nameEnd || i + 1;
+        continue;
+      }
+      j += 1;
+      const valueStart = j;
+      while (j < body.length) {
+        const inner = skipCssConstruct(body, j);
+        if (inner !== null) {
+          j = inner;
+          continue;
+        }
+        if (body[j] === ";" || body[j] === "}") break;
+        j += 1;
+      }
+      if (name) decls.push([name, body.slice(valueStart, j).trim()]);
+      i = body[j] === ";" ? j + 1 : j;
+      continue;
+    }
+    i += 1;
+  }
+  return decls;
+}
+
+/**
+ * Pull `--name: value` pairs out of every `:root { … }` block.
+ *
+ * Must survive `}` inside `url("…<svg></svg>…")`. A `:root { [^}]+ }` regex
+ * cuts the block at that brace and never sees tokens after it.
+ */
 export function extractRootDecls(html: string): Array<[string, string]> {
   const decls: Array<[string, string]> = [];
-  const blocks = html.matchAll(/:root\s*\{([^}]+)\}/gi);
-  for (const block of blocks) {
-    const body = block[1] ?? "";
-    for (const pair of body.matchAll(/--([a-zA-Z0-9_-]+)\s*:\s*([^;]+)/g)) {
-      decls.push([pair[1], pair[2].trim()]);
-    }
+  const open = /:root\s*\{/gi;
+  let match: RegExpExecArray | null;
+  while ((match = open.exec(html))) {
+    const start = match.index + match[0].length;
+    const end = scanCssBlockEnd(html, start);
+    if (end === -1) break;
+    decls.push(...parseCssDeclarations(html.slice(start, end)));
+    open.lastIndex = end + 1;
   }
   return decls;
 }
@@ -161,8 +294,32 @@ export function compositionBindDecls(
   return extra;
 }
 
+/**
+ * True only at a custom-property boundary: `var(--bg)`, `var(--bg,`,
+ * `var(--bg )`. A prefix of `--bg-alt` must not green `--bg`.
+ */
+export function consumesCustomProperty(html: string, name: string): boolean {
+  const lower = html.toLowerCase();
+  const ident = name.toLowerCase();
+  let i = 0;
+  while (i < lower.length) {
+    const open = lower.indexOf("var(", i);
+    if (open === -1) return false;
+    let j = open + 4;
+    while (j < lower.length && /\s/.test(lower[j])) j += 1;
+    if (lower.startsWith("--", j)) {
+      j += 2;
+      if (lower.startsWith(ident, j) && !isCssIdentContinue(lower[j + ident.length])) {
+        return true;
+      }
+    }
+    i = open + 4;
+  }
+  return false;
+}
+
 function consumesHeroVar(html: string): boolean {
-  return /var\(\s*--hero-image\b/i.test(html);
+  return consumesCustomProperty(html, "hero-image");
 }
 
 /** First painted `background-image:url(...)` that is not a data-URI grain. */

@@ -1978,8 +1978,44 @@ fn page_redundancy_ratio(s: &str) -> f64 {
     raw.len() as f64 / compressed.len() as f64
 }
 
+fn is_custom_property_ident_char(c: u8) -> bool {
+    c.is_ascii_alphanumeric() || c == b'_' || c == b'-'
+}
+
+/// True only at a custom-property boundary: `var(--bg)`, `var(--bg,`,
+/// `var(--bg )`. A prefix of `--bg-alt` must not green `--bg`.
 fn consumes_custom_property(html_lower: &str, name: &str) -> bool {
-    html_lower.contains(&format!("var(--{name}"))
+    let bytes = html_lower.as_bytes();
+    let name_bytes = name.as_bytes();
+    let mut i = 0;
+    while i + 4 <= bytes.len() {
+        if bytes[i] == b'v'
+            && bytes[i + 1] == b'a'
+            && bytes[i + 2] == b'r'
+            && bytes[i + 3] == b'('
+        {
+            let mut j = i + 4;
+            while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+                j += 1;
+            }
+            if bytes.get(j..).is_some_and(|slice| slice.starts_with(b"--"))
+                && bytes
+                    .get(j + 2..)
+                    .is_some_and(|slice| slice.starts_with(name_bytes))
+            {
+                let after = j + 2 + name_bytes.len();
+                let boundary = match bytes.get(after) {
+                    None => true,
+                    Some(&c) => !is_custom_property_ident_char(c),
+                };
+                if boundary {
+                    return true;
+                }
+            }
+        }
+        i += 1;
+    }
+    false
 }
 
 fn verify_file_body(
@@ -6037,6 +6073,38 @@ mod page_quality_tests {
         let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
             .expect_err("declaring --hero-image without var(--hero-image) must fail");
         assert_eq!(err.code, "landing_hero_not_consumed");
+    }
+
+    #[test]
+    fn consume_gate_is_a_custom_property_boundary_not_a_prefix() {
+        assert!(consumes_custom_property("color:var(--bg)", "bg"));
+        assert!(consumes_custom_property("color:var(--bg,#fff)", "bg"));
+        assert!(consumes_custom_property("color:var(--bg )", "bg"));
+        assert!(consumes_custom_property("color:var( --bg )", "bg"));
+        assert!(!consumes_custom_property("color:var(--bg-alt)", "bg"));
+        assert!(!consumes_custom_property("color:var(--background)", "bg"));
+        assert!(!consumes_custom_property(":root{--bg:#fff}", "bg"));
+        assert!(consumes_custom_property(
+            "background-image:var(--hero-image)",
+            "hero-image"
+        ));
+        assert!(!consumes_custom_property(
+            "background-image:var(--hero-image-alt)",
+            "hero-image"
+        ));
+    }
+
+    #[test]
+    fn landing_that_only_uses_bg_alt_fails_consume_gate() {
+        let mut body = page("Bg alt", "bg-alt", 30_000);
+        body = body.replace("var(--bg)", "var(--bg-alt)");
+        body = body.replace(
+            "</head>",
+            "<style>.hero{background-image:var(--hero-image,url(https://katagami.ai/api/file/fl-x))}</style></head>",
+        );
+        let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect_err("var(--bg-alt) must not green var(--bg)");
+        assert_eq!(err.code, "composition_remix_vars_not_consumed");
     }
 
     #[test]
