@@ -1,12 +1,22 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import {
+import { transform } from "sucrase";
+
+const srcPath = resolve("src/lib/thumbnail-sources.ts");
+const { code } = transform(readFileSync(srcPath, "utf8"), {
+  transforms: ["typescript", "imports"],
+  production: true,
+  filePath: srcPath,
+});
+const sourcesMod = { exports: {} };
+new Function("module", "exports", code)(sourcesMod, sourcesMod.exports);
+const {
   thumbnailPreviewSources,
   thumbnailSourcesKey,
   alignThumbnailPreviewState,
   advanceThumbnailPreviewState,
-} from "../src/lib/thumbnail-sources.ts";
+} = sourcesMod.exports;
 
 assert.deepEqual(
   thumbnailPreviewSources(
@@ -77,6 +87,11 @@ assert.match(
   preview,
   /thumbnailSourcesKey/,
   "ThumbnailPreview must reset on the full src-list identity, not sources[0]+length",
+);
+assert.match(
+  preview,
+  /aligned\.srcIndex}:\$\{src\}/,
+  "same URL in two slots must remount GalleryImage — key={src} reuses a failed instance",
 );
 
 const deadUrl = "https://example.com/dead.jpg";

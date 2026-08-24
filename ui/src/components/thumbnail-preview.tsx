@@ -92,7 +92,7 @@ export function ThumbnailPreview({
       />
       {aligned.failed || !src ? null : (
         <GalleryImage
-          key={src}
+          key={`${aligned.srcIndex}:${src}`}
           src={src}
           alt={alt}
           sizes={LANGUAGE_CARD_SIZES}
