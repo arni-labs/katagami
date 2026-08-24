@@ -201,7 +201,7 @@ export default async function LanguageDetailPage({
   const designMd = designMdToMarkdown(specProps);
   // Remix catalogs and the pending pulse live in LanguageRemixIsland.
   // Do not await catalogs here (#245 leftover). Do not wrap remix in
-  // fallback={null} (empty slot until listArtStyles — this PR's leftover).
+  // fallback={null} (empty slot until the island's lists resolve).
   const identityOutcome = identityStreamOutcome(f);
   const remixOutcome = remixStreamOutcome(lang);
   // The shadcn implementation kit (3 stored-file reads + markdown generation) is
