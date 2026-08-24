@@ -16,6 +16,7 @@ const designWithShadcnRoute = read("src/app/(site)/language/[id]/DESIGN.with-sha
 const specPanel = read("src/components/spec-panel.tsx");
 const specActions = read("src/components/spec-actions.tsx");
 const page = read("src/app/(site)/language/[id]/page.tsx");
+const kit = read("src/components/shadcn-kit-section.tsx");
 
 const required = [
   ["projection builds registry theme", projection, /type:\s*"registry:theme"/],
@@ -65,9 +66,10 @@ const required = [
   ["route serves DESIGN.md with shadcn", shadcnDesignRoute, /shadcnDesignMdMarkdown/],
   ["route validates DESIGN.md with shadcn inputs", shadcnDesignRoute, /isAgentAuthoredShadcnComponentSpec/],
   ["ergonomic route aliases DESIGN.md with shadcn", designWithShadcnRoute, /SHADCN-DESIGN\.md\/route/],
-  ["page reads stored shadcn files", page, /readTemperFileText/],
-  ["page passes stored preview shots", page, /storedPreviewShots=\{storedShadcnPreviewShots\}/],
-  ["page passes DESIGN.md with shadcn", page, /shadcnDesignMd=\{shadcnDesignMd\}/],
+  ["page streams the shadcn kit after first paint", page, /<ShadcnKitSection\b/],
+  ["kit reads stored shadcn files", kit, /readTemperFileText/],
+  ["kit passes stored preview shots", kit, /storedPreviewShots=\{storedShadcnPreviewShots\}/],
+  ["kit passes DESIGN.md with shadcn", kit, /shadcnDesignMd=\{shadcnDesignMd\}/],
   ["DESIGN.md includes shadcn usage", specPanel, /shadcnUsageMarkdown/],
   ["copy controls include shadcn MD", specActions, /shadcn-md/],
   ["copy controls include DESIGN.md with shadcn", specActions, /with shadcn/],

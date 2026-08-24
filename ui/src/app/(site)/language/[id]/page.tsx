@@ -7,16 +7,12 @@ import { ArrowLeft } from "lucide-react";
 import {
   getDesignLanguage,
   getFileUrl,
-  listPaletteSystems,
-  listArtStyles,
   parseJson,
 } from "@/lib/odata";
 import { RelatedLanguages } from "@/components/related-languages";
 import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
-import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
-import { InlineRemix } from "@/components/remix/inline-remix";
-import { RemixLaneBlurb } from "@/components/remix/remix-lane-blurb";
+import { LanguageRemixSection } from "@/components/language-remix-section";
 import {
   designMdToMarkdown,
   katagamiSpecToMarkdown,
@@ -38,8 +34,6 @@ import {
   Stamp,
   Perforation,
 } from "@/components/scrapbook";
-
-
 
 type LanguagePageProps = {
   params: Promise<{ id: string }>;
@@ -112,19 +106,6 @@ export default async function LanguageDetailPage({
   // renders never execute cookies(), preserving the full-route cache
   // (the sign-in rollout invariant for this page).
   if (lang.status !== "Published" && !(await isOwner())) notFound();
-
-  // Lanes for the in-page remix (swap palette + art on this language).
-  const [paletteRows, artRows] = await Promise.all([
-    listPaletteSystems().catch(() => []),
-    listArtStyles().catch(() => []),
-  ]);
-  const remixLangOpts = toLanguageOpts([lang]);
-  const remixPalOpts = toPaletteOpts(paletteRows);
-  const remixArtOpts = toArtOpts(artRows);
-  const canRemix =
-    remixLangOpts[0]?.landingUrl &&
-    remixPalOpts.length > 0 &&
-    remixArtOpts.length > 0;
 
   const f = lang.fields;
 
@@ -346,8 +327,11 @@ export default async function LanguageDetailPage({
       </div>
 
       {/* Identity — what the language is BUILT WITH: its art style + palette.
-          Sits UNDER the embodiment, never above it. */}
-      <LanguageIdentity fields={f} />
+          Sits UNDER the embodiment, never above it. One style / one palette,
+          never a full-lane list (that is what made this page wait 1–3s). */}
+      <Suspense fallback={null}>
+        <LanguageIdentity fields={f} />
+      </Suspense>
 
       <Credits raw={f.credits} />
 
@@ -355,28 +339,20 @@ export default async function LanguageDetailPage({
 
       <ModelProvenance raw={f.model_provenance} />
 
-      {canRemix ? (
-        <section>
-          <Perforation className="mb-8" />
-          <SectionHeading eyebrow="remix lane" eyebrowColor="graphite">
-            try a remix
-          </SectionHeading>
-          <RemixLaneBlurb name={name} />
-          <InlineRemix
-            languages={remixLangOpts}
-            palettes={remixPalOpts}
-            art={remixArtOpts}
-            fixed={{ language: id }}
-          />
-        </section>
-      ) : null}
+      <Suspense fallback={null}>
+        <LanguageRemixSection lang={lang} />
+      </Suspense>
 
-      <LanguageLineage currentId={id} fields={f} />
+      <Suspense fallback={null}>
+        <LanguageLineage currentId={id} fields={f} />
+      </Suspense>
 
-      <RelatedLanguages
-        currentId={id}
-        currentTags={parseJson<string[]>(f.tags) ?? []}
-      />
+      <Suspense fallback={null}>
+        <RelatedLanguages
+          currentId={id}
+          currentTags={parseJson<string[]>(f.tags) ?? []}
+        />
+      </Suspense>
     </div>
   );
 }

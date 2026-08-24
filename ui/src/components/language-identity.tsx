@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import {
-  listArtStyles,
+  getArtStyle,
+  getArtStyleBySlug,
   getPaletteSystem,
   getFileUrl,
   parseJson,
   paletteCore,
   paletteDisplayName,
   artStyleDisplayName,
+  type LaneEntity,
   type PaletteCore,
 } from "@/lib/odata";
 
@@ -66,11 +68,10 @@ export async function LanguageIdentity({
     ? undefined
     : imagery.pairs_with?.trim();
 
-  const arts = await listArtStyles("Status eq 'Published'").catch(() => []);
   const art = fields.default_art_style_id
-    ? arts.find((a) => a.entity_id === fields.default_art_style_id)
+    ? await getArtStyle(fields.default_art_style_id).catch(() => undefined)
     : artSlug
-      ? arts.find((a) => a.fields.slug === artSlug)
+      ? await getArtStyleBySlug(artSlug)
       : undefined;
 
   // The linked palette is a real PaletteSystem entity. Resolve it when present;
@@ -124,7 +125,7 @@ function ArtStyleCard({
   art,
   thumb,
 }: {
-  art: Awaited<ReturnType<typeof listArtStyles>>[number];
+  art: LaneEntity;
   thumb: string;
 }) {
   return (

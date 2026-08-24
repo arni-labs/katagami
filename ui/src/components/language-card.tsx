@@ -112,7 +112,7 @@ export function LanguageCard({
     >
       <TrackedLink
         href={`/language/${id}`}
-        prefetch={false}
+        prefetch
         className="block h-full"
         event="language_click"
         data={{ language_id: id, language_name: name, source: "card" }}
