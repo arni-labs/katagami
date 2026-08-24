@@ -152,8 +152,15 @@ globalThis.IntersectionObserver = class {
 };
 
 const React = nodeRequire("react");
-const { act } = nodeRequire("react");
+// Vercel prebuild sets NODE_ENV=production; React's production CJS build
+// does not export `act`. flushSync is the production flush. When `act` is
+// present (local default), wrap so the dev runtime does not warn.
+const { flushSync } = nodeRequire("react-dom");
 const { createRoot } = nodeRequire("react-dom/client");
+const reactAct = typeof React.act === "function" ? React.act : (fn) => fn();
+function flush(fn) {
+  return reactAct(() => flushSync(fn));
+}
 const { ThumbnailPreview } = loadModule(
   resolve(uiRoot, "src/components/thumbnail-preview.tsx"),
 );
@@ -184,7 +191,7 @@ const container = document.createElement("div");
 document.body.appendChild(container);
 const root = createRoot(container);
 
-await act(() => {
+flush(() => {
   root.render(React.createElement(Harness, { srcs: [deadUrl, goodUrl] }));
 });
 
@@ -192,7 +199,7 @@ let img = currentImg(container);
 assert.ok(img, "eager preview must render the first src, not the swatch");
 assert.equal(img.getAttribute("src"), deadUrl);
 
-await act(() => {
+flush(() => {
   img.dispatchEvent(new window.Event("error", { bubbles: true }));
 });
 
@@ -200,7 +207,7 @@ img = currentImg(container);
 assert.ok(img, "a 404 must try the next src instead of the placeholder");
 assert.equal(img.getAttribute("src"), goodUrl);
 
-await act(() => {
+flush(() => {
   root.render(React.createElement(Harness, { srcs: [otherGood] }));
 });
 
@@ -216,7 +223,7 @@ assert.equal(
 );
 assert.equal(isPlaceholder(container), false);
 
-await act(() => {
+flush(() => {
   root.unmount();
 });
 
@@ -230,7 +237,7 @@ await act(() => {
   assert.equal(replaced.length, exhausted.length);
 
   const sameLandingRoot = createRoot(container);
-  await act(() => {
+  flush(() => {
     sameLandingRoot.render(React.createElement(Harness, { srcs: exhausted }));
   });
 
@@ -238,14 +245,14 @@ await act(() => {
   assert.ok(img);
   assert.equal(img.getAttribute("src"), deadUrl);
 
-  await act(() => {
+  flush(() => {
     img.dispatchEvent(new window.Event("error", { bubbles: true }));
   });
   img = currentImg(container);
   assert.ok(img, "first 404 must advance to the second slot");
   assert.equal(img.getAttribute("src"), deadUrl);
 
-  await act(() => {
+  flush(() => {
     img.dispatchEvent(new window.Event("error", { bubbles: true }));
   });
   assert.equal(
@@ -254,7 +261,7 @@ await act(() => {
     "exhausting the list must swap to the palette-dot placeholder",
   );
 
-  await act(() => {
+  flush(() => {
     sameLandingRoot.render(React.createElement(Harness, { srcs: replaced }));
   });
 
@@ -265,7 +272,7 @@ await act(() => {
   );
   assert.equal(img.getAttribute("src"), deadUrl);
 
-  await act(() => {
+  flush(() => {
     img.dispatchEvent(new window.Event("error", { bubbles: true }));
   });
   img = currentImg(container);
@@ -277,7 +284,7 @@ await act(() => {
   );
   assert.equal(isPlaceholder(container), false);
 
-  await act(() => {
+  flush(() => {
     sameLandingRoot.unmount();
   });
 }
@@ -321,7 +328,7 @@ const proxyA = "/api/file/fl-a";
 
 const cdnRoot = createRoot(container);
 
-await act(() => {
+flush(() => {
   cdnRoot.render(React.createElement(CdnHarness, { src: cdnA, fallbackSrc: proxyA }));
 });
 
@@ -329,7 +336,7 @@ let cdnImg = container.querySelector("img");
 assert.ok(cdnImg);
 assert.equal(cdnImg.getAttribute("src"), cdnA);
 
-await act(() => {
+flush(() => {
   cdnRoot.render(React.createElement(CdnHarness, { src: cdnB, fallbackSrc: proxyA }));
 });
 
@@ -341,19 +348,19 @@ assert.equal(
   "reused CdnImg must show the new src, not the previous current",
 );
 
-await act(() => {
+flush(() => {
   cdnRoot.render(React.createElement(CdnHarness, { src: cdnA, fallbackSrc: proxyA }));
 });
 cdnImg = container.querySelector("img");
 assert.equal(cdnImg.getAttribute("src"), cdnA);
 
-await act(() => {
+flush(() => {
   cdnImg.dispatchEvent(new window.Event("error", { bubbles: true }));
 });
 cdnImg = container.querySelector("img");
 assert.equal(cdnImg.getAttribute("src"), proxyA, "404 must heal to the proxy");
 
-await act(() => {
+flush(() => {
   cdnRoot.render(React.createElement(CdnHarness, { src: cdnA, fallbackSrc: proxyA }));
 });
 cdnImg = container.querySelector("img");
@@ -363,13 +370,13 @@ assert.equal(
   "same src after fallback must keep the proxy, not retry the dead CDN URL",
 );
 
-await act(() => {
+flush(() => {
   cdnRoot.render(React.createElement(CdnHarness, { src: cdnB, fallbackSrc: "/api/file/fl-b" }));
 });
 cdnImg = container.querySelector("img");
 assert.equal(cdnImg.getAttribute("src"), cdnB);
 
-await act(() => {
+flush(() => {
   cdnRoot.unmount();
 });
 
