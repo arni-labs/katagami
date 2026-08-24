@@ -1978,6 +1978,10 @@ fn page_redundancy_ratio(s: &str) -> f64 {
     raw.len() as f64 / compressed.len() as f64
 }
 
+fn consumes_custom_property(html_lower: &str, name: &str) -> bool {
+    html_lower.contains(&format!("var(--{name}"))
+}
+
 fn verify_file_body(
     language_id: &str,
     file_id: &str,
@@ -2058,13 +2062,29 @@ fn verify_file_body(
                     "composition file must use CSS custom properties such as var(--...)",
                 );
             }
-            if artifact_kind == "composition_landing" && !lower.contains("--hero-image") {
+            // Remix injects --bg / --surface / --accent / --hero-image. A
+            // composition that only *declares* those names and paints with
+            // --paper / --ink / --plate-* ships a no-op picker (ARN-380).
+            // Require the remix contract vars to be *consumed*.
+            for token in ["bg", "surface", "accent"] {
+                if !consumes_custom_property(&lower, token) {
+                    return artifact_error(
+                        language_id,
+                        file_id,
+                        artifact_kind,
+                        "composition_remix_vars_not_consumed",
+                        "composition must consume var(--bg), var(--surface), and var(--accent) so a remix palette swap can recolor it",
+                    );
+                }
+            }
+            if artifact_kind == "composition_landing" && !consumes_custom_property(&lower, "hero-image")
+            {
                 return artifact_error(
                     language_id,
                     file_id,
                     artifact_kind,
-                    "landing_missing_hero_slot",
-                    "landing composition is missing the --hero-image slot",
+                    "landing_hero_not_consumed",
+                    "landing must paint the hero with var(--hero-image), not only declare --hero-image",
                 );
             }
             // The hero slot must reference REAL generated imagery served from
@@ -5960,7 +5980,7 @@ mod page_quality_tests {
     /// copy, and data. Compresses like the real corpus (~3x), not like filler.
     fn page(title: &str, filler_seed: &str, bytes: usize) -> String {
         let mut body = format!(
-            "<!doctype html><html><head><title>{title}</title><style>:root{{--bg:#fff}}</style></head><body style=\"background:var(--bg)\">"
+            "<!doctype html><html><head><title>{title}</title><style>:root{{--bg:#fff;--surface:#f5f5f4;--accent:#3a6df0}}</style></head><body style=\"background:var(--bg);color:var(--accent)\"><div class=\"card\" style=\"background:var(--surface)\">"
         );
         let mut st: u64 = filler_seed.bytes().map(|b| b as u64).sum::<u64>() + 7;
         let mut i = 0usize;
@@ -5981,7 +6001,7 @@ mod page_quality_tests {
             body.push_str(&sentence);
             i += 1;
         }
-        body.push_str("</body></html>");
+        body.push_str("</div></body></html>");
         body
     }
 
@@ -6005,6 +6025,31 @@ mod page_quality_tests {
         );
         verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
             .expect("a 30 KB tokenized landing with a real hero must pass");
+    }
+
+    #[test]
+    fn landing_that_only_declares_hero_fails_consume_gate() {
+        let mut body = page("Bluet class", "bluet-decl", 30_000);
+        body = body.replace(
+            "</head>",
+            "<style>:root{--hero-image:url(https://katagami.ai/api/file/fl-x)}</style></head>",
+        );
+        let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect_err("declaring --hero-image without var(--hero-image) must fail");
+        assert_eq!(err.code, "landing_hero_not_consumed");
+    }
+
+    #[test]
+    fn landing_that_paints_with_paper_not_bg_fails_consume_gate() {
+        let mut body = page("Paper only", "paper-only", 30_000);
+        body = body.replace("var(--bg)", "var(--paper)");
+        body = body.replace(
+            "</head>",
+            "<style>.hero{background-image:var(--hero-image,url(https://katagami.ai/api/file/fl-x))}</style></head>",
+        );
+        let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect_err("painting with var(--paper) instead of var(--bg) must fail");
+        assert_eq!(err.code, "composition_remix_vars_not_consumed");
     }
 
     #[test]
