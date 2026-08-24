@@ -1,7 +1,7 @@
-import Image from "next/image";
-import { CdnImg } from "@/components/cdn-img";
+import { GalleryImage } from "@/components/gallery-image";
 import { CatalogCardOwnerControls } from "@/components/catalog-card-owner-controls";
 import { ArchivedStamp } from "@/components/archived-stamp";
+import { ART_STYLE_CARD_SIZES, artStyleCardHero } from "@/lib/gallery-image";
 
 export interface ArtStyleItem {
   id: string;
@@ -10,11 +10,13 @@ export interface ArtStyleItem {
   status: string;
   medium: string;
   promptTemplate: string;
-  /** Reference images — refs[0] is the wide hero (the establishing shot). */
+  /** Reference images — gallery cards use at most refs[0] as a thumb fallback. */
   refs: string[];
-  /** Proof shots: the same subjects rendered in-style (portrait/object/scene). */
+  /** Proof shots live on the detail page. Gallery items leave this empty. */
   proofs: string[];
   thumb: string;
+  /** Total catalog images (hero + refs + proofs) for the footer count. */
+  imageCount?: number;
   /** CDN src -> /api/file proxy fallback for published asset URLs (ARN-354). */
   imageFallbacks?: Record<string, string>;
   tags: string[];
@@ -25,43 +27,6 @@ export interface ArtStyleItem {
 const accentColors = [
   "var(--sakura)", "var(--yuzu)", "var(--ramune)", "var(--sumire)",
 ];
-
-const STRIP_MAX = 4;
-
-/** Fills its (relative) parent. Local paths are optimized by next/image —
- *  resize + lazy + modern format, the fix for the gallery's image-memory blow-up
- *  — but only without a query string (Next's localPatterns rejects those), so we
- *  strip the cache-bust `?v=` (file ids are immutable, so it's redundant).
- *  Absolute/external URLs aren't allowlisted under images config, so they fall
- *  back to a lazy <img> rather than throw an SSR error on an un-configured host. */
-function GalleryImg({
-  src,
-  alt,
-  sizes,
-  className = "",
-  fallbackSrc,
-}: {
-  src: string;
-  alt: string;
-  sizes: string;
-  className?: string;
-  /** Proxy URL to swap in if a published CDN URL 404s (ARN-354). */
-  fallbackSrc?: string;
-}) {
-  if (src.startsWith("/")) {
-    return (
-      <Image src={src.split("?")[0]} alt={alt} fill sizes={sizes} className={className} />
-    );
-  }
-  return (
-    <CdnImg
-      src={src}
-      fallbackSrc={fallbackSrc}
-      alt={alt}
-      className={`absolute inset-0 h-full w-full ${className}`}
-    />
-  );
-}
 
 function hashInt(s: string) {
   let h = 0;
@@ -79,16 +44,13 @@ export function ArtStyleCard({
   const tint = accentColors[hashInt(art.id) % accentColors.length];
   const archived = art.status === "Archived";
 
-  // A wide hero (the establishing shot) leads; the proof shots read as a tidy
-  // contact strip of fixed-size squares (never a stretched orphan). Falls back
-  // to extra references if no separate proof shots were attached.
-  const hero = art.refs[0] || art.thumb || "";
-  const strip = (art.proofs.length ? art.proofs : art.refs.slice(1)).filter(
-    (s) => s && s !== hero,
-  );
-  const imageCount = new Set([hero, ...strip].filter(Boolean)).size;
-  const stripShots = strip.slice(0, STRIP_MAX);
-  const overflow = strip.length - stripShots.length;
+  // One card-sized image. The contact strip used to mount 3 extra full-size
+  // proofs (32px CSS, 1024–1536px files) per card — that is what made this
+  // lane feel like it was still loading while you scrolled.
+  const hero = artStyleCardHero(art);
+  const imageCount =
+    art.imageCount ??
+    new Set([hero, ...art.refs, ...art.proofs].filter(Boolean)).size;
 
   return (
     <article
@@ -110,36 +72,20 @@ export function ArtStyleCard({
           status={art.status}
         />
       ) : null}
-      {/* hero reference — edge to edge; proofs ride as a small strip in the corner */}
       <div className="relative w-full overflow-hidden bg-muted" style={{ aspectRatio: "16 / 10" }}>
         {hero ? (
-          <GalleryImg
+          <GalleryImage
             src={hero}
             fallbackSrc={art.imageFallbacks?.[hero]}
             alt={`${art.name} — hero reference`}
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            sizes={ART_STYLE_CARD_SIZES}
             className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.03]"
           />
         ) : (
           <div className="absolute inset-0" style={{ background: `color-mix(in srgb, ${tint} 14%, var(--card))` }} />
         )}
-        {stripShots.length > 0 && (
-          <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
-            {stripShots.slice(0, 3).map((src, i) => (
-              <div key={i} className="relative h-8 w-8 shrink-0 overflow-hidden bg-muted shadow-[0_1px_3px_rgba(0,0,0,0.25)]">
-                <GalleryImg src={src} fallbackSrc={art.imageFallbacks?.[src]} alt={`${art.name} proof ${i + 1}`} sizes="48px" className="object-cover" />
-              </div>
-            ))}
-            {overflow > 0 && (
-              <span className="grid h-8 w-8 shrink-0 place-items-center bg-card/90 font-mono text-[9px] text-muted-foreground shadow-[0_1px_3px_rgba(0,0,0,0.2)]">
-                +{overflow}
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* footer — compact meta */}
       <div className="flex flex-1 flex-col gap-1.5 px-3.5 py-3">
         <div className="flex items-baseline justify-between gap-2">
           <h3 className="min-w-0 truncate font-display text-[16px] font-bold leading-tight tracking-[-0.02em] text-foreground">

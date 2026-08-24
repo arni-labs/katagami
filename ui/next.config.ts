@@ -30,6 +30,10 @@ const nextConfig: NextConfig = {
     // Google account avatars (header chip, /account) — lh3/lh4/… subdomains.
     remotePatterns: [
       { protocol: "https", hostname: "*.googleusercontent.com" },
+      // Gallery cards (language + art-style). Without these hosts next/image
+      // refuses the URL and the card downloads the original 1024–1536px file.
+      { protocol: "https", hostname: "assets.katagami.ai" },
+      { protocol: "https", hostname: "temperpaw-assets.katagami.ai" },
     ],
   },
 };

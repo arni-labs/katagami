@@ -142,9 +142,15 @@ export function toWritingStyleItem(r: LaneEntity): import("@/components/writing-
   };
 }
 
-/** An ArtStyle row -> the item the art-style catalog renders. */
+/** An ArtStyle row -> the item the art-style catalog renders.
+ *  The card shows ONE image (the thumbnail). Proofs stay on the detail page
+ *  so a first page of 48 cards is 48 images, not ~190 originals. */
 export function toArtStyleItem(r: LaneEntity): ArtStyleItem {
   const images = artStyleImages(r.fields);
+  const hero = (images.thumb || images.refs[0] || "").trim();
+  const imageCount = new Set(
+    [images.thumb, ...images.refs, ...images.proofs].filter(Boolean),
+  ).size;
   return {
     id: r.entity_id,
     name: artStyleDisplayName(r.fields),
@@ -152,10 +158,12 @@ export function toArtStyleItem(r: LaneEntity): ArtStyleItem {
     status: r.status,
     medium: r.fields.medium ?? "",
     promptTemplate: r.fields.prompt_template ?? "",
-    refs: images.refs,
-    proofs: images.proofs,
-    thumb: images.thumb,
-    imageFallbacks: images.fallbacks,
+    refs: hero ? [hero] : [],
+    proofs: [],
+    thumb: hero,
+    imageCount,
+    imageFallbacks:
+      hero && images.fallbacks[hero] ? { [hero]: images.fallbacks[hero] } : {},
     tags: parseJson<string[]>(r.fields.tags) ?? [],
     taxonomyIds: parseJson<string[]>(r.fields.taxonomy_ids) ?? [],
   };
