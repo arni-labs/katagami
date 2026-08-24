@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import type { DesignLanguage } from "@/lib/odata";
 import { TrackedLink } from "@/components/tracked-link";
-import { parseJson } from "@/lib/odata";
+import { getFileUrl, parseJson } from "@/lib/odata";
 import { LanguageCardOwnerControls } from "@/components/language-card-owner-controls";
 import { ThumbnailPreview } from "@/components/thumbnail-preview";
 import { ProvenanceBadge } from "@/components/provenance-badge";
@@ -176,17 +176,17 @@ function FullCard({
   const embodimentFormat = (f.embodiment_format as "html" | "tsx") ?? "html";
   const thumbnailFileId = f.thumbnail_file_id;
   const thumbnailAssetUrl = f.thumbnail_asset_url;
-  const isPublished = lang.status === "Published";
-  const thumbnailProxyFileId = isPublished ? undefined : thumbnailFileId;
   // Prefer a static screenshot of the bespoke landing when present; else the
   // embodiment thumbnail. Both are plain images — no live rendering on the card.
-  // Pass both URLs: a 404 on the landing thumb must not be a dead end (ARN-378).
+  // CDN URLs first, then the governed file id: a missing published asset URL
+  // must not leave the card on the swatch forever (ARN-400).
   const landingThumbUrl = (f.landing_thumbnail_asset_url || "").trim();
   const previewSrcs = thumbnailPreviewSources(
     landingThumbUrl,
     thumbnailAssetUrl,
+    thumbnailFileId ? getFileUrl(thumbnailFileId) : undefined,
   );
-  const previewFileId = previewSrcs.length > 0 ? undefined : thumbnailProxyFileId;
+  const previewFileId = previewSrcs.length > 0 ? undefined : thumbnailFileId;
   const hasThumbnailPreview = Boolean(previewSrcs.length > 0 || previewFileId);
 
 

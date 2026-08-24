@@ -61,7 +61,12 @@ assert.match(
 assert.match(
   preview,
   /THUMBNAIL_LOAD_TIMEOUT_MS = 8000/,
-  "a hung /api/file request must release the queue in 8s, not 30s",
+  "a hung source must advance in 8s, not sit on a blank image",
+);
+assert.match(
+  card,
+  /getFileUrl\(thumbnailFileId\)/,
+  "a missing published asset URL must still have the file-id fallback",
 );
 
 console.log("thumbnail fallback contract: ok");
