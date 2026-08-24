@@ -220,6 +220,68 @@ await act(() => {
   root.unmount();
 });
 
+// Same landing URL and length after the list exhausted. A sources[0]+length
+// key treats this as unchanged and stays on the placeholder; the full-list
+// key must reset, retry, and reach the new fallback.
+{
+  const exhausted = [deadUrl, deadUrl];
+  const replaced = [deadUrl, goodUrl];
+  assert.equal(replaced[0], exhausted[0]);
+  assert.equal(replaced.length, exhausted.length);
+
+  const sameLandingRoot = createRoot(container);
+  await act(() => {
+    sameLandingRoot.render(React.createElement(Harness, { srcs: exhausted }));
+  });
+
+  img = currentImg(container);
+  assert.ok(img);
+  assert.equal(img.getAttribute("src"), deadUrl);
+
+  await act(() => {
+    img.dispatchEvent(new window.Event("error", { bubbles: true }));
+  });
+  img = currentImg(container);
+  assert.ok(img, "first 404 must advance to the second slot");
+  assert.equal(img.getAttribute("src"), deadUrl);
+
+  await act(() => {
+    img.dispatchEvent(new window.Event("error", { bubbles: true }));
+  });
+  assert.equal(
+    isPlaceholder(container),
+    true,
+    "exhausting the list must swap to the palette-dot placeholder",
+  );
+
+  await act(() => {
+    sameLandingRoot.render(React.createElement(Harness, { srcs: replaced }));
+  });
+
+  img = currentImg(container);
+  assert.ok(
+    img,
+    "same first URL + length with a new fallback must leave the placeholder",
+  );
+  assert.equal(img.getAttribute("src"), deadUrl);
+
+  await act(() => {
+    img.dispatchEvent(new window.Event("error", { bubbles: true }));
+  });
+  img = currentImg(container);
+  assert.ok(img, "after reset the new fallback must be reachable");
+  assert.equal(
+    img.getAttribute("src"),
+    goodUrl,
+    "a sources[0]+length key would have stayed failed; the new rest of the list must show",
+  );
+  assert.equal(isPlaceholder(container), false);
+
+  await act(() => {
+    sameLandingRoot.unmount();
+  });
+}
+
 // ── Same reuse class: CdnImg keeps useState(src) across src changes ──
 const { CdnImg, alignCdnImgCurrent } = loadModule(
   resolve(uiRoot, "src/components/cdn-img.tsx"),
