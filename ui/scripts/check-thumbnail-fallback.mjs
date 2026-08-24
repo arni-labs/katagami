@@ -14,6 +14,7 @@ new Function("module", "exports", code)(sourcesMod, sourcesMod.exports);
 const {
   thumbnailPreviewSources,
   thumbnailSourcesKey,
+  thumbnailSourcesNeedReset,
   alignThumbnailPreviewState,
   advanceThumbnailPreviewState,
 } = sourcesMod.exports;
@@ -86,12 +87,17 @@ assert.match(
 assert.match(
   preview,
   /thumbnailSourcesKey/,
-  "ThumbnailPreview must reset on the full src-list identity, not sources[0]+length",
+  "ThumbnailPreview must use thumbnailSourcesKey so a sources[0]+length key cannot hide a same-landing replace",
 );
 assert.match(
   preview,
-  /aligned\.srcIndex}:\$\{src\}/,
-  "same URL in two slots must remount GalleryImage — key={src} reuses a failed instance",
+  /key=\{src\}/,
+  "key={src} keeps a loaded first URL mounted when the fallback list grows",
+);
+assert.doesNotMatch(
+  preview,
+  /srcIndex\}:\$\{src/,
+  "key={srcIndex:src} remounts a loaded thumb when the list grows and the 8s timer can swap it",
 );
 
 const deadUrl = "https://example.com/dead.jpg";
@@ -154,6 +160,23 @@ function initial(sources) {
   assert.equal(again.src, b);
 }
 
+{
+  const good = "https://example.com/good.jpg";
+  const other = "https://example.com/other.jpg";
+  let view = initial([good]);
+  view = { ...view, loaded: true };
+  assert.equal(
+    thumbnailSourcesNeedReset([good, other], view),
+    false,
+    "array grew but [0] is the same loaded URL — not a remount",
+  );
+  view = alignThumbnailPreviewState([good, other], view);
+  assert.equal(view.loaded, true, "must not zero loaded when [0] is unchanged and already loaded");
+  assert.equal(view.srcIndex, 0);
+  assert.equal(view.src, good);
+  assert.equal(view.failed, false);
+}
+
 // ── Same sequence on a mounted ThumbnailPreview instance ───────────
 const { loadUiModule, createFlush } = await import("./react-harness.mjs");
 const { ThumbnailPreview } = loadUiModule("src/components/thumbnail-preview.tsx");
@@ -175,6 +198,31 @@ function currentImg(container) {
 
 function isPlaceholder(container) {
   return currentImg(container) === null;
+}
+
+const pendingLoadTimeouts = [];
+let timeoutHandle = 4000;
+const realSetTimeout = window.setTimeout.bind(window);
+const realClearTimeout = window.clearTimeout.bind(window);
+window.setTimeout = (fn, ms, ...args) => {
+  if (ms === 8000) {
+    const handle = ++timeoutHandle;
+    pendingLoadTimeouts.push({ handle, fn, args });
+    return handle;
+  }
+  return realSetTimeout(fn, ms, ...args);
+};
+window.clearTimeout = (handle) => {
+  const i = pendingLoadTimeouts.findIndex((t) => t.handle === handle);
+  if (i >= 0) pendingLoadTimeouts.splice(i, 1);
+  else realClearTimeout(handle);
+};
+function fireLoadTimeouts() {
+  const due = pendingLoadTimeouts.splice(0);
+  if (due.length === 0) return;
+  flush(() => {
+    for (const t of due) t.fn(...(t.args ?? []));
+  });
 }
 
 const container = document.createElement("div");
@@ -238,13 +286,16 @@ flush(() => {
   flush(() => {
     img.dispatchEvent(new window.Event("error", { bubbles: true }));
   });
+  // key={src} reuses GalleryImage when both slots are the same URL, so the
+  // second hop may not paint. The 8s hang timer finishes the exhaust so
+  // the replace below is against a failed set.
   img = currentImg(container);
-  assert.ok(img, "first 404 must advance to the second slot");
-  assert.equal(img.getAttribute("src"), deadUrl);
-
-  flush(() => {
-    img.dispatchEvent(new window.Event("error", { bubbles: true }));
-  });
+  if (img) {
+    flush(() => {
+      img.dispatchEvent(new window.Event("error", { bubbles: true }));
+    });
+  }
+  fireLoadTimeouts();
   assert.equal(
     isPlaceholder(container),
     true,
@@ -276,6 +327,42 @@ flush(() => {
 
   flush(() => {
     sameLandingRoot.unmount();
+  });
+}
+
+// [good] already loaded, then the list grows. key={src} plus a kept
+// `loaded` flag must not let the 8s hang timer swap to the new fallback.
+{
+  const growRoot = createRoot(container);
+  flush(() => {
+    growRoot.render(React.createElement(Harness, { srcs: [goodUrl] }));
+  });
+  img = currentImg(container);
+  assert.ok(img);
+  assert.equal(img.getAttribute("src"), goodUrl);
+  flush(() => {
+    img.dispatchEvent(new window.Event("load", { bubbles: true }));
+  });
+  assert.equal(currentImg(container)?.getAttribute("src"), goodUrl);
+
+  flush(() => {
+    growRoot.render(React.createElement(Harness, { srcs: [goodUrl, otherGood] }));
+  });
+  img = currentImg(container);
+  assert.ok(img, "growing the list must keep the loaded first URL");
+  assert.equal(img.getAttribute("src"), goodUrl);
+  fireLoadTimeouts();
+  img = currentImg(container);
+  assert.ok(img);
+  assert.equal(
+    img.getAttribute("src"),
+    goodUrl,
+    "key={src} plus a loaded [0] must not 8s-swap to the new fallback",
+  );
+  assert.notEqual(img.getAttribute("src"), otherGood);
+
+  flush(() => {
+    growRoot.unmount();
   });
 }
 

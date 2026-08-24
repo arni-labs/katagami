@@ -52,11 +52,11 @@ export function ThumbnailPreview({
     loaded,
     srcIndex,
   });
-  // Reset during render when the src list identity changes. A useEffect
-  // would also unstick, but this render already has to show sources[0] —
-  // otherwise a reused card paints the palette-dot placeholder for a frame
-  // (or forever if the effect is omitted). First-src + length is not the
-  // key: see thumbnailSourcesKey.
+  // Align during render. A new first URL, or a same-landing replace of an
+  // exhausted set, resets failed/srcIndex/loaded. Growing the list while
+  // [0] is already loaded must keep `loaded` — otherwise the 8s hang
+  // timer swaps a working thumb to the new fallback. First-src + length
+  // is not the key: see thumbnailSourcesKey.
   if (aligned.sourcesKey !== seenSourcesKey) {
     setSeenSourcesKey(aligned.sourcesKey);
     setFailed(aligned.failed);
@@ -92,7 +92,7 @@ export function ThumbnailPreview({
       />
       {aligned.failed || !src ? null : (
         <GalleryImage
-          key={`${aligned.srcIndex}:${src}`}
+          key={src}
           src={src}
           alt={alt}
           sizes={LANGUAGE_CARD_SIZES}

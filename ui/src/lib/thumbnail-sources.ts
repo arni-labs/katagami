@@ -20,10 +20,36 @@ export type ThumbnailPreviewSourceState = {
 /**
  * Identity of the whole src list. First URL + length is not enough: a reused
  * card can keep the same landing URL and count while later fallbacks change
- * after OData (`[dead, dead]` → `[dead, good]`).
+ * after OData (`[dead, dead]` → `[dead, good]`). A key change is not a full
+ * remount — see alignThumbnailPreviewState.
  */
 export function thumbnailSourcesKey(sources: readonly string[]): string {
   return JSON.stringify(sources);
+}
+
+function sourcesFromKey(key: string): string[] {
+  if (!key) return [];
+  try {
+    const parsed = JSON.parse(key);
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Reset failed/srcIndex/loaded only when the identity that matters changes:
+ *  a new first URL, or a same-landing replace of an exhausted/failed set.
+ *  An array that grew while [0] is the same loaded URL is not a remount. */
+export function thumbnailSourcesNeedReset(
+  sources: readonly string[],
+  state: ThumbnailPreviewSourceState,
+): boolean {
+  const sourcesKey = thumbnailSourcesKey(sources);
+  if (state.sourcesKey === sourcesKey) return false;
+  const prevFirst = sourcesFromKey(state.sourcesKey)[0] ?? "";
+  const first = sources[0] ?? "";
+  if (prevFirst !== first) return true;
+  return state.failed;
 }
 
 export function alignThumbnailPreviewState(
@@ -31,7 +57,7 @@ export function alignThumbnailPreviewState(
   state: ThumbnailPreviewSourceState,
 ): ThumbnailPreviewSourceState & { src: string } {
   const sourcesKey = thumbnailSourcesKey(sources);
-  if (state.sourcesKey !== sourcesKey) {
+  if (thumbnailSourcesNeedReset(sources, state)) {
     return {
       sourcesKey,
       failed: false,
@@ -42,6 +68,7 @@ export function alignThumbnailPreviewState(
   }
   return {
     ...state,
+    sourcesKey,
     src: sources[state.srcIndex] ?? "",
   };
 }
