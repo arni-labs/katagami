@@ -651,6 +651,43 @@ assert.doesNotMatch(
   /--blue:/,
 );
 
+const webkitResizer = ":root:-webkit-resizer { --blue:#f00 }";
+assert.equal(
+  webkitResizer,
+  ":root:-webkit-resizer { --blue:#f00 }",
+  "replay must keep :-webkit-resizer; do not hide by adding only scrollbar",
+);
+assert.match(webkitResizer, /:root:-webkit-resizer \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(webkitResizer), []);
+assert.doesNotMatch(
+  compositionBindDecls(webkitResizer, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const mozSelection = ":root:-moz-selection { --blue:#f00 }";
+assert.equal(
+  mozSelection,
+  ":root:-moz-selection { --blue:#f00 }",
+  "replay must keep :-moz-selection; do not hide by rewriting to ::-moz-selection",
+);
+assert.match(mozSelection, /:root:-moz-selection \{ --blue:#f00 \}/);
+assert.doesNotMatch(mozSelection, /::-moz-selection/);
+assert.deepEqual(extractRootDecls(mozSelection), []);
+assert.doesNotMatch(
+  compositionBindDecls(mozSelection, roles, hero).join(";"),
+  /--blue:/,
+);
+
+const mozAnyLink = ":root:-moz-any-link { --blue:#f00 }";
+assert.equal(
+  mozAnyLink,
+  ":root:-moz-any-link { --blue:#f00 }",
+  "control: vendor pseudo-class still matches :root",
+);
+assert.match(mozAnyLink, /:root:-moz-any-link \{ --blue:#f00 \}/);
+assert.deepEqual(extractRootDecls(mozAnyLink).map(([name]) => name), ["blue"]);
+assert.match(compositionBindDecls(mozAnyLink, roles, hero).join(";"), /--blue:#FF3D9E/);
+
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
   "utf8",

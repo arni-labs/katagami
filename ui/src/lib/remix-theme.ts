@@ -892,38 +892,56 @@ const PSEUDO_ELEMENTS = new Set([
   "column",
   "scroll-marker",
   "scroll-marker-group",
-  "-webkit-input-placeholder",
-  "-moz-placeholder",
-  "-ms-input-placeholder",
-  "-webkit-file-upload-button",
-  "-webkit-search-cancel-button",
-  "-webkit-search-decoration",
-  "-webkit-inner-spin-button",
-  "-webkit-outer-spin-button",
-  "-moz-focus-inner",
-  "-webkit-progress-bar",
-  "-webkit-progress-value",
-  "-webkit-slider-thumb",
-  "-webkit-slider-runnable-track",
-  "-moz-range-thumb",
-  "-moz-range-track",
-  "-webkit-details-marker",
-  "-webkit-calendar-picker-indicator",
 ]);
+
+/** Vendor-prefixed names that still match the element, not a PE. */
+const VENDOR_PSEUDO_CLASSES = new Set([
+  "any",
+  "any-link",
+  "full-screen",
+  "fullscreen",
+  "autofill",
+  "drag",
+  "ui-invalid",
+  "ui-valid",
+  "focusring",
+  "read-only",
+  "read-write",
+  "placeholder-shown",
+  "submit-invalid",
+  "window-inactive",
+  "broken",
+  "loading",
+  "suppressed",
+  "user-disabled",
+  "locale-dir",
+  "only-whitespace",
+  "native-anonymous",
+  "lwtheme",
+  "handler-disabled",
+  "handler-blocked",
+  "handler-crashed",
+]);
+
+function vendorPseudoRest(name: string): string | null {
+  const m = /^-(?:webkit|moz|ms|o)-(.+)$/.exec(name);
+  return m ? m[1] : null;
+}
 
 function isPseudoElementName(name: string): boolean {
   if (PSEUDO_ELEMENTS.has(name)) return true;
-  if (name.startsWith("-webkit-scrollbar")) return true;
-  if (name.startsWith("-moz-scrollbar")) return true;
-  return false;
+  const rest = vendorPseudoRest(name);
+  if (rest === null) return false;
+  return !VENDOR_PSEUDO_CLASSES.has(rest);
 }
 
 /**
  * A pseudo-element on the subject sits on the PE, not on `:root`.
  * `::` is always a PE. Single-colon PE names (`:before`, `:selection`,
  * `:cue`) are too. `:is(:before)` / `:has(::before)` still nest a PE.
- * `:root:has(.foo)` does not. Vendor PEs (`:-webkit-scrollbar`) sit on
- * the PE. `:hover` is a class. `:is(:root)` still matches :root.
+ * `:root:has(.foo)` does not. A vendor-prefixed name is a PE unless
+ * it is a vendor class (`:-moz-any-link`, `:-webkit-any`). `:hover`
+ * is a class. `:is(:root)` still matches :root.
  */
 function rangeHasPseudoElement(src: string, start: number, end: number): boolean {
   let i = start;
