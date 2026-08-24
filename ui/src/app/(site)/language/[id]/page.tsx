@@ -13,6 +13,7 @@ import { RelatedLanguages } from "@/components/related-languages";
 import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
 import { LanguageRemixSection } from "@/components/language-remix-section";
+import { RemixLaneSkeleton } from "@/components/gallery-skeleton";
 import {
   designMdToMarkdown,
   katagamiSpecToMarkdown,
@@ -339,7 +340,7 @@ export default async function LanguageDetailPage({
 
       <ModelProvenance raw={f.model_provenance} />
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<RemixLaneSkeleton />}>
         <LanguageRemixSection lang={lang} />
       </Suspense>
 
