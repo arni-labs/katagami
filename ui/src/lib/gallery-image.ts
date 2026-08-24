@@ -53,10 +53,26 @@ export function canOptimizeGallerySrc(url: string): boolean {
 }
 
 /** One primary card image: the dedicated thumbnail when present, else the
- *  first reference. Proofs stay on the detail page. */
+ *  first reference. Proofs stay on the detail page. Whitespace is not a
+ *  thumb — trim before the fallback so `"   "` cannot hide refs[0]. */
 export function artStyleCardHero(input: {
   thumb?: string;
   refs?: string[];
 }): string {
-  return (input.thumb || input.refs?.[0] || "").trim();
+  return (input.thumb ?? "").trim() || (input.refs?.[0] ?? "").trim();
+}
+
+/** Reset current/failed when the src *prop* identity changes. Comparing
+ *  `current !== src` is wrong: after a 404 fallback those already differ,
+ *  and that check would snap back to the dead CDN URL on every render. */
+export function alignGalleryImageState(
+  src: string,
+  seenSrc: string,
+  current: string,
+  failed: boolean,
+): { seenSrc: string; current: string; failed: boolean } {
+  if (seenSrc !== src) {
+    return { seenSrc: src, current: src, failed: false };
+  }
+  return { seenSrc, current, failed };
 }

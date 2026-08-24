@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import {
+  alignGalleryImageState,
   canOptimizeGallerySrc,
   galleryImageSrc,
 } from "@/lib/gallery-image";
@@ -28,13 +29,23 @@ export function GalleryImage({
   onLoad?: () => void;
   onError?: () => void;
 }) {
+  const [seenSrc, setSeenSrc] = useState(src);
   const [current, setCurrent] = useState(src);
   const [failed, setFailed] = useState(false);
-  const resolved = galleryImageSrc(current);
+  const aligned = alignGalleryImageState(src, seenSrc, current, failed);
+  // Reset during render when the src prop identity changes. A useEffect
+  // would paint the previous failed/null frame first. Comparing current
+  // to src would snap a live proxy fallback back to the dead CDN URL.
+  if (aligned.seenSrc !== seenSrc) {
+    setSeenSrc(aligned.seenSrc);
+    setCurrent(aligned.current);
+    setFailed(aligned.failed);
+  }
+  const resolved = galleryImageSrc(aligned.current);
   const optimize = canOptimizeGallerySrc(resolved);
 
   const handleError = () => {
-    if (fallbackSrc && current !== fallbackSrc) {
+    if (fallbackSrc && aligned.current !== fallbackSrc) {
       setCurrent(fallbackSrc);
       return;
     }
@@ -42,7 +53,7 @@ export function GalleryImage({
     onError?.();
   };
 
-  if (failed || !resolved) return null;
+  if (aligned.failed || !resolved) return null;
 
   if (optimize) {
     return (

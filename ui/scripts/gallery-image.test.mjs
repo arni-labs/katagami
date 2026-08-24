@@ -59,7 +59,17 @@ assert.equal(
   artStyleCardHero({ thumb: "", refs: ["https://cdn/ref"] }),
   "https://cdn/ref",
 );
+assert.equal(
+  artStyleCardHero({ thumb: "   ", refs: ["https://cdn/ref"] }),
+  "https://cdn/ref",
+  "whitespace is not a thumb — it must not hide refs[0]",
+);
 assert.equal(artStyleCardHero({ thumb: "", refs: [] }), "");
+assert.equal(
+  artStyleCardHero({ thumb: "   ", refs: ["   "] }),
+  "",
+  "whitespace refs are also not a hero",
+);
 
 const nextConfig = readFileSync(resolve("next.config.ts"), "utf8");
 assert.match(
@@ -179,4 +189,126 @@ assert.doesNotMatch(
   "the homepage hero no longer carries a Browse gallery button",
 );
 
+const laneItems = readFileSync(resolve("src/lib/lane-items.ts"), "utf8");
+assert.match(
+  laneItems,
+  /artStyleCardHero/,
+  "card items must pick the hero through artStyleCardHero so whitespace thumbs cannot hide refs[0]",
+);
+assert.match(
+  laneItems,
+  /proofs: \[\]/,
+  "gallery card items still carry no proof-strip images",
+);
+
+const { alignGalleryImageState } = mod.exports;
+{
+  const cdnA = "https://example.com/a.jpg";
+  const cdnB = "https://example.com/b.jpg";
+  const proxy = "/api/file/fl-a";
+  let view = alignGalleryImageState(cdnA, "", cdnA, false);
+  assert.equal(view.current, cdnA);
+  view = alignGalleryImageState(cdnA, view.seenSrc, proxy, false);
+  assert.equal(
+    view.current,
+    proxy,
+    "a 404 fallback must not snap back to the dead CDN URL",
+  );
+  view = alignGalleryImageState(cdnB, view.seenSrc, view.current, true);
+  assert.equal(view.seenSrc, cdnB);
+  assert.equal(view.current, cdnB, "src identity change must reset current");
+  assert.equal(view.failed, false, "src identity change must clear failed");
+}
+
+const galleryImageSrcFile = readFileSync(
+  resolve("src/components/gallery-image.tsx"),
+  "utf8",
+);
+assert.match(
+  galleryImageSrcFile,
+  /alignGalleryImageState/,
+  "GalleryImage must reset current/failed when the src prop identity changes",
+);
+
+// ── Mounted replay: same instance, failed=true, then a new src ──
+const { loadUiModule, createFlush } = await import("./react-harness.mjs");
+const { GalleryImage } = loadUiModule("src/components/gallery-image.tsx");
+const { React, createRoot, flush } = createFlush();
+
+function GalleryHarness({ src, fallbackSrc }) {
+  return React.createElement(GalleryImage, {
+    src,
+    fallbackSrc,
+    alt: "art",
+    sizes: "25vw",
+    eager: true,
+  });
+}
+
+const cdnA = "https://example.com/a.jpg";
+const cdnB = "https://example.com/b.jpg";
+const proxyA = "/api/file/fl-a";
+
+const container = document.createElement("div");
+document.body.appendChild(container);
+const root = createRoot(container);
+
+flush(() => {
+  root.render(React.createElement(GalleryHarness, { src: cdnA }));
+});
+
+let img = container.querySelector("img");
+assert.ok(img, "eager GalleryImage must render the first src");
+assert.equal(img.getAttribute("src"), cdnA);
+
+flush(() => {
+  img.dispatchEvent(new window.Event("error", { bubbles: true }));
+});
+assert.equal(
+  container.querySelector("img"),
+  null,
+  "onError with no fallback must set failed and return null",
+);
+
+flush(() => {
+  root.render(React.createElement(GalleryHarness, { src: cdnB }));
+});
+img = container.querySelector("img");
+assert.ok(
+  img,
+  "same instance after failed=true must render again when src identity changes",
+);
+assert.equal(
+  img.getAttribute("src"),
+  cdnB,
+  "reused GalleryImage must show the new src, not stay null on the previous failed state",
+);
+
+flush(() => {
+  root.render(React.createElement(GalleryHarness, { src: cdnA, fallbackSrc: proxyA }));
+});
+img = container.querySelector("img");
+assert.equal(img.getAttribute("src"), cdnA);
+
+flush(() => {
+  img.dispatchEvent(new window.Event("error", { bubbles: true }));
+});
+img = container.querySelector("img");
+assert.equal(img.getAttribute("src"), proxyA, "404 must heal to the proxy");
+
+flush(() => {
+  root.render(React.createElement(GalleryHarness, { src: cdnA, fallbackSrc: proxyA }));
+});
+img = container.querySelector("img");
+assert.equal(
+  img.getAttribute("src"),
+  proxyA,
+  "same src after fallback must keep the proxy, not retry the dead CDN URL",
+);
+
+flush(() => {
+  root.unmount();
+});
+
 console.log("gallery image contract: ok");
+console.log("gallery image src reset: ok");

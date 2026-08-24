@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { GalleryImage } from "@/components/gallery-image";
 import { LANGUAGE_CARD_SIZES } from "@/lib/gallery-image";
 import { getFileUrl } from "@/lib/odata";
+import {
+  advanceThumbnailPreviewState,
+  alignThumbnailPreviewState,
+  thumbnailSourcesKey,
+} from "@/lib/thumbnail-sources";
 
 // A hung source must not pin the card on a blank image. Advance to the next
 // URL (CDN → file id) or the swatch. 8s, not 30s — measured /api/file 404s
@@ -38,22 +43,46 @@ export function ThumbnailPreview({
         : fileId
           ? [getFileUrl(fileId)]
           : [];
-  const src = sources[srcIndex] ?? "";
+  const [seenSourcesKey, setSeenSourcesKey] = useState(() =>
+    thumbnailSourcesKey(sources),
+  );
+  const aligned = alignThumbnailPreviewState(sources, {
+    sourcesKey: seenSourcesKey,
+    failed,
+    loaded,
+    srcIndex,
+  });
+  // Reset during render when the src list identity changes. A useEffect
+  // would also unstick, but this render already has to show sources[0] —
+  // otherwise a reused card paints the palette-dot placeholder for a frame
+  // (or forever if the effect is omitted). First-src + length is not the
+  // key: see thumbnailSourcesKey.
+  if (aligned.sourcesKey !== seenSourcesKey) {
+    setSeenSourcesKey(aligned.sourcesKey);
+    setFailed(aligned.failed);
+    setLoaded(aligned.loaded);
+    setSrcIndex(aligned.srcIndex);
+  }
+  const src = aligned.src;
 
   const advanceOrFail = () => {
-    setLoaded(false);
-    if (srcIndex + 1 < sources.length) {
-      setSrcIndex((i) => i + 1);
-      return;
-    }
-    setFailed(true);
+    const next = advanceThumbnailPreviewState(sources, {
+      sourcesKey: aligned.sourcesKey,
+      failed: aligned.failed,
+      loaded: aligned.loaded,
+      srcIndex: aligned.srcIndex,
+    });
+    setSeenSourcesKey(next.sourcesKey);
+    setFailed(next.failed);
+    setLoaded(next.loaded);
+    setSrcIndex(next.srcIndex);
   };
 
   useEffect(() => {
-    if (!src || failed || loaded) return;
+    if (!src || aligned.failed || aligned.loaded) return;
     const timer = window.setTimeout(advanceOrFail, THUMBNAIL_LOAD_TIMEOUT_MS);
     return () => window.clearTimeout(timer);
-  }, [src, failed, loaded, srcIndex]);
+  }, [src, aligned.failed, aligned.loaded, aligned.srcIndex]);
 
   return (
     <div className="absolute inset-0">
@@ -61,7 +90,7 @@ export function ThumbnailPreview({
         paletteColors={paletteColors}
         placeholderTint={placeholderTint}
       />
-      {failed || !src ? null : (
+      {aligned.failed || !src ? null : (
         <GalleryImage
           key={src}
           src={src}

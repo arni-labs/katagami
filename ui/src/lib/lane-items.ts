@@ -7,6 +7,7 @@ import {
   parseJson,
   type LaneEntity,
 } from "@/lib/odata";
+import { artStyleCardHero } from "@/lib/gallery-image";
 import type { PaletteItem } from "@/components/palette-card";
 import type { ArtStyleItem } from "@/components/art-style-card";
 
@@ -147,9 +148,14 @@ export function toWritingStyleItem(r: LaneEntity): import("@/components/writing-
  *  so a first page of 48 cards is 48 images, not ~190 originals. */
 export function toArtStyleItem(r: LaneEntity): ArtStyleItem {
   const images = artStyleImages(r.fields);
-  const hero = (images.thumb || images.refs[0] || "").trim();
+  const hero = artStyleCardHero({
+    thumb: images.thumb,
+    refs: images.refs,
+  });
   const imageCount = new Set(
-    [images.thumb, ...images.refs, ...images.proofs].filter(Boolean),
+    [images.thumb, ...images.refs, ...images.proofs].filter((url) =>
+      Boolean((url ?? "").trim()),
+    ),
   ).size;
   return {
     id: r.entity_id,
