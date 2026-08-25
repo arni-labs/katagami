@@ -82,11 +82,14 @@ export async function listEntities(id: Identity, set: string, filter?: string): 
   const out: EntityRow[] = [];
   let guard = 0;
   while (url && guard++ < 50) {
-    const res: Response = await check(await fetch(url, { headers: headers(id) }), `List ${set}`);
+    const current: string = url;
+    const res: Response = await check(await fetch(current, { headers: headers(id) }), `List ${set}`);
     const body = (await res.json()) as { value?: EntityRow[]; "@odata.nextLink"?: string };
     out.push(...(body.value ?? []));
-    const next = body["@odata.nextLink"] ?? null;
-    url = next ? (next.startsWith("http") ? next : `${config.temperUrl}/${next.replace(/^\//, "")}`) : null;
+    const next = body["@odata.nextLink"];
+    // nextLink is relative to the request URI — resolve spec-correct, not by
+    // prefixing the origin (which drops /tdata and 404s on page 2).
+    url = next ? new URL(next, current).toString() : null;
   }
   return out;
 }

@@ -54,13 +54,16 @@ async function readAll(set: string, filter: string): Promise<Row[]> {
     `${API_BASE}/tdata/${set}?$filter=${encodeURIComponent(filter)}&$top=500`;
   let guard = 0;
   while (url && guard++ < 50) {
-    const res: Response = await fetch(url, { headers: headers(), cache: "no-store" });
+    const current: string = url;
+    const res: Response = await fetch(current, { headers: headers(), cache: "no-store" });
     if (!res.ok) throw new Error(`Read ${set} failed ${res.status}`);
     const body = (await res.json()) as { value?: Row[]; "@odata.nextLink"?: string };
     out.push(...(body.value ?? []));
-    const next = body["@odata.nextLink"] ?? null;
-    // nextLink may be relative or absolute depending on the server.
-    url = next ? (next.startsWith("http") ? next : `${API_BASE}/${next.replace(/^\//, "")}`) : null;
+    const next = body["@odata.nextLink"];
+    // nextLink is relative to the request URI (e.g. "DesignLanguages?…") —
+    // resolve it the spec-correct way, not by prefixing the origin (which
+    // drops /tdata and 404s on page 2).
+    url = next ? new URL(next, current).toString() : null;
   }
   return out;
 }
