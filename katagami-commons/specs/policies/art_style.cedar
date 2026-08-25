@@ -50,4 +50,4 @@ forbid(
   action == Action::"ReturnToDraft",
   resource is ArtStyle
 )
-unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) || (principal is Customer && resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) || (principal is Customer && resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && context.actingFor != "" && resource has creator_sub && resource.creator_sub == context.actingFor) };
