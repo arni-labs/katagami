@@ -74,13 +74,21 @@ export async function getEntity(id: Identity, set: string, entityId: string): Pr
 }
 
 export async function listEntities(id: Identity, set: string, filter?: string): Promise<EntityRow[]> {
-  const q = filter ? `?$filter=${encodeURIComponent(filter)}` : "";
-  const res = await check(
-    await fetch(`${config.temperUrl}/tdata/${set}${q}`, { headers: headers(id) }),
-    `List ${set}`,
-  );
-  const body = (await res.json()) as { value?: EntityRow[] };
-  return body.value ?? [];
+  // ALWAYS paginate: Temper caps an un-$top'd list at 100 and returns an
+  // @odata.nextLink for the rest (ARN-363). A bare read silently drops
+  // everything past 100 — the contributor search must see the whole catalog.
+  const filterQ = filter ? `$filter=${encodeURIComponent(filter)}&` : "";
+  let url: string | null = `${config.temperUrl}/tdata/${set}?${filterQ}$top=500`;
+  const out: EntityRow[] = [];
+  let guard = 0;
+  while (url && guard++ < 50) {
+    const res: Response = await check(await fetch(url, { headers: headers(id) }), `List ${set}`);
+    const body = (await res.json()) as { value?: EntityRow[]; "@odata.nextLink"?: string };
+    out.push(...(body.value ?? []));
+    const next = body["@odata.nextLink"] ?? null;
+    url = next ? (next.startsWith("http") ? next : `${config.temperUrl}/${next.replace(/^\//, "")}`) : null;
+  }
+  return out;
 }
 
 export async function createEntity(id: Identity, set: string): Promise<string> {
