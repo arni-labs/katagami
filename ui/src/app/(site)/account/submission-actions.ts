@@ -34,7 +34,7 @@ export async function withdrawSubmission(formData: FormData): Promise<void> {
 
   // The row is attacker input until BOTH checks below pass: the submission is
   // still in review, and its creator_sub is exactly this session's stable
-  // Google subject id. Only then does the operator-key dispatch fire.
+  // Google subject id. Both are defence in depth; Cedar is the real gate.
   const res = await fetch(`${API_BASE}/tdata/${set}('${encodeURIComponent(id)}')`, {
     headers: {
       "X-Tenant-Id": TENANT,
