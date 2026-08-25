@@ -199,6 +199,7 @@ const required = [
 const BEARER_WRITE_FILES = {
   "src/app/remix-actions.ts": read("src/app/remix-actions.ts"),
   "src/app/(site)/voice/actions.ts": read("src/app/(site)/voice/actions.ts"),
+  "src/app/(site)/account/submission-actions.ts": read("src/app/(site)/account/submission-actions.ts"),
 };
 for (const [file, src] of Object.entries(BEARER_WRITE_FILES)) {
   const mutations = (src.match(/\b(?:dispatchAction|createEntity|uploadFile)\s*\(/g) || []).length;

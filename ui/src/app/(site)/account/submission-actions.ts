@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/user-auth";
 import { dispatchAction } from "@/lib/odata-mutations";
+import { humanBearer } from "@/lib/human-bearer";
 
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
@@ -17,17 +18,13 @@ const SETS: Record<string, string> = {
 /** The owning human pulls a submission back before a curator sees it —
  *  the veto half of "agents act, humans own".
  *
- *  DELIBERATE SERVICE-KEY EXCEPTION (ARN-255): this is the one human-attributed
- *  write that does NOT carry the contributor's own token. ReturnToDraft is a
- *  curator-gated action in Cedar (design_language/palette_system/art_style
- *  .cedar list it among the owner|curator-only actions), so a contributor's own
- *  token would be DENIED — threading it here would break a creator withdrawing
- *  their OWN submission. Until a proper Cedar "creator may withdraw own
- *  submission" action exists (follow-up), authorization is enforced IN-APP: the
- *  dispatch runs on the operator key ONLY after the block below verifies the
- *  signed-in user's stable sub is exactly the submission's creator_sub and the
- *  row is still UnderReview. Do not add a bearer here, and do not invent a
- *  policy change to make one work. */
+ *  Cedar authorizes this on the contributor's OWN token: ReturnToDraft permits
+ *  the creator (resource.creator_sub == principal.id) in addition to curators
+ *  (design_language/palette_system/art_style.cedar). So this carries the
+ *  contributor's bearer and the KERNEL is the authorization gate — a non-creator
+ *  is denied by Cedar. The in-app creator/status check below stays as a fast UX
+ *  guard (skip a guaranteed 403, and only offer withdrawal on UnderReview rows);
+ *  it is defence in depth, not the sole gate. */
 export async function withdrawSubmission(formData: FormData): Promise<void> {
   const user = await requireUser();
   const kind = formData.get("kind");
@@ -57,9 +54,17 @@ export async function withdrawSubmission(formData: FormData): Promise<void> {
   // creator_sub cannot slip through here.
   if (!creatorSub || creatorSub !== user.sub) return;
 
-  await dispatchAction(set, id, "ReturnToDraft", {
-    curator_notes: "Withdrawn by the owner before review.",
-  });
+  // Fail closed: a signed-in write mints the contributor's token or aborts —
+  // never falls back to the service key.
+  const bearer = await humanBearer();
+  if (!bearer) throw new Error("Could not verify your identity to withdraw.");
+  await dispatchAction(
+    set,
+    id,
+    "ReturnToDraft",
+    { curator_notes: "Withdrawn by the owner before review." },
+    { bearer },
+  );
   revalidatePath("/account");
   revalidatePath("/under-review");
 }

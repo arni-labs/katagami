@@ -9,7 +9,9 @@ forbid(
   action in [
     Action::"AddCuratorNotes",
     Action::"Archive",
+    Action::"AttachCorpus",
     Action::"AttachPublishedAssets",
+    Action::"SetVoiceLayer",
     Action::"AttachTasteVector",
     Action::"AttestConsent",
     Action::"IncrementFork",

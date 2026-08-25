@@ -18,7 +18,6 @@ forbid(
     Action::"MarkQualityPassed",
     Action::"Publish",
     Action::"Restore",
-    Action::"ReturnToDraft",
     Action::"Revise",
     Action::"SetCreator",
     Action::"SetDefaultArtStyle",
@@ -43,3 +42,14 @@ forbid(
   resource is DesignLanguage
 )
 unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
+
+// ReturnToDraft is both a curator REJECT (any submission) and a contributor
+// WITHDRAW of their OWN submission. Split from the curator-only bundle above so
+// the creator can return their own draft without gaining any other curator
+// power. Creator match mirrors remix.cedar (own id, or an agent acting for them).
+forbid(
+  principal,
+  action == Action::"ReturnToDraft",
+  resource is DesignLanguage
+)
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) || (principal is Customer && resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };
