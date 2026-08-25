@@ -190,6 +190,16 @@ const required = [
   ["remix.cedar ownership-gates every mutating action",
    read("../katagami-commons/policies/remix.cedar"),
    /Action::"SetSelection",[\s\S]*?Action::"SetSlotAssignments",[\s\S]*?Action::"AttachBrief",[\s\S]*?Action::"Save"/],
+  ...["SubmitWritingStyle","SetName","SetMechanicalBands","SetSources","SetTags","SetCredits","SetModelProvenance","SetCrossModal","AttachThumbnail","SetExemplars"].map((act) => [
+    `writing_style.cedar gates ${act} (owner|curator|service only)`,
+    read("../katagami-commons/policies/writing_style.cedar"),
+    new RegExp(`Action::"${act}"[\\s\\S]*?unless \\{[\\s\\S]*?\\["owner", "curator"\\]`),
+  ]),
+  ...["design_language","art_style","palette_system"].map((stem) => [
+    `${stem}.cedar ReturnToDraft permits the creator with the empty-actingFor guard`,
+    read(`../katagami-commons/policies/${stem}.cedar`),
+    /action == Action::"ReturnToDraft"[\s\S]*?resource\.creator_sub == principal\.id[\s\S]*?context\.actingFor != ""/,
+  ]),
 ];
 
 // EACH human-attributed governed write must carry { bearer } — not just "some
@@ -199,6 +209,7 @@ const required = [
 const BEARER_WRITE_FILES = {
   "src/app/remix-actions.ts": read("src/app/remix-actions.ts"),
   "src/app/(site)/voice/actions.ts": read("src/app/(site)/voice/actions.ts"),
+  "src/app/(site)/account/submission-actions.ts": read("src/app/(site)/account/submission-actions.ts"),
 };
 for (const [file, src] of Object.entries(BEARER_WRITE_FILES)) {
   const mutations = (src.match(/\b(?:dispatchAction|createEntity|uploadFile)\s*\(/g) || []).length;
