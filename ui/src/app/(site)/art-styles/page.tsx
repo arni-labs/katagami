@@ -5,7 +5,7 @@ import { toArtStyleItem } from "@/lib/lane-items";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { InfiniteArtStyles } from "@/components/infinite-galleries";
 import { CardGridSkeleton } from "@/components/gallery-skeleton";
-import { isOwner } from "@/lib/owner";
+import { hasCuratorAccess } from "@/lib/owner";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -38,22 +38,23 @@ async function ArtStyleCount() {
   return <HeroStat value={total} label="art styles" accent="sakura" />;
 }
 
-async function ArtStyleGrid({ owner }: { owner: boolean }) {
+async function ArtStyleGrid({ canCurate }: { canCurate: boolean }) {
   const first = await cachedArtStyleFirstPage();
   return (
     <InfiniteArtStyles
       initialItems={first.items}
       initialCursor={first.nextCursor}
-      canArchive={owner}
+      canArchive={canCurate}
     />
   );
 }
 
 export default async function ArtStylesPage() {
-  // Owner check is cookie-bound and must stay off the public cache.
-  // The catalog itself is Published-only and is cached as a slim card page
-  // so a header click is not a 4s Temper collection round-trip.
-  const owner = await isOwner();
+  // Curator check (owner|curator — the set Cedar grants ArtStyle.Archive to) is
+  // cookie-bound and must stay off the public cache. The catalog itself is
+  // Published-only and is cached as a slim card page so a header click is not a
+  // 4s Temper collection round-trip.
+  const canCurate = await hasCuratorAccess();
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-10">
@@ -74,7 +75,7 @@ export default async function ArtStylesPage() {
       />
       <div className="mt-10">
         <Suspense fallback={<CardGridSkeleton count={8} />}>
-          <ArtStyleGrid owner={owner} />
+          <ArtStyleGrid canCurate={canCurate} />
         </Suspense>
       </div>
     </div>

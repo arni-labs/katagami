@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertOwnerBearer } from "@/lib/owner";
+import { assertCuratorBearer } from "@/lib/owner";
 import { dispatchAction } from "@/lib/odata-mutations";
 
 const SETS: Record<string, string> = {
@@ -13,7 +13,7 @@ const SETS: Record<string, string> = {
 /** Curator rejection with feedback: back to Draft, notes readable by the
  *  contributor via submission_status (ARN-154). */
 export async function rejectSubmission(formData: FormData): Promise<void> {
-  const bearer = await assertOwnerBearer();
+  const bearer = await assertCuratorBearer();
   const kind = formData.get("kind");
   const id = formData.get("id");
   const notes = formData.get("notes");

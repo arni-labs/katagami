@@ -278,7 +278,9 @@ export function InfiniteLanguages({
   families?: { id: string; name: string; count: number }[];
   initialItems: DesignLanguage[];
   initialCursor: string | null;
-  canDelete?: boolean;
+  /** Boolean, or a pending server-side isOwner() Promise the cards stream in
+   *  (so the public, cached gallery paints without waiting on authorization). */
+  canDelete?: boolean | Promise<boolean>;
 }) {
   const [mode, setMode] = useState<SearchMode>("keyword");
   const {

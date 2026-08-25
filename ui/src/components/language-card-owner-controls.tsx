@@ -1,8 +1,44 @@
 "use client";
 
+import { Suspense, use, type ReactNode } from "react";
 import { DeleteLanguageButton } from "@/components/delete-language-button";
 import { FeaturedLanguageButton } from "@/components/featured-language-button";
 import { SendToReviewLanguageButton } from "@/components/send-to-review-language-button";
+
+type OwnerControlsProps = {
+  id: string;
+  name: string;
+  status: string;
+  featured: boolean;
+  displayOrder: number;
+};
+
+function ResolvedOwnerControls({
+  canDelete,
+  ...props
+}: OwnerControlsProps & { canDelete: Promise<boolean> }): ReactNode {
+  return use(canDelete) ? <LanguageCardOwnerControls {...props} /> : null;
+}
+
+/** Renders the owner controls when `canDelete` is — or resolves to — true.
+ *  Accepts a Promise so the gallery can paint the public, cached cards
+ *  immediately and stream the owner-only controls in once the SERVER-SIDE
+ *  isOwner() check resolves: the client never decides authorization, it only
+ *  awaits the server's answer (the fallback shows no controls). A plain boolean
+ *  (server-rendered contexts) renders synchronously with no Suspense. */
+export function LanguageCardOwnerSlot({
+  canDelete,
+  ...props
+}: OwnerControlsProps & { canDelete: boolean | Promise<boolean> }): ReactNode {
+  if (typeof canDelete === "boolean") {
+    return canDelete ? <LanguageCardOwnerControls {...props} /> : null;
+  }
+  return (
+    <Suspense fallback={null}>
+      <ResolvedOwnerControls canDelete={canDelete} {...props} />
+    </Suspense>
+  );
+}
 
 export function LanguageCardOwnerControls({
   id,
@@ -10,13 +46,7 @@ export function LanguageCardOwnerControls({
   status,
   featured,
   displayOrder,
-}: {
-  id: string;
-  name: string;
-  status: string;
-  featured: boolean;
-  displayOrder: number;
-}) {
+}: OwnerControlsProps) {
   return (
     <div
       className="absolute right-2 top-2 z-30 flex items-center gap-1 rounded-[2px] bg-[color-mix(in_oklch,var(--paper-sticker)_92%,transparent)] p-1 backdrop-blur-[2px]"

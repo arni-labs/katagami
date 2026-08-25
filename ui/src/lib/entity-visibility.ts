@@ -1,12 +1,12 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { isOwner } from "@/lib/owner";
+import { hasCuratorAccess } from "@/lib/owner";
 import { getUser, isAuthConfigured } from "@/lib/user-auth";
 
 // ARN-331: by-id readers must not serve non-Published entities to the public.
 // Route handlers that export derived artifacts (DESIGN.md, shadcn.*, BRIEF.md)
 // call artifactGate() before rendering: Published stays CDN-cacheable, the
-// owner can still fetch a draft (never CDN-cached), everyone else gets 404.
+// a curator/owner can still fetch a draft (never CDN-cached), everyone else gets 404.
 
 const PUBLIC_CACHE = "public, max-age=60, s-maxage=300";
 const OWNER_CACHE = "private, no-store";
@@ -21,8 +21,8 @@ export async function artifactGate(
   if (status === "Published") {
     return { allowed: true, cacheControl: PUBLIC_CACHE };
   }
-  if (await isOwner()) {
-    // Owner preview of a draft: the isOwner() cookie read makes the request
+  if (await hasCuratorAccess()) {
+    // Curator/owner preview of a draft: the role lookup makes the request
     // dynamic, and the response must never land in a shared cache.
     return { allowed: true, cacheControl: OWNER_CACHE };
   }
@@ -37,7 +37,7 @@ export async function artifactGate(
 
 /** Page-level variant: may this viewer see a non-Published entity at all? */
 export async function canViewNonPublished(): Promise<boolean> {
-  return isOwner();
+  return hasCuratorAccess();
 }
 
 /**

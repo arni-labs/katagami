@@ -258,127 +258,12 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
   "total_event_count",
 ] as const;
 
-// Booleans / counters that may arrive flattened on a $select response.
-// Booleans we care about for gallery sort/filter:
-const FLAT_BOOLEAN_KEYS = new Set([
-  "featured",
-  "embodiment_verified",
-  "has_embodiment",
-  "has_thumbnail",
-  "thumbnail_verified",
-  "has_design_md",
-  "has_valid_design_md",
-  "design_md_verified",
-  "has_published_assets",
-  "has_shadcn_export",
-  "shadcn_export_verified",
-  "has_shadcn_component_spec",
-  "shadcn_component_spec_verified",
-  "has_shadcn_preview_shots",
-  "shadcn_preview_shots_verified",
-  "quality_review_passed",
-]);
-// Counters used for sort/badge/usage:
-const FLAT_COUNTER_KEYS = new Set([
-  "display_order",
-  "fork_count",
-  "version",
-  "element_count",
-  "composition_count",
-  "usage_count",
-]);
-// OData envelope keys (kept at top level when normalizing):
-const ODATA_ENVELOPE_KEYS = new Set([
-  "@odata.id",
-  "@odata.context",
-  "@odata.type",
-  "entity_id",
-  "entity_type",
-  "status",
-  "item_count",
-  "fields",
-  "booleans",
-  "counters",
-  "lists",
-  "events",
-  "sequence_nr",
-  "total_event_count",
-]);
-
-// When a query goes through Temper's catalog-fast-read path with $select,
-// the row is returned FLAT — top-level Id/Status/name/tokens/... — instead
-// of the nested {entity_id, status, fields:{...}, booleans:{...}, counters:{...}}
-// shape the rest of this codebase reads. Normalize so callers see the
-// nested shape regardless of how OData chose to project.
-export function normalizeDesignLanguageRow(
-  raw: Record<string, unknown>,
-): DesignLanguage {
-  if (raw && typeof raw.fields === "object" && raw.fields !== null) {
-    const fields = raw.fields as Record<string, unknown>;
-    const booleans = {
-      ...((raw.booleans as Record<string, boolean> | undefined) ?? {}),
-    };
-    const counters = {
-      ...((raw.counters as Record<string, number> | undefined) ?? {}),
-    };
-    for (const [key, value] of Object.entries(fields)) {
-      if (FLAT_BOOLEAN_KEYS.has(key) && typeof value === "boolean") {
-        booleans[key] = value;
-      }
-      if (FLAT_COUNTER_KEYS.has(key) && typeof value === "number") {
-        counters[key] = value;
-      }
-    }
-    return {
-      ...raw,
-      booleans,
-      counters,
-    } as unknown as DesignLanguage;
-  }
-  const fields: Record<string, unknown> = {};
-  const booleans: Record<string, boolean> = {};
-  const counters: Record<string, number> = {};
-  const top: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(raw)) {
-    if (ODATA_ENVELOPE_KEYS.has(k)) {
-      top[k] = v;
-      continue;
-    }
-    if (k === "Id") {
-      top.entity_id = v;
-      fields.Id = v as string;
-      continue;
-    }
-    if (k === "Status") {
-      top.status = v;
-      fields.Status = v as string;
-      continue;
-    }
-    if (FLAT_BOOLEAN_KEYS.has(k) && typeof v === "boolean") {
-      booleans[k] = v;
-      continue;
-    }
-    if (FLAT_COUNTER_KEYS.has(k) && typeof v === "number") {
-      counters[k] = v;
-      continue;
-    }
-    fields[k] = v;
-  }
-  const canonicalId = parseODataEntityId(top["@odata.id"]);
-  if (canonicalId) top.entity_id = canonicalId;
-  return {
-    ...top,
-    fields,
-    booleans,
-    counters,
-  } as unknown as DesignLanguage;
-}
-
-function parseODataEntityId(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined;
-  const match = value.match(/DesignLanguages\('([^']+)'\)/);
-  return match?.[1];
-}
+// The flat-vs-nested $select row normalizer lives in a framework-free ESM
+// module (plain .mjs + a .d.mts) so the gallery-projection contract test can
+// import and execute the real code (not a copy) on any Node version. Re-exported
+// here so existing importers keep their path.
+import { normalizeDesignLanguageRow } from "@/lib/design-language-row.mjs";
+export { normalizeDesignLanguageRow };
 
 function parseEntitySetId(
   value: unknown,
@@ -733,14 +618,27 @@ export async function taxonomyFamilyIndex(): Promise<Map<string, TaxonomyParent>
 export const galleryFamilies = unstable_cache(
   async (): Promise<{ id: string; name: string; count: number }[]> => {
     const index = await taxonomyFamilyIndex();
+    // Only family_id is read for counting, so project just that: $select cuts
+    // the payload ~100x (measured ~5.26 MB -> ~35 KB) at the same query time.
+    // Under $select the row comes back FLAT (top-level family_id, no `.fields`),
+    // which `(row.fields ?? row)` already handles.
     const rows = await collectODataPages<Record<string, unknown>>(
-      "DesignLanguages?$filter=Status eq 'Published'&$top=5000",
+      "DesignLanguages?$filter=Status eq 'Published'&$select=family_id&$top=5000",
     );
     const counts = new Map<string, number>();
     for (const row of rows) {
       const f = (row.fields ?? row) as Record<string, unknown>;
       const fid = typeof f.family_id === "string" ? f.family_id : "";
       if (fid) counts.set(fid, (counts.get(fid) ?? 0) + 1);
+    }
+    // The silent-failure mode the retired ARN-97 comment warned about: rows
+    // came back but none carried a family_id (a projection that dropped the
+    // field, or a shape change), so every facet would vanish with no error.
+    // Cheap to detect here where both sides are in hand; log it instead.
+    if (rows.length > 0 && counts.size === 0) {
+      console.warn(
+        `[gallery] galleryFamilies: ${rows.length} published rows but no family_id on any — the family facet will be empty (projection/shape drift?)`,
+      );
     }
     return [...counts.entries()]
       .map(([id, count]) => ({ id, name: index.get(id)?.name ?? "", count }))
@@ -750,33 +648,6 @@ export const galleryFamilies = unstable_cache(
   ["gallery-families-v1"],
   { revalidate: 300 },
 );
-
-let languageTaxonomyCache: { at: number; map: Map<string, string[]> } | null =
-  null;
-
-/**
- * Published language id → its taxonomy leaf ids, read CANONICALLY. The gallery's
- * `$select` projection (DESIGN_LANGUAGE_GALLERY_FIELDS) silently drops list
- * fields like `taxonomy_ids` in the current kernel (ARN-97), so family grouping
- * can't rely on it — this reads the canonical rows and is memoized for a few
- * minutes so the lean card fetch stays the home's hot path.
- */
-export async function languageTaxonomyMap(): Promise<Map<string, string[]>> {
-  if (languageTaxonomyCache && Date.now() - languageTaxonomyCache.at < 5 * 60 * 1000) {
-    return languageTaxonomyCache.map;
-  }
-  const rows = await collectDesignLanguageRows("Status eq 'Published'");
-  const map = new Map<string, string[]>();
-  for (const row of rows) {
-    const id = typeof row.entity_id === "string" ? row.entity_id : "";
-    if (!id) continue;
-    const fields = (row.fields ?? {}) as Record<string, unknown>;
-    const ids = parseJson<string[]>(fields.taxonomy_ids as string) ?? [];
-    map.set(id, Array.isArray(ids) ? ids.filter(Boolean) : []);
-  }
-  languageTaxonomyCache = { at: Date.now(), map };
-  return map;
-}
 
 // ── Taste Rules ──
 

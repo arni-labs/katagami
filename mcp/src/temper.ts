@@ -1,9 +1,11 @@
-// Temper backend client. Every call is made AS the contributor. With
-// forwardCallerToken on, the caller's own access token goes through and the
-// kernel verifies it against the registered TrustedIssuer — the contributor
-// boundary is enforced by the kernel, not by headers this adapter stamps
-// (RFC-0002 step 2). The legacy branch swaps to the shared TEMPER_API_KEY
-// plus self-asserted principal headers, and is retired with the header path.
+// Temper backend client. Every call here is made AS the caller: the caller's
+// own access token is always forwarded, and the kernel verifies it against the
+// registered TrustedIssuer — the contributor boundary is enforced by the
+// kernel, not by headers this adapter stamps (RFC-0002 step 2 / ARN-255).
+// Every /mcp route is bearer-gated, so every tool call carries a token; a call
+// reaching here without one is a bug and fails closed (see `headers`). The
+// adapter never self-asserts a principal via headers, which the kernel strips
+// anyway (ARN-170).
 
 import { config } from "./config.js";
 import { createHash } from "node:crypto";
@@ -28,22 +30,23 @@ export function principalId(id: Identity): string {
 }
 
 function headers(id: Identity): Record<string, string> {
-  if (config.forwardCallerToken && id.token) {
-    // The kernel resolves identity (human sub, acting agent, agent_type)
-    // from the verified token itself; no self-asserted principal headers.
-    return {
-      "Content-Type": "application/json",
-      "X-Tenant-Id": config.temperTenant,
-      Authorization: `Bearer ${id.token}`,
-    };
+  // Every /mcp route is bearer-gated (requireBearerAuth in index.ts) and the
+  // Identity is built from the verified token (identityFromAuth), so a tool
+  // call ALWAYS carries the caller's own token. Forward it: the kernel resolves
+  // identity (human sub, acting agent, agent_type) from the token itself.
+  //
+  // A missing token is therefore a construction bug, never an anonymous read.
+  // Fail CLOSED rather than silently fall back to the shared service key — that
+  // dead branch would have run the write with SERVICE authority, skipping the
+  // caller's Cedar boundary (a latent escalation). The service key stays in
+  // auth.ts for the one non-caller call: the grant-liveness read.
+  if (!id.token) {
+    throw new TemperError("Cannot reach Temper without the caller's token.", 401);
   }
   return {
     "Content-Type": "application/json",
     "X-Tenant-Id": config.temperTenant,
-    Authorization: `Bearer ${config.temperApiKey}`,
-    "x-temper-principal-kind": "agent",
-    "x-temper-principal-id": principalId(id),
-    "x-temper-agent-type": "contributor",
+    Authorization: `Bearer ${id.token}`,
   };
 }
 

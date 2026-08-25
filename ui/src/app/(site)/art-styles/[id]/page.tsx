@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { isOwner } from "@/lib/owner";
+import { hasCuratorAccess } from "@/lib/owner";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
@@ -45,12 +45,13 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   } catch {
     notFound();
   }
-  // Non-published entries are the curator's queue: owner sees them (preview),
-  // everyone else gets a 404. The owner check runs ONLY on this branch, so
-  // Published renders never touch cookies() and stay cacheable.
+  // Non-published entries are the curator's queue: a curator (owner|curator,
+  // the set Cedar grants the review actions to) sees them (preview), everyone
+  // else gets a 404. The role check runs ONLY on this branch, so Published
+  // renders never touch cookies() and stay cacheable.
   const isPublished = art.status === "Published";
-  const ownerPreview = !isPublished && (await isOwner());
-  if (!isPublished && !ownerPreview) notFound();
+  const curatorPreview = !isPublished && (await hasCuratorAccess());
+  if (!isPublished && !curatorPreview) notFound();
 
   const f = art.fields;
   const name = artStyleDisplayName(f);
@@ -118,9 +119,9 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         rightSlot={<Stamp color="sakura">{medium}</Stamp>}
       />
 
-      {ownerPreview ? (
+      {curatorPreview ? (
         <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          Owner preview · Under review · Not public
+          Curator preview · Under review · Not public
         </div>
       ) : null}
 

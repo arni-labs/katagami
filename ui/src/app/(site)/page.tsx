@@ -11,7 +11,7 @@ import { LanguageCard } from "@/components/language-card";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { RisoHeroPress } from "@/components/riso-hero";
 import { RisoInkField } from "@/components/riso-ink-field";
-import { isOwner } from "@/lib/owner";
+import { hasCuratorAccess } from "@/lib/owner";
 
 export const dynamic = "force-dynamic";
 
@@ -208,7 +208,12 @@ async function GalleryGrid({
   // which must not become a sign-in bypass; demo only turns delete controls
   // off, never widens visibility.
   if (!(await hasFullGalleryAccess())) return <TeaserGallery />;
-  const canDelete = demo ? false : await isOwner();
+  // Don't block the cached, public gallery paint on the curator check: start
+  // hasCuratorAccess() (a kernel Member lookup — owner|curator, the set Cedar
+  // grants Archive to) here and hand the pending Promise to the cards, which
+  // stream the archive controls in once it resolves. Authorization stays
+  // server-side — the client only awaits the server's answer.
+  const canDelete: boolean | Promise<boolean> = demo ? false : hasCuratorAccess();
   let first: Awaited<ReturnType<typeof pageDesignLanguages>>;
   let featured: Awaited<ReturnType<typeof listFeaturedDesignLanguages>>;
   let families: Awaited<ReturnType<typeof galleryFamilies>> = [];

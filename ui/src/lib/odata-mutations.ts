@@ -38,7 +38,7 @@ export async function dispatchAction(
   let lastError = "";
   for (const namespace of namespaces) {
     const res = await fetch(
-      `${API_BASE}/tdata/${entitySet}('${id}')/${namespace}.${action}`,
+      `${API_BASE}/tdata/${entitySet}('${encodeURIComponent(id)}')/${namespace}.${action}`,
       {
         method: "POST",
         headers: reqHeaders,
@@ -81,7 +81,7 @@ export async function deleteEntity(
   id: string,
   opts?: { bearer?: string },
 ): Promise<void> {
-  const res = await fetch(`${API_BASE}/tdata/${entitySet}('${id}')`, {
+  const res = await fetch(`${API_BASE}/tdata/${entitySet}('${encodeURIComponent(id)}')`, {
     method: "DELETE",
     headers: authHeaders(opts?.bearer),
   });

@@ -61,9 +61,11 @@ const required = [
   // dynamic; the header chip hydrates from /api/auth/me instead.
   ["layout stays cookie-free (full-route cache preserved)", layout, /^(?![\s\S]*getUser)[\s\S]*$/],
   ["identity endpoint is uncacheable", me, /no-store/],
-  // Owner mode is identity (ARN-144): a signed-in sub on the allowlist —
-  // no passphrase, no per-browser unlock cookie, no HMAC grant path.
-  ["owner mode keys on the sub allowlist", owner, /KATAGAMI_OWNER_SUBS/],
+  // Owner mode is identity (ARN-144, ARN-255): the signed-in account's durable
+  // Member.role — single-sourced on the same field Cedar enforces. No JS
+  // allowlist, no passphrase, no per-browser unlock cookie, no HMAC grant path.
+  ["owner mode keys on the Member role", owner, /roleForSub\(user\.sub\)\) === "owner"/],
+  ["owner mode has no env allowlist", owner, /^(?![\s\S]*(KATAGAMI_OWNER_SUBS|KATAGAMI_OWNER_EMAILS|owner-allowlist))[\s\S]*$/],
   ["owner check reads the signed-in session first", owner, /const user = await getUser/],
   ["session cookie is shared on katagami.ai", session, /sessionCookieDomain/],
   ["header sign-out is a form POST", userMenu, /action="\/api\/auth\/signout"/],
