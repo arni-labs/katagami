@@ -21,15 +21,15 @@ export const config = {
   /** Temper backend. */
   temperUrl: req("TEMPER_API_URL", "https://openpaw-production.up.railway.app"),
   temperTenant: req("TEMPER_TENANT", "default"),
-  temperApiKey: req("TEMPER_API_KEY", ""),
   /**
-   * Forward the caller's own access token to Temper instead of swapping to
-   * the shared TEMPER_API_KEY + self-asserted principal headers (RFC-0002
-   * step 2). Requires a kernel that verifies katagami.ai as a TrustedIssuer
-   * (ARN-255 step 1); until that is deployed this stays off, and once the
-   * header path is retired the flag and the legacy branch go with it.
+   * Shared service key. Used only for the ONE non-caller call: the grant
+   * liveness read in auth.ts (verifying a token means checking the anchoring
+   * grant is still Active, before any caller identity is established). There is
+   * no anonymous sample tier — every /mcp route is bearer-gated, so all
+   * tool-driven calls forward the caller's own token instead (RFC-0002 step 2 /
+   * ARN-255).
    */
-  forwardCallerToken: (process.env.KATAGAMI_MCP_FORWARD_CALLER_TOKEN ?? "") === "1",
+  temperApiKey: req("TEMPER_API_KEY", ""),
   /** Public gallery, for handing back human-viewable links. */
   galleryUrl: req("KATAGAMI_GALLERY_URL", "https://katagami.ai"),
 };

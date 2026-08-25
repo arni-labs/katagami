@@ -11,7 +11,7 @@ import { ArtStyleCatalog, PaletteCatalog } from "@/components/lane-catalog";
 import { LanguageCard } from "@/components/language-card";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { notFound } from "next/navigation";
-import { isOwner } from "@/lib/owner";
+import { hasCuratorAccess, isOwner } from "@/lib/owner";
 import ReviewQueuePanel, { type QueueItem } from "./review-queue-panel";
 
 export const dynamic = "force-dynamic";
@@ -61,15 +61,16 @@ function NoneYet({ what }: { what: string }) {
 export default async function UnderReviewPage() {
   // UnderReview-only — the published catalog lives on the gallery pages; this is
   // the curation queue, kept deliberately separate so the two never mix.
-  // The whole curation queue is the owner's desk — not a public page.
-  const owner = await isOwner();
-  if (!owner) notFound();
+  // The curation queue is a curator's desk — owner OR curator, the same set
+  // Cedar grants the review/archive/publish actions to — not a public page.
+  const [canCurate, owner] = await Promise.all([hasCuratorAccess(), isOwner()]);
+  if (!canCurate) notFound();
   const [languages, paletteRows, artRows, writingRows, taxFamily] = await Promise.all([
     listDesignLanguages(UNDER_REVIEW).catch(() => []),
     listPaletteSystems(UNDER_REVIEW).catch(() => []),
     listArtStyles(UNDER_REVIEW).catch(() => []),
-    // Writing styles are owner-only end to end; the queue section renders
-    // only for the owner.
+    // Writing styles stay owner-only (consent-bound), so their queue section
+    // renders only for the owner even though a curator sees the rest.
     owner ? listWritingStyles(UNDER_REVIEW).catch(() => []) : Promise.resolve([]),
     taxonomyFamilyIndex().catch(
       () => new Map<string, { name: string; parentId: string }>(),
@@ -120,7 +121,7 @@ export default async function UnderReviewPage() {
                     key={l.entity_id}
                     lang={l}
                     index={i}
-                    canDelete={owner}
+                    canDelete={canCurate}
                   />
                 ))}
               </div>
@@ -138,7 +139,7 @@ export default async function UnderReviewPage() {
             {palettes.length ? (
               <PaletteCatalog
                 items={palettes}
-                canArchive={owner}
+                canArchive={canCurate}
                 categoryNames={categoryNames}
               />
             ) : (
@@ -155,7 +156,7 @@ export default async function UnderReviewPage() {
             {artStyles.length ? (
               <ArtStyleCatalog
                 items={artStyles}
-                canArchive={owner}
+                canArchive={canCurate}
                 categoryNames={categoryNames}
               />
             ) : (
@@ -163,7 +164,7 @@ export default async function UnderReviewPage() {
             )}
           </section>
 
-          {owner ? (
+          {canCurate ? (
             <ReviewQueuePanel
               items={[
                 ...langs.map(

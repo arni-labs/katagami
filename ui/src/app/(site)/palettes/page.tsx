@@ -6,7 +6,7 @@ import {
 import { toPaletteItem } from "@/lib/lane-items";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { InfinitePalettes } from "@/components/infinite-galleries";
-import { isOwner } from "@/lib/owner";
+import { hasCuratorAccess } from "@/lib/owner";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -17,7 +17,9 @@ export const metadata = {
 export default async function PalettesPage() {
   // Published-only. Keyset-paginated + server-searched so the catalog stays fast
   // at any size — the first page renders here, the rest load on scroll.
-  const owner = await isOwner();
+  // Curator (owner|curator) sees the archive controls — the set Cedar grants
+  // PaletteSystem.Archive to.
+  const canCurate = await hasCuratorAccess();
   const [first, total, featuredRows] = await Promise.all([
     pagePaletteSystems({ limit: 48 }),
     countPaletteSystems(),
@@ -44,7 +46,7 @@ export default async function PalettesPage() {
           featured={featured}
           initialItems={items}
           initialCursor={first.nextCursor}
-          canArchive={owner}
+          canArchive={canCurate}
         />
       </div>
     </div>

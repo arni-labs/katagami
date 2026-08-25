@@ -22,7 +22,7 @@ import {
   parseJson,
 } from "@/lib/odata";
 import type { CurationJob, TasteRule } from "@/lib/odata";
-import { isOwner, isOwnerModeConfigured } from "@/lib/owner";
+import { isOwner } from "@/lib/owner";
 import { getUser } from "@/lib/user-auth";
 import { UserAvatar } from "@/components/user-menu";
 import { KX_BTN_PAPER } from "@/lib/katagami-ui";
@@ -284,11 +284,7 @@ function tasteRuleIds(rule: TasteRule, ...keys: string[]): string[] {
 }
 
 export default async function OwnerPage() {
-  const [user, owner, configured] = await Promise.all([
-    getUser(),
-    isOwner(),
-    Promise.resolve(isOwnerModeConfigured()),
-  ]);
+  const [user, owner] = await Promise.all([getUser(), isOwner()]);
   const tasteRules = await loadTasteRuleDashboard(owner);
 
   return (
@@ -316,9 +312,9 @@ export default async function OwnerPage() {
         description={
           <>
             Owner access follows your Google account: sign in with an
-            allowlisted account and the curator controls appear in the gallery
-            and language detail pages, on any device. The server still checks
-            the allowlist before it archives anything.
+            owner-role account and the curator controls appear in the gallery
+            and language detail pages, on any device. The server checks your
+            account role before it archives anything.
           </>
         }
         rightSlot={
@@ -349,15 +345,7 @@ export default async function OwnerPage() {
             </Marker>
           </SectionHeading>
 
-          {!configured ? (
-            <p className="text-sm text-muted-foreground">
-              Set{" "}
-              <code className="font-mono text-[12px]">KATAGAMI_OWNER_SUBS</code>{" "}
-              on the server first — a comma-separated allowlist of Google
-              subject ids. Find yours on any mix you saved (
-              <code className="font-mono text-[12px]">creator_sub</code>).
-            </p>
-          ) : user ? (
+          {user ? (
             <div className="flex flex-wrap items-center gap-4">
               <UserAvatar user={user} size={40} />
               <div className="min-w-0 flex-1">
@@ -373,8 +361,8 @@ export default async function OwnerPage() {
               </div>
               <p className="text-sm text-muted-foreground">
                 {owner
-                  ? "This account is on the owner list."
-                  : "This account is not on the owner list."}
+                  ? "This account has the owner role."
+                  : "This account does not have the owner role."}
               </p>
             </div>
           ) : (

@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { DesignLanguage } from "@/lib/odata";
 import { TrackedLink } from "@/components/tracked-link";
 import { getFileUrl, parseJson } from "@/lib/odata";
-import { LanguageCardOwnerControls } from "@/components/language-card-owner-controls";
+import { LanguageCardOwnerSlot } from "@/components/language-card-owner-controls";
 import { ThumbnailPreview } from "@/components/thumbnail-preview";
 import { ProvenanceBadge } from "@/components/provenance-badge";
 import { thumbnailPreviewSources } from "@/lib/thumbnail-sources";
@@ -98,7 +98,9 @@ export function LanguageCard({
 }: {
   lang: DesignLanguage;
   index?: number;
-  canDelete?: boolean;
+  /** A Promise streams the owner controls in without blocking the card paint
+   *  (the gallery passes the pending server-side isOwner() check). */
+  canDelete?: boolean | Promise<boolean>;
 }) {
   const id = lang.entity_id;
   const stickyTint = tintFor(lang);
@@ -115,15 +117,14 @@ export function LanguageCard({
       >
         <FullCard lang={lang} stickyTint={stickyTint} eagerThumbnail={index < 12} />
       </TrackedLink>
-      {canDelete ? (
-        <LanguageCardOwnerControls
-          id={id}
-          name={name}
-          status={lang.status}
-          featured={featured}
-          displayOrder={displayOrder(lang)}
-        />
-      ) : null}
+      <LanguageCardOwnerSlot
+        canDelete={canDelete}
+        id={id}
+        name={name}
+        status={lang.status}
+        featured={featured}
+        displayOrder={displayOrder(lang)}
+      />
     </div>
   );
 }

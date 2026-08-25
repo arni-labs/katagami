@@ -13,9 +13,8 @@ export const metadata = {
 };
 
 export default async function VoicePage() {
-  // Owner-only while the lane seeds: rita's signed-in Google identity
-  // (KATAGAMI_OWNER_SUBS) or a plain 404 — the section does not exist
-  // for the public yet.
+  // Owner-only while the lane seeds: an owner-role signed-in account, or a
+  // plain 404 — the section does not exist for the public yet.
   if (!(await isOwner())) notFound();
   // The voice catalog is young — a single server-rendered page (96) covers it.
   // Keyset infinite scroll joins when the lane outgrows one page.

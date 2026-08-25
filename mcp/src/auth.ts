@@ -44,9 +44,8 @@ export function identityFromAuth(auth: AuthInfo): Identity {
     email: extra.email ?? "",
     clientId: auth.clientId,
     grantId: extra.grantId ?? "",
-    // The caller's raw access token, forwarded to Temper when
-    // config.forwardCallerToken is on so the kernel verifies the caller
-    // itself (RFC-0002 step 2).
+    // The caller's raw access token, always forwarded to Temper so the kernel
+    // verifies the caller itself (RFC-0002 step 2 / ARN-255).
     token: auth.token,
   };
 }

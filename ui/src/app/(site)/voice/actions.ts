@@ -1,14 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertOwnerBearer } from "@/lib/owner";
+import { assertCuratorBearer, assertOwnerBearer } from "@/lib/owner";
 import { createEntity, dispatchAction, uploadFile } from "@/lib/odata-mutations";
 
 // The curator gate's other half: the finalizer stops writing styles at
-// UnderReview with every Publish guard satisfied; the owner reads the voice
-// and publishes it from the contract page.
+// UnderReview with every Publish guard satisfied; a curator (or owner) reads
+// the voice and publishes it from the contract page. WritingStyle.Publish is
+// granted to owner|curator in katagami-commons/policies/writing_style.cedar, so
+// this carries the curator's own token.
 export async function publishWritingStyle(id: string): Promise<void> {
-  const bearer = await assertOwnerBearer();
+  const bearer = await assertCuratorBearer();
   await dispatchAction("WritingStyles", id, "Publish", {}, { bearer });
   revalidatePath("/voice");
   revalidatePath(`/voice/${id}`);
@@ -92,7 +94,7 @@ export async function submitVoiceIntake(
         provenance,
         attested_by_owner: true,
       }),
-    });
+    }, { bearer });
     if (name || refusals.length) {
       await dispatchAction("WritingStyles", id, "SetVoiceLayer", {
         persona: "",

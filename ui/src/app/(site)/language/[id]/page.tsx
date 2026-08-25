@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { isOwner } from "@/lib/owner";
+import { hasCuratorAccess } from "@/lib/owner";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
@@ -65,7 +65,7 @@ export async function generateMetadata({
     // ARN-331: don't leak a non-Published name into <title>/OG — the page body
     // 404s below, but metadata renders first. Cookie check only on this branch,
     // same cache invariant as the body gate.
-    if (lang.status !== "Published" && !(await isOwner())) {
+    if (lang.status !== "Published" && !(await hasCuratorAccess())) {
       return { title: pageTitle() };
     }
     const name = lang.fields.name || "Untitled";
@@ -105,7 +105,7 @@ export default async function LanguageDetailPage({
   // everyone else 404s. The check runs ONLY on this branch — Published
   // renders never execute cookies(), preserving the full-route cache
   // (the sign-in rollout invariant for this page).
-  if (lang.status !== "Published" && !(await isOwner())) notFound();
+  if (lang.status !== "Published" && !(await hasCuratorAccess())) notFound();
 
   const f = lang.fields;
 

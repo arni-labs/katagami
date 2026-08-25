@@ -56,10 +56,25 @@ const humanChecks = CURATED.map((stem) => [
   ["remix.cedar gates human ownership",
    read("../katagami-commons/policies/remix.cedar"),
    /resource\.creator_sub == principal\.id/],
-  ["owner actions carry the acting human to the kernel",
+  ["owner/curator bearer helpers carry the acting human to the kernel",
    read("src/lib/owner.ts"), /assertOwnerBearer[\s\S]*humanBearer/],
-  ["curator server actions use assertOwnerBearer",
-   read("src/app/actions.ts"), /assertOwnerBearer\(\)[\s\S]*\{ bearer \}/],
+  // Fail-closed contract (ARN-255): a signed-in write throws if the mint fails,
+  // never coalesces null->undefined and falls back to the shared service key.
+  ["assertOwnerBearer returns a string and fails closed",
+   read("src/lib/owner.ts"),
+   /assertOwnerBearer\(\): Promise<string>[\s\S]*?humanBearer\(\)[\s\S]*?throw new Error/],
+  ["a curator predicate exists (owner OR curator)",
+   read("src/lib/owner.ts"),
+   /hasCuratorAccess[\s\S]*?=== "owner" \|\| role === "curator"/],
+  ["assertCuratorBearer returns a string and fails closed",
+   read("src/lib/owner.ts"),
+   /assertCuratorBearer\(\): Promise<string>[\s\S]*?humanBearer\(\)[\s\S]*?throw new Error/],
+  // The curation/review Server Actions carry the CURATOR's token — Cedar grants
+  // these to owner|curator — and every one threads { bearer }, none the service key.
+  ["curation server actions use assertCuratorBearer",
+   read("src/app/actions.ts"), /assertCuratorBearer\(\)[\s\S]*\{ bearer \}/],
+  ["curation Server Actions no longer route through assertOwnerBearer",
+   read("src/app/actions.ts"), /^(?![\s\S]*assertOwnerBearer)[\s\S]*$/],
 ]);
 
 // THE RECURRING BUG CLASS, made unrepeatable: a boundary written as
@@ -124,17 +139,30 @@ const required = [
   ["sign-out-everywhere bumps the kernel generation", as, /BumpGeneration/],
   ["account exposes a sign-out-everywhere action", agentsActions, /signOutEverywhere[\s\S]*?bumpGeneration/],
 
-  // Adapter forwards the caller's own token when the rollout flag is on, and
-  // drops the self-asserted principal headers on that path.
-  ["adapter can forward the caller token", mcp, /forwardCallerToken && id\.token/],
+  // Adapter ALWAYS forwards the caller's own token, and never self-asserts a
+  // principal via headers (ARN-255): the mandatory path, not a flag.
+  ["adapter always forwards the caller token", mcp, /Bearer \$\{id\.token\}/],
+  ["adapter fails closed on a missing caller token", mcp, /if \(!id\.token\)[\s\S]*?throw new TemperError/],
+  ["adapter headers never fall back to the service key", mcp, /^(?![\s\S]*Bearer \$\{config\.temperApiKey\})[\s\S]*$/],
+  ["adapter never self-asserts a principal header", mcp, /^(?![\s\S]*x-temper-principal-)[\s\S]*$/],
+  ["adapter forwarding is not flag-gated", mcp, /^(?![\s\S]*forwardCallerToken)[\s\S]*$/],
 
-  // Human-write routing: per-user mutations can carry the human's Customer
-  // token (flag-gated), minted from the session — not the shared service key.
-  ["human bearer is flag-gated", humanBearer, /KATAGAMI_HUMAN_TOKENS/],
+  // Human-write routing: per-user mutations ALWAYS carry the human's Customer
+  // token, minted from the session — not the shared service key, no flag gate.
+  ["human bearer is mandatory (no flag gate)", humanBearer, /^(?![\s\S]*KATAGAMI_HUMAN_TOKENS)[\s\S]*$/],
   ["human bearer is minted from the session via issueHumanToken", humanBearer, /getUser\(\)[\s\S]*issueHumanToken/],
   ["mutations accept a per-call bearer override", mutations, /function authHeaders\(bearer/],
   ["public reads stay on the service key (routing note present)", humanBearer, /does NOT touch public catalog reads/],
   ["rateRemix carries the human bearer", remixActions, /humanBearer\(\)[\s\S]*dispatchAction\("Remixes", id, "Rate"/],
+  // Authoring writes (create + every dispatch) carry the human's own token too,
+  // and fail closed — none run on the service key (ARN-255).
+  ["saveRemix mints the human bearer and threads it through create + dispatch",
+   remixActions,
+   /saveRemix[\s\S]*?humanBearer\(\)[\s\S]*?createEntity\("Remixes", \{\}, \{ bearer \}\)[\s\S]*?"SetSelection"[\s\S]*?\{ bearer \}/],
+  ["saveRemix fails closed on a missing bearer", remixActions,
+   /saveRemix[\s\S]*?humanBearer\(\)[\s\S]*?if \(!bearer\)[\s\S]*?throw/],
+  ["rateRemix fails closed on a missing bearer", remixActions,
+   /rateRemix[\s\S]*?humanBearer\(\)[\s\S]*?if \(!bearer\)[\s\S]*?throw/],
 
   // Sign-out-everywhere must actually end sessions AND stop agents — the
   // generation bump alone leaves the session cookie live and lets agents
@@ -163,6 +191,24 @@ const required = [
    read("../katagami-commons/policies/remix.cedar"),
    /Action::"SetSelection",[\s\S]*?Action::"SetSlotAssignments",[\s\S]*?Action::"AttachBrief",[\s\S]*?Action::"Save"/],
 ];
+
+// EACH human-attributed governed write must carry { bearer } — not just "some
+// bearer occurs somewhere". Assert per-file that every mutation call
+// (dispatchAction/createEntity) is bearer-carrying, so dropping the bearer from
+// SetCreator/Save/AttachCorpus/CurationJob-create fails this contract.
+const BEARER_WRITE_FILES = {
+  "src/app/remix-actions.ts": read("src/app/remix-actions.ts"),
+  "src/app/(site)/voice/actions.ts": read("src/app/(site)/voice/actions.ts"),
+};
+for (const [file, src] of Object.entries(BEARER_WRITE_FILES)) {
+  const mutations = (src.match(/\b(?:dispatchAction|createEntity|uploadFile)\s*\(/g) || []).length;
+  const bearers = (src.match(/\{ bearer \}/g) || []).length;
+  required.push([
+    `${file}: every governed write carries { bearer } (${bearers}/${mutations})`,
+    src,
+    new RegExp(`^${mutations === bearers ? "" : "(?!)"}[\\s\\S]*$`),
+  ]);
+}
 
 let failed = 0;
 for (const [name, source, pattern] of required) {
