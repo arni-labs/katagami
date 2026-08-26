@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScaledFrame } from "@/components/scaled-frame";
-import { injectTheme, type Roles } from "@/lib/remix-theme";
+import { injectTheme, themeOverrideStyle, type Roles } from "@/lib/remix-theme";
 
 /**
  * Live remix preview: fetches a language's bespoke composition HTML (landing or
@@ -25,9 +25,13 @@ export function RemixPreview({
   const [raw, setRaw] = useState<{ url: string; html: string } | null>(() =>
     compositionUrl && initialHtml ? { url: compositionUrl, html: initialHtml } : null,
   );
+  const rawRef = useRef(raw);
+  rawRef.current = raw;
 
   useEffect(() => {
     if (!compositionUrl) return;
+    const have = rawRef.current;
+    if (have?.url === compositionUrl && have.html) return;
     let cancelled = false;
     fetch(compositionUrl)
       .then((r) => (r.ok ? r.text() : Promise.reject()))
@@ -35,7 +39,13 @@ export function RemixPreview({
         if (!cancelled) setRaw({ url: compositionUrl, html: t });
       })
       .catch(() => {
-        if (!cancelled) setRaw({ url: compositionUrl, html: "" });
+        if (!cancelled) {
+          setRaw((prev) =>
+            prev?.url === compositionUrl && prev.html
+              ? prev
+              : { url: compositionUrl, html: "" },
+          );
+        }
       });
     return () => {
       cancelled = true;
@@ -43,6 +53,13 @@ export function RemixPreview({
   }, [compositionUrl]);
 
   const fresh = raw && raw.url === compositionUrl ? raw.html : null;
+  const tokens = (
+    <div
+      hidden
+      data-remix-theme=""
+      dangerouslySetInnerHTML={{ __html: themeOverrideStyle(roles, hero) }}
+    />
+  );
 
   if (!compositionUrl) {
     return (
@@ -52,9 +69,19 @@ export function RemixPreview({
     );
   }
   if (fresh === null) {
-    return <div className="aspect-[16/10] w-full animate-pulse bg-muted" />;
+    return (
+      <>
+        {tokens}
+        <div className="aspect-[16/10] w-full animate-pulse bg-muted" />
+      </>
+    );
   }
 
   const html = injectTheme(fresh, roles, hero);
-  return <ScaledFrame html={html} title="Remix preview" />;
+  return (
+    <>
+      {tokens}
+      <ScaledFrame html={html} title="Remix preview" />
+    </>
+  );
 }

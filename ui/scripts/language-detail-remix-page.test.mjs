@@ -102,6 +102,10 @@ const remixSrc = fs.readFileSync(
   path.join(here, "../src/components/language-remix-section.tsx"),
   "utf8",
 );
+const previewSrc = fs.readFileSync(
+  path.join(here, "../src/components/remix/remix-preview.tsx"),
+  "utf8",
+);
 const streamSrc = fs.readFileSync(
   path.join(here, "../src/lib/language-detail-stream.ts"),
   "utf8",
@@ -264,11 +268,29 @@ const treeMod = loadTsx(
               React.createElement("li", { key: p.id }, p.name, " ", p.swatches?.[0]),
             ),
           ),
+          React.createElement(
+            "div",
+            {
+              hidden: true,
+              dangerouslySetInnerHTML: {
+                __html: injectTheme("<style>:root{}</style>", {
+                  accent:
+                    palettes.find((p) => p.name === "Ember Signal")?.roles
+                      ?.accent ||
+                    palettes.find((p) => p.swatches?.includes("#C8442A"))?.roles
+                      ?.accent ||
+                    "#C8442A",
+                }),
+              },
+            },
+          ),
           initialPreviewHtml
             ? React.createElement("iframe", {
                 title: "Remix preview",
                 srcDoc: injectTheme(initialPreviewHtml, {
-                  accent: palettes[0]?.roles?.accent || "#C8442A",
+                  accent:
+                    palettes.find((p) => p.swatches?.includes("#C8442A"))?.roles
+                      ?.accent || "#C8442A",
                 }),
               })
             : null,
@@ -332,7 +354,11 @@ assert.match(
   "Ember Signal is in the page tree even when it is not the first palette",
 );
 assert.match(laneHtml, /#C8442A/);
-assert.match(laneHtml, /--primary/);
+assert.match(
+  laneHtml,
+  /--primary:#C8442A/,
+  "Ember Signal accent is --primary in the page tree, not the landing fixture #122A47",
+);
 assert.match(laneHtml, /<iframe/);
 assert.equal(h72Count(laneHtml), 0);
 

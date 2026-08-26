@@ -67,6 +67,9 @@ function RemixControlsResolved({
 
 async function LanguageRemixControls({ lang }: { lang: DesignLanguage }) {
   const catalogs = await loadLanguageRemixCatalogs();
+  if (!canRemixLanguage(lang, catalogs.palettes, catalogs.arts)) {
+    return <RemixControlsDark />;
+  }
   const landingId = lang.fields.landing_file_id ?? "";
   const initialPreviewHtml = landingId ? await getFileText(landingId) : "";
   return (
