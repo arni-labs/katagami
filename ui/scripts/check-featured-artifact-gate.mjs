@@ -90,6 +90,128 @@ required.push([
   /^(?![\s\S]*s-maxage=300)[\s\S]*$/,
 ]);
 
+const brief = read("src/app/(site)/studio/BRIEF.md/route.ts");
+const odata = read("src/lib/odata.ts");
+required.push([
+  "BRIEF.md resolves the language by id or slug (a slug must not 500)",
+  brief,
+  /getDesignLanguageByIdOrSlug\(uiId\)/,
+]);
+required.push([
+  "BRIEF.md resolves the palette by id or slug (featured pal slugs must 200)",
+  brief,
+  /getPaletteSystemByIdOrSlug\(palId\)/,
+]);
+required.push([
+  "BRIEF.md resolves the art style by id or slug (featured art slugs must 200)",
+  brief,
+  /getArtStyleByIdOrSlug\(artId\)/,
+]);
+required.push([
+  "BRIEF.md 404s when any lane misses rather than falling through to the 500 catch",
+  brief,
+  /if \(!lang \|\| !pal \|\| !art\) \{\s*return new Response\("not found\\n", \{ status: 404 \}\);/,
+]);
+required.push([
+  "BRIEF.md featured-gates the resolved language entity_id, not the raw query slug",
+  brief,
+  /anonMaySee\("language", lang\.entity_id\)/,
+]);
+required.push([
+  "BRIEF.md featured-gates the resolved art-style entity_id, not the raw query slug",
+  brief,
+  /anonMaySee\("art_style", art\.entity_id\)/,
+]);
+required.push([
+  "odata treats a by-key OData 404 as a miss, not a throw-through",
+  odata,
+  /export \{ normalizeDesignLanguageRow, isODataNotFound \}/,
+]);
+required.push([
+  "anonMaySee is slug-aware so a featured pal/art slug is not gated as a miss",
+  read("src/lib/catalog.ts"),
+  /rowMatchesIdOrSlug\(r, idOrSlug\)/,
+]);
+required.push([
+  "id-or-slug language lookup is exported",
+  odata,
+  /export async function getDesignLanguageByIdOrSlug/,
+]);
+required.push([
+  "id-or-slug palette lookup is exported (featured pal slugs, not ids only)",
+  odata,
+  /export async function getPaletteSystemByIdOrSlug/,
+]);
+required.push([
+  "id-or-slug art-style lookup is exported (featured art slugs, not ids only)",
+  odata,
+  /export async function getArtStyleByIdOrSlug/,
+]);
+required.push([
+  "non-en keys take the slug path first (komawari-plates / cathode-ray)",
+  odata,
+  /function looksLikeEntityId/,
+]);
+const odataMiss = read("src/lib/odata-not-found.mjs");
+required.push([
+  "OData-miss predicate matches the Temper by-key 404 message",
+  odataMiss,
+  /\\bOData 404\\b/,
+]);
+const paletteDetail = read("src/app/(site)/palettes/[id]/page.tsx");
+required.push([
+  "palette detail resolves id or slug (komawari-plates must not 404)",
+  paletteDetail,
+  /getPaletteSystemByIdOrSlug\(id\)/,
+]);
+required.push([
+  "palette detail does not by-key-only getPaletteSystem(id)",
+  paletteDetail,
+  /^(?![\s\S]*getPaletteSystem\(id\))[\s\S]*$/,
+]);
+required.push([
+  "palette detail featured-gates the resolved entity_id",
+  paletteDetail,
+  /anonMaySee\("palette", pal\.entity_id\)/,
+]);
+const languageDetail = read("src/app/(site)/language/[id]/page.tsx");
+required.push([
+  "language detail resolves id or slug (komawari must not be the 97k shell)",
+  languageDetail,
+  /getDesignLanguageByIdOrSlug\(id\)/,
+]);
+required.push([
+  "language detail does not by-key-only getDesignLanguage(id)",
+  languageDetail,
+  /^(?![\s\S]*getDesignLanguage\(id\))[\s\S]*$/,
+]);
+required.push([
+  "language detail featured-gates the resolved entity_id",
+  languageDetail,
+  /anonMaySee\("language", lang\.entity_id\)/,
+]);
+required.push([
+  "language metadata featured-gates the resolved entity_id",
+  languageDetail,
+  /anonMaySee\("language", lang\.entity_id\)/,
+]);
+const artStyleDetail = read("src/app/(site)/art-styles/[id]/page.tsx");
+required.push([
+  "art-style detail resolves id or slug (cathode-ray must not be the 100k shell)",
+  artStyleDetail,
+  /getArtStyleByIdOrSlug\(id\)/,
+]);
+required.push([
+  "art-style detail does not by-key-only getArtStyle(id)",
+  artStyleDetail,
+  /^(?![\s\S]*getArtStyle\(id\))[\s\S]*$/,
+]);
+required.push([
+  "art-style detail featured-gates the resolved entity_id",
+  artStyleDetail,
+  /anonMaySee\("art_style", art\.entity_id\)/,
+]);
+
 let failed = 0;
 for (const [name, source, pattern] of required) {
   if (pattern.test(source)) {

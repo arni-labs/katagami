@@ -264,7 +264,8 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
 // here so existing importers keep their path.
 import { normalizeDesignLanguageRow } from "@/lib/design-language-row.mjs";
 import { isFeaturedRecord } from "@/lib/featured.mjs";
-export { normalizeDesignLanguageRow };
+import { isODataNotFound } from "@/lib/odata-not-found.mjs";
+export { normalizeDesignLanguageRow, isODataNotFound };
 
 function parseEntitySetId(
   value: unknown,
@@ -983,6 +984,98 @@ export async function getArtStyleBySlug(
   }
   return demo;
 }
+
+async function firstPublishedBySlug<T>(
+  set: string,
+  slug: string,
+  normalize: (row: Record<string, unknown>) => T,
+): Promise<T | undefined> {
+  const resp = await odata<{ value?: Record<string, unknown>[] }>(
+    `${set}?$filter=Status eq 'Published' and slug eq '${odataLiteral(slug)}'&$top=1`,
+  );
+  const row = resp.value?.[0];
+  return row ? normalize(row) : undefined;
+}
+
+/** Kernel entity keys are `en-…`; local demo rows are `specimen-…`. Anything
+ *  else is a slug — look that up first so featured pal/art slugs
+ *  (komawari-plates, cathode-ray) do not depend on a by-key 404. */
+function looksLikeEntityId(idOrSlug: string): boolean {
+  return /^(en|specimen)-/.test(idOrSlug);
+}
+
+async function resolveByIdOrSlug<T>(
+  idOrSlug: string,
+  getById: (id: string) => Promise<T>,
+  bySlug: () => Promise<T | undefined>,
+): Promise<T | null> {
+  const tryId = async (): Promise<T | null> => {
+    try {
+      return await getById(idOrSlug);
+    } catch (e) {
+      if (!isODataNotFound(e)) throw e;
+      return null;
+    }
+  };
+  const trySlug = async (): Promise<T | null> => (await bySlug()) ?? null;
+  // Slugs first when the token is not an entity key — a featured palette/art
+  // slug must resolve without a by-key miss. Entity keys still fall back to
+  // slug so a published row is found either way. A clean miss is null (404).
+  if (!looksLikeEntityId(idOrSlug)) {
+    return (await trySlug()) ?? (await tryId());
+  }
+  return (await tryId()) ?? (await trySlug());
+}
+
+/**
+ * Resolve a published (or demo) row by entity key or slug. A miss is null —
+ * callers turn that into HTTP 404. Any other OData failure still throws so
+ * a Temper outage cannot masquerade as not-found.
+ */
+export async function getDesignLanguageByIdOrSlug(
+  idOrSlug: string,
+): Promise<DesignLanguage | null> {
+  return resolveByIdOrSlug(
+    idOrSlug,
+    getDesignLanguage,
+    async () =>
+      (await firstPublishedBySlug(
+        "DesignLanguages",
+        idOrSlug,
+        normalizeDesignLanguageRow,
+      )) ?? demoDesignLanguages().find((d) => d.fields.slug === idOrSlug),
+  );
+}
+
+export async function getPaletteSystemByIdOrSlug(
+  idOrSlug: string,
+): Promise<LaneEntity | null> {
+  return resolveByIdOrSlug(
+    idOrSlug,
+    getPaletteSystem,
+    async () =>
+      (await firstPublishedBySlug(
+        "PaletteSystems",
+        idOrSlug,
+        (row) => normalizeLaneRow(row, "PaletteSystems"),
+      )) ?? demoPaletteSystems().find((d) => d.fields.slug === idOrSlug),
+  );
+}
+
+export async function getArtStyleByIdOrSlug(
+  idOrSlug: string,
+): Promise<LaneEntity | null> {
+  return resolveByIdOrSlug(
+    idOrSlug,
+    getArtStyle,
+    async () =>
+      (await firstPublishedBySlug(
+        "ArtStyles",
+        idOrSlug,
+        (row) => normalizeLaneRow(row, "ArtStyles"),
+      )) ?? demoArtStyles().find((d) => d.fields.slug === idOrSlug),
+  );
+}
 /** Read a governed File's text content server-side (corpus excerpts on the
  *  voice contract pages). Returns "" on any failure — a missing excerpt
  *  degrades to nothing rather than a 500. */
@@ -1214,6 +1307,8 @@ export async function listFeaturedPaletteSystems(): Promise<LaneEntity[]> {
     return (await collectFeaturedRows("PaletteSystems"))
       .filter(isFeaturedRecord)
       .map((r) => normalizeLaneRow(r, "PaletteSystems"))
+      // On the shelf = featured AND named; a nameless junk row never renders.
+      .filter((x) => Boolean(x.fields.name))
       .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
   } catch {
     return [];
@@ -1225,6 +1320,8 @@ export async function listFeaturedArtStyles(): Promise<LaneEntity[]> {
     return (await collectFeaturedRows("ArtStyles"))
       .filter(isFeaturedRecord)
       .map((r) => normalizeLaneRow(r, "ArtStyles"))
+      // On the shelf = featured AND named; a nameless junk row never renders.
+      .filter((x) => Boolean(x.fields.name))
       .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
   } catch {
     return [];

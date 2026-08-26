@@ -4,14 +4,14 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
   artStyleDisplayName,
-  getArtStyle,
+  getArtStyleByIdOrSlug,
   listDesignLanguages,
-  listFeaturedArtStyles,
   listPaletteSystems,
   getFileUrl,
   parseJson,
 } from "@/lib/odata";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { anonMaySee, featuredIds } from "@/lib/catalog";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { artStyleImages } from "@/lib/lane-items";
 import { PageHero } from "@/components/page-hero";
@@ -41,12 +41,11 @@ function cellText(v: unknown): string {
 
 export default async function ArtStyleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  let art;
-  try {
-    art = await getArtStyle(id);
-  } catch {
-    notFound();
-  }
+  // id OR slug. The by-key reader served a ~100k not-found shell for
+  // /art-styles/cathode-ray while the UUID rendered the real ~354k page.
+  // A miss slug stays 404.
+  const art = await getArtStyleByIdOrSlug(id);
+  if (!art) notFound();
   // Non-published entries are the curator's queue: a curator (owner|curator,
   // the set Cedar grants the review actions to) sees them (preview), everyone
   // else gets a 404. The role check runs ONLY on this branch, so Published
@@ -58,12 +57,17 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   // ARN-385: a signed-out visitor reaches only the owner-picked featured shelf —
   // the same set the /art-styles teaser and the read-MCP anonymous sample show.
   // A Published-but-unfeatured style is not viewable by direct URL when anon.
-  // Membership (not the row's own flag) is the source of truth so the gate can
-  // never diverge from the shelf. Cookie check only on this branch, so featured
-  // renders for anon and every signed-in render stay off the role path.
-  if (isPublished && !(await hasFullGalleryAccess())) {
-    const featured = await listFeaturedArtStyles();
-    if (!featured.some((a) => a.entity_id === id)) notFound();
+  // Membership comes from the ONE catalog primitive (anonMaySee), so the gate
+  // can never diverge from the shelf or the MCP. Cookie check only on this
+  // branch, so featured renders for anon and every signed-in render stay off
+  // the role path. Gate the resolved entity id (the URL may be a slug;
+  // featuredIds() is id-keyed).
+  if (
+    isPublished &&
+    !(await hasFullGalleryAccess()) &&
+    !(await anonMaySee("art_style", art.entity_id))
+  ) {
+    notFound();
   }
 
   const f = art.fields;
@@ -102,8 +106,21 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
     listPaletteSystems().catch(() => []),
   ]);
   const artOpts = toArtOpts([art]);
-  const langOpts = toLanguageOpts(languages);
-  const palOpts = toPaletteOpts(palettes);
+  let langOpts = toLanguageOpts(languages);
+  let palOpts = toPaletteOpts(palettes);
+
+  // ARN-385: the InlineRemix language + palette pickers embed the full lists. For
+  // a signed-out visitor, withhold the non-featured portion of each — filter the
+  // DATA before it reaches the client component (the fixed art style is this
+  // page's own, already visible to reach here).
+  if (!(await hasFullGalleryAccess())) {
+    const [languageIds, paletteIds] = await Promise.all([
+      featuredIds("language"),
+      featuredIds("palette"),
+    ]);
+    langOpts = langOpts.filter((o) => languageIds.has(o.id));
+    palOpts = palOpts.filter((o) => paletteIds.has(o.id));
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:py-10">
@@ -226,7 +243,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             languages={langOpts}
             palettes={palOpts}
             art={artOpts}
-            fixed={{ art: id }}
+            fixed={{ art: art.entity_id }}
           />
         ) : (
           <div className="sticker-card p-5 text-sm text-muted-foreground">

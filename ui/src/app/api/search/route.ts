@@ -12,6 +12,7 @@ import {
   hasFullGalleryAccess,
   isOnVisitorShelf,
 } from "@/lib/entity-visibility";
+import { anonMaySee } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +22,9 @@ export const dynamic = "force-dynamic";
  * against each lane's stored taste vectors in the Temper kernel.
  *
  * ARN-385: anonymous callers rank the same featured portion the website
- * teaser and the read-MCP sample show (languages + art styles). Palettes
- * stay public. Signed-in callers rank the full Published catalog. The
- * embed + kernel calls use the server's own credentials, never exposed.
+ * teaser and the read-MCP sample show — languages, art styles, AND palettes.
+ * Signed-in callers rank the full Published catalog. The embed + kernel calls
+ * use the server's own credentials, never exposed.
  *
  *   ?q=<text>              required — the phrase to rank by meaning
  *   ?lane=language|palette|art-style   optional — omit to search across all lanes
@@ -82,13 +83,13 @@ export async function GET(request: Request) {
   }
 
   // Membership is the source of truth (same as the HTML detail gate). The
-  // kernel featured filter can be non-honored; never return an off-shelf
-  // language/art-style id to an anonymous caller — those DESIGN.md links
-  // would 404, and the names themselves are the leak.
+  // kernel featured filter can be non-honored; never return an off-shelf id of
+  // any kind to an anonymous caller — those detail/DESIGN.md links would 404,
+  // and the names themselves are the leak. Palettes gate the same way now.
   if (featuredOnly) {
     const allowed = await Promise.all(
       hits.map(async (hit) => {
-        if (hit.kind === "palette") return true;
+        if (hit.kind === "palette") return anonMaySee("palette", hit.id);
         const kind = hit.kind === "art-style" ? "art_style" : "language";
         return isOnVisitorShelf(kind, hit.id);
       }),

@@ -3,7 +3,7 @@ import { hasCuratorAccess } from "@/lib/owner";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
-  getPaletteSystem,
+  getPaletteSystemByIdOrSlug,
   listDesignLanguages,
   listArtStyles,
   paletteCore,
@@ -12,6 +12,8 @@ import {
   parseJson,
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { anonMaySee, featuredIds } from "@/lib/catalog";
 import { readableTextColor } from "@/lib/shadcn-export";
 import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
@@ -39,17 +41,29 @@ function rampHexes(ramp: PaletteRamp | undefined): string[] {
 
 export default async function PaletteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  let pal;
-  try {
-    pal = await getPaletteSystem(id);
-  } catch {
-    notFound();
-  }
+  // id OR slug. The by-key reader 404'd /palettes/komawari-plates while
+  // BRIEF.md and MCP get_palette resolved the same slug. A miss slug stays 404.
+  const pal = await getPaletteSystemByIdOrSlug(id);
+  if (!pal) notFound();
   // Non-published entries are the curator's queue: a curator (owner|curator,
   // the set Cedar grants the review actions to) sees them (preview), everyone
   // else gets a 404. The role check runs ONLY on this branch, so Published
   // renders never touch cookies() and stay cacheable.
   if (pal.status !== "Published" && !(await hasCuratorAccess())) notFound();
+
+  // ARN-385: a signed-out visitor reaches only the owner-picked featured shelf —
+  // the same set the /palettes teaser and the read-MCP sample show. A
+  // Published-but-unfeatured palette is not viewable by direct URL when anon.
+  // Membership comes from the ONE catalog primitive (anonMaySee), so the gate
+  // can never diverge from the shelf or the MCP. Gate the resolved entity id
+  // (the URL may be a slug; featuredIds() is id-keyed).
+  if (
+    pal.status === "Published" &&
+    !(await hasFullGalleryAccess()) &&
+    !(await anonMaySee("palette", pal.entity_id))
+  ) {
+    notFound();
+  }
 
   const f = pal.fields;
   const core = paletteCore(f);
@@ -76,8 +90,21 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
     listArtStyles().catch(() => []),
   ]);
   const palOpts = toPaletteOpts([pal]);
-  const langOpts = toLanguageOpts(languages);
-  const artOpts = toArtOpts(artStyles);
+  let langOpts = toLanguageOpts(languages);
+  let artOpts = toArtOpts(artStyles);
+
+  // ARN-385: an anon visitor only reaches this page for a featured palette (the
+  // gate above), and its OWN palette stays in palOpts. But the embedded
+  // InlineRemix language + art-style pickers must withhold the non-featured
+  // portion — filter the DATA before it reaches the client component.
+  if (!(await hasFullGalleryAccess())) {
+    const [languageIds, artIds] = await Promise.all([
+      featuredIds("language"),
+      featuredIds("art_style"),
+    ]);
+    langOpts = langOpts.filter((o) => languageIds.has(o.id));
+    artOpts = artOpts.filter((o) => artIds.has(o.id));
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:py-10">

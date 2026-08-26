@@ -1,5 +1,6 @@
 import "server-only";
 import { isFeaturedRecord as isFeatured } from "./featured.mjs";
+import { rowMatchesIdOrSlug } from "./catalog-membership.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
 // commons through this module, so "what an identity may see" is defined once.
@@ -54,9 +55,10 @@ function headers(): Record<string, string> {
 // instead of a fresh crawl per call.
 const readCache = new Map<string, { rows: Row[]; at: number }>();
 const READ_TTL_MS = 20_000;
-// 200 pages × 500 rows = 100k, far above any real set. Reaching it means a
-// runaway backend, so we throw rather than silently returning a partial set.
-const MAX_PAGES = 200;
+// The repeated-nextLink guard below is the real loop protection; this ceiling
+// is only a runaway backstop, set far above any real set so it never rejects
+// valid pagination. Throw at it rather than silently return a partial set.
+const MAX_PAGES = 100_000;
 
 /** Read every row of a set, following @odata.nextLink to completion. */
 async function readAll(set: string, filter: string): Promise<Row[]> {
@@ -84,6 +86,11 @@ async function readAll(set: string, filter: string): Promise<Row[]> {
     if (!Array.isArray(body.value)) throw new Error(`Read ${set} returned no value array`);
     out.push(...body.value);
     const next = body["@odata.nextLink"];
+    // A present-but-non-string nextLink (e.g. 0) would otherwise end paging
+    // early and silently truncate; treat it as a fault.
+    if (next !== undefined && (typeof next !== "string" || next === "")) {
+      throw new Error(`Read ${set} returned an invalid nextLink`);
+    }
     // nextLink is relative to the request URI (e.g. "DesignLanguages?…") —
     // resolve it the spec-correct way, not by prefixing the origin (which
     // drops /tdata and 404s on page 2).
@@ -145,12 +152,6 @@ function summary(kind: Kind, r: Row) {
 
 const PUBLISHED = "Status eq 'Published'";
 
-// Palettes are public on the site, so their MCP sample is featured-first then
-// filled toward this cap. Languages and art styles instead sample to the WHOLE
-// featured set (no cap), so the portion is identical in the website teaser and
-// the MCP — the owner curates its size via the featured flag.
-const SAMPLE_CAP = 40;
-
 const byEntityId = (a: Row, b: Row) =>
   a.entity_id < b.entity_id ? -1 : a.entity_id > b.entity_id ? 1 : 0;
 
@@ -158,18 +159,41 @@ const byEntityId = (a: Row, b: Row) =>
 async function visibleRows(kind: Kind, tier: Tier): Promise<Row[]> {
   const rows = (await readAll(SET[kind], PUBLISHED)).filter((r) => str(r.fields?.name));
   if (tier === "full") return rows;
-  // The anonymous sample is a fixed, owner-curated portion. Sorting by
-  // entity_id PINS it: the same query always yields the same slice, so a
-  // patient anonymous caller can't page past it, and the website teaser and
-  // the MCP show the identical portion (ARN-360). Languages and art styles
-  // sample to the featured set; palettes are public on the site, so their
-  // sample is featured-first then filled to the cap.
-  const featured = rows.filter(isFeatured).sort(byEntityId);
-  if (kind === "palette") {
-    const rest = rows.filter((r) => !isFeatured(r)).sort(byEntityId);
-    return [...featured, ...rest].slice(0, SAMPLE_CAP);
-  }
-  return featured;
+  // The anonymous portion is the owner-curated visitor shelf — the `featured`
+  // set — for ALL three kinds, sorted by entity_id so it is a fixed slice a
+  // patient caller can't page past. Uncapped: the shelf is exactly what the
+  // owner selected, and byte-for-byte identical to every other anonymous
+  // surface (they all filter by featuredIds()).
+  return rows.filter(isFeatured).sort(byEntityId);
+}
+
+/**
+ * The ONE source of truth for the anonymous "portion" of a kind: the set of
+ * published entity_ids a signed-out visitor may see — the owner-curated visitor
+ * shelf (the `featured` set), for languages, art styles, AND palettes alike.
+ * Every anonymous-facing surface — the website pages, its search/vectors APIs,
+ * the studio/compare tools, and the MCP — filters by this set, so the portion
+ * can never diverge between them.
+ */
+export async function featuredIds(kind: Kind): Promise<Set<string>> {
+  const rows = await readAll(SET[kind], PUBLISHED);
+  // On the shelf = featured AND has a name — the same predicate visibleRows
+  // uses, so a nameless-but-featured junk row can't make this set diverge from
+  // what the MCP sample and the website shelves actually render.
+  return new Set(
+    rows.filter((r) => str(r.fields?.name) && isFeatured(r)).map((r) => r.entity_id),
+  );
+}
+
+/** May a signed-out visitor see this published id or slug? The visitor shelf
+ *  (featured AND named) for ALL kinds — palettes included. featuredIds() stays
+ *  id-keyed (list filters); this accepts a slug too so a by-id-or-slug door like
+ *  BRIEF.md?palette=komawari-plates&art=cathode-ray isn't 404'd as a miss. */
+export async function anonMaySee(kind: Kind, idOrSlug: string): Promise<boolean> {
+  const rows = await readAll(SET[kind], PUBLISHED);
+  return rows.some(
+    (r) => str(r.fields?.name) && isFeatured(r) && rowMatchesIdOrSlug(r, idOrSlug),
+  );
 }
 
 // --- describe_catalog: the agent's map --------------------------------------

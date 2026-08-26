@@ -1,14 +1,15 @@
 import { NextRequest } from "next/server";
 import {
-  getDesignLanguage,
-  getPaletteSystem,
-  getArtStyle,
+  getDesignLanguageByIdOrSlug,
+  getPaletteSystemByIdOrSlug,
+  getArtStyleByIdOrSlug,
   getFileUrl,
   parseJson,
 } from "@/lib/odata";
 import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
-import { canViewNonPublished } from "@/lib/entity-visibility";
+import { canViewNonPublished, hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { anonMaySee } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -33,11 +34,17 @@ export async function GET(req: NextRequest) {
     COMPOSITIONS.find((c) => c.key === compKey) ?? COMPOSITIONS[0];
 
   try {
+    // id OR slug on every lane. Featured slugs (komawari, komawari-plates,
+    // cathode-ray) must resolve; a miss slug 404s. ui=gust is a published
+    // off-shelf language — resolve, then the featured gate 404s (never 500).
     const [lang, pal, art] = await Promise.all([
-      getDesignLanguage(uiId),
-      getPaletteSystem(palId),
-      getArtStyle(artId),
+      getDesignLanguageByIdOrSlug(uiId),
+      getPaletteSystemByIdOrSlug(palId),
+      getArtStyleByIdOrSlug(artId),
     ]);
+    if (!lang || !pal || !art) {
+      return new Response("not found\n", { status: 404 });
+    }
 
     // ARN-331: composing a brief from a non-Published entity in any lane is
     // owner-only — the ids are guessable and the brief embeds spec content.
@@ -48,12 +55,30 @@ export async function GET(req: NextRequest) {
       return new Response("not found\n", { status: 404 });
     }
 
+    // ARN-385: even when every lane is Published, a signed-out visitor may
+    // compose a brief only from the anonymous featured portion of EVERY lane —
+    // language, palette, AND art style. The brief embeds each lane's spec
+    // content (the palette's name + roles included), so an off-shelf id in any
+    // lane is a leak. Gate on the RESOLVED entity id — the query string may be a
+    // slug, and featuredIds() is id-keyed — using the same primitive as the
+    // gallery/MCP so the visible set can never diverge.
+    if (!(await hasFullGalleryAccess())) {
+      const [languageOk, paletteOk, artOk] = await Promise.all([
+        anonMaySee("language", lang.entity_id),
+        anonMaySee("palette", pal.entity_id),
+        anonMaySee("art_style", art.entity_id),
+      ]);
+      if (!languageOk || !paletteOk || !artOk) {
+        return new Response("not found\n", { status: 404 });
+      }
+    }
+
     const brief = buildRemixBrief({
       language: {
         name: lang.fields.name ?? "Untitled",
         slug: lang.fields.slug,
         tokens: parseJson(lang.fields.tokens),
-        designMdUrl: `/language/${uiId}/DESIGN.md`,
+        designMdUrl: `/language/${lang.entity_id}/DESIGN.md`,
       },
       palette: {
         name: pal.fields.name ?? "Untitled",

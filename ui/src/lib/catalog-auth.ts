@@ -24,12 +24,18 @@ const API_KEY = process.env.TEMPER_API_KEY || "";
 
 export type ReadIdentity = { sub: string; email: string };
 
-/** Audiences this MCP accepts: its own resource plus any dev adapters
- *  (RFC 8707, the same set the AS mints for — KATAGAMI_EXTRA_RESOURCES). */
-function allowedAudiences(): string[] {
-  return [mcpResource(), ...(process.env.KATAGAMI_EXTRA_RESOURCES ?? "").split(",")]
-    .map((r) => r.trim().replace(/\/$/, ""))
-    .filter(Boolean);
+/** Normalize a resource URI for comparison (trailing slash is not significant). */
+function normRes(s: string): string {
+  return s.trim().replace(/\/+$/, "");
+}
+
+/** Does the token's audience name THIS MCP's resource? Only this resource —
+ *  a token minted for a dev adapter (KATAGAMI_EXTRA_RESOURCES) or any other
+ *  resource must NOT unlock the catalog here. Trailing slash tolerated. */
+function audienceMatches(aud: unknown): boolean {
+  const want = normRes(mcpResource());
+  const auds = Array.isArray(aud) ? aud : aud ? [aud] : [];
+  return auds.some((a) => normRes(String(a)) === want);
 }
 
 // Small positive cache for grant liveness: one backend read per grant per
@@ -41,14 +47,23 @@ const GRANT_TTL_MS = 15_000;
 async function grantIsActive(grantId: string): Promise<boolean> {
   const hit = grantCache.get(grantId);
   if (hit && Date.now() - hit.at < GRANT_TTL_MS) return hit.active;
-  const res = await fetch(
-    `${API_BASE}/tdata/AgentGrants('${encodeURIComponent(grantId)}')`,
-    {
-      headers: { "X-Tenant-Id": TENANT, ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}) },
-      cache: "no-store",
-    },
-  );
-  const active = res.ok ? ((await res.json()) as { status?: string }).status === "Active" : false;
+  let res: Response;
+  try {
+    res = await fetch(
+      `${API_BASE}/tdata/AgentGrants('${encodeURIComponent(grantId)}')`,
+      {
+        headers: { "X-Tenant-Id": TENANT, ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}) },
+        cache: "no-store",
+      },
+    );
+  } catch {
+    return false; // transient failure: deny this call, but don't cache it
+  }
+  // Only cache a DEFINITIVE answer: 200 (Active or not) or 404 (grant gone).
+  // A 5xx/other is transient — deny now, retry next call rather than pinning a
+  // legitimate token to the sample tier for the whole cache window.
+  if (!res.ok && res.status !== 404) return false;
+  const active = res.status === 404 ? false : ((await res.json()) as { status?: string }).status === "Active";
   grantCache.set(grantId, { active, at: Date.now() });
   return active;
 }
@@ -61,12 +76,14 @@ export async function verifyReadBearer(token: string): Promise<ReadIdentity | nu
     const key = await importJWK(keys[0], "ES256");
     const { payload } = await jwtVerify(token, key, {
       algorithms: ["ES256"],
-      audience: allowedAudiences(),
-      requiredClaims: ["exp", "sub"],
+      requiredClaims: ["exp", "sub", "aud", "auth_generation"],
       ...(process.env.KATAGAMI_AS_ISSUER ? { issuer: process.env.KATAGAMI_AS_ISSUER } : {}),
     });
     // Authorization codes are signed by the same key; never honor one as a bearer.
     if (payload.typ) return null;
+    // Audience must be exactly this MCP's resource (jose treats an audience
+    // array as alternatives, so it is checked here against the one resource).
+    if (!audienceMatches(payload.aud)) return null;
     const sub = String(payload.sub ?? "");
     if (!sub) return null;
     // Kill switches: generation (sign-out-everywhere) and per-grant revoke.
