@@ -1,7 +1,7 @@
-// Language-detail preview contract (ARN-376 + 2026-08-26 restore):
-// the embodiment iframe is a screenshot card, not a Polaroid sticker.
-// Caption and 3px pills stay gone. Exactly one Open full overlay sits on
-// the language-detail preview and opens the URL currently being shown.
+// Language-detail preview contract (ARN-376 + Open full hold).
+// Polaroid caption / 3px pills stay gone. Exactly one Open full overlay
+// sits on the landing / dashboard preview and opens the URL currently
+// shown. Live Bluet now has zero. Two is fail. Zero is fail.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
