@@ -14,7 +14,7 @@ import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { RelatedLanguages } from "@/components/related-languages";
 import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
-import { LanguageRemixSection } from "@/components/language-remix-section";
+import { LanguageDetailRemix } from "@/components/language-remix-section";
 import {
   designMdToMarkdown,
   katagamiSpecToMarkdown,
@@ -360,9 +360,10 @@ export default async function LanguageDetailPage({
 
       <ModelProvenance raw={f.model_provenance} />
 
-      <Suspense fallback={null}>
-        <LanguageRemixSection lang={lang} />
-      </Suspense>
+      {/* Remix is not behind fallback={null} or the pending two h-72.
+          Catalogs load inside LanguageDetailRemix; this page does not
+          await them. Lineage / related keep fallback={null} (open leftover). */}
+      <LanguageDetailRemix lang={lang} />
 
       <Suspense fallback={null}>
         <LanguageLineage currentId={id} fields={f} />

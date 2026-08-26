@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { transform } from "sucrase";
 
@@ -177,8 +177,8 @@ assert.doesNotMatch(
 );
 assert.match(
   languagePage,
-  /LanguageRemixSection/,
-  "remix catalogs stream in after the language itself paints",
+  /LanguageDetailRemix/,
+  "remix catalogs load in LanguageDetailRemix — the page does not await them",
 );
 
 const identity = readFileSync(
@@ -206,10 +206,15 @@ assert.match(
   /CardGridSkeleton/,
   "Art Styles nav must paint a shell immediately",
 );
+assert.equal(
+  existsSync(resolve("src/app/(site)/language/[id]/loading.tsx")),
+  false,
+  "language loading.tsx replaced <main> with two h-72 — remix stayed payload-only",
+);
 assert.match(
-  readFileSync(resolve("src/app/(site)/language/[id]/loading.tsx"), "utf8"),
-  /LanguageDetailSkeleton/,
-  "language detail clicks must paint a shell immediately",
+  readFileSync(resolve("src/components/tracked-link.tsx"), "utf8"),
+  /LinkPending/,
+  "language card clicks still pulse on the link, not on route loading.tsx",
 );
 
 const homepage = readFileSync(resolve("src/app/(site)/page.tsx"), "utf8");

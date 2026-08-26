@@ -14,12 +14,17 @@ export function RemixPreview({
   compositionUrl,
   roles,
   hero,
+  initialHtml,
 }: {
   compositionUrl: string;
   roles: Roles;
   hero?: string;
+  /** Server-read landing HTML so --primary is in the SSR iframe, not payload-only. */
+  initialHtml?: string;
 }) {
-  const [raw, setRaw] = useState<{ url: string; html: string } | null>(null);
+  const [raw, setRaw] = useState<{ url: string; html: string } | null>(() =>
+    compositionUrl && initialHtml ? { url: compositionUrl, html: initialHtml } : null,
+  );
 
   useEffect(() => {
     if (!compositionUrl) return;

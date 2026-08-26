@@ -110,6 +110,7 @@ export function InlineRemix({
   enableSave = false,
   signedIn = true,
   initial,
+  initialPreviewHtml,
 }: {
   languages: LanguageOpt[];
   palettes: PaletteOpt[];
@@ -119,6 +120,7 @@ export function InlineRemix({
   /** Saving is a signed-in act; signed out, the save button becomes the door. */
   signedIn?: boolean;
   initial?: { langId?: string; palId?: string; artId?: string; compositionKey?: string };
+  initialPreviewHtml?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -332,7 +334,12 @@ export function InlineRemix({
             </span>
           </div>
           <div className="overflow-hidden rounded-[1px]">
-            <RemixPreview compositionUrl={compositionUrl} roles={roles} hero={hero} />
+            <RemixPreview
+              compositionUrl={compositionUrl}
+              roles={roles}
+              hero={hero}
+              initialHtml={initialPreviewHtml}
+            />
           </div>
           <span className="absolute inset-x-0 bottom-3 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/75">
             live preview · recolored + filled
