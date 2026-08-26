@@ -232,6 +232,11 @@ assert.match(
 );
 assert.match(previewSrc, /themeOverrideStyle/, "--primary tokens stay in the tree even without landing HTML");
 assert.match(
+  fs.readFileSync(path.join(here, "../src/lib/remix-theme.ts"), "utf8"),
+  /`--primary:\$\{map\.accent\}`/,
+  "themeOverrideStyle always binds --primary — empty HTML never runs injectTheme",
+);
+assert.match(
   previewSrc,
   /prev\?\.url === compositionUrl && prev\.html/,
   "a failed client refetch must not wipe a good SSR srcDoc",
@@ -452,6 +457,11 @@ function withoutSrOnly(html) {
   return html.replace(/<ul class="sr-only">[\s\S]*?<\/ul>/g, "");
 }
 
+function themeNode(html) {
+  const m = html.match(/data-remix-theme=""[^>]*>([\s\S]*?)<\/div>/);
+  return m?.[1] ?? "";
+}
+
 function loadLiveTree(odata, inlineRemix) {
   return loadTsx(path.join(here, "../src/components/language-remix-section.tsx"), {
     "@/lib/odata": odata,
@@ -629,6 +639,11 @@ assert.match(
 );
 assert.doesNotMatch(liveSrcDoc, /--primary:#007C78/);
 assert.match(withoutSrOnly(liveControls), /--primary:#C8442A/);
+assert.match(
+  themeNode(liveControls),
+  /--primary:#C8442A/,
+  "settled token node keeps --primary, not accent-only",
+);
 
 const emberSelected = lang({
   name: "Bluet",
@@ -664,6 +679,30 @@ assert.match(
 );
 assert.match(emptyTheme, /--accent:#C8442A/);
 
+assert.equal(injectTheme("", { accent: "#007C78" }), "", "empty HTML never reaches injectTheme binds");
+
+const emptyFileLive = loadLiveTree(
+  remixOdata(
+    {
+      listPaletteSystems: async () => catalogs.palettes,
+      listArtStyles: async () => catalogs.arts,
+    },
+    async () => "",
+  ),
+  inlineMod,
+);
+const emptyFileHtml = renderToStaticMarkup(
+  await emptyFileLive.LanguageRemixControls({ lang: bluet }),
+);
+assert.match(emptyFileHtml, /data-remix-theme=""/);
+assert.match(
+  themeNode(emptyFileHtml),
+  /--primary:#007C78/,
+  "failed getFileText: token node keeps --primary, not accent-only",
+);
+assert.match(themeNode(emptyFileHtml), /--accent:#007C78/);
+assert.doesNotMatch(iframeSrcDoc(emptyFileHtml), /--primary:/);
+
 const emptyPreview = renderToStaticMarkup(
   React.createElement(previewMod.RemixPreview, {
     compositionUrl: "/api/file/fl-land",
@@ -672,8 +711,8 @@ const emptyPreview = renderToStaticMarkup(
   }),
 );
 assert.match(emptyPreview, /data-remix-theme=""/);
-assert.match(emptyPreview, /--primary:#C8442A/);
-assert.match(emptyPreview, /--accent:#C8442A/);
+assert.match(themeNode(emptyPreview), /--primary:#C8442A/);
+assert.match(themeNode(emptyPreview), /--accent:#C8442A/);
 assert.doesNotMatch(emptyPreview, /<iframe/);
 
 console.log(
