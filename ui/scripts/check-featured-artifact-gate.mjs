@@ -178,7 +178,7 @@ const languageDetail = read("src/app/(site)/language/[id]/page.tsx");
 required.push([
   "language detail resolves id or slug (komawari must not be the 97k shell)",
   languageDetail,
-  /getDesignLanguageByIdOrSlug\(id\)/,
+  /getDesignLanguageByIdOrSlug/,
 ]);
 required.push([
   "language detail does not by-key-only getDesignLanguage(id)",
@@ -188,18 +188,28 @@ required.push([
 required.push([
   "language detail featured-gates the resolved entity_id",
   languageDetail,
-  /anonMaySee\("language", lang\.entity_id\)/,
+  /anonMaySee\("language", entityId\)/,
 ]);
 required.push([
-  "language metadata featured-gates the resolved entity_id",
+  "language metadata notFound()s a miss/off-shelf — generic title is 200 chrome",
   languageDetail,
-  /anonMaySee\("language", lang\.entity_id\)/,
+  /if \(!lang\) notFound\(\)/,
+]);
+required.push([
+  "language metadata does not return the generic title on miss (200 chrome door)",
+  languageDetail,
+  /^(?![\s\S]*return \{\s*title: pageTitle\(\)\s*\})[\s\S]*$/,
+]);
+required.push([
+  "language metadata still names a visible featured language",
+  languageDetail,
+  /title: pageTitle\(name\)/,
 ]);
 const artStyleDetail = read("src/app/(site)/art-styles/[id]/page.tsx");
 required.push([
   "art-style detail resolves id or slug (cathode-ray must not be the 100k shell)",
   artStyleDetail,
-  /getArtStyleByIdOrSlug\(id\)/,
+  /getArtStyleByIdOrSlug/,
 ]);
 required.push([
   "art-style detail does not by-key-only getArtStyle(id)",
@@ -209,7 +219,17 @@ required.push([
 required.push([
   "art-style detail featured-gates the resolved entity_id",
   artStyleDetail,
-  /anonMaySee\("art_style", art\.entity_id\)/,
+  /anonMaySee\("art_style", entityId\)/,
+]);
+required.push([
+  "art-style metadata notFound()s a miss/off-shelf — loading.tsx chrome is 200",
+  artStyleDetail,
+  /export async function generateMetadata/,
+]);
+required.push([
+  "art-style metadata/page share visibleArtStyle which notFound()s a miss",
+  artStyleDetail,
+  /if \(!art\) notFound\(\)/,
 ]);
 
 let failed = 0;
