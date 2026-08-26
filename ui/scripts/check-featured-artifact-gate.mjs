@@ -158,6 +158,22 @@ required.push([
   odataMiss,
   /\\bOData 404\\b/,
 ]);
+const paletteDetail = read("src/app/(site)/palettes/[id]/page.tsx");
+required.push([
+  "palette detail resolves id or slug (komawari-plates must not 404)",
+  paletteDetail,
+  /getPaletteSystemByIdOrSlug\(id\)/,
+]);
+required.push([
+  "palette detail does not by-key-only getPaletteSystem(id)",
+  paletteDetail,
+  /^(?![\s\S]*getPaletteSystem\(id\))[\s\S]*$/,
+]);
+required.push([
+  "palette detail featured-gates the resolved entity_id",
+  paletteDetail,
+  /anonMaySee\("palette", pal\.entity_id\)/,
+]);
 
 let failed = 0;
 for (const [name, source, pattern] of required) {

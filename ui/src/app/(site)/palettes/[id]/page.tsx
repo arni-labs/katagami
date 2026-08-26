@@ -3,7 +3,7 @@ import { hasCuratorAccess } from "@/lib/owner";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
-  getPaletteSystem,
+  getPaletteSystemByIdOrSlug,
   listDesignLanguages,
   listArtStyles,
   paletteCore,
@@ -41,12 +41,10 @@ function rampHexes(ramp: PaletteRamp | undefined): string[] {
 
 export default async function PaletteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  let pal;
-  try {
-    pal = await getPaletteSystem(id);
-  } catch {
-    notFound();
-  }
+  // id OR slug. The by-key reader 404'd /palettes/komawari-plates while
+  // BRIEF.md and MCP get_palette resolved the same slug. A miss slug stays 404.
+  const pal = await getPaletteSystemByIdOrSlug(id);
+  if (!pal) notFound();
   // Non-published entries are the curator's queue: a curator (owner|curator,
   // the set Cedar grants the review actions to) sees them (preview), everyone
   // else gets a 404. The role check runs ONLY on this branch, so Published
@@ -57,11 +55,12 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
   // the same set the /palettes teaser and the read-MCP sample show. A
   // Published-but-unfeatured palette is not viewable by direct URL when anon.
   // Membership comes from the ONE catalog primitive (anonMaySee), so the gate
-  // can never diverge from the shelf or the MCP.
+  // can never diverge from the shelf or the MCP. Gate the resolved entity id
+  // (the URL may be a slug; featuredIds() is id-keyed).
   if (
     pal.status === "Published" &&
     !(await hasFullGalleryAccess()) &&
-    !(await anonMaySee("palette", id))
+    !(await anonMaySee("palette", pal.entity_id))
   ) {
     notFound();
   }
