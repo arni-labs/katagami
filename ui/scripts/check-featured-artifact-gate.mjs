@@ -11,6 +11,7 @@ function read(path) {
 const gate = read("src/lib/entity-visibility.ts");
 const searchRoute = read("src/app/api/search/route.ts");
 const searchLib = read("src/lib/search.ts");
+const searchLexical = read("src/lib/search-lexical.mjs");
 
 const ARTIFACT_ROUTES = [
   "src/app/(site)/language/[id]/DESIGN.md/route.ts",
@@ -61,6 +62,21 @@ const required = [
     "search kernel filter pins languages/art-styles to featured when asked",
     searchLib,
     /Status eq 'Published' and featured eq true/,
+  ],
+  [
+    "/api/search unions visitor-shelf name/slug hits (Bluet-by-name)",
+    searchLib,
+    /mergeSearchHits/,
+  ],
+  [
+    "lexical ranker scores exact name/slug as 1",
+    searchLexical,
+    /name === q \|\| slug === q/,
+  ],
+  [
+    "/api/search clips to k after the membership filter, not before",
+    searchRoute,
+    /hits = hits\.slice\(0, k\)/,
   ],
 ];
 
