@@ -14,6 +14,10 @@ function accentOf(p: { roles?: { accent?: string } }): string {
   return (p.roles?.accent ?? "").trim().toLowerCase();
 }
 
+function isEmber(p: { name?: string; roles?: { accent?: string } }): boolean {
+  return accentOf(p) === EMBER_ACCENT || /ember/i.test(p.name ?? "");
+}
+
 /** First `--primary:#hex` in composition HTML (landing :root). */
 export function cssPrimaryHex(html?: string): string | undefined {
   if (!html) return undefined;
@@ -22,7 +26,7 @@ export function cssPrimaryHex(html?: string): string | undefined {
 }
 
 export function pickRemixPaletteId(
-  palettes: Array<{ id: string; roles?: { accent?: string } }>,
+  palettes: Array<{ id: string; name?: string; roles?: { accent?: string } }>,
   preferredId?: string,
   againstHex?: string,
 ): string {
@@ -40,7 +44,7 @@ export function pickRemixPaletteId(
     : rest;
   const rows = pool.length > 0 ? pool : rest;
 
-  const ember = rows.find((p) => accentOf(p) === EMBER_ACCENT);
+  const ember = rows.find(isEmber);
   if (ember) return ember.id;
   return rows[0].id;
 }

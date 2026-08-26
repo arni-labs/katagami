@@ -3,13 +3,39 @@
 import { useEffect, useRef, useState } from "react";
 import { ScaledFrame } from "@/components/scaled-frame";
 import {
-  bindWinningRemixPrimary,
   compositionBindDecls,
   injectTheme,
-  remixPrimaryDecl,
   themeOverrideStyle,
   type Roles,
 } from "@/lib/remix-theme";
+
+function remixAccent(roles: Roles): string {
+  return roles.accent || "#3a6df0";
+}
+
+/**
+ * Leftover 1 lives here: iframe srcDoc --primary is the selected accent.
+ * Contrast-max / live Bluet wrote --primary:#FFD400 and left Ember in
+ * sr-only (--primary:#C8442A count 0). Rewrite every --primary:#hex, then
+ * append a final :root bind. Empty HTML stays empty (leftover 2).
+ */
+export function remixPreviewSrcDoc(
+  fresh: string,
+  roles: Roles,
+  hero?: string,
+): string {
+  if (!fresh) return "";
+  const accent = remixAccent(roles);
+  const themed = injectTheme(fresh, roles, hero);
+  const rebound = themed.replace(
+    /--primary\s*:\s*#[0-9A-Fa-f]{3,8}/g,
+    `--primary:${accent}`,
+  );
+  const tail = `<style id="remix-preview-primary">:root{--primary:${accent}}</style>`;
+  return rebound.includes("</body>")
+    ? rebound.replace("</body>", `${tail}</body>`)
+    : rebound + tail;
+}
 
 /**
  * Live remix preview: fetches a language's bespoke composition HTML (landing or
@@ -60,13 +86,14 @@ export function RemixPreview({
   }, [compositionUrl]);
 
   const fresh = raw && raw.url === compositionUrl ? raw.html : null;
+  const accent = remixAccent(roles);
   const tokens = (
     <div
       hidden
       data-remix-theme=""
       dangerouslySetInnerHTML={{
         __html: themeOverrideStyle(roles, hero, [
-          remixPrimaryDecl(roles.accent),
+          `--primary:${accent}`,
           ...compositionBindDecls(fresh || "", roles, hero),
         ]),
       }}
@@ -89,9 +116,7 @@ export function RemixPreview({
     );
   }
 
-  // Winning --primary is the selected accent. Empty/failed HTML stays
-  // iframe-less; leftover 2 keeps --primary on the token node above.
-  const html = bindWinningRemixPrimary(injectTheme(fresh, roles, hero), roles.accent);
+  const html = remixPreviewSrcDoc(fresh, roles, hero);
   return (
     <>
       {tokens}

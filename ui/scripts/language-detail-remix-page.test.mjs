@@ -112,7 +112,7 @@ assert.equal(
     "#122A47",
   ),
   "ps-ember",
-  "[other, ember] no default — Ember, not catalog[0] teal",
+  "[teal, ember] no default — Ember, not catalog[0] teal",
 );
 assert.equal(
   pickRemixPaletteId(
@@ -282,14 +282,10 @@ assert.match(
 );
 assert.match(
   previewSrc,
-  /remixPrimaryDecl/,
-  "RemixPreview token node owns --primary via remixPrimaryDecl, not accent-only",
+  /export function remixPreviewSrcDoc/,
+  "remix-preview.tsx owns iframe --primary — leftover 1",
 );
-assert.match(
-  previewSrc,
-  /bindWinningRemixPrimary/,
-  "remix-preview must own the winning iframe --primary — leftover 1",
-);
+assert.match(previewSrc, /remix-preview-primary/);
 assert.doesNotMatch(
   fs.readFileSync(path.join(here, "../scripts/language-detail-remix-page.test.mjs"), "utf8"),
   /InlineRemix: \(\{ palettes/,
@@ -625,12 +621,12 @@ assert.match(liveControls, /<iframe/, "LanguageDetailRemix live leaf mounts an i
 assert.equal(
   lastPrimary(liveSrcDoc),
   "#C8442A",
-  "iframe srcDoc binds Ember-not-first — sr-only #C8442A is not enough",
+  "[teal, ember] no default, landing #122A47 → srcDoc --primary:#C8442A",
 );
 assert.match(
   liveSrcDoc,
   /--primary:#C8442A/,
-  "iframe srcDoc binds Ember-not-first — sr-only #C8442A is not enough",
+  "[teal, ember] no default, landing #122A47 → srcDoc --primary:#C8442A",
 );
 assert.doesNotMatch(liveSrcDoc, /--primary:#007C78/);
 assert.doesNotMatch(
@@ -727,6 +723,29 @@ assert.match(
 );
 assert.match(themeNode(emptyFileHtml), /--accent:#C8442A/);
 assert.doesNotMatch(iframeSrcDoc(emptyFileHtml), /--primary:/);
+
+assert.equal(
+  previewMod.remixPreviewSrcDoc("", { accent: "#C8442A" }),
+  "",
+  "leftover 2: empty HTML does not invent iframe srcDoc",
+);
+const tealEmberSrc = previewMod.remixPreviewSrcDoc(landingHtml, { accent: "#C8442A" });
+assert.equal(
+  lastPrimary(tealEmberSrc),
+  "#C8442A",
+  "[teal, ember] landing #122A47 → srcDoc --primary:#C8442A",
+);
+assert.match(tealEmberSrc, /--primary:#C8442A/);
+const yellowLandingSrc = previewMod.remixPreviewSrcDoc(
+  "<style>:root{--primary:#FFD400}</style>",
+  { accent: "#C8442A" },
+);
+assert.doesNotMatch(
+  yellowLandingSrc,
+  /--primary:#FFD400/,
+  "remix-preview must not leave --primary:#FFD400 in srcDoc",
+);
+assert.equal(lastPrimary(yellowLandingSrc), "#C8442A");
 
 const emptyPreview = renderToStaticMarkup(
   React.createElement(previewMod.RemixPreview, {
