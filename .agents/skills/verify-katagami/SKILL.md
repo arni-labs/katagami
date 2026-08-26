@@ -24,6 +24,8 @@ Prerequisites: `temper` on PATH (build it from a temper checkout with `cargo bui
 
 Both servers are detached into their own session, so they outlive the shell that started them. Logs are `/tmp/katagami-temper-$PORT.log` and `/tmp/katagami-ui-$UI_PORT.log`.
 
+**Known break:** the seed step currently fails. See the "Known break" section in `features/local-stack.md` before you spend time on it: the stack itself comes up correctly, but no content reaches Published, so drives that need seeded content are blocked.
+
 ## Doctor
 
 Two read-only checks before driving anything:

@@ -77,7 +77,7 @@ async function act(set, id, action, params = {}) {
 const J = (o) => JSON.stringify(o);
 
 // ── Design Languages ────────────────────────────────────────────────────────
-async function seedDesignLanguage(d) {
+async function seedDesignLanguage(d, artStyleId) {
   const id = await create("DesignLanguages");
   await act("DesignLanguages", id, "SetSpec", {
     name: d.name, slug: d.slug,
@@ -112,6 +112,10 @@ async function seedDesignLanguage(d) {
     shadcn_preview_shots_file_id: `seed-shadcn-shots-${d.slug}`,
     shadcn_preview_shots_format_version: "preview-shots-v1", shadcn_preview_shots_manifest: J({ seed: true }),
   });
+  // SubmitForReview guards on has_default_art_style and cross-checks that the
+  // paired ArtStyle is UnderReview/Published, so the language cannot leave Draft
+  // without its imagery recipe. Art styles are therefore seeded first.
+  await act("DesignLanguages", id, "SetDefaultArtStyle", { default_art_style_id: artStyleId });
   await act("DesignLanguages", id, "SubmitForReview", {});
   await act("DesignLanguages", id, "AttachPublishedAssets", {
     thumbnail_asset_id: `seed-thumb-${d.slug}`, thumbnail_asset_url: `/thumbs/${d.slug}.png`,
@@ -189,6 +193,7 @@ async function seedArtStyle(a) {
   await act("ArtStyles", id, "Publish", {});
   console.log(`  ✓ ArtStyle ${a.name} (${id})`);
   return id;
+  return id;
 }
 
 // ── Sample data ───────────────────────────────────────────────────────────────
@@ -246,12 +251,17 @@ const ART_STYLES = [
   const probe = await fetch(`${BASE}/tdata/PaletteSystems`, { headers });
   if (!probe.ok) throw new Error(`PaletteSystems not reachable (${probe.status}). Is the server up + specs loaded?`);
 
+  // Art styles first: a design language cannot pass SubmitForReview without a
+  // paired ArtStyle that is already UnderReview or Published.
+  console.log("Art Styles:");
+  const artStyleIds = [];
+  for (const a of ART_STYLES) artStyleIds.push(await seedArtStyle(a));
   console.log("Design Languages:");
-  for (const d of LANGUAGES) await seedDesignLanguage(d);
+  for (const [i, d] of LANGUAGES.entries()) {
+    await seedDesignLanguage(d, artStyleIds[i % artStyleIds.length]);
+  }
   console.log("Palette Systems:");
   for (const p of PALETTES) await seedPalette(p);
-  console.log("Art Styles:");
-  for (const a of ART_STYLES) await seedArtStyle(a);
 
   // report published counts
   for (const set of ["DesignLanguages", "PaletteSystems", "ArtStyles"]) {

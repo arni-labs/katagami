@@ -52,8 +52,11 @@ LAUNCH="/tmp/katagami-launch-$PORT.py"
 
 stop() {
   echo "==> stopping anything on :$PORT and :$UI_PORT"
-  kill "$(lsof -ti :"$PORT" 2>/dev/null)" 2>/dev/null || true
-  kill "$(lsof -ti :"$UI_PORT" 2>/dev/null)" 2>/dev/null || true
+  # xargs, not kill "$(...)": a dev server is usually several listening PIDs
+  # (the launcher plus next-server), and quoting them into one argument makes
+  # kill fail and leaves the port occupied.
+  lsof -ti :"$PORT" 2>/dev/null | xargs -r kill 2>/dev/null || true
+  lsof -ti :"$UI_PORT" 2>/dev/null | xargs -r kill 2>/dev/null || true
   pkill -f "temper serve --port $PORT" 2>/dev/null || true
 }
 
