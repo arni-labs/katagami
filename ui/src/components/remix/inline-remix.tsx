@@ -128,9 +128,12 @@ export function InlineRemix({
   const [langId, setLangId] = useState(fixed.language ?? initial?.langId ?? languages[0]?.id ?? "");
   // Do not seed palettes[0]. That leftover bound teal and left Ember in sr-only.
   const landingPrimary = cssPrimaryHex(initialPreviewHtml);
-  const [palId, setPalId] = useState(() =>
-    pickRemixPaletteId(palettes, fixed.palette ?? initial?.palId, landingPrimary),
+  const seededPalId = pickRemixPaletteId(
+    palettes,
+    fixed.palette ?? initial?.palId,
+    landingPrimary,
   );
+  const [palId, setPalId] = useState(seededPalId);
   const [artId, setArtId] = useState(fixed.art ?? initial?.artId ?? art[0]?.id ?? "");
   const [compIdx, setCompIdx] = useState(() => {
     const i = COMPS.findIndex((c) => c.key === initial?.compositionKey);
@@ -141,7 +144,9 @@ export function InlineRemix({
   const [saveFailed, setSaveFailed] = useState(false);
 
   const lang = languages.find((l) => l.id === langId) ?? languages[0];
-  const pal = palettes.find((p) => p.id === palId) ?? palettes[0];
+  const pal =
+    palettes.find((p) => p.id === palId) ??
+    palettes.find((p) => p.id === seededPalId);
   const sel = art.find((a) => a.id === artId) ?? art[0];
   const comp = COMPS[compIdx] ?? COMPS[0];
 
@@ -200,7 +205,7 @@ export function InlineRemix({
   const haveAll = Boolean(lang && pal && sel);
 
   function copyBrief() {
-    if (!haveAll) return;
+    if (!lang || !pal || !sel) return;
     const brief = buildRemixBrief({
       language: { name: lang.name, tokens: safeParse(lang.tokens) },
       palette: { name: pal.name, roles },
@@ -230,7 +235,7 @@ export function InlineRemix({
     (!fixed.art && art.length > 1);
 
   function doSave() {
-    if (!haveAll) return;
+    if (!lang || !pal || !sel) return;
     startTransition(async () => {
       try {
         await saveRemix({

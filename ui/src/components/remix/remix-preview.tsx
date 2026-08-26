@@ -5,6 +5,7 @@ import { ScaledFrame } from "@/components/scaled-frame";
 import {
   compositionBindDecls,
   injectTheme,
+  remixPrimaryDecl,
   themeOverrideStyle,
   type Roles,
 } from "@/lib/remix-theme";
@@ -63,11 +64,10 @@ export function RemixPreview({
       hidden
       data-remix-theme=""
       dangerouslySetInnerHTML={{
-        __html: themeOverrideStyle(
-          roles,
-          hero,
-          compositionBindDecls(fresh || "", roles, hero),
-        ),
+        __html: themeOverrideStyle(roles, hero, [
+          remixPrimaryDecl(roles.accent),
+          ...compositionBindDecls(fresh || "", roles, hero),
+        ]),
       }}
     />
   );

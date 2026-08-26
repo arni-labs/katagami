@@ -1,7 +1,8 @@
 /**
- * Seed the language-detail remix picker. "Try a remix" must show a swap,
- * not palettes[0] when a later catalog row contrasts the landing --primary.
- * default_palette_id still wins when it is in the catalog.
+ * Seed the language-detail remix picker. palettes[0] is the leftover:
+ * Ember-not-first stayed in sr-only and the iframe bound teal.
+ * With no default_palette_id, never seed the first catalog row when a
+ * later row exists. default_palette_id still wins when it is in the catalog.
  */
 
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -44,12 +45,17 @@ export function pickRemixPaletteId(
     if (hit) return hit.id;
   }
   if (palettes.length === 0) return "";
+  if (palettes.length === 1) return palettes[0].id;
+
+  // Later rows only — palettes[0] is the leftover teal bind.
+  const rest = palettes.slice(1);
   const against = againstHex?.toLowerCase();
   const pool = against
-    ? palettes.filter((p) => (p.roles?.accent ?? "").toLowerCase() !== against)
-    : palettes;
-  const rows = pool.length > 0 ? pool : palettes;
-  if (againstHex && rows.length > 0) {
+    ? rest.filter((p) => (p.roles?.accent ?? "").toLowerCase() !== against)
+    : rest;
+  const rows = pool.length > 0 ? pool : rest;
+
+  if (againstHex) {
     let best = rows[0];
     let bestD = -1;
     for (const p of rows) {

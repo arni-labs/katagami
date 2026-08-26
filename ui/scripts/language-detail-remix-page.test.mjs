@@ -98,7 +98,19 @@ assert.equal(
     "#122A47",
   ),
   "ps-ember",
-  "Ember-not-first wins contrast vs landing --primary — not palettes[0]",
+  "[other, ember] no default — Ember, not catalog[0] teal",
+);
+assert.equal(
+  pickRemixPaletteId(
+    [
+      { id: "ps-other", roles: { accent: "#007C78" } },
+      { id: "ps-ember", roles: { accent: "#C8442A" } },
+    ],
+    undefined,
+    undefined,
+  ),
+  "ps-ember",
+  "no landing primary: still skip palettes[0] when a later row exists",
 );
 assert.equal(
   pickRemixPaletteId(
@@ -205,6 +217,11 @@ assert.doesNotMatch(
   inlineSrc,
   /useState\(fixed\.palette \?\? initial\?\.palId \?\? palettes\[0\]/,
 );
+assert.doesNotMatch(
+  inlineSrc,
+  /palettes\.find\(\(p\) => p\.id === palId\) \?\? palettes\[0\]/,
+  "bound pal must not fall back to catalog[0] teal",
+);
 assert.match(remixSrc, /export function LanguageDetailRemix\(\{ lang \}/);
 assert.doesNotMatch(remixSrc, /LanguageRemixPageTree/);
 assert.doesNotMatch(
@@ -233,8 +250,13 @@ assert.match(
 assert.match(previewSrc, /themeOverrideStyle/, "--primary tokens stay in the tree even without landing HTML");
 assert.match(
   fs.readFileSync(path.join(here, "../src/lib/remix-theme.ts"), "utf8"),
-  /`--primary:\$\{map\.accent\}`/,
+  /export function remixPrimaryDecl/,
   "themeOverrideStyle always binds --primary — empty HTML never runs injectTheme",
+);
+assert.match(
+  previewSrc,
+  /remixPrimaryDecl/,
+  "RemixPreview token node owns --primary via remixPrimaryDecl, not accent-only",
 );
 assert.match(
   previewSrc,
@@ -697,10 +719,10 @@ const emptyFileHtml = renderToStaticMarkup(
 assert.match(emptyFileHtml, /data-remix-theme=""/);
 assert.match(
   themeNode(emptyFileHtml),
-  /--primary:#007C78/,
-  "failed getFileText: token node keeps --primary, not accent-only",
+  /--primary:#C8442A/,
+  "failed getFileText: token node keeps Ember --primary, not catalog[0] teal",
 );
-assert.match(themeNode(emptyFileHtml), /--accent:#007C78/);
+assert.match(themeNode(emptyFileHtml), /--accent:#C8442A/);
 assert.doesNotMatch(iframeSrcDoc(emptyFileHtml), /--primary:/);
 
 const emptyPreview = renderToStaticMarkup(

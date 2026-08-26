@@ -30,6 +30,7 @@ const REMIX_OWNED = new Set([
   "muted",
   "border",
   "accent",
+  "primary",
   "on-accent",
   "success",
   "warning",
@@ -50,6 +51,11 @@ function roleValues(roles: Roles): Record<PaletteRole, string> {
     border: roles.border || "#e5e7eb",
     accent,
   };
+}
+
+/** Token-node bind. Empty HTML never reaches injectTheme, so --primary lives here. */
+export function remixPrimaryDecl(accent?: string): string {
+  return `--primary:${accent || "#3a6df0"}`;
 }
 
 function skipToken(name: string): boolean {
@@ -1109,7 +1115,7 @@ export function compositionBindDecls(
   const extra: string[] = [
     `--paper:${map.bg}`,
     `--ink:${map.text}`,
-    `--primary:${map.accent}`,
+    remixPrimaryDecl(map.accent),
     `--ds-bg:${map.bg}`,
     `--ds-background:${map.bg}`,
     `--ds-surface:${map.surface}`,
@@ -1203,7 +1209,7 @@ export function themeOverrideStyle(
   decl.push(
     `--paper:${map.bg}`,
     `--ink:${map.text}`,
-    `--primary:${map.accent}`,
+    remixPrimaryDecl(map.accent),
     `--ds-bg:${map.bg}`,
     `--ds-background:${map.bg}`,
     `--ds-surface:${map.surface}`,
