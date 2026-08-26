@@ -3,7 +3,7 @@
 This file keeps operational verification gates. Reusable design taste,
 anti-slop, and visual judgment checks live in the inlined taste rulebook
 (`knowledge/rules/design-language.md`). Synthesis and quality-review agents
-obey that rulebook; they must not `temper.list('TasteRules')` at gen time.
+obey that rulebook; they must not load TasteRule entities at gen time.
 
 Do not duplicate the full taste checklist here. If a design pass/fail rule can
 be written as a short prompt directive, it belongs in the rulebook file.

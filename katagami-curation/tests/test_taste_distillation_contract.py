@@ -156,7 +156,8 @@ class TasteDistillationContractTests(unittest.TestCase):
         ]
         for path in skills:
             skill = path.read_text()
-            self.assertNotIn("temper.list('TasteRules',", skill)
+            self.assertNotIn("list('TasteRules')", skill)
+            self.assertNotIn("Accepted TasteRules", skill)
             self.assertIn("taste rulebook inlined in this prompt", skill)
 
     def test_foundation_knowledge_points_at_inlined_rulebook(self):
@@ -165,9 +166,9 @@ class TasteDistillationContractTests(unittest.TestCase):
         feedback = (self.root / "system" / "knowledge" / "feedback-log.md").read_text()
 
         self.assertIn("inlined taste rulebook", quality)
-        self.assertIn("temper.list('TasteRules')", quality)
+        self.assertNotIn("list('TasteRules')", quality)
         self.assertIn("inlined taste rulebook", principles)
-        self.assertIn("temper.list('TasteRules')", principles)
+        self.assertNotIn("list('TasteRules')", principles)
         self.assertIn("Foundation TasteRules Extracted", feedback)
         self.assertIn("Do not duplicate the full taste checklist", quality)
 

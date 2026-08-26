@@ -75,13 +75,17 @@ printf '%s\n' "$skill22" | grep -q 'taste rulebook inlined in this prompt' \
 PALETTE="$ROOT/katagami-curation/agents/curator/skills/synthesize-palette/SKILL.md"
 ART="$ROOT/katagami-curation/agents/curator/skills/synthesize-art-style/SKILL.md"
 REVIEW="$ROOT/katagami-curation/agents/curator/skills/review-quality/SKILL.md"
-for f in "$SKILL" "$PALETTE" "$ART" "$REVIEW"; do
-  if grep -nE "temper\.list\('TasteRules'," "$f"; then
+# QA replay of the three leftover skills: list('TasteRules') / Accepted TasteRules
+# must not appear. "Do not list(...)" still matches that grep.
+for f in "$PALETTE" "$ART" "$REVIEW"; do
+  if grep -nE "list\('TasteRules'\)|Accepted TasteRules" "$f"; then
     fail "$f still lists TasteRules at gen time"
   fi
   grep -q 'taste rulebook inlined in this prompt' "$f" \
     || fail "$f must obey the inlined rulebook"
 done
+grep -q 'taste rulebook inlined in this prompt' "$SKILL" \
+  || fail "synthesize-language/SKILL.md:22 must still obey the inlined rulebook"
 pass "leftover 5 extra: palette / art-style / review-quality do not list TasteRules"
 
 if grep -nE 'curator skills read them at generation time|read them at generation time' "$AGENTS"; then

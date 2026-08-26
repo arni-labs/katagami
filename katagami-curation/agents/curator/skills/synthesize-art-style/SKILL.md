@@ -35,8 +35,8 @@ An ArtStyle is one prompt, not an adapter system.
 
 1. Read `/system/knowledge/design-principles.md` and
    `/system/knowledge/quality-standards.md`. Obey EVERY rule in the
-   taste rulebook inlined in this prompt. Do not `temper.list('TasteRules')`;
-   those entities are outdated.
+   taste rulebook inlined in this prompt. Do not load TasteRule entities;
+   those are outdated.
 2. List existing `ArtStyles`; the new treatment must be distinct.
 3. Research every named influence and record its eligibility:
    - collective tradition or movement;

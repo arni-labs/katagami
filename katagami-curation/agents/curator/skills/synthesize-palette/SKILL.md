@@ -27,8 +27,8 @@ existing = temper.list('PaletteSystems', '')
 Note existing hues, temperatures, and moods. Your palette must be distinct.
 
 Obey EVERY rule in the taste rulebook inlined in this prompt — it governs
-palette, type, accents, radius, spacing, contrast, and naming. Do not
-`temper.list('TasteRules')`; those entities are outdated.
+palette, type, accents, radius, spacing, contrast, and naming. Do not load
+TasteRule entities; those are outdated.
 
 ## Execution Discipline
 

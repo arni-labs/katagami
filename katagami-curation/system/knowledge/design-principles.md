@@ -6,8 +6,8 @@ tests that used to live here live in the inlined taste rulebook
 them consistently.
 
 Use this document to understand the spirit of the system. Use the inlined
-rulebook for concrete pass/fail design guidance. Do not
-`temper.list('TasteRules')` at generation or review time.
+rulebook for concrete pass/fail design guidance. Do not load TasteRule
+entities at generation or review time.
 
 ## Complete Visual Identity
 

@@ -14,11 +14,11 @@ Read the knowledge files in your workspace:
 - `/system/knowledge/feedback-log.md` — human feedback (may contain specific notes about target languages)
 
 Obey EVERY rule in the taste rulebook inlined in this prompt — it is the
-authoritative reusable design test. Do not `temper.list('TasteRules')`;
-those entities are outdated. Proposed, Rejected, and Superseded TasteRule
-entities have no effect on quality review. The knowledge files provide
-orientation and hard artifact context; do not recreate parallel anti-slop
-checklists from prose.
+authoritative reusable design test. Do not load TasteRule entities; those
+are outdated. Proposed, Rejected, and Superseded TasteRule entities have
+no effect on quality review. The knowledge files provide orientation and
+hard artifact context; do not recreate parallel anti-slop checklists from
+prose.
 
 ## Process
 
