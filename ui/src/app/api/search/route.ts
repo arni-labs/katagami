@@ -26,6 +26,10 @@ export const dynamic = "force-dynamic";
  * Signed-in callers rank the full Published catalog. The embed + kernel calls
  * use the server's own credentials, never exposed.
  *
+ * Name/slug matches against that same shelf are unioned with the kNN ranking
+ * so a featured home card (Bluet) is findable by its own name even when it
+ * has no taste vector. Off-shelf names (Gust) stay out.
+ *
  *   ?q=<text>              required — the phrase to rank by meaning
  *   ?lane=language|palette|art-style   optional — omit to search across all lanes
  *   ?k=<1..25>             optional — how many results (default 8)
@@ -96,6 +100,10 @@ export async function GET(request: Request) {
     );
     hits = hits.filter((_, i) => allowed[i]);
   }
+  // Clip to the requested k. The meaning window is already `k` before this
+  // (over-fetching it is what made q=komawari 8 instead of prod's 5). Lexical
+  // name matches insert into that window; they do not deepen kNN.
+  hits = hits.slice(0, k);
 
   const base = siteBase(request);
   const results = hits.map((hit) => withLinks(hit, base, detailed));

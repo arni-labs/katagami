@@ -6,13 +6,25 @@ import {
   normalizeDesignLanguageRow,
   normalizeLaneRow,
   parseJson,
+  listArtStyles,
+  listDesignLanguages,
+  listFeaturedArtStyles,
+  listFeaturedDesignLanguages,
+  listFeaturedPaletteSystems,
+  listPaletteSystems,
   type DesignLanguage,
+  type LaneEntity,
   type VectorHit,
 } from "@/lib/odata";
 import { specSummary } from "@/lib/spec-summary";
 import { toArtStyleItem, toPaletteItem } from "@/lib/lane-items";
 import type { PaletteItem } from "@/components/palette-card";
 import type { ArtStyleItem } from "@/components/art-style-card";
+import {
+  lexicalHits,
+  mergeSearchHits,
+  type LexicalDoc,
+} from "@/lib/search-lexical.mjs";
 
 /**
  * Free-text semantic search (ARN-244) — the ONE place a text query becomes a
@@ -23,6 +35,13 @@ import type { ArtStyleItem } from "@/components/art-style-card";
  * (`/api/search` + the `katagami_search` MCP tool → dense results).
  *
  * Ranking lives in the kernel, embedding lives here; there is no app-side cosine.
+ *
+ * Name/slug hits from the same visitor shelf the home cards use are unioned
+ * in front of the kNN ranking. A featured language can be a live home card
+ * and still be missing from Temper.Nearest (no taste vector, or a proper noun
+ * MiniLM maps near a color word). Live leftover: q=bluet was 200/0 after #257
+ * while Bluet sat on the home shelf. Lexical match is that close — not a
+ * stub that treats 0 hits as success.
  */
 
 export type SearchLane = "language" | "palette" | "art-style";
@@ -44,9 +63,10 @@ export function isSearchLane(value: unknown): value is SearchLane {
   return typeof value === "string" && value in LANE;
 }
 
-/** Anonymous ranking is the featured shelf for languages and art styles
- *  (ARN-385). Palettes stay the full published set — they are public on the
- *  site. Signed-in ranking omits this and uses Published-only. */
+/** Anonymous ranking is the featured/visitor shelf for every lane (ARN-385 /
+ *  #257). Signed-in ranking omits this and uses Published-only. The kernel
+ *  filter still pins languages/art-styles; palettes are membership-filtered
+ *  in the API route because that kernel boolean can be non-honored. */
 export type SearchOpts = { featuredOnly?: boolean };
 
 function publishedFilter(lane: SearchLane, featuredOnly?: boolean): string {
@@ -54,6 +74,112 @@ function publishedFilter(lane: SearchLane, featuredOnly?: boolean): string {
     return "Status eq 'Published' and featured eq true";
   }
   return "Status eq 'Published'";
+}
+
+/** Same per-lane k the pre-#259 ranker used. Over-fetching to 16–25 when
+ *  anonymous is what swelled q=komawari from prod's 5 to preview's 8. */
+function perLaneK(k: number): number {
+  return Math.min(Math.max(Math.floor(k) || 8, 4), 25);
+}
+
+async function safeList<T>(label: string, fn: () => Promise<T[]>): Promise<T[]> {
+  try {
+    return await fn();
+  } catch (err) {
+    console.error(`search: lexical ${label} failed:`, err);
+    return [];
+  }
+}
+
+type ShelfDoc = LexicalDoc & { fields: Record<string, unknown> };
+
+function tagsOf(fields: Record<string, unknown> | undefined): string[] {
+  return (parseJson<string[]>(fields?.tags as string) ?? []).filter(
+    (t) => typeof t === "string",
+  );
+}
+
+function languageDoc(lang: DesignLanguage): ShelfDoc | null {
+  if (!lang.fields.name) return null;
+  return {
+    id: lang.entity_id,
+    kind: "language",
+    name: lang.fields.name,
+    slug: lang.fields.slug ?? "",
+    tags: tagsOf(lang.fields),
+    fields: lang.fields as Record<string, unknown>,
+  };
+}
+
+function laneDoc(kind: "palette" | "art-style", row: LaneEntity): ShelfDoc | null {
+  if (!row.fields.name) return null;
+  return {
+    id: row.entity_id,
+    kind,
+    name: row.fields.name,
+    slug: row.fields.slug ?? "",
+    tags: tagsOf(row.fields),
+    fields: row.fields,
+  };
+}
+
+/** Same ids the home cards / ⌘K sample use when `featuredOnly` — including
+ *  featured palettes, so Komawari Plates matches by name the same way Bluet
+ *  does. Signed-in reads the published set. */
+async function loadLexicalDocs(opts?: SearchOpts): Promise<ShelfDoc[]> {
+  const featuredOnly = Boolean(opts?.featuredOnly);
+  const [langs, pals, arts] = await Promise.all([
+    safeList("languages", () =>
+      featuredOnly
+        ? listFeaturedDesignLanguages()
+        : listDesignLanguages("Status eq 'Published'"),
+    ),
+    safeList("palettes", () =>
+      featuredOnly ? listFeaturedPaletteSystems() : listPaletteSystems(),
+    ),
+    safeList("art-styles", () =>
+      featuredOnly ? listFeaturedArtStyles() : listArtStyles(),
+    ),
+  ]);
+  const docs: ShelfDoc[] = [];
+  for (const lang of langs) {
+    const doc = languageDoc(lang);
+    if (doc) docs.push(doc);
+  }
+  for (const pal of pals) {
+    const doc = laneDoc("palette", pal);
+    if (doc) docs.push(doc);
+  }
+  for (const art of arts) {
+    const doc = laneDoc("art-style", art);
+    if (doc) docs.push(doc);
+  }
+  return docs;
+}
+
+function lexicalHitsFor(
+  query: string,
+  docs: ShelfDoc[],
+  k: number,
+  detailed: boolean,
+): SearchHit[] {
+  const extras = new Map(docs.map((d) => [`${d.kind}:${d.id}`, d]));
+  return lexicalHits(query, docs, k).map((hit) => {
+    const doc = extras.get(`${hit.kind}:${hit.id}`);
+    const out: SearchHit = {
+      id: hit.id,
+      kind: hit.kind,
+      name: hit.name,
+      slug: hit.slug,
+      score: hit.score,
+      tags: hit.tags,
+    };
+    if (hit.kind === "art-style" && typeof doc?.fields.medium === "string") {
+      out.medium = doc.fields.medium;
+    }
+    if (detailed && doc) out.summary = summarize(hit.kind, doc.fields);
+    return out;
+  });
 }
 
 /** A dense, url-less search hit — the shape agents rank on. The API route adds
@@ -209,7 +335,9 @@ export function summarize(lane: SearchLane, fields: Record<string, unknown>): st
   return tags.slice(0, 4).join(", ");
 }
 
-/** Dense hits for one lane (agent projection). */
+/** Dense hits for one lane (agent projection). Name/slug matches from the
+ *  visitor shelf (or full catalog) sit in front of the kNN ranking. The
+ *  meaning window stays `k` — same as prod before this PR. */
 export async function searchLane(
   lane: SearchLane,
   query: string,
@@ -217,13 +345,26 @@ export async function searchLane(
   detailed = false,
   opts?: SearchOpts,
 ): Promise<SearchHit[]> {
-  const hits = await searchLaneRaw(lane, query, k, opts);
-  return hits.map((h) => toHit(lane, h, detailed));
+  const want = Math.max(1, Math.floor(k) || 8);
+  const [hits, docs] = await Promise.all([
+    searchLaneRaw(lane, query, want, opts),
+    loadLexicalDocs(opts),
+  ]);
+  const semantic = hits.map((h) => toHit(lane, h, detailed));
+  const lexical = lexicalHitsFor(
+    query,
+    docs.filter((d) => d.kind === lane),
+    want,
+    detailed,
+  );
+  return mergeSearchHits(lexical, semantic, want);
 }
 
 /** Dense hits across ALL lanes, merged and re-ranked by score. Since every lane
  *  shares the one MiniLM space, a single query vector ranks each set and the
- *  scores are directly comparable. Over-fetches per lane, then keeps the top `k`.
+ *  scores are directly comparable. Per-lane k and the merged window are the
+ *  same as before the lexical union — name matches insert, they do not
+ *  deepen the meaning ranking (q=komawari must stay count 5).
  */
 export async function searchAllLanes(
   query: string,
@@ -231,14 +372,18 @@ export async function searchAllLanes(
   detailed = false,
   opts?: SearchOpts,
 ): Promise<SearchHit[]> {
-  const perLane = Math.min(Math.max(k, 4), 25);
-  const lanes = await Promise.all(
-    SEARCH_LANES.map((lane) => searchLane(lane, query, perLane, detailed, opts)),
-  );
-  return lanes
-    .flat()
+  const perLane = perLaneK(k);
+  const keep = Math.max(1, Math.floor(k) || 8);
+  const [docs, ...lanes] = await Promise.all([
+    loadLexicalDocs(opts),
+    ...SEARCH_LANES.map((lane) => searchLaneRaw(lane, query, perLane, opts)),
+  ]);
+  const semantic = lanes
+    .flatMap((hits, i) => hits.map((h) => toHit(SEARCH_LANES[i], h, detailed)))
     .sort((a, b) => b.score - a.score)
-    .slice(0, k);
+    .slice(0, keep);
+  const lexical = lexicalHitsFor(query, docs, keep, detailed);
+  return mergeSearchHits(lexical, semantic, keep);
 }
 
 // ── UI card projections (human "search by meaning") ──────────────────────────
