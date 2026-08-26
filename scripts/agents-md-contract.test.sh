@@ -72,6 +72,18 @@ skill22="$(slice '22,23' "$SKILL")"
 printf '%s\n' "$skill22" | grep -q 'taste rulebook inlined in this prompt' \
   || fail "QA SKILL.md:22 must obey the inlined rulebook"
 
+PALETTE="$ROOT/katagami-curation/agents/curator/skills/synthesize-palette/SKILL.md"
+ART="$ROOT/katagami-curation/agents/curator/skills/synthesize-art-style/SKILL.md"
+REVIEW="$ROOT/katagami-curation/agents/curator/skills/review-quality/SKILL.md"
+for f in "$SKILL" "$PALETTE" "$ART" "$REVIEW"; do
+  if grep -nE "temper\.list\('TasteRules'," "$f"; then
+    fail "$f still lists TasteRules at gen time"
+  fi
+  grep -q 'taste rulebook inlined in this prompt' "$f" \
+    || fail "$f must obey the inlined rulebook"
+done
+pass "leftover 5 extra: palette / art-style / review-quality do not list TasteRules"
+
 if grep -nE 'curator skills read them at generation time|read them at generation time' "$AGENTS"; then
   fail "AGENTS.md still says skills read TasteRule entities at gen time (leftover 5)"
 fi
@@ -80,8 +92,11 @@ if grep -nE 'Canonical taste rules live in the deployed Katagami app' "$AGENTS";
 fi
 grep -q 'lib.rs:989' "$AGENTS" || fail "AGENTS.md must cite build_session_message lib.rs:989"
 grep -q 'SKILL.md:22' "$AGENTS" || fail "AGENTS.md must cite synthesize-language/SKILL.md:22"
+grep -q 'synthesize-palette/SKILL.md' "$AGENTS" || fail "AGENTS.md must name synthesize-palette"
+grep -q 'synthesize-art-style/SKILL.md' "$AGENTS" || fail "AGENTS.md must name synthesize-art-style"
+grep -q 'review-quality/SKILL.md' "$AGENTS" || fail "AGENTS.md must name review-quality"
 grep -q 'knowledge/rules/design-language.md' "$AGENTS" || fail "AGENTS.md must name the inlined rulebook"
-pass "leftover 5: QA lib.rs:989 + SKILL.md:22; AGENTS.md cites them"
+pass "leftover 5: QA lib.rs:989 + SKILL.md:22; AGENTS.md names all four gen/review skills"
 
 if [ ! -L "$ROOT/CLAUDE.md" ]; then
   fail "CLAUDE.md must remain a symlink to AGENTS.md"
@@ -106,8 +121,8 @@ pass "leftovers 1–3 still present"
 if grep -nE 'grep -Ev.*SubmitForReview -> 409' "$ROOT/scripts/lib/run-local-lib.sh"; then
   fail "leftover 6: Ev-strip of every SubmitForReview -> 409 returned"
 fi
-grep -q 'is_known_draft_409_line' "$ROOT/scripts/lib/run-local-lib.sh" \
-  || fail "leftover 6 dropped: only Draft-specific 409 lines are known"
+grep -q 'is_known_draft_409_event' "$ROOT/scripts/lib/run-local-lib.sh" \
+  || fail "leftover 6 dropped: each SubmitForReview 409 is classified on its own"
 pass "leftover 6: classifier does not Ev-strip every 409"
 
 echo "ALL PASSED"

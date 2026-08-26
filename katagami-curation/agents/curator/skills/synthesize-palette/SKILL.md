@@ -26,10 +26,9 @@ existing = temper.list('PaletteSystems', '')
 ```
 Note existing hues, temperatures, and moods. Your palette must be distinct.
 
-Load accepted taste rules and apply only `Accepted` ones:
-```python
-accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")
-```
+Obey EVERY rule in the taste rulebook inlined in this prompt — it governs
+palette, type, accents, radius, spacing, contrast, and naming. Do not
+`temper.list('TasteRules')`; those entities are outdated.
 
 ## Execution Discipline
 

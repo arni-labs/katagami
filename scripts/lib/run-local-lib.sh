@@ -1,21 +1,19 @@
 # Shared helpers for scripts/run-local.sh. Sourced, not executed.
 # Keep this file free of side effects so the contract tests can source it.
 
-# True when a single line is the recorded Draft SubmitForReview 409
-# (or the seed script's honest marker for that event). A later
-# SubmitForReview -> 409 for a missing guard is not this.
-is_known_draft_409_line() {
-  local line="$1"
-  printf '%s\n' "$line" | grep -Eq \
-      "Seed incomplete:.*SubmitForReview|left in Draft|SubmitForReview -> 409.*not valid from state 'Draft'"
+# True when one SubmitForReview -> 409 payload is the recorded Draft
+# refusal. A guard/policy 409 is not this, even on a line that also
+# mentions Draft or "left in Draft".
+is_known_draft_409_event() {
+  printf '%s\n' "$1" | grep -Fq "not valid from state 'Draft'"
 }
 
 # Classify seed-local-remix.mjs stdout/stderr.
 # Prints one of: complete | verifying | known_submit_break | failed
 #
-# known_submit_break only when every seed failure is the recorded Draft
-# 409. A Draft 409 plus a later guard 409 is failed — do not Ev-strip
-# every "SubmitForReview -> 409" (that hid leftover 6).
+# Each "SubmitForReview -> 409" is its own event (same line or later).
+# known_submit_break only when every such event is the recorded Draft
+# refusal. A Draft 409 plus a later guard 409 is failed — leftover 6.
 classify_seed_output() {
   local out="$1"
   if printf '%s\n' "$out" | grep -q "=== Seed complete ==="; then
@@ -29,18 +27,29 @@ classify_seed_output() {
 
   local known=0
   local other_fail=0
-  local line
+  local line rest event
+  if printf '%s\n' "$out" | grep -q \
+      "=== Seed incomplete: SubmitForReview refused from Draft"; then
+    known=1
+  fi
   while IFS= read -r line || [ -n "$line" ]; do
     [ -n "$line" ] || continue
-    if is_known_draft_409_line "$line"; then
-      known=1
-      continue
-    fi
-    if printf '%s\n' "$line" | grep -q "SEED FAILED"; then
-      other_fail=1
-      continue
-    fi
-    if printf '%s\n' "$line" | grep -q "SubmitForReview -> 409"; then
+    rest="$line"
+    while [[ "$rest" == *"SubmitForReview -> 409"* ]]; do
+      rest="${rest#*SubmitForReview -> 409}"
+      if [[ "$rest" == *"SubmitForReview -> 409"* ]]; then
+        event="${rest%%SubmitForReview -> 409*}"
+      else
+        event="$rest"
+      fi
+      if is_known_draft_409_event "$event"; then
+        known=1
+      else
+        other_fail=1
+      fi
+    done
+    if [[ "$line" == *"SEED FAILED"* ]] && \
+        [[ "$line" != *"SubmitForReview -> 409"* ]]; then
       other_fail=1
     fi
   done <<EOF

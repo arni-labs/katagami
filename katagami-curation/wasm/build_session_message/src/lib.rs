@@ -1001,7 +1001,7 @@ fn render_taste_rules_block(
     headers: &[(String, String)],
     skill: &str,
 ) -> String {
-    if skill != "synthesize-language" {
+    if skill != "synthesize-language" && skill != "synthesize-palette" && skill != "synthesize-art-style" && skill != "review-quality" {
         return String::new();
     }
     const CANDIDATE_PATHS: [&str; 2] = [

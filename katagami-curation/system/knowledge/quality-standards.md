@@ -1,17 +1,17 @@
 # Katagami Quality Standards
 
 This file keeps operational verification gates. Reusable design taste,
-anti-slop, and visual judgment checks live in Accepted `TasteRule` records.
-Synthesis and quality-review agents must load those records before creating or
-judging a language.
+anti-slop, and visual judgment checks live in the inlined taste rulebook
+(`knowledge/rules/design-language.md`). Synthesis and quality-review agents
+obey that rulebook; they must not `temper.list('TasteRules')` at gen time.
 
 Do not duplicate the full taste checklist here. If a design pass/fail rule can
-be written as a short prompt directive, it belongs in `TasteRules`.
+be written as a short prompt directive, it belongs in the rulebook file.
 
 ## Rule Source Of Truth
 
-- Load Accepted `TasteRule` records for reusable visual tests and anti-patterns.
-- Treat Proposed, Rejected, and Superseded rules as inert for generation.
+- Obey the inlined taste rulebook for reusable visual tests and anti-patterns.
+- Do not load TasteRule entities at generation or review time.
 - Keep hard artifact validation in skill docs and finalizers.
 - Keep this file short enough to orient agents without competing with rules.
 

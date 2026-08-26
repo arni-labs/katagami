@@ -56,6 +56,21 @@ case "$(classify_seed_output "$mixed409")" in
   known_submit_break) fail "leftover 6: mixed pair classified as known_submit_break" ;;
   *) fail "expected failed for Draft 409 + later guard 409, got $(classify_seed_output "$mixed409")" ;;
 esac
+# Same-line pair and a "left in Draft" wrapper must not hide the guard 409.
+sameline="SEED FAILED: ArtStyles('x').SubmitForReview -> 409: ActionFailed: Action 'SubmitForReview' not valid from state 'Draft' SEED FAILED: DesignLanguages('y').SubmitForReview -> 409: guard has_default_art_style"
+case "$(classify_seed_output "$sameline")" in
+  failed) pass "classify same-line Draft+guard 409 as failed" ;;
+  known_submit_break) fail "leftover 6: same-line mixed pair classified as known_submit_break" ;;
+  *) fail "expected failed for same-line mixed pair" ;;
+esac
+wrapped="$(printf '%s\n' \
+  "  ! ArtStyles x left in Draft: ArtStyles('x').SubmitForReview -> 409: ActionFailed: Action 'SubmitForReview' not valid from state 'Draft'" \
+  "  ! DesignLanguages y left in Draft: DesignLanguages('y').SubmitForReview -> 409: guard has_default_art_style")"
+case "$(classify_seed_output "$wrapped")" in
+  failed) pass "classify left-in-Draft wrapper plus guard 409 as failed" ;;
+  known_submit_break) fail "leftover 6: left-in-Draft wrapper hid the guard 409" ;;
+  *) fail "expected failed for wrapped mixed pair" ;;
+esac
 
 # Leftover 2: each PORT has its own env file; contents follow the port.
 tmp="$(mktemp -d)"
