@@ -6,6 +6,8 @@ import {
   nearestDesignLanguages,
   parseJson,
 } from "@/lib/odata";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { featuredIds } from "@/lib/catalog";
 
 interface TokensLite {
   colors?: Record<string, string | undefined>;
@@ -49,6 +51,14 @@ export async function RelatedLanguages({
     // vector yet still gets "More like this" via tag overlap, rather than an
     // empty section until the backfill reaches it.
     scored = await relatedByTagOverlap(currentId, currentTags, sharedTags);
+  }
+
+  // ARN-385: "More like this" links to other language detail pages; a signed-out
+  // visitor may only be sent to languages in the anonymous featured portion, so
+  // withhold non-featured neighbours before rendering the links.
+  if (scored.length > 0 && !(await hasFullGalleryAccess())) {
+    const ids = await featuredIds("language");
+    scored = scored.filter((s) => ids.has(s.lang.entity_id));
   }
 
   if (scored.length === 0) return null;

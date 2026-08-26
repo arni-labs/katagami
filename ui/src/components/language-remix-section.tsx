@@ -4,6 +4,8 @@ import {
   type DesignLanguage,
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { featuredIds } from "@/lib/catalog";
 import { InlineRemix } from "@/components/remix/inline-remix";
 import { RemixLaneBlurb } from "@/components/remix/remix-lane-blurb";
 import { SectionHeading, Perforation } from "@/components/scrapbook";
@@ -20,7 +22,17 @@ export async function LanguageRemixSection({
   ]);
   const remixLangOpts = toLanguageOpts([lang]);
   const remixPalOpts = toPaletteOpts(paletteRows);
-  const remixArtOpts = toArtOpts(artRows);
+  let remixArtOpts = toArtOpts(artRows);
+
+  // ARN-385: the InlineRemix art-style picker embeds the full art-style list.
+  // For a signed-out visitor, withhold non-featured art styles — filter the
+  // DATA before it reaches the client component (palettes stay public; the
+  // language is this page's own, already visible to reach here).
+  if (!(await hasFullGalleryAccess())) {
+    const artIds = await featuredIds("art_style");
+    remixArtOpts = remixArtOpts.filter((o) => artIds.has(o.id));
+  }
+
   const canRemix =
     remixLangOpts[0]?.landingUrl &&
     remixPalOpts.length > 0 &&

@@ -6,6 +6,8 @@ import {
   parseJson,
   type DesignLanguage,
 } from "@/lib/odata";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { featuredIds } from "@/lib/catalog";
 
 interface TokensLite {
   colors?: Record<string, string | undefined>;
@@ -107,7 +109,18 @@ export async function LanguageLineage({
       (parseJson<string[]>(l.fields.parent_ids) ?? []).includes(currentId),
   );
 
-  if (parents.length === 0 && children.length === 0) return null;
+  // ARN-385: each lineage chip links to another language detail page. For a
+  // signed-out visitor, withhold ancestors/descendants outside the anonymous
+  // featured portion so no chip leads to a page they would be 404'd from.
+  let visibleParents = parents;
+  let visibleChildren = children;
+  if (!(await hasFullGalleryAccess())) {
+    const ids = await featuredIds("language");
+    visibleParents = parents.filter((p) => ids.has(p.entity_id));
+    visibleChildren = children.filter((c) => ids.has(c.entity_id));
+  }
+
+  if (visibleParents.length === 0 && visibleChildren.length === 0) return null;
 
   const parentLabel = LINEAGE_LABEL[lineageType] || "Descended from";
 
@@ -127,14 +140,14 @@ export async function LanguageLineage({
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {parents.length > 0 ? (
+        {visibleParents.length > 0 ? (
           <div className="space-y-3">
             <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
               <GitBranch className="h-3 w-3" />
               {parentLabel}
             </span>
             <div className="grid gap-2">
-              {parents.map((p) => (
+              {visibleParents.map((p) => (
                 <LangChip key={p.entity_id} lang={p} />
               ))}
             </div>
@@ -142,13 +155,13 @@ export async function LanguageLineage({
         ) : (
           <span />
         )}
-        {children.length > 0 ? (
+        {visibleChildren.length > 0 ? (
           <div className="space-y-3">
             <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              {children.length} descendant{children.length === 1 ? "" : "s"}
+              {visibleChildren.length} descendant{visibleChildren.length === 1 ? "" : "s"}
             </span>
             <div className="grid gap-2">
-              {children.map((c) => (
+              {visibleChildren.map((c) => (
                 <LangChip key={c.entity_id} lang={c} />
               ))}
             </div>

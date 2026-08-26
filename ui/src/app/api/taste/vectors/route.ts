@@ -17,6 +17,8 @@ import {
   TASTE_EMBEDDING_DIM,
   TASTE_EMBEDDING_MODEL,
 } from "@/lib/embeddings";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { featuredIds } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +48,14 @@ export async function GET() {
   const vectors: Record<string, number[]> = {};
   const counts = { stored: 0, computed: 0 };
 
+  // ARN-385: a signed-out visitor gets vectors only for the anonymous featured
+  // portion of languages and art styles (palettes stay public). Same
+  // featuredIds() primitive as the gallery/MCP, so the set can never diverge.
+  const full = await hasFullGalleryAccess();
+  const [languageFeatured, artFeatured] = full
+    ? [null, null]
+    : await Promise.all([featuredIds("language"), featuredIds("art_style")]);
+
   const put = async (
     id: string,
     fields: { taste_vector?: string; taste_vector_model?: string },
@@ -71,6 +81,7 @@ export async function GET() {
     anyLaneLoaded = true;
     for (const lang of languages) {
       if (!lang.fields.name) continue;
+      if (languageFeatured && !languageFeatured.has(lang.entity_id)) continue;
       const tokens = parseJson<TokensLite>(lang.fields.tokens);
       await put(
         lang.entity_id,
@@ -125,6 +136,7 @@ export async function GET() {
     anyLaneLoaded = true;
     for (const style of styles) {
       if (!style.fields.name) continue;
+      if (artFeatured && !artFeatured.has(style.entity_id)) continue;
       await put(
         style.entity_id,
         style.fields,

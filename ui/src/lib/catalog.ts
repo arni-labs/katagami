@@ -54,9 +54,10 @@ function headers(): Record<string, string> {
 // instead of a fresh crawl per call.
 const readCache = new Map<string, { rows: Row[]; at: number }>();
 const READ_TTL_MS = 20_000;
-// 200 pages × 500 rows = 100k, far above any real set. Reaching it means a
-// runaway backend, so we throw rather than silently returning a partial set.
-const MAX_PAGES = 200;
+// The repeated-nextLink guard below is the real loop protection; this ceiling
+// is only a runaway backstop, set far above any real set so it never rejects
+// valid pagination. Throw at it rather than silently return a partial set.
+const MAX_PAGES = 100_000;
 
 /** Read every row of a set, following @odata.nextLink to completion. */
 async function readAll(set: string, filter: string): Promise<Row[]> {
@@ -84,6 +85,11 @@ async function readAll(set: string, filter: string): Promise<Row[]> {
     if (!Array.isArray(body.value)) throw new Error(`Read ${set} returned no value array`);
     out.push(...body.value);
     const next = body["@odata.nextLink"];
+    // A present-but-non-string nextLink (e.g. 0) would otherwise end paging
+    // early and silently truncate; treat it as a fault.
+    if (next !== undefined && (typeof next !== "string" || next === "")) {
+      throw new Error(`Read ${set} returned an invalid nextLink`);
+    }
     // nextLink is relative to the request URI (e.g. "DesignLanguages?…") —
     // resolve it the spec-correct way, not by prefixing the origin (which
     // drops /tdata and 404s on page 2).
@@ -145,31 +151,39 @@ function summary(kind: Kind, r: Row) {
 
 const PUBLISHED = "Status eq 'Published'";
 
-// Palettes are public on the site, so their MCP sample is featured-first then
-// filled toward this cap. Languages and art styles instead sample to the WHOLE
-// featured set (no cap), so the portion is identical in the website teaser and
-// the MCP — the owner curates its size via the featured flag.
-const SAMPLE_CAP = 40;
-
 const byEntityId = (a: Row, b: Row) =>
   a.entity_id < b.entity_id ? -1 : a.entity_id > b.entity_id ? 1 : 0;
 
 /** Gate: which published rows may this tier see? */
 async function visibleRows(kind: Kind, tier: Tier): Promise<Row[]> {
   const rows = (await readAll(SET[kind], PUBLISHED)).filter((r) => str(r.fields?.name));
+  // Palettes are public everywhere — the site shows them all, so the MCP does
+  // too (no cap, no sign-in gate), for both tiers.
+  if (kind === "palette") return rows;
   if (tier === "full") return rows;
-  // The anonymous sample is a fixed, owner-curated portion. Sorting by
-  // entity_id PINS it: the same query always yields the same slice, so a
-  // patient anonymous caller can't page past it, and the website teaser and
-  // the MCP show the identical portion (ARN-360). Languages and art styles
-  // sample to the featured set; palettes are public on the site, so their
-  // sample is featured-first then filled to the cap.
-  const featured = rows.filter(isFeatured).sort(byEntityId);
-  if (kind === "palette") {
-    const rest = rows.filter((r) => !isFeatured(r)).sort(byEntityId);
-    return [...featured, ...rest].slice(0, SAMPLE_CAP);
-  }
-  return featured;
+  // The anonymous portion for languages and art styles is the owner-curated
+  // featured set, sorted by entity_id so it is a fixed slice a patient caller
+  // can't page past, and byte-for-byte identical to every other anonymous
+  // surface (they all filter by featuredIds()).
+  return rows.filter(isFeatured).sort(byEntityId);
+}
+
+/**
+ * The ONE source of truth for the anonymous "portion" of a kind: the set of
+ * published entity_ids a signed-out visitor may see. Featured for languages and
+ * art styles; every published id for palettes (public). Every anonymous-facing
+ * surface — the website pages, its search/vectors APIs, the studio/compare
+ * tools, and the MCP — filters by this set, so the portion can never diverge.
+ */
+export async function featuredIds(kind: Kind): Promise<Set<string>> {
+  const rows = await readAll(SET[kind], PUBLISHED);
+  if (kind === "palette") return new Set(rows.map((r) => r.entity_id));
+  return new Set(rows.filter(isFeatured).map((r) => r.entity_id));
+}
+
+/** May a signed-out visitor see this specific published id? Palettes: always. */
+export async function anonMaySee(kind: Kind, id: string): Promise<boolean> {
+  return (await featuredIds(kind)).has(id);
 }
 
 // --- describe_catalog: the agent's map --------------------------------------

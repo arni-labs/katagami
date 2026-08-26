@@ -12,6 +12,8 @@ import {
   parseJson,
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { featuredIds } from "@/lib/catalog";
 import { readableTextColor } from "@/lib/shadcn-export";
 import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
@@ -76,8 +78,20 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
     listArtStyles().catch(() => []),
   ]);
   const palOpts = toPaletteOpts([pal]);
-  const langOpts = toLanguageOpts(languages);
-  const artOpts = toArtOpts(artStyles);
+  let langOpts = toLanguageOpts(languages);
+  let artOpts = toArtOpts(artStyles);
+
+  // ARN-385: this palette page stays public, but its embedded InlineRemix
+  // language + art-style pickers must withhold the non-featured portion from a
+  // signed-out visitor. Filter the DATA before it reaches the client component.
+  if (!(await hasFullGalleryAccess())) {
+    const [languageIds, artIds] = await Promise.all([
+      featuredIds("language"),
+      featuredIds("art_style"),
+    ]);
+    langOpts = langOpts.filter((o) => languageIds.has(o.id));
+    artOpts = artOpts.filter((o) => artIds.has(o.id));
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:py-10">

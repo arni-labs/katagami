@@ -1,4 +1,6 @@
 import { listTaxonomies, listDesignLanguages } from "@/lib/odata";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { featuredIds } from "@/lib/catalog";
 import { TaxonomyClusterView } from "@/components/taxonomy-cluster-view";
 import { PageHero, Marker } from "@/components/page-hero";
 import { StickyNote, Stamp } from "@/components/scrapbook";
@@ -29,6 +31,13 @@ export default async function TaxonomyPage() {
     languages = await listDesignLanguages("Status eq 'Published'");
   } catch {
     // keep empty
+  }
+
+  // ARN-385: a signed-out visitor's taxonomy map counts only the anonymous
+  // featured portion — the same set every other anon surface shows.
+  if (!(await hasFullGalleryAccess())) {
+    const ids = await featuredIds("language");
+    languages = languages.filter((l) => ids.has(l.entity_id));
   }
 
   return (

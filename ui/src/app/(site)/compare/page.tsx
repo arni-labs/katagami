@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getDesignLanguage, listDesignLanguages, parseJson } from "@/lib/odata";
-import { canViewNonPublished } from "@/lib/entity-visibility";
+import { canViewNonPublished, hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { anonMaySee, featuredIds } from "@/lib/catalog";
 import { SpecPanel } from "@/components/spec-panel";
 import { EmbodimentViewer } from "@/components/embodiment-viewer";
 import { CompareSelector } from "@/components/compare-selector";
@@ -29,6 +30,17 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
     !(await canViewNonPublished())
   ) {
     notFound();
+  }
+
+  // ARN-385: a signed-out visitor may compare only languages in the anonymous
+  // featured portion — a guessed non-featured (but Published) id must 404, the
+  // same way the selector below only offers featured languages to anon.
+  if (!(await hasFullGalleryAccess())) {
+    const [aOk, bOk] = await Promise.all([
+      anonMaySee("language", idA),
+      anonMaySee("language", idB),
+    ]);
+    if (!aOk || !bOk) notFound();
   }
 
   const sides = [
@@ -284,6 +296,13 @@ export default async function ComparePage({
     languages = await listDesignLanguages("Status eq 'Published'");
   } catch {
     // keep empty
+  }
+
+  // ARN-385: a signed-out visitor's selector offers only the anonymous featured
+  // portion — the same set the by-id comparison gate above enforces.
+  if (!(await hasFullGalleryAccess())) {
+    const ids = await featuredIds("language");
+    languages = languages.filter((l) => ids.has(l.entity_id));
   }
 
   return (

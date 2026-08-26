@@ -1,8 +1,9 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
-import { countArtStyles, listFeaturedArtStyles, pageArtStyles } from "@/lib/odata";
+import { countArtStyles, listArtStyles, pageArtStyles } from "@/lib/odata";
 import { toArtStyleItem } from "@/lib/lane-items";
+import { featuredIds } from "@/lib/catalog";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { InfiniteArtStyles } from "@/components/infinite-galleries";
 import { ArtStyleCard } from "@/components/art-style-card";
@@ -61,11 +62,18 @@ const LANE_GRID =
 // newest-first filler, no "load more" pagination. Search and paging stay behind
 // sign-in. The same gate is enforced in the gallery server actions.
 async function FeaturedArtStyleShelf() {
-  const [total, featuredRows] = await Promise.all([
+  // ARN-385: the anonymous shelf is the WHOLE featured portion, read the same
+  // uncapped way the MCP and ⌘K index read it — listArtStyles() (fully
+  // paginated) filtered by the featuredIds() primitive — so it can never lag
+  // behind them the way the older capped listFeaturedArtStyles() could.
+  const [total, allRows, featuredSet] = await Promise.all([
     cachedArtStyleCount(),
-    listFeaturedArtStyles().catch(() => []),
+    listArtStyles().catch(() => []),
+    featuredIds("art_style"),
   ]);
-  const featured = featuredRows.map(toArtStyleItem);
+  const featured = allRows
+    .filter((r) => featuredSet.has(r.entity_id))
+    .map(toArtStyleItem);
   const shown = featured.length;
   return (
     <div className="space-y-10">
