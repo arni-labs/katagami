@@ -8,7 +8,8 @@ import {
 } from "@/lib/odata";
 import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
-import { canViewNonPublished } from "@/lib/entity-visibility";
+import { canViewNonPublished, hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { anonMaySee } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,20 @@ export async function GET(req: NextRequest) {
     );
     if (!allPublished && !(await canViewNonPublished())) {
       return new Response("not found\n", { status: 404 });
+    }
+
+    // ARN-385: even when every lane is Published, a signed-out visitor may
+    // compose a brief only from the anonymous featured portion of the language
+    // and art style (the palette stays public). Same featuredIds() primitive as
+    // the gallery/MCP so the visible set can never diverge.
+    if (!(await hasFullGalleryAccess())) {
+      const [languageOk, artOk] = await Promise.all([
+        anonMaySee("language", uiId),
+        anonMaySee("art_style", artId),
+      ]);
+      if (!languageOk || !artOk) {
+        return new Response("not found\n", { status: 404 });
+      }
     }
 
     const brief = buildRemixBrief({

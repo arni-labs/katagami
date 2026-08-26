@@ -84,10 +84,10 @@ export async function listEntities(id: Identity, set: string, filter?: string): 
   let url: string | null = `${config.temperUrl}/tdata/${set}?${filterQ}$top=500`;
   const out: EntityRow[] = [];
   const seen = new Set<string>();
-  // 200 pages × 500 = 100k, far above any real set. Reaching it, or seeing a
-  // repeated nextLink, is a runaway — throw rather than return a partial or
-  // duplicated set as if it were the whole catalog.
-  const MAX_PAGES = 200;
+  // The repeated-nextLink guard is the real loop protection; this ceiling is a
+  // runaway backstop set far above any real set, so it never rejects valid
+  // pagination. Throw at it rather than return a partial or duplicated set.
+  const MAX_PAGES = 100_000;
   let pages = 0;
   while (url) {
     if (pages++ >= MAX_PAGES) throw new TemperError(`List ${set} exceeded ${MAX_PAGES} pages`, 500);
@@ -99,6 +99,10 @@ export async function listEntities(id: Identity, set: string, filter?: string): 
     if (!Array.isArray(body.value)) throw new TemperError(`List ${set} returned no value array`, 502);
     out.push(...body.value);
     const next = body["@odata.nextLink"];
+    // A present-but-non-string nextLink would end paging early and truncate.
+    if (next !== undefined && (typeof next !== "string" || next === "")) {
+      throw new TemperError(`List ${set} returned an invalid nextLink`, 502);
+    }
     // nextLink is relative to the request URI — resolve spec-correct, not by
     // prefixing the origin (which drops /tdata and 404s on page 2).
     url = next ? new URL(next, current).toString() : null;

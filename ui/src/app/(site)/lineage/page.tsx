@@ -1,4 +1,6 @@
 import { listDesignLanguages, parseJson } from "@/lib/odata";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { featuredIds } from "@/lib/catalog";
 import { LineageGraph } from "@/components/lineage-graph";
 import { PageHero, Marker } from "@/components/page-hero";
 import {
@@ -32,6 +34,14 @@ export default async function LineagePage({
         </StickyNote>
       </div>
     );
+  }
+
+  // ARN-385: a signed-out visitor sees a family tree of only the anonymous
+  // featured portion — the same set every other anon surface shows. Filter the
+  // data before it is graphed; nodes outside the portion simply do not appear.
+  if (!(await hasFullGalleryAccess())) {
+    const ids = await featuredIds("language");
+    languages = languages.filter((l) => ids.has(l.entity_id));
   }
 
   // Lineage kind and generation are DERIVED from the parent graph — the single

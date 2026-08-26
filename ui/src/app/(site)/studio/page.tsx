@@ -6,6 +6,8 @@ import {
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { getUser } from "@/lib/user-auth";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { featuredIds } from "@/lib/catalog";
 import Link from "next/link";
 import { PageHero, Marker } from "@/components/page-hero";
 import { StudioClient } from "@/components/remix/studio-client";
@@ -28,9 +30,21 @@ export default async function StudioPage() {
       listRemixes("Status eq 'Saved'").catch(() => []),
     ]);
 
-  const ui = toLanguageOpts(languages);
+  let ui = toLanguageOpts(languages);
   const pal = toPaletteOpts(palettes);
-  const art = toArtOpts(artStyles);
+  let art = toArtOpts(artStyles);
+
+  // ARN-385: a signed-out visitor may pick only the anonymous featured portion
+  // of languages and art styles (palettes stay public). Filter the DATA before
+  // it reaches the client StudioClient — never rely on client-side hiding.
+  if (!(await hasFullGalleryAccess())) {
+    const [languageIds, artIds] = await Promise.all([
+      featuredIds("language"),
+      featuredIds("art_style"),
+    ]);
+    ui = ui.filter((o) => languageIds.has(o.id));
+    art = art.filter((o) => artIds.has(o.id));
+  }
 
   // "Your mixes" means yours: creator-attributed remixes of the signed-in
   // human, matched on the stable Google subject id (emails change hands;

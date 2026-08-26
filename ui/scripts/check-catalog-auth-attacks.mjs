@@ -119,14 +119,14 @@ async function readBearer(token, ctx = { generation: 1, grantActive: true }) {
 
 const required = [
   [
-    "verifier requires MCP audience",
+    "verifier requires MCP audience (this resource only, not dev-adapter extras)",
     auth,
-    /audience: allowedAudiences\(\)/,
+    /if \(!audienceMatches\(payload\.aud\)\) return null/,
   ],
   [
-    "verifier requires exp and sub",
+    "verifier requires exp, sub, aud, and auth_generation",
     auth,
-    /requiredClaims: \["exp", "sub"\]/,
+    /requiredClaims: \["exp", "sub", "aud", "auth_generation"\]/,
   ],
   [
     "verifier rejects any typ (authorization codes)",
