@@ -1,6 +1,6 @@
 // Language-detail preview contract (ARN-376): the embodiment iframe is a
-// screenshot card, not a Polaroid sticker. Caption and 3px-pill Open full
-// must not return.
+// screenshot card, not a Polaroid sticker. Caption, Open full overlay, and
+// 3px pills must not return (curator order: previews carry no chrome).
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -29,14 +29,16 @@ const required = [
     (src) => !/<EmbodimentTabs\b[^>]*\bslug=/.test(src),
   ],
   [
-    "Open full overlay uses radius 0, not a 3px pill",
+    "no overlay chrome on the preview",
     viewer,
-    (src) => src.includes("rounded-none") && !src.includes("rounded-[3px]"),
-  ],
-  [
-    "Open full overlay stays on the preview",
-    viewer,
-    (src) => /absolute right-2 top-2/.test(src) && /open full/.test(src),
+    // No anchors/buttons at all inside the viewer (it renders only the sandboxed
+    // iframe + measurement scaffolding), so overlay chrome cannot return under
+    // any wording or icon.
+    (src) =>
+      !/open full/i.test(src) &&
+      !src.includes("ExternalLink") &&
+      !/<a\s/.test(src) &&
+      !/<button\s/.test(src),
   ],
 ];
 
