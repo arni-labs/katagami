@@ -263,6 +263,7 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
 // import and execute the real code (not a copy) on any Node version. Re-exported
 // here so existing importers keep their path.
 import { normalizeDesignLanguageRow } from "@/lib/design-language-row.mjs";
+import { isFeaturedRecord } from "@/lib/featured.mjs";
 export { normalizeDesignLanguageRow };
 
 function parseEntitySetId(
@@ -840,6 +841,7 @@ export interface LaneEntity {
   entity_id: string;
   status: string;
   fields: Record<string, string | undefined>;
+  booleans?: Record<string, unknown>;
 }
 
 // Field shapes are advisory — fields arrive as snake_case action params.
@@ -883,7 +885,13 @@ export function normalizeLaneRow(raw: Record<string, unknown>, set: string): Lan
     const row = raw as unknown as LaneEntity;
     const f = normalizeLaneFields(row.fields as Record<string, unknown>);
     const status = row.status ?? f.State ?? f.Status ?? f.state ?? f.status ?? "";
-    return { entity_id: row.entity_id || f.Id || "", status, fields: f };
+    const booleans = (raw as { booleans?: Record<string, unknown> }).booleans;
+    return {
+      entity_id: row.entity_id || f.Id || "",
+      status,
+      fields: f,
+      ...(booleans ? { booleans } : {}),
+    };
   }
   const rawFields: Record<string, unknown> = {};
   let entityId = "";
@@ -1159,31 +1167,16 @@ export const countWritingStyles = () => countLane("WritingStyles", []);
 
 // ── Curator's picks (owner-pinned `featured`) ────────────────────────────────
 // Keyset paging is newest-first, so pinned picks would otherwise scatter through
-// the list. Fetch the (small) set of featured items separately so the galleries
-// can lead with them. Bounded + filtered defensively: a re-check on the rows
-// means a non-honored boolean filter can never pin a non-featured item (worst
-// case: a pick is simply not pinned — never wrong, just unpinned).
+// the list. Fetch the featured set separately so the galleries can lead with
+// them. Same contract as the MCP catalog (ARN-360): the featured portion is
+// UNCapped — $top=500 is a page size, and we follow @odata.nextLink to
+// completion. A fields/booleans re-check (isFeaturedRecord, the catalog
+// predicate) means a non-honored boolean filter can never pin a non-featured
+// item (worst case: a pick is simply not pinned — never wrong, just unpinned).
 
-function isTruthyFlag(v: unknown): boolean {
-  return (
-    v === true ||
-    v === 1 ||
-    (typeof v === "string" && /^(true|1)$/i.test(v.trim()))
-  );
-}
-
-function isDesignLanguageFeatured(l: DesignLanguage): boolean {
-  const bag = l as unknown as Record<string, Record<string, unknown> | undefined>;
-  for (const b of [bag.booleans, bag.fields, bag.counters]) {
-    if (b && (isTruthyFlag(b.featured) || isTruthyFlag(b.Featured) || isTruthyFlag(b.isFeatured)))
-      return true;
-  }
-  return false;
-}
-
-function isLaneFeatured(e: LaneEntity): boolean {
-  return isTruthyFlag(e.fields.featured) || isTruthyFlag(e.fields.Featured);
-}
+// Page size matches catalog.readAll. Not a set cap — collectODataPages follows
+// nextLink so a featured shelf past 100/500 is the same portion MCP shows.
+const FEATURED_PAGE = 500;
 
 // Curators set a `display_order` alongside `featured`; lower comes first.
 function displayOrderOf(e: {
@@ -1198,48 +1191,40 @@ function displayOrderOf(e: {
   return Number.isNaN(n) ? 0 : n;
 }
 
-export async function listFeaturedDesignLanguages(
-  limit = 500,
-): Promise<DesignLanguage[]> {
+async function collectFeaturedRows(set: string): Promise<Record<string, unknown>[]> {
+  return collectODataPages<Record<string, unknown>>(
+    `${set}?$filter=Status eq 'Published' and featured eq true&$top=${FEATURED_PAGE}`,
+  );
+}
+
+export async function listFeaturedDesignLanguages(): Promise<DesignLanguage[]> {
   try {
-    const resp = await odata<{ value?: Record<string, unknown>[] }>(
-      `DesignLanguages?$filter=Status eq 'Published' and featured eq true&$top=${limit}`,
-    );
-    return (resp.value ?? [])
+    return (await collectFeaturedRows("DesignLanguages"))
+      .filter(isFeaturedRecord)
       .map(normalizeDesignLanguageRow)
-      .filter((l) => l.fields.name && isDesignLanguageFeatured(l))
+      .filter((l) => Boolean(l.fields.name))
       .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
   } catch {
     return [];
   }
 }
 
-export async function listFeaturedPaletteSystems(
-  limit = 100,
-): Promise<LaneEntity[]> {
+export async function listFeaturedPaletteSystems(): Promise<LaneEntity[]> {
   try {
-    const resp = await odata<{ value?: Record<string, unknown>[] }>(
-      `PaletteSystems?$filter=Status eq 'Published' and featured eq true&$top=${limit}`,
-    );
-    return (resp.value ?? [])
+    return (await collectFeaturedRows("PaletteSystems"))
+      .filter(isFeaturedRecord)
       .map((r) => normalizeLaneRow(r, "PaletteSystems"))
-      .filter(isLaneFeatured)
       .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
   } catch {
     return [];
   }
 }
 
-export async function listFeaturedArtStyles(
-  limit = 100,
-): Promise<LaneEntity[]> {
+export async function listFeaturedArtStyles(): Promise<LaneEntity[]> {
   try {
-    const resp = await odata<{ value?: Record<string, unknown>[] }>(
-      `ArtStyles?$filter=Status eq 'Published' and featured eq true&$top=${limit}`,
-    );
-    return (resp.value ?? [])
+    return (await collectFeaturedRows("ArtStyles"))
+      .filter(isFeaturedRecord)
       .map((r) => normalizeLaneRow(r, "ArtStyles"))
-      .filter(isLaneFeatured)
       .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
   } catch {
     return [];

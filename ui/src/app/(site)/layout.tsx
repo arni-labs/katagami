@@ -19,6 +19,7 @@ import {
   parseJson,
 } from "@/lib/odata";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { isFeaturedRecord } from "@/lib/featured.mjs";
 
 /** The signature trio, in registration-bar order. */
 const REGISTRATION_INKS = [
@@ -39,16 +40,6 @@ interface TokensLite {
 // the featured portion (identical to the /art-styles + /language teasers and the
 // read MCP), so ⌘K can't enumerate the full catalog from page source. Palettes
 // are public. Signed-in visitors get everything. Cached per tier.
-const isSearchFeatured = (r: { fields?: Record<string, unknown> }) => {
-  const f = r.fields ?? {};
-  return (
-    f.featured === true ||
-    f.featured === "true" ||
-    f.Featured === true ||
-    f.Featured === "true"
-  );
-};
-
 const buildSearchIndex = unstable_cache(
   async (tier: "sample" | "full"): Promise<PaletteIndexItem[]> => {
     const items: PaletteIndexItem[] = [];
@@ -61,7 +52,7 @@ const buildSearchIndex = unstable_cache(
     const languages = await listDesignLanguages("Status eq 'Published'");
     for (const lang of languages) {
       if (!lang.fields.name) continue;
-      if (featuredOnly && !isSearchFeatured(lang)) continue;
+      if (featuredOnly && !isFeaturedRecord(lang)) continue;
       const colors = parseJson<TokensLite>(lang.fields.tokens)?.colors ?? {};
       const swatch = [colors.primary, colors.secondary, colors.accent].filter(
         (c): c is string => Boolean(c),
@@ -99,7 +90,7 @@ const buildSearchIndex = unstable_cache(
   try {
     for (const style of await listArtStyles()) {
       if (!style.fields.name) continue;
-      if (featuredOnly && !isSearchFeatured(style)) continue;
+      if (featuredOnly && !isFeaturedRecord(style)) continue;
       items.push({
         id: style.entity_id,
         kind: "art-style",
@@ -133,7 +124,7 @@ const buildSearchIndex = unstable_cache(
 
     return items;
   },
-  ["site-search-index-v2"],
+  ["site-search-index-v3"],
   { revalidate: 60 },
 );
 

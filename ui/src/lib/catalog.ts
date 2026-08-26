@@ -1,4 +1,5 @@
 import "server-only";
+import { isFeaturedRecord as isFeatured } from "./featured.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
 // commons through this module, so "what an identity may see" is defined once.
@@ -122,15 +123,6 @@ function jsonArr(v: unknown): string[] {
   }
   return [];
 }
-function truthy(v: unknown): boolean {
-  return v === true || v === "true" || v === 1 || v === "1";
-}
-function isFeatured(r: Row): boolean {
-  const f = r.fields ?? {};
-  const b = r.booleans ?? {};
-  return truthy(f.featured) || truthy(f.Featured) || truthy(b.featured) || truthy(b.Featured);
-}
-
 /** Compact, agent-facing shape for a catalog item. */
 function summary(kind: Kind, r: Row) {
   const f = r.fields ?? {};
