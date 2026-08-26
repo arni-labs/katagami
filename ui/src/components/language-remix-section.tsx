@@ -65,7 +65,12 @@ function RemixControlsResolved({
   );
 }
 
-/** Live leaf behind Suspense. Exported so tests await this loader, not a settled catalogs prop. */
+/**
+ * Live Suspense leaf — the same child page.tsx reaches through
+ * LanguageDetailRemix({ lang }). Pending is RemixControlsPulse (hold 2).
+ * [] / throw resolve to RemixControlsDark here, so they do not keep the
+ * pulse fallback (hold 3). Do not await getFileText after empty catalogs.
+ */
 export async function LanguageRemixControls({ lang }: { lang: DesignLanguage }) {
   const catalogs = await loadLanguageRemixCatalogs();
   if (!canRemixLanguage(lang, catalogs.palettes, catalogs.arts)) {
@@ -83,21 +88,13 @@ export async function LanguageRemixControls({ lang }: { lang: DesignLanguage }) 
 }
 
 /**
- * Live page tree. Lang only — LanguageDetailPage does not await catalogs.
- * Chrome is sync (remix lane is in the first HTML flush). Catalogs load
- * behind Suspense. Pending pulses the preview well, not two h-72.
- * `catalogs` is test-only so [] / throw / Ember Signal render the same
- * tree the page mounts, not a settled helper the live route never uses.
+ * Live slot page.tsx mounts: `<LanguageDetailRemix lang={lang} />`.
+ * Sync chrome (remix lane) so hero/spec already in the document while
+ * catalogs suspend inside. No catalogs prop — that helper is not the
+ * live tree. Inner Suspense pulses; [] / throw do not share a page-level
+ * pulse (that flashes then goes dark).
  */
-export function LanguageDetailRemix({
-  lang,
-  catalogs,
-  initialPreviewHtml = "",
-}: {
-  lang: DesignLanguage;
-  catalogs?: RemixCatalogs;
-  initialPreviewHtml?: string;
-}) {
+export function LanguageDetailRemix({ lang }: { lang: DesignLanguage }) {
   if (!languageHasRemixComposition(lang)) return null;
   return (
     <section>
@@ -106,17 +103,9 @@ export function LanguageDetailRemix({
         try a remix
       </SectionHeading>
       <RemixLaneBlurb name={lang.fields.name || "Untitled"} />
-      {catalogs === undefined ? (
-        <Suspense fallback={<RemixControlsPulse />}>
-          <LanguageRemixControls lang={lang} />
-        </Suspense>
-      ) : (
-        <RemixControlsResolved
-          lang={lang}
-          catalogs={catalogs}
-          initialPreviewHtml={initialPreviewHtml}
-        />
-      )}
+      <Suspense fallback={<RemixControlsPulse />}>
+        <LanguageRemixControls lang={lang} />
+      </Suspense>
     </section>
   );
 }

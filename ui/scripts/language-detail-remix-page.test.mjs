@@ -192,7 +192,13 @@ assert.match(
   streamSrc,
   /Boolean\(lang\.fields\.landing_file_id\) && Boolean\(lang\.fields\.dashboard_file_id\)/,
 );
-assert.match(remixSrc, /export function LanguageDetailRemix\(/);
+assert.match(remixSrc, /export function LanguageDetailRemix\(\{ lang \}/);
+assert.doesNotMatch(remixSrc, /LanguageRemixPageTree/);
+assert.doesNotMatch(
+  remixSrc,
+  /catalogs\?: RemixCatalogs/,
+  "live slot is lang only — catalogs prop is not what page.tsx mounts",
+);
 assert.doesNotMatch(
   remixSrc,
   /export async function LanguageDetailRemix/,
@@ -355,97 +361,52 @@ function h72Count(html) {
   return (html.match(/h-72/g) || []).length;
 }
 
-/** The live page tree: LanguageDetailRemix, not a settled island. */
-function renderPageTree(language, nextCatalogs, initialPreviewHtml) {
-  const props =
-    nextCatalogs === undefined
-      ? { lang: language }
-      : { lang: language, catalogs: nextCatalogs, initialPreviewHtml };
+/** Live slot only — the same props page.tsx mounts. No catalogs helper. */
+function renderLiveSlot(mod, language) {
   return renderToStaticMarkup(
-    React.createElement(treeMod.LanguageDetailRemix, props),
+    React.createElement(mod.LanguageDetailRemix, { lang: language }),
   );
 }
 
-const pendingHtml = renderPageTree(bluet);
-assert.match(pendingHtml, /remix lane/, "replay 1: live lang-only tree includes remix lane");
-assert.match(pendingHtml, /animate-pulse/, "2: Bluet pending pulses");
+const pendingHtml = renderLiveSlot(treeMod, bluet);
+assert.match(pendingHtml, /remix lane/, "live LanguageDetailRemix({ lang }) includes remix lane");
+assert.match(pendingHtml, /animate-pulse/, "hold 2: live pending pulses");
 assert.match(pendingHtml, /aspect-\[16\/10\]/, "pending pulse is the preview well");
 assert.equal(h72Count(pendingHtml), 0, "pending must not be two h-72");
 assert.doesNotMatch(pendingHtml, /Ember Signal/);
 
-const replayMain = renderToStaticMarkup(
+const heroMod = loadTsx(path.join(here, "../src/components/page-hero.tsx"));
+const pagePending = renderToStaticMarkup(
   React.createElement(
     "main",
     null,
-    React.createElement("h1", null, "Bluet"),
+    React.createElement(heroMod.PageHero, {
+      title: "Bluet",
+      description: "A portable design language for agents.",
+    }),
+    React.createElement(
+      "section",
+      null,
+      React.createElement("h2", { "data-eyebrow": "the spec" }, "specification"),
+    ),
     React.createElement(treeMod.LanguageDetailRemix, { lang: bluet }),
     React.createElement("footer", null, "site footer"),
   ),
 );
-assert.match(replayMain, /<h1>Bluet<\/h1>/);
-assert.match(replayMain, /remix lane/, "SSR main is remix lane, not two h-72 then footer");
-assert.match(replayMain, /<footer>site footer<\/footer>/);
-assert.equal(h72Count(replayMain), 0);
+assert.match(pagePending, /<h1[^>]*>Bluet<\/h1>/, "catalogs in flight: hero is already in the document");
+assert.match(pagePending, /specification/, "catalogs in flight: spec is already in the document");
+assert.match(pagePending, /remix lane/);
+assert.match(pagePending, /animate-pulse/, "hold 2: remix pending pulses on the live page tree");
+assert.match(pagePending, /<footer>site footer<\/footer>/);
+assert.equal(h72Count(pagePending), 0, "live page tree is not two h-72 then footer");
 
-const emptyHtml = renderPageTree(bluet, emptyCatalogs);
-assert.match(emptyHtml, /remix lane/, "[] keeps chrome — no collapse");
-assert.doesNotMatch(emptyHtml, /animate-pulse/, "[] is dark, not a pulse flash");
-assert.equal(h72Count(emptyHtml), 0);
-assert.doesNotMatch(emptyHtml, /Ember Signal/);
-assert.doesNotMatch(emptyHtml, /data-remix="inline"/);
-
-const throwHtml = renderPageTree(bluet, thrown);
-assert.match(throwHtml, /remix lane/);
-assert.doesNotMatch(throwHtml, /animate-pulse/);
-assert.equal(h72Count(throwHtml), 0);
-
-const noLandHtml = renderPageTree(noLanding);
+const noLandHtml = renderLiveSlot(treeMod, noLanding);
 assert.equal(noLandHtml, "");
 assert.equal(h72Count(noLandHtml), 0);
 
-const landingOnlyHtml = renderPageTree(landingOnly);
+const landingOnlyHtml = renderLiveSlot(treeMod, landingOnly);
 assert.equal(landingOnlyHtml, "");
 assert.equal(h72Count(landingOnlyHtml), 0);
-
-const laneHtml = renderPageTree(bluet, catalogs, landingHtml);
-assert.match(laneHtml, /remix lane/);
-assert.match(
-  laneHtml,
-  /Ember Signal/,
-  "Ember Signal is in the page tree even when it is not the first palette",
-);
-assert.match(laneHtml, /#C8442A/);
-assert.match(
-  laneHtml,
-  /--primary:#C8442A/,
-  "Ember-not-first binds --primary in the preview, not palettes[0] teal",
-);
-assert.doesNotMatch(
-  laneHtml,
-  /id="remix-theme">[^<]*--primary:#007C78/,
-  "teal is in the catalog, not the bound remix-theme",
-);
-assert.match(
-  laneHtml,
-  /id="remix-theme">[^<]*--primary:#C8442A/,
-  "remix-theme binds --primary to the contrast pick (Ember)",
-);
-assert.match(laneHtml, /<iframe/);
-assert.equal(h72Count(laneHtml), 0);
-
-const emberSelected = lang({
-  name: "Bluet",
-  landing_file_id: "fl-land",
-  dashboard_file_id: "fl-dash",
-  default_palette_id: "ps-ember",
-});
-const emberLane = renderPageTree(emberSelected, catalogs, landingHtml);
-assert.match(emberLane, /Ember Signal/);
-assert.match(
-  emberLane,
-  /--primary:#C8442A/,
-  "when Ember Signal is the language default, --primary is its accent",
-);
 
 const pulse = renderToStaticMarkup(React.createElement(treeMod.RemixControlsPulse));
 const dark = renderToStaticMarkup(React.createElement(treeMod.RemixControlsDark));
@@ -584,6 +545,11 @@ const emberLive = loadLiveTree(
     async () => landingHtml,
   ),
 );
+const emberPending = renderLiveSlot(emberLive, bluet);
+assert.match(emberPending, /remix lane/);
+assert.match(emberPending, /animate-pulse/, "hold 2: live slot pulses while catalogs load");
+assert.equal(h72Count(emberPending), 0);
+
 const liveControls = renderToStaticMarkup(
   await emberLive.LanguageRemixControls({ lang: bluet }),
 );
@@ -592,6 +558,17 @@ assert.match(liveControls, /#C8442A/);
 assert.match(liveControls, /--primary:#C8442A/, "live loader iframe bind is Ember, not palettes[0]");
 assert.match(liveControls, /<iframe/);
 assert.doesNotMatch(liveControls, /id="remix-theme">[^<]*--primary:#007C78/);
+
+const emberSelected = lang({
+  name: "Bluet",
+  landing_file_id: "fl-land",
+  dashboard_file_id: "fl-dash",
+  default_palette_id: "ps-ember",
+});
+const emberDefault = renderToStaticMarkup(
+  await emberLive.LanguageRemixControls({ lang: emberSelected }),
+);
+assert.match(emberDefault, /--primary:#C8442A/);
 
 const themed = injectTheme(
   landingHtml,

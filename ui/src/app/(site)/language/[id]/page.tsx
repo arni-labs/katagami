@@ -360,9 +360,10 @@ export default async function LanguageDetailPage({
 
       <ModelProvenance raw={f.model_provenance} />
 
-      {/* Remix is not behind fallback={null} or the pending two h-72.
-          Catalogs load inside LanguageDetailRemix; this page does not
-          await them. Lineage / related keep fallback={null} (open leftover). */}
+      {/* Live remix slot. No page-level Suspense: LanguageDetailRemix is
+          sync chrome + an inner pulse around LanguageRemixControls, so
+          [] / throw do not ride a page pulse then go dark. This page
+          does not await catalogs. Lineage / related keep fallback={null}. */}
       <LanguageDetailRemix lang={lang} />
 
       <Suspense fallback={null}>
