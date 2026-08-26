@@ -1221,7 +1221,19 @@ export function themeOverrideStyle(
   return `<style id="remix-theme">:root{${decl.join(";")}}</style>`;
 }
 
-/** Inject the theme override just before </head> (or prepend if no head). */
+/**
+ * Last --primary in the document wins. Append so a landing :root
+ * (or a later warning yellow) cannot keep --primary:#FFD400 / #122A47
+ * after remix binds Ember.
+ */
+export function bindWinningRemixPrimary(html: string, accent?: string): string {
+  if (!html) return "";
+  const win = `<style id="remix-primary">:root{${remixPrimaryDecl(accent)}}</style>`;
+  if (html.includes("</body>")) return html.replace("</body>", `${win}</body>`);
+  return html + win;
+}
+
+/** Inject the theme override so remix --primary wins the cascade. */
 export function injectTheme(html: string, roles: Roles, hero?: string): string {
   if (!html) return "";
   const bound = bindLiteralHero(html, hero);
@@ -1230,7 +1242,10 @@ export function injectTheme(html: string, roles: Roles, hero?: string): string {
     hero,
     compositionBindDecls(bound, roles, hero),
   );
-  return bound.includes("</head>")
-    ? bound.replace("</head>", `${ov}</head>`)
-    : ov + bound;
+  const themed = bound.includes("</body>")
+    ? bound.replace("</body>", `${ov}</body>`)
+    : bound.includes("</head>")
+      ? bound.replace("</head>", `${ov}</head>`)
+      : bound + ov;
+  return bindWinningRemixPrimary(themed, roles.accent);
 }

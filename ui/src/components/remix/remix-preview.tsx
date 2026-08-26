@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ScaledFrame } from "@/components/scaled-frame";
 import {
+  bindWinningRemixPrimary,
   compositionBindDecls,
   injectTheme,
   remixPrimaryDecl,
@@ -88,7 +89,9 @@ export function RemixPreview({
     );
   }
 
-  const html = injectTheme(fresh, roles, hero);
+  // Winning --primary is the selected accent. Empty/failed HTML stays
+  // iframe-less; leftover 2 keeps --primary on the token node above.
+  const html = bindWinningRemixPrimary(injectTheme(fresh, roles, hero), roles.accent);
   return (
     <>
       {tokens}

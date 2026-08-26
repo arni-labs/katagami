@@ -65,7 +65,21 @@ const arts = [
     fields: { name: "Ink Wash", prompt_template: "paint {subject}" },
   },
 ];
+const yellowPalette = {
+  entity_id: "ps-yellow",
+  status: "Published",
+  fields: {
+    name: "Risograph Pull",
+    signature: JSON.stringify([{ hex: "#FFD400", name: "yellow" }]),
+    neutrals: JSON.stringify({}),
+    semantic: JSON.stringify({}),
+  },
+};
 const catalogs = { palettes: [otherPalette, emberPalette], arts };
+const liveShapedCatalogs = {
+  palettes: [otherPalette, yellowPalette, emberPalette],
+  arts,
+};
 const emptyCatalogs = { palettes: [], arts: [] };
 const landingHtml = `<!doctype html><html><head></head><body>
 <style>:root{--paper:#fff;--ink:#111;--primary:#122A47}</style>
@@ -123,6 +137,19 @@ assert.equal(
   ),
   "ps-other",
   "default_palette_id still wins when set",
+);
+assert.equal(
+  pickRemixPaletteId(
+    [
+      { id: "ps-other", roles: { accent: "#007C78" } },
+      { id: "ps-yellow", roles: { accent: "#FFD400" } },
+      { id: "ps-ember", roles: { accent: "#C8442A" } },
+    ],
+    undefined,
+    "#122A47",
+  ),
+  "ps-ember",
+  "live-shaped catalog: Ember, not contrast-max #FFD400",
 );
 
 const thrown = await resolveRemixCatalogs(
@@ -260,6 +287,16 @@ assert.match(
 );
 assert.match(
   previewSrc,
+  /bindWinningRemixPrimary/,
+  "remix-preview must own the winning iframe --primary — leftover 1",
+);
+assert.doesNotMatch(
+  fs.readFileSync(path.join(here, "../scripts/language-detail-remix-page.test.mjs"), "utf8"),
+  /InlineRemix: \(\{ palettes/,
+  "page-tree must not stub InlineRemix",
+);
+assert.match(
+  previewSrc,
   /prev\?\.url === compositionUrl && prev\.html/,
   "a failed client refetch must not wipe a good SSR srcDoc",
 );
@@ -303,6 +340,44 @@ function scrapbookStub() {
     WashiTape: () => null,
   };
 }
+
+const frameMod = loadTsx(path.join(here, "../src/components/scaled-frame.tsx"));
+const previewMod = loadTsx(path.join(here, "../src/components/remix/remix-preview.tsx"), {
+  "@/components/scaled-frame": frameMod,
+  "@/lib/remix-theme": await import("../src/lib/remix-theme.ts"),
+});
+const inlineMod = loadTsx(path.join(here, "../src/components/remix/inline-remix.tsx"), {
+  "next/link": {
+    default: ({ href, children }) => React.createElement("a", { href }, children),
+  },
+  "next/navigation": { useRouter: () => ({ refresh() {}, push() {} }) },
+  "@/components/remix/remix-preview": previewMod,
+  "@/components/remix/entity-picker": {
+    EntityPicker: ({ label, items, value }) =>
+      React.createElement(
+        "div",
+        { "data-picker": label },
+        items.find((it) => it.id === value)?.name,
+      ),
+  },
+  "@/components/scrapbook": { WashiTape: () => null },
+  "@/lib/remix-brief": { buildRemixBrief: () => "brief" },
+  "@/lib/remix-compositions": {
+    COMPOSITIONS: [
+      { key: "compositions.landing", name: "Landing" },
+      { key: "compositions.dashboard", name: "Dashboard" },
+    ],
+  },
+  "@/app/remix-actions": { saveRemix: async () => {} },
+  "@/lib/remix-theme": await import("../src/lib/remix-theme.ts"),
+  "@/lib/katagami-ui": {
+    KX_BTN_INK: "",
+    KX_BTN_PAPER: "",
+    KX_LABEL: "",
+  },
+  "@/lib/analytics": { trackCopy: () => {} },
+  "@/lib/remix-palette-pick": await import("../src/lib/remix-palette-pick.ts"),
+});
 
 const treeMod = loadTsx(
   path.join(here, "../src/components/language-remix-section.tsx"),
@@ -352,43 +427,7 @@ const treeMod = loadTsx(
           })),
     },
     "@/lib/language-detail-stream": streamForTree,
-    "@/components/remix/inline-remix": {
-      InlineRemix: ({ palettes, initial, initialPreviewHtml }) => {
-        const selected =
-          palettes.find(
-            (p) =>
-              p.id ===
-              pickRemixPaletteId(
-                palettes,
-                initial?.palId,
-                cssPrimaryHex(initialPreviewHtml),
-              ),
-          ) ?? palettes[0];
-        const accent = selected?.roles?.accent || "";
-        const themed = injectTheme("<style>:root{}</style>", { accent });
-        return React.createElement(
-          "div",
-          { "data-remix": "inline" },
-          React.createElement(
-            "ul",
-            { className: "sr-only" },
-            palettes.map((p) =>
-              React.createElement("li", { key: p.id }, p.name, " ", p.swatches?.[0]),
-            ),
-          ),
-          React.createElement("div", {
-            hidden: true,
-            dangerouslySetInnerHTML: { __html: themed },
-          }),
-          initialPreviewHtml
-            ? React.createElement("iframe", {
-                title: "Remix preview",
-                srcDoc: injectTheme(initialPreviewHtml, { accent }),
-              })
-            : null,
-        );
-      },
-    },
+    "@/components/remix/inline-remix": inlineMod,
     "@/components/remix/remix-lane-blurb": {
       RemixLaneBlurb: ({ name }) =>
         React.createElement("p", null, `Keep ${name} and swap a palette`),
@@ -475,6 +514,11 @@ function iframeSrcDoc(html) {
     .replace(/&quot;/g, '"');
 }
 
+function lastPrimary(html) {
+  const all = [...html.matchAll(/--primary:(#[0-9A-Fa-f]+)/g)].map((m) => m[1]);
+  return all.at(-1) ?? "";
+}
+
 function withoutSrOnly(html) {
   return html.replace(/<ul class="sr-only">[\s\S]*?<\/ul>/g, "");
 }
@@ -484,7 +528,7 @@ function themeNode(html) {
   return m?.[1] ?? "";
 }
 
-function loadLiveTree(odata, inlineRemix) {
+function loadLiveTree(odata) {
   return loadTsx(path.join(here, "../src/components/language-remix-section.tsx"), {
     "@/lib/odata": odata,
     "@/lib/remix-options": {
@@ -523,44 +567,7 @@ function loadLiveTree(odata, inlineRemix) {
           })),
     },
     "@/lib/language-detail-stream": streamForTree,
-    "@/components/remix/inline-remix": inlineRemix ?? {
-      InlineRemix: ({ palettes, initial, initialPreviewHtml }) => {
-        const selected =
-          palettes.find(
-            (p) =>
-              p.id ===
-              pickRemixPaletteId(
-                palettes,
-                initial?.palId,
-                cssPrimaryHex(initialPreviewHtml),
-              ),
-          ) ?? palettes[0];
-        const accent = selected?.roles?.accent || "";
-        return React.createElement(
-          "div",
-          { "data-remix": "inline" },
-          React.createElement(
-            "ul",
-            { className: "sr-only" },
-            palettes.map((p) =>
-              React.createElement("li", { key: p.id }, p.name, " ", p.swatches?.[0]),
-            ),
-          ),
-          React.createElement("div", {
-            hidden: true,
-            dangerouslySetInnerHTML: {
-              __html: injectTheme("<style>:root{}</style>", { accent }),
-            },
-          }),
-          initialPreviewHtml
-            ? React.createElement("iframe", {
-                title: "Remix preview",
-                srcDoc: injectTheme(initialPreviewHtml, { accent }),
-              })
-            : null,
-        );
-      },
-    },
+    "@/components/remix/inline-remix": inlineMod,
     "@/components/remix/remix-lane-blurb": {
       RemixLaneBlurb: ({ name }) =>
         React.createElement("p", null, `Keep ${name} and swap a palette`),
@@ -595,44 +602,6 @@ assert.doesNotMatch(emptyResolved, /data-remix="inline"/);
 assert.equal(h72Count(emptyResolved), 0);
 assert.equal(fileReads, 0, "live loader must not await getFileText after empty catalogs");
 
-const frameMod = loadTsx(path.join(here, "../src/components/scaled-frame.tsx"));
-const previewMod = loadTsx(path.join(here, "../src/components/remix/remix-preview.tsx"), {
-  "@/components/scaled-frame": frameMod,
-  "@/lib/remix-theme": await import("../src/lib/remix-theme.ts"),
-});
-const inlineMod = loadTsx(path.join(here, "../src/components/remix/inline-remix.tsx"), {
-  "next/link": {
-    default: ({ href, children }) => React.createElement("a", { href }, children),
-  },
-  "next/navigation": { useRouter: () => ({ refresh() {}, push() {} }) },
-  "@/components/remix/remix-preview": previewMod,
-  "@/components/remix/entity-picker": {
-    EntityPicker: ({ label, items, value }) =>
-      React.createElement(
-        "div",
-        { "data-picker": label },
-        items.find((it) => it.id === value)?.name,
-      ),
-  },
-  "@/components/scrapbook": { WashiTape: () => null },
-  "@/lib/remix-brief": { buildRemixBrief: () => "brief" },
-  "@/lib/remix-compositions": {
-    COMPOSITIONS: [
-      { key: "compositions.landing", name: "Landing" },
-      { key: "compositions.dashboard", name: "Dashboard" },
-    ],
-  },
-  "@/app/remix-actions": { saveRemix: async () => {} },
-  "@/lib/remix-theme": await import("../src/lib/remix-theme.ts"),
-  "@/lib/katagami-ui": {
-    KX_BTN_INK: "",
-    KX_BTN_PAPER: "",
-    KX_LABEL: "",
-  },
-  "@/lib/analytics": { trackCopy: () => {} },
-  "@/lib/remix-palette-pick": await import("../src/lib/remix-palette-pick.ts"),
-});
-
 const emberLive = loadLiveTree(
   remixOdata(
     {
@@ -641,7 +610,6 @@ const emberLive = loadLiveTree(
     },
     async () => landingHtml,
   ),
-  inlineMod,
 );
 const emberPending = renderLiveSlot(emberLive, bluet);
 assert.match(emberPending, /remix lane/);
@@ -654,18 +622,54 @@ const liveControls = renderToStaticMarkup(
 );
 const liveSrcDoc = iframeSrcDoc(liveControls);
 assert.match(liveControls, /<iframe/, "LanguageDetailRemix live leaf mounts an iframe");
+assert.equal(
+  lastPrimary(liveSrcDoc),
+  "#C8442A",
+  "iframe srcDoc binds Ember-not-first — sr-only #C8442A is not enough",
+);
 assert.match(
   liveSrcDoc,
   /--primary:#C8442A/,
   "iframe srcDoc binds Ember-not-first — sr-only #C8442A is not enough",
 );
 assert.doesNotMatch(liveSrcDoc, /--primary:#007C78/);
+assert.doesNotMatch(
+  liveSrcDoc,
+  /--primary:#FFD400/,
+  "live Bluet must not bind #FFD400 as the remix primary",
+);
 assert.match(withoutSrOnly(liveControls), /--primary:#C8442A/);
 assert.match(
   themeNode(liveControls),
   /--primary:#C8442A/,
   "settled token node keeps --primary, not accent-only",
 );
+
+const yellowLive = loadLiveTree(
+  remixOdata(
+    {
+      listPaletteSystems: async () => liveShapedCatalogs.palettes,
+      listArtStyles: async () => liveShapedCatalogs.arts,
+    },
+    async () => landingHtml,
+  ),
+);
+const yellowControls = renderToStaticMarkup(
+  await yellowLive.LanguageRemixControls({ lang: bluet }),
+);
+const yellowSrcDoc = iframeSrcDoc(yellowControls);
+assert.equal(lastPrimary(yellowSrcDoc), "#C8442A");
+assert.match(
+  yellowSrcDoc,
+  /--primary:#C8442A/,
+  "live-shaped [teal, yellow, ember] iframe binds Ember, not #FFD400",
+);
+assert.doesNotMatch(
+  yellowSrcDoc,
+  /--primary:#FFD400/,
+  "live Bluet must not bind #FFD400 as the remix primary",
+);
+assert.match(withoutSrOnly(yellowControls), /--primary:#C8442A/);
 
 const emberSelected = lang({
   name: "Bluet",
@@ -711,7 +715,6 @@ const emptyFileLive = loadLiveTree(
     },
     async () => "",
   ),
-  inlineMod,
 );
 const emptyFileHtml = renderToStaticMarkup(
   await emptyFileLive.LanguageRemixControls({ lang: bluet }),
