@@ -250,6 +250,16 @@ export function InlineRemix({
 
   return (
     <div className="space-y-4">
+      <ul className="sr-only">
+        {palettes.map((p) => (
+          <li key={p.id}>
+            {p.name} {(p.swatches ?? []).join(" ")}
+          </li>
+        ))}
+        {art.map((a) => (
+          <li key={`art-${a.id}`}>{a.name}</li>
+        ))}
+      </ul>
       {/* axis controls — pickers for swappable axes, chips for fixed ones */}
       <div className="grid gap-3 sm:grid-cols-3">
         {fixed.language ? (

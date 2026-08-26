@@ -2,15 +2,15 @@
  * Language-detail remix paints. Catalogs stay off LanguageDetailPage
  * (hero / spec / embodiments do not await listPaletteSystems / listArtStyles).
  *
- * pending — landing+dashboard, catalogs omitted (in flight). Pulse is legal.
- * empty   — no landing+dashboard, or catalogs `[]` / throw (catch-to-`[]`).
- *           Dark. Must never have painted two h-72, then collapsed.
+ * pending — landing+dashboard, catalogs omitted (in flight). Pulse the
+ *           preview well (aspect 16/10). Never two h-72 — that leftover
+ *           is the route loading.tsx / LanguageSectionSkeleton collapse.
+ * empty   — no landing+dashboard: do not mount. Catalogs `[]` / throw:
+ *           chrome stays, preview well is static dark (same size as pulse).
  * render  — catalogs in hand and canRemixLanguage.
  *
- * The live page mounts LanguageDetailRemix (lang only) and does not wrap
- * that fetch in the pending pulse. Wrapping it is leftover: [] / throw
- * rides the pulse and flashes two h-72 then gone. Tests render both
- * paints of the page tree (pending helper + live slot + resolved []).
+ * LanguageDetailPage mounts LanguageDetailRemix with lang only. Chrome
+ * is sync. Catalogs load behind Suspense. Tests render that same component.
  */
 
 type FieldBag = Record<string, string | undefined>;

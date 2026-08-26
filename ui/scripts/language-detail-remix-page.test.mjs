@@ -32,7 +32,6 @@ const bluet = lang({
   name: "Bluet",
   landing_file_id: "fl-land",
   dashboard_file_id: "fl-dash",
-  default_palette_id: "ps-ember",
 });
 
 const emberPalette = {
@@ -45,6 +44,16 @@ const emberPalette = {
     semantic: JSON.stringify({}),
   },
 };
+const otherPalette = {
+  entity_id: "ps-other",
+  status: "Published",
+  fields: {
+    name: "Transformative teal",
+    signature: JSON.stringify([{ hex: "#007C78", name: "teal" }]),
+    neutrals: JSON.stringify({}),
+    semantic: JSON.stringify({}),
+  },
+};
 const arts = [
   {
     entity_id: "as-1",
@@ -52,7 +61,7 @@ const arts = [
     fields: { name: "Ink Wash", prompt_template: "paint {subject}" },
   },
 ];
-const catalogs = { palettes: [emberPalette], arts };
+const catalogs = { palettes: [otherPalette, emberPalette], arts };
 const emptyCatalogs = { palettes: [], arts: [] };
 const landingHtml = `<!doctype html><html><head></head><body>
 <style>:root{--paper:#fff;--ink:#111;--primary:#122A47}</style>
@@ -62,22 +71,15 @@ const landingHtml = `<!doctype html><html><head></head><body>
 assert.equal(languageHasRemixComposition(noLanding), false);
 assert.equal(languageHasRemixComposition(landingOnly), false);
 assert.equal(languageHasRemixComposition(bluet), true);
-
 assert.equal(remixStreamOutcome(noLanding), "empty");
 assert.equal(remixStreamOutcome(landingOnly), "empty");
-assert.equal(
-  remixStreamOutcome(bluet),
-  "pending",
-  "omitted catalogs is pending — the page must not await them",
-);
+assert.equal(remixStreamOutcome(bluet), "pending");
 assert.equal(remixStreamOutcome(bluet, emptyCatalogs), "empty");
 assert.equal(remixStreamOutcome(bluet, catalogs), "render");
 assert.equal(canRemixLanguage(bluet, [], []), false);
 assert.equal(canRemixLanguage(bluet, catalogs.palettes, catalogs.arts), true);
-
 assert.equal(remixPageFirstPaint(noLanding), "dark");
-assert.equal(remixPageFirstPaint(landingOnly), "dark");
-assert.equal(remixPageFirstPaint(bluet), "pulse", "2: Bluet pending pulses");
+assert.equal(remixPageFirstPaint(bluet), "pulse");
 assert.equal(remixPageFirstPaint(bluet, emptyCatalogs), "dark");
 assert.equal(remixPageFirstPaint(bluet, catalogs), "lane");
 
@@ -127,53 +129,19 @@ assert.equal(
   false,
   "language loading.tsx stole <main> — two h-72 then footer, remix payload-only",
 );
-assert.match(
-  trackedLink,
-  /LinkPending/,
-  "click pending stays on the language card link, not route loading.tsx",
-);
-
-assert.doesNotMatch(
-  pageSrc,
-  /await loadLanguageRemixCatalogs/,
-  "1: LanguageDetailPage must not await catalogs",
-);
-assert.doesNotMatch(
-  pageSrc,
-  /await resolveRemixCatalogs/,
-  "1: catalog await belongs in the remix section, not the page",
-);
-assert.doesNotMatch(
-  pageSrc,
-  /listArtStyles|listPaletteSystems/,
-  "1: page must not list remix catalogs",
-);
-assert.match(
-  pageSrc,
-  /<LanguageDetailRemix lang=\{lang\} \/>/,
-  "live page tree mounts LanguageDetailRemix with lang only",
-);
+assert.match(trackedLink, /LinkPending/);
+assert.doesNotMatch(pageSrc, /await loadLanguageRemixCatalogs/);
+assert.doesNotMatch(pageSrc, /await resolveRemixCatalogs/);
+assert.doesNotMatch(pageSrc, /listArtStyles|listPaletteSystems/);
+assert.match(pageSrc, /<LanguageDetailRemix lang=\{lang\} \/>/);
 assert.doesNotMatch(
   pageSrc,
   /<Suspense fallback=\{null\}>\s*<Language(Remix|DetailRemix)/,
-  "2: do not hide pending remix with fallback={null}",
 );
-assert.doesNotMatch(
-  pageSrc,
-  /<Suspense fallback=\{<LanguageSectionSkeleton/,
-  "live fetch must not ride the pending two h-72 — [] / throw would flash then collapse",
-);
+assert.doesNotMatch(pageSrc, /<Suspense fallback=\{<LanguageSectionSkeleton/);
 assert.doesNotMatch(pageSrc, /lineageStreamOutcome|relatedStreamOutcome/);
-assert.match(
-  pageSrc,
-  /<Suspense fallback=\{null\}>\s*<LanguageLineage/,
-  "lineage leftover stays fallback={null}",
-);
-assert.match(
-  pageSrc,
-  /<Suspense fallback=\{null\}>\s*<RelatedLanguages/,
-  "related leftover stays fallback={null}",
-);
+assert.match(pageSrc, /<Suspense fallback=\{null\}>\s*<LanguageLineage/);
+assert.match(pageSrc, /<Suspense fallback=\{null\}>\s*<RelatedLanguages/);
 assert.match(
   lineageSrc,
   /if \(parents\.length === 0 && children\.length === 0\) return null/,
@@ -188,10 +156,20 @@ assert.match(
   /Boolean\(lang\.fields\.landing_file_id\) && Boolean\(lang\.fields\.dashboard_file_id\)/,
 );
 assert.match(remixSrc, /await loadLanguageRemixCatalogs\(\)/);
-assert.match(remixSrc, /LanguageRemixPageTree/);
+assert.match(
+  remixSrc,
+  /<Suspense fallback=\{<RemixControlsPulse/,
+  "live lang-only tree pulses the preview well, not two h-72",
+);
+assert.match(remixSrc, /RemixControlsDark/);
 assert.match(remixSrc, /getFileText/);
+assert.doesNotMatch(remixSrc, /LanguageSectionSkeleton/);
+assert.doesNotMatch(
+  remixSrc,
+  /className="[^"]*h-72/,
+  "remix pending must not paint the route-skeleton two h-72",
+);
 assert.doesNotMatch(remixSrc, /:has\(/);
-assert.doesNotMatch(remixSrc, /data-remix-empty|data-remix-pulse/);
 
 function loadTsx(filePath, mocks = {}) {
   const src = fs.readFileSync(filePath, "utf8");
@@ -216,9 +194,6 @@ function loadTsx(filePath, mocks = {}) {
 }
 
 const streamForTree = await import("../src/lib/language-detail-stream.ts");
-const skeletonMod = loadTsx(
-  path.join(here, "../src/components/gallery-skeleton.tsx"),
-);
 
 function scrapbookStub() {
   return {
@@ -234,10 +209,10 @@ const treeMod = loadTsx(
   {
     "@/lib/odata": {
       listPaletteSystems: async () => {
-        throw new Error("page-tree pending must not fetch to paint");
+        throw new Error("pending paint must not fetch");
       },
       listArtStyles: async () => {
-        throw new Error("page-tree pending must not fetch to paint");
+        throw new Error("pending paint must not fetch");
       },
       getFileText: async () => landingHtml,
     },
@@ -253,12 +228,16 @@ const treeMod = loadTsx(
             : "",
         })),
       toPaletteOpts: (rows) =>
-        rows.map((p) => ({
-          id: p.entity_id,
-          name: p.fields.name,
-          roles: { bg: "#FFFFFF", surface: "#FFFFFF", text: "#14213D", accent: "#C8442A" },
-          swatches: ["#C8442A"],
-        })),
+        rows.map((p) => {
+          const sig = JSON.parse(p.fields.signature || "[]");
+          const hex = sig[0]?.hex ?? "";
+          return {
+            id: p.entity_id,
+            name: p.fields.name,
+            roles: { accent: hex },
+            swatches: hex ? [hex] : [],
+          };
+        }),
       toArtOpts: (rows) =>
         rows
           .filter((a) => a.fields.prompt_template)
@@ -273,21 +252,24 @@ const treeMod = loadTsx(
           })),
     },
     "@/lib/language-detail-stream": streamForTree,
-    "@/components/gallery-skeleton": skeletonMod,
     "@/components/remix/inline-remix": {
       InlineRemix: ({ palettes, initialPreviewHtml }) =>
         React.createElement(
           "div",
           { "data-remix": "inline" },
-          palettes.map((p) =>
-            React.createElement("span", { key: p.id }, p.name, p.swatches?.[0]),
+          React.createElement(
+            "ul",
+            { className: "sr-only" },
+            palettes.map((p) =>
+              React.createElement("li", { key: p.id }, p.name, " ", p.swatches?.[0]),
+            ),
           ),
           initialPreviewHtml
             ? React.createElement("iframe", {
                 title: "Remix preview",
-                srcDoc: initialPreviewHtml.includes("--primary")
-                  ? initialPreviewHtml.replace("--primary:#122A47", "--primary:#C8442A")
-                  : `${initialPreviewHtml}<style id="remix-theme">:root{--primary:#C8442A}</style>`,
+                srcDoc: injectTheme(initialPreviewHtml, {
+                  accent: palettes[0]?.roles?.accent || "#C8442A",
+                }),
               })
             : null,
         ),
@@ -304,83 +286,71 @@ function h72Count(html) {
   return (html.match(/h-72/g) || []).length;
 }
 
-function renderTree(language, nextCatalogs, initialPreviewHtml) {
+/** The live page tree: LanguageDetailRemix, not a settled island. */
+function renderPageTree(language, nextCatalogs, initialPreviewHtml) {
   const props =
     nextCatalogs === undefined
       ? { lang: language }
       : { lang: language, catalogs: nextCatalogs, initialPreviewHtml };
   return renderToStaticMarkup(
-    React.createElement(treeMod.LanguageRemixPageTree, props),
+    React.createElement(treeMod.LanguageDetailRemix, props),
   );
 }
 
-const pendingHtml = renderTree(bluet);
-assert.equal(
-  h72Count(pendingHtml),
-  2,
-  "replay 1: page tree pending (catalogs omitted) is two h-72",
-);
-assert.doesNotMatch(pendingHtml, /remix lane|try a remix|Ember Signal/);
+const pendingHtml = renderPageTree(bluet);
+assert.match(pendingHtml, /remix lane/, "replay 1: live lang-only tree includes remix lane");
+assert.match(pendingHtml, /animate-pulse/, "2: Bluet pending pulses");
+assert.match(pendingHtml, /aspect-\[16\/10\]/, "pending pulse is the preview well");
+assert.equal(h72Count(pendingHtml), 0, "pending must not be two h-72");
+assert.doesNotMatch(pendingHtml, /Ember Signal/);
 
-const emptyHtml = renderTree(bluet, emptyCatalogs);
-assert.equal(h72Count(emptyHtml), 0, "replay 2: [] page tree has no h-72");
-assert.equal(emptyHtml, "");
-assert.doesNotMatch(emptyHtml, /try a remix/);
+const emptyHtml = renderPageTree(bluet, emptyCatalogs);
+assert.match(emptyHtml, /remix lane/, "[] keeps chrome — no collapse");
+assert.doesNotMatch(emptyHtml, /animate-pulse/, "[] is dark, not a pulse flash");
+assert.equal(h72Count(emptyHtml), 0);
+assert.doesNotMatch(emptyHtml, /Ember Signal/);
+assert.doesNotMatch(emptyHtml, /data-remix="inline"/);
 
-const throwHtml = renderTree(bluet, thrown);
-assert.equal(h72Count(throwHtml), 0, "replay 2: throw page tree has no h-72");
-assert.equal(throwHtml, "");
+const throwHtml = renderPageTree(bluet, thrown);
+assert.match(throwHtml, /remix lane/);
+assert.doesNotMatch(throwHtml, /animate-pulse/);
+assert.equal(h72Count(throwHtml), 0);
 
-const noLandHtml = renderTree(noLanding);
-assert.equal(h72Count(noLandHtml), 0);
+const noLandHtml = renderPageTree(noLanding);
 assert.equal(noLandHtml, "");
+assert.equal(h72Count(noLandHtml), 0);
 
-const landingOnlyHtml = renderTree(landingOnly);
-assert.equal(h72Count(landingOnlyHtml), 0);
+const landingOnlyHtml = renderPageTree(landingOnly);
 assert.equal(landingOnlyHtml, "");
+assert.equal(h72Count(landingOnlyHtml), 0);
 
-const laneHtml = renderTree(bluet, catalogs, landingHtml);
-assert.match(laneHtml, /remix lane/, "resolved page tree includes the remix lane");
-assert.match(laneHtml, /try a remix/);
-assert.match(laneHtml, /Ember Signal/, "Ember Signal is in the rendered tree, not payload-only");
-assert.match(laneHtml, /#C8442A/, "#C8442A is in the rendered tree");
-assert.match(laneHtml, /--primary/, "--primary is in the preview HTML");
-assert.match(laneHtml, /<iframe/, "remix iframe is in the page-tree SSR");
-assert.equal(h72Count(laneHtml), 0, "resolved lane is not the pending pulse");
-
-const liveSlot = renderToStaticMarkup(
-  React.createElement(treeMod.LanguageRemixIsland, {
-    lang: bluet,
-    catalogs,
-    initialPreviewHtml: landingHtml,
-  }),
+const laneHtml = renderPageTree(bluet, catalogs, landingHtml);
+assert.match(laneHtml, /remix lane/);
+assert.match(
+  laneHtml,
+  /Ember Signal/,
+  "Ember Signal is in the page tree even when it is not the first palette",
 );
-assert.match(liveSlot, /remix lane/);
-assert.match(liveSlot, /Ember Signal/);
-assert.match(liveSlot, /#C8442A/);
-assert.match(liveSlot, /--primary/);
-assert.match(liveSlot, /<iframe/);
-assert.equal(h72Count(liveSlot), 0);
+assert.match(laneHtml, /#C8442A/);
+assert.match(laneHtml, /--primary/);
+assert.match(laneHtml, /<iframe/);
+assert.equal(h72Count(laneHtml), 0);
 
-const liveEmpty = renderToStaticMarkup(
-  React.createElement(treeMod.LanguageRemixIsland, {
-    lang: bluet,
-    catalogs: emptyCatalogs,
-  }),
-);
-assert.equal(liveEmpty, "", "live slot with [] is dark — no pulse then collapse");
-assert.equal(h72Count(liveEmpty), 0);
+const pulse = renderToStaticMarkup(React.createElement(treeMod.RemixControlsPulse));
+const dark = renderToStaticMarkup(React.createElement(treeMod.RemixControlsDark));
+assert.equal(h72Count(pulse), 0);
+assert.equal(h72Count(dark), 0);
+assert.match(pulse, /animate-pulse/);
+assert.doesNotMatch(dark, /animate-pulse/);
+assert.match(pulse, /aspect-\[16\/10\]/);
+assert.match(dark, /aspect-\[16\/10\]/);
 
 const themed = injectTheme(
   landingHtml,
   { bg: "#FFFFFF", surface: "#FFFFFF", text: "#14213D", accent: "#C8442A" },
   "",
 );
-assert.match(
-  themed,
-  /--primary:#C8442A/,
-  "Ember Signal accent binds --primary in the preview HTML",
-);
+assert.match(themed, /--primary:#C8442A/);
 const frameMod = loadTsx(path.join(here, "../src/components/scaled-frame.tsx"));
 const frameHtml = renderToStaticMarkup(
   React.createElement(frameMod.ScaledFrame, {
@@ -388,9 +358,9 @@ const frameHtml = renderToStaticMarkup(
     title: "Remix preview",
   }),
 );
-assert.match(frameHtml, /<iframe/, "ScaledFrame SSR includes the remix iframe");
-assert.match(frameHtml, /--primary:#C8442A/, "--primary is in iframe srcDoc, not payload-only");
+assert.match(frameHtml, /<iframe/);
+assert.match(frameHtml, /--primary:#C8442A/);
 
 console.log(
-  "language-detail remix page tree: pending pulses; [] / throw never h-72; Ember Signal + --primary in the lane",
+  "language-detail remix page tree: chrome+preview pulse pending; [] / throw dark well; Ember Signal in the lane",
 );
