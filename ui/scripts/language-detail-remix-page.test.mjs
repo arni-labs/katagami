@@ -14,6 +14,7 @@ import {
 import { injectTheme, themeOverrideStyle } from "../src/lib/remix-theme.ts";
 import {
   cssPrimaryHex,
+  EMBER_SIGNAL_ID,
   pickRemixPaletteId,
   seedLanguageRemixPaletteId,
 } from "../src/lib/remix-palette-pick.ts";
@@ -78,8 +79,36 @@ const yellowPalette = {
   },
 };
 const catalogs = { palettes: [otherPalette, emberPalette], arts };
+const liveEmberPalette = {
+  entity_id: EMBER_SIGNAL_ID,
+  status: "Published",
+  fields: {
+    name: "Ember Signal",
+    signature: JSON.stringify([{ hex: "#C8442A", name: "ember" }]),
+    neutrals: JSON.stringify({ bg: "#FFFFFF", surface: "#FFFFFF", text: "#14213D" }),
+    semantic: JSON.stringify({}),
+  },
+};
 const liveShapedCatalogs = {
   palettes: [otherPalette, yellowPalette, emberPalette],
+  arts,
+};
+const live424Catalogs = {
+  palettes: Array.from({ length: 424 }, (_, i) => {
+    if (i === 0) return otherPalette;
+    if (i === 22) return liveEmberPalette;
+    if (i === 159) return yellowPalette;
+    return {
+      entity_id: `ps-fill-${i}`,
+      status: "Published",
+      fields: {
+        name: `Fill ${i}`,
+        signature: JSON.stringify([{ hex: `#${(0x101010 + i).toString(16).padStart(6, "0")}`, name: "fill" }]),
+        neutrals: JSON.stringify({}),
+        semantic: JSON.stringify({}),
+      },
+    };
+  }),
   arts,
 };
 const emptyCatalogs = { palettes: [], arts: [] };
@@ -114,7 +143,7 @@ assert.equal(
     "#122A47",
   ),
   "ps-ember",
-  "[teal, ember] no default — Ember, not catalog[0] teal",
+  "[other, ember] no default — Ember, not catalog[0] teal",
 );
 assert.equal(
   pickRemixPaletteId(
@@ -171,6 +200,18 @@ assert.doesNotMatch(
   /dist2|bestD/,
   "pickRemixPaletteId must not max-contrast — that leftover bound live Bluet to #FFD400",
 );
+assert.match(pickSrc, /EMBER_SIGNAL_ID/);
+const live424Seeds = live424Catalogs.palettes.map((p) => {
+  const hex = JSON.parse(p.fields.signature || "[]")[0]?.hex ?? "";
+  return { id: p.entity_id, name: p.fields.name, roles: { accent: hex } };
+});
+assert.equal(live424Seeds.length, 424);
+assert.equal(
+  pickRemixPaletteId(live424Seeds, undefined, "#122A47"),
+  EMBER_SIGNAL_ID,
+  "424-row live catalog binds Ember Signal id, not contrast-max #FFD400",
+);
+assert.equal(seedLanguageRemixPaletteId(undefined, live424Seeds), EMBER_SIGNAL_ID);
 
 const thrown = await resolveRemixCatalogs(
   async () => {
@@ -708,6 +749,35 @@ assert.doesNotMatch(
   "live Bluet must not bind #FFD400 as the remix primary",
 );
 assert.match(withoutSrOnly(yellowControls), /--primary:#C8442A/);
+
+const live424Tree = loadLiveTree(
+  remixOdata(
+    {
+      listPaletteSystems: async () => live424Catalogs.palettes,
+      listArtStyles: async () => live424Catalogs.arts,
+    },
+    async () => landingHtml,
+  ),
+);
+const live424Html = renderToStaticMarkup(
+  await live424Tree.LanguageRemixControls({ lang: bluet }),
+);
+const live424SrcDoc = iframeSrcDoc(live424Html);
+assert.match(live424Html, /<iframe/, "live Bluet page mounts remix iframe");
+assert.equal(
+  lastPrimary(live424SrcDoc),
+  "#C8442A",
+  "live Bluet 424-row catalog → srcDoc --primary:#C8442A",
+);
+assert.match(live424SrcDoc, /--primary:#C8442A/);
+assert.doesNotMatch(
+  live424SrcDoc,
+  /--primary:#FFD400/,
+  "live Bluet must not bind #FFD400 as the remix primary",
+);
+assert.match(withoutSrOnly(live424Html), /--primary:#C8442A/);
+assert.equal((live424SrcDoc.match(/--primary:#C8442A/g) || []).length > 0, true);
+assert.equal((withoutSrOnly(live424Html).match(/--primary:#C8442A/g) || []).length > 0, true);
 
 const emberSelected = lang({
   name: "Bluet",
