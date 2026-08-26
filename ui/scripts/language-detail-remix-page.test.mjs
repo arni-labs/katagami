@@ -152,6 +152,10 @@ const remixOpts = fs.readFileSync(
   path.join(here, "../src/lib/remix-options.ts"),
   "utf8",
 );
+const inlineSrc = fs.readFileSync(
+  path.join(here, "../src/components/remix/inline-remix.tsx"),
+  "utf8",
+);
 const loadingPath = path.join(here, "../src/app/(site)/language/[id]/loading.tsx");
 const trackedLink = fs.readFileSync(
   path.join(here, "../src/components/tracked-link.tsx"),
@@ -191,6 +195,15 @@ assert.match(
 assert.match(
   streamSrc,
   /Boolean\(lang\.fields\.landing_file_id\) && Boolean\(lang\.fields\.dashboard_file_id\)/,
+);
+assert.match(
+  inlineSrc,
+  /pickRemixPaletteId/,
+  "live InlineRemix must seed palId from pickRemixPaletteId, not palettes[0]",
+);
+assert.doesNotMatch(
+  inlineSrc,
+  /useState\(fixed\.palette \?\? initial\?\.palId \?\? palettes\[0\]/,
 );
 assert.match(remixSrc, /export function LanguageDetailRemix\(\{ lang \}/);
 assert.doesNotMatch(remixSrc, /LanguageRemixPageTree/);
@@ -425,7 +438,21 @@ function remixOdata(lists, getFileText) {
   };
 }
 
-function loadLiveTree(odata) {
+function iframeSrcDoc(html) {
+  const m = html.match(/srcDoc="([^"]*)"/);
+  if (!m) return "";
+  return m[1]
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"');
+}
+
+function withoutSrOnly(html) {
+  return html.replace(/<ul class="sr-only">[\s\S]*?<\/ul>/g, "");
+}
+
+function loadLiveTree(odata, inlineRemix) {
   return loadTsx(path.join(here, "../src/components/language-remix-section.tsx"), {
     "@/lib/odata": odata,
     "@/lib/remix-options": {
@@ -464,7 +491,7 @@ function loadLiveTree(odata) {
           })),
     },
     "@/lib/language-detail-stream": streamForTree,
-    "@/components/remix/inline-remix": {
+    "@/components/remix/inline-remix": inlineRemix ?? {
       InlineRemix: ({ palettes, initial, initialPreviewHtml }) => {
         const selected =
           palettes.find(
@@ -536,80 +563,11 @@ assert.doesNotMatch(emptyResolved, /data-remix="inline"/);
 assert.equal(h72Count(emptyResolved), 0);
 assert.equal(fileReads, 0, "live loader must not await getFileText after empty catalogs");
 
-const emberLive = loadLiveTree(
-  remixOdata(
-    {
-      listPaletteSystems: async () => catalogs.palettes,
-      listArtStyles: async () => catalogs.arts,
-    },
-    async () => landingHtml,
-  ),
-);
-const emberPending = renderLiveSlot(emberLive, bluet);
-assert.match(emberPending, /remix lane/);
-assert.match(emberPending, /animate-pulse/, "hold 2: live slot pulses while catalogs load");
-assert.equal(h72Count(emberPending), 0);
-
-const liveControls = renderToStaticMarkup(
-  await emberLive.LanguageRemixControls({ lang: bluet }),
-);
-assert.match(liveControls, /Ember Signal/, "live loader surfaces Ember Signal in the catalog");
-assert.match(liveControls, /#C8442A/);
-assert.match(liveControls, /--primary:#C8442A/, "live loader iframe bind is Ember, not palettes[0]");
-assert.match(liveControls, /<iframe/);
-assert.doesNotMatch(liveControls, /id="remix-theme">[^<]*--primary:#007C78/);
-
-const emberSelected = lang({
-  name: "Bluet",
-  landing_file_id: "fl-land",
-  dashboard_file_id: "fl-dash",
-  default_palette_id: "ps-ember",
-});
-const emberDefault = renderToStaticMarkup(
-  await emberLive.LanguageRemixControls({ lang: emberSelected }),
-);
-assert.match(emberDefault, /--primary:#C8442A/);
-
-const themed = injectTheme(
-  landingHtml,
-  { bg: "#FFFFFF", surface: "#FFFFFF", text: "#14213D", accent: "#C8442A" },
-  "",
-);
-assert.match(themed, /--primary:#C8442A/);
 const frameMod = loadTsx(path.join(here, "../src/components/scaled-frame.tsx"));
-const frameHtml = renderToStaticMarkup(
-  React.createElement(frameMod.ScaledFrame, {
-    html: themed,
-    title: "Remix preview",
-  }),
-);
-assert.match(frameHtml, /<iframe/);
-assert.match(frameHtml, /--primary:#C8442A/);
-
-const emptyTheme = themeOverrideStyle({ accent: "#C8442A" });
-assert.match(
-  emptyTheme,
-  /--primary:#C8442A/,
-  "empty HTML / failed fetch still emit --primary, not accent-only",
-);
-assert.match(emptyTheme, /--accent:#C8442A/);
-
 const previewMod = loadTsx(path.join(here, "../src/components/remix/remix-preview.tsx"), {
   "@/components/scaled-frame": frameMod,
   "@/lib/remix-theme": await import("../src/lib/remix-theme.ts"),
 });
-const emptyPreview = renderToStaticMarkup(
-  React.createElement(previewMod.RemixPreview, {
-    compositionUrl: "/api/file/fl-land",
-    roles: { accent: "#C8442A" },
-    initialHtml: "",
-  }),
-);
-assert.match(emptyPreview, /data-remix-theme=""/);
-assert.match(emptyPreview, /--primary:#C8442A/);
-assert.match(emptyPreview, /--accent:#C8442A/);
-assert.doesNotMatch(emptyPreview, /<iframe/);
-
 const inlineMod = loadTsx(path.join(here, "../src/components/remix/inline-remix.tsx"), {
   "next/link": {
     default: ({ href, children }) => React.createElement("a", { href }, children),
@@ -642,49 +600,82 @@ const inlineMod = loadTsx(path.join(here, "../src/components/remix/inline-remix.
   "@/lib/analytics": { trackCopy: () => {} },
   "@/lib/remix-palette-pick": await import("../src/lib/remix-palette-pick.ts"),
 });
-const realLane = renderToStaticMarkup(
-  React.createElement(inlineMod.InlineRemix, {
-    languages: [
-      {
-        id: "en-bluet",
-        name: "Bluet",
-        tokens: "",
-        landingUrl: "/api/file/fl-land",
-        dashboardUrl: "/api/file/fl-dash",
-      },
-    ],
-    palettes: [
-      { id: "ps-other", name: "Transformative teal", roles: { accent: "#007C78" }, swatches: ["#007C78"] },
-      {
-        id: "ps-ember",
-        name: "Ember Signal",
-        roles: { accent: "#C8442A" },
-        swatches: ["#C8442A"],
-      },
-    ],
-    art: [
-      {
-        id: "as-1",
-        name: "Ink Wash",
-        medium: "",
-        hero: "",
-        promptTemplate: "paint {subject}",
-        slotRecipes: "{}",
-        refs: [],
-      },
-    ],
-    fixed: { language: "en-bluet" },
-    initialPreviewHtml: landingHtml,
+
+const emberLive = loadLiveTree(
+  remixOdata(
+    {
+      listPaletteSystems: async () => catalogs.palettes,
+      listArtStyles: async () => catalogs.arts,
+    },
+    async () => landingHtml,
+  ),
+  inlineMod,
+);
+const emberPending = renderLiveSlot(emberLive, bluet);
+assert.match(emberPending, /remix lane/);
+assert.match(emberPending, /animate-pulse/, "hold 2: live slot pulses while catalogs load");
+assert.equal(h72Count(emberPending), 0);
+
+assert.equal(bluet.fields.default_palette_id, undefined);
+const liveControls = renderToStaticMarkup(
+  await emberLive.LanguageRemixControls({ lang: bluet }),
+);
+const liveSrcDoc = iframeSrcDoc(liveControls);
+assert.match(liveControls, /<iframe/, "LanguageDetailRemix live leaf mounts an iframe");
+assert.match(
+  liveSrcDoc,
+  /--primary:#C8442A/,
+  "iframe srcDoc binds Ember-not-first — sr-only #C8442A is not enough",
+);
+assert.doesNotMatch(liveSrcDoc, /--primary:#007C78/);
+assert.match(withoutSrOnly(liveControls), /--primary:#C8442A/);
+
+const emberSelected = lang({
+  name: "Bluet",
+  landing_file_id: "fl-land",
+  dashboard_file_id: "fl-dash",
+  default_palette_id: "ps-ember",
+});
+const emberDefault = renderToStaticMarkup(
+  await emberLive.LanguageRemixControls({ lang: emberSelected }),
+);
+assert.match(iframeSrcDoc(emberDefault), /--primary:#C8442A/);
+
+const themed = injectTheme(
+  landingHtml,
+  { bg: "#FFFFFF", surface: "#FFFFFF", text: "#14213D", accent: "#C8442A" },
+  "",
+);
+assert.match(themed, /--primary:#C8442A/);
+const frameHtml = renderToStaticMarkup(
+  React.createElement(frameMod.ScaledFrame, {
+    html: themed,
+    title: "Remix preview",
   }),
 );
-assert.match(realLane, /Ember Signal/);
-assert.match(realLane, /<iframe/);
+assert.match(frameHtml, /<iframe/);
+assert.match(frameHtml, /--primary:#C8442A/);
+
+const emptyTheme = themeOverrideStyle({ accent: "#C8442A" });
 assert.match(
-  realLane,
+  emptyTheme,
   /--primary:#C8442A/,
-  "real InlineRemix (no stub) binds Ember-not-first into iframe srcDoc",
+  "empty HTML / failed fetch still emit --primary, not accent-only",
 );
+assert.match(emptyTheme, /--accent:#C8442A/);
+
+const emptyPreview = renderToStaticMarkup(
+  React.createElement(previewMod.RemixPreview, {
+    compositionUrl: "/api/file/fl-land",
+    roles: { accent: "#C8442A" },
+    initialHtml: "",
+  }),
+);
+assert.match(emptyPreview, /data-remix-theme=""/);
+assert.match(emptyPreview, /--primary:#C8442A/);
+assert.match(emptyPreview, /--accent:#C8442A/);
+assert.doesNotMatch(emptyPreview, /<iframe/);
 
 console.log(
-  "language-detail remix page tree: locked holds; Ember-not-first iframe bind; empty --primary",
+  "language-detail remix page tree: live slot + real InlineRemix Ember-not-first iframe bind",
 );
