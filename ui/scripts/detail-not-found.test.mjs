@@ -3,7 +3,7 @@
 // because generateMetadata returned a title instead of notFound(). Palette
 // miss already 404s. This renders the same resolver the page functions use.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   publicDetailHidden,
@@ -145,6 +145,16 @@ assert.match(
   artPage,
   /if \(!art\) notFound\(\)/,
   "art-style generateMetadata/page notFound() on a hidden row",
+);
+assert.equal(
+  existsSync(resolve("src/app/(site)/language/[id]/loading.tsx")),
+  false,
+  "language/[id]/loading.tsx streams 200 chrome before notFound()",
+);
+assert.equal(
+  existsSync(resolve("src/app/(site)/art-styles/loading.tsx")),
+  false,
+  "art-styles/loading.tsx wraps /art-styles/[id] in 200 chrome",
 );
 
 console.log("ok: language + art-style page functions notFound() instead of 200 chrome");

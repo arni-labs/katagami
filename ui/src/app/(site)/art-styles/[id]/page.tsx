@@ -31,9 +31,9 @@ const CHIP = "bg-[color-mix(in_srgb,var(--foreground)_4%,var(--card))]";
 
 /**
  * ByIdOrSlug + entity_id gate. A miss / unpublished / off-shelf must
- * notFound() in generateMetadata, not only in the page body: the parent
- * `art-styles/loading.tsx` otherwise streams 200 chrome (~100k, title
- * `katagami`) around Next's default not-found copy.
+ * notFound() in generateMetadata, not only in the page body. A route-level
+ * `loading.tsx` above this segment streams 200 chrome (~100k) around the
+ * not-found copy — the list page keeps its Suspense skeleton instead.
  */
 const visibleArtStyle = cache(async (id: string) => {
   const art = await resolvePublicDetail(id, {
