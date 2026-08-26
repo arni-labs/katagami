@@ -14,7 +14,7 @@ import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { RelatedLanguages } from "@/components/related-languages";
 import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
-import { LanguageRemixSection } from "@/components/language-remix-section";
+import { LanguageDetailRemix } from "@/components/language-remix-section";
 import {
   designMdToMarkdown,
   katagamiSpecToMarkdown,
@@ -360,9 +360,11 @@ export default async function LanguageDetailPage({
 
       <ModelProvenance raw={f.model_provenance} />
 
-      <Suspense fallback={null}>
-        <LanguageRemixSection lang={lang} />
-      </Suspense>
+      {/* Live remix slot. No page-level Suspense: LanguageDetailRemix is
+          sync chrome + an inner pulse around LanguageRemixControls, so
+          [] / throw do not ride a page pulse then go dark. This page
+          does not await catalogs. Lineage / related keep fallback={null}. */}
+      <LanguageDetailRemix lang={lang} />
 
       <Suspense fallback={null}>
         <LanguageLineage currentId={id} fields={f} />

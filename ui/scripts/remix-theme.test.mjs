@@ -26,11 +26,13 @@ const mod = { exports: {} };
 new Function("module", "exports", code)(mod, mod.exports);
 const {
   injectTheme,
+  themeOverrideStyle,
   classifyColorToken,
   compositionBindDecls,
   bindLiteralHero,
   extractRootDecls,
   consumesCustomProperty,
+  bindWinningRemixPrimary,
 } = mod.exports;
 
 const roles = {
@@ -704,6 +706,27 @@ assert.doesNotMatch(
   compositionBindDecls(mozAnyBefore, roles, hero).join(";"),
   /--blue:/,
 );
+
+const yellowLanding = injectTheme(
+  "<style>:root{--primary:#FFD400}</style>",
+  { accent: "#C8442A" },
+);
+const yellowPrimaries = [...yellowLanding.matchAll(/--primary:(#[0-9A-Fa-f]+)/g)].map((m) => m[1]);
+assert.equal(
+  yellowPrimaries.at(-1),
+  "#C8442A",
+  "remix --primary wins over a later landing #FFD400",
+);
+assert.equal(bindWinningRemixPrimary("", "#C8442A"), "", "empty HTML stays empty — leftover 2");
+assert.match(bindWinningRemixPrimary("<p></p>", "#C8442A"), /--primary:#C8442A/);
+
+const emptyOverride = themeOverrideStyle({ accent: "#C8442A" });
+assert.match(
+  emptyOverride,
+  /--primary:#C8442A/,
+  "themeOverrideStyle keeps --primary when there is no landing HTML",
+);
+assert.match(emptyOverride, /--accent:#C8442A/);
 
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),

@@ -91,7 +91,9 @@ export function ScaledFrame({
 
   // One persistent container holds the ref so the ResizeObserver keeps tracking
   // it across loading -> loaded and on window resize. Before we have a scale (or
-  // content), it holds the desktop aspect ratio as a placeholder.
+  // content), it holds the desktop aspect ratio as a placeholder. The iframe
+  // stays in the tree whenever `html` is set so SSR (and Rei's visible-HTML
+  // count) includes srcDoc — --primary must not be payload-only.
   return (
     <div
       ref={containerRef}
@@ -102,15 +104,19 @@ export function ScaledFrame({
           : { aspectRatio: `${viewportWidth} / ${DEFAULT_HEIGHT}` }
       }
     >
-      {ready ? (
+      {srcDoc ? (
         <iframe
           ref={iframeRef}
           srcDoc={srcDoc}
-          className="absolute left-0 top-0 border-0"
+          className={
+            ready
+              ? "absolute left-0 top-0 border-0"
+              : "pointer-events-none absolute left-0 top-0 border-0 opacity-0"
+          }
           style={{
             width: `${viewportWidth}px`,
             height: `${contentHeight}px`,
-            transform: `scale(${scale as number})`,
+            transform: ready ? `scale(${scale as number})` : undefined,
             transformOrigin: "top left",
           }}
           sandbox=""
@@ -123,9 +129,8 @@ export function ScaledFrame({
           }}
           title={title}
         />
-      ) : (
-        <div className="h-full w-full animate-pulse bg-muted" />
-      )}
+      ) : null}
+      {ready ? null : <div className="h-full w-full animate-pulse bg-muted" />}
     </div>
   );
 }

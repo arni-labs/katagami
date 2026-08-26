@@ -30,6 +30,7 @@ const REMIX_OWNED = new Set([
   "muted",
   "border",
   "accent",
+  "primary",
   "on-accent",
   "success",
   "warning",
@@ -50,6 +51,11 @@ function roleValues(roles: Roles): Record<PaletteRole, string> {
     border: roles.border || "#e5e7eb",
     accent,
   };
+}
+
+/** Token-node bind. Empty HTML never reaches injectTheme, so --primary lives here. */
+export function remixPrimaryDecl(accent?: string): string {
+  return `--primary:${accent || "#3a6df0"}`;
 }
 
 function skipToken(name: string): boolean {
@@ -1109,7 +1115,7 @@ export function compositionBindDecls(
   const extra: string[] = [
     `--paper:${map.bg}`,
     `--ink:${map.text}`,
-    `--primary:${map.accent}`,
+    remixPrimaryDecl(map.accent),
     `--ds-bg:${map.bg}`,
     `--ds-background:${map.bg}`,
     `--ds-surface:${map.surface}`,
@@ -1190,6 +1196,7 @@ export function themeOverrideStyle(
     ["--muted", map.muted],
     ["--border", map.border],
     ["--accent", map.accent],
+    ["--primary", map.accent],
     ["--on-accent", readableOn(map.accent)],
     ["--success", roles.success || "#16a34a"],
     ["--warning", roles.warning || "#d97706"],
@@ -1197,11 +1204,36 @@ export function themeOverrideStyle(
     ["--info", roles.info || "#2563eb"],
   ].map(([k, v]) => `${k}:${v}`);
   if (hero) decl.push(`--hero-image:url('${hero}')`);
+  // Well-known aliases always — empty HTML / failed fetch still emit
+  // --primary, not accent-only. injectTheme adds composition-specific binds.
+  decl.push(
+    `--paper:${map.bg}`,
+    `--ink:${map.text}`,
+    remixPrimaryDecl(map.accent),
+    `--ds-bg:${map.bg}`,
+    `--ds-background:${map.bg}`,
+    `--ds-surface:${map.surface}`,
+    `--ds-text:${map.text}`,
+    `--ds-foreground:${map.text}`,
+    `--ds-accent:${map.accent}`,
+  );
   decl.push(...extra);
   return `<style id="remix-theme">:root{${decl.join(";")}}</style>`;
 }
 
-/** Inject the theme override just before </head> (or prepend if no head). */
+/**
+ * Last --primary in the document wins. Append so a landing :root
+ * (or a later warning yellow) cannot keep --primary:#FFD400 / #122A47
+ * after remix binds Ember.
+ */
+export function bindWinningRemixPrimary(html: string, accent?: string): string {
+  if (!html) return "";
+  const win = `<style id="remix-primary">:root{${remixPrimaryDecl(accent)}}</style>`;
+  if (html.includes("</body>")) return html.replace("</body>", `${win}</body>`);
+  return html + win;
+}
+
+/** Inject the theme override so remix --primary wins the cascade. */
 export function injectTheme(html: string, roles: Roles, hero?: string): string {
   if (!html) return "";
   const bound = bindLiteralHero(html, hero);
@@ -1210,7 +1242,10 @@ export function injectTheme(html: string, roles: Roles, hero?: string): string {
     hero,
     compositionBindDecls(bound, roles, hero),
   );
-  return bound.includes("</head>")
-    ? bound.replace("</head>", `${ov}</head>`)
-    : ov + bound;
+  const themed = bound.includes("</body>")
+    ? bound.replace("</body>", `${ov}</body>`)
+    : bound.includes("</head>")
+      ? bound.replace("</head>", `${ov}</head>`)
+      : bound + ov;
+  return bindWinningRemixPrimary(themed, roles.accent);
 }

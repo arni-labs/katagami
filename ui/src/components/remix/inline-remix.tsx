@@ -12,6 +12,11 @@ import { saveRemix } from "@/app/remix-actions";
 import type { Roles } from "@/lib/remix-theme";
 import { KX_BTN_INK, KX_BTN_PAPER, KX_LABEL } from "@/lib/katagami-ui";
 import { trackCopy } from "@/lib/analytics";
+import {
+  cssPrimaryHex,
+  pickRemixPaletteId,
+  seedLanguageRemixPaletteId,
+} from "@/lib/remix-palette-pick";
 
 const MEDIA = "shrink-0 overflow-hidden rounded-[2px] shadow-[0_1px_3px_rgba(30,35,45,0.14)]";
 
@@ -110,6 +115,7 @@ export function InlineRemix({
   enableSave = false,
   signedIn = true,
   initial,
+  initialPreviewHtml,
 }: {
   languages: LanguageOpt[];
   palettes: PaletteOpt[];
@@ -119,11 +125,20 @@ export function InlineRemix({
   /** Saving is a signed-in act; signed out, the save button becomes the door. */
   signedIn?: boolean;
   initial?: { langId?: string; palId?: string; artId?: string; compositionKey?: string };
+  initialPreviewHtml?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [langId, setLangId] = useState(fixed.language ?? initial?.langId ?? languages[0]?.id ?? "");
-  const [palId, setPalId] = useState(fixed.palette ?? initial?.palId ?? palettes[0]?.id ?? "");
+  // Hold is Ember / #C8442A. Do not max-contrast against landing --primary
+  // (that leftover bound live Bluet to #FFD400).
+  const landingPrimary = cssPrimaryHex(initialPreviewHtml);
+  const seededPalId = pickRemixPaletteId(
+    palettes,
+    seedLanguageRemixPaletteId(fixed.palette ?? initial?.palId, palettes),
+    landingPrimary,
+  );
+  const [palId, setPalId] = useState(seededPalId);
   const [artId, setArtId] = useState(fixed.art ?? initial?.artId ?? art[0]?.id ?? "");
   const [compIdx, setCompIdx] = useState(() => {
     const i = COMPS.findIndex((c) => c.key === initial?.compositionKey);
@@ -134,7 +149,9 @@ export function InlineRemix({
   const [saveFailed, setSaveFailed] = useState(false);
 
   const lang = languages.find((l) => l.id === langId) ?? languages[0];
-  const pal = palettes.find((p) => p.id === palId) ?? palettes[0];
+  const pal =
+    palettes.find((p) => p.id === palId) ??
+    palettes.find((p) => p.id === seededPalId);
   const sel = art.find((a) => a.id === artId) ?? art[0];
   const comp = COMPS[compIdx] ?? COMPS[0];
 
@@ -193,7 +210,7 @@ export function InlineRemix({
   const haveAll = Boolean(lang && pal && sel);
 
   function copyBrief() {
-    if (!haveAll) return;
+    if (!lang || !pal || !sel) return;
     const brief = buildRemixBrief({
       language: { name: lang.name, tokens: safeParse(lang.tokens) },
       palette: { name: pal.name, roles },
@@ -223,7 +240,7 @@ export function InlineRemix({
     (!fixed.art && art.length > 1);
 
   function doSave() {
-    if (!haveAll) return;
+    if (!lang || !pal || !sel) return;
     startTransition(async () => {
       try {
         await saveRemix({
@@ -248,6 +265,16 @@ export function InlineRemix({
 
   return (
     <div className="space-y-4">
+      <ul className="sr-only">
+        {palettes.map((p) => (
+          <li key={p.id}>
+            {p.name} {(p.swatches ?? []).join(" ")}
+          </li>
+        ))}
+        {art.map((a) => (
+          <li key={`art-${a.id}`}>{a.name}</li>
+        ))}
+      </ul>
       {/* axis controls — pickers for swappable axes, chips for fixed ones */}
       <div className="grid gap-3 sm:grid-cols-3">
         {fixed.language ? (
@@ -332,7 +359,12 @@ export function InlineRemix({
             </span>
           </div>
           <div className="overflow-hidden rounded-[1px]">
-            <RemixPreview compositionUrl={compositionUrl} roles={roles} hero={hero} />
+            <RemixPreview
+              compositionUrl={compositionUrl}
+              roles={roles}
+              hero={hero}
+              initialHtml={initialPreviewHtml}
+            />
           </div>
           <span className="absolute inset-x-0 bottom-3 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/75">
             live preview · recolored + filled
