@@ -11,6 +11,7 @@ import {
   remixPageFirstPaint,
   remixStreamOutcome,
 } from "../src/lib/language-detail-stream.ts";
+import { injectTheme } from "../src/lib/remix-theme.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const nodeRequire = createRequire(import.meta.url);
@@ -369,6 +370,26 @@ const liveEmpty = renderToStaticMarkup(
 );
 assert.equal(liveEmpty, "", "live slot with [] is dark — no pulse then collapse");
 assert.equal(h72Count(liveEmpty), 0);
+
+const themed = injectTheme(
+  landingHtml,
+  { bg: "#FFFFFF", surface: "#FFFFFF", text: "#14213D", accent: "#C8442A" },
+  "",
+);
+assert.match(
+  themed,
+  /--primary:#C8442A/,
+  "Ember Signal accent binds --primary in the preview HTML",
+);
+const frameMod = loadTsx(path.join(here, "../src/components/scaled-frame.tsx"));
+const frameHtml = renderToStaticMarkup(
+  React.createElement(frameMod.ScaledFrame, {
+    html: themed,
+    title: "Remix preview",
+  }),
+);
+assert.match(frameHtml, /<iframe/, "ScaledFrame SSR includes the remix iframe");
+assert.match(frameHtml, /--primary:#C8442A/, "--primary is in iframe srcDoc, not payload-only");
 
 console.log(
   "language-detail remix page tree: pending pulses; [] / throw never h-72; Ember Signal + --primary in the lane",
