@@ -116,13 +116,14 @@ class TasteDistillationContractTests(unittest.TestCase):
         self.assertIn("Create proposed rules only", skill)
         self.assertIn("temper.list('DesignLanguages', \"Status eq 'Archived'\")", skill)
         self.assertIn("temper.list('DesignLanguages', \"Status eq 'Published'\")", skill)
-        self.assertIn("temper.list('TasteRules', '')", skill)
+        self.assertNotIn("list('TasteRules')", skill)
+        self.assertNotIn("Accepted TasteRules", skill)
+        self.assertIn("taste rulebook inlined in this prompt", skill)
         self.assertIn("evidence_fingerprint", skill)
         self.assertIn("skipped_duplicate_fingerprints", skill)
         self.assertIn("short, general proposed\nprompt directives", skill)
         self.assertIn("Do not recommend catalog actions", skill)
-        self.assertIn("Accepted rules are already incorporated guidance", skill)
-        self.assertIn("Rejected rules are negative meta-evidence", skill)
+        self.assertIn("already-incorporated", skill)
         self.assertIn("normalized_rule_text", skill)
         self.assertIn("skipped_existing_directives", skill)
         self.assertIn("skipped_rejected_precedents", skill)
@@ -141,8 +142,6 @@ class TasteDistillationContractTests(unittest.TestCase):
         self.assertIn("contradiction_rule_candidates", skill)
         self.assertIn("rule_tension_candidates", skill)
         self.assertIn("skipped_contradictory_directives", skill)
-        self.assertIn("Accepted rule reintroduces a Rejected framing", skill)
-        self.assertIn("one Accepted rule requires what another Accepted rule forbids", skill)
         self.assertIn("temper.create('TasteRules'", skill)
         self.assertIn("'CompleteTasteDistillation'", skill)
         self.assertNotIn("temper.action('TasteRules', rule['entity_id'], 'Accept'", skill)
@@ -153,6 +152,7 @@ class TasteDistillationContractTests(unittest.TestCase):
             self.root / "agents" / "curator" / "skills" / "synthesize-palette" / "SKILL.md",
             self.root / "agents" / "curator" / "skills" / "synthesize-art-style" / "SKILL.md",
             self.root / "agents" / "curator" / "skills" / "review-quality" / "SKILL.md",
+            self.root / "agents" / "curator" / "skills" / "taste-distillation" / "SKILL.md",
         ]
         for path in skills:
             skill = path.read_text()

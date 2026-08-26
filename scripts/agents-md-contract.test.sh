@@ -75,9 +75,9 @@ printf '%s\n' "$skill22" | grep -q 'taste rulebook inlined in this prompt' \
 PALETTE="$ROOT/katagami-curation/agents/curator/skills/synthesize-palette/SKILL.md"
 ART="$ROOT/katagami-curation/agents/curator/skills/synthesize-art-style/SKILL.md"
 REVIEW="$ROOT/katagami-curation/agents/curator/skills/review-quality/SKILL.md"
-# QA replay of the three leftover skills: list('TasteRules') / Accepted TasteRules
-# must not appear. "Do not list(...)" still matches that grep.
-for f in "$PALETTE" "$ART" "$REVIEW"; do
+DISTILL="$ROOT/katagami-curation/agents/curator/skills/taste-distillation/SKILL.md"
+# QA replay: list('TasteRules') / Accepted TasteRules must not appear.
+for f in "$PALETTE" "$ART" "$REVIEW" "$DISTILL"; do
   if grep -nE "list\('TasteRules'\)|Accepted TasteRules" "$f"; then
     fail "$f still lists TasteRules at gen time"
   fi
@@ -86,7 +86,7 @@ for f in "$PALETTE" "$ART" "$REVIEW"; do
 done
 grep -q 'taste rulebook inlined in this prompt' "$SKILL" \
   || fail "synthesize-language/SKILL.md:22 must still obey the inlined rulebook"
-pass "leftover 5 extra: palette / art-style / review-quality do not list TasteRules"
+pass "leftover 5 extra: palette / art-style / review-quality / distillation do not list TasteRules"
 
 if grep -nE 'curator skills read them at generation time|read them at generation time' "$AGENTS"; then
   fail "AGENTS.md still says skills read TasteRule entities at gen time (leftover 5)"
@@ -99,8 +99,9 @@ grep -q 'SKILL.md:22' "$AGENTS" || fail "AGENTS.md must cite synthesize-language
 grep -q 'synthesize-palette/SKILL.md' "$AGENTS" || fail "AGENTS.md must name synthesize-palette"
 grep -q 'synthesize-art-style/SKILL.md' "$AGENTS" || fail "AGENTS.md must name synthesize-art-style"
 grep -q 'review-quality/SKILL.md' "$AGENTS" || fail "AGENTS.md must name review-quality"
+grep -q 'taste-distillation/SKILL.md' "$AGENTS" || fail "AGENTS.md must name taste-distillation"
 grep -q 'knowledge/rules/design-language.md' "$AGENTS" || fail "AGENTS.md must name the inlined rulebook"
-pass "leftover 5: QA lib.rs:989 + SKILL.md:22; AGENTS.md names all four gen/review skills"
+pass "leftover 5: QA lib.rs:989 + SKILL.md:22; AGENTS.md names gen/review/distill skills"
 
 if [ ! -L "$ROOT/CLAUDE.md" ]; then
   fail "CLAUDE.md must remain a symlink to AGENTS.md"
