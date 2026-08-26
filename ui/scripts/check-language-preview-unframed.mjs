@@ -29,9 +29,16 @@ const required = [
     (src) => !/<EmbodimentTabs\b[^>]*\bslug=/.test(src),
   ],
   [
-    "no Open full overlay on the preview",
+    "no overlay chrome on the preview",
     viewer,
-    (src) => !/open full/.test(src) && !src.includes("ExternalLink"),
+    // No anchors/buttons at all inside the viewer (it renders only the sandboxed
+    // iframe + measurement scaffolding), so overlay chrome cannot return under
+    // any wording or icon.
+    (src) =>
+      !/open full/i.test(src) &&
+      !src.includes("ExternalLink") &&
+      !/<a\s/.test(src) &&
+      !/<button\s/.test(src),
   ],
 ];
 
