@@ -64,6 +64,10 @@ export async function loadArtStylePage(input: {
   cursor?: string | null;
   search?: string;
 }): Promise<PageResult<ArtStyleItem>> {
+  // ARN-385: art-style browsing beyond the owner-picked visitor shelf is a
+  // signed-in surface — same gate as loadLanguagePage. Enforced here, not just
+  // hidden in the UI, because a server action is a public HTTP endpoint.
+  if (!(await hasFullGalleryAccess())) return { items: [], nextCursor: null };
   const page = await pageArtStyles({
     cursor: input.cursor ?? undefined,
     search: input.search,
@@ -99,5 +103,8 @@ export async function searchArtStylesByMeaning(input: {
   query: string;
   k?: number;
 }): Promise<ArtStyleItem[]> {
+  // ARN-331: same signed-in gate as loadArtStylePage — meaning search ranks the
+  // full published catalog, which would sidestep the featured teaser cap.
+  if (!(await hasFullGalleryAccess())) return [];
   return searchArtStyleCards(input.query, input.k ?? MEANING_LIMIT);
 }

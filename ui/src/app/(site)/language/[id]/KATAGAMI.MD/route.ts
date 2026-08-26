@@ -21,7 +21,7 @@ export async function GET(
     });
   }
 
-  const gate = await artifactGate(lang.status);
+  const gate = await artifactGate(lang.status, { id, kind: "language" });
   if (!gate.allowed) return gate.response;
 
   const f = lang.fields;
@@ -44,7 +44,7 @@ export async function GET(
     headers: {
       "content-type": "text/markdown; charset=utf-8",
       "content-disposition": `inline; filename="${filename}"`,
-      "cache-control": "public, max-age=60, s-maxage=300",
+          "cache-control": gate.cacheControl,
     },
   });
 }

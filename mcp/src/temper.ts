@@ -83,12 +83,21 @@ export async function listEntities(id: Identity, set: string, filter?: string): 
   const filterQ = filter ? `$filter=${encodeURIComponent(filter)}&` : "";
   let url: string | null = `${config.temperUrl}/tdata/${set}?${filterQ}$top=500`;
   const out: EntityRow[] = [];
-  let guard = 0;
-  while (url && guard++ < 50) {
+  const seen = new Set<string>();
+  // 200 pages × 500 = 100k, far above any real set. Reaching it, or seeing a
+  // repeated nextLink, is a runaway — throw rather than return a partial or
+  // duplicated set as if it were the whole catalog.
+  const MAX_PAGES = 200;
+  let pages = 0;
+  while (url) {
+    if (pages++ >= MAX_PAGES) throw new TemperError(`List ${set} exceeded ${MAX_PAGES} pages`, 500);
+    if (seen.has(url)) throw new TemperError(`List ${set} looped on a repeated nextLink`, 500);
+    seen.add(url);
     const current: string = url;
     const res: Response = await check(await fetch(current, { headers: headers(id) }), `List ${set}`);
     const body = (await res.json()) as { value?: EntityRow[]; "@odata.nextLink"?: string };
-    out.push(...(body.value ?? []));
+    if (!Array.isArray(body.value)) throw new TemperError(`List ${set} returned no value array`, 502);
+    out.push(...body.value);
     const next = body["@odata.nextLink"];
     // nextLink is relative to the request URI — resolve spec-correct, not by
     // prefixing the origin (which drops /tdata and 404s on page 2).
