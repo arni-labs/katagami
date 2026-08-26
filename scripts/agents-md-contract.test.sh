@@ -53,6 +53,8 @@ if grep -nE 'never dispatches transitions itself' "$AGENTS"; then
 fi
 grep -q 'SessionSpawned' "$AGENTS" || fail "AGENTS.md must name SessionSpawned (BSM:382)"
 grep -q 'Fail' "$AGENTS" || fail "AGENTS.md must name Fail (BSM:495)"
+grep -q 'SubmitForReview' "$AGENTS" || fail "AGENTS.md must name SubmitForReview (QA leftover 4)"
+grep -q 'Publish' "$AGENTS" || fail "AGENTS.md must name Publish (QA leftover 4)"
 grep -q 'maybe_spawn_repair_job' "$AGENTS" || fail "AGENTS.md must name maybe_spawn_repair_job (FIN:315)"
 grep -q 'dispatch_action' "$AGENTS" || fail "AGENTS.md must name dispatch_action (FIN:5940)"
 pass "leftover 4: QA curl ranges still dispatch; AGENTS.md names them"
