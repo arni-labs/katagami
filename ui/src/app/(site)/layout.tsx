@@ -18,6 +18,7 @@ import {
   paletteCore,
   parseJson,
 } from "@/lib/odata";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 
 /** The signature trio, in registration-bar order. */
 const REGISTRATION_INKS = [
@@ -34,18 +35,33 @@ interface TokensLite {
 // so it was rebuilt — 3 catalog fetches + parsing every item — on every single
 // page render (the dominant shared TTFB cost across all pages). Cache the whole
 // built index so it's produced once per window, not per request.
+// Anonymous visitors get a GATED index: languages and art styles are limited to
+// the featured portion (identical to the /art-styles + /language teasers and the
+// read MCP), so ⌘K can't enumerate the full catalog from page source. Palettes
+// are public. Signed-in visitors get everything. Cached per tier.
+const isSearchFeatured = (r: { fields?: Record<string, unknown> }) => {
+  const f = r.fields ?? {};
+  return (
+    f.featured === true ||
+    f.featured === "true" ||
+    f.Featured === true ||
+    f.Featured === "true"
+  );
+};
+
 const buildSearchIndex = unstable_cache(
-  async (): Promise<PaletteIndexItem[]> => {
+  async (tier: "sample" | "full"): Promise<PaletteIndexItem[]> => {
     const items: PaletteIndexItem[] = [];
+    const featuredOnly = tier === "sample";
 
   try {
-    // Search only surfaces the public catalog — Published only (palettes and
-    // art styles are already Published-only via their default filter).
-    // Full canonical read (no $select): Temper's projected $select read path
-    // silently omits some published languages, which would hide them from search.
+    // Search surfaces the public catalog (Published only). For anonymous
+    // visitors, languages and art styles are further limited to the featured
+    // portion so the palette matches the teaser + MCP sample.
     const languages = await listDesignLanguages("Status eq 'Published'");
     for (const lang of languages) {
       if (!lang.fields.name) continue;
+      if (featuredOnly && !isSearchFeatured(lang)) continue;
       const colors = parseJson<TokensLite>(lang.fields.tokens)?.colors ?? {};
       const swatch = [colors.primary, colors.secondary, colors.accent].filter(
         (c): c is string => Boolean(c),
@@ -83,6 +99,7 @@ const buildSearchIndex = unstable_cache(
   try {
     for (const style of await listArtStyles()) {
       if (!style.fields.name) continue;
+      if (featuredOnly && !isSearchFeatured(style)) continue;
       items.push({
         id: style.entity_id,
         kind: "art-style",
@@ -116,7 +133,7 @@ const buildSearchIndex = unstable_cache(
 
     return items;
   },
-  ["site-search-index-v1"],
+  ["site-search-index-v2"],
   { revalidate: 60 },
 );
 
@@ -125,7 +142,8 @@ export default async function SiteLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const searchIndex = await buildSearchIndex();
+  const tier: "sample" | "full" = (await hasFullGalleryAccess()) ? "full" : "sample";
+  const searchIndex = await buildSearchIndex(tier);
 
   return (
     <div className="flex min-h-full w-full max-w-full flex-col overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">

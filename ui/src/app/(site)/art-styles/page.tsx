@@ -1,11 +1,14 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { unstable_cache } from "next/cache";
-import { countArtStyles, pageArtStyles } from "@/lib/odata";
+import { countArtStyles, listFeaturedArtStyles, pageArtStyles } from "@/lib/odata";
 import { toArtStyleItem } from "@/lib/lane-items";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { InfiniteArtStyles } from "@/components/infinite-galleries";
+import { ArtStyleCard } from "@/components/art-style-card";
 import { CardGridSkeleton } from "@/components/gallery-skeleton";
 import { hasCuratorAccess } from "@/lib/owner";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -49,12 +52,77 @@ async function ArtStyleGrid({ canCurate }: { canCurate: boolean }) {
   );
 }
 
+// Same lane grid the InfiniteArtStyles gallery uses, so the featured shelf and
+// the full catalog read identically.
+const LANE_GRID =
+  "grid grid-cols-2 items-start gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4";
+
+// ARN-385: signed-out art-styles is the owner-picked featured set only — no
+// newest-first filler, no "load more" pagination. Search and paging stay behind
+// sign-in. The same gate is enforced in the gallery server actions.
+async function FeaturedArtStyleShelf() {
+  const [total, featuredRows] = await Promise.all([
+    cachedArtStyleCount(),
+    listFeaturedArtStyles().catch(() => []),
+  ]);
+  const featured = featuredRows.map(toArtStyleItem);
+  const shown = featured.length;
+  return (
+    <div className="space-y-10">
+      {shown > 0 ? (
+        <section className="space-y-3">
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--sakura)]">
+            Visitor shelf
+          </p>
+          <div className={LANE_GRID}>
+            {featured.map((a) => (
+              <Link
+                key={a.id}
+                href={`/art-styles/${a.id}`}
+                prefetch={false}
+                className="group block min-w-0"
+              >
+                <ArtStyleCard art={a} />
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
+          The public shelf is empty until an owner picks art styles for visitors.
+        </div>
+      )}
+      <div className="pt-2">
+        <span aria-hidden className="sticker-perforation block" />
+        <p className="mt-6 text-center text-[15.5px] leading-relaxed text-muted-foreground sm:text-[17px]">
+          {shown} of {total} art styles.{" "}
+          <Link
+            href="/signin"
+            className="marker relative inline-block text-foreground transition-transform duration-200 hover:-translate-y-[1px]"
+          >
+            <span
+              aria-hidden
+              className="marker-fill"
+              style={{ background: "var(--yuzu)" }}
+            />
+            <span className="marker-text">Sign in</span>
+          </Link>{" "}
+          to keep exploring.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default async function ArtStylesPage() {
   // Curator check (owner|curator — the set Cedar grants ArtStyle.Archive to) is
   // cookie-bound and must stay off the public cache. The catalog itself is
   // Published-only and is cached as a slim card page so a header click is not a
   // 4s Temper collection round-trip.
   const canCurate = await hasCuratorAccess();
+  // Signed-out visitors get the owner-picked featured shelf only — mirrors the
+  // language home teaser and the read-MCP anonymous sample.
+  const full = await hasFullGalleryAccess();
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-10">
@@ -74,9 +142,15 @@ export default async function ArtStylesPage() {
         }
       />
       <div className="mt-10">
-        <Suspense fallback={<CardGridSkeleton count={8} />}>
-          <ArtStyleGrid canCurate={canCurate} />
-        </Suspense>
+        {full ? (
+          <Suspense fallback={<CardGridSkeleton count={8} />}>
+            <ArtStyleGrid canCurate={canCurate} />
+          </Suspense>
+        ) : (
+          <Suspense fallback={<CardGridSkeleton count={8} />}>
+            <FeaturedArtStyleShelf />
+          </Suspense>
+        )}
       </div>
     </div>
   );

@@ -1230,6 +1230,22 @@ export async function listFeaturedPaletteSystems(
   }
 }
 
+export async function listFeaturedArtStyles(
+  limit = 100,
+): Promise<LaneEntity[]> {
+  try {
+    const resp = await odata<{ value?: Record<string, unknown>[] }>(
+      `ArtStyles?$filter=Status eq 'Published' and featured eq true&$top=${limit}`,
+    );
+    return (resp.value ?? [])
+      .map((r) => normalizeLaneRow(r, "ArtStyles"))
+      .filter(isLaneFeatured)
+      .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
+  } catch {
+    return [];
+  }
+}
+
 // ── Directions (bake-off rounds) ──
 // A Direction is a reimagine brief / bake-off round. Contributor submissions
 // (DesignLanguage/ArtStyle/PaletteSystem) link to it via `direction_id`; the

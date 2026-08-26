@@ -10,6 +10,7 @@ import {
   getEmbodiment,
   getTokens,
   NEEDS_SIGN_IN,
+  NOT_FOUND,
   type Kind,
   type Tier,
 } from "@/lib/catalog";
@@ -32,8 +33,12 @@ function tierOf(extra: unknown): Tier {
 function ok(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
 }
-function gone() {
-  return { content: [{ type: "text" as const, text: JSON.stringify(NEEDS_SIGN_IN, null, 2) }], isError: true };
+// A miss means different things per tier: on the sample tier the design may
+// simply be outside the anonymous portion (sign in), but a full-tier caller has
+// the whole catalog, so a miss is a genuine not-found — never tell them to sign in.
+function gone(tier: Tier) {
+  const body = tier === "full" ? NOT_FOUND : NEEDS_SIGN_IN;
+  return { content: [{ type: "text" as const, text: JSON.stringify(body, null, 2) }], isError: true };
 }
 
 const idArg = z.string().describe("The entity id (en-…) or the slug");
@@ -80,8 +85,9 @@ const baseHandler = createMcpHandler(
         inputSchema: { id_or_slug: idArg },
       },
       async (a, extra) => {
-        const d = await getDesign("language", a.id_or_slug, tierOf(extra));
-        return d ? ok(d) : gone();
+        const tier = tierOf(extra);
+        const d = await getDesign("language", a.id_or_slug, tier);
+        return d ? ok(d) : gone(tier);
       },
     );
     server.registerTool(
@@ -93,8 +99,9 @@ const baseHandler = createMcpHandler(
         inputSchema: { id_or_slug: idArg },
       },
       async (a, extra) => {
-        const d = await getDesignMd(a.id_or_slug, tierOf(extra));
-        return d ? ok(d) : gone();
+        const tier = tierOf(extra);
+        const d = await getDesignMd(a.id_or_slug, tier);
+        return d ? ok(d) : gone(tier);
       },
     );
     server.registerTool(
@@ -110,8 +117,9 @@ const baseHandler = createMcpHandler(
         },
       },
       async (a, extra) => {
-        const d = await getTokens(a.kind ?? "language", a.id_or_slug, tierOf(extra), a.format ?? "json");
-        return d ? ok(d) : gone();
+        const tier = tierOf(extra);
+        const d = await getTokens(a.kind ?? "language", a.id_or_slug, tier, a.format ?? "json");
+        return d ? ok(d) : gone(tier);
       },
     );
 
@@ -141,8 +149,9 @@ const baseHandler = createMcpHandler(
         inputSchema: { id_or_slug: idArg },
       },
       async (a, extra) => {
-        const d = await getDesign("palette", a.id_or_slug, tierOf(extra));
-        return d ? ok(d) : gone();
+        const tier = tierOf(extra);
+        const d = await getDesign("palette", a.id_or_slug, tier);
+        return d ? ok(d) : gone(tier);
       },
     );
 
@@ -173,8 +182,9 @@ const baseHandler = createMcpHandler(
         inputSchema: { id_or_slug: idArg },
       },
       async (a, extra) => {
-        const d = await getDesign("art_style", a.id_or_slug, tierOf(extra));
-        return d ? ok(d) : gone();
+        const tier = tierOf(extra);
+        const d = await getDesign("art_style", a.id_or_slug, tier);
+        return d ? ok(d) : gone(tier);
       },
     );
 
@@ -188,8 +198,9 @@ const baseHandler = createMcpHandler(
         inputSchema: { kind: z.enum(["language", "palette", "art_style"]), id_or_slug: idArg },
       },
       async (a, extra) => {
-        const d = await getEmbodiment(a.kind, a.id_or_slug, tierOf(extra));
-        return d ? ok(d) : gone();
+        const tier = tierOf(extra);
+        const d = await getEmbodiment(a.kind, a.id_or_slug, tier);
+        return d ? ok(d) : gone(tier);
       },
     );
     server.registerTool(
@@ -207,7 +218,7 @@ const baseHandler = createMcpHandler(
             ? { tier: "full", signed_in_as: email ?? "(a Google account)", access: "the complete Katagami catalog" }
             : {
                 tier: "sample",
-                access: "featured designs only (the anonymous sample)",
+                access: "a curated portion of the catalog (the anonymous sample)",
                 unlock:
                   "Sign in with Google to unlock the full catalog. In an MCP client that supports OAuth, authenticate when prompted; the server advertises its authorization server at /.well-known/oauth-protected-resource.",
               },
