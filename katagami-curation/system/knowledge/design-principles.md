@@ -1,11 +1,13 @@
 # Katagami Design Principles
 
 This file is the compact philosophy layer for Katagami. The reusable design
-tests that used to live here have been extracted into Accepted `TasteRule`
-records so synthesis and review agents can apply them consistently.
+tests that used to live here live in the inlined taste rulebook
+(`knowledge/rules/design-language.md`) so synthesis and review agents apply
+them consistently.
 
-Use this document to understand the spirit of the system. Use Accepted
-`TasteRules` for concrete pass/fail design guidance.
+Use this document to understand the spirit of the system. Use the inlined
+rulebook for concrete pass/fail design guidance. Do not load TasteRule
+entities at generation or review time.
 
 ## Complete Visual Identity
 

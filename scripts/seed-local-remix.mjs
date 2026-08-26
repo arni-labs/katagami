@@ -58,6 +58,15 @@ async function ensureFile(fid) {
   if (!up.ok) throw new Error(`ready File ${fid} -> ${up.status}: ${await up.text()}`);
 }
 
+function isKnownSubmitForReviewBreak(status, body) {
+  if (status !== 409) return false;
+  const text = String(body ?? "");
+  // Called only for action === SubmitForReview. The recorded platform
+  // refusal is specifically "not valid from state 'Draft'". A 409 for a
+  // different reason (missing guard, policy) must still fail the seed.
+  return /not valid from state 'Draft'/.test(text);
+}
+
 async function act(set, id, action, params = {}) {
   for (const [k, v] of Object.entries(params)) {
     if (k.endsWith("_file_id")) await ensureFile(v);
@@ -70,8 +79,29 @@ async function act(set, id, action, params = {}) {
     headers,
     body: JSON.stringify(params),
   });
-  if (!res.ok) throw new Error(`${set}('${id}').${action} -> ${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    const body = await res.text();
+    const err = new Error(`${set}('${id}').${action} -> ${res.status}: ${body}`);
+    if (action === "SubmitForReview" && isKnownSubmitForReviewBreak(res.status, body)) {
+      err.code = "KNOWN_SUBMIT_FOR_REVIEW_BREAK";
+    }
+    throw err;
+  }
   return res;
+}
+
+async function finishReviewLifecycle(set, name, id, afterSubmit) {
+  try {
+    await act(set, id, "SubmitForReview", {});
+  } catch (e) {
+    if (e && e.code === "KNOWN_SUBMIT_FOR_REVIEW_BREAK") {
+      console.warn(`  ! ${set} ${name} (${id}) left in Draft: ${e.message}`);
+      return false;
+    }
+    throw e;
+  }
+  await afterSubmit();
+  return true;
 }
 
 const J = (o) => JSON.stringify(o);
@@ -116,16 +146,17 @@ async function seedDesignLanguage(d, artStyleId) {
   // paired ArtStyle is UnderReview/Published, so the language cannot leave Draft
   // without its imagery recipe. Art styles are therefore seeded first.
   await act("DesignLanguages", id, "SetDefaultArtStyle", { default_art_style_id: artStyleId });
-  await act("DesignLanguages", id, "SubmitForReview", {});
-  await act("DesignLanguages", id, "AttachPublishedAssets", {
-    thumbnail_asset_id: `seed-thumb-${d.slug}`, thumbnail_asset_url: `/thumbs/${d.slug}.png`,
-    embodiment_asset_id: `seed-embodiment-${d.slug}`, embodiment_asset_url: `/embodiments/${d.slug}-embodiment.html`,
-    design_md_asset_id: `seed-designmd-${d.slug}`, design_md_asset_url: "",
+  const published = await finishReviewLifecycle("DesignLanguages", d.name, id, async () => {
+    await act("DesignLanguages", id, "AttachPublishedAssets", {
+      thumbnail_asset_id: `seed-thumb-${d.slug}`, thumbnail_asset_url: `/thumbs/${d.slug}.png`,
+      embodiment_asset_id: `seed-embodiment-${d.slug}`, embodiment_asset_url: `/embodiments/${d.slug}-embodiment.html`,
+      design_md_asset_id: `seed-designmd-${d.slug}`, design_md_asset_url: "",
+    });
+    await act("DesignLanguages", id, "MarkQualityPassed", {});
+    await act("DesignLanguages", id, "Publish", {});
   });
-  await act("DesignLanguages", id, "MarkQualityPassed", {});
-  await act("DesignLanguages", id, "Publish", {});
-  console.log(`  ✓ DesignLanguage ${d.name} (${id})`);
-  return id;
+  if (published) console.log(`  ✓ DesignLanguage ${d.name} (${id})`);
+  return { id, published };
 }
 
 // ── Palette Systems ─────────────────────────────────────────────────────────
@@ -143,15 +174,16 @@ async function seedPalette(p) {
     tokens_export_manifest: J({ signature_count: p.signature.length, css_var_prefix: "--ds-" }),
   });
   await act("PaletteSystems", id, "AttachThumbnail", { thumbnail_file_id: `seed-pal-thumb-${p.slug}` });
-  await act("PaletteSystems", id, "SubmitForReview", {});
-  await act("PaletteSystems", id, "AttachPublishedAssets", {
-    thumbnail_asset_id: `seed-pal-thumb-${p.slug}`, thumbnail_asset_url: "",
-    tokens_export_asset_id: `seed-tokens-${p.slug}`, tokens_export_asset_url: "",
+  const published = await finishReviewLifecycle("PaletteSystems", p.name, id, async () => {
+    await act("PaletteSystems", id, "AttachPublishedAssets", {
+      thumbnail_asset_id: `seed-pal-thumb-${p.slug}`, thumbnail_asset_url: "",
+      tokens_export_asset_id: `seed-tokens-${p.slug}`, tokens_export_asset_url: "",
+    });
+    await act("PaletteSystems", id, "MarkQualityPassed", {});
+    await act("PaletteSystems", id, "Publish", {});
   });
-  await act("PaletteSystems", id, "MarkQualityPassed", {});
-  await act("PaletteSystems", id, "Publish", {});
-  console.log(`  ✓ PaletteSystem ${p.name} (${id})`);
-  return id;
+  if (published) console.log(`  ✓ PaletteSystem ${p.name} (${id})`);
+  return { id, published };
 }
 
 // ── Art Styles ──────────────────────────────────────────────────────────────
@@ -185,15 +217,15 @@ async function seedArtStyle(a) {
     prompt_review: J({ reviewed: true, notes: "seed-local placeholder" }),
     portability_report: J({ scenes: [], notes: "seed-local placeholder" }),
   });
-  await act("ArtStyles", id, "SubmitForReview", {});
-  await act("ArtStyles", id, "AttachPublishedAssets", {
-    thumbnail_asset_id: `/art/${a.slug}-1.png`, thumbnail_asset_url: "", reference_assets: "{}",
+  const published = await finishReviewLifecycle("ArtStyles", a.name, id, async () => {
+    await act("ArtStyles", id, "AttachPublishedAssets", {
+      thumbnail_asset_id: `/art/${a.slug}-1.png`, thumbnail_asset_url: "", reference_assets: "{}",
+    });
+    await act("ArtStyles", id, "MarkQualityPassed", {});
+    await act("ArtStyles", id, "Publish", {});
   });
-  await act("ArtStyles", id, "MarkQualityPassed", {});
-  await act("ArtStyles", id, "Publish", {});
-  console.log(`  ✓ ArtStyle ${a.name} (${id})`);
-  return id;
-  return id;
+  if (published) console.log(`  ✓ ArtStyle ${a.name} (${id})`);
+  return { id, published };
 }
 
 // ── Sample data ───────────────────────────────────────────────────────────────
@@ -253,21 +285,33 @@ const ART_STYLES = [
 
   // Art styles first: a design language cannot pass SubmitForReview without a
   // paired ArtStyle that is already UnderReview or Published.
+  let anyPublished = false;
+  let knownBreak = false;
+  const note = (r) => {
+    if (r.published) anyPublished = true;
+    else knownBreak = true;
+    return r.id;
+  };
+
   console.log("Art Styles:");
   const artStyleIds = [];
-  for (const a of ART_STYLES) artStyleIds.push(await seedArtStyle(a));
+  for (const a of ART_STYLES) artStyleIds.push(note(await seedArtStyle(a)));
   console.log("Design Languages:");
   for (const [i, d] of LANGUAGES.entries()) {
-    await seedDesignLanguage(d, artStyleIds[i % artStyleIds.length]);
+    note(await seedDesignLanguage(d, artStyleIds[i % artStyleIds.length]));
   }
   console.log("Palette Systems:");
-  for (const p of PALETTES) await seedPalette(p);
+  for (const p of PALETTES) note(await seedPalette(p));
 
   // report published counts
   for (const set of ["DesignLanguages", "PaletteSystems", "ArtStyles"]) {
     const r = await fetch(`${BASE}/tdata/${set}?$filter=Status eq 'Published'`, { headers });
     const j = await r.json().catch(() => ({}));
     console.log(`  ${set}: ${j.value?.length ?? "?"} Published`);
+  }
+  if (knownBreak) {
+    console.log("=== Seed incomplete: SubmitForReview refused from Draft (known break) ===");
+    process.exit(anyPublished ? 0 : 2);
   }
   console.log("=== Seed complete ===");
 })().catch((e) => {
