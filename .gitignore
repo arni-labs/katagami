@@ -20,8 +20,14 @@ node_modules/
 .vercel
 .env*.local
 
-# Local agent config
-.claude/
+# Local agent config. The repo contract files under .claude/ ARE tracked:
+# settings.json, global.md, hooks/, and the skills symlink into .agents/.
+# Everything else there is per-machine state.
+.claude/*
+!.claude/settings.json
+!.claude/global.md
+!.claude/hooks/
+!.claude/skills
 
 # model-bakeoff: keep tooling + the published round artifacts, exclude heavy logs/raw/venv
 experiments/model-bakeoff/runs/

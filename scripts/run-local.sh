@@ -13,15 +13,21 @@
 #     guards cross-check File entities, so the temper-fs specs must be
 #     registered alongside katagami-commons.
 #
-# Starts a local Temper server on :3467, registers the temper-fs + commons
+# Starts a local Temper server on :$PORT (default 3467), registers the temper-fs + commons
 # specs at runtime (entity sets only register via POST /api/specs/load-dir —
 # the `temper serve --specs-dir/--app` flags verify specs but do NOT expose
 # their OData entity sets; the second load passes "merge":true because
 # load-dir REPLACES the tenant registry by default), waits out the L0–L3
 # verification cascade (several minutes on a debug build — creates return 423
 # VerificationRequired until it finishes), seeds sample
-# palettes/art-styles/languages, and starts the Next.js dev server on :3000.
-# Open http://localhost:3000/.
+# palettes/art-styles/languages, and starts the Next.js dev server on :$UI_PORT
+# (default 3000). Open http://localhost:$UI_PORT/.
+#
+# Both ports are overridable so two stacks (or a verification run alongside
+# someone's session) never fight over a port or kill each other's servers:
+#   PORT=3499 UI_PORT=3500 bash scripts/run-local.sh
+# The db and log paths key off $PORT, and --stop only ever touches the two
+# ports it was given.
 #
 # Both servers are launched FULLY DETACHED (own session via a setsid launcher),
 # so they keep running after this script exits — they survive the terminal/agent
@@ -35,18 +41,19 @@ export PATH="$HOME/.cargo/bin:$PATH"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TEMPER_REPO="${TEMPER_REPO:-$ROOT/../temper}"
 FS_SPECS="$TEMPER_REPO/os-apps/temper-fs/specs"
-PORT=3467
-DB="/tmp/katagami-remix-local.db"
+PORT="${PORT:-3467}"
+UI_PORT="${UI_PORT:-3000}"
+DB="/tmp/katagami-remix-local-$PORT.db"
 TENANT=default
 KEY=test-local-key
-TEMPER_LOG=/tmp/katagami-temper.log
-UI_LOG=/tmp/katagami-ui.log
-LAUNCH=/tmp/katagami-launch.py
+TEMPER_LOG="/tmp/katagami-temper-$PORT.log"
+UI_LOG="/tmp/katagami-ui-$UI_PORT.log"
+LAUNCH="/tmp/katagami-launch-$PORT.py"
 
 stop() {
-  echo "==> stopping anything on :$PORT and :3000"
+  echo "==> stopping anything on :$PORT and :$UI_PORT"
   kill "$(lsof -ti :"$PORT" 2>/dev/null)" 2>/dev/null || true
-  kill "$(lsof -ti :3000 2>/dev/null)" 2>/dev/null || true
+  kill "$(lsof -ti :"$UI_PORT" 2>/dev/null)" 2>/dev/null || true
   pkill -f "temper serve --port $PORT" 2>/dev/null || true
 }
 
@@ -146,19 +153,19 @@ if [ ! -e "$ROOT/ui/node_modules" ]; then
   echo "    (no ui/node_modules — run 'npm install' in ui/ first)"
 fi
 
-echo "==> starting UI dev server on :3000 (detached)"
-( cd "$ROOT/ui" && python3 "$LAUNCH" "$UI_LOG" npm run dev ) &
+echo "==> starting UI dev server on :$UI_PORT (detached)"
+( cd "$ROOT/ui" && python3 "$LAUNCH" "$UI_LOG" npm run dev -- --port "$UI_PORT" ) &
 echo "    ui log: $UI_LOG"
 
 echo "==> waiting for UI to accept connections"
-curl --retry 60 --retry-delay 1 --retry-connrefused -sf "http://localhost:3000/" >/dev/null \
+curl --retry 60 --retry-delay 1 --retry-connrefused -sf "http://localhost:$UI_PORT/" >/dev/null \
   && echo "    UI up" || echo "    UI not responding yet — check $UI_LOG"
 
 echo
 echo "==> ready"
-echo "    Gallery     http://localhost:3000/"
-echo "    Palettes    http://localhost:3000/palettes"
-echo "    Art Styles  http://localhost:3000/art-styles"
-echo "    Studio      http://localhost:3000/studio"
+echo "    Gallery     http://localhost:$UI_PORT/"
+echo "    Palettes    http://localhost:$UI_PORT/palettes"
+echo "    Art Styles  http://localhost:$UI_PORT/art-styles"
+echo "    Studio      http://localhost:$UI_PORT/studio"
 echo "    (first hit on each route compiles for a few seconds)"
-echo "    stop with:  bash scripts/run-local.sh --stop"
+echo "    stop with:  PORT=$PORT UI_PORT=$UI_PORT bash scripts/run-local.sh --stop"
