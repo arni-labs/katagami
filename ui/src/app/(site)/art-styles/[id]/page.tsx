@@ -6,10 +6,12 @@ import {
   artStyleDisplayName,
   getArtStyle,
   listDesignLanguages,
+  listFeaturedArtStyles,
   listPaletteSystems,
   getFileUrl,
   parseJson,
 } from "@/lib/odata";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { artStyleImages } from "@/lib/lane-items";
 import { PageHero } from "@/components/page-hero";
@@ -52,6 +54,17 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   const isPublished = art.status === "Published";
   const curatorPreview = !isPublished && (await hasCuratorAccess());
   if (!isPublished && !curatorPreview) notFound();
+
+  // ARN-385: a signed-out visitor reaches only the owner-picked featured shelf —
+  // the same set the /art-styles teaser and the read-MCP anonymous sample show.
+  // A Published-but-unfeatured style is not viewable by direct URL when anon.
+  // Membership (not the row's own flag) is the source of truth so the gate can
+  // never diverge from the shelf. Cookie check only on this branch, so featured
+  // renders for anon and every signed-in render stay off the role path.
+  if (isPublished && !(await hasFullGalleryAccess())) {
+    const featured = await listFeaturedArtStyles();
+    if (!featured.some((a) => a.entity_id === id)) notFound();
+  }
 
   const f = art.fields;
   const name = artStyleDisplayName(f);

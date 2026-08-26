@@ -1,4 +1,5 @@
 import "server-only";
+import { isFeaturedRecord as isFeatured } from "./featured.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
 // commons through this module, so "what an identity may see" is defined once.
@@ -47,24 +48,48 @@ function headers(): Record<string, string> {
   };
 }
 
+// A short positive cache. The published catalog changes rarely, but an
+// anonymous caller can fan out many tool calls at once; caching each
+// (set, filter) read for a few seconds turns that storm into one backend pass
+// instead of a fresh crawl per call.
+const readCache = new Map<string, { rows: Row[]; at: number }>();
+const READ_TTL_MS = 20_000;
+// 200 pages × 500 rows = 100k, far above any real set. Reaching it means a
+// runaway backend, so we throw rather than silently returning a partial set.
+const MAX_PAGES = 200;
+
 /** Read every row of a set, following @odata.nextLink to completion. */
 async function readAll(set: string, filter: string): Promise<Row[]> {
+  const cacheKey = `${set}::${filter}`;
+  const hit = readCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < READ_TTL_MS) return hit.rows;
+
   const out: Row[] = [];
+  const seen = new Set<string>();
   let url: string | null =
     `${API_BASE}/tdata/${set}?$filter=${encodeURIComponent(filter)}&$top=500`;
-  let guard = 0;
-  while (url && guard++ < 50) {
+  let pages = 0;
+  while (url) {
+    if (pages++ >= MAX_PAGES) throw new Error(`Read ${set} exceeded ${MAX_PAGES} pages`);
+    if (seen.has(url)) throw new Error(`Read ${set} looped on a repeated nextLink`);
+    seen.add(url);
     const current: string = url;
-    const res: Response = await fetch(current, { headers: headers(), cache: "no-store" });
+    const res: Response = await fetch(current, {
+      headers: headers(),
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
     if (!res.ok) throw new Error(`Read ${set} failed ${res.status}`);
     const body = (await res.json()) as { value?: Row[]; "@odata.nextLink"?: string };
-    out.push(...(body.value ?? []));
+    if (!Array.isArray(body.value)) throw new Error(`Read ${set} returned no value array`);
+    out.push(...body.value);
     const next = body["@odata.nextLink"];
     // nextLink is relative to the request URI (e.g. "DesignLanguages?…") —
     // resolve it the spec-correct way, not by prefixing the origin (which
     // drops /tdata and 404s on page 2).
     url = next ? new URL(next, current).toString() : null;
   }
+  readCache.set(cacheKey, { rows: out, at: Date.now() });
   return out;
 }
 
@@ -72,8 +97,12 @@ async function readOne(set: string, id: string): Promise<Row | null> {
   const res = await fetch(`${API_BASE}/tdata/${set}('${encodeURIComponent(id)}')`, {
     headers: headers(),
     cache: "no-store",
+    signal: AbortSignal.timeout(15_000),
   });
-  if (!res.ok) return null;
+  if (res.status === 404) return null;
+  // A genuine backend fault must surface as an error, never masquerade as a
+  // clean not-found (which the caller would render as "sign in").
+  if (!res.ok) throw new Error(`Read ${set}('${id}') failed ${res.status}`);
   return (await res.json()) as Row;
 }
 
@@ -94,15 +123,6 @@ function jsonArr(v: unknown): string[] {
   }
   return [];
 }
-function truthy(v: unknown): boolean {
-  return v === true || v === "true" || v === 1 || v === "1";
-}
-function isFeatured(r: Row): boolean {
-  const f = r.fields ?? {};
-  const b = r.booleans ?? {};
-  return truthy(f.featured) || truthy(f.Featured) || truthy(b.featured) || truthy(b.Featured);
-}
-
 /** Compact, agent-facing shape for a catalog item. */
 function summary(kind: Kind, r: Row) {
   const f = r.fields ?? {};
@@ -125,19 +145,31 @@ function summary(kind: Kind, r: Row) {
 
 const PUBLISHED = "Status eq 'Published'";
 
-// The anonymous sample: featured entities first, then filled to a cap per kind
-// (mirrors the website's signed-out teaser). Featured-first keeps it curated;
-// the fill guarantees every kind has a usable sample even where nothing is
-// featured yet (palettes and art styles currently have 0 featured).
+// Palettes are public on the site, so their MCP sample is featured-first then
+// filled toward this cap. Languages and art styles instead sample to the WHOLE
+// featured set (no cap), so the portion is identical in the website teaser and
+// the MCP — the owner curates its size via the featured flag.
 const SAMPLE_CAP = 40;
+
+const byEntityId = (a: Row, b: Row) =>
+  a.entity_id < b.entity_id ? -1 : a.entity_id > b.entity_id ? 1 : 0;
 
 /** Gate: which published rows may this tier see? */
 async function visibleRows(kind: Kind, tier: Tier): Promise<Row[]> {
   const rows = (await readAll(SET[kind], PUBLISHED)).filter((r) => str(r.fields?.name));
   if (tier === "full") return rows;
-  const featured = rows.filter(isFeatured);
-  const rest = rows.filter((r) => !isFeatured(r));
-  return [...featured, ...rest].slice(0, SAMPLE_CAP);
+  // The anonymous sample is a fixed, owner-curated portion. Sorting by
+  // entity_id PINS it: the same query always yields the same slice, so a
+  // patient anonymous caller can't page past it, and the website teaser and
+  // the MCP show the identical portion (ARN-360). Languages and art styles
+  // sample to the featured set; palettes are public on the site, so their
+  // sample is featured-first then filled to the cap.
+  const featured = rows.filter(isFeatured).sort(byEntityId);
+  if (kind === "palette") {
+    const rest = rows.filter((r) => !isFeatured(r)).sort(byEntityId);
+    return [...featured, ...rest].slice(0, SAMPLE_CAP);
+  }
+  return featured;
 }
 
 // --- describe_catalog: the agent's map --------------------------------------
@@ -179,7 +211,7 @@ export async function describeCatalog(tier: Tier) {
     tier,
     note:
       tier === "sample"
-        ? "You are on the anonymous SAMPLE tier (featured designs only). Sign in with Google to unlock the full catalog — see whoami."
+        ? "You are on the anonymous SAMPLE tier (a curated portion of the catalog). Sign in with Google to unlock the full catalog — see whoami."
         : "Full catalog access.",
     kinds: {
       language: { count: langs.length, facets: ["family", "taxonomy", "tag", "query"] },
@@ -211,7 +243,7 @@ export type SearchArgs = {
   cursor?: number;
 };
 
-function matchName(rows: Row[], names: Map<string, string>, needle: string): Set<string> {
+function matchName(names: Map<string, string>, needle: string): Set<string> {
   // Resolve a family/taxonomy facet given by NAME to its id(s).
   const ids = new Set<string>();
   const n = needle.toLowerCase();
@@ -247,11 +279,11 @@ export async function searchDesigns(kind: Kind, tier: Tier, a: SearchArgs) {
     hits = hits.filter((r) => str(r.fields?.medium).toLowerCase() === m);
   }
   if (kind === "language" && a.family) {
-    const famIds = matchName(rows, taxNames, a.family);
+    const famIds = matchName(taxNames, a.family);
     hits = hits.filter((r) => famIds.has(str(r.fields?.family_id)));
   }
   if (a.taxonomy) {
-    const taxIds = matchName(rows, taxNames, a.taxonomy);
+    const taxIds = matchName(taxNames, a.taxonomy);
     hits = hits.filter((r) => jsonArr(r.fields?.taxonomy_ids).some((t) => taxIds.has(t)));
   }
 
@@ -288,6 +320,11 @@ export const NEEDS_SIGN_IN = {
   error: "not_available_on_sample_tier",
   message:
     "This design isn't in the anonymous sample. Sign in with Google to unlock the full catalog (see whoami).",
+};
+
+export const NOT_FOUND = {
+  error: "not_found",
+  message: "No published design with that id or slug.",
 };
 
 export async function getDesign(kind: Kind, idOrSlug: string, tier: Tier) {

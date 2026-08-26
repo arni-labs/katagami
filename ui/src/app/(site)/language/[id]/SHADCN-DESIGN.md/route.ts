@@ -42,7 +42,7 @@ export async function GET(
     });
   }
 
-  const gate = await artifactGate(lang.status);
+  const gate = await artifactGate(lang.status, { id, kind: "language" });
   if (!gate.allowed) return gate.response;
 
   const f = lang.fields;

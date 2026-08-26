@@ -7,8 +7,10 @@ import { ArrowLeft } from "lucide-react";
 import {
   getDesignLanguage,
   getFileUrl,
+  listFeaturedDesignLanguages,
   parseJson,
 } from "@/lib/odata";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { RelatedLanguages } from "@/components/related-languages";
 import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
@@ -68,6 +70,16 @@ export async function generateMetadata({
     if (lang.status !== "Published" && !(await hasCuratorAccess())) {
       return { title: pageTitle() };
     }
+    // ARN-385: a signed-out visitor reaches only the owner-picked featured shelf.
+    // Don't leak a non-featured language's name into <title>/OG for anon — the
+    // page body 404s below, but metadata renders first. Featured membership is
+    // the source of truth so this can never diverge from the visitor shelf.
+    if (lang.status === "Published" && !(await hasFullGalleryAccess())) {
+      const featured = await listFeaturedDesignLanguages();
+      if (!featured.some((l) => l.entity_id === id)) {
+        return { title: pageTitle() };
+      }
+    }
     const name = lang.fields.name || "Untitled";
     return {
       title: pageTitle(name),
@@ -106,6 +118,15 @@ export default async function LanguageDetailPage({
   // renders never execute cookies(), preserving the full-route cache
   // (the sign-in rollout invariant for this page).
   if (lang.status !== "Published" && !(await hasCuratorAccess())) notFound();
+
+  // ARN-385: signed-out visitors reach only the owner-picked featured shelf — a
+  // Published-but-unfeatured language is not viewable by direct URL when anon.
+  // Membership (not the row's own flag) mirrors the home teaser and read-MCP
+  // exactly. Cookie check only on this branch, preserving the cache invariant.
+  if (lang.status === "Published" && !(await hasFullGalleryAccess())) {
+    const featured = await listFeaturedDesignLanguages();
+    if (!featured.some((l) => l.entity_id === id)) notFound();
+  }
 
   const f = lang.fields;
 
