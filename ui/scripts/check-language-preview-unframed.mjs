@@ -1,6 +1,7 @@
-// Language-detail preview contract (ARN-376): the embodiment iframe is a
-// screenshot card, not a Polaroid sticker. Caption, Open full overlay, and
-// 3px pills must not return (curator order: previews carry no chrome).
+// Language-detail preview contract (ARN-376 + Open full hold).
+// Polaroid caption / 3px pills stay gone. Exactly one Open full overlay
+// sits on the landing / dashboard preview and opens the URL currently
+// shown. Live Bluet now has zero. Two is fail. Zero is fail.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -11,6 +12,7 @@ function read(path) {
 const tabs = read("src/components/embodiment-tabs.tsx");
 const viewer = read("src/components/embodiment-viewer.tsx");
 const page = read("src/app/(site)/language/[id]/page.tsx");
+const surfaces = [tabs, viewer, page].join("\n");
 
 const required = [
   [
@@ -29,16 +31,41 @@ const required = [
     (src) => !/<EmbodimentTabs\b[^>]*\bslug=/.test(src),
   ],
   [
-    "no overlay chrome on the preview",
+    "shared viewer stays chrome-free",
     viewer,
-    // No anchors/buttons at all inside the viewer (it renders only the sandboxed
-    // iframe + measurement scaffolding), so overlay chrome cannot return under
-    // any wording or icon.
+    // Compare / AB / radix-test reuse EmbodimentViewer. Overlay lives on the
+    // language-detail tabs preview only, so this file must stay iframe-only.
     (src) =>
       !/open full/i.test(src) &&
       !src.includes("ExternalLink") &&
       !/<a\s/.test(src) &&
       !/<button\s/.test(src),
+  ],
+  [
+    "preview overlay is the one Open full control",
+    tabs,
+    (src) => {
+      const anchors = src.match(/<a\s/g) ?? [];
+      return (
+        anchors.length === 1 &&
+        /href=\{cur\.url\}/.test(src) &&
+        /target="_blank"/.test(src) &&
+        /absolute right-2 top-2/.test(src) &&
+        /open full/i.test(src) &&
+        src.includes("rounded-none") &&
+        !src.includes("rounded-[3px]") &&
+        !/open full page/i.test(src)
+      );
+    },
+  ],
+  [
+    "language detail does not add a second Open full / open-in-new on the preview",
+    surfaces,
+    (src) => {
+      const anchors = src.match(/<a\s/g) ?? [];
+      const pageLinks = src.match(/open full page/gi) ?? [];
+      return anchors.length === 1 && pageLinks.length === 0;
+    },
   ],
 ];
 

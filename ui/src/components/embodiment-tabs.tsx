@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { EmbodimentViewer } from "@/components/embodiment-viewer";
 
 export type EmbodimentTab = {
@@ -15,6 +16,10 @@ export type EmbodimentTab = {
  * showcase, the bespoke Landing, and the bespoke Dashboard. Each renders in the
  * safety-sandboxed EmbodimentViewer. We remount the viewer per tab (key=url) so
  * the auto-height measurement re-runs for the newly selected document.
+ *
+ * One overlay on the preview opens `cur.url` — the landing / embodiment /
+ * dashboard currently shown. The shared viewer stays chrome-free (compare /
+ * AB / radix-test). The old dotted tab-row escape hatch does not come back.
  */
 export function EmbodimentTabs({
   tabs,
@@ -42,9 +47,22 @@ export function EmbodimentTabs({
         </div>
       </div>
 
-      <div className="relative min-w-0 overflow-hidden shadow-[var(--shadow-card)]">
-        {/* key=url → remount on tab switch so height re-measures */}
-        <EmbodimentViewer key={cur.url} src={cur.url} />
+      <div className="relative min-w-0">
+        <div className="overflow-hidden shadow-[var(--shadow-card)]">
+          {/* key=url → remount on tab switch so height re-measures */}
+          <EmbodimentViewer key={cur.url} src={cur.url} />
+        </div>
+        <a
+          href={cur.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Open full ${cur.label}`}
+          className="group absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-none bg-card/90 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground shadow-[0_1px_3px_rgba(30,35,45,0.16)] backdrop-blur-[2px] transition-all hover:-translate-y-[1px] hover:text-foreground"
+        >
+          <span className="hidden sm:inline">open full</span>
+          <span className="sm:hidden">full</span>
+          <ExternalLink className="h-3 w-3" />
+        </a>
       </div>
     </div>
   );
