@@ -1190,6 +1190,7 @@ export function themeOverrideStyle(
     ["--muted", map.muted],
     ["--border", map.border],
     ["--accent", map.accent],
+    ["--primary", map.accent],
     ["--on-accent", readableOn(map.accent)],
     ["--success", roles.success || "#16a34a"],
     ["--warning", roles.warning || "#d97706"],

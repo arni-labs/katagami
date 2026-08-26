@@ -126,12 +126,10 @@ export function InlineRemix({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [langId, setLangId] = useState(fixed.language ?? initial?.langId ?? languages[0]?.id ?? "");
+  // Do not seed palettes[0]. That leftover bound teal and left Ember in sr-only.
+  const landingPrimary = cssPrimaryHex(initialPreviewHtml);
   const [palId, setPalId] = useState(() =>
-    pickRemixPaletteId(
-      palettes,
-      fixed.palette ?? initial?.palId,
-      cssPrimaryHex(initialPreviewHtml),
-    ),
+    pickRemixPaletteId(palettes, fixed.palette ?? initial?.palId, landingPrimary),
   );
   const [artId, setArtId] = useState(fixed.art ?? initial?.artId ?? art[0]?.id ?? "");
   const [compIdx, setCompIdx] = useState(() => {

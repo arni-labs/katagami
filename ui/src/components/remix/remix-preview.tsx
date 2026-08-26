@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ScaledFrame } from "@/components/scaled-frame";
-import { injectTheme, themeOverrideStyle, type Roles } from "@/lib/remix-theme";
+import {
+  compositionBindDecls,
+  injectTheme,
+  themeOverrideStyle,
+  type Roles,
+} from "@/lib/remix-theme";
 
 /**
  * Live remix preview: fetches a language's bespoke composition HTML (landing or
@@ -57,7 +62,13 @@ export function RemixPreview({
     <div
       hidden
       data-remix-theme=""
-      dangerouslySetInnerHTML={{ __html: themeOverrideStyle(roles, hero) }}
+      dangerouslySetInnerHTML={{
+        __html: themeOverrideStyle(
+          roles,
+          hero,
+          compositionBindDecls(fresh || "", roles, hero),
+        ),
+      }}
     />
   );
 

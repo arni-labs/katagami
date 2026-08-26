@@ -44,10 +44,15 @@ export function pickRemixPaletteId(
     if (hit) return hit.id;
   }
   if (palettes.length === 0) return "";
-  if (againstHex && palettes.length > 1) {
-    let best = palettes[0];
+  const against = againstHex?.toLowerCase();
+  const pool = against
+    ? palettes.filter((p) => (p.roles?.accent ?? "").toLowerCase() !== against)
+    : palettes;
+  const rows = pool.length > 0 ? pool : palettes;
+  if (againstHex && rows.length > 0) {
+    let best = rows[0];
     let bestD = -1;
-    for (const p of palettes) {
+    for (const p of rows) {
       const d = dist2(p.roles?.accent ?? "", againstHex);
       if (d > bestD) {
         bestD = d;
@@ -56,5 +61,5 @@ export function pickRemixPaletteId(
     }
     return best.id;
   }
-  return palettes[0].id;
+  return rows[0].id;
 }
