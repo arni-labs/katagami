@@ -22,6 +22,7 @@ forbid(
     Action::"SetCreator",
     Action::"SetFeatured",
     Action::"SetTaxonomy",
+    Action::"SetVisitorVisibility",
     Action::"UpdateQuality"
   ],
   resource is ArtStyle
