@@ -61,10 +61,10 @@ async function ensureFile(fid) {
 function isKnownSubmitForReviewBreak(status, body) {
   if (status !== 409) return false;
   const text = String(body ?? "");
-  // Called only for action === SubmitForReview. Temper's recorded local
-  // refusal is 409 ActionFailed from Draft; the body may or may not repeat
-  // the action name.
-  return /ActionFailed/.test(text) || /not valid from state 'Draft'/.test(text);
+  // Called only for action === SubmitForReview. The recorded platform
+  // refusal is specifically "not valid from state 'Draft'". A 409 for a
+  // different reason (missing guard, policy) must still fail the seed.
+  return /not valid from state 'Draft'/.test(text);
 }
 
 async function act(set, id, action, params = {}) {

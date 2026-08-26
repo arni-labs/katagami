@@ -36,6 +36,17 @@ case "$(classify_seed_output "SEED FAILED: PaletteSystems not reachable (404)")"
   failed) pass "classify other seed failure as failed" ;;
   *) fail "expected failed for a non-409 seed error" ;;
 esac
+mixed="$(printf '%s\n' \
+  "SEED FAILED: ArtStyles('x').SubmitForReview -> 409: ActionFailed: Action 'SubmitForReview' not valid from state 'Draft'" \
+  "SEED FAILED: create PaletteSystems -> 500: boom")"
+case "$(classify_seed_output "$mixed")" in
+  failed) pass "classify 409 plus a later SEED FAILED as failed" ;;
+  *) fail "409 must not hide a later seed crash" ;;
+esac
+case "$(classify_seed_output "SEED FAILED: DesignLanguages('x').SubmitForReview -> 409: guard has_default_art_style")" in
+  failed) pass "classify a non-Draft SubmitForReview 409 as failed" ;;
+  *) fail "other SubmitForReview 409s must stay fatal" ;;
+esac
 
 # Leftover 2: each PORT has its own env file; contents follow the port.
 tmp="$(mktemp -d)"

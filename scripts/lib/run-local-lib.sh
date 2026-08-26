@@ -3,6 +3,9 @@
 
 # Classify seed-local-remix.mjs stdout/stderr.
 # Prints one of: complete | verifying | known_submit_break | failed
+#
+# A recorded SubmitForReview-from-Draft 409 is not a launch failure. A
+# different SEED FAILED in the same output still is — the 409 must not hide it.
 classify_seed_output() {
   local out="$1"
   if printf '%s\n' "$out" | grep -q "=== Seed complete ==="; then
@@ -13,25 +16,50 @@ classify_seed_output() {
     printf '%s\n' verifying
     return
   fi
-  # Recorded platform break: SubmitForReview refused from Draft (409), or the
-  # seed script's honest incomplete marker for the same event. Not a launch
-  # failure — the stack can still write env and start Next.
+
+  local known=0
   if printf '%s\n' "$out" | grep -Eq \
-      "SubmitForReview -> 409|SubmitForReview' not valid from state 'Draft'|Seed incomplete:.*SubmitForReview"; then
+      "SubmitForReview -> 409.*not valid from state 'Draft'|not valid from state 'Draft'|Seed incomplete:.*SubmitForReview"; then
+    known=1
+  fi
+
+  local other
+  other="$(printf '%s\n' "$out" | grep -Ev \
+      "SubmitForReview -> 409|SubmitForReview' not valid from state 'Draft'|Seed incomplete:.*SubmitForReview|left in Draft" \
+      || true)"
+  if printf '%s\n' "$other" | grep -q "SEED FAILED"; then
+    printf '%s\n' failed
+    return
+  fi
+  if [ "$known" = 1 ]; then
     printf '%s\n' known_submit_break
     return
   fi
   printf '%s\n' failed
 }
 
-# Kill whatever is listening on a TCP port. Never match by process name:
-# other sessions run `temper serve` / `next dev` on this machine.
-# Unquoted expansion is intentional: one PID per argument. Quoting the
-# whole lsof output into a single kill argument is the bug this replaced.
+# Kill the process recorded in a port-keyed pidfile. This is not a name match:
+# the pidfile is written by the launcher after setsid, before exec, so it
+# covers a server that has not bound its port yet.
+kill_pidfile() {
+  local f="$1"
+  local pid
+  [ -f "$f" ] || return 0
+  pid="$(tr -d '[:space:]' < "$f" 2>/dev/null || true)"
+  rm -f "$f"
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+    kill "$pid" 2>/dev/null || true
+  fi
+}
+
+# Kill LISTEN-ers on a TCP port only. Never match by process name; never
+# kill clients that merely connected to the port (a browser on the gallery,
+# an agent curling /tdata).
+# Unquoted expansion is intentional: one PID per argument.
 kill_port_listeners() {
   local port="$1"
   local pids
-  pids="$(lsof -ti :"$port" 2>/dev/null || true)"
+  pids="$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null || true)"
   if [ -n "$pids" ]; then
     # shellcheck disable=SC2086
     kill $pids 2>/dev/null || true

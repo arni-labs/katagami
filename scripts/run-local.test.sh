@@ -10,6 +10,7 @@ trap 'cleanup' EXIT
 cleanup() {
   if [ -n "${PORT1:-}" ]; then PORT="$PORT1" UI_PORT="$UI1" bash "$ROOT/scripts/run-local.sh" --stop >/dev/null 2>&1 || true; fi
   if [ -n "${PORT2:-}" ]; then PORT="$PORT2" UI_PORT="$UI2" bash "$ROOT/scripts/run-local.sh" --stop >/dev/null 2>&1 || true; fi
+  if [ -n "${PORT4:-}" ]; then PORT="$PORT4" UI_PORT="$UI4" bash "$ROOT/scripts/run-local.sh" --stop >/dev/null 2>&1 || true; fi
   rm -rf "$WORKDIR"
 }
 
@@ -66,9 +67,9 @@ HTTPServer(("127.0.0.1", port), H).serve_forever()
 PY
 chmod +x "$STUB/temper"
 
-cat >"$STUB/npm" <<'PY'
+cat >"$STUB/npm" <<PY
 #!/usr/bin/env python3
-import sys
+import os, sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 port = 3000
@@ -76,6 +77,10 @@ args = sys.argv[1:]
 for i, a in enumerate(args):
     if a == "--port" and i + 1 < len(args):
         port = int(args[i + 1])
+
+env_dump = os.path.join("$WORKDIR", f"next-env-{port}.txt")
+with open(env_dump, "w") as f:
+    f.write(os.environ.get("NEXT_PUBLIC_TEMPER_API_URL", "") + "\\n")
 
 class H(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -121,6 +126,8 @@ printf '%s\n' "$OUT1" | grep -q "==> ready" || fail "replay 1 missing ==> ready"
 [ -f "$WORKDIR/ui/.env.$PORT1.local" ] || fail "replay 1 did not write stack env"
 grep -q "localhost:$PORT1" "$WORKDIR/ui/.env.local" || fail "replay 1 env URL"
 curl -sf "http://127.0.0.1:$UI1/" >/dev/null || fail "replay 1 Next not listening on $UI1"
+[ -f "$WORKDIR/next-env-$UI1.txt" ] || fail "replay 1 Next did not record process env"
+grep -q "localhost:$PORT1" "$WORKDIR/next-env-$UI1.txt" || fail "replay 1 Next env URL"
 pass "replay 1 reached ready, wrote env, UI on $UI1"
 
 # Replay 2: second stack must not retarget the first env / URL.
@@ -138,6 +145,8 @@ grep -q "localhost:$PORT2" "$WORKDIR/ui/.env.$PORT2.local" || fail "stack 2 env 
 grep -q "localhost:$PORT1" "$WORKDIR/ui/.env.local" || fail "shared ui/.env.local clobbered by second PORT"
 curl -sf "http://127.0.0.1:$UI1/" >/dev/null || fail "replay 2 killed first UI"
 curl -sf "http://127.0.0.1:$UI2/" >/dev/null || fail "replay 2 UI not listening"
+grep -q "localhost:$PORT1" "$WORKDIR/next-env-$UI1.txt" || fail "first Next env retargeted"
+grep -q "localhost:$PORT2" "$WORKDIR/next-env-$UI2.txt" || fail "second Next env wrong"
 pass "replay 2: two PORT stacks keep distinct env files and URLs"
 
 # Replay 3: --stop must not call pkill (stub exits 99 if it does).
@@ -154,5 +163,22 @@ if curl -sf "http://127.0.0.1:$UI1/" >/dev/null 2>&1; then
 fi
 curl -sf "http://127.0.0.1:$UI2/" >/dev/null || fail "replay 3 stop on stack 1 killed stack 2"
 pass "replay 3: stop() kills by port only, no pkill"
+
+# Ready is a listen contract: a dead UI must not print ==> ready.
+echo "==> replay 4: Next never binds, Launch must not claim ready"
+cat >"$STUB/npm" <<'SH'
+#!/usr/bin/env bash
+exit 1
+SH
+chmod +x "$STUB/npm"
+PORT4="$(pick_port)"
+UI4="$(pick_port)"
+set +e
+OUT4="$(PORT="$PORT4" UI_PORT="$UI4" bash "$ROOT/scripts/run-local.sh" 2>&1)"
+RC4=$?
+set -e
+[ "$RC4" != 0 ] || fail "replay 4 exited 0 with a dead UI"
+printf '%s\n' "$OUT4" | grep -q "==> ready" && fail "replay 4 printed ==> ready without a UI"
+pass "replay 4: no ready when Next never listens"
 
 echo "ALL PASSED"
