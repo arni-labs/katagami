@@ -11,6 +11,7 @@ cleanup() {
   if [ -n "${PORT1:-}" ]; then PORT="$PORT1" UI_PORT="$UI1" bash "$ROOT/scripts/run-local.sh" --stop >/dev/null 2>&1 || true; fi
   if [ -n "${PORT2:-}" ]; then PORT="$PORT2" UI_PORT="$UI2" bash "$ROOT/scripts/run-local.sh" --stop >/dev/null 2>&1 || true; fi
   if [ -n "${PORT4:-}" ]; then PORT="$PORT4" UI_PORT="$UI4" bash "$ROOT/scripts/run-local.sh" --stop >/dev/null 2>&1 || true; fi
+  if [ -n "${PORT6:-}" ]; then PORT="$PORT6" UI_PORT="$UI6" bash "$ROOT/scripts/run-local.sh" --stop >/dev/null 2>&1 || true; fi
   rm -rf "$WORKDIR"
 }
 
@@ -163,6 +164,27 @@ if curl -sf "http://127.0.0.1:$UI1/" >/dev/null 2>&1; then
 fi
 curl -sf "http://127.0.0.1:$UI2/" >/dev/null || fail "replay 3 stop on stack 1 killed stack 2"
 pass "replay 3: stop() kills by port only, no pkill"
+
+# Leftover 6: a Draft 409 plus a later guard 409 is not the known break.
+# Next still works here — if classify wrongly returns known_submit_break,
+# Launch would start the UI and print ready, and this replay would fail.
+echo "==> replay 6: Draft 409 + later guard 409 must not print ready"
+cat >"$WORKDIR/seed-mixed-409.mjs" <<'JS'
+console.error("SEED FAILED: ArtStyles('seed').SubmitForReview -> 409: ActionFailed: Action 'SubmitForReview' not valid from state 'Draft'");
+console.error("SEED FAILED: DesignLanguages('seed').SubmitForReview -> 409: guard has_default_art_style");
+process.exit(1);
+JS
+PORT6="$(pick_port)"
+UI6="$(pick_port)"
+set +e
+OUT6="$(PORT="$PORT6" UI_PORT="$UI6" KATAGAMI_SEED_SCRIPT="$WORKDIR/seed-mixed-409.mjs" \
+  bash "$ROOT/scripts/run-local.sh" 2>&1)"
+RC6=$?
+set -e
+[ "$RC6" != 0 ] || fail "replay 6 exited 0 on mixed Draft+guard 409"
+printf '%s\n' "$OUT6" | grep -q "==> ready" && fail "replay 6 printed ==> ready on mixed pair"
+printf '%s\n' "$OUT6" | grep -q "seed stopped at Draft" && fail "replay 6 treated mixed pair as known Draft break"
+pass "replay 6: mixed Draft 409 + guard 409 is failed, no ready"
 
 # Ready is a listen contract: a dead UI must not print ==> ready.
 echo "==> replay 4: Next never binds, Launch must not claim ready"

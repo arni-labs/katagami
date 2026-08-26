@@ -47,6 +47,15 @@ case "$(classify_seed_output "SEED FAILED: DesignLanguages('x').SubmitForReview 
   failed) pass "classify a non-Draft SubmitForReview 409 as failed" ;;
   *) fail "other SubmitForReview 409s must stay fatal" ;;
 esac
+# Leftover 6: Ev-stripping every SubmitForReview -> 409 hid a later guard 409.
+mixed409="$(printf '%s\n' \
+  "SEED FAILED: ArtStyles('x').SubmitForReview -> 409: ActionFailed: Action 'SubmitForReview' not valid from state 'Draft'" \
+  "SEED FAILED: DesignLanguages('y').SubmitForReview -> 409: guard has_default_art_style")"
+case "$(classify_seed_output "$mixed409")" in
+  failed) pass "classify Draft 409 plus later guard 409 as failed" ;;
+  known_submit_break) fail "leftover 6: mixed pair classified as known_submit_break" ;;
+  *) fail "expected failed for Draft 409 + later guard 409, got $(classify_seed_output "$mixed409")" ;;
+esac
 
 # Leftover 2: each PORT has its own env file; contents follow the port.
 tmp="$(mktemp -d)"

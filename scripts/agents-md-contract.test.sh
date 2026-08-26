@@ -102,4 +102,12 @@ grep -q 'maybe_write_shared_ui_env' "$ROOT/scripts/lib/run-local-lib.sh" \
   || fail "leftover 2 dropped: shared .env.local guard missing"
 pass "leftovers 1–3 still present"
 
+# Leftover 6: do not Ev-strip every SubmitForReview -> 409.
+if grep -nE 'grep -Ev.*SubmitForReview -> 409' "$ROOT/scripts/lib/run-local-lib.sh"; then
+  fail "leftover 6: Ev-strip of every SubmitForReview -> 409 returned"
+fi
+grep -q 'is_known_draft_409_line' "$ROOT/scripts/lib/run-local-lib.sh" \
+  || fail "leftover 6 dropped: only Draft-specific 409 lines are known"
+pass "leftover 6: classifier does not Ev-strip every 409"
+
 echo "ALL PASSED"

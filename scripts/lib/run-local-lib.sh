@@ -1,11 +1,21 @@
 # Shared helpers for scripts/run-local.sh. Sourced, not executed.
 # Keep this file free of side effects so the contract tests can source it.
 
+# True when a single line is the recorded Draft SubmitForReview 409
+# (or the seed script's honest marker for that event). A later
+# SubmitForReview -> 409 for a missing guard is not this.
+is_known_draft_409_line() {
+  local line="$1"
+  printf '%s\n' "$line" | grep -Eq \
+      "Seed incomplete:.*SubmitForReview|left in Draft|SubmitForReview -> 409.*not valid from state 'Draft'"
+}
+
 # Classify seed-local-remix.mjs stdout/stderr.
 # Prints one of: complete | verifying | known_submit_break | failed
 #
-# A recorded SubmitForReview-from-Draft 409 is not a launch failure. A
-# different SEED FAILED in the same output still is — the 409 must not hide it.
+# known_submit_break only when every seed failure is the recorded Draft
+# 409. A Draft 409 plus a later guard 409 is failed — do not Ev-strip
+# every "SubmitForReview -> 409" (that hid leftover 6).
 classify_seed_output() {
   local out="$1"
   if printf '%s\n' "$out" | grep -q "=== Seed complete ==="; then
@@ -18,16 +28,26 @@ classify_seed_output() {
   fi
 
   local known=0
-  if printf '%s\n' "$out" | grep -Eq \
-      "SubmitForReview -> 409.*not valid from state 'Draft'|not valid from state 'Draft'|Seed incomplete:.*SubmitForReview"; then
-    known=1
-  fi
+  local other_fail=0
+  local line
+  while IFS= read -r line || [ -n "$line" ]; do
+    [ -n "$line" ] || continue
+    if is_known_draft_409_line "$line"; then
+      known=1
+      continue
+    fi
+    if printf '%s\n' "$line" | grep -q "SEED FAILED"; then
+      other_fail=1
+      continue
+    fi
+    if printf '%s\n' "$line" | grep -q "SubmitForReview -> 409"; then
+      other_fail=1
+    fi
+  done <<EOF
+$out
+EOF
 
-  local other
-  other="$(printf '%s\n' "$out" | grep -Ev \
-      "SubmitForReview -> 409|SubmitForReview' not valid from state 'Draft'|Seed incomplete:.*SubmitForReview|left in Draft" \
-      || true)"
-  if printf '%s\n' "$other" | grep -q "SEED FAILED"; then
+  if [ "$other_fail" = 1 ]; then
     printf '%s\n' failed
     return
   fi
