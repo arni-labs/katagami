@@ -6,6 +6,7 @@ import {
   type DesignLanguage,
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
+import { seedLanguageRemixPaletteId } from "@/lib/remix-palette-pick";
 import {
   canRemixLanguage,
   languageHasRemixComposition,
@@ -50,14 +51,15 @@ function RemixControlsResolved({
   if (!canRemixLanguage(lang, catalogs.palettes, catalogs.arts)) {
     return <RemixControlsDark />;
   }
+  const palettes = toPaletteOpts(catalogs.palettes);
   return (
     <InlineRemix
       languages={toLanguageOpts([lang])}
-      palettes={toPaletteOpts(catalogs.palettes)}
+      palettes={palettes}
       art={toArtOpts(catalogs.arts)}
       fixed={{ language: lang.entity_id }}
       initial={{
-        palId: lang.fields.default_palette_id,
+        palId: seedLanguageRemixPaletteId(lang.fields.default_palette_id, palettes),
         artId: lang.fields.default_art_style_id,
       }}
       initialPreviewHtml={initialPreviewHtml}

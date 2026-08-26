@@ -12,7 +12,11 @@ import { saveRemix } from "@/app/remix-actions";
 import type { Roles } from "@/lib/remix-theme";
 import { KX_BTN_INK, KX_BTN_PAPER, KX_LABEL } from "@/lib/katagami-ui";
 import { trackCopy } from "@/lib/analytics";
-import { cssPrimaryHex, pickRemixPaletteId } from "@/lib/remix-palette-pick";
+import {
+  cssPrimaryHex,
+  pickRemixPaletteId,
+  seedLanguageRemixPaletteId,
+} from "@/lib/remix-palette-pick";
 
 const MEDIA = "shrink-0 overflow-hidden rounded-[2px] shadow-[0_1px_3px_rgba(30,35,45,0.14)]";
 
@@ -126,11 +130,12 @@ export function InlineRemix({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [langId, setLangId] = useState(fixed.language ?? initial?.langId ?? languages[0]?.id ?? "");
-  // Do not seed palettes[0] (teal) or contrast-max (#FFD400). Ember-not-first.
+  // Hold is Ember / #C8442A. Do not max-contrast against landing --primary
+  // (that leftover bound live Bluet to #FFD400).
   const landingPrimary = cssPrimaryHex(initialPreviewHtml);
   const seededPalId = pickRemixPaletteId(
     palettes,
-    fixed.palette ?? initial?.palId,
+    seedLanguageRemixPaletteId(fixed.palette ?? initial?.palId, palettes),
     landingPrimary,
   );
   const [palId, setPalId] = useState(seededPalId);

@@ -15,7 +15,9 @@ import { injectTheme, themeOverrideStyle } from "../src/lib/remix-theme.ts";
 import {
   cssPrimaryHex,
   pickRemixPaletteId,
+  seedLanguageRemixPaletteId,
 } from "../src/lib/remix-palette-pick.ts";
+const pickMod = await import("../src/lib/remix-palette-pick.ts");
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const nodeRequire = createRequire(import.meta.url);
@@ -151,6 +153,24 @@ assert.equal(
   "ps-ember",
   "live-shaped catalog: Ember, not contrast-max #FFD400",
 );
+assert.equal(
+  seedLanguageRemixPaletteId(undefined, [
+    { id: "ps-other", roles: { accent: "#007C78" } },
+    { id: "ps-yellow", roles: { accent: "#FFD400" } },
+    { id: "ps-ember", name: "Ember Signal", roles: { accent: "#C8442A" } },
+  ]),
+  "ps-ember",
+  "language page seeds Ember, not max-contrast yellow",
+);
+const pickSrc = fs.readFileSync(
+  path.join(here, "../src/lib/remix-palette-pick.ts"),
+  "utf8",
+);
+assert.doesNotMatch(
+  pickSrc,
+  /dist2|bestD/,
+  "pickRemixPaletteId must not max-contrast — that leftover bound live Bluet to #FFD400",
+);
 
 const thrown = await resolveRemixCatalogs(
   async () => {
@@ -237,9 +257,10 @@ assert.match(
 );
 assert.match(
   inlineSrc,
-  /pickRemixPaletteId/,
-  "live InlineRemix must seed palId from pickRemixPaletteId, not palettes[0]",
+  /seedLanguageRemixPaletteId/,
+  "live InlineRemix seeds Ember, not palettes[0] or max-contrast",
 );
+assert.match(remixSrc, /seedLanguageRemixPaletteId/);
 assert.doesNotMatch(
   inlineSrc,
   /useState\(fixed\.palette \?\? initial\?\.palId \?\? palettes\[0\]/,
@@ -423,6 +444,7 @@ const treeMod = loadTsx(
           })),
     },
     "@/lib/language-detail-stream": streamForTree,
+    "@/lib/remix-palette-pick": pickMod,
     "@/components/remix/inline-remix": inlineMod,
     "@/components/remix/remix-lane-blurb": {
       RemixLaneBlurb: ({ name }) =>
@@ -563,6 +585,7 @@ function loadLiveTree(odata) {
           })),
     },
     "@/lib/language-detail-stream": streamForTree,
+    "@/lib/remix-palette-pick": pickMod,
     "@/components/remix/inline-remix": inlineMod,
     "@/components/remix/remix-lane-blurb": {
       RemixLaneBlurb: ({ name }) =>
@@ -598,11 +621,20 @@ assert.doesNotMatch(emptyResolved, /data-remix="inline"/);
 assert.equal(h72Count(emptyResolved), 0);
 assert.equal(fileReads, 0, "live loader must not await getFileText after empty catalogs");
 
-const emberLive = loadLiveTree(
+const tealEmberLive = loadLiveTree(
   remixOdata(
     {
       listPaletteSystems: async () => catalogs.palettes,
       listArtStyles: async () => catalogs.arts,
+    },
+    async () => landingHtml,
+  ),
+);
+const emberLive = loadLiveTree(
+  remixOdata(
+    {
+      listPaletteSystems: async () => liveShapedCatalogs.palettes,
+      listArtStyles: async () => liveShapedCatalogs.arts,
     },
     async () => landingHtml,
   ),
@@ -613,6 +645,16 @@ assert.match(emberPending, /animate-pulse/, "hold 2: live slot pulses while cata
 assert.equal(h72Count(emberPending), 0);
 
 assert.equal(bluet.fields.default_palette_id, undefined);
+const holdControls = renderToStaticMarkup(
+  await tealEmberLive.LanguageRemixControls({ lang: bluet }),
+);
+const holdSrcDoc = iframeSrcDoc(holdControls);
+assert.equal(
+  lastPrimary(holdSrcDoc),
+  "#C8442A",
+  "hold [teal, ember] no default → iframe srcDoc --primary:#C8442A",
+);
+
 const liveControls = renderToStaticMarkup(
   await emberLive.LanguageRemixControls({ lang: bluet }),
 );
@@ -621,12 +663,12 @@ assert.match(liveControls, /<iframe/, "LanguageDetailRemix live leaf mounts an i
 assert.equal(
   lastPrimary(liveSrcDoc),
   "#C8442A",
-  "[teal, ember] no default, landing #122A47 → srcDoc --primary:#C8442A",
+  "live-shaped [teal, yellow, ember] → srcDoc --primary:#C8442A, not contrast-max #FFD400",
 );
 assert.match(
   liveSrcDoc,
   /--primary:#C8442A/,
-  "[teal, ember] no default, landing #122A47 → srcDoc --primary:#C8442A",
+  "live Bluet bind is Ember — sr-only #C8442A is not enough",
 );
 assert.doesNotMatch(liveSrcDoc, /--primary:#007C78/);
 assert.doesNotMatch(

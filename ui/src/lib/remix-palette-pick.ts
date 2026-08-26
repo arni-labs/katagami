@@ -1,20 +1,28 @@
 /**
- * Seed the language-detail remix picker.
+ * Language-detail remix seed.
  *
- * palettes[0] is leftover teal. RGB contrast-max is leftover yellow
- * (#FFD400 / Risograph Pull on live Bluet) — Ember stayed in sr-only.
- * With no default_palette_id, never seed the first catalog row when a
- * later row exists. Prefer a later Ember accent (#C8442A) when present.
- * default_palette_id still wins when it is in the catalog.
+ * 602e59f leftover 1: max-contrast vs landing --primary:#122A47 picks
+ * Risograph #FFD400 on live Bluet (Ember stays sr-only). [teal, ember]
+ * still "passes" under contrast because Ember is farther from navy than
+ * teal — that fixture is not the live bind.
+ *
+ * The hold is Ember Signal / #C8442A, not the highest-contrast catalog
+ * color. No RGB distance. default_palette_id still wins when present.
  */
 
 const EMBER_ACCENT = "#c8442a";
 
-function accentOf(p: { roles?: { accent?: string } }): string {
+export type RemixPaletteSeed = {
+  id: string;
+  name?: string;
+  roles?: { accent?: string };
+};
+
+function accentOf(p: RemixPaletteSeed): string {
   return (p.roles?.accent ?? "").trim().toLowerCase();
 }
 
-function isEmber(p: { name?: string; roles?: { accent?: string } }): boolean {
+function isEmber(p: RemixPaletteSeed): boolean {
   return accentOf(p) === EMBER_ACCENT || /ember/i.test(p.name ?? "");
 }
 
@@ -25,26 +33,26 @@ export function cssPrimaryHex(html?: string): string | undefined {
   return m?.[1];
 }
 
-export function pickRemixPaletteId(
-  palettes: Array<{ id: string; name?: string; roles?: { accent?: string } }>,
-  preferredId?: string,
-  againstHex?: string,
-): string {
+/** Language-page seed: default_palette_id, else Ember Signal when present. */
+export function seedLanguageRemixPaletteId(
+  preferredId: string | undefined,
+  palettes: RemixPaletteSeed[],
+): string | undefined {
   if (preferredId) {
     const hit = palettes.find((p) => p.id === preferredId);
     if (hit) return hit.id;
   }
+  return palettes.find(isEmber)?.id;
+}
+
+export function pickRemixPaletteId(
+  palettes: RemixPaletteSeed[],
+  preferredId?: string,
+  _againstHex?: string,
+): string {
+  const seeded = seedLanguageRemixPaletteId(preferredId, palettes);
+  if (seeded) return seeded;
   if (palettes.length === 0) return "";
   if (palettes.length === 1) return palettes[0].id;
-
-  const rest = palettes.slice(1);
-  const against = againstHex?.trim().toLowerCase();
-  const pool = against
-    ? rest.filter((p) => accentOf(p) !== against)
-    : rest;
-  const rows = pool.length > 0 ? pool : rest;
-
-  const ember = rows.find(isEmber);
-  if (ember) return ember.id;
-  return rows[0].id;
+  return palettes[1].id;
 }
