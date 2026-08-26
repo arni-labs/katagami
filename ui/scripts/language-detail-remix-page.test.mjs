@@ -159,6 +159,12 @@ assert.match(
   streamSrc,
   /Boolean\(lang\.fields\.landing_file_id\) && Boolean\(lang\.fields\.dashboard_file_id\)/,
 );
+assert.match(remixSrc, /export function LanguageDetailRemix\(/);
+assert.doesNotMatch(
+  remixSrc,
+  /export async function LanguageDetailRemix/,
+  "LanguageDetailRemix is sync chrome — catalogs suspend inside, the page does not await them",
+);
 assert.match(remixSrc, /await loadLanguageRemixCatalogs\(\)/);
 assert.match(
   remixSrc,
@@ -167,6 +173,17 @@ assert.match(
 );
 assert.match(remixSrc, /RemixControlsDark/);
 assert.match(remixSrc, /getFileText/);
+assert.match(
+  remixSrc,
+  /if \(!canRemixLanguage\(lang, catalogs\.palettes, catalogs\.arts\)\)/,
+  "do not await getFileText after [] / throw — that stalls the dark well",
+);
+assert.match(previewSrc, /themeOverrideStyle/, "--primary tokens stay in the tree even without landing HTML");
+assert.match(
+  previewSrc,
+  /prev\?\.url === compositionUrl && prev\.html/,
+  "a failed client refetch must not wipe a good SSR srcDoc",
+);
 assert.doesNotMatch(remixSrc, /LanguageSectionSkeleton/);
 assert.doesNotMatch(
   remixSrc,
@@ -257,8 +274,15 @@ const treeMod = loadTsx(
     },
     "@/lib/language-detail-stream": streamForTree,
     "@/components/remix/inline-remix": {
-      InlineRemix: ({ palettes, initialPreviewHtml }) =>
-        React.createElement(
+      // Same selection as InlineRemix: default_palette_id, else catalog[0].
+      // Ember Signal is listed even when it is not selected — do not bind
+      // --primary to Ember just because the catalog contains it.
+      InlineRemix: ({ palettes, initial, initialPreviewHtml }) => {
+        const selected =
+          palettes.find((p) => p.id === initial?.palId) ?? palettes[0];
+        const accent = selected?.roles?.accent || "";
+        const themed = injectTheme("<style>:root{}</style>", { accent });
+        return React.createElement(
           "div",
           { "data-remix": "inline" },
           React.createElement(
@@ -268,33 +292,18 @@ const treeMod = loadTsx(
               React.createElement("li", { key: p.id }, p.name, " ", p.swatches?.[0]),
             ),
           ),
-          React.createElement(
-            "div",
-            {
-              hidden: true,
-              dangerouslySetInnerHTML: {
-                __html: injectTheme("<style>:root{}</style>", {
-                  accent:
-                    palettes.find((p) => p.name === "Ember Signal")?.roles
-                      ?.accent ||
-                    palettes.find((p) => p.swatches?.includes("#C8442A"))?.roles
-                      ?.accent ||
-                    "#C8442A",
-                }),
-              },
-            },
-          ),
+          React.createElement("div", {
+            hidden: true,
+            dangerouslySetInnerHTML: { __html: themed },
+          }),
           initialPreviewHtml
             ? React.createElement("iframe", {
                 title: "Remix preview",
-                srcDoc: injectTheme(initialPreviewHtml, {
-                  accent:
-                    palettes.find((p) => p.swatches?.includes("#C8442A"))?.roles
-                      ?.accent || "#C8442A",
-                }),
+                srcDoc: injectTheme(initialPreviewHtml, { accent }),
               })
             : null,
-        ),
+        );
+      },
     },
     "@/components/remix/remix-lane-blurb": {
       RemixLaneBlurb: ({ name }) =>
@@ -326,6 +335,20 @@ assert.match(pendingHtml, /aspect-\[16\/10\]/, "pending pulse is the preview wel
 assert.equal(h72Count(pendingHtml), 0, "pending must not be two h-72");
 assert.doesNotMatch(pendingHtml, /Ember Signal/);
 
+const replayMain = renderToStaticMarkup(
+  React.createElement(
+    "main",
+    null,
+    React.createElement("h1", null, "Bluet"),
+    React.createElement(treeMod.LanguageDetailRemix, { lang: bluet }),
+    React.createElement("footer", null, "site footer"),
+  ),
+);
+assert.match(replayMain, /<h1>Bluet<\/h1>/);
+assert.match(replayMain, /remix lane/, "SSR main is remix lane, not two h-72 then footer");
+assert.match(replayMain, /<footer>site footer<\/footer>/);
+assert.equal(h72Count(replayMain), 0);
+
 const emptyHtml = renderPageTree(bluet, emptyCatalogs);
 assert.match(emptyHtml, /remix lane/, "[] keeps chrome — no collapse");
 assert.doesNotMatch(emptyHtml, /animate-pulse/, "[] is dark, not a pulse flash");
@@ -356,11 +379,35 @@ assert.match(
 assert.match(laneHtml, /#C8442A/);
 assert.match(
   laneHtml,
+  /--primary:#007C78/,
+  "selected catalog[0] binds --primary; live Bluet has no default_palette_id",
+);
+assert.doesNotMatch(
+  laneHtml,
   /--primary:#C8442A/,
-  "Ember Signal accent is --primary in the page tree, not the landing fixture #122A47",
+  "Ember Signal is listed, not selected — do not fake its accent onto --primary",
+);
+assert.match(
+  laneHtml,
+  /id="remix-theme">[^<]*--primary:#007C78/,
+  "remix-theme binds --primary to the selected accent",
 );
 assert.match(laneHtml, /<iframe/);
 assert.equal(h72Count(laneHtml), 0);
+
+const emberSelected = lang({
+  name: "Bluet",
+  landing_file_id: "fl-land",
+  dashboard_file_id: "fl-dash",
+  default_palette_id: "ps-ember",
+});
+const emberLane = renderPageTree(emberSelected, catalogs, landingHtml);
+assert.match(emberLane, /Ember Signal/);
+assert.match(
+  emberLane,
+  /--primary:#C8442A/,
+  "when Ember Signal is the language default, --primary is its accent",
+);
 
 const pulse = renderToStaticMarkup(React.createElement(treeMod.RemixControlsPulse));
 const dark = renderToStaticMarkup(React.createElement(treeMod.RemixControlsDark));
@@ -370,6 +417,135 @@ assert.match(pulse, /animate-pulse/);
 assert.doesNotMatch(dark, /animate-pulse/);
 assert.match(pulse, /aspect-\[16\/10\]/);
 assert.match(dark, /aspect-\[16\/10\]/);
+
+function remixOdata(lists, getFileText) {
+  return {
+    listPaletteSystems: lists.listPaletteSystems,
+    listArtStyles: lists.listArtStyles,
+    getFileText,
+  };
+}
+
+function loadLiveTree(odata) {
+  return loadTsx(path.join(here, "../src/components/language-remix-section.tsx"), {
+    "@/lib/odata": odata,
+    "@/lib/remix-options": {
+      toLanguageOpts: (rows) =>
+        rows.map((l) => ({
+          id: l.entity_id,
+          name: l.fields.name,
+          tokens: "",
+          landingUrl: l.fields.landing_file_id ? `/api/file/${l.fields.landing_file_id}` : "",
+          dashboardUrl: l.fields.dashboard_file_id
+            ? `/api/file/${l.fields.dashboard_file_id}`
+            : "",
+        })),
+      toPaletteOpts: (rows) =>
+        rows.map((p) => {
+          const sig = JSON.parse(p.fields.signature || "[]");
+          const hex = sig[0]?.hex ?? "";
+          return {
+            id: p.entity_id,
+            name: p.fields.name,
+            roles: { accent: hex },
+            swatches: hex ? [hex] : [],
+          };
+        }),
+      toArtOpts: (rows) =>
+        rows
+          .filter((a) => a.fields.prompt_template)
+          .map((a) => ({
+            id: a.entity_id,
+            name: a.fields.name,
+            medium: "",
+            hero: "",
+            promptTemplate: a.fields.prompt_template,
+            slotRecipes: "{}",
+            refs: [],
+          })),
+    },
+    "@/lib/language-detail-stream": streamForTree,
+    "@/components/remix/inline-remix": {
+      InlineRemix: ({ palettes, initial, initialPreviewHtml }) => {
+        const selected =
+          palettes.find((p) => p.id === initial?.palId) ?? palettes[0];
+        const accent = selected?.roles?.accent || "";
+        return React.createElement(
+          "div",
+          { "data-remix": "inline" },
+          React.createElement(
+            "ul",
+            { className: "sr-only" },
+            palettes.map((p) =>
+              React.createElement("li", { key: p.id }, p.name, " ", p.swatches?.[0]),
+            ),
+          ),
+          React.createElement("div", {
+            hidden: true,
+            dangerouslySetInnerHTML: {
+              __html: injectTheme("<style>:root{}</style>", { accent }),
+            },
+          }),
+          initialPreviewHtml
+            ? React.createElement("iframe", {
+                title: "Remix preview",
+                srcDoc: injectTheme(initialPreviewHtml, { accent }),
+              })
+            : null,
+        );
+      },
+    },
+    "@/components/remix/remix-lane-blurb": {
+      RemixLaneBlurb: ({ name }) =>
+        React.createElement("p", null, `Keep ${name} and swap a palette`),
+    },
+    "@/components/scrapbook": scrapbookStub(),
+  });
+}
+
+let fileReads = 0;
+const emptyLive = loadLiveTree(
+  remixOdata(
+    {
+      listPaletteSystems: async () => [],
+      listArtStyles: async () => {
+        throw new Error("listArtStyles failed");
+      },
+    },
+    async () => {
+      fileReads += 1;
+      throw new Error("getFileText must not run after [] / throw");
+    },
+  ),
+);
+const emptyPending = renderToStaticMarkup(
+  React.createElement(emptyLive.LanguageDetailRemix, { lang: bluet }),
+);
+assert.match(emptyPending, /remix lane/);
+assert.match(emptyPending, /animate-pulse/);
+const emptyResolved = renderToStaticMarkup(await emptyLive.LanguageRemixControls({ lang: bluet }));
+assert.doesNotMatch(emptyResolved, /animate-pulse/, "live loader [] / throw is the dark well");
+assert.doesNotMatch(emptyResolved, /data-remix="inline"/);
+assert.equal(h72Count(emptyResolved), 0);
+assert.equal(fileReads, 0, "live loader must not await getFileText after empty catalogs");
+
+const emberLive = loadLiveTree(
+  remixOdata(
+    {
+      listPaletteSystems: async () => catalogs.palettes,
+      listArtStyles: async () => catalogs.arts,
+    },
+    async () => landingHtml,
+  ),
+);
+const liveControls = renderToStaticMarkup(
+  await emberLive.LanguageRemixControls({ lang: bluet }),
+);
+assert.match(liveControls, /Ember Signal/, "live loader surfaces Ember Signal in the catalog");
+assert.match(liveControls, /#C8442A/);
+assert.match(liveControls, /--primary:#007C78/);
+assert.match(liveControls, /<iframe/);
+assert.doesNotMatch(liveControls, /--primary:#C8442A/);
 
 const themed = injectTheme(
   landingHtml,

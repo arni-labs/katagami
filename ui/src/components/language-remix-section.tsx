@@ -65,7 +65,8 @@ function RemixControlsResolved({
   );
 }
 
-async function LanguageRemixControls({ lang }: { lang: DesignLanguage }) {
+/** Live leaf behind Suspense. Exported so tests await this loader, not a settled catalogs prop. */
+export async function LanguageRemixControls({ lang }: { lang: DesignLanguage }) {
   const catalogs = await loadLanguageRemixCatalogs();
   if (!canRemixLanguage(lang, catalogs.palettes, catalogs.arts)) {
     return <RemixControlsDark />;
