@@ -12,6 +12,7 @@ import { saveRemix } from "@/app/remix-actions";
 import type { Roles } from "@/lib/remix-theme";
 import { KX_BTN_INK, KX_BTN_PAPER, KX_LABEL } from "@/lib/katagami-ui";
 import { trackCopy } from "@/lib/analytics";
+import { cssPrimaryHex, pickRemixPaletteId } from "@/lib/remix-palette-pick";
 
 const MEDIA = "shrink-0 overflow-hidden rounded-[2px] shadow-[0_1px_3px_rgba(30,35,45,0.14)]";
 
@@ -125,7 +126,13 @@ export function InlineRemix({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [langId, setLangId] = useState(fixed.language ?? initial?.langId ?? languages[0]?.id ?? "");
-  const [palId, setPalId] = useState(fixed.palette ?? initial?.palId ?? palettes[0]?.id ?? "");
+  const [palId, setPalId] = useState(() =>
+    pickRemixPaletteId(
+      palettes,
+      fixed.palette ?? initial?.palId,
+      cssPrimaryHex(initialPreviewHtml),
+    ),
+  );
   const [artId, setArtId] = useState(fixed.art ?? initial?.artId ?? art[0]?.id ?? "");
   const [compIdx, setCompIdx] = useState(() => {
     const i = COMPS.findIndex((c) => c.key === initial?.compositionKey);

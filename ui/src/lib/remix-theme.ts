@@ -1197,6 +1197,19 @@ export function themeOverrideStyle(
     ["--info", roles.info || "#2563eb"],
   ].map(([k, v]) => `${k}:${v}`);
   if (hero) decl.push(`--hero-image:url('${hero}')`);
+  // Well-known aliases always — empty HTML / failed fetch still emit
+  // --primary, not accent-only. injectTheme adds composition-specific binds.
+  decl.push(
+    `--paper:${map.bg}`,
+    `--ink:${map.text}`,
+    `--primary:${map.accent}`,
+    `--ds-bg:${map.bg}`,
+    `--ds-background:${map.bg}`,
+    `--ds-surface:${map.surface}`,
+    `--ds-text:${map.text}`,
+    `--ds-foreground:${map.text}`,
+    `--ds-accent:${map.accent}`,
+  );
   decl.push(...extra);
   return `<style id="remix-theme">:root{${decl.join(";")}}</style>`;
 }

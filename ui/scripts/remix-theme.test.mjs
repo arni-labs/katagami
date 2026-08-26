@@ -26,6 +26,7 @@ const mod = { exports: {} };
 new Function("module", "exports", code)(mod, mod.exports);
 const {
   injectTheme,
+  themeOverrideStyle,
   classifyColorToken,
   compositionBindDecls,
   bindLiteralHero,
@@ -704,6 +705,14 @@ assert.doesNotMatch(
   compositionBindDecls(mozAnyBefore, roles, hero).join(";"),
   /--blue:/,
 );
+
+const emptyOverride = themeOverrideStyle({ accent: "#C8442A" });
+assert.match(
+  emptyOverride,
+  /--primary:#C8442A/,
+  "themeOverrideStyle keeps --primary when there is no landing HTML",
+);
+assert.match(emptyOverride, /--accent:#C8442A/);
 
 const rustGate = fs.readFileSync(
   path.join(here, "../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs"),
