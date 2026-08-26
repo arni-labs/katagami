@@ -60,6 +60,7 @@ console.log("ok: isFeaturedRecord matches the catalog boolean (fields OR boolean
 const catalog = read("src/lib/catalog.ts");
 const odata = read("src/lib/odata.ts");
 const layout = read("src/app/(site)/layout.tsx");
+const membership = read("src/lib/catalog-membership.mjs");
 
 const required = [
   [
@@ -111,6 +112,16 @@ const required = [
     "listFeatured* filter with the catalog featured predicate",
     odata,
     /collectFeaturedRows\("ArtStyles"\)[\s\S]*\.filter\(isFeaturedRecord\)/,
+  ],
+  [
+    "anonMaySee matches entity id OR slug (not featuredIds.has(id) only)",
+    catalog,
+    /rowMatchesIdOrSlug\(r, idOrSlug\)/,
+  ],
+  [
+    "membership helper compares entity_id and fields.slug",
+    membership,
+    /row\.entity_id === idOrSlug/,
   ],
 ];
 

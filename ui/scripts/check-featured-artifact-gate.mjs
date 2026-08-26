@@ -93,9 +93,19 @@ required.push([
 const brief = read("src/app/(site)/studio/BRIEF.md/route.ts");
 const odata = read("src/lib/odata.ts");
 required.push([
-  "BRIEF.md resolves ui/palette/art by id or slug (a slug must not 500)",
+  "BRIEF.md resolves the language by id or slug (a slug must not 500)",
   brief,
   /getDesignLanguageByIdOrSlug\(uiId\)/,
+]);
+required.push([
+  "BRIEF.md resolves the palette by id or slug (featured pal slugs must 200)",
+  brief,
+  /getPaletteSystemByIdOrSlug\(palId\)/,
+]);
+required.push([
+  "BRIEF.md resolves the art style by id or slug (featured art slugs must 200)",
+  brief,
+  /getArtStyleByIdOrSlug\(artId\)/,
 ]);
 required.push([
   "BRIEF.md 404s when any lane misses rather than falling through to the 500 catch",
@@ -118,9 +128,29 @@ required.push([
   /export \{ normalizeDesignLanguageRow, isODataNotFound \}/,
 ]);
 required.push([
-  "id-or-slug language lookup maps a by-key 404 into a slug fallback",
+  "anonMaySee is slug-aware so a featured pal/art slug is not gated as a miss",
+  read("src/lib/catalog.ts"),
+  /rowMatchesIdOrSlug\(r, idOrSlug\)/,
+]);
+required.push([
+  "id-or-slug language lookup is exported",
   odata,
   /export async function getDesignLanguageByIdOrSlug/,
+]);
+required.push([
+  "id-or-slug palette lookup is exported (featured pal slugs, not ids only)",
+  odata,
+  /export async function getPaletteSystemByIdOrSlug/,
+]);
+required.push([
+  "id-or-slug art-style lookup is exported (featured art slugs, not ids only)",
+  odata,
+  /export async function getArtStyleByIdOrSlug/,
+]);
+required.push([
+  "non-en keys take the slug path first (komawari-plates / cathode-ray)",
+  odata,
+  /function looksLikeEntityId/,
 ]);
 const odataMiss = read("src/lib/odata-not-found.mjs");
 required.push([

@@ -34,8 +34,9 @@ export async function GET(req: NextRequest) {
     COMPOSITIONS.find((c) => c.key === compKey) ?? COMPOSITIONS[0];
 
   try {
-    // id OR slug. A by-key miss used to throw and become HTTP 500 (ui=gust);
-    // a clean miss — unknown key, or a slug that isn't a published row — is 404.
+    // id OR slug on every lane. Featured slugs (komawari, komawari-plates,
+    // cathode-ray) must resolve; a miss slug 404s. ui=gust is a published
+    // off-shelf language — resolve, then the featured gate 404s (never 500).
     const [lang, pal, art] = await Promise.all([
       getDesignLanguageByIdOrSlug(uiId),
       getPaletteSystemByIdOrSlug(palId),

@@ -1,8 +1,9 @@
-// BRIEF.md leftover: a slug like ui=gust 404s at DesignLanguages('gust').
-// That miss is HTTP 404, never a 500. The predicate is the same function
-// the resolver uses — not a copy.
+// BRIEF.md leftovers: a slug like ui=gust 404s at DesignLanguages('gust')
+// (HTTP 404, never 500). Featured pal/art slugs must match membership the
+// same way entity ids do — the gate used to be id-keyed only.
 import assert from "node:assert/strict";
 import { isODataNotFound } from "../src/lib/odata-not-found.mjs";
+import { rowMatchesIdOrSlug } from "../src/lib/catalog-membership.mjs";
 
 assert.equal(
   isODataNotFound(
@@ -22,3 +23,28 @@ assert.equal(isODataNotFound(new Error("network down")), false);
 assert.equal(isODataNotFound("OData 404: missing"), true);
 
 console.log("ok: isODataNotFound maps by-key miss → 404, fault → not 404");
+
+const featuredPal = {
+  entity_id: "en-palette-1",
+  fields: { slug: "komawari-plates" },
+};
+const featuredArt = {
+  entity_id: "en-art-1",
+  fields: { slug: "cathode-ray" },
+};
+const offShelfLang = {
+  entity_id: "en-gust-1",
+  fields: { slug: "gust" },
+};
+
+assert.equal(rowMatchesIdOrSlug(featuredPal, "en-palette-1"), true);
+assert.equal(rowMatchesIdOrSlug(featuredPal, "komawari-plates"), true, "featured palette slug");
+assert.equal(rowMatchesIdOrSlug(featuredArt, "cathode-ray"), true, "featured art slug");
+assert.equal(rowMatchesIdOrSlug(featuredPal, "no-such-palette"), false, "miss palette slug");
+assert.equal(rowMatchesIdOrSlug(featuredArt, "no-such-art"), false, "miss art slug");
+assert.equal(rowMatchesIdOrSlug(offShelfLang, "gust"), true, "gust slug identifies the row");
+assert.equal(rowMatchesIdOrSlug(offShelfLang, "komawari"), false);
+assert.equal(rowMatchesIdOrSlug(null, "komawari-plates"), false);
+assert.equal(rowMatchesIdOrSlug(featuredPal, ""), false);
+
+console.log("ok: membership matches featured pal/art slugs; miss slugs do not");

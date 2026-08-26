@@ -1,5 +1,6 @@
 import "server-only";
 import { isFeaturedRecord as isFeatured } from "./featured.mjs";
+import { rowMatchesIdOrSlug } from "./catalog-membership.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
 // commons through this module, so "what an identity may see" is defined once.
@@ -181,9 +182,16 @@ export async function featuredIds(kind: Kind): Promise<Set<string>> {
   return new Set(rows.filter(isFeatured).map((r) => r.entity_id));
 }
 
-/** May a signed-out visitor see this specific published id? Palettes: always. */
-export async function anonMaySee(kind: Kind, id: string): Promise<boolean> {
-  return (await featuredIds(kind)).has(id);
+/** May a signed-out visitor see this published id or slug? Palettes: any
+ *  published row. Languages and art styles: the featured shelf only.
+ *  featuredIds() stays id-keyed (list filters); this accepts a slug too so
+ *  BRIEF.md?palette=komawari-plates&art=cathode-ray is not 404'd as a miss. */
+export async function anonMaySee(kind: Kind, idOrSlug: string): Promise<boolean> {
+  const rows = await readAll(SET[kind], PUBLISHED);
+  if (kind === "palette") {
+    return rows.some((r) => rowMatchesIdOrSlug(r, idOrSlug));
+  }
+  return rows.some((r) => isFeatured(r) && rowMatchesIdOrSlug(r, idOrSlug));
 }
 
 // --- describe_catalog: the agent's map --------------------------------------

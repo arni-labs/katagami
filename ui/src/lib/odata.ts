@@ -997,60 +997,84 @@ async function firstPublishedBySlug<T>(
   return row ? normalize(row) : undefined;
 }
 
+/** Kernel entity keys are `en-…`; local demo rows are `specimen-…`. Anything
+ *  else is a slug — look that up first so featured pal/art slugs
+ *  (komawari-plates, cathode-ray) do not depend on a by-key 404. */
+function looksLikeEntityId(idOrSlug: string): boolean {
+  return /^(en|specimen)-/.test(idOrSlug);
+}
+
+async function resolveByIdOrSlug<T>(
+  idOrSlug: string,
+  getById: (id: string) => Promise<T>,
+  bySlug: () => Promise<T | undefined>,
+): Promise<T | null> {
+  const tryId = async (): Promise<T | null> => {
+    try {
+      return await getById(idOrSlug);
+    } catch (e) {
+      if (!isODataNotFound(e)) throw e;
+      return null;
+    }
+  };
+  const trySlug = async (): Promise<T | null> => (await bySlug()) ?? null;
+  // Slugs first when the token is not an entity key — a featured palette/art
+  // slug must resolve without a by-key miss. Entity keys still fall back to
+  // slug so a published row is found either way. A clean miss is null (404).
+  if (!looksLikeEntityId(idOrSlug)) {
+    return (await trySlug()) ?? (await tryId());
+  }
+  return (await tryId()) ?? (await trySlug());
+}
+
 /**
- * Resolve a published (or demo) row by entity key, then by slug. A by-key
- * miss is not an error — callers turn null into HTTP 404. Any other OData
- * failure still throws so a Temper outage cannot masquerade as not-found.
+ * Resolve a published (or demo) row by entity key or slug. A miss is null —
+ * callers turn that into HTTP 404. Any other OData failure still throws so
+ * a Temper outage cannot masquerade as not-found.
  */
 export async function getDesignLanguageByIdOrSlug(
   idOrSlug: string,
 ): Promise<DesignLanguage | null> {
-  try {
-    return await getDesignLanguage(idOrSlug);
-  } catch (e) {
-    if (!isODataNotFound(e)) throw e;
-  }
-  const fromSlug = await firstPublishedBySlug(
-    "DesignLanguages",
+  return resolveByIdOrSlug(
     idOrSlug,
-    normalizeDesignLanguageRow,
+    getDesignLanguage,
+    async () =>
+      (await firstPublishedBySlug(
+        "DesignLanguages",
+        idOrSlug,
+        normalizeDesignLanguageRow,
+      )) ?? demoDesignLanguages().find((d) => d.fields.slug === idOrSlug),
   );
-  if (fromSlug) return fromSlug;
-  return demoDesignLanguages().find((d) => d.fields.slug === idOrSlug) ?? null;
 }
 
 export async function getPaletteSystemByIdOrSlug(
   idOrSlug: string,
 ): Promise<LaneEntity | null> {
-  try {
-    return await getPaletteSystem(idOrSlug);
-  } catch (e) {
-    if (!isODataNotFound(e)) throw e;
-  }
-  const fromSlug = await firstPublishedBySlug(
-    "PaletteSystems",
+  return resolveByIdOrSlug(
     idOrSlug,
-    (row) => normalizeLaneRow(row, "PaletteSystems"),
+    getPaletteSystem,
+    async () =>
+      (await firstPublishedBySlug(
+        "PaletteSystems",
+        idOrSlug,
+        (row) => normalizeLaneRow(row, "PaletteSystems"),
+      )) ?? demoPaletteSystems().find((d) => d.fields.slug === idOrSlug),
   );
-  if (fromSlug) return fromSlug;
-  return demoPaletteSystems().find((d) => d.fields.slug === idOrSlug) ?? null;
 }
 
 export async function getArtStyleByIdOrSlug(
   idOrSlug: string,
 ): Promise<LaneEntity | null> {
-  try {
-    return await getArtStyle(idOrSlug);
-  } catch (e) {
-    if (!isODataNotFound(e)) throw e;
-  }
-  const fromSlug = await firstPublishedBySlug(
-    "ArtStyles",
+  return resolveByIdOrSlug(
     idOrSlug,
-    (row) => normalizeLaneRow(row, "ArtStyles"),
+    getArtStyle,
+    async () =>
+      (await firstPublishedBySlug(
+        "ArtStyles",
+        idOrSlug,
+        (row) => normalizeLaneRow(row, "ArtStyles"),
+      )) ?? demoArtStyles().find((d) => d.fields.slug === idOrSlug),
   );
-  if (fromSlug) return fromSlug;
-  return demoArtStyles().find((d) => d.fields.slug === idOrSlug) ?? null;
 }
 /** Read a governed File's text content server-side (corpus excerpts on the
  *  voice contract pages). Returns "" on any failure — a missing excerpt
