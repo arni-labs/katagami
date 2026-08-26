@@ -174,6 +174,43 @@ required.push([
   paletteDetail,
   /anonMaySee\("palette", pal\.entity_id\)/,
 ]);
+const languageDetail = read("src/app/(site)/language/[id]/page.tsx");
+required.push([
+  "language detail resolves id or slug (komawari must not be the 97k shell)",
+  languageDetail,
+  /getDesignLanguageByIdOrSlug\(id\)/,
+]);
+required.push([
+  "language detail does not by-key-only getDesignLanguage(id)",
+  languageDetail,
+  /^(?![\s\S]*getDesignLanguage\(id\))[\s\S]*$/,
+]);
+required.push([
+  "language detail featured-gates the resolved entity_id",
+  languageDetail,
+  /anonMaySee\("language", lang\.entity_id\)/,
+]);
+required.push([
+  "language metadata featured-gates the resolved entity_id",
+  languageDetail,
+  /anonMaySee\("language", lang\.entity_id\)/,
+]);
+const artStyleDetail = read("src/app/(site)/art-styles/[id]/page.tsx");
+required.push([
+  "art-style detail resolves id or slug (cathode-ray must not be the 100k shell)",
+  artStyleDetail,
+  /getArtStyleByIdOrSlug\(id\)/,
+]);
+required.push([
+  "art-style detail does not by-key-only getArtStyle(id)",
+  artStyleDetail,
+  /^(?![\s\S]*getArtStyle\(id\))[\s\S]*$/,
+]);
+required.push([
+  "art-style detail featured-gates the resolved entity_id",
+  artStyleDetail,
+  /anonMaySee\("art_style", art\.entity_id\)/,
+]);
 
 let failed = 0;
 for (const [name, source, pattern] of required) {

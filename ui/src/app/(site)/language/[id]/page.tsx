@@ -5,7 +5,7 @@ import { hasCuratorAccess } from "@/lib/owner";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
-  getDesignLanguage,
+  getDesignLanguageByIdOrSlug,
   getFileUrl,
   parseJson,
 } from "@/lib/odata";
@@ -63,7 +63,12 @@ export async function generateMetadata({
   const { id } = await params;
 
   try {
-    const lang = await getDesignLanguage(id);
+    // id OR slug. The by-key reader 404'd /language/komawari while the UUID
+    // path rendered the real Komawari page. A miss slug stays generic title.
+    const lang = await getDesignLanguageByIdOrSlug(id);
+    if (!lang) {
+      return { title: pageTitle() };
+    }
     // ARN-331: don't leak a non-Published name into <title>/OG — the page body
     // 404s below, but metadata renders first. Cookie check only on this branch,
     // same cache invariant as the body gate.
@@ -74,10 +79,11 @@ export async function generateMetadata({
     // Don't leak a non-featured language's name into <title>/OG for anon — the
     // page body 404s below, but metadata renders first. Membership comes from the
     // ONE catalog primitive (anonMaySee) so this can never diverge from the shelf.
+    // Gate the resolved entity id (the URL may be a slug; featuredIds() is id-keyed).
     if (
       lang.status === "Published" &&
       !(await hasFullGalleryAccess()) &&
-      !(await anonMaySee("language", id))
+      !(await anonMaySee("language", lang.entity_id))
     ) {
       return { title: pageTitle() };
     }
@@ -107,12 +113,11 @@ export default async function LanguageDetailPage({
 }: LanguagePageProps) {
   const { id } = await params;
 
-  let lang;
-  try {
-    lang = await getDesignLanguage(id);
-  } catch {
-    notFound();
-  }
+  // id OR slug. The by-key reader served a ~97k not-found shell for
+  // /language/komawari while the UUID rendered the real ~584k page.
+  // A miss slug stays 404.
+  const lang = await getDesignLanguageByIdOrSlug(id);
+  if (!lang) notFound();
 
   // Non-published languages are the curator's queue: owner previews them,
   // everyone else 404s. The check runs ONLY on this branch — Published
@@ -124,11 +129,12 @@ export default async function LanguageDetailPage({
   // Published-but-unfeatured language is not viewable by direct URL when anon.
   // Membership comes from the ONE catalog primitive (anonMaySee), mirroring the
   // home teaser and read-MCP exactly. Cookie check only on this branch,
-  // preserving the cache invariant.
+  // preserving the cache invariant. Gate the resolved entity id (the URL may
+  // be a slug; featuredIds() is id-keyed).
   if (
     lang.status === "Published" &&
     !(await hasFullGalleryAccess()) &&
-    !(await anonMaySee("language", id))
+    !(await anonMaySee("language", lang.entity_id))
   ) {
     notFound();
   }
@@ -189,7 +195,7 @@ export default async function LanguageDetailPage({
       url: dashboardUrl,
     });
   const specProps = {
-    languageId: id,
+    languageId: lang.entity_id,
     name,
     slug: f.slug,
     philosophy: f.philosophy,
@@ -228,7 +234,7 @@ export default async function LanguageDetailPage({
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-10 sm:py-10">
       {/* Records a `language_view` RUM event with the language NAME + id, so
           dashboards can rank languages by name and dedupe to unique visitors. */}
-      <LanguageViewTracker languageId={id} languageName={name} slug={f.slug} />
+      <LanguageViewTracker languageId={lang.entity_id} languageName={name} slug={f.slug} />
 
       {/* Back link */}
       <Link
@@ -266,7 +272,7 @@ export default async function LanguageDetailPage({
       />
 
       <SpecActions
-        languageId={id}
+        languageId={lang.entity_id}
         languageName={name}
         katagamiSpec={katagamiMarkdown}
         designMd={designMd}
@@ -339,7 +345,7 @@ export default async function LanguageDetailPage({
                 }
               >
                 <ShadcnKitSection
-                  languageId={id}
+                  languageId={lang.entity_id}
                   name={name}
                   designMd={designMd}
                   fields={f}
@@ -370,12 +376,12 @@ export default async function LanguageDetailPage({
       </Suspense>
 
       <Suspense fallback={null}>
-        <LanguageLineage currentId={id} fields={f} />
+        <LanguageLineage currentId={lang.entity_id} fields={f} />
       </Suspense>
 
       <Suspense fallback={null}>
         <RelatedLanguages
-          currentId={id}
+          currentId={lang.entity_id}
           currentTags={parseJson<string[]>(f.tags) ?? []}
         />
       </Suspense>
