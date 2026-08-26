@@ -26,8 +26,13 @@
 # Both ports are overridable so two stacks (or a verification run alongside
 # someone's session) never fight over a port or kill each other's servers:
 #   PORT=3499 UI_PORT=3500 bash scripts/run-local.sh
-# The db and log paths key off $PORT, and --stop only ever touches the two
-# ports it was given.
+# The db, log, and UI env paths key off $PORT. --stop only ever touches the
+# two ports it was given, by listener PID — never by process name.
+#
+# Seed may stop at Draft: SubmitForReview is a recorded platform 409 (see
+# .agents/skills/verify-katagami/features/local-stack.md). That is not a
+# launch failure. This script still writes the stack env, starts Next, and
+# prints ==> ready. It does not claim the seed published.
 #
 # Both servers are launched FULLY DETACHED (own session via a setsid launcher),
 # so they keep running after this script exits — they survive the terminal/agent
@@ -39,6 +44,8 @@ set -euo pipefail
 
 export PATH="$HOME/.cargo/bin:$PATH"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib/run-local-lib.sh
+. "$ROOT/scripts/lib/run-local-lib.sh"
 TEMPER_REPO="${TEMPER_REPO:-$ROOT/../temper}"
 FS_SPECS="$TEMPER_REPO/os-apps/temper-fs/specs"
 PORT="${PORT:-3467}"
@@ -49,15 +56,14 @@ KEY=test-local-key
 TEMPER_LOG="/tmp/katagami-temper-$PORT.log"
 UI_LOG="/tmp/katagami-ui-$UI_PORT.log"
 LAUNCH="/tmp/katagami-launch-$PORT.py"
+# Overridable so the contract tests can write env files into a temp dir.
+UI_DIR="${KATAGAMI_UI_DIR:-$ROOT/ui}"
+SEED_SCRIPT="${KATAGAMI_SEED_SCRIPT:-$ROOT/scripts/seed-local-remix.mjs}"
 
 stop() {
   echo "==> stopping anything on :$PORT and :$UI_PORT"
-  # xargs, not kill "$(...)": a dev server is usually several listening PIDs
-  # (the launcher plus next-server), and quoting them into one argument makes
-  # kill fail and leaves the port occupied.
-  lsof -ti :"$PORT" 2>/dev/null | xargs -r kill 2>/dev/null || true
-  lsof -ti :"$UI_PORT" 2>/dev/null | xargs -r kill 2>/dev/null || true
-  pkill -f "temper serve --port $PORT" 2>/dev/null || true
+  kill_port_listeners "$PORT"
+  kill_port_listeners "$UI_PORT"
 }
 
 if [ "${1:-}" = "--stop" ]; then
@@ -123,41 +129,63 @@ load_specs "$ROOT/katagami-commons/specs" true
 
 echo "==> seeding sample data (retries while the verification cascade finishes)"
 seeded=0
+seed_known_break=0
 for i in $(seq 1 90); do
   OUT="$(TEMPER_URL="http://localhost:$PORT" TENANT="$TENANT" KEY="$KEY" \
-        node "$ROOT/scripts/seed-local-remix.mjs" 2>&1)" || true
-  if echo "$OUT" | grep -q "=== Seed complete ==="; then
-    echo "$OUT" | tail -5
-    seeded=1
-    break
-  fi
-  if echo "$OUT" | grep -q "VerificationRequired"; then
-    echo "    attempt $i: verification cascade still running — retrying in 20s"
-    sleep 20
-    continue
-  fi
-  echo "$OUT" | tail -8
-  echo "==> seed failed (see above)"
-  exit 1
+        node "$SEED_SCRIPT" 2>&1)" || true
+  case "$(classify_seed_output "$OUT")" in
+    complete)
+      echo "$OUT" | tail -5
+      seeded=1
+      ;;
+    verifying)
+      echo "    attempt $i: verification cascade still running — retrying in 20s"
+      sleep 20
+      continue
+      ;;
+    known_submit_break)
+      echo "$OUT" | tail -8
+      echo "==> seed stopped at Draft: SubmitForReview is the recorded platform 409"
+      echo "    (see .agents/skills/verify-katagami/features/local-stack.md)"
+      echo "    continuing to env + Next; nothing is Published"
+      seed_known_break=1
+      seeded=1
+      ;;
+    *)
+      echo "$OUT" | tail -8
+      echo "==> seed failed (see above)"
+      exit 1
+      ;;
+  esac
+  break
 done
 if [ "$seeded" != 1 ]; then
   echo "==> gave up waiting for the verification cascade (30 min)"
   exit 1
 fi
 
-echo "==> writing ui/.env.local"
-cat > "$ROOT/ui/.env.local" <<EOF
-NEXT_PUBLIC_TEMPER_API_URL=http://localhost:$PORT
-NEXT_PUBLIC_TEMPER_TENANT=$TENANT
-TEMPER_API_KEY=$KEY
-EOF
+STACK_ENV="$(ui_stack_env_file "$UI_DIR" "$PORT")"
+echo "==> writing $STACK_ENV"
+write_ui_env_file "$STACK_ENV" "$PORT" "$TENANT" "$KEY"
+# Convenience copy for `cd ui && npm run dev` after a single stack. Next
+# started below is bound to this stack via the process environment, so a
+# later PORT cannot retarget an already-running UI even if it overwrites
+# this file. Each stack's live file is $STACK_ENV.
+echo "==> writing $UI_DIR/.env.local (unless another stack still owns it)"
+maybe_write_shared_ui_env "$UI_DIR/.env.local" "$PORT" "$TENANT" "$KEY"
 
-if [ ! -e "$ROOT/ui/node_modules" ]; then
+if [ ! -e "$UI_DIR/node_modules" ]; then
   echo "    (no ui/node_modules — run 'npm install' in ui/ first)"
 fi
 
 echo "==> starting UI dev server on :$UI_PORT (detached)"
-( cd "$ROOT/ui" && python3 "$LAUNCH" "$UI_LOG" npm run dev -- --port "$UI_PORT" ) &
+# Process env wins over any shared ui/.env.local Next may load, so two
+# PORT stacks keep distinct NEXT_PUBLIC_TEMPER_API_URL values.
+( cd "$UI_DIR" && \
+  NEXT_PUBLIC_TEMPER_API_URL="http://localhost:$PORT" \
+  NEXT_PUBLIC_TEMPER_TENANT="$TENANT" \
+  TEMPER_API_KEY="$KEY" \
+  python3 "$LAUNCH" "$UI_LOG" npm run dev -- --port "$UI_PORT" ) &
 echo "    ui log: $UI_LOG"
 
 echo "==> waiting for UI to accept connections"
@@ -166,9 +194,13 @@ curl --retry 60 --retry-delay 1 --retry-connrefused -sf "http://localhost:$UI_PO
 
 echo
 echo "==> ready"
+if [ "$seed_known_break" = 1 ]; then
+  echo "    seed did not publish (SubmitForReview 409; recorded platform break)"
+fi
 echo "    Gallery     http://localhost:$UI_PORT/"
 echo "    Palettes    http://localhost:$UI_PORT/palettes"
 echo "    Art Styles  http://localhost:$UI_PORT/art-styles"
 echo "    Studio      http://localhost:$UI_PORT/studio"
+echo "    env         $STACK_ENV"
 echo "    (first hit on each route compiles for a few seconds)"
 echo "    stop with:  PORT=$PORT UI_PORT=$UI_PORT bash scripts/run-local.sh --stop"

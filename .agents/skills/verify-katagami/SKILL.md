@@ -16,15 +16,15 @@ PORT=3499 UI_PORT=3500 TEMPER_REPO="$HOME/Development/temper" \
   bash scripts/run-local.sh
 ```
 
-It stops anything on those two ports, starts a detached `temper serve` on `$PORT` against a fresh turso file at `/tmp/katagami-remix-local-$PORT.db`, registers the temper-fs File specs and then the commons specs through `POST /api/specs/load-dir`, waits out the verification cascade, seeds sample palettes / art styles / languages, writes `ui/.env.local`, and starts `next dev` on `$UI_PORT`. It ends with `==> ready` and the URLs.
+It stops anything on those two ports, starts a detached `temper serve` on `$PORT` against a fresh turso file at `/tmp/katagami-remix-local-$PORT.db`, registers the temper-fs File specs and then the commons specs through `POST /api/specs/load-dir`, waits out the verification cascade, walks the seed as far as it can, writes `ui/.env.$PORT.local` (and `ui/.env.local` when that would not retarget a stack that is still listening), and starts `next dev` on `$UI_PORT` with those values already in the process environment. It ends with `==> ready` and the URLs. That ready line is the launch contract: env is written and Next is listening. It is not a claim that seed reached Published.
+
+Seed today stops at Draft. `SubmitForReview` is refused from Draft on every lane (409 ActionFailed) even when every local boolean is true and every referenced File is Ready — the recorded platform break in `features/local-stack.md`, including DesignLanguage's nine `cross_entity_state` lookups against a kernel budget of four. Launch does **not** treat that 409 as fatal: `run-local.sh` prints that seed did not publish, then continues to env + Next + `==> ready`. A different seed failure (missing entity sets, a 423 other than the cascade, a crash) still exits 1.
 
 Prerequisites: `temper` on PATH (build it from a temper checkout with `cargo build -p temper-cli` and symlink `target/debug/temper` into `~/.cargo/bin`), a temper checkout for the temper-fs specs (`TEMPER_REPO`, defaulting to a sibling directory named `temper`), and `npm install` already run in `ui/`.
 
-**Always set `PORT` and `UI_PORT`.** The defaults are 3467 and 3000, which other sessions on this machine use, and `--stop` kills whatever owns the ports it is given. Pick a free pair in the 3499 and up range.
+**Always set `PORT` and `UI_PORT`.** The defaults are 3467 and 3000, which other sessions on this machine use, and `--stop` kills whatever owns the ports it is given. Pick a free pair in the 3499 and up range. Two stacks each write `ui/.env.$PORT.local` and bind their own Next process to that URL; they do not share one live `NEXT_PUBLIC_TEMPER_API_URL`.
 
 Both servers are detached into their own session, so they outlive the shell that started them. Logs are `/tmp/katagami-temper-$PORT.log` and `/tmp/katagami-ui-$UI_PORT.log`.
-
-**Known break:** the seed step currently fails. See the "Known break" section in `features/local-stack.md` before you spend time on it: the stack itself comes up correctly, but no content reaches Published, so drives that need seeded content are blocked.
 
 ## Doctor
 
@@ -72,7 +72,7 @@ Mark these verified-unreachable with the prerequisite. Do not fake them, and do 
 PORT=3499 UI_PORT=3500 bash scripts/run-local.sh --stop
 ```
 
-That kills whatever owns the two ports you launched on, which is why the ports must be yours. Never kill by process name: other agents run `temper serve` and `next dev` on this machine. The scratch database at `/tmp/katagami-remix-local-$PORT.db` and `ui/.env.local` can be left; both are regenerated on the next run and `ui/.env.local` is gitignored.
+That kills whatever owns the two ports you launched on, which is why the ports must be yours. `stop()` uses `lsof` on those two ports only. Never kill by process name: other agents run `temper serve` and `next dev` on this machine. The scratch database at `/tmp/katagami-remix-local-$PORT.db`, `ui/.env.$PORT.local`, and `ui/.env.local` can be left; they are regenerated on the next run and gitignored.
 
 ## Feature map
 

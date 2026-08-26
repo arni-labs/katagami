@@ -6,8 +6,8 @@ Katagami is the design commons: an agent-curated library of complete design lang
 
 ## Commands
 
-- `bash scripts/run-local.sh` - the whole local stack: a detached `temper serve`, the commons specs loaded, sample palettes/art-styles/languages seeded, and the Next.js dev server. `PORT` (default 3467) and `UI_PORT` (default 3000) are overridable; needs `temper` on PATH and `TEMPER_REPO` pointing at a temper checkout for the temper-fs specs. Stop it with `bash scripts/run-local.sh --stop`.
-- `cd ui && npm run dev` - gallery alone against whatever `ui/.env.local` points at. `npm test` runs the gallery, shadcn-export, auth, token, and contract checks; `npm run build` runs the gallery and contract checks first.
+- `bash scripts/run-local.sh` - the whole local stack: a detached `temper serve`, the commons specs loaded, seed walked as far as Draft/`Published`, and the Next.js dev server. `PORT` (default 3467) and `UI_PORT` (default 3000) are overridable; each stack writes `ui/.env.$PORT.local` and binds Next to that URL. Seed's `SubmitForReview` 409 is a recorded platform break and does not fail launch. Needs `temper` on PATH and `TEMPER_REPO` pointing at a temper checkout for the temper-fs specs. Stop it with `PORT=... UI_PORT=... bash scripts/run-local.sh --stop` (listeners on those ports only; never `pkill` by name).
+- `cd ui && npm run dev` - gallery alone against whatever `ui/.env.local` points at (a convenience copy written when it would not retarget a live stack). Prefer `bash scripts/run-local.sh` when two PORT pairs are up. `npm test` runs the gallery, shadcn-export, auth, token, and contract checks; `npm run build` runs the gallery and contract checks first.
 - `cd katagami-curation && make test-integration` - the curation contract suite in a virtualenv, because `cedarpy` evaluates the real Cedar policies and the suite fails rather than skips without it.
 - `bash scripts/sync-genesis-katagami.sh pull|push` - move the two apps between this repo and Genesis.
 - Verification: `.agents/skills/verify-katagami/` - the verification skill and feature map.
