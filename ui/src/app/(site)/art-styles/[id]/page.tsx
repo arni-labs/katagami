@@ -103,15 +103,19 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   ]);
   const artOpts = toArtOpts([art]);
   let langOpts = toLanguageOpts(languages);
-  const palOpts = toPaletteOpts(palettes);
+  let palOpts = toPaletteOpts(palettes);
 
-  // ARN-385: the InlineRemix language picker embeds the full language list. For
-  // a signed-out visitor, withhold non-featured languages — filter the DATA
-  // before it reaches the client component (palettes stay public; the fixed art
-  // style is this page's own, already visible to reach here).
+  // ARN-385: the InlineRemix language + palette pickers embed the full lists. For
+  // a signed-out visitor, withhold the non-featured portion of each — filter the
+  // DATA before it reaches the client component (the fixed art style is this
+  // page's own, already visible to reach here).
   if (!(await hasFullGalleryAccess())) {
-    const languageIds = await featuredIds("language");
+    const [languageIds, paletteIds] = await Promise.all([
+      featuredIds("language"),
+      featuredIds("palette"),
+    ]);
     langOpts = langOpts.filter((o) => languageIds.has(o.id));
+    palOpts = palOpts.filter((o) => paletteIds.has(o.id));
   }
 
   return (

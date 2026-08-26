@@ -158,40 +158,42 @@ const byEntityId = (a: Row, b: Row) =>
 /** Gate: which published rows may this tier see? */
 async function visibleRows(kind: Kind, tier: Tier): Promise<Row[]> {
   const rows = (await readAll(SET[kind], PUBLISHED)).filter((r) => str(r.fields?.name));
-  // Palettes are public everywhere — the site shows them all, so the MCP does
-  // too (no cap, no sign-in gate), for both tiers.
-  if (kind === "palette") return rows;
   if (tier === "full") return rows;
-  // The anonymous portion for languages and art styles is the owner-curated
-  // featured set, sorted by entity_id so it is a fixed slice a patient caller
-  // can't page past, and byte-for-byte identical to every other anonymous
+  // The anonymous portion is the owner-curated visitor shelf — the `featured`
+  // set — for ALL three kinds, sorted by entity_id so it is a fixed slice a
+  // patient caller can't page past. Uncapped: the shelf is exactly what the
+  // owner selected, and byte-for-byte identical to every other anonymous
   // surface (they all filter by featuredIds()).
   return rows.filter(isFeatured).sort(byEntityId);
 }
 
 /**
  * The ONE source of truth for the anonymous "portion" of a kind: the set of
- * published entity_ids a signed-out visitor may see. Featured for languages and
- * art styles; every published id for palettes (public). Every anonymous-facing
- * surface — the website pages, its search/vectors APIs, the studio/compare
- * tools, and the MCP — filters by this set, so the portion can never diverge.
+ * published entity_ids a signed-out visitor may see — the owner-curated visitor
+ * shelf (the `featured` set), for languages, art styles, AND palettes alike.
+ * Every anonymous-facing surface — the website pages, its search/vectors APIs,
+ * the studio/compare tools, and the MCP — filters by this set, so the portion
+ * can never diverge between them.
  */
 export async function featuredIds(kind: Kind): Promise<Set<string>> {
   const rows = await readAll(SET[kind], PUBLISHED);
-  if (kind === "palette") return new Set(rows.map((r) => r.entity_id));
-  return new Set(rows.filter(isFeatured).map((r) => r.entity_id));
+  // On the shelf = featured AND has a name — the same predicate visibleRows
+  // uses, so a nameless-but-featured junk row can't make this set diverge from
+  // what the MCP sample and the website shelves actually render.
+  return new Set(
+    rows.filter((r) => str(r.fields?.name) && isFeatured(r)).map((r) => r.entity_id),
+  );
 }
 
-/** May a signed-out visitor see this published id or slug? Palettes: any
- *  published row. Languages and art styles: the featured shelf only.
- *  featuredIds() stays id-keyed (list filters); this accepts a slug too so
- *  BRIEF.md?palette=komawari-plates&art=cathode-ray is not 404'd as a miss. */
+/** May a signed-out visitor see this published id or slug? The visitor shelf
+ *  (featured AND named) for ALL kinds — palettes included. featuredIds() stays
+ *  id-keyed (list filters); this accepts a slug too so a by-id-or-slug door like
+ *  BRIEF.md?palette=komawari-plates&art=cathode-ray isn't 404'd as a miss. */
 export async function anonMaySee(kind: Kind, idOrSlug: string): Promise<boolean> {
   const rows = await readAll(SET[kind], PUBLISHED);
-  if (kind === "palette") {
-    return rows.some((r) => rowMatchesIdOrSlug(r, idOrSlug));
-  }
-  return rows.some((r) => isFeatured(r) && rowMatchesIdOrSlug(r, idOrSlug));
+  return rows.some(
+    (r) => str(r.fields?.name) && isFeatured(r) && rowMatchesIdOrSlug(r, idOrSlug),
+  );
 }
 
 // --- describe_catalog: the agent's map --------------------------------------

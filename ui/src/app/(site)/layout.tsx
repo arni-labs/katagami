@@ -19,6 +19,7 @@ import {
   parseJson,
 } from "@/lib/odata";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { featuredIds } from "@/lib/catalog";
 import { isFeaturedRecord } from "@/lib/featured.mjs";
 
 /** The signature trio, in registration-bar order. */
@@ -36,14 +37,15 @@ interface TokensLite {
 // so it was rebuilt — 3 catalog fetches + parsing every item — on every single
 // page render (the dominant shared TTFB cost across all pages). Cache the whole
 // built index so it's produced once per window, not per request.
-// Anonymous visitors get a GATED index: languages and art styles are limited to
-// the featured portion (identical to the /art-styles + /language teasers and the
-// read MCP), so ⌘K can't enumerate the full catalog from page source. Palettes
-// are public. Signed-in visitors get everything. Cached per tier.
+// Anonymous visitors get a GATED index: languages, art styles, AND palettes are
+// limited to the featured portion (identical to the /art-styles + /palettes +
+// /language teasers and the read MCP), so ⌘K can't enumerate the full catalog
+// from page source. Signed-in visitors get everything. Cached per tier.
 const buildSearchIndex = unstable_cache(
   async (tier: "sample" | "full"): Promise<PaletteIndexItem[]> => {
     const items: PaletteIndexItem[] = [];
     const featuredOnly = tier === "sample";
+    const palFeatured = featuredOnly ? await featuredIds("palette") : null;
 
   try {
     // Search surfaces the public catalog (Published only). For anonymous
@@ -73,6 +75,7 @@ const buildSearchIndex = unstable_cache(
   try {
     for (const palette of await listPaletteSystems()) {
       if (!palette.fields.name) continue;
+      if (palFeatured && !palFeatured.has(palette.entity_id)) continue;
       const core = paletteCore(palette.fields);
       items.push({
         id: palette.entity_id,

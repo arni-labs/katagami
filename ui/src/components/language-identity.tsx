@@ -79,17 +79,24 @@ export async function LanguageIdentity({
   // ARN-385: the "built with" art-style card links to that style's detail page.
   // For a signed-out visitor, omit it when the style is outside the anonymous
   // featured portion, so the card never links to a page they would be 404'd
-  // from. The palette below stays (palettes are public; the applied-tokens
-  // fallback carries no link at all).
+  // from.
   if (art && !(await hasFullGalleryAccess()) && !(await anonMaySee("art_style", art.entity_id))) {
     art = undefined;
   }
 
   // The linked palette is a real PaletteSystem entity. Resolve it when present;
   // otherwise derive the applied palette from the language's own tokens.
-  const linked = fields.default_palette_id
+  let linked = fields.default_palette_id
     ? await getPaletteSystem(fields.default_palette_id).catch(() => null)
     : null;
+
+  // ARN-385: parity with the art-style card above — a signed-out visitor gets a
+  // non-featured linked palette dropped back to the applied-tokens fallback, so
+  // the row never leaks its name or links to a palette page they'd be 404'd from
+  // (the language's own colours still render; the fallback carries no link).
+  if (linked && !(await hasFullGalleryAccess()) && !(await anonMaySee("palette", linked.entity_id))) {
+    linked = null;
+  }
   const palette = linked
     ? {
         core: paletteCore(linked.fields),

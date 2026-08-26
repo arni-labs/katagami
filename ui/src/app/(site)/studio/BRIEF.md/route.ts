@@ -56,15 +56,19 @@ export async function GET(req: NextRequest) {
     }
 
     // ARN-385: even when every lane is Published, a signed-out visitor may
-    // compose a brief only from the anonymous featured portion of the language
-    // and art style (the palette stays public). Gate on the RESOLVED entity
-    // id — the query string may be a slug, and featuredIds() is id-keyed.
+    // compose a brief only from the anonymous featured portion of EVERY lane —
+    // language, palette, AND art style. The brief embeds each lane's spec
+    // content (the palette's name + roles included), so an off-shelf id in any
+    // lane is a leak. Gate on the RESOLVED entity id — the query string may be a
+    // slug, and featuredIds() is id-keyed — using the same primitive as the
+    // gallery/MCP so the visible set can never diverge.
     if (!(await hasFullGalleryAccess())) {
-      const [languageOk, artOk] = await Promise.all([
+      const [languageOk, paletteOk, artOk] = await Promise.all([
         anonMaySee("language", lang.entity_id),
+        anonMaySee("palette", pal.entity_id),
         anonMaySee("art_style", art.entity_id),
       ]);
-      if (!languageOk || !artOk) {
+      if (!languageOk || !paletteOk || !artOk) {
         return new Response("not found\n", { status: 404 });
       }
     }

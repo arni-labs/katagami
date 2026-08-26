@@ -52,6 +52,11 @@ export async function loadPalettePage(input: {
   cursor?: string | null;
   search?: string;
 }): Promise<PageResult<PaletteItem>> {
+  // ARN-385: palette browsing beyond the owner-picked visitor shelf is a
+  // signed-in surface — same gate as loadLanguagePage/loadArtStylePage.
+  // Enforced here, not just hidden in the UI, because a server action is a
+  // public HTTP endpoint anyone can invoke directly.
+  if (!(await hasFullGalleryAccess())) return { items: [], nextCursor: null };
   const page = await pagePaletteSystems({
     cursor: input.cursor ?? undefined,
     search: input.search,
@@ -96,6 +101,9 @@ export async function searchPalettesByMeaning(input: {
   query: string;
   k?: number;
 }): Promise<PaletteItem[]> {
+  // ARN-385: same signed-in gate as loadPalettePage — meaning search ranks the
+  // full published catalog, which would sidestep the featured teaser shelf.
+  if (!(await hasFullGalleryAccess())) return [];
   return searchPaletteCards(input.query, input.k ?? MEANING_LIMIT);
 }
 

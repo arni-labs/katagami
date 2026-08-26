@@ -1307,6 +1307,8 @@ export async function listFeaturedPaletteSystems(): Promise<LaneEntity[]> {
     return (await collectFeaturedRows("PaletteSystems"))
       .filter(isFeaturedRecord)
       .map((r) => normalizeLaneRow(r, "PaletteSystems"))
+      // On the shelf = featured AND named; a nameless junk row never renders.
+      .filter((x) => Boolean(x.fields.name))
       .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
   } catch {
     return [];
@@ -1318,6 +1320,8 @@ export async function listFeaturedArtStyles(): Promise<LaneEntity[]> {
     return (await collectFeaturedRows("ArtStyles"))
       .filter(isFeaturedRecord)
       .map((r) => normalizeLaneRow(r, "ArtStyles"))
+      // On the shelf = featured AND named; a nameless junk row never renders.
+      .filter((x) => Boolean(x.fields.name))
       .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
   } catch {
     return [];

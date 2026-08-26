@@ -13,7 +13,7 @@ import {
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
-import { featuredIds } from "@/lib/catalog";
+import { anonMaySee, featuredIds } from "@/lib/catalog";
 import { readableTextColor } from "@/lib/shadcn-export";
 import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
@@ -53,6 +53,19 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
   // renders never touch cookies() and stay cacheable.
   if (pal.status !== "Published" && !(await hasCuratorAccess())) notFound();
 
+  // ARN-385: a signed-out visitor reaches only the owner-picked featured shelf —
+  // the same set the /palettes teaser and the read-MCP sample show. A
+  // Published-but-unfeatured palette is not viewable by direct URL when anon.
+  // Membership comes from the ONE catalog primitive (anonMaySee), so the gate
+  // can never diverge from the shelf or the MCP.
+  if (
+    pal.status === "Published" &&
+    !(await hasFullGalleryAccess()) &&
+    !(await anonMaySee("palette", id))
+  ) {
+    notFound();
+  }
+
   const f = pal.fields;
   const core = paletteCore(f);
   const ramps = parseJson<Record<string, PaletteRamp>>(f.ramps) ?? {};
@@ -81,9 +94,10 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
   let langOpts = toLanguageOpts(languages);
   let artOpts = toArtOpts(artStyles);
 
-  // ARN-385: this palette page stays public, but its embedded InlineRemix
-  // language + art-style pickers must withhold the non-featured portion from a
-  // signed-out visitor. Filter the DATA before it reaches the client component.
+  // ARN-385: an anon visitor only reaches this page for a featured palette (the
+  // gate above), and its OWN palette stays in palOpts. But the embedded
+  // InlineRemix language + art-style pickers must withhold the non-featured
+  // portion — filter the DATA before it reaches the client component.
   if (!(await hasFullGalleryAccess())) {
     const [languageIds, artIds] = await Promise.all([
       featuredIds("language"),

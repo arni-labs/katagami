@@ -21,15 +21,19 @@ export async function LanguageRemixSection({
     listArtStyles().catch(() => []),
   ]);
   const remixLangOpts = toLanguageOpts([lang]);
-  const remixPalOpts = toPaletteOpts(paletteRows);
+  let remixPalOpts = toPaletteOpts(paletteRows);
   let remixArtOpts = toArtOpts(artRows);
 
-  // ARN-385: the InlineRemix art-style picker embeds the full art-style list.
-  // For a signed-out visitor, withhold non-featured art styles — filter the
-  // DATA before it reaches the client component (palettes stay public; the
-  // language is this page's own, already visible to reach here).
+  // ARN-385: the InlineRemix palette + art-style pickers embed the full lists.
+  // For a signed-out visitor, withhold the non-featured portion of each — filter
+  // the DATA before it reaches the client component (the language is this page's
+  // own, already visible to reach here).
   if (!(await hasFullGalleryAccess())) {
-    const artIds = await featuredIds("art_style");
+    const [paletteIds, artIds] = await Promise.all([
+      featuredIds("palette"),
+      featuredIds("art_style"),
+    ]);
+    remixPalOpts = remixPalOpts.filter((o) => paletteIds.has(o.id));
     remixArtOpts = remixArtOpts.filter((o) => artIds.has(o.id));
   }
 

@@ -31,18 +31,20 @@ export default async function StudioPage() {
     ]);
 
   let ui = toLanguageOpts(languages);
-  const pal = toPaletteOpts(palettes);
+  let pal = toPaletteOpts(palettes);
   let art = toArtOpts(artStyles);
 
   // ARN-385: a signed-out visitor may pick only the anonymous featured portion
-  // of languages and art styles (palettes stay public). Filter the DATA before
+  // of every lane — languages, palettes, AND art styles. Filter the DATA before
   // it reaches the client StudioClient — never rely on client-side hiding.
   if (!(await hasFullGalleryAccess())) {
-    const [languageIds, artIds] = await Promise.all([
+    const [languageIds, paletteIds, artIds] = await Promise.all([
       featuredIds("language"),
+      featuredIds("palette"),
       featuredIds("art_style"),
     ]);
     ui = ui.filter((o) => languageIds.has(o.id));
+    pal = pal.filter((o) => paletteIds.has(o.id));
     art = art.filter((o) => artIds.has(o.id));
   }
 

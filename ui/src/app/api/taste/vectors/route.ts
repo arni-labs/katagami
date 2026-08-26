@@ -49,12 +49,16 @@ export async function GET() {
   const counts = { stored: 0, computed: 0 };
 
   // ARN-385: a signed-out visitor gets vectors only for the anonymous featured
-  // portion of languages and art styles (palettes stay public). Same
-  // featuredIds() primitive as the gallery/MCP, so the set can never diverge.
+  // portion — languages, art styles, AND palettes. Same featuredIds() primitive
+  // as the gallery/MCP, so the set can never diverge.
   const full = await hasFullGalleryAccess();
-  const [languageFeatured, artFeatured] = full
-    ? [null, null]
-    : await Promise.all([featuredIds("language"), featuredIds("art_style")]);
+  const [languageFeatured, paletteFeatured, artFeatured] = full
+    ? [null, null, null]
+    : await Promise.all([
+        featuredIds("language"),
+        featuredIds("palette"),
+        featuredIds("art_style"),
+      ]);
 
   const put = async (
     id: string,
@@ -113,6 +117,7 @@ export async function GET() {
     anyLaneLoaded = true;
     for (const palette of palettes) {
       if (!palette.fields.name) continue;
+      if (paletteFeatured && !paletteFeatured.has(palette.entity_id)) continue;
       const core = paletteCore(palette.fields);
       await put(
         palette.entity_id,
