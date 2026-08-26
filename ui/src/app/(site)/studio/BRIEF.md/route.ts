@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import {
-  getDesignLanguage,
-  getPaletteSystem,
-  getArtStyle,
+  getDesignLanguageByIdOrSlug,
+  getPaletteSystemByIdOrSlug,
+  getArtStyleByIdOrSlug,
   getFileUrl,
   parseJson,
 } from "@/lib/odata";
@@ -34,11 +34,16 @@ export async function GET(req: NextRequest) {
     COMPOSITIONS.find((c) => c.key === compKey) ?? COMPOSITIONS[0];
 
   try {
+    // id OR slug. A by-key miss used to throw and become HTTP 500 (ui=gust);
+    // a clean miss — unknown key, or a slug that isn't a published row — is 404.
     const [lang, pal, art] = await Promise.all([
-      getDesignLanguage(uiId),
-      getPaletteSystem(palId),
-      getArtStyle(artId),
+      getDesignLanguageByIdOrSlug(uiId),
+      getPaletteSystemByIdOrSlug(palId),
+      getArtStyleByIdOrSlug(artId),
     ]);
+    if (!lang || !pal || !art) {
+      return new Response("not found\n", { status: 404 });
+    }
 
     // ARN-331: composing a brief from a non-Published entity in any lane is
     // owner-only — the ids are guessable and the brief embeds spec content.
@@ -51,12 +56,12 @@ export async function GET(req: NextRequest) {
 
     // ARN-385: even when every lane is Published, a signed-out visitor may
     // compose a brief only from the anonymous featured portion of the language
-    // and art style (the palette stays public). Same featuredIds() primitive as
-    // the gallery/MCP so the visible set can never diverge.
+    // and art style (the palette stays public). Gate on the RESOLVED entity
+    // id — the query string may be a slug, and featuredIds() is id-keyed.
     if (!(await hasFullGalleryAccess())) {
       const [languageOk, artOk] = await Promise.all([
-        anonMaySee("language", uiId),
-        anonMaySee("art_style", artId),
+        anonMaySee("language", lang.entity_id),
+        anonMaySee("art_style", art.entity_id),
       ]);
       if (!languageOk || !artOk) {
         return new Response("not found\n", { status: 404 });
@@ -68,7 +73,7 @@ export async function GET(req: NextRequest) {
         name: lang.fields.name ?? "Untitled",
         slug: lang.fields.slug,
         tokens: parseJson(lang.fields.tokens),
-        designMdUrl: `/language/${uiId}/DESIGN.md`,
+        designMdUrl: `/language/${lang.entity_id}/DESIGN.md`,
       },
       palette: {
         name: pal.fields.name ?? "Untitled",

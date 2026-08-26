@@ -264,7 +264,8 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
 // here so existing importers keep their path.
 import { normalizeDesignLanguageRow } from "@/lib/design-language-row.mjs";
 import { isFeaturedRecord } from "@/lib/featured.mjs";
-export { normalizeDesignLanguageRow };
+import { isODataNotFound } from "@/lib/odata-not-found.mjs";
+export { normalizeDesignLanguageRow, isODataNotFound };
 
 function parseEntitySetId(
   value: unknown,
@@ -982,6 +983,74 @@ export async function getArtStyleBySlug(
     /* fall through to demo */
   }
   return demo;
+}
+
+async function firstPublishedBySlug<T>(
+  set: string,
+  slug: string,
+  normalize: (row: Record<string, unknown>) => T,
+): Promise<T | undefined> {
+  const resp = await odata<{ value?: Record<string, unknown>[] }>(
+    `${set}?$filter=Status eq 'Published' and slug eq '${odataLiteral(slug)}'&$top=1`,
+  );
+  const row = resp.value?.[0];
+  return row ? normalize(row) : undefined;
+}
+
+/**
+ * Resolve a published (or demo) row by entity key, then by slug. A by-key
+ * miss is not an error — callers turn null into HTTP 404. Any other OData
+ * failure still throws so a Temper outage cannot masquerade as not-found.
+ */
+export async function getDesignLanguageByIdOrSlug(
+  idOrSlug: string,
+): Promise<DesignLanguage | null> {
+  try {
+    return await getDesignLanguage(idOrSlug);
+  } catch (e) {
+    if (!isODataNotFound(e)) throw e;
+  }
+  const fromSlug = await firstPublishedBySlug(
+    "DesignLanguages",
+    idOrSlug,
+    normalizeDesignLanguageRow,
+  );
+  if (fromSlug) return fromSlug;
+  return demoDesignLanguages().find((d) => d.fields.slug === idOrSlug) ?? null;
+}
+
+export async function getPaletteSystemByIdOrSlug(
+  idOrSlug: string,
+): Promise<LaneEntity | null> {
+  try {
+    return await getPaletteSystem(idOrSlug);
+  } catch (e) {
+    if (!isODataNotFound(e)) throw e;
+  }
+  const fromSlug = await firstPublishedBySlug(
+    "PaletteSystems",
+    idOrSlug,
+    (row) => normalizeLaneRow(row, "PaletteSystems"),
+  );
+  if (fromSlug) return fromSlug;
+  return demoPaletteSystems().find((d) => d.fields.slug === idOrSlug) ?? null;
+}
+
+export async function getArtStyleByIdOrSlug(
+  idOrSlug: string,
+): Promise<LaneEntity | null> {
+  try {
+    return await getArtStyle(idOrSlug);
+  } catch (e) {
+    if (!isODataNotFound(e)) throw e;
+  }
+  const fromSlug = await firstPublishedBySlug(
+    "ArtStyles",
+    idOrSlug,
+    (row) => normalizeLaneRow(row, "ArtStyles"),
+  );
+  if (fromSlug) return fromSlug;
+  return demoArtStyles().find((d) => d.fields.slug === idOrSlug) ?? null;
 }
 /** Read a governed File's text content server-side (corpus excerpts on the
  *  voice contract pages). Returns "" on any failure — a missing excerpt

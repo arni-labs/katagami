@@ -90,6 +90,45 @@ required.push([
   /^(?![\s\S]*s-maxage=300)[\s\S]*$/,
 ]);
 
+const brief = read("src/app/(site)/studio/BRIEF.md/route.ts");
+const odata = read("src/lib/odata.ts");
+required.push([
+  "BRIEF.md resolves ui/palette/art by id or slug (a slug must not 500)",
+  brief,
+  /getDesignLanguageByIdOrSlug\(uiId\)/,
+]);
+required.push([
+  "BRIEF.md 404s when any lane misses rather than falling through to the 500 catch",
+  brief,
+  /if \(!lang \|\| !pal \|\| !art\) \{\s*return new Response\("not found\\n", \{ status: 404 \}\);/,
+]);
+required.push([
+  "BRIEF.md featured-gates the resolved language entity_id, not the raw query slug",
+  brief,
+  /anonMaySee\("language", lang\.entity_id\)/,
+]);
+required.push([
+  "BRIEF.md featured-gates the resolved art-style entity_id, not the raw query slug",
+  brief,
+  /anonMaySee\("art_style", art\.entity_id\)/,
+]);
+required.push([
+  "odata treats a by-key OData 404 as a miss, not a throw-through",
+  odata,
+  /export \{ normalizeDesignLanguageRow, isODataNotFound \}/,
+]);
+required.push([
+  "id-or-slug language lookup maps a by-key 404 into a slug fallback",
+  odata,
+  /export async function getDesignLanguageByIdOrSlug/,
+]);
+const odataMiss = read("src/lib/odata-not-found.mjs");
+required.push([
+  "OData-miss predicate matches the Temper by-key 404 message",
+  odataMiss,
+  /\\bOData 404\\b/,
+]);
+
 let failed = 0;
 for (const [name, source, pattern] of required) {
   if (pattern.test(source)) {
