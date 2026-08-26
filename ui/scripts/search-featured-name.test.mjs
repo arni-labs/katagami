@@ -84,42 +84,103 @@ assert.ok(
 
 console.log("ok: q=bluet includes Bluet the language against today's live 200/0 fixture");
 
-const komawariHits = mergeSearchHits(
+function hit(partial) {
+  return { tags: [], slug: "", ...partial };
+}
+
+// Live prod after #257 (and the locked replay): q=komawari is 200/5 —
+// Komawari + Komawari Plates first, then Kōka, Yūnagi, Tachikiri. The
+// default k=8 meaning window also held 3 off-shelf rows that the
+// membership filter stripped. Preview 913114c over-fetched, so three more
+// featured meaning hits (Screentone Press, Shizuku, Plakat) filled those
+// slots and the count became 8.
+const KOKA = hit({
+  id: "en-019ef830-83df-76a0-8fdd-58080a22da67",
+  kind: "palette",
+  name: "Kōka",
+  score: 0.2405,
+});
+const YUNAGI = hit({
+  id: "en-019ef73d-2fbf-7e33-88d5-bef9ccf7bf0a",
+  kind: "language",
+  name: "Yūnagi",
+  score: 0.2311,
+});
+const TACHIKIRI = hit({
+  id: "en-019ef820-29bb-7941-9720-bb01d0378e82",
+  kind: "language",
+  name: "Tachikiri",
+  score: 0.2186,
+});
+const prodKomawariWindow = [
+  hit({
+    id: KOMWARI_PLATES.id,
+    kind: "palette",
+    name: "Komawari Plates",
+    slug: "komawari-plates",
+    score: 0.3519,
+  }),
+  hit({
+    id: KOMWARI.id,
+    kind: "language",
+    name: "Komawari",
+    slug: "komawari",
+    score: 0.3455,
+  }),
+  KOKA,
+  YUNAGI,
+  TACHIKIRI,
+  hit({ id: "en-off-1", kind: "language", name: "Off-1", score: 0.2 }),
+  hit({ id: "en-off-2", kind: "language", name: "Off-2", score: 0.19 }),
+  hit({ id: "en-off-3", kind: "language", name: "Off-3", score: 0.18 }),
+];
+const overfetchExtras = [
+  hit({ id: "en-screentone", kind: "language", name: "Screentone Press", score: 0.21 }),
+  hit({ id: "en-shizuku", kind: "language", name: "Shizuku", score: 0.2 }),
+  hit({ id: "en-plakat", kind: "language", name: "Plakat", score: 0.19 }),
+];
+const featuredIds = new Set([
+  KOMWARI.id,
+  KOMWARI_PLATES.id,
+  KOKA.id,
+  YUNAGI.id,
+  TACHIKIRI.id,
+  "en-screentone",
+  "en-shizuku",
+  "en-plakat",
+]);
+
+const komawariMerged = mergeSearchHits(
   lexicalHits("komawari", visitorShelf, 8),
-  [
-    {
-      id: KOMWARI.id,
-      kind: "language",
-      name: "Komawari",
-      slug: "komawari",
-      score: 0.3455,
-      tags: [],
-    },
-    {
-      id: KOMWARI_PLATES.id,
-      kind: "palette",
-      name: "Komawari Plates",
-      slug: "komawari-plates",
-      score: 0.3519,
-      tags: [],
-    },
-  ],
+  [...prodKomawariWindow, ...overfetchExtras],
   8,
 );
+const komawariVisible = komawariMerged.filter((h) => featuredIds.has(h.id));
+assert.equal(
+  komawariVisible.length,
+  5,
+  "q=komawari count must be 5 (prod before this PR), not 8 from over-fetch",
+);
 assert.ok(
-  komawariHits.some((h) => h.id === KOMWARI.id && h.kind === "language"),
+  komawariVisible.some((h) => h.id === KOMWARI.id && h.kind === "language"),
   "q=komawari still includes Komawari",
 );
 assert.ok(
-  komawariHits.some((h) => h.id === KOMWARI_PLATES.id && h.kind === "palette"),
+  komawariVisible.some((h) => h.id === KOMWARI_PLATES.id && h.kind === "palette"),
   "q=komawari still includes Komawari Plates",
 );
 assert.ok(
-  !komawariHits.some((h) => h.id === GUST.id),
+  !komawariMerged.some((h) =>
+    ["en-screentone", "en-shizuku", "en-plakat"].includes(h.id),
+  ),
+  "over-fetched meaning hits must not fill the default k=8 window",
+);
+assert.ok(
+  !komawariVisible.some((h) => h.id === GUST.id),
   "q=komawari does not include Gust",
 );
 
-console.log("ok: q=komawari still includes Komawari + Komawari Plates");
+console.log("ok: q=komawari count is 5 and still includes Komawari + Komawari Plates");
 
 const gustHits = mergeSearchHits(
   lexicalHits("gust", visitorShelf, 8),
@@ -153,6 +214,21 @@ assert.match(searchLib, /mergeSearchHits/);
 assert.match(searchLib, /listFeaturedDesignLanguages/);
 assert.match(searchLib, /listFeaturedPaletteSystems/);
 assert.match(searchRoute, /hits = hits\.slice\(0, k\)/);
+assert.match(
+  searchLib,
+  /Math\.min\(Math\.max\(Math\.floor\(k\) \|\| 8, 4\), 25\)/,
+  "per-lane k stays the pre-#259 window (4..25 of requested k)",
+);
+assert.doesNotMatch(
+  searchLib,
+  /want \* 4/,
+  "must not over-fetch k*4 — that is the q=komawari 5→8 regression",
+);
+assert.doesNotMatch(
+  searchLib,
+  /featuredOnly \? KERNEL_K_MAX/,
+  "anonymous keep must not widen to KERNEL_K_MAX",
+);
 
 console.log("ok: /api/search wires lexical shelf names + clips after the membership filter");
 

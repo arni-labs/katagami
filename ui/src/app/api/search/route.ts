@@ -100,9 +100,9 @@ export async function GET(request: Request) {
     );
     hits = hits.filter((_, i) => allowed[i]);
   }
-  // Clip after the membership filter (and after lexical name matches were
-  // unioned). Clipping first was the ranking-cap half of the live q=bluet
-  // 200/0: the default k=8 window filled with off-shelf rows, then emptied.
+  // Clip to the requested k. The meaning window is already `k` before this
+  // (over-fetching it is what made q=komawari 8 instead of prod's 5). Lexical
+  // name matches insert into that window; they do not deepen kNN.
   hits = hits.slice(0, k);
 
   const base = siteBase(request);

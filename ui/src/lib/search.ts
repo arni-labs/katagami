@@ -76,16 +76,10 @@ function publishedFilter(lane: SearchLane, featuredOnly?: boolean): string {
   return "Status eq 'Published'";
 }
 
-/** Kernel k ceiling — same as the API MAX_K. Over-fetch to this when the
- *  route will membership-filter, so off-shelf high-scorers cannot crowd a
- *  featured name out of the default k=8 window (the other half of the live
- *  q=bluet 200/0: merge-then-strip left nothing). */
-const KERNEL_K_MAX = 25;
-
-function fetchK(k: number, featuredOnly?: boolean): number {
-  const want = Math.max(1, Math.floor(k));
-  if (!featuredOnly) return Math.min(want, KERNEL_K_MAX);
-  return Math.min(KERNEL_K_MAX, Math.max(want * 4, 16));
+/** Same per-lane k the pre-#259 ranker used. Over-fetching to 16–25 when
+ *  anonymous is what swelled q=komawari from prod's 5 to preview's 8. */
+function perLaneK(k: number): number {
+  return Math.min(Math.max(Math.floor(k) || 8, 4), 25);
 }
 
 async function safeList<T>(label: string, fn: () => Promise<T[]>): Promise<T[]> {
@@ -342,7 +336,8 @@ export function summarize(lane: SearchLane, fields: Record<string, unknown>): st
 }
 
 /** Dense hits for one lane (agent projection). Name/slug matches from the
- *  visitor shelf (or full catalog) sit in front of the kNN ranking. */
+ *  visitor shelf (or full catalog) sit in front of the kNN ranking. The
+ *  meaning window stays `k` — same as prod before this PR. */
 export async function searchLane(
   lane: SearchLane,
   query: string,
@@ -350,7 +345,7 @@ export async function searchLane(
   detailed = false,
   opts?: SearchOpts,
 ): Promise<SearchHit[]> {
-  const want = fetchK(k, opts?.featuredOnly);
+  const want = Math.max(1, Math.floor(k) || 8);
   const [hits, docs] = await Promise.all([
     searchLaneRaw(lane, query, want, opts),
     loadLexicalDocs(opts),
@@ -367,9 +362,9 @@ export async function searchLane(
 
 /** Dense hits across ALL lanes, merged and re-ranked by score. Since every lane
  *  shares the one MiniLM space, a single query vector ranks each set and the
- *  scores are directly comparable. Over-fetches per lane, unions shelf name
- *  matches, then keeps the top window (the API route clips to `k` after the
- *  membership filter).
+ *  scores are directly comparable. Per-lane k and the merged window are the
+ *  same as before the lexical union — name matches insert, they do not
+ *  deepen the meaning ranking (q=komawari must stay count 5).
  */
 export async function searchAllLanes(
   query: string,
@@ -377,15 +372,16 @@ export async function searchAllLanes(
   detailed = false,
   opts?: SearchOpts,
 ): Promise<SearchHit[]> {
-  const perLane = fetchK(k, opts?.featuredOnly);
-  const keep = opts?.featuredOnly ? KERNEL_K_MAX : Math.min(Math.max(k, 4), KERNEL_K_MAX);
+  const perLane = perLaneK(k);
+  const keep = Math.max(1, Math.floor(k) || 8);
   const [docs, ...lanes] = await Promise.all([
     loadLexicalDocs(opts),
     ...SEARCH_LANES.map((lane) => searchLaneRaw(lane, query, perLane, opts)),
   ]);
   const semantic = lanes
     .flatMap((hits, i) => hits.map((h) => toHit(SEARCH_LANES[i], h, detailed)))
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score)
+    .slice(0, keep);
   const lexical = lexicalHitsFor(query, docs, keep, detailed);
   return mergeSearchHits(lexical, semantic, keep);
 }

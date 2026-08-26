@@ -78,6 +78,11 @@ const required = [
     searchRoute,
     /hits = hits\.slice\(0, k\)/,
   ],
+  [
+    "search does not over-fetch the meaning window (komawari must stay count 5)",
+    searchLib,
+    /^(?![\s\S]*want \* 4)[\s\S]*$/,
+  ],
 ];
 
 for (const rel of ARTIFACT_ROUTES) {

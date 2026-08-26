@@ -52,12 +52,16 @@ export function lexicalHits(query, docs, k) {
     .slice(0, limit);
 }
 
-/** Name matches first (they already score ≥ 0.7), then meaning, de-duped. */
+/** Name matches first (they already score ≥ 0.7), then the meaning window.
+ *  Semantic is clipped to `k` BEFORE the union so an over-fetched kNN list
+ *  cannot swell the default window (preview q=komawari went 5 → 8 that way).
+ *  Lexical inserts (Bluet-by-name) still land even when meaning is empty. */
 export function mergeSearchHits(lexical, semantic, k) {
   const limit = Math.max(1, Math.floor(Number(k) || 8));
+  const meaning = (semantic ?? []).slice(0, limit);
   const seen = new Set();
   const out = [];
-  for (const hit of [...(lexical ?? []), ...(semantic ?? [])]) {
+  for (const hit of [...(lexical ?? []), ...meaning]) {
     if (!hit || !hit.id) continue;
     const key = `${hit.kind}:${hit.id}`;
     if (seen.has(key)) continue;
