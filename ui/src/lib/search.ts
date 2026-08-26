@@ -44,6 +44,18 @@ export function isSearchLane(value: unknown): value is SearchLane {
   return typeof value === "string" && value in LANE;
 }
 
+/** Anonymous ranking is the featured shelf for languages and art styles
+ *  (ARN-385). Palettes stay the full published set — they are public on the
+ *  site. Signed-in ranking omits this and uses Published-only. */
+export type SearchOpts = { featuredOnly?: boolean };
+
+function publishedFilter(lane: SearchLane, featuredOnly?: boolean): string {
+  if (featuredOnly && lane !== "palette") {
+    return "Status eq 'Published' and featured eq true";
+  }
+  return "Status eq 'Published'";
+}
+
 /** A dense, url-less search hit — the shape agents rank on. The API route adds
  *  absolute URLs (it alone knows the request origin); the lib stays origin-free. */
 export interface SearchHit {
@@ -126,6 +138,7 @@ export async function searchLaneRaw(
   lane: SearchLane,
   query: string,
   k: number,
+  opts?: SearchOpts,
 ): Promise<VectorHit[]> {
   const vector = await embedQuery(query);
   if (!vector) return [];
@@ -134,7 +147,7 @@ export async function searchLaneRaw(
     vector,
     model: TASTE_EMBEDDING_MODEL,
     k,
-    filter: "Status eq 'Published'",
+    filter: publishedFilter(lane, opts?.featuredOnly),
   });
   if (hits === null) {
     throw new SearchUnavailableError("vector ranking unavailable");
@@ -202,8 +215,9 @@ export async function searchLane(
   query: string,
   k: number,
   detailed = false,
+  opts?: SearchOpts,
 ): Promise<SearchHit[]> {
-  const hits = await searchLaneRaw(lane, query, k);
+  const hits = await searchLaneRaw(lane, query, k, opts);
   return hits.map((h) => toHit(lane, h, detailed));
 }
 
@@ -215,10 +229,11 @@ export async function searchAllLanes(
   query: string,
   k: number,
   detailed = false,
+  opts?: SearchOpts,
 ): Promise<SearchHit[]> {
   const perLane = Math.min(Math.max(k, 4), 25);
   const lanes = await Promise.all(
-    SEARCH_LANES.map((lane) => searchLane(lane, query, perLane, detailed)),
+    SEARCH_LANES.map((lane) => searchLane(lane, query, perLane, detailed, opts)),
   );
   return lanes
     .flat()

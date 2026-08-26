@@ -8,16 +8,22 @@ import {
   type SearchHit,
 } from "@/lib/search";
 import { TASTE_EMBEDDING_MODEL } from "@/lib/embeddings";
+import {
+  hasFullGalleryAccess,
+  isOnVisitorShelf,
+} from "@/lib/entity-visibility";
 
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/search — free-text semantic search over the published commons
- * (ARN-244). The documented agent surface: a text query is embedded (MiniLM)
- * and ranked against each lane's stored taste vectors in the Temper kernel.
- * Public and read-only — it searches Published entities only and returns just
- * what the gallery already shows, so it needs no auth (the embed + kernel calls
- * use the server's own credentials, never exposed).
+ * GET /api/search — free-text semantic search over the commons (ARN-244).
+ * The documented agent surface: a text query is embedded (MiniLM) and ranked
+ * against each lane's stored taste vectors in the Temper kernel.
+ *
+ * ARN-385: anonymous callers rank the same featured portion the website
+ * teaser and the read-MCP sample show (languages + art styles). Palettes
+ * stay public. Signed-in callers rank the full Published catalog. The
+ * embed + kernel calls use the server's own credentials, never exposed.
  *
  *   ?q=<text>              required — the phrase to rank by meaning
  *   ?lane=language|palette|art-style   optional — omit to search across all lanes
@@ -57,11 +63,14 @@ export async function GET(request: Request) {
   const k = Number.isFinite(kRaw) ? Math.min(Math.max(kRaw, 1), MAX_K) : DEFAULT_K;
   const detailed = url.searchParams.get("format") === "detailed";
 
+  const full = await hasFullGalleryAccess();
+  const featuredOnly = !full;
+
   let hits;
   try {
     hits = lane
-      ? await searchLane(lane, query, k, detailed)
-      : await searchAllLanes(query, k, detailed);
+      ? await searchLane(lane, query, k, detailed, { featuredOnly })
+      : await searchAllLanes(query, k, detailed, { featuredOnly });
   } catch (err) {
     if (err instanceof SearchUnavailableError) {
       return NextResponse.json(
@@ -70,6 +79,21 @@ export async function GET(request: Request) {
       );
     }
     throw err;
+  }
+
+  // Membership is the source of truth (same as the HTML detail gate). The
+  // kernel featured filter can be non-honored; never return an off-shelf
+  // language/art-style id to an anonymous caller — those DESIGN.md links
+  // would 404, and the names themselves are the leak.
+  if (featuredOnly) {
+    const allowed = await Promise.all(
+      hits.map(async (hit) => {
+        if (hit.kind === "palette") return true;
+        const kind = hit.kind === "art-style" ? "art_style" : "language";
+        return isOnVisitorShelf(kind, hit.id);
+      }),
+    );
+    hits = hits.filter((_, i) => allowed[i]);
   }
 
   const base = siteBase(request);
@@ -85,9 +109,10 @@ export async function GET(request: Request) {
     },
     {
       headers: {
-        // Read-only and public; short cache smooths repeat queries without
-        // holding a per-query CPU cost for long.
-        "Cache-Control": "public, max-age=60",
+        // Signed-in ranking is the full catalog — never a shared cache, or
+        // an anonymous replay would inherit those ids. The featured sample
+        // is public.
+        "Cache-Control": full ? "private, no-store" : "public, max-age=60",
       },
     },
   );
