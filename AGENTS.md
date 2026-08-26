@@ -17,7 +17,7 @@ Katagami is the design commons: an agent-curated library of complete design lang
 
 - **Genesis is the source of truth for the apps.** `katagami/katagami-commons` and `katagami/katagami-curation` live on the Genesis git server; GitHub (`arni-labs/katagami`) is a mirror and the default branch there is `master`, not `main`. After merging on GitHub, push to Genesis too and verify both sides agree. On divergence Genesis wins: preserve the Genesis-side change.
 - Remotes are named after the project (`katagami-commons`, `katagami-curation`), never after infrastructure. `origin` is GitHub; the other two are Genesis. Say which host you mean when you report git state.
-- **Canonical taste rules live in the deployed Katagami app**, as `TasteRule` entities. Read the accepted rules from there before generating anything; the copies under `katagami-curation/knowledge/rules/` can lag.
+- **Canonical taste rules for language synthesis** live in `katagami-curation/knowledge/rules/design-language.md`. `build_session_message` inlines that file into the synthesize-language prompt (docs-workspace copy first, compiled-in fallback) and must not load `TasteRule` entities — owner decision 2026-07-23; those entities are outdated. `synthesize-language/SKILL.md` obeys the inlined rulebook. `TasteRule` entities still exist for taste-distillation (propose) and human accept; they are not what generation reads.
 - `ui/DESIGN.md` is the design language of katagami.ai itself, and it is separate from the languages the commons curates.
 
 ## Katagami is Temper-native
@@ -26,7 +26,7 @@ Katagami is built on Temper the same way TemperPaw is: all functionality is Temp
 
 - **Entity-first.** If state changes, it is an entity. If logic runs on a state change, it is a WASM integration. Define the state machine (`.ioa.toml`), wire WASM on the actions that need logic, use Cedar for authorization. Never write orchestration in imperative code (Rust, Python, background tasks). If Rust creates entities or dispatches actions in a loop, it belongs in a WASM integration instead.
 - **The trigger boundary.** External events enter through a trigger that creates ONE entity, dispatches ONE action, and returns. Everything after that first action is WASM reacting to state transitions. A new external event source is a config entity, not new imperative code.
-- **WASM integration rules.** A module fired by a transition never dispatches transitions itself - sequencing belongs to the state machine, so step B after step A is two declared transitions, not a dispatch inside A's module. One integration, one concern: a module doing several things in sequence gets broken into transitions with one module each.
+- **WASM integration rules.** Prefer declared transitions for new sequencing: step B after step A is two transitions, not a dispatch inside A's module. The two modules this app actually ships do not follow a never-dispatch rule; they fire on a transition and then dispatch, and that is the pipeline. `build_session_message` POSTs `SessionSpawned` and `Fail` on the CurationJob (and Configures the Session / SessionLink). `finalize_spawned_session` dispatches `AttachComputedFacets`, `MarkQualityPassed`, `SubmitForReview`, and `Publish` on the lane entities, and `maybe_spawn_repair_job` creates a follow-up CurationJob then `Configure` + `Submit`. Do not "fix" those dispatches to satisfy a never-dispatch sentence.
 - **A module not declared in `app.toml` is not uploaded at install**, and every trigger for it fails with "WASM module not found".
 
 ## The two apps
@@ -35,7 +35,7 @@ Katagami is built on Temper the same way TemperPaw is: all functionality is Temp
 
 `katagami-curation` is the agent work layer: `curation_query` (the end-to-end pipeline tracker), `curation_direction` (one research direction), `curation_job` (Queued, Ready, Running, Finalizing, Completed), `curation_job_template` (job type to skill, template, and completion contract), plus the actor specs `curator_agent`, `review_agent`, `human_curator`, `taste_rule`, `trajectory_verdict`. Two WASM modules are declared in `app.toml` and both are app-required: `build_session_message` and `finalize_spawned_session`. A module that is not declared there is not uploaded at install, and every trigger for it fails with "WASM module not found".
 
-Job routing lives in `CurationJobTemplate` seed data, not in Rust. `build_session_message` reads the active template plus the skill and knowledge files from TemperFS at runtime, so prompt policy is a Katagami file rather than compiled source (ADR-0001). Follow-up jobs come from Temper reactions; source-search fan-out is modeled as `CurationDirection` records rather than a spawning loop.
+Job routing lives in `CurationJobTemplate` seed data, not in Rust. `build_session_message` reads the active template plus the skill and knowledge files from TemperFS at runtime, so prompt policy is a Katagami file rather than compiled source (ADR-0001). Source-search fan-out is modeled as `CurationDirection` records. Repair follow-ups are created inside `finalize_spawned_session` (`maybe_spawn_repair_job`), not only by Temper reactions.
 
 Curator skills live in `katagami-curation/agents/curator/skills/`: research-direction, synthesize-language, synthesize-palette, synthesize-art-style, synthesize-writing-style, review-quality, organize-taxonomy, taste-distillation, immersive-landing. Shared knowledge is in `katagami-curation/knowledge/`.
 
@@ -43,7 +43,7 @@ Batch pipeline jobs run at most 10 concurrent.
 
 ## The design contract the pipeline enforces
 
-These are the rules the **curation agents** apply to everything they generate - embodiments, landing pages, dashboards, previews, seed content. They are not styling rules for developing this repo; they are the product's output contract. The canonical, evolving form lives in the deployed app as `TasteRule` entities (and the curator skills read them at generation time); the summary below is a quick reference and can lag. When you touch the pipeline, preserve this contract; when you generate content, read the canonical rules first.
+These are the rules the **curation agents** apply to everything they generate - embodiments, landing pages, dashboards, previews, seed content. They are not styling rules for developing this repo; they are the product's output contract. For language generation the canonical form is the inlined rulebook (`katagami-curation/knowledge/rules/design-language.md`), not Accepted `TasteRule` entities. The summary below is a quick reference and can lag that file. When you generate a language, obey the inlined rulebook; do not `temper.list('TasteRules')`.
 
 - No borders wherever borders can be avoided, and never grey or heavy ones. No decorative sidelines.
 - No emoji on buttons. Clean, minimal, intentional.
