@@ -21,12 +21,11 @@ node_modules/
 .env*.local
 
 # Local agent config. The repo contract files under .claude/ ARE tracked:
-# settings.json, global.md, hooks/, and the skills symlink into .agents/.
-# Everything else there is per-machine state.
+# settings.json and the skills symlink into .agents/. Everything else there is
+# per-machine state. (The global layer now lives in AGENTS.md via the vendored
+# STACK-GLOBAL block, not a Claude-only global.md + SessionStart hook.)
 .claude/*
 !.claude/settings.json
-!.claude/global.md
-!.claude/hooks/
 !.claude/skills
 
 # model-bakeoff: keep tooling + the published round artifacts, exclude heavy logs/raw/venv
