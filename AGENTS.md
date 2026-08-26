@@ -20,6 +20,15 @@ Katagami is the design commons: an agent-curated library of complete design lang
 - **Canonical taste rules live in the deployed Katagami app**, as `TasteRule` entities. Read the accepted rules from there before generating anything; the copies under `katagami-curation/knowledge/rules/` can lag.
 - `ui/DESIGN.md` is the design language of katagami.ai itself, and it is separate from the languages the commons curates.
 
+## Katagami is Temper-native
+
+Katagami is built on Temper the same way TemperPaw is: all functionality is Temper apps - entity specs, WASM integrations, Cedar policies. There is no separate orchestration layer. If Temper does not support what you need, extend Temper rather than work around it.
+
+- **Entity-first.** If state changes, it is an entity. If logic runs on a state change, it is a WASM integration. Define the state machine (`.ioa.toml`), wire WASM on the actions that need logic, use Cedar for authorization. Never write orchestration in imperative code (Rust, Python, background tasks). If Rust creates entities or dispatches actions in a loop, it belongs in a WASM integration instead.
+- **The trigger boundary.** External events enter through a trigger that creates ONE entity, dispatches ONE action, and returns. Everything after that first action is WASM reacting to state transitions. A new external event source is a config entity, not new imperative code.
+- **WASM integration rules.** A module fired by a transition never dispatches transitions itself - sequencing belongs to the state machine, so step B after step A is two declared transitions, not a dispatch inside A's module. One integration, one concern: a module doing several things in sequence gets broken into transitions with one module each.
+- **A module not declared in `app.toml` is not uploaded at install**, and every trigger for it fails with "WASM module not found".
+
 ## The two apps
 
 `katagami-commons` is the data layer. Its specs (`katagami-commons/specs/*.ioa.toml`) carry the lifecycle state machines: `design_language` (Draft, UnderReview, Published, Archived), plus `palette_system`, `art_style`, `writing_style`, `design_source`, `design_element`, `element_manifest`, `taxonomy`, `remix`, `direction`, `member`, `agent_grant`, `oauth_client`, `feedback_response`. Cedar policies sit beside them in `policies/`.
@@ -32,9 +41,9 @@ Curator skills live in `katagami-curation/agents/curator/skills/`: research-dire
 
 Batch pipeline jobs run at most 10 concurrent.
 
-## The design contract (the katagami way)
+## The design contract the pipeline enforces
 
-Everything generated or styled follows these rules: embodiments, landing pages, dashboards, previews, and seed content alike.
+These are the rules the **curation agents** apply to everything they generate - embodiments, landing pages, dashboards, previews, seed content. They are not styling rules for developing this repo; they are the product's output contract. The canonical, evolving form lives in the deployed app as `TasteRule` entities (and the curator skills read them at generation time); the summary below is a quick reference and can lag. When you touch the pipeline, preserve this contract; when you generate content, read the canonical rules first.
 
 - No borders wherever borders can be avoided, and never grey or heavy ones. No decorative sidelines.
 - No emoji on buttons. Clean, minimal, intentional.
