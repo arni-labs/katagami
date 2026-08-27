@@ -89,6 +89,14 @@ name = "shown_to_visitors"
 type = "bool"
 initial = "false"
 
+# Shelf position for the anonymous visitor shelf, INDEPENDENT of display_order
+# (which orders the signed-in featured/picks lead). Written only by
+# SetVisitorVisibility; lower comes first.
+[[state]]
+name = "visitor_order"
+type = "counter"
+initial = 0
+
 [[state]]
 name = "display_order"
 type = "counter"
@@ -345,8 +353,8 @@ hint = "Highlight this art style for signed-in users and set display order for g
 name = "SetVisitorVisibility"
 kind = "input"
 from = ["Draft", "UnderReview", "Published"]
-params = ["shown_to_visitors"]
-hint = "Put this art style on the signed-out visitor shelf (shown_to_visitors=true) or take it off (false). This is the only flag that decides what a not-logged-in visitor sees on the website and the read MCP; signed-in users always see the full catalog. Independent of featured."
+params = ["shown_to_visitors", "visitor_order"]
+hint = "Put this art style on the signed-out visitor shelf (shown_to_visitors=true) or take it off (false). This is the only flag that decides what a not-logged-in visitor sees on the website and the read MCP; signed-in users always see the full catalog. Independent of featured. visitor_order sets the shelf position (lower first), independent of display_order/featured; writing it here never changes the featured flag or the featured lead order."
 
 [[action]]
 name = "AddCuratorNotes"

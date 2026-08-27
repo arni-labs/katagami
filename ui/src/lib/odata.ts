@@ -197,6 +197,7 @@ export interface DesignLanguage {
     fork_count?: number;
     usage_count?: number;
     display_order?: number;
+    visitor_order?: number;
   };
   booleans: Record<string, boolean> & { featured?: boolean };
 }
@@ -237,6 +238,7 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
   "featured",
   "shown_to_visitors",
   "display_order",
+  "visitor_order",
   "fork_count",
   "version",
   "quality_review_passed",
@@ -1278,8 +1280,9 @@ export const countWritingStyles = () => countLane("WritingStyles", []);
 // nextLink so a featured shelf past 100/500 is the same portion MCP shows.
 const FEATURED_PAGE = 500;
 
-// Curators set a `display_order` alongside `featured`; lower comes first.
-function displayOrderOf(e: {
+// Curators set a `display_order` alongside `featured`; lower comes first. This
+// orders the signed-in featured/curator's-picks lead ONLY (listFeatured*).
+export function displayOrderOf(e: {
   fields: Record<string, string | undefined>;
   counters?: Record<string, number>;
 }): number {
@@ -1287,6 +1290,22 @@ function displayOrderOf(e: {
     e.counters?.display_order ??
     e.fields.display_order ??
     e.fields.displayOrder;
+  const n = typeof raw === "number" ? raw : parseInt(String(raw ?? ""), 10);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+// The visitor shelf (shown_to_visitors) orders by `visitor_order`, an INDEPENDENT
+// field from display_order — a curator can order what signed-out visitors see
+// without disturbing the featured lead. Lower comes first. Mirrors displayOrderOf
+// but reads visitor_order (from counters or fields, either casing).
+export function visitorOrderOf(e: {
+  fields: Record<string, string | undefined>;
+  counters?: Record<string, number>;
+}): number {
+  const raw =
+    e.counters?.visitor_order ??
+    e.fields.visitor_order ??
+    e.fields.visitorOrder;
   const n = typeof raw === "number" ? raw : parseInt(String(raw ?? ""), 10);
   return Number.isNaN(n) ? 0 : n;
 }
@@ -1337,9 +1356,10 @@ export async function listFeaturedArtStyles(): Promise<LaneEntity[]> {
 
 // ── Visitor shelf (owner-pinned `shown_to_visitors`) ─────────────────────────
 // The ANONYMOUS allowlist — what a signed-out visitor sees on the website and
-// the read MCP. Mirrors the listFeatured* readers exactly (same uncapped page,
-// same fields/booleans re-check, same name filter, same display_order sort) but
-// filters on `shown_to_visitors` instead of `featured`. Every anonymous surface
+// the read MCP. Mirrors the listFeatured* readers (same uncapped page, same
+// fields/booleans re-check, same name filter) but filters on `shown_to_visitors`
+// instead of `featured` and sorts by the INDEPENDENT `visitor_order` (not
+// display_order — that stays with the featured lead). Every anonymous surface
 // (the teasers, the artifact gate, the ⌘K sample) reads THESE, not listFeatured*.
 async function collectVisibleRows(set: string): Promise<Record<string, unknown>[]> {
   return collectODataPages<Record<string, unknown>>(
@@ -1353,7 +1373,7 @@ export async function listVisibleDesignLanguages(): Promise<DesignLanguage[]> {
       .filter(isShownToVisitorsRecord)
       .map(normalizeDesignLanguageRow)
       .filter((l) => Boolean(l.fields.name))
-      .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
+      .sort((a, b) => visitorOrderOf(a) - visitorOrderOf(b));
   } catch {
     return [];
   }
@@ -1366,7 +1386,7 @@ export async function listVisiblePaletteSystems(): Promise<LaneEntity[]> {
       .map((r) => normalizeLaneRow(r, "PaletteSystems"))
       // On the shelf = shown_to_visitors AND named; a nameless junk row never renders.
       .filter((x) => Boolean(x.fields.name))
-      .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
+      .sort((a, b) => visitorOrderOf(a) - visitorOrderOf(b));
   } catch {
     return [];
   }
@@ -1379,7 +1399,7 @@ export async function listVisibleArtStyles(): Promise<LaneEntity[]> {
       .map((r) => normalizeLaneRow(r, "ArtStyles"))
       // On the shelf = shown_to_visitors AND named; a nameless junk row never renders.
       .filter((x) => Boolean(x.fields.name))
-      .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
+      .sort((a, b) => visitorOrderOf(a) - visitorOrderOf(b));
   } catch {
     return [];
   }

@@ -118,8 +118,20 @@ export function MobileMenu() {
                       trackNav({ target: l.href, source: "mobile-menu" });
                       setOpen(false);
                     }}
-                    className="ink-underline relative inline-flex w-fit items-center py-2.5 font-display text-[24px] font-bold leading-tight tracking-[-0.02em] text-foreground/80 transition-colors data-[active=true]:text-foreground"
+                    className={
+                      l.owner
+                        ? // Owner marker is the sakura DOT below; the label stays
+                          // foreground so it clears WCAG contrast (sakura-on-white was ~2.4:1).
+                          "ink-underline relative inline-flex w-fit items-center gap-2 py-2.5 font-display text-[24px] font-bold leading-tight tracking-[-0.02em] text-foreground/80 transition-colors data-[active=true]:text-foreground"
+                        : "ink-underline relative inline-flex w-fit items-center py-2.5 font-display text-[24px] font-bold leading-tight tracking-[-0.02em] text-foreground/80 transition-colors data-[active=true]:text-foreground"
+                    }
                   >
+                    {l.owner ? (
+                      <span
+                        aria-hidden
+                        className="inline-block h-2 w-2 shrink-0 rounded-full bg-[var(--sakura)]"
+                      />
+                    ) : null}
                     {l.label}
                     <LinkPending className="pointer-events-none absolute inset-x-0 -bottom-1 h-0.5 animate-pulse bg-foreground/40" />
                   </Link>

@@ -28,6 +28,7 @@ const FLAT_BOOLEAN_KEYS = new Set([
 // Counters used for sort/badge/usage:
 const FLAT_COUNTER_KEYS = new Set([
   "display_order",
+  "visitor_order",
   "fork_count",
   "version",
   "element_count",

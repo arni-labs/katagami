@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import {
   artStyleDisplayName,
+  visitorOrderOf,
   listArtStyles,
   listDesignLanguages,
   listPaletteSystems,
@@ -28,20 +29,21 @@ function languageName(lang: DesignLanguage): string {
   return lang.fields.name || lang.fields.slug || lang.entity_id;
 }
 
-/** Build one shelf section: the on-shelf rows and the off-shelf catalog pool,
- *  both sorted by display name. */
+/** Build one shelf section: the on-shelf rows (kept in shelf order, lower
+ *  visitor_order first — that is the position visitors see) and the off-shelf
+ *  catalog pool (sorted by display name for scanning). */
 function buildGroup(
   entitySet: ShelfGroup["entitySet"],
   label: string,
-  onShelfRows: { id: string; name: string; slug: string }[],
-  publishedRows: { id: string; name: string; slug: string }[],
+  onShelfRows: ShelfRow[],
+  publishedRows: ShelfRow[],
 ): ShelfGroup {
   const onIds = new Set(onShelfRows.map((r) => r.id));
   const byName = (a: ShelfRow, b: ShelfRow) => a.name.localeCompare(b.name);
   return {
     entitySet,
     label,
-    onShelf: [...onShelfRows].sort(byName),
+    onShelf: [...onShelfRows].sort((a, b) => a.visitorOrder - b.visitorOrder),
     catalog: publishedRows.filter((r) => !onIds.has(r.id)).sort(byName),
   };
 }
@@ -67,20 +69,23 @@ export default async function VisitorShelfPage() {
     listArtStyles("Status eq 'Published'"),
   ]);
 
-  const langRow = (l: DesignLanguage) => ({
+  const langRow = (l: DesignLanguage): ShelfRow => ({
     id: l.entity_id,
     name: languageName(l),
     slug: l.fields.slug ?? "",
+    visitorOrder: visitorOrderOf(l),
   });
-  const paletteRow = (p: LaneEntity) => ({
+  const paletteRow = (p: LaneEntity): ShelfRow => ({
     id: p.entity_id,
     name: paletteDisplayName(p.fields),
     slug: p.fields.slug ?? "",
+    visitorOrder: visitorOrderOf(p),
   });
-  const artRow = (a: LaneEntity) => ({
+  const artRow = (a: LaneEntity): ShelfRow => ({
     id: a.entity_id,
     name: artStyleDisplayName(a.fields),
     slug: a.fields.slug ?? "",
+    visitorOrder: visitorOrderOf(a),
   });
 
   const groups: ShelfGroup[] = [
