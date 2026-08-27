@@ -35,7 +35,7 @@ forbid(
   ],
   resource is Remix
 ) when { principal has agent_type && principal.agent_type == "contributor" }
-unless { !(resource has creator_sub) || resource.creator_sub == "" || (resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };
+unless { !(context has creator_sub) || context.creator_sub == "" || (context has creator_sub && context.creator_sub == principal.id) || (context has actingFor && context has creator_sub && context.creator_sub == context.actingFor) };
 // Ownership is claimed once, never reassigned: a contributor may set the
 // creator on a mix that has none, and never on one that belongs to someone else.
 forbid(
@@ -43,7 +43,7 @@ forbid(
   action == Action::"SetCreator",
   resource is Remix
 ) when { principal has agent_type && principal.agent_type == "contributor" }
-unless { !(resource has creator_sub) || resource.creator_sub == "" || (resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };
+unless { !(context has creator_sub) || context.creator_sub == "" || (context has creator_sub && context.creator_sub == principal.id) || (context has actingFor && context has creator_sub && context.creator_sub == context.actingFor) };
 // Human ownership (ARN-255): the contributor forbid above never matches a
 // Customer principal, so a signed-in human could otherwise archive or rate any
 // mix. Same rule, expressed for humans acting with their own token.
@@ -62,4 +62,4 @@ forbid(
   ],
   resource is Remix
 ) when { principal is Customer }
-unless { !(resource has creator_sub) || resource.creator_sub == "" || (resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };
+unless { !(context has creator_sub) || context.creator_sub == "" || (context has creator_sub && context.creator_sub == principal.id) || (context has actingFor && context has creator_sub && context.creator_sub == context.actingFor) };
