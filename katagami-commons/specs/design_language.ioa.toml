@@ -470,8 +470,8 @@ hint = "Highlight this language for signed-in users (the featured seal + curator
 name = "SetVisitorVisibility"
 kind = "input"
 from = ["Draft", "UnderReview", "Published"]
-params = ["shown_to_visitors"]
-hint = "Put this language on the signed-out visitor shelf (shown_to_visitors=true) or take it off (false). This is the only flag that decides what a not-logged-in visitor sees on the website and the read MCP; signed-in users always see the full catalog. Independent of featured."
+params = ["shown_to_visitors", "display_order"]
+hint = "Put this language on the signed-out visitor shelf (shown_to_visitors=true) or take it off (false). This is the only flag that decides what a not-logged-in visitor sees on the website and the read MCP; signed-in users always see the full catalog. Independent of featured. display_order sets the shelf position (lower first); writing it here never changes the featured flag."
 
 [[action]]
 name = "AddCuratorNotes"
