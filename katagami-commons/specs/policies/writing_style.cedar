@@ -52,6 +52,7 @@ unless { principal is System || principal is Admin || (principal has agent_type 
 forbid(
   principal,
   action in [
+    Action::"create",
     Action::"update",
     Action::"delete"
   ],

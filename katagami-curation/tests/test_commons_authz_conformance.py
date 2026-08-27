@@ -31,6 +31,7 @@ cedarpy is absent is a FAILURE, not a pass — see the sibling
 """
 
 import re
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -57,6 +58,12 @@ MISSING_CEDAR = (
 # surface, so the boundary leaves them open. Everything else mutates state.
 READ_ACTIONS = {"read", "get", "list", "query"}
 
+# The generic OData verbs bypass the named-action ladder: a PATCH/DELETE/POST
+# authorizes as lowercase create/update/delete, matching no `[[action]]` name.
+# They exist for every entity, so testing them means no entity can vacuously
+# pass this suite by exposing no parseable named actions.
+GENERIC_MUTATIONS = ("create", "update", "delete")
+
 
 def policy_text(name):
     return (POLICIES / f"{name}.cedar").read_text()
@@ -67,22 +74,37 @@ def resource_type(text):
     return m.group(1) if m else None
 
 
-def spec_actions(entity):
+def named_actions(entity):
+    # Parse the TOML rather than grep it: a `[[action]]` block that lists
+    # `from = [...]` before `name` defeats a regex that stops at the first `[`,
+    # and a silently-empty action list turns every deny assertion vacuous.
     spec = SPECS / f"{entity}.ioa.toml"
     if not spec.exists():
         return []
-    return re.findall(
-        r'\[\[action\]\][^\[]*?name\s*=\s*"([^"]+)"', spec.read_text(), re.S
-    )
+    with spec.open("rb") as f:
+        data = tomllib.load(f)
+    return [a["name"] for a in data.get("action", []) if "name" in a]
+
+
+# A Customer legitimately CREATES their own record here: saving a remix is a
+# signed-in human minting their own token (remix.cedar creator-scopes every
+# action after create). Every other commons entity is created by the pipeline
+# or a curator, never by an ordinary Customer — so `create` is denied there too.
+CUSTOMER_MAY_CREATE = {"remix"}
 
 
 def mutating_actions(entity):
-    out = []
-    for a in spec_actions(entity):
-        if a.lower() in READ_ACTIONS or a.endswith("Event"):
-            continue
-        out.append(a)
-    return out
+    named = [
+        a
+        for a in named_actions(entity)
+        if a.lower() not in READ_ACTIONS and not a.endswith("Event")
+    ]
+    generic = [
+        a
+        for a in GENERIC_MUTATIONS
+        if not (a == "create" and entity in CUSTOMER_MAY_CREATE)
+    ]
+    return named + generic
 
 
 def entity(uid_type, uid_id, attrs):
@@ -142,6 +164,20 @@ class CommonsAuthzConformance(unittest.TestCase):
                 r"forbid\(",
                 f"{name}: base-grants its entity with no forbid — every "
                 f"principal is allowed every action (the ARN-315 class)",
+            )
+
+    def test_every_entity_enumerates_named_actions(self):
+        # A parse regression (or a spec layout the enumerator can't read) would
+        # leave an entity with no named actions, and the deny assertions below
+        # would pass vacuously. Every commons entity that has a spec must expose
+        # at least one named action here, so that failure is loud.
+        for name in commons_entities():
+            if not (SPECS / f"{name}.ioa.toml").exists():
+                continue
+            self.assertTrue(
+                named_actions(name),
+                f"{name}: zero named actions parsed — the deny checks below would "
+                f"pass vacuously; the enumerator is broken",
             )
 
     def test_a_non_creator_customer_is_denied_every_mutation(self):
