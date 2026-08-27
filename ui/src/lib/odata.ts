@@ -263,7 +263,7 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
 // import and execute the real code (not a copy) on any Node version. Re-exported
 // here so existing importers keep their path.
 import { normalizeDesignLanguageRow } from "@/lib/design-language-row.mjs";
-import { isFeaturedRecord } from "@/lib/featured.mjs";
+import { isFeaturedRecord, isShownToVisitorsRecord } from "@/lib/featured.mjs";
 import { isODataNotFound } from "@/lib/odata-not-found.mjs";
 export { normalizeDesignLanguageRow, isODataNotFound };
 
@@ -1259,6 +1259,12 @@ export const pageWritingStyles = (opts: PageOpts = {}) =>
 export const countWritingStyles = () => countLane("WritingStyles", []);
 
 // ── Curator's picks (owner-pinned `featured`) ────────────────────────────────
+// ARN-385 split: `featured` is a HIGHLIGHT only (the seal + curator's-picks
+// lead, for signed-in users) — these listFeatured* readers serve that. The
+// ANONYMOUS visitor shelf reads `shown_to_visitors` instead, via the
+// listVisible* readers just below. Keep the two apart: a highlight consumer
+// must never gate anonymous visibility, and vice versa.
+//
 // Keyset paging is newest-first, so pinned picks would otherwise scatter through
 // the list. Fetch the featured set separately so the galleries can lead with
 // them. Same contract as the MCP catalog (ARN-360): the featured portion is
@@ -1321,6 +1327,56 @@ export async function listFeaturedArtStyles(): Promise<LaneEntity[]> {
       .filter(isFeaturedRecord)
       .map((r) => normalizeLaneRow(r, "ArtStyles"))
       // On the shelf = featured AND named; a nameless junk row never renders.
+      .filter((x) => Boolean(x.fields.name))
+      .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
+  } catch {
+    return [];
+  }
+}
+
+// ── Visitor shelf (owner-pinned `shown_to_visitors`) ─────────────────────────
+// The ANONYMOUS allowlist — what a signed-out visitor sees on the website and
+// the read MCP. Mirrors the listFeatured* readers exactly (same uncapped page,
+// same fields/booleans re-check, same name filter, same display_order sort) but
+// filters on `shown_to_visitors` instead of `featured`. Every anonymous surface
+// (the teasers, the artifact gate, the ⌘K sample) reads THESE, not listFeatured*.
+async function collectVisibleRows(set: string): Promise<Record<string, unknown>[]> {
+  return collectODataPages<Record<string, unknown>>(
+    `${set}?$filter=Status eq 'Published' and shown_to_visitors eq true&$top=${FEATURED_PAGE}`,
+  );
+}
+
+export async function listVisibleDesignLanguages(): Promise<DesignLanguage[]> {
+  try {
+    return (await collectVisibleRows("DesignLanguages"))
+      .filter(isShownToVisitorsRecord)
+      .map(normalizeDesignLanguageRow)
+      .filter((l) => Boolean(l.fields.name))
+      .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
+  } catch {
+    return [];
+  }
+}
+
+export async function listVisiblePaletteSystems(): Promise<LaneEntity[]> {
+  try {
+    return (await collectVisibleRows("PaletteSystems"))
+      .filter(isShownToVisitorsRecord)
+      .map((r) => normalizeLaneRow(r, "PaletteSystems"))
+      // On the shelf = shown_to_visitors AND named; a nameless junk row never renders.
+      .filter((x) => Boolean(x.fields.name))
+      .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
+  } catch {
+    return [];
+  }
+}
+
+export async function listVisibleArtStyles(): Promise<LaneEntity[]> {
+  try {
+    return (await collectVisibleRows("ArtStyles"))
+      .filter(isShownToVisitorsRecord)
+      .map((r) => normalizeLaneRow(r, "ArtStyles"))
+      // On the shelf = shown_to_visitors AND named; a nameless junk row never renders.
       .filter((x) => Boolean(x.fields.name))
       .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
   } catch {

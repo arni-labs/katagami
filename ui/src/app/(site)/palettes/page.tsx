@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   countPaletteSystems,
   listFeaturedPaletteSystems,
+  listVisiblePaletteSystems,
   pagePaletteSystems,
 } from "@/lib/odata";
 import { toPaletteItem } from "@/lib/lane-items";
@@ -41,12 +42,13 @@ async function FullPaletteGallery({ canCurate }: { canCurate: boolean }) {
   );
 }
 
-// ARN-385: signed-out palettes is the owner-picked featured set only — no
-// newest-first filler, no "load more" pagination. Search and paging stay behind
-// sign-in, exactly like the /art-styles and /language teasers. The same gate is
-// enforced in the gallery server actions (loadPalettePage, searchPalettesByMeaning).
+// ARN-385: signed-out palettes is the owner-picked visitor shelf
+// (shown_to_visitors) only — no newest-first filler, no "load more" pagination.
+// Search and paging stay behind sign-in, exactly like the /art-styles and
+// /language teasers. The same gate is enforced in the gallery server actions
+// (loadPalettePage, searchPalettesByMeaning).
 async function FeaturedPaletteShelf({ total }: { total: number }) {
-  const featured = (await listFeaturedPaletteSystems()).map(toPaletteItem);
+  const featured = (await listVisiblePaletteSystems()).map(toPaletteItem);
   const shown = featured.length;
   return (
     <div className="space-y-10">

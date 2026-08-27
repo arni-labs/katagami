@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { hasCuratorAccess } from "@/lib/owner";
 import { getUser, isAuthConfigured } from "@/lib/user-auth";
 import {
-  listFeaturedArtStyles,
-  listFeaturedDesignLanguages,
+  listVisibleArtStyles,
+  listVisibleDesignLanguages,
 } from "@/lib/odata";
 
 // ARN-331: by-id readers must not serve non-Published entities to the public.
@@ -12,13 +12,13 @@ import {
 // call artifactGate() before rendering.
 //
 // ARN-385: Published is not enough. The HTML language/art-style detail pages
-// further restrict anonymous visitors to the owner-picked featured shelf. The
-// raw artifact URLs used to skip that check (Published → 200), so a search
-// hit or a guessed id leaked the full spec. Featured membership — not the
-// row's own flag — is the source of truth, matching the visitor shelf.
-// Featured Published stays CDN-cacheable (no cookie). A signed-in viewer of
-// a Published-but-unfeatured language gets a private response so the 200 can
-// never land in a shared cache for an anonymous replay.
+// further restrict anonymous visitors to the owner-picked visitor shelf
+// (`shown_to_visitors`). The raw artifact URLs used to skip that check
+// (Published → 200), so a search hit or a guessed id leaked the full spec.
+// Visitor-shelf membership — not the row's own `featured` highlight — is the
+// source of truth. On-shelf Published stays CDN-cacheable (no cookie). A
+// signed-in viewer of a Published-but-off-shelf language gets a private
+// response so the 200 can never land in a shared cache for an anonymous replay.
 
 const PUBLIC_CACHE = "public, max-age=60, s-maxage=300";
 const OWNER_CACHE = "private, no-store";
@@ -45,11 +45,11 @@ export async function isOnVisitorShelf(
   id: string,
 ): Promise<boolean> {
   if (kind === "language") {
-    const featured = await listFeaturedDesignLanguages();
-    return featured.some((l) => l.entity_id === id);
+    const visible = await listVisibleDesignLanguages();
+    return visible.some((l) => l.entity_id === id);
   }
-  const featured = await listFeaturedArtStyles();
-  return featured.some((a) => a.entity_id === id);
+  const visible = await listVisibleArtStyles();
+  return visible.some((a) => a.entity_id === id);
 }
 
 export async function artifactGate(

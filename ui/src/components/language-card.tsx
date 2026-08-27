@@ -62,33 +62,30 @@ function tintFor(lang: DesignLanguage): string {
 }
 
 
-function isFeaturedLanguage(lang: DesignLanguage): boolean {
+/** Reads a boolean flag from any of the row's bags (booleans/fields/counters). */
+function langFlag(lang: DesignLanguage, keys: readonly string[]): boolean {
   const bag = lang as unknown as Record<string, unknown>;
   const bags = [bag.booleans, bag.fields, bag.counters, bag];
   for (const b of bags) {
     if (!b || typeof b !== "object") continue;
     const rec = b as Record<string, unknown>;
-    const v = rec.featured ?? rec.Featured ?? rec.isFeatured;
-    if (v === true || v === 1) return true;
-    if (typeof v === "string" && v.toLowerCase() === "true") return true;
+    for (const key of keys) {
+      const v = rec[key];
+      if (v === true || v === 1) return true;
+      if (typeof v === "string" && v.toLowerCase() === "true") return true;
+    }
   }
   return false;
 }
 
-function displayOrder(lang: DesignLanguage): number {
-  const bag = lang as unknown as Record<string, unknown>;
-  const bags = [bag.counters, bag.fields, bag];
-  for (const b of bags) {
-    if (!b || typeof b !== "object") continue;
-    const rec = b as Record<string, unknown>;
-    const v = rec.display_order ?? rec.displayOrder ?? rec.DisplayOrder;
-    if (typeof v === "number") return v;
-    if (typeof v === "string") {
-      const n = parseInt(v, 10);
-      if (!Number.isNaN(n)) return n;
-    }
-  }
-  return 0;
+/** HIGHLIGHT: drives the FeaturedSeal (signed-in only). */
+function isFeaturedLanguage(lang: DesignLanguage): boolean {
+  return langFlag(lang, ["featured", "Featured", "isFeatured"]);
+}
+
+/** ANON ALLOWLIST: the current state of the owner's visitor-shelf toggle. */
+function isShownToVisitorsLanguage(lang: DesignLanguage): boolean {
+  return langFlag(lang, ["shown_to_visitors", "Shown_to_visitors"]);
 }
 
 export function LanguageCard({
@@ -105,7 +102,9 @@ export function LanguageCard({
   const id = lang.entity_id;
   const stickyTint = tintFor(lang);
   const name = lang.fields.name || "Untitled";
-  const featured = isFeaturedLanguage(lang);
+  // The owner control toggles the visitor shelf (shown_to_visitors), so its
+  // current-state reads that flag — NOT the `featured` highlight (the seal).
+  const shownToVisitors = isShownToVisitorsLanguage(lang);
 
   return (
     <div className="group relative min-w-0 max-w-full">
@@ -122,8 +121,7 @@ export function LanguageCard({
         id={id}
         name={name}
         status={lang.status}
-        featured={featured}
-        displayOrder={displayOrder(lang)}
+        shownToVisitors={shownToVisitors}
       />
     </div>
   );

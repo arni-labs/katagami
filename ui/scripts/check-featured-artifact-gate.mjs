@@ -58,9 +58,11 @@ const required = [
     /Cache-Control": full \? "private, no-store"/,
   ],
   [
-    "search kernel filter pins languages/art-styles to featured when asked",
+    // ARN-385 split: the anon ranking filter is the visitor allowlist
+    // (shown_to_visitors), not the signed-in-only `featured` highlight.
+    "search kernel filter pins languages/art-styles to the visitor shelf when asked",
     searchLib,
-    /Status eq 'Published' and featured eq true/,
+    /Status eq 'Published' and shown_to_visitors eq true/,
   ],
 ];
 

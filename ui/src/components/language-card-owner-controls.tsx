@@ -9,8 +9,9 @@ type OwnerControlsProps = {
   id: string;
   name: string;
   status: string;
-  featured: boolean;
-  displayOrder: number;
+  /** Current state of the visitor-shelf toggle (shown_to_visitors), NOT the
+   *  `featured` highlight — the card control writes visitor visibility. */
+  shownToVisitors: boolean;
 };
 
 function ResolvedOwnerControls({
@@ -44,8 +45,7 @@ export function LanguageCardOwnerControls({
   id,
   name,
   status,
-  featured,
-  displayOrder,
+  shownToVisitors,
 }: OwnerControlsProps) {
   return (
     <div
@@ -72,8 +72,7 @@ export function LanguageCardOwnerControls({
       <FeaturedLanguageButton
         id={id}
         name={name}
-        featured={featured}
-        displayOrder={displayOrder}
+        shownToVisitors={shownToVisitors}
       />
       {status === "Published" ? (
         <SendToReviewLanguageButton id={id} name={name} />

@@ -20,7 +20,7 @@ import {
 } from "@/lib/odata";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { featuredIds } from "@/lib/catalog";
-import { isFeaturedRecord } from "@/lib/featured.mjs";
+import { isShownToVisitorsRecord } from "@/lib/featured.mjs";
 
 /** The signature trio, in registration-bar order. */
 const REGISTRATION_INKS = [
@@ -38,9 +38,10 @@ interface TokensLite {
 // page render (the dominant shared TTFB cost across all pages). Cache the whole
 // built index so it's produced once per window, not per request.
 // Anonymous visitors get a GATED index: languages, art styles, AND palettes are
-// limited to the featured portion (identical to the /art-styles + /palettes +
-// /language teasers and the read MCP), so ⌘K can't enumerate the full catalog
-// from page source. Signed-in visitors get everything. Cached per tier.
+// limited to the visitor shelf (shown_to_visitors — identical to the
+// /art-styles + /palettes + /language teasers and the read MCP), so ⌘K can't
+// enumerate the full catalog from page source. Signed-in visitors get
+// everything. Cached per tier.
 const buildSearchIndex = unstable_cache(
   async (tier: "sample" | "full"): Promise<PaletteIndexItem[]> => {
     const items: PaletteIndexItem[] = [];
@@ -49,12 +50,12 @@ const buildSearchIndex = unstable_cache(
 
   try {
     // Search surfaces the public catalog (Published only). For anonymous
-    // visitors, languages and art styles are further limited to the featured
-    // portion so the palette matches the teaser + MCP sample.
+    // visitors, languages and art styles are further limited to the visitor
+    // shelf (shown_to_visitors) so the palette matches the teaser + MCP sample.
     const languages = await listDesignLanguages("Status eq 'Published'");
     for (const lang of languages) {
       if (!lang.fields.name) continue;
-      if (featuredOnly && !isFeaturedRecord(lang)) continue;
+      if (featuredOnly && !isShownToVisitorsRecord(lang)) continue;
       const colors = parseJson<TokensLite>(lang.fields.tokens)?.colors ?? {};
       const swatch = [colors.primary, colors.secondary, colors.accent].filter(
         (c): c is string => Boolean(c),
@@ -93,7 +94,7 @@ const buildSearchIndex = unstable_cache(
   try {
     for (const style of await listArtStyles()) {
       if (!style.fields.name) continue;
-      if (featuredOnly && !isFeaturedRecord(style)) continue;
+      if (featuredOnly && !isShownToVisitorsRecord(style)) continue;
       items.push({
         id: style.entity_id,
         kind: "art-style",

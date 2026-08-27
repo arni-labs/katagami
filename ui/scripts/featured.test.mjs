@@ -64,14 +64,17 @@ const membership = read("src/lib/catalog-membership.mjs");
 
 const required = [
   [
-    "MCP catalog uses the shared isFeaturedRecord",
+    // ARN-385 split: the MCP catalog gate is the ANON allowlist
+    // (shown_to_visitors), not the signed-in-only `featured` highlight.
+    "MCP catalog uses the shared isShownToVisitorsRecord",
     catalog,
-    /isFeaturedRecord as isFeatured/,
+    /isShownToVisitorsRecord as isShownToVisitors/,
   ],
   [
-    "⌘K sample index uses the shared isFeaturedRecord (not fields-only)",
+    // ⌘K's anonymous (sample-tier) gate reads the visitor allowlist too.
+    "⌘K sample index uses the shared isShownToVisitorsRecord (not fields-only)",
     layout,
-    /isFeaturedRecord/,
+    /isShownToVisitorsRecord/,
   ],
   [
     "⌘K no longer has a fields-only isSearchFeatured helper",

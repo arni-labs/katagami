@@ -44,14 +44,16 @@ export function isSearchLane(value: unknown): value is SearchLane {
   return typeof value === "string" && value in LANE;
 }
 
-/** Anonymous ranking is the featured shelf for languages and art styles
- *  (ARN-385). Palettes stay the full published set — they are public on the
- *  site. Signed-in ranking omits this and uses Published-only. */
+/** Anonymous ranking is the visitor shelf (`shown_to_visitors`) for languages
+ *  and art styles (ARN-385 split). Palettes stay the full published set — they
+ *  are public on the site. Signed-in ranking omits this and uses Published-only.
+ *  `featuredOnly` names the anon-gate intent; the flag it reads is
+ *  shown_to_visitors, not the `featured` highlight. */
 export type SearchOpts = { featuredOnly?: boolean };
 
 function publishedFilter(lane: SearchLane, featuredOnly?: boolean): string {
   if (featuredOnly && lane !== "palette") {
-    return "Status eq 'Published' and featured eq true";
+    return "Status eq 'Published' and shown_to_visitors eq true";
   }
   return "Status eq 'Published'";
 }

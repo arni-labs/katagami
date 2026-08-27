@@ -20,3 +20,20 @@ export function isFeaturedRecord(row) {
     isFeaturedFlag(b.Featured)
   );
 }
+
+// The ONE visitor-visibility predicate (ARN-385 split). `featured` is a
+// HIGHLIGHT only (the seal + curator's-picks lead, for signed-in users);
+// `shown_to_visitors` is the ANONYMOUS ALLOWLIST — what a signed-out visitor
+// sees on the website and the read MCP. Everything gating anonymous visibility
+// reads THIS, mirroring isFeaturedRecord's fields-OR-booleans logic exactly so
+// the pin can live in either bag.
+export function isShownToVisitorsRecord(row) {
+  const f = row?.fields ?? {};
+  const b = row?.booleans ?? {};
+  return (
+    isFeaturedFlag(f.shown_to_visitors) ||
+    isFeaturedFlag(f.Shown_to_visitors) ||
+    isFeaturedFlag(b.shown_to_visitors) ||
+    isFeaturedFlag(b.Shown_to_visitors)
+  );
+}
