@@ -12,6 +12,7 @@ export const NAV_LINKS: NavLink[] = [
   { href: "/art-styles", label: "Art Styles" },
   { href: "/studio", label: "Studio" },
   { href: "/model-bake-off", label: "Bake-off" },
+  { href: "/connect", label: "Connect" },
   // Lineage + Compare are hidden from the menu for now (routes still work via
   // direct URL); re-add here when they're ready to surface again.
 ];

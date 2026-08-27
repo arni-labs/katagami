@@ -246,4 +246,17 @@ const handler = withMcpAuth(
   { required: false },
 );
 
-export { handler as GET, handler as POST, handler as DELETE };
+// A human pasting the MCP URL into a browser sends a plain-HTML GET; a real
+// MCP client opening the optional SSE stream MUST send
+// `Accept: text/event-stream` (Streamable HTTP spec), and POST/DELETE — the
+// actual protocol path — are untouched. So: browsers land on the setup page,
+// MCP clients never notice.
+async function get(req: Request): Promise<Response> {
+  const accept = req.headers.get("accept") ?? "";
+  if (!accept.toLowerCase().includes("text/event-stream")) {
+    return new Response(null, { status: 302, headers: { Location: "/connect" } });
+  }
+  return handler(req);
+}
+
+export { get as GET, handler as POST, handler as DELETE };
