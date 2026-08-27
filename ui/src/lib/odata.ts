@@ -1279,7 +1279,7 @@ export const countWritingStyles = () => countLane("WritingStyles", []);
 const FEATURED_PAGE = 500;
 
 // Curators set a `display_order` alongside `featured`; lower comes first.
-function displayOrderOf(e: {
+export function displayOrderOf(e: {
   fields: Record<string, string | undefined>;
   counters?: Record<string, number>;
 }): number {

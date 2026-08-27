@@ -93,20 +93,31 @@ const VISITOR_SHELF_REVALIDATE: Record<string, (id: string) => string[]> = {
 /** ANON-ALLOWLIST writer (ARN-385 split): SetVisitorVisibility sets
  *  `shown_to_visitors` — the ONLY flag that decides what a signed-out visitor
  *  sees on the website and the read MCP, for languages, palettes, and art
- *  styles alike. Independent of the `featured` highlight. */
+ *  styles alike. Independent of the `featured` highlight.
+ *
+ *  `displayOrder` sets the shelf position (lower comes first). It is written
+ *  ONLY when supplied — a plain add/remove toggle omits it, so an item keeps
+ *  its current position and toggling never resets order. A reorder passes the
+ *  new order with `shown = true`. Writing display_order here NEVER touches
+ *  `featured` (that stays with SetFeatured). */
 export async function setVisitorVisibility(
   entitySet: string,
   id: string,
   shown: boolean,
+  displayOrder?: number,
 ): Promise<void> {
   const revalidate = VISITOR_SHELF_REVALIDATE[entitySet];
   if (!revalidate) {
     throw new Error(`Visitor visibility for ${entitySet} is not supported.`);
   }
   const bearer = await assertCuratorBearer();
-  await dispatchAction(entitySet, id, "SetVisitorVisibility", {
-    shown_to_visitors: shown,
-  }, { bearer });
+  const params: Record<string, unknown> = { shown_to_visitors: shown };
+  if (displayOrder !== undefined) {
+    params.display_order = displayOrder;
+  }
+  await dispatchAction(entitySet, id, "SetVisitorVisibility", params, {
+    bearer,
+  });
   for (const path of revalidate(id)) {
     revalidatePath(path);
   }

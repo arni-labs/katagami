@@ -11,6 +11,8 @@ export type ShelfRow = {
   id: string;
   name: string;
   slug: string;
+  /** Shelf position (lower comes first). Drives the Up/Down reorder. */
+  displayOrder: number;
 };
 
 export type ShelfGroup = {
@@ -53,18 +55,64 @@ function ShelfSection({ group }: { group: ShelfGroup }) {
     [group.catalog, q],
   );
 
-  function toggle(row: ShelfRow, shown: boolean) {
+  /** Run one shelf mutation with shared pending/error handling. */
+  function run(id: string, mutate: () => Promise<void>) {
     setError(null);
-    setPendingId(row.id);
+    setPendingId(id);
     startTransition(async () => {
       try {
-        await setVisitorVisibility(group.entitySet, row.id, shown);
+        await mutate();
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not update.");
       } finally {
         setPendingId(null);
       }
+    });
+  }
+
+  /** Add to the shelf at the end: give it the next display_order so it lands
+   *  after everything already there. */
+  function add(row: ShelfRow) {
+    const nextOrder =
+      group.onShelf.reduce(
+        (max, item) => Math.max(max, item.displayOrder),
+        0,
+      ) + 1;
+    run(row.id, () =>
+      setVisitorVisibility(group.entitySet, row.id, true, nextOrder),
+    );
+  }
+
+  /** Remove from the shelf. Omit display_order — position is moot once off the
+   *  shelf, and omitting it leaves the field untouched. */
+  function remove(row: ShelfRow) {
+    run(row.id, () => setVisitorVisibility(group.entitySet, row.id, false));
+  }
+
+  /** Move one item up (-1) or down (1) by swapping its display_order with the
+   *  neighbor it steps past. Two SetVisitorVisibility writes, both shown=true —
+   *  featured / SetFeatured is never touched. */
+  function move(row: ShelfRow, direction: -1 | 1) {
+    const ordered = [...group.onShelf].sort(
+      (a, b) => a.displayOrder - b.displayOrder,
+    );
+    const index = ordered.findIndex((item) => item.id === row.id);
+    const swap = ordered[index + direction];
+    if (!swap) return;
+    run(row.id, async () => {
+      await setVisitorVisibility(
+        group.entitySet,
+        row.id,
+        true,
+        swap.displayOrder,
+      );
+      await setVisitorVisibility(
+        group.entitySet,
+        swap.id,
+        true,
+        row.displayOrder,
+      );
     });
   }
 
@@ -89,7 +137,7 @@ function ShelfSection({ group }: { group: ShelfGroup }) {
           </p>
         ) : (
           <ul className="space-y-2">
-            {group.onShelf.map((row) => (
+            {group.onShelf.map((row, index) => (
               <li
                 key={row.id}
                 className="flex flex-wrap items-center gap-3 bg-card/70 px-3 py-3"
@@ -97,14 +145,32 @@ function ShelfSection({ group }: { group: ShelfGroup }) {
                 <span className="min-w-0 flex-1 text-[17px] font-medium tracking-[-0.02em]">
                   {row.name}
                 </span>
-                <button
-                  type="button"
-                  className={KX_BTN_PAPER}
-                  disabled={isPending && pendingId === row.id}
-                  onClick={() => toggle(row, false)}
-                >
-                  Remove
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    className={KX_BTN_PAPER}
+                    disabled={isPending || index === 0}
+                    onClick={() => move(row, -1)}
+                  >
+                    Up
+                  </button>
+                  <button
+                    type="button"
+                    className={KX_BTN_PAPER}
+                    disabled={isPending || index === group.onShelf.length - 1}
+                    onClick={() => move(row, 1)}
+                  >
+                    Down
+                  </button>
+                  <button
+                    type="button"
+                    className={KX_BTN_PAPER}
+                    disabled={isPending && pendingId === row.id}
+                    onClick={() => remove(row)}
+                  >
+                    Remove
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -132,7 +198,7 @@ function ShelfSection({ group }: { group: ShelfGroup }) {
                 type="button"
                 className={KX_BTN_PAPER}
                 disabled={isPending && pendingId === row.id}
-                onClick={() => toggle(row, true)}
+                onClick={() => add(row)}
               >
                 Add to visitor home
               </button>
