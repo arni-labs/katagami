@@ -17,6 +17,20 @@ const MCP_URL = "https://katagami.ai/mcp";
 
 const CLAUDE_CODE_CMD = `claude mcp add --transport http katagami ${MCP_URL}`;
 
+const CODEX_CMD = `codex mcp add katagami --url ${MCP_URL}`;
+
+const CODEX_TOML = `[mcp_servers.katagami]
+url = "${MCP_URL}"`;
+
+// Grok reads the same config as Claude Code — the standard mcpServers block.
+const GROK_JSON = `{
+  "mcpServers": {
+    "katagami": {
+      "url": "${MCP_URL}"
+    }
+  }
+}`;
+
 const CURSOR_DEEPLINK =
   "cursor://anysphere.cursor-deeplink/mcp/install?name=katagami&config=eyJ1cmwiOiJodHRwczovL2thdGFnYW1pLmFpL21jcCJ9";
 
@@ -129,8 +143,14 @@ export default function ConnectPage() {
             <TabsTrigger value="claude-code" className={TAB_TRIGGER}>
               Claude Code
             </TabsTrigger>
+            <TabsTrigger value="codex" className={TAB_TRIGGER}>
+              Codex
+            </TabsTrigger>
             <TabsTrigger value="cursor" className={TAB_TRIGGER}>
               Cursor
+            </TabsTrigger>
+            <TabsTrigger value="grok" className={TAB_TRIGGER}>
+              Grok
             </TabsTrigger>
             <TabsTrigger value="vscode" className={TAB_TRIGGER}>
               VS Code
@@ -148,6 +168,15 @@ export default function ConnectPage() {
             <CodeBlock label="Terminal" code={CLAUDE_CODE_CMD} copyArtifact="mcp-claude-code-cmd" />
           </TabsContent>
 
+          <TabsContent value="codex" className="mt-4 space-y-4">
+            <TabNote>One command, or a couple of lines in your Codex config.</TabNote>
+            <CodeBlock label="Terminal" code={CODEX_CMD} copyArtifact="mcp-codex-cmd" />
+            <TabNote>
+              Or add it to <code className="font-mono text-[15px]">~/.codex/config.toml</code>:
+            </TabNote>
+            <CodeBlock label="~/.codex/config.toml" code={CODEX_TOML} copyArtifact="mcp-codex-toml" />
+          </TabsContent>
+
           <TabsContent value="cursor" className="mt-4 space-y-4">
             <TabNote>One click installs the server straight into Cursor.</TabNote>
             <a href={CURSOR_DEEPLINK} className={KX_BTN_INK}>
@@ -157,6 +186,22 @@ export default function ConnectPage() {
               Or add it by hand to <code className="font-mono text-[15px]">~/.cursor/mcp.json</code>:
             </TabNote>
             <CodeBlock label="~/.cursor/mcp.json" code={CURSOR_JSON} copyArtifact="mcp-cursor-json" />
+          </TabsContent>
+
+          <TabsContent value="grok" className="mt-4 space-y-4">
+            <TabNote>
+              Grok reads the same MCP config as Claude Code — add Katagami once
+              and it&apos;s there.
+            </TabNote>
+            <CodeBlock
+              label="~/.claude.json or .mcp.json"
+              code={GROK_JSON}
+              copyArtifact="mcp-grok-json"
+            />
+            <TabNote>
+              Then run <code className="font-mono text-[15px]">/mcps</code> inside
+              Grok to enable it.
+            </TabNote>
           </TabsContent>
 
           <TabsContent value="vscode" className="mt-4 space-y-4">
