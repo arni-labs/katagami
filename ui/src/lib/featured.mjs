@@ -33,7 +33,9 @@ export function isShownToVisitorsRecord(row) {
   return (
     isFeaturedFlag(f.shown_to_visitors) ||
     isFeaturedFlag(f.Shown_to_visitors) ||
+    isFeaturedFlag(f.ShownToVisitors) ||
     isFeaturedFlag(b.shown_to_visitors) ||
-    isFeaturedFlag(b.Shown_to_visitors)
+    isFeaturedFlag(b.Shown_to_visitors) ||
+    isFeaturedFlag(b.ShownToVisitors)
   );
 }

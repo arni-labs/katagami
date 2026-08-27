@@ -235,6 +235,7 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
   "tokens",
   "philosophy",
   "featured",
+  "shown_to_visitors",
   "display_order",
   "fork_count",
   "version",
