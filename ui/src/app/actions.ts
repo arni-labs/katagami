@@ -65,6 +65,9 @@ export async function sendLanguageToReview(id: string): Promise<void> {
   revalidatePath(`/language/${id}`);
 }
 
+/** HIGHLIGHT writer (ARN-385 split): SetFeatured sets the `featured` flag +
+ *  display_order — the seal + curator's-picks lead for signed-in users. It does
+ *  NOT decide visitor visibility; that is setVisitorVisibility below. */
 export async function setLanguageFeatured(
   id: string,
   featured: boolean,
@@ -77,6 +80,36 @@ export async function setLanguageFeatured(
   }, { bearer });
   revalidatePath("/");
   revalidatePath(`/language/${id}`);
+}
+
+/** The paths whose anonymous view changes when an entity goes on/off the
+ *  visitor shelf — the lane home + its detail page. */
+const VISITOR_SHELF_REVALIDATE: Record<string, (id: string) => string[]> = {
+  DesignLanguages: (id) => ["/", `/language/${id}`],
+  PaletteSystems: (id) => ["/palettes", `/palettes/${id}`],
+  ArtStyles: (id) => ["/art-styles", `/art-styles/${id}`],
+};
+
+/** ANON-ALLOWLIST writer (ARN-385 split): SetVisitorVisibility sets
+ *  `shown_to_visitors` — the ONLY flag that decides what a signed-out visitor
+ *  sees on the website and the read MCP, for languages, palettes, and art
+ *  styles alike. Independent of the `featured` highlight. */
+export async function setVisitorVisibility(
+  entitySet: string,
+  id: string,
+  shown: boolean,
+): Promise<void> {
+  const revalidate = VISITOR_SHELF_REVALIDATE[entitySet];
+  if (!revalidate) {
+    throw new Error(`Visitor visibility for ${entitySet} is not supported.`);
+  }
+  const bearer = await assertCuratorBearer();
+  await dispatchAction(entitySet, id, "SetVisitorVisibility", {
+    shown_to_visitors: shown,
+  }, { bearer });
+  for (const path of revalidate(id)) {
+    revalidatePath(path);
+  }
   revalidatePath("/owner/visitor-shelf");
 }
 

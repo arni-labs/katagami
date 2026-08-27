@@ -48,9 +48,17 @@ const required = [
     /featuredOnly/,
   ],
   [
-    "/api/search membership-filters language/art-style hits for anon",
+    // ARN-385 F7: anon hits are membership-filtered against a per-kind visitor
+    // id set computed ONCE via featuredIds() (which THROWS on a backend fault),
+    // so an outage surfaces as 503 instead of a silent count:0.
+    "/api/search membership-filters language/art-style/palette hits for anon",
     searchRoute,
-    /isOnVisitorShelf/,
+    /featuredIds/,
+  ],
+  [
+    "/api/search surfaces a visitor-set lookup failure as unavailable, not empty",
+    searchRoute,
+    /status: 503[\s\S]*shelfByKind|shelfByKind[\s\S]*status: 503/,
   ],
   [
     "/api/search does not public-cache signed-in full-catalog results",
@@ -58,9 +66,11 @@ const required = [
     /Cache-Control": full \? "private, no-store"/,
   ],
   [
-    "search kernel filter pins languages/art-styles to featured when asked",
+    // ARN-385 split: the anon ranking filter is the visitor allowlist
+    // (shown_to_visitors), not the signed-in-only `featured` highlight.
+    "search kernel filter pins languages/art-styles to the visitor shelf when asked",
     searchLib,
-    /Status eq 'Published' and featured eq true/,
+    /Status eq 'Published' and shown_to_visitors eq true/,
   ],
 ];
 

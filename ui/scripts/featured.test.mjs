@@ -4,7 +4,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { isFeaturedFlag, isFeaturedRecord } from "../src/lib/featured.mjs";
+import {
+  isFeaturedFlag,
+  isFeaturedRecord,
+  isShownToVisitorsRecord,
+} from "../src/lib/featured.mjs";
 
 function read(path) {
   return readFileSync(resolve(path), "utf8");
@@ -55,6 +59,63 @@ assert.equal(isFeaturedRecord({}), false);
 
 console.log("ok: isFeaturedRecord matches the catalog boolean (fields OR booleans)");
 
+// --- Visitor-shelf predicate (the anon allowlist every anon gate reads) ------
+// ARN-385 split: `shown_to_visitors` is the anonymous allowlist; every anon
+// surface (website teasers, the artifact gate, /api/search, the MCP sample)
+// hangs on this predicate, so pin its truth table the same way as featured.
+
+for (const truthy of [true, "true", 1, "1"]) {
+  assert.equal(
+    isShownToVisitorsRecord({ fields: { shown_to_visitors: truthy } }),
+    true,
+    `fields.shown_to_visitors=${JSON.stringify(truthy)}`,
+  );
+  assert.equal(
+    isShownToVisitorsRecord({ booleans: { shown_to_visitors: truthy } }),
+    true,
+    `booleans.shown_to_visitors=${JSON.stringify(truthy)} (Temper stores the pin here)`,
+  );
+}
+assert.equal(
+  isShownToVisitorsRecord({ fields: { Shown_to_visitors: "true" } }),
+  true,
+  "fields.Shown_to_visitors capitalized variant",
+);
+assert.equal(
+  isShownToVisitorsRecord({ booleans: { ShownToVisitors: 1 } }),
+  true,
+  "booleans.ShownToVisitors PascalCase variant",
+);
+assert.equal(
+  isShownToVisitorsRecord({
+    fields: { shown_to_visitors: false },
+    booleans: { shown_to_visitors: true },
+  }),
+  true,
+  "booleans win when fields is falsey",
+);
+assert.equal(
+  isShownToVisitorsRecord({ fields: { shown_to_visitors: false } }),
+  false,
+  "explicit false is off the shelf",
+);
+assert.equal(
+  isShownToVisitorsRecord({ fields: { featured: true } }),
+  false,
+  "the `featured` highlight alone does NOT put a row on the visitor shelf",
+);
+assert.equal(
+  isShownToVisitorsRecord({ fields: { name: "Gust" }, counters: { shown_to_visitors: 1 } }),
+  false,
+  "counters.shown_to_visitors is not the allowlist boolean",
+);
+assert.equal(isShownToVisitorsRecord({ fields: {}, booleans: {} }), false);
+assert.equal(isShownToVisitorsRecord({}), false);
+
+console.log(
+  "ok: isShownToVisitorsRecord matches the visitor allowlist (fields OR booleans, not featured)",
+);
+
 // --- Source lock ------------------------------------------------------------
 
 const catalog = read("src/lib/catalog.ts");
@@ -64,14 +125,17 @@ const membership = read("src/lib/catalog-membership.mjs");
 
 const required = [
   [
-    "MCP catalog uses the shared isFeaturedRecord",
+    // ARN-385 split: the MCP catalog gate is the ANON allowlist
+    // (shown_to_visitors), not the signed-in-only `featured` highlight.
+    "MCP catalog uses the shared isShownToVisitorsRecord",
     catalog,
-    /isFeaturedRecord as isFeatured/,
+    /isShownToVisitorsRecord as isShownToVisitors/,
   ],
   [
-    "⌘K sample index uses the shared isFeaturedRecord (not fields-only)",
+    // ⌘K's anonymous (sample-tier) gate reads the visitor allowlist too.
+    "⌘K sample index uses the shared isShownToVisitorsRecord (not fields-only)",
     layout,
-    /isFeaturedRecord/,
+    /isShownToVisitorsRecord/,
   ],
   [
     "⌘K no longer has a fields-only isSearchFeatured helper",

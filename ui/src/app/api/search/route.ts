@@ -8,11 +8,8 @@ import {
   type SearchHit,
 } from "@/lib/search";
 import { TASTE_EMBEDDING_MODEL } from "@/lib/embeddings";
-import {
-  hasFullGalleryAccess,
-  isOnVisitorShelf,
-} from "@/lib/entity-visibility";
-import { anonMaySee } from "@/lib/catalog";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { featuredIds } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -86,15 +83,28 @@ export async function GET(request: Request) {
   // kernel featured filter can be non-honored; never return an off-shelf id of
   // any kind to an anonymous caller — those detail/DESIGN.md links would 404,
   // and the names themselves are the leak. Palettes gate the same way now.
+  //
+  // Compute each present kind's visitor-shelf id set ONCE — featuredIds() reads
+  // the full published set and THROWS on a backend fault (unlike listVisible*,
+  // which fail-closed to []). A failed lookup must surface as "unavailable", not
+  // a silent 200 with count:0 that masquerades as "no results".
   if (featuredOnly) {
-    const allowed = await Promise.all(
-      hits.map(async (hit) => {
-        if (hit.kind === "palette") return anonMaySee("palette", hit.id);
-        const kind = hit.kind === "art-style" ? "art_style" : "language";
-        return isOnVisitorShelf(kind, hit.id);
-      }),
-    );
-    hits = hits.filter((_, i) => allowed[i]);
+    let shelfByKind: Map<SearchHit["kind"], Set<string>>;
+    try {
+      const kinds = [...new Set(hits.map((hit) => hit.kind))];
+      const sets = await Promise.all(
+        kinds.map((kind) =>
+          featuredIds(kind === "art-style" ? "art_style" : kind),
+        ),
+      );
+      shelfByKind = new Map(kinds.map((kind, i) => [kind, sets[i]]));
+    } catch {
+      return NextResponse.json(
+        { error: "search temporarily unavailable — try again shortly" },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    hits = hits.filter((hit) => shelfByKind.get(hit.kind)?.has(hit.id));
   }
 
   const base = siteBase(request);

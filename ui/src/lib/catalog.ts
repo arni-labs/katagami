@@ -1,11 +1,12 @@
 import "server-only";
-import { isFeaturedRecord as isFeatured } from "./featured.mjs";
+import { isShownToVisitorsRecord as isShownToVisitors } from "./featured.mjs";
 import { rowMatchesIdOrSlug } from "./catalog-membership.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
 // commons through this module, so "what an identity may see" is defined once.
 //
-// Tiering: anonymous → the featured sample; authenticated → the full catalog.
+// Tiering: anonymous → the visitor sample (shown_to_visitors); authenticated →
+// the full catalog.
 // The website resolves identity from its Google session cookie; the MCP from
 // an OAuth bearer (ARN-151). Either way the decision — and the paginating,
 // facet-aware reads — live here, never in a per-surface slice.
@@ -142,7 +143,10 @@ function summary(kind: Kind, r: Row) {
     ...(kind === "art_style" ? { medium: str(f.medium) } : {}),
     ...(kind === "language" ? { family_id: str(f.family_id) } : {}),
     taxonomy_ids: jsonArr(f.taxonomy_ids),
-    featured: isFeatured(r),
+    // What a signed-out caller can actually see (the visitor allowlist), not
+    // the signed-in-only `featured` highlight — so an agent on the sample tier
+    // reads its own visibility.
+    shown_to_visitors: isShownToVisitors(r),
     url: `${GALLERY}/${PATH[kind]}/${r.entity_id}`,
     ...(kind === "language"
       ? { design_md_url: `${GALLERY}/language/${r.entity_id}/DESIGN.md` }
@@ -159,40 +163,41 @@ const byEntityId = (a: Row, b: Row) =>
 async function visibleRows(kind: Kind, tier: Tier): Promise<Row[]> {
   const rows = (await readAll(SET[kind], PUBLISHED)).filter((r) => str(r.fields?.name));
   if (tier === "full") return rows;
-  // The anonymous portion is the owner-curated visitor shelf — the `featured`
-  // set — for ALL three kinds, sorted by entity_id so it is a fixed slice a
-  // patient caller can't page past. Uncapped: the shelf is exactly what the
-  // owner selected, and byte-for-byte identical to every other anonymous
-  // surface (they all filter by featuredIds()).
-  return rows.filter(isFeatured).sort(byEntityId);
+  // The anonymous portion is the owner-curated visitor shelf — the
+  // `shown_to_visitors` set — for ALL three kinds, sorted by entity_id so it is
+  // a fixed slice a patient caller can't page past. Uncapped: the shelf is
+  // exactly what the owner selected, and byte-for-byte identical to every other
+  // anonymous surface (they all filter by featuredIds()).
+  return rows.filter(isShownToVisitors).sort(byEntityId);
 }
 
 /**
  * The ONE source of truth for the anonymous "portion" of a kind: the set of
  * published entity_ids a signed-out visitor may see — the owner-curated visitor
- * shelf (the `featured` set), for languages, art styles, AND palettes alike.
- * Every anonymous-facing surface — the website pages, its search/vectors APIs,
- * the studio/compare tools, and the MCP — filters by this set, so the portion
- * can never diverge between them.
+ * shelf (the `shown_to_visitors` set), for languages, art styles, AND palettes
+ * alike. Every anonymous-facing surface — the website pages, its search/vectors
+ * APIs, the studio/compare tools, and the MCP — filters by this set, so the
+ * portion can never diverge between them. (Name kept for call-site stability;
+ * the predicate is visitor-visibility, not the `featured` highlight.)
  */
 export async function featuredIds(kind: Kind): Promise<Set<string>> {
   const rows = await readAll(SET[kind], PUBLISHED);
-  // On the shelf = featured AND has a name — the same predicate visibleRows
-  // uses, so a nameless-but-featured junk row can't make this set diverge from
-  // what the MCP sample and the website shelves actually render.
+  // On the shelf = shown_to_visitors AND has a name — the same predicate
+  // visibleRows uses, so a nameless-but-visible junk row can't make this set
+  // diverge from what the MCP sample and the website shelves actually render.
   return new Set(
-    rows.filter((r) => str(r.fields?.name) && isFeatured(r)).map((r) => r.entity_id),
+    rows.filter((r) => str(r.fields?.name) && isShownToVisitors(r)).map((r) => r.entity_id),
   );
 }
 
 /** May a signed-out visitor see this published id or slug? The visitor shelf
- *  (featured AND named) for ALL kinds — palettes included. featuredIds() stays
- *  id-keyed (list filters); this accepts a slug too so a by-id-or-slug door like
- *  BRIEF.md?palette=komawari-plates&art=cathode-ray isn't 404'd as a miss. */
+ *  (shown_to_visitors AND named) for ALL kinds — palettes included. featuredIds()
+ *  stays id-keyed (list filters); this accepts a slug too so a by-id-or-slug door
+ *  like BRIEF.md?palette=komawari-plates&art=cathode-ray isn't 404'd as a miss. */
 export async function anonMaySee(kind: Kind, idOrSlug: string): Promise<boolean> {
   const rows = await readAll(SET[kind], PUBLISHED);
   return rows.some(
-    (r) => str(r.fields?.name) && isFeatured(r) && rowMatchesIdOrSlug(r, idOrSlug),
+    (r) => str(r.fields?.name) && isShownToVisitors(r) && rowMatchesIdOrSlug(r, idOrSlug),
   );
 }
 

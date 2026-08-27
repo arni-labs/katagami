@@ -8,6 +8,7 @@
 // Booleans we care about for gallery sort/filter:
 const FLAT_BOOLEAN_KEYS = new Set([
   "featured",
+  "shown_to_visitors",
   "embodiment_verified",
   "has_embodiment",
   "has_thumbnail",

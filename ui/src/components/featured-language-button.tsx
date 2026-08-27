@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Star } from "lucide-react";
-import { setLanguageFeatured } from "@/app/actions";
+import { setVisitorVisibility } from "@/app/actions";
 
 interface ViewportPosition {
   left: number;
@@ -41,29 +41,24 @@ function restoreViewportPosition(position: ViewportPosition) {
 export function FeaturedLanguageButton({
   id,
   name,
-  featured,
-  displayOrder = 0,
+  shownToVisitors,
 }: {
   id: string;
   name: string;
-  featured: boolean;
-  displayOrder?: number;
+  /** Current visitor-shelf state (shown_to_visitors). */
+  shownToVisitors: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const nextFeatured = !featured;
+  const nextShown = !shownToVisitors;
 
-  function toggleFeatured() {
+  function toggleVisitorVisibility() {
     const viewportPosition = currentViewportPosition();
     setError(null);
     startTransition(async () => {
       try {
-        await setLanguageFeatured(
-          id,
-          nextFeatured,
-          nextFeatured ? displayOrder : 0,
-        );
+        await setVisitorVisibility("DesignLanguages", id, nextShown);
         router.refresh();
         restoreViewportPosition(viewportPosition);
       } catch (err) {
@@ -76,21 +71,21 @@ export function FeaturedLanguageButton({
     <div className="relative">
       <button
         type="button"
-        aria-pressed={featured}
-        aria-label={`${featured ? "Remove from visitor home" : "Show on visitor home"}: ${name}`}
-        title={`${featured ? "On visitor home — click to remove" : "Show on visitor home"}`}
+        aria-pressed={shownToVisitors}
+        aria-label={`${shownToVisitors ? "Remove from visitor home" : "Show on visitor home"}: ${name}`}
+        title={`${shownToVisitors ? "On visitor home — click to remove" : "Show on visitor home"}`}
         disabled={isPending}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          toggleFeatured();
+          toggleVisitorVisibility();
         }}
         className="group/feature relative flex h-7 w-7 items-center justify-center rounded-[3px] shadow-[0_1px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[-3deg] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklch,var(--sumire)_40%,transparent)] disabled:pointer-events-none disabled:opacity-60"
         style={{
-          color: featured
+          color: shownToVisitors
             ? "color-mix(in oklch, var(--sakura) 72%, var(--foreground))"
             : "color-mix(in oklch, var(--sumire) 72%, var(--foreground))",
-          background: featured
+          background: shownToVisitors
             ? "color-mix(in srgb, var(--sakura) 14%, var(--paper-stamp-mix))"
             : "color-mix(in srgb, var(--sumire) 14%, var(--paper-stamp-mix))",
         }}
@@ -99,16 +94,16 @@ export function FeaturedLanguageButton({
           aria-hidden
           className="absolute -left-1 -top-1 h-2 w-2 rounded-full opacity-90 transition-transform group-hover/feature:scale-125"
           style={{
-            background: featured ? "var(--yuzu)" : "var(--sumire)",
+            background: shownToVisitors ? "var(--yuzu)" : "var(--sumire)",
           }}
         />
-        {featured ? (
+        {shownToVisitors ? (
           <Sparkles className="h-3.5 w-3.5" />
         ) : (
           <Star className="h-3.5 w-3.5" />
         )}
         <span className="sr-only">
-          {isPending ? "Saving" : featured ? "On visitor home" : "Visitor home"}
+          {isPending ? "Saving" : shownToVisitors ? "On visitor home" : "Visitor home"}
         </span>
       </button>
       {error ? (

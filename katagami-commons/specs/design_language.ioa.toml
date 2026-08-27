@@ -117,6 +117,15 @@ name = "featured"
 type = "bool"
 initial = "false"
 
+# The owner-curated allowlist a signed-out visitor may see. Independent of
+# `featured` (which is only a highlight for signed-in users): a language can be
+# featured without being shown to visitors. The website + read MCP gate the
+# anonymous portion on THIS flag; signed-in users still see the full catalog.
+[[state]]
+name = "shown_to_visitors"
+type = "bool"
+initial = "false"
+
 [[state]]
 name = "display_order"
 type = "counter"
@@ -455,7 +464,14 @@ name = "SetFeatured"
 kind = "input"
 from = ["Draft", "UnderReview", "Published"]
 params = ["featured", "display_order"]
-hint = "Pin this language on the signed-out visitor home (featured) and set display_order. Lower order comes first. Visitors see only featured languages; signed-in users still see the full catalog."
+hint = "Highlight this language for signed-in users (the featured seal + curator's-picks lead) and set display_order (lower comes first). Featured is a highlight only; it does NOT decide visitor visibility — use SetVisitorVisibility for that."
+
+[[action]]
+name = "SetVisitorVisibility"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["shown_to_visitors"]
+hint = "Put this language on the signed-out visitor shelf (shown_to_visitors=true) or take it off (false). This is the only flag that decides what a not-logged-in visitor sees on the website and the read MCP; signed-in users always see the full catalog. Independent of featured."
 
 [[action]]
 name = "AddCuratorNotes"

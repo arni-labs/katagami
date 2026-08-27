@@ -3,6 +3,7 @@ import {
   countDesignLanguages,
   galleryFamilies,
   listFeaturedDesignLanguages,
+  listVisibleDesignLanguages,
   pageDesignLanguages,
 } from "@/lib/odata";
 import Link from "next/link";
@@ -108,9 +109,9 @@ function HowItWorksFold() {
   );
 }
 
-// ARN-385: signed-out home is the owner-picked featured set only — no
-// newest-25 filler, no 15-cap. Search, facets, and pagination stay behind
-// sign-in. The same gate is enforced in gallery server actions.
+// ARN-385: signed-out home is the owner-picked visitor shelf (shown_to_visitors)
+// only — no newest-25 filler, no 15-cap. Search, facets, and pagination stay
+// behind sign-in. The same gate is enforced in gallery server actions.
 
 function TeaserCardGrid({
   items,
@@ -130,9 +131,9 @@ function TeaserCardGrid({
 
 async function TeaserGallery() {
   const total = await countDesignLanguages("Status eq 'Published'");
-  let featured: Awaited<ReturnType<typeof listFeaturedDesignLanguages>> = [];
+  let featured: Awaited<ReturnType<typeof listVisibleDesignLanguages>> = [];
   try {
-    featured = await listFeaturedDesignLanguages();
+    featured = await listVisibleDesignLanguages();
   } catch {
     return (
       <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">

@@ -24,6 +24,7 @@ forbid(
     Action::"SetFeatured",
     Action::"SetProvenanceTier",
     Action::"SetTaxonomy",
+    Action::"SetVisitorVisibility",
     Action::"UpdateQuality"
   ],
   resource is DesignLanguage
