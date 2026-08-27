@@ -24,7 +24,9 @@ export function HeaderNav() {
             title={l.owner ? "Owner-only — the public never sees this" : undefined}
             className={
               l.owner
-                ? "ink-underline relative inline-flex shrink-0 items-center gap-1.5 text-[var(--sakura)]/85 transition-colors hover:text-[var(--sakura)] data-[active=true]:text-[var(--sakura)]"
+                ? // Owner marker is the sakura DOT below; the label stays
+                  // foreground so it clears WCAG contrast (sakura-on-white was ~2.4:1).
+                  "ink-underline relative inline-flex shrink-0 items-center gap-1.5 text-foreground/75 transition-colors hover:text-foreground data-[active=true]:text-foreground"
                 : "ink-underline relative inline-block shrink-0 text-foreground/75 transition-colors hover:text-foreground data-[active=true]:text-foreground"
             }
           >

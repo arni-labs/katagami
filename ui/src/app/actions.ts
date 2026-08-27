@@ -1,9 +1,28 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getDesignLanguage } from "@/lib/odata";
+import {
+  getDesignLanguage,
+  listVisibleArtStyles,
+  listVisibleDesignLanguages,
+  listVisiblePaletteSystems,
+  visitorOrderOf,
+} from "@/lib/odata";
 import { createEntity, deleteEntity, dispatchAction } from "@/lib/odata-mutations";
 import { assertCuratorBearer } from "@/lib/owner";
+
+type VisitorShelfEntitySet = "DesignLanguages" | "PaletteSystems" | "ArtStyles";
+
+/** Current on-shelf rows per lane — the reader whose max visitor_order gives the
+ *  next append position (max+1). Same source the visitor shelf page lists from. */
+const VISITOR_SHELF_ON_SHELF: Record<
+  VisitorShelfEntitySet,
+  () => Promise<Array<Parameters<typeof visitorOrderOf>[0]>>
+> = {
+  DesignLanguages: listVisibleDesignLanguages,
+  PaletteSystems: listVisiblePaletteSystems,
+  ArtStyles: listVisibleArtStyles,
+};
 
 const OWNER_ARCHIVE_NOTE = "Archived from the owner gallery controls.";
 const OWNER_REVIEW_NOTE = "Sent back to review from owner controls.";
@@ -95,16 +114,17 @@ const VISITOR_SHELF_REVALIDATE: Record<string, (id: string) => string[]> = {
  *  sees on the website and the read MCP, for languages, palettes, and art
  *  styles alike. Independent of the `featured` highlight.
  *
- *  `displayOrder` sets the shelf position (lower comes first). It is written
- *  ONLY when supplied — a plain add/remove toggle omits it, so an item keeps
- *  its current position and toggling never resets order. A reorder passes the
- *  new order with `shown = true`. Writing display_order here NEVER touches
- *  `featured` (that stays with SetFeatured). */
+ *  `order` sets the shelf position (lower comes first) and is sent as the
+ *  INDEPENDENT `visitor_order` field. It is written ONLY when supplied — a plain
+ *  add/remove toggle omits it, so an item keeps its current position and toggling
+ *  never resets order. A reorder passes the new order with `shown = true`. This
+ *  writer NEVER sends display_order and NEVER dispatches SetFeatured — the
+ *  featured lead and its display_order stay entirely with setLanguageFeatured. */
 export async function setVisitorVisibility(
   entitySet: string,
   id: string,
   shown: boolean,
-  displayOrder?: number,
+  order?: number,
 ): Promise<void> {
   const revalidate = VISITOR_SHELF_REVALIDATE[entitySet];
   if (!revalidate) {
@@ -112,8 +132,8 @@ export async function setVisitorVisibility(
   }
   const bearer = await assertCuratorBearer();
   const params: Record<string, unknown> = { shown_to_visitors: shown };
-  if (displayOrder !== undefined) {
-    params.display_order = displayOrder;
+  if (order !== undefined) {
+    params.visitor_order = order;
   }
   await dispatchAction(entitySet, id, "SetVisitorVisibility", params, {
     bearer,
@@ -122,6 +142,24 @@ export async function setVisitorVisibility(
     revalidatePath(path);
   }
   revalidatePath("/owner/visitor-shelf");
+}
+
+/** Owner-gated: append `id` to the END of its lane's visitor shelf. Reads the
+ *  current on-shelf max `visitor_order` and pins this one at max+1 so a
+ *  card-added item never lands at the front or ties an existing pick — the same
+ *  collision-free placement the picker's Add does. Toggle-OFF stays a plain
+ *  setVisitorVisibility(..., false) (no order). Only ever writes shown_to_visitors
+ *  + visitor_order — never display_order, never SetFeatured. */
+export async function addToVisitorShelf(
+  entitySet: VisitorShelfEntitySet,
+  id: string,
+): Promise<void> {
+  // assertCuratorBearer inside setVisitorVisibility gates the write; the read
+  // below runs on the shared service key like every other listVisible* read.
+  const onShelf = await VISITOR_SHELF_ON_SHELF[entitySet]();
+  const nextOrder =
+    onShelf.reduce((max, e) => Math.max(max, visitorOrderOf(e)), 0) + 1;
+  await setVisitorVisibility(entitySet, id, true, nextOrder);
 }
 
 export async function addCuratorNotes(

@@ -120,7 +120,9 @@ export function MobileMenu() {
                     }}
                     className={
                       l.owner
-                        ? "ink-underline relative inline-flex w-fit items-center gap-2 py-2.5 font-display text-[24px] font-bold leading-tight tracking-[-0.02em] text-[var(--sakura)]/90 transition-colors data-[active=true]:text-[var(--sakura)]"
+                        ? // Owner marker is the sakura DOT below; the label stays
+                          // foreground so it clears WCAG contrast (sakura-on-white was ~2.4:1).
+                          "ink-underline relative inline-flex w-fit items-center gap-2 py-2.5 font-display text-[24px] font-bold leading-tight tracking-[-0.02em] text-foreground/80 transition-colors data-[active=true]:text-foreground"
                         : "ink-underline relative inline-flex w-fit items-center py-2.5 font-display text-[24px] font-bold leading-tight tracking-[-0.02em] text-foreground/80 transition-colors data-[active=true]:text-foreground"
                     }
                   >

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Star } from "lucide-react";
-import { setVisitorVisibility } from "@/app/actions";
+import { addToVisitorShelf, setVisitorVisibility } from "@/app/actions";
 
 interface ViewportPosition {
   left: number;
@@ -58,7 +58,15 @@ export function FeaturedLanguageButton({
     setError(null);
     startTransition(async () => {
       try {
-        await setVisitorVisibility("DesignLanguages", id, nextShown);
+        // Toggle ON appends to the END of the visitor shelf (max visitor_order + 1,
+        // computed server-side) so a card-added item never lands at the front or
+        // ties an existing pick — the same collision-free placement the picker's
+        // Add uses. Toggle OFF just clears shown_to_visitors (order is moot off-shelf).
+        if (nextShown) {
+          await addToVisitorShelf("DesignLanguages", id);
+        } else {
+          await setVisitorVisibility("DesignLanguages", id, false);
+        }
         router.refresh();
         restoreViewportPosition(viewportPosition);
       } catch (err) {

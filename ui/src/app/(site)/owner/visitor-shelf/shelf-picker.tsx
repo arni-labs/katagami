@@ -11,8 +11,9 @@ export type ShelfRow = {
   id: string;
   name: string;
   slug: string;
-  /** Shelf position (lower comes first). Drives the Up/Down reorder. */
-  displayOrder: number;
+  /** Shelf position (visitor_order — lower comes first). Drives the Up/Down
+   *  reorder. Independent of the featured lead's display_order. */
+  visitorOrder: number;
 };
 
 export type ShelfGroup = {
@@ -71,12 +72,12 @@ function ShelfSection({ group }: { group: ShelfGroup }) {
     });
   }
 
-  /** Add to the shelf at the end: give it the next display_order so it lands
+  /** Add to the shelf at the end: give it the next visitor_order so it lands
    *  after everything already there. */
   function add(row: ShelfRow) {
     const nextOrder =
       group.onShelf.reduce(
-        (max, item) => Math.max(max, item.displayOrder),
+        (max, item) => Math.max(max, item.visitorOrder),
         0,
       ) + 1;
     run(row.id, () =>
@@ -84,18 +85,18 @@ function ShelfSection({ group }: { group: ShelfGroup }) {
     );
   }
 
-  /** Remove from the shelf. Omit display_order — position is moot once off the
-   *  shelf, and omitting it leaves the field untouched. */
+  /** Remove from the shelf. Omit the order — position is moot once off the
+   *  shelf, and omitting it leaves visitor_order untouched. */
   function remove(row: ShelfRow) {
     run(row.id, () => setVisitorVisibility(group.entitySet, row.id, false));
   }
 
-  /** Move one item up (-1) or down (1) by swapping its display_order with the
+  /** Move one item up (-1) or down (1) by swapping its visitor_order with the
    *  neighbor it steps past. Two SetVisitorVisibility writes, both shown=true —
-   *  featured / SetFeatured is never touched. */
+   *  featured / SetFeatured / display_order is never touched. */
   function move(row: ShelfRow, direction: -1 | 1) {
     const ordered = [...group.onShelf].sort(
-      (a, b) => a.displayOrder - b.displayOrder,
+      (a, b) => a.visitorOrder - b.visitorOrder,
     );
     const index = ordered.findIndex((item) => item.id === row.id);
     const swap = ordered[index + direction];
@@ -105,13 +106,13 @@ function ShelfSection({ group }: { group: ShelfGroup }) {
         group.entitySet,
         row.id,
         true,
-        swap.displayOrder,
+        swap.visitorOrder,
       );
       await setVisitorVisibility(
         group.entitySet,
         swap.id,
         true,
-        row.displayOrder,
+        row.visitorOrder,
       );
     });
   }

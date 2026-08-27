@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import {
   artStyleDisplayName,
-  displayOrderOf,
+  visitorOrderOf,
   listArtStyles,
   listDesignLanguages,
   listPaletteSystems,
@@ -30,7 +30,7 @@ function languageName(lang: DesignLanguage): string {
 }
 
 /** Build one shelf section: the on-shelf rows (kept in shelf order, lower
- *  display_order first — that is the position visitors see) and the off-shelf
+ *  visitor_order first — that is the position visitors see) and the off-shelf
  *  catalog pool (sorted by display name for scanning). */
 function buildGroup(
   entitySet: ShelfGroup["entitySet"],
@@ -43,7 +43,7 @@ function buildGroup(
   return {
     entitySet,
     label,
-    onShelf: [...onShelfRows].sort((a, b) => a.displayOrder - b.displayOrder),
+    onShelf: [...onShelfRows].sort((a, b) => a.visitorOrder - b.visitorOrder),
     catalog: publishedRows.filter((r) => !onIds.has(r.id)).sort(byName),
   };
 }
@@ -73,19 +73,19 @@ export default async function VisitorShelfPage() {
     id: l.entity_id,
     name: languageName(l),
     slug: l.fields.slug ?? "",
-    displayOrder: displayOrderOf(l),
+    visitorOrder: visitorOrderOf(l),
   });
   const paletteRow = (p: LaneEntity): ShelfRow => ({
     id: p.entity_id,
     name: paletteDisplayName(p.fields),
     slug: p.fields.slug ?? "",
-    displayOrder: displayOrderOf(p),
+    visitorOrder: visitorOrderOf(p),
   });
   const artRow = (a: LaneEntity): ShelfRow => ({
     id: a.entity_id,
     name: artStyleDisplayName(a.fields),
     slug: a.fields.slug ?? "",
-    displayOrder: displayOrderOf(a),
+    visitorOrder: visitorOrderOf(a),
   });
 
   const groups: ShelfGroup[] = [
