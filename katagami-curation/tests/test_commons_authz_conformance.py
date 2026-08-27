@@ -208,6 +208,31 @@ class CommonsAuthzConformance(unittest.TestCase):
                     f"{name}.{action}: a non-creator Customer was ALLOWED to mutate",
                 )
 
+    def test_a_customer_cannot_self_attribute_a_create(self):
+        # The creator arm keys on `context.creator_sub == principal.id`. At CREATE
+        # there is no server-set creator_sub, so honoring a self-supplied one lets
+        # any Customer create a record and claim ownership of it. `create` is
+        # denied to Customers on every entity except remix, whose create is the
+        # legitimate "save my own mix". (Regression-guards the review finding that
+        # a Customer could create the three artifacts by passing their own id.)
+        for name in commons_entities():
+            if name in CUSTOMER_MAY_CREATE:
+                continue
+            text = policy_text(name)
+            rtype = resource_type(text)
+            self.assertEqual(
+                decide(
+                    text,
+                    rtype,
+                    "create",
+                    "Customer",
+                    {"role": "contributor"},
+                    {"creator_sub": "p1"},  # == principal id: self-attribution
+                ),
+                cedarpy.Decision.Deny,
+                f"{name}: a Customer self-attributed a create (supplied own creator_sub)",
+            )
+
     def test_an_anonymous_customer_is_denied_every_mutation(self):
         for name in commons_entities():
             text = policy_text(name)
