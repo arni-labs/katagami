@@ -21,10 +21,12 @@ or a loosened policy fails here rather than in production:
   * no commons policy is a bare `permit` with no forbid.
 
 These evaluate the Cedar policies through the interpreter, on requests shaped
-the way `temper-server` builds them (the principal carries `id`, `agent_type`
-and `role`; the resource carries `creator_sub`/`status`). A silent skip when
-cedarpy is absent is a FAILURE, not a pass — see the sibling
-`test_actor_policy_evaluation.py` for why that distinction is load-bearing.
+the way `temper-server` builds them: the entity store holds ONLY the principal
+(carrying `id`, `agent_type`, `role`), and the resource's state (`creator_sub`,
+`status`, every field) is injected into the request `context`, never onto the
+resource entity — so ownership clauses read `context.creator_sub` (see
+`decide()`). A silent skip when cedarpy is absent is a FAILURE, not a pass —
+see the sibling `test_actor_policy_evaluation.py` for why that is load-bearing.
 
     make -C katagami-curation test-integration      # installs cedarpy, runs it
     pip install -r katagami-curation/tests/requirements-dev.txt
@@ -207,6 +209,22 @@ class CommonsAuthzConformance(unittest.TestCase):
                     cedarpy.Decision.Deny,
                     f"{name}.{action}: a non-creator Customer was ALLOWED to mutate",
                 )
+
+    def test_a_customer_with_no_creator_sub_in_context_is_denied(self):
+        # Fail-closed on missing context: if the `context has creator_sub` guard
+        # were dropped, `context.creator_sub == principal.id` would ERROR on a
+        # request with no creator_sub and Cedar would drop the forbid → Allow.
+        # A Customer mutating an existing artifact with NO creator_sub in context
+        # must still be denied. (Regression-guards the review finding that
+        # removing the has-guard fails open on Customer.SetName.)
+        for name in ARTIFACTS:
+            text = policy_text(name)
+            rtype = resource_type(text)
+            self.assertEqual(
+                decide(text, rtype, "SetName", "Customer", {"role": "contributor"}, {}),
+                cedarpy.Decision.Deny,
+                f"{name}.SetName: a Customer with no creator_sub in context was ALLOWED",
+            )
 
     def test_a_customer_cannot_self_attribute_a_create(self):
         # The creator arm keys on `context.creator_sub == principal.id`. At CREATE
