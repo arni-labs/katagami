@@ -200,6 +200,29 @@ const required = [
     read(`../katagami-commons/policies/${stem}.cedar`),
     /action == Action::"ReturnToDraft"[\s\S]*?resource\.creator_sub == principal\.id[\s\S]*?context\.actingFor != ""/,
   ]),
+  // ARN-315: the artifact policies gated advancement but left AUTHORING on the
+  // base grant, so any Customer could edit/submit another contributor's draft.
+  // Each artifact must carry the broad creator-scoped forbid — an unqualified
+  // `forbid(principal, action, ...)` that permits only the creator, owner/
+  // curator, or a service agent. The cedarpy suite proves the decisions; this
+  // fails fast in `npm test` if the clause is deleted.
+  ...["design_language","art_style","palette_system"].map((stem) => [
+    `${stem}.cedar creator-scopes every remaining authoring action (ARN-315)`,
+    read(`../katagami-commons/policies/${stem}.cedar`),
+    /forbid\(principal, action, resource is \w+\)\s*\nunless \{ action == Action::"read"[\s\S]*?resource\.creator_sub == principal\.id/,
+  ]),
+  // Attribution is curator/pipeline-only: SetCredits/SetModelProvenance reach
+  // Published, so a creator must not rewrite them on their own published record.
+  ...["design_language","art_style","palette_system"].map((stem) => [
+    `${stem}.cedar routes SetCredits/SetModelProvenance to owner|curator|service`,
+    read(`../katagami-commons/policies/${stem}.cedar`),
+    /Action::"SetCredits",[\s\S]*?Action::"SetModelProvenance",[\s\S]*?unless \{[\s\S]*?\["owner", "curator"\]/,
+  ]),
+  // feedback_response was a bare `permit(principal, action, ...)` — the ARN-315
+  // hole in its simplest form. It must now forbid all but service/owner/curator.
+  ["feedback_response.cedar is no longer an open grant (ARN-315)",
+   read("../katagami-commons/policies/feedback_response.cedar"),
+   /forbid\(principal, action, resource is FeedbackResponse\)\s*\nunless \{[\s\S]*?\["owner", "curator"\]/],
 ];
 
 // EACH human-attributed governed write must carry { bearer } — not just "some
