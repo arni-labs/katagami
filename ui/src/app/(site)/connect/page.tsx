@@ -23,9 +23,11 @@ const CODEX_TOML = `[mcp_servers.katagami]
 url = "${MCP_URL}"`;
 
 // Grok reads the same config as Claude Code — the standard mcpServers block.
+// Claude-format readers skip a server that has a "url" but no "type", so it's required.
 const GROK_JSON = `{
   "mcpServers": {
     "katagami": {
+      "type": "http",
       "url": "${MCP_URL}"
     }
   }
@@ -43,11 +45,23 @@ const CURSOR_JSON = `{
 }`;
 
 const VSCODE_DEEPLINK =
-  "vscode:mcp/install?%7B%22name%22%3A%22katagami%22%2C%22url%22%3A%22https%3A%2F%2Fkatagami.ai%2Fmcp%22%7D";
+  "vscode:mcp/install?%7B%22name%22%3A%22katagami%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fkatagami.ai%2Fmcp%22%7D";
 
-const VSCODE_CLI = `code --add-mcp '{"name":"katagami","url":"${MCP_URL}"}'`;
+const VSCODE_CLI = `code --add-mcp '{"name":"katagami","type":"http","url":"${MCP_URL}"}'`;
 
-const CLAUDE_DESKTOP_JSON = `{
+// Older Claude Desktop builds without remote connectors bridge the HTTP server
+// locally as a stdio server via mcp-remote.
+const CLAUDE_DESKTOP_STDIO_JSON = `{
+  "mcpServers": {
+    "katagami": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "${MCP_URL}"]
+    }
+  }
+}`;
+
+// Generic typed block — the type field keeps it working in Claude-format readers.
+const GENERIC_JSON = `{
   "mcpServers": {
     "katagami": {
       "type": "http",
@@ -215,13 +229,23 @@ export default function ConnectPage() {
 
           <TabsContent value="claude-desktop" className="mt-4 space-y-4">
             <TabNote>
-              Paste this into your MCP config — Settings → Developer → Edit
-              Config — then restart Claude Desktop.
+              Add it as a custom connector — Settings → Connectors → Add custom
+              connector — and paste the server URL, naming it{" "}
+              <code className="font-mono text-[15px]">katagami</code>.
+            </TabNote>
+            <CodeBlock
+              label="Server URL"
+              code={MCP_URL}
+              copyArtifact="mcp-claude-desktop-url"
+            />
+            <TabNote>
+              Older builds without remote connectors can bridge it locally as a
+              stdio server:
             </TabNote>
             <CodeBlock
               label="claude_desktop_config.json"
-              code={CLAUDE_DESKTOP_JSON}
-              copyArtifact="mcp-claude-desktop-json"
+              code={CLAUDE_DESKTOP_STDIO_JSON}
+              copyArtifact="mcp-claude-desktop-stdio-json"
             />
           </TabsContent>
 
@@ -231,7 +255,7 @@ export default function ConnectPage() {
               at the server URL, or use the generic config block.
             </TabNote>
             <CodeBlock label="Server URL" code={MCP_URL} copyArtifact="mcp-url-other" />
-            <CodeBlock label="mcp.json" code={CURSOR_JSON} copyArtifact="mcp-generic-json" />
+            <CodeBlock label="mcp.json" code={GENERIC_JSON} copyArtifact="mcp-generic-json" />
           </TabsContent>
         </Tabs>
       </section>
