@@ -53,7 +53,7 @@ forbid(
   action == Action::"ReturnToDraft",
   resource is ArtStyle
 )
-unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) || (principal is Customer && resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && context.actingFor != "" && resource has creator_sub && resource.creator_sub == context.actingFor) };
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) || (principal is Customer && context has creator_sub && context.creator_sub == principal.id) || (context has actingFor && context.actingFor != "" && context has creator_sub && context.creator_sub == context.actingFor) };
 
 // ARN-315: authoring actions (SetName, SetTokens, SubmitForReview, …) sat on
 // the base grant with no scoping, so any signed-in human (a Customer) could
@@ -64,4 +64,4 @@ unless { principal is System || principal is Admin || (principal has agent_type 
 // is denied. Agents are untouched — the contribution pipeline authors exactly
 // as before — and reads plus the system-emitted lifecycle events stay open.
 forbid(principal, action, resource is ArtStyle)
-unless { action == Action::"read" || action == Action::"ArtStylePublishedEvent" || action == Action::"ArtStyleArchivedEvent" || !(principal is Customer) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) || (principal is Customer && resource has creator_sub && resource.creator_sub == principal.id) };
+unless { action == Action::"read" || action == Action::"ArtStylePublishedEvent" || action == Action::"ArtStyleArchivedEvent" || !(principal is Customer) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) || (principal is Customer && context has creator_sub && context.creator_sub == principal.id) };

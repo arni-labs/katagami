@@ -112,16 +112,23 @@ def entity(uid_type, uid_id, attrs):
 
 
 def decide(text, rtype, action, principal, attrs, resource_attrs=None, context=None):
-    entities = [
-        entity(principal, "p1", {"id": "p1", **attrs}),
-        entity(rtype, "r1", {"id": "r1", **(resource_attrs or {})}),
-    ]
+    # Mirror the DEPLOYED kernel's request shape, not a convenient one. temper-
+    # authz builds the entity store with ONLY the principal entity and injects
+    # the resource's state (id, status, and every entity field, incl.
+    # creator_sub) into CONTEXT — never onto the resource entity
+    # (temper-server/src/odata/bindings.rs → temper-authz/src/engine/mod.rs).
+    # So a policy that reads `resource.creator_sub` is dead in production; the
+    # live attribute is `context.creator_sub`. Testing the entity shape gives a
+    # false green on every creator-scoped clause, so we replicate context here.
+    ctx = dict(context or {})
+    ctx.update(resource_attrs or {})
+    entities = [entity(principal, "p1", {"id": "p1", **attrs})]
     return cedarpy.is_authorized(
         {
             "principal": {"type": principal, "id": "p1"},
             "action": {"type": "Action", "id": action},
             "resource": {"type": rtype, "id": "r1"},
-            "context": context or {},
+            "context": ctx,
         },
         text,
         entities,

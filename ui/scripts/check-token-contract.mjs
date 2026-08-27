@@ -55,7 +55,7 @@ const humanChecks = CURATED.map((stem) => [
   ]),
   ["remix.cedar gates human ownership",
    read("../katagami-commons/policies/remix.cedar"),
-   /resource\.creator_sub == principal\.id/],
+   /context\.creator_sub == principal\.id/],
   ["owner/curator bearer helpers carry the acting human to the kernel",
    read("src/lib/owner.ts"), /assertOwnerBearer[\s\S]*humanBearer/],
   // Fail-closed contract (ARN-255): a signed-in write throws if the mint fails,
@@ -198,7 +198,7 @@ const required = [
   ...["design_language","art_style","palette_system"].map((stem) => [
     `${stem}.cedar ReturnToDraft permits the creator with the empty-actingFor guard`,
     read(`../katagami-commons/policies/${stem}.cedar`),
-    /action == Action::"ReturnToDraft"[\s\S]*?resource\.creator_sub == principal\.id[\s\S]*?context\.actingFor != ""/,
+    /action == Action::"ReturnToDraft"[\s\S]*?context\.creator_sub == principal\.id[\s\S]*?context\.actingFor != ""/,
   ]),
   // ARN-315: the artifact policies gated advancement but left AUTHORING on the
   // base grant, so any Customer could edit/submit another contributor's draft.
@@ -209,7 +209,7 @@ const required = [
   ...["design_language","art_style","palette_system"].map((stem) => [
     `${stem}.cedar creator-scopes every remaining authoring action (ARN-315)`,
     read(`../katagami-commons/policies/${stem}.cedar`),
-    /forbid\(principal, action, resource is \w+\)\s*\nunless \{ action == Action::"read"[\s\S]*?resource\.creator_sub == principal\.id/,
+    /forbid\(principal, action, resource is \w+\)\s*\nunless \{ action == Action::"read"[\s\S]*?context\.creator_sub == principal\.id/,
   ]),
   // Attribution is curator/pipeline-only: SetCredits/SetModelProvenance reach
   // Published, so a creator must not rewrite them on their own published record.
@@ -223,6 +223,17 @@ const required = [
   ["feedback_response.cedar is no longer an open grant (ARN-315)",
    read("../katagami-commons/policies/feedback_response.cedar"),
    /forbid\(principal, action, resource is FeedbackResponse\)\s*\nunless \{[\s\S]*?\["owner", "curator"\]/],
+  // The kernel injects entity state into Cedar CONTEXT, not onto the resource
+  // entity (temper-server/src/odata/bindings.rs → temper-authz engine). A
+  // creator-scoping clause written as `resource.creator_sub` is DEAD in
+  // production — it silently drops to the fail-open/over-deny branch (remix
+  // ownership was fully bypassed this way). Every ownership clause reads
+  // `context.creator_sub`; a `resource.creator_sub` in commons is the bug.
+  ...["design_language","art_style","palette_system","remix"].map((stem) => [
+    `${stem}.cedar reads context.creator_sub, never the dead resource.creator_sub`,
+    read(`../katagami-commons/policies/${stem}.cedar`),
+    /^(?![\s\S]*resource\.creator_sub)(?![\s\S]*resource has creator_sub)[\s\S]*context\.creator_sub == principal\.id/,
+  ]),
 ];
 
 // EACH human-attributed governed write must carry { bearer } — not just "some
