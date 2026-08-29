@@ -5,6 +5,7 @@ import {
   emitServerEvent,
   hashPrincipal,
   runAfter,
+  serverTelemetryEnabled,
   trackServerEvent,
 } from "@/lib/server-telemetry";
 import {
@@ -83,6 +84,8 @@ export async function GET(req: NextRequest) {
     // Guarded like trackServerEvent: a throw from Next after must not skip
     // the katagami_user cookie after a successful Google exchange.
     runAfter(async () => {
+      // Fail-closed intake → do not hit Temper $count for a no-op emit.
+      if (!serverTelemetryEnabled()) return;
       let userHash: string | undefined;
       try {
         const hashed = await hashPrincipal(sub);

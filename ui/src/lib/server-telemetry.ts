@@ -3,6 +3,7 @@ import "server-only";
 import { after } from "next/server";
 import {
   hashPrincipal,
+  intakeAbortSignal,
   resolveLogsIntake,
   telemetryEnabled,
   logPayload,
@@ -65,6 +66,7 @@ export async function emitServerEvent(
       method: "POST",
       headers: intake.headers as HeadersInit,
       body: JSON.stringify([logPayload(evt, attributes, status)]),
+      signal: intakeAbortSignal(),
     });
     if (!res.ok) {
       console.error(`[telemetry] intake ${res.status} for ${evt}`);

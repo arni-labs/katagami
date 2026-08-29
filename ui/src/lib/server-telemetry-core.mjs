@@ -64,6 +64,13 @@ function logsSite(env) {
   return env.NEXT_PUBLIC_DD_RUM_SITE || "datadoghq.com";
 }
 
+/** Datadog intake must not stall a Vercel response. Hung intake → abort. */
+export const INTAKE_FETCH_TIMEOUT_MS = 2500;
+
+export function intakeAbortSignal(timeoutMs = INTAKE_FETCH_TIMEOUT_MS) {
+  return AbortSignal.timeout(timeoutMs);
+}
+
 /**
  * Resolve the Datadog logs intake.
  *

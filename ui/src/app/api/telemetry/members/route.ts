@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { countMembers } from "@/lib/oauth-as";
-import { authorizeCronRequest, emitServerEvent, serverTelemetryEnabled } from "@/lib/server-telemetry";
+import {
+  authorizeCronRequest,
+  emitServerEvent,
+  runAfter,
+  serverTelemetryEnabled,
+} from "@/lib/server-telemetry";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +28,9 @@ export async function GET(req: Request) {
   }
   try {
     const membersTotal = await countMembers();
-    await emitServerEvent("members_snapshot", { members_total: membersTotal });
+    // Do not await Datadog on this request: a hung intake must not stall
+    // the cron HTTP response. emitServerEvent also aborts via AbortSignal.
+    runAfter(() => emitServerEvent("members_snapshot", { members_total: membersTotal }));
     return NextResponse.json({
       ok: true,
       members_total: membersTotal,

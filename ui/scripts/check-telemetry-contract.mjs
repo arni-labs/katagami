@@ -6,10 +6,12 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { createServer } from "node:http";
 import {
   authorizeCronRequest,
   cleanAttrs,
   hashPrincipal,
+  intakeAbortSignal,
   isForbiddenAttrKey,
   principalPepper,
   resolveLogsIntake,
@@ -112,6 +114,25 @@ const dashboard = read("../infra/datadog/katagami-rum-dashboard.json");
   console.log("ok: hashPrincipal uses env pepper; unset pepper omits user_hash");
 }
 
+{
+  const server = createServer(() => {
+    /* blackhole: accept, never write a response */
+  });
+  await new Promise((resolveListen) => server.listen(0, "127.0.0.1", resolveListen));
+  const { port } = server.address();
+  const started = Date.now();
+  let aborted = false;
+  try {
+    await fetch(`http://127.0.0.1:${port}/`, { signal: intakeAbortSignal(200) });
+  } catch (err) {
+    aborted = err?.name === "TimeoutError" || err?.name === "AbortError";
+  }
+  await new Promise((resolveClose) => server.close(resolveClose));
+  assert.ok(aborted, "blackhole intake must abort");
+  assert.ok(Date.now() - started < 1500, "abort must be prompt, not a platform stall");
+  console.log("ok: hung intake aborts instead of stalling");
+}
+
 // --- Wiring greps -----------------------------------------------------------
 
 const required = [
@@ -134,12 +155,15 @@ const required = [
   ["upsertMember reports created-vs-existing", oauthAs, /Promise<\{ created: boolean \}>/],
   ["countMembers filters on has_identity", oauthAs, /has_identity eq true/],
   ["daily members snapshot emits members_total", snapshot, /emitServerEvent\("members_snapshot"/],
+  ["members snapshot does not await Datadog on the request path", snapshot, /runAfter\(\(\) => emitServerEvent\("members_snapshot"/],
   ["members snapshot uses authorizeCronRequest", snapshot, /authorizeCronRequest\(/],
+  ["sign-in skips countMembers when intake is fail-closed", callback, /if \(!serverTelemetryEnabled\(\)\) return/],
   ["members snapshot cron is scheduled", vercelJson, /\/api\/telemetry\/members/],
   ["runAfter guards next/server after()", telemetry, /export function runAfter/],
   ["hash+emit for MCP tools runs inside runAfter", telemetry, /runAfter\(async \(\) => \{[\s\S]*hashPrincipal/],
   ["MCP emit stamps @tier:full (dashboard filters match)", telemetry, /tier: "full"/],
   ["telemetry no-ops without credentials", telemetry, /if \(!intake\) return/],
+  ["intake fetch is aborted on hang", telemetry, /signal: intakeAbortSignal\(\)/],
   ["dashboard distinct-callers tile keys on @tier:full", dashboard, /@evt:mcp_tool_call @tier:full/],
   ["dashboard does not claim a sample-vs-full split", dashboard, /Auth tier \(full/],
   ["pepper comes from env, not a repo string", core, /KATAGAMI_TELEMETRY_PEPPER/],
