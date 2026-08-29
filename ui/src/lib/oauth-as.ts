@@ -156,9 +156,19 @@ export async function upsertMember(user: {
     await dispatchAction("Members", existing[0].entity_id, "Register", params);
     return { created: false };
   }
-  const created = await createEntity("Members");
-  await dispatchAction("Members", created.entity_id, "Register", params);
-  return { created: true };
+  try {
+    const created = await createEntity("Members");
+    await dispatchAction("Members", created.entity_id, "Register", params);
+    return { created: true };
+  } catch (err) {
+    // First-time create/Register can throw (race, Temper hiccup). Re-query:
+    // if the sub is now registered, this is a returning login. If it is
+    // still missing, throw — the callback must not emit registration:false
+    // for a first-time login that never landed.
+    const again = await queryEntities("Members", `sub eq '${user.sub}'`);
+    if (again.length > 0) return { created: false };
+    throw err;
+  }
 }
 
 /** Registered humans: Members that completed a Google sign-in. Filters on

@@ -107,20 +107,23 @@ the registered-user count, and every MCP tool call at katagami.ai/mcp — are
 emitted from the Vercel routes as **Datadog logs** with
 `service:katagami-server`, via `ui/src/lib/server-telemetry.ts`.
 
-**Transport.** The Logs HTTP intake (`http-intake.logs.datadoghq.com`)
-authenticated with the SAME public RUM client token the browser SDK uses —
-client tokens may submit logs (verified live 2026-08-29). So this works from
-Vercel serverless with **no agent, no log drain, and no new secret**: if RUM is
-configured, server telemetry is on. Events are sent via `next/server`'s
-`after()`, so they never delay a response and still complete before the
-function freezes. `env:` is `production` on the production deploy, `preview`
-on previews, `local-verify` elsewhere; every dashboard query scopes to
-`env:production`.
+**Transport.** Prefer a server-only `DD_API_KEY` on the official Logs
+intake (`http-intake.logs.datadoghq.com`) as the `DD-API-KEY` header. When
+that key is unset, fall back to the public RUM client token on
+`browser-http-intake.logs` as a **query param** — never as `DD-API-KEY`
+(that header is the secret API-key slot; putting the browser token there
+is spoofable). Events ride `next/server`'s `after()`, so they never delay
+a response and still complete before the function freezes. `env:` is
+`production` on the production deploy, `preview` on previews,
+`local-verify` elsewhere; every dashboard query scopes to `env:production`.
+A preview that has neither `DD_API_KEY` nor `NEXT_PUBLIC_DD_RUM_CLIENT_TOKEN`
+in that environment reports `emitted: false` — enable one of those vars on
+Preview if you want the probe to light up.
 
-**Privacy.** Google subs travel only as truncated sha256 hashes
+**Privacy.** Google subs travel only as a peppered HMAC truncated to 16 hex
 (`@user_hash`); emails, names, and bearer tokens never reach Datadog —
-identity-shaped attribute keys are stripped at emit time
-(`FORBIDDEN_ATTR_KEYS`), enforced by `scripts/check-telemetry-contract.mjs`.
+identity-shaped attribute keys (exact names and common variants) are
+stripped at emit time, enforced by `scripts/check-telemetry-contract.mjs`.
 
 **Events** (all under `service:katagami-server`, filter with `@evt:<name>`):
 
@@ -149,8 +152,11 @@ sign-ins.
   retention (~15 days); these metrics keep 15 months, counting from
   2026-08-29 onward.
 
-**Optional hardening.** Set `CRON_SECRET` in Vercel to lock
-`/api/telemetry/members` to the cron caller (without it the route is public
-but only returns a member count and emits one log line per call). A real
-`DD_API_KEY` is still not required by anything here; adding one would unlock
-direct metric submission if the log-based path ever becomes limiting.
+**`CRON_SECRET` is required before this route exists on master.** Vercel
+cron sends `Authorization: Bearer <CRON_SECRET>` to
+`/api/telemetry/members`. Unset secret, missing bearer, or a wrong bearer
+→ 401 with no `members_total`. Howl/Rita set the secret in Vercel
+(Production; Preview too if that URL is reachable). Do not invent a value
+in the repo. A real `DD_API_KEY` is optional; without it the RUM-token
+browser intake still emits, and adding an API key later unlocks the
+official logs path (and, later, direct metric submission).

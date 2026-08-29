@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { countMembers } from "@/lib/oauth-as";
-import { emitServerEvent, serverTelemetryEnabled } from "@/lib/server-telemetry";
+import { authorizeCronRequest, emitServerEvent, serverTelemetryEnabled } from "@/lib/server-telemetry";
 
 export const dynamic = "force-dynamic";
 
@@ -9,15 +9,17 @@ export const dynamic = "force-dynamic";
 // sign-ins the "total registered users" tile would go stale — this keeps it
 // fed with one datapoint per day.
 //
-// Access: CRON_SECRET is set in Vercel production, and Vercel's cron caller
-// sends it as `Authorization: Bearer <secret>` automatically — everyone else
-// gets 401, so the route cannot be used to hammer the Temper backend or spam
-// logs. Locally (no CRON_SECRET) the route stays open for development; it
-// only returns a member count and emits one log line per call.
+// Access: CRON_SECRET MUST be set in Vercel (Production + Preview) before
+// this route exists on master. Vercel's cron caller sends
+// `Authorization: Bearer <CRON_SECRET>` automatically. Unset secret, missing
+// bearer, or a wrong bearer → 401 with no members_total. Howl/Rita set the
+// secret; this route does not invent one and does not stay open for "local
+// dev" when the secret is absent.
+const unauthorized = () => NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!authorizeCronRequest(req.headers.get("authorization"), process.env.CRON_SECRET)) {
+    return unauthorized();
   }
   try {
     const membersTotal = await countMembers();

@@ -1,81 +1,32 @@
 import "server-only";
 
 import { after } from "next/server";
+import {
+  resolveLogsIntake,
+  telemetryEnabled,
+  logPayload,
+} from "./server-telemetry-core.mjs";
+
+export { hashPrincipal, authorizeCronRequest } from "./server-telemetry-core.mjs";
 
 // Server-side telemetry for katagami.ai (ARN-436) — the sibling of the
 // browser-side RUM layer in lib/analytics.ts, for the signals RUM structurally
 // cannot see: MCP tool calls and sign-in outcomes happen in server routes,
 // not in the visitor's browser.
 //
-// Transport: the Datadog Logs HTTP intake, authenticated with the SAME public
-// RUM client token the browser SDK ships (client tokens may submit logs;
-// verified live 2026-08-29 — a probe POSTed with the pub… token was queryable
-// in the org seconds later). That works from Vercel serverless with no agent,
-// no log drain, and no new secret. The metrics intake would need a real
-// DD_API_KEY, which this project does not have — see infra/datadog/README.md
-// for the upgrade path.
-//
-// Design rules, mirrored from analytics.ts:
-//  - Absent credentials → permanent no-op; telemetry must never break a route.
-//  - Nothing personally identifying leaves: Google subs travel only as
-//    sha256 hashes (hashPrincipal), and identity-shaped attribute keys are
-//    stripped at emit time so a future call site cannot leak by accident.
-//  - Emission rides next/server's after() so it never delays a response and
-//    still completes before Vercel freezes the function.
-
-const SERVICE = "katagami-server";
-
-function clientToken(): string {
-  return process.env.NEXT_PUBLIC_DD_RUM_CLIENT_TOKEN ?? "";
-}
-
-function intakeUrl(): string {
-  const site = process.env.NEXT_PUBLIC_DD_RUM_SITE || "datadoghq.com";
-  return `https://http-intake.logs.${site}/api/v2/logs`;
-}
-
-/** `production` on the production deploy, `preview` on previews, and
- *  `local-verify` everywhere else — every dashboard query is scoped to
- *  env:production, so local runs and previews never pollute the numbers. */
-function telemetryEnv(): string {
-  if (process.env.VERCEL_ENV === "production") return "production";
-  if (process.env.VERCEL_ENV === "preview") return "preview";
-  return "local-verify";
-}
-
-export function serverTelemetryEnabled(): boolean {
-  return Boolean(clientToken());
-}
-
-/** sha256 of a principal id, truncated to 16 hex chars: stable per-user
- *  cardinality for dashboards with nothing reversible in the logs. Raw Google
- *  subs, emails, and bearer tokens must never be emitted. */
-export async function hashPrincipal(sub: string): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(sub),
-  );
-  return Buffer.from(digest).toString("hex").slice(0, 16);
-}
+// Transport: Datadog Logs HTTP intake.
+//  - Prefer DD_API_KEY (server-only) on http-intake.logs as DD-API-KEY.
+//  - Else the public RUM client token on browser-http-intake as a query
+//    param — never as the DD-API-KEY header (that slot is the secret API
+//    key; stuffing the browser token there is spoofable and the Greptile P1).
+// Absent credentials → permanent no-op. Emission rides next/server after()
+// so it never delays a response and still completes before Vercel freezes.
 
 type AttrValue = string | number | boolean | undefined | null;
 export type TelemetryStatus = "info" | "warn" | "error";
 
-// Identity-shaped keys are dropped at emit time — the PII rule enforced in
-// code, not convention. Hashed ids go under user_hash.
-const FORBIDDEN_ATTR_KEYS =
-  /^(email|sub|token|bearer|authorization|name|picture|user|username)$/i;
-
-function cleanAttrs(
-  attributes: Record<string, AttrValue>,
-): Record<string, string | number | boolean> {
-  const out: Record<string, string | number | boolean> = {};
-  for (const [k, v] of Object.entries(attributes)) {
-    if (v === undefined || v === null || v === "") continue;
-    if (FORBIDDEN_ATTR_KEYS.test(k)) continue;
-    out[k] = v;
-  }
-  return out;
+export function serverTelemetryEnabled(): boolean {
+  return telemetryEnabled();
 }
 
 /** POST one event to the logs intake and await the result. Use inside an
@@ -85,26 +36,13 @@ export async function emitServerEvent(
   attributes: Record<string, AttrValue> = {},
   status: TelemetryStatus = "info",
 ): Promise<void> {
-  if (!serverTelemetryEnabled()) return;
+  const intake = resolveLogsIntake();
+  if (!intake) return;
   try {
-    const res = await fetch(intakeUrl(), {
+    const res = await fetch(intake.url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "DD-API-KEY": clientToken(),
-      },
-      body: JSON.stringify([
-        {
-          ddsource: SERVICE,
-          ddtags: `env:${telemetryEnv()},service:${SERVICE}`,
-          service: SERVICE,
-          hostname: process.env.VERCEL_REGION || "vercel",
-          status,
-          message: evt,
-          evt,
-          ...cleanAttrs(attributes),
-        },
-      ]),
+      headers: intake.headers as HeadersInit,
+      body: JSON.stringify([logPayload(evt, attributes, status)]),
     });
     if (!res.ok) {
       console.error(`[telemetry] intake ${res.status} for ${evt}`);

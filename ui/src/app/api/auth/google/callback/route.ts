@@ -40,8 +40,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/signin?error=state", origin));
   }
 
-  const user = await exchangeGoogleCode(origin, code, verifier, nonce);
-  const token = user ? await signSession(user) : null;
+  let user;
+  let token;
+  try {
+    user = await exchangeGoogleCode(origin, code, verifier, nonce);
+    token = user ? await signSession(user) : null;
+  } catch (err) {
+    // fetch / JWKS / signSession throws used to skip auth_login_failed.
+    console.error("Google exchange failed:", err);
+    trackServerEvent("auth_login_failed", { reason: "google" }, "warn");
+    return NextResponse.redirect(new URL("/signin?error=google", origin));
+  }
   if (!token) {
     trackServerEvent("auth_login_failed", { reason: "google" }, "warn");
     return NextResponse.redirect(new URL("/signin?error=google", origin));
@@ -50,7 +59,7 @@ export async function GET(req: NextRequest) {
   // Durable account behind the stateless session (ARN-151): grants, roles,
   // and submissions anchor on the Member. Best-effort — a backend hiccup
   // must never block the sign-in itself.
-  let registration = false;
+  let registration: boolean | undefined;
   let upsertOk = true;
   try {
     if (user) registration = (await upsertMember(user)).created;
@@ -65,6 +74,9 @@ export async function GET(req: NextRequest) {
   // members_total rides along so "total registered users" always has a fresh
   // datapoint (best-effort; the daily /api/telemetry/members snapshot is the
   // steady feed).
+  //
+  // If upsert threw, omit `registration` — a first-time login that failed
+  // to land must not look like a returning user (registration:false).
   if (user) {
     const sub = user.sub;
     after(async () => {
@@ -76,7 +88,7 @@ export async function GET(req: NextRequest) {
         membersTotal = undefined;
       }
       await emitServerEvent("auth_login", {
-        registration,
+        ...(upsertOk ? { registration } : {}),
         upsert_ok: upsertOk,
         user_hash: userHash,
         members_total: membersTotal,
