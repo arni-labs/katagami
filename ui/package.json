@@ -13,7 +13,7 @@
     "test": "npm run test:gallery && npm run test:shadcn-export && npm run test:auth && npm run test:tokens && npm run test:contracts",
     "test:gallery": "node scripts/check-gallery-renders-all-cards.mjs",
     "test:shadcn-export": "node scripts/check-shadcn-preview-contract.mjs",
-    "test:auth": "node scripts/check-auth-contract.mjs && node scripts/check-catalog-auth-attacks.mjs",
+    "test:auth": "node scripts/check-auth-contract.mjs && node scripts/check-catalog-auth-attacks.mjs && node scripts/check-mcp-oauth-contract.mjs",
     "test:tokens": "node scripts/check-token-contract.mjs",
     "test:contracts": "node scripts/taste-doc.test.mjs && node scripts/facets.test.mjs && node scripts/remix-brief.test.mjs && node scripts/brief-lookup.test.mjs && node scripts/art-style-prompt-state.test.mjs && node scripts/spec-prose.test.mjs && node scripts/remix-lane-copy.test.mjs && node scripts/design-md-art-style.test.mjs && node scripts/remix-options.test.mjs && node scripts/remix-theme.test.mjs && node scripts/visitor-shelf.test.mjs && node scripts/owner-mode.test.mjs && node scripts/gallery-projection.test.mjs && node scripts/check-file-proxy-state-contract.mjs && node scripts/check-thumbnail-fallback.mjs && node scripts/gallery-image.test.mjs && node scripts/check-language-detail-chrome.mjs && node scripts/check-language-preview-unframed.mjs && node scripts/check-language-preview-open-full.mjs && node scripts/check-header-cluster.mjs && node scripts/check-featured-artifact-gate.mjs && node scripts/featured.test.mjs"
   },

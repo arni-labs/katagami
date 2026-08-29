@@ -13,6 +13,9 @@ import "server-only";
 
 import { SignJWT, jwtVerify, importPKCS8, exportJWK, calculateJwkThumbprint, type JWK } from "jose";
 import { createEntity, dispatchAction } from "@/lib/odata-mutations";
+import { isAllowedRedirectUri, readMcpResource } from "@/lib/mcp-oauth.mjs";
+
+export { isAllowedRedirectUri, readMcpResource };
 
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
@@ -28,12 +31,17 @@ export function mcpResource(): string {
 }
 
 /** RFC 8707 resource indicators are honored only for known resources —
- *  this AS mints tokens for the Katagami front door, not for whatever a
- *  crafted authorize URL asks for. Extra entries (e.g. a localhost adapter
- *  in development) come from KATAGAMI_EXTRA_RESOURCES, comma-separated. */
+ *  this AS mints tokens for the Katagami front doors, not for whatever a
+ *  crafted authorize URL asks for. Known: the contribution adapter
+ *  (mcp.katagami.ai), the gallery read MCP (katagami.ai/mcp), plus extras
+ *  (e.g. a localhost adapter) from KATAGAMI_EXTRA_RESOURCES. */
 export function resolveResource(requested: string): string {
   const allowed = new Set(
-    [mcpResource(), ...(process.env.KATAGAMI_EXTRA_RESOURCES ?? "").split(",")]
+    [
+      mcpResource(),
+      readMcpResource(),
+      ...(process.env.KATAGAMI_EXTRA_RESOURCES ?? "").split(","),
+    ]
       .map((r) => r.trim().replace(/\/$/, ""))
       .filter(Boolean),
   );
@@ -187,20 +195,6 @@ export type RegisteredClient = {
   client_name: string;
   redirect_uris: string[];
 };
-
-/** Loopback redirects (CLIs) may use http; everything else must be https. */
-export function isAllowedRedirectUri(uri: string): boolean {
-  try {
-    const u = new URL(uri);
-    if (u.protocol === "https:") return true;
-    return (
-      u.protocol === "http:" &&
-      (u.hostname === "localhost" || u.hostname === "127.0.0.1" || u.hostname === "::1")
-    );
-  } catch {
-    return false;
-  }
-}
 
 export async function registerClient(meta: {
   client_name: string;

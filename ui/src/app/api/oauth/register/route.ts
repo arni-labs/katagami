@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       {
         error: "invalid_redirect_uri",
         error_description:
-          "redirect_uris must be https URLs or loopback http URLs.",
+          "redirect_uris must be https URLs, loopback http URLs, or a native-app custom scheme (Cursor, Grok Bot, VS Code).",
       },
       { status: 400, headers: CORS },
     );

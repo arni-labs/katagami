@@ -2,6 +2,7 @@ import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { verifyReadBearer } from "@/lib/catalog-auth";
+import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
 import {
   describeCatalog,
   searchDesigns,
@@ -17,9 +18,10 @@ import {
 
 // The Katagami read MCP (ARN-360), served at /mcp on katagami.ai — the same
 // Next.js app that serves the website, reading the commons through the one
-// shared gate in lib/catalog.ts. Auth is OPTIONAL: no token → the featured
-// sample tier (zero-friction); a valid Google-backed OAuth token → the full
-// catalog. Read-only: no remix/submit/nominate.
+// shared gate in lib/catalog.ts. Auth is REQUIRED: no bearer → HTTP 401 with
+// WWW-Authenticate pointing at protected-resource metadata, which is how
+// Grok Bot (and other MCP hosts) draw a connect card. A valid Google-backed
+// OAuth token → the full catalog. Read-only: no remix/submit/nominate.
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -229,7 +231,9 @@ const baseHandler = createMcpHandler(
   { serverInfo: { name: "katagami", version: "0.1.0" } },
 );
 
-// Optional auth: no/invalid token → anonymous (sample tier); valid token → full.
+// Required auth: no/invalid token → 401 + WWW-Authenticate (the connect card).
+// A valid token → full catalog. Do not answer initialize 200 anonymously —
+// that is why Grok Bot's AuthenticateMcpServer returned no_auth_link.
 const handler = withMcpAuth(
   baseHandler,
   async (_req: Request, bearer?: string): Promise<AuthInfo | undefined> => {
@@ -243,7 +247,11 @@ const handler = withMcpAuth(
       extra: { sub: id.sub, email: id.email },
     } as AuthInfo;
   },
-  { required: false },
+  {
+    required: true,
+    resourceMetadataPath: MCP_RESOURCE_METADATA_PATH,
+    resourceUrl: mcpPublicOrigin(),
+  },
 );
 
 // A human pasting the MCP URL into a browser sends a plain-HTML GET; a real

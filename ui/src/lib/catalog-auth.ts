@@ -1,10 +1,11 @@
 import "server-only";
 import { importJWK, jwtVerify } from "jose";
-import { publicJwks, isAsConfigured, mcpResource, currentGeneration } from "./oauth-as";
+import { publicJwks, isAsConfigured, mcpResource, readMcpResource, currentGeneration } from "./oauth-as";
 
 // Verify an MCP bearer for the READ tier (ARN-360). A valid, live access token
 // minted by our own AS (ARN-151) = an authenticated Katagami user → full
-// catalog; anything else → the anonymous sample. "Valid" is strict on purpose,
+// catalog. The /mcp route 401s before this when there is no bearer — that
+// challenge is the Grok Bot login card. "Valid" is strict on purpose,
 // because full-tier unlocks the whole art-style/language catalog:
 //
 //  - ES256, signed by the current AS key, with a required `exp`.
@@ -29,13 +30,15 @@ function normRes(s: string): string {
   return s.trim().replace(/\/+$/, "");
 }
 
-/** Does the token's audience name THIS MCP's resource? Only this resource —
- *  a token minted for a dev adapter (KATAGAMI_EXTRA_RESOURCES) or any other
- *  resource must NOT unlock the catalog here. Trailing slash tolerated. */
+/** Does the token's audience name a Katagami MCP resource? The gallery
+ *  read server (katagami.ai/mcp) and the contribution adapter
+ *  (mcp.katagami.ai) share this AS. A token minted for a dev adapter
+ *  (KATAGAMI_EXTRA_RESOURCES) or any other resource must NOT unlock the
+ *  catalog here. Trailing slash tolerated. */
 function audienceMatches(aud: unknown): boolean {
-  const want = normRes(mcpResource());
+  const allowed = new Set([normRes(readMcpResource()), normRes(mcpResource())]);
   const auds = Array.isArray(aud) ? aud : aud ? [aud] : [];
-  return auds.some((a) => normRes(String(a)) === want);
+  return auds.some((a) => allowed.has(normRes(String(a))));
 }
 
 // Small positive cache for grant liveness: one backend read per grant per

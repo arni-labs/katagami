@@ -1,16 +1,22 @@
-import {
-  protectedResourceHandler,
-  metadataCorsOptionsRequestHandler,
-} from "mcp-handler";
+import { NextResponse } from "next/server";
+import { metadataCorsOptionsRequestHandler } from "mcp-handler";
+import { protectedResourceDocument } from "@/lib/mcp-oauth.mjs";
 
-// RFC 9728 protected-resource metadata for the read MCP (ARN-360). Points MCP
-// clients at katagami.ai's authorization server (ARN-151) so a client that
-// wants the full catalog can sign in with Google. Anonymous access still
-// works without any of this — auth only upgrades the sample tier to full.
+// RFC 9728 protected-resource metadata for the read MCP at /mcp.
+// `resource` is the MCP URL itself (https://katagami.ai/mcp), not the
+// origin — Grok Bot and other hosts bind the token audience to this
+// identifier. The same document is served at the path-scoped URL
+// /.well-known/oauth-protected-resource/mcp.
 
-const handler = protectedResourceHandler({
-  authServerUrls: [process.env.KATAGAMI_AS_ISSUER || "https://katagami.ai"],
-});
+export const dynamic = "force-dynamic";
 
-export { handler as GET };
+export function GET() {
+  return NextResponse.json(protectedResourceDocument(), {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
+}
+
 export const OPTIONS = metadataCorsOptionsRequestHandler();
