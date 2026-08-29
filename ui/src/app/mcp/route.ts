@@ -3,7 +3,7 @@ import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { verifyReadBearer, readMcpAuthInfo, whoamiFromAuth } from "@/lib/catalog-auth";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
-import { hashPrincipal, trackMcpToolCall } from "@/lib/server-telemetry";
+import { trackMcpToolCall } from "@/lib/server-telemetry";
 import {
   describeCatalog,
   searchDesigns,
@@ -55,25 +55,23 @@ function withUsageTracking(server: McpServer): void {
   ) =>
     original(name, def, async (args: unknown, extra: unknown) => {
       const started = Date.now();
-      const sub = authOf(extra)?.extra?.sub;
-      const userHash = sub ? await hashPrincipal(sub) : undefined;
       try {
         const result = await handler(args, extra);
+        // Hash + emit only inside after() — a hash/intake throw must not
+        // 500 the tool or inflate duration_ms.
         trackMcpToolCall({
           tool: name,
-          tier: tierOf(extra),
           outcome: result?.isError ? "error" : "success",
           durationMs: Date.now() - started,
-          userHash,
+          sub: authOf(extra)?.extra?.sub,
         });
         return result;
       } catch (err) {
         trackMcpToolCall({
           tool: name,
-          tier: tierOf(extra),
           outcome: "exception",
           durationMs: Date.now() - started,
-          userHash,
+          sub: authOf(extra)?.extra?.sub,
           errorKind: err instanceof Error ? err.name : "unknown",
         });
         throw err;

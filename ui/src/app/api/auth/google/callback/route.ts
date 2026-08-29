@@ -1,9 +1,10 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { exchangeGoogleCode } from "@/lib/google-oidc";
 import { countMembers, upsertMember } from "@/lib/oauth-as";
 import {
   emitServerEvent,
   hashPrincipal,
+  runAfter,
   trackServerEvent,
 } from "@/lib/server-telemetry";
 import {
@@ -79,8 +80,16 @@ export async function GET(req: NextRequest) {
   // to land must not look like a returning user (registration:false).
   if (user) {
     const sub = user.sub;
-    after(async () => {
-      const userHash = await hashPrincipal(sub);
+    // Guarded like trackServerEvent: a throw from Next after must not skip
+    // the katagami_user cookie after a successful Google exchange.
+    runAfter(async () => {
+      let userHash: string | undefined;
+      try {
+        const hashed = await hashPrincipal(sub);
+        if (typeof hashed === "string") userHash = hashed;
+      } catch (err) {
+        console.error("[telemetry] hashPrincipal failed", err);
+      }
       let membersTotal: number | undefined;
       try {
         membersTotal = await countMembers();

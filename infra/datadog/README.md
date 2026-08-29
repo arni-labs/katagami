@@ -107,29 +107,29 @@ the registered-user count, and every MCP tool call at katagami.ai/mcp — are
 emitted from the Vercel routes as **Datadog logs** with
 `service:katagami-server`, via `ui/src/lib/server-telemetry.ts`.
 
-**Transport.** Prefer a server-only `DD_API_KEY` on the official Logs
-intake (`http-intake.logs.datadoghq.com`) as the `DD-API-KEY` header. When
-that key is unset, fall back to the public RUM client token on
-`browser-http-intake.logs` as a **query param** — never as `DD-API-KEY`
-(that header is the secret API-key slot; putting the browser token there
-is spoofable). Events ride `next/server`'s `after()`, so they never delay
-a response and still complete before the function freezes. `env:` is
+**Transport.** Server events use the official Logs intake
+(`http-intake.logs.datadoghq.com`) authenticated with a server-only
+`DD_API_KEY`. There is **no public-RUM fallback**: a browser token must
+not authenticate `env:production service:katagami-server` (anyone who can
+read the bundle could forge those events). Unset `DD_API_KEY` → fail
+closed (`emitted: false`). Rita/Howl set the key in Vercel; do not invent
+a value. Hash + emit run only inside a guarded `after()` so a telemetry
+throw cannot 500 an MCP tool or skip the Google session cookie. `env:` is
 `production` on the production deploy, `preview` on previews,
 `local-verify` elsewhere; every dashboard query scopes to `env:production`.
-A preview that has neither `DD_API_KEY` nor `NEXT_PUBLIC_DD_RUM_CLIENT_TOKEN`
-in that environment reports `emitted: false` — enable one of those vars on
-Preview if you want the probe to light up.
 
-**Privacy.** Google subs travel only as a peppered HMAC truncated to 16 hex
-(`@user_hash`); emails, names, and bearer tokens never reach Datadog —
-identity-shaped attribute keys (exact names and common variants) are
-stripped at emit time, enforced by `scripts/check-telemetry-contract.mjs`.
+**Privacy.** Google subs travel only as an HMAC truncated to 16 hex
+(`@user_hash`) when `KATAGAMI_TELEMETRY_PEPPER` is set; unset pepper omits
+`user_hash` rather than falling back to a repo string. Emails, names, and
+bearer tokens never reach Datadog — identity-shaped attribute keys (exact
+names and common variants) are stripped at emit time, enforced by
+`scripts/check-telemetry-contract.mjs`.
 
 **Events** (all under `service:katagami-server`, filter with `@evt:<name>`):
 
 | `@evt` | Fired by | Attributes |
 | --- | --- | --- |
-| `mcp_tool_call` | every tool call at `/mcp` (auto-instrumented via the patched `registerTool` in `ui/src/app/mcp/route.ts`) | `@tool`, `@tier` (sample/full), `@outcome` (success/error/exception), `@duration_ms`, `@user_hash` (full tier) |
+| `mcp_tool_call` | every **tool** call at `/mcp` (auto-instrumented via the patched `registerTool` in `ui/src/app/mcp/route.ts`) | `@tool`, `@outcome` (success/error/exception), `@duration_ms`, `@user_hash`. No `@tier:sample` — `/mcp` requires a bearer, so the sample/full split is dead; initialize 401s are untracked on purpose |
 | `auth_login` | every successful Google sign-in (`api/auth/google/callback`) | `@registration` (true = first sign-in of this account), `@user_hash`, `@members_total` |
 | `auth_login_failed` | failed sign-in (state mismatch / Google exchange) | `@reason` |
 | `members_snapshot` | daily Vercel cron → `/api/telemetry/members` (see `ui/vercel.json`) | `@members_total` |
@@ -147,16 +147,22 @@ sign-ins.
   and **"MCP usage — katagami.ai/mcp"**, next to the existing RUM groups.
 - Logs Explorer — `service:katagami-server env:production`.
 - Long-term history: log-based metrics `katagami.mcp.tool_calls`
-  (tags: env/tool/tier/outcome), `katagami.auth.logins` (env/registration),
-  `katagami.members.total` (distribution, env). Logs age out with index
-  retention (~15 days); these metrics keep 15 months, counting from
-  2026-08-29 onward.
+  (tags: env/tool/outcome), `katagami.auth.logins` (env/registration),
+  `katagami.members.total` (distribution, env). The old `tier` tag on the
+  MCP metric will sit at 0 sample — `/mcp` no longer has a sample path.
+  Logs age out with index retention (~15 days); these metrics keep 15
+  months, counting from 2026-08-29 onward.
 
-**`CRON_SECRET` is required before this route exists on master.** Vercel
-cron sends `Authorization: Bearer <CRON_SECRET>` to
-`/api/telemetry/members`. Unset secret, missing bearer, or a wrong bearer
-→ 401 with no `members_total`. Howl/Rita set the secret in Vercel
-(Production; Preview too if that URL is reachable). Do not invent a value
-in the repo. A real `DD_API_KEY` is optional; without it the RUM-token
-browser intake still emits, and adding an API key later unlocks the
-official logs path (and, later, direct metric submission).
+**Before this route exists on master, Rita/Howl must set in Vercel:**
+
+- `CRON_SECRET` — Vercel cron sends `Authorization: Bearer <CRON_SECRET>`
+  to `/api/telemetry/members`. Unset → 401 forever, no `members_total`
+  leak. Do not invent a value in the repo.
+- `DD_API_KEY` — server telemetry fails closed without it. Do not invent
+  a value.
+- `KATAGAMI_TELEMETRY_PEPPER` — optional for emit, required for
+  `@user_hash`. Do not invent a value.
+
+A production Google `auth_login` has not been verified end-to-end on this
+PR (cannot complete a real Google exchange from this agent). Components
+are covered; the live sign-in event is a follow-up on a shipped deploy.

@@ -2,6 +2,7 @@ import "server-only";
 
 import { after } from "next/server";
 import {
+  hashPrincipal,
   resolveLogsIntake,
   telemetryEnabled,
   logPayload,
@@ -14,19 +15,40 @@ export { hashPrincipal, authorizeCronRequest } from "./server-telemetry-core.mjs
 // cannot see: MCP tool calls and sign-in outcomes happen in server routes,
 // not in the visitor's browser.
 //
-// Transport: Datadog Logs HTTP intake.
-//  - Prefer DD_API_KEY (server-only) on http-intake.logs as DD-API-KEY.
-//  - Else the public RUM client token on browser-http-intake as a query
-//    param — never as the DD-API-KEY header (that slot is the secret API
-//    key; stuffing the browser token there is spoofable and the Greptile P1).
-// Absent credentials → permanent no-op. Emission rides next/server after()
-// so it never delays a response and still completes before Vercel freezes.
+// Transport: Datadog Logs HTTP intake, authenticated only with a server-only
+// DD_API_KEY. There is no public-RUM fallback — a browser token must not
+// authenticate env:production service:katagami-server events. Unset key →
+// permanent no-op (fail closed). Rita/Howl set DD_API_KEY in Vercel.
+//
+// Hash + emit run only inside runAfter() so a telemetry throw cannot 500 an
+// MCP tool or skip the Google session cookie.
 
 type AttrValue = string | number | boolean | undefined | null;
 export type TelemetryStatus = "info" | "warn" | "error";
 
 export function serverTelemetryEnabled(): boolean {
   return telemetryEnabled();
+}
+
+/**
+ * Schedule work after the response. `after()` itself can throw (outside a
+ * request scope); the task can too. Neither must break the route.
+ */
+export function runAfter(task: () => void | Promise<void>): void {
+  const safe = () => {
+    try {
+      return Promise.resolve(task()).catch((err) => {
+        console.error("[telemetry] after() task failed", err);
+      });
+    } catch (err) {
+      console.error("[telemetry] after() task failed", err);
+    }
+  };
+  try {
+    after(safe);
+  } catch {
+    void safe();
+  }
 }
 
 /** POST one event to the logs intake and await the result. Use inside an
@@ -48,51 +70,53 @@ export async function emitServerEvent(
       console.error(`[telemetry] intake ${res.status} for ${evt}`);
     }
   } catch (err) {
-    // Surfaced to the function log, never to the caller: telemetry must not
-    // break the route it observes.
     console.error(`[telemetry] emit failed for ${evt}`, err);
   }
 }
 
-/** Fire-and-forget an event without delaying the response: attributes are
- *  captured now, the POST runs in after(). Falls back to a detached promise
- *  outside a request scope (scripts, tests). */
+/** Fire-and-forget an event without delaying the response. */
 export function trackServerEvent(
   evt: string,
   attributes: Record<string, AttrValue> = {},
   status: TelemetryStatus = "info",
 ): void {
   if (!serverTelemetryEnabled()) return;
-  const send = () => emitServerEvent(evt, attributes, status);
-  try {
-    after(send);
-  } catch {
-    void send();
-  }
+  runAfter(() => emitServerEvent(evt, attributes, status));
 }
 
 // ---- Typed events (the API routes should use) ------------------------------
 
-/** One MCP tool invocation at /mcp: which tool, which auth tier, how it went,
- *  how long it took, and (full tier only) the hashed caller. */
+/** One MCP tool invocation at /mcp. Hash + emit happen inside after() so a
+ *  telemetry failure cannot 500 the tool. /mcp requires a bearer — there is
+ *  no sample tier on this URL; initialize 401s are untracked on purpose. */
 export function trackMcpToolCall(d: {
   tool: string;
-  tier: "sample" | "full";
   outcome: "success" | "error" | "exception";
   durationMs: number;
-  userHash?: string;
+  sub?: string;
   errorKind?: string;
 }): void {
-  trackServerEvent(
-    "mcp_tool_call",
-    {
-      tool: d.tool,
-      tier: d.tier,
-      outcome: d.outcome,
-      duration_ms: d.durationMs,
-      user_hash: d.userHash,
-      error_kind: d.errorKind,
-    },
-    d.outcome === "success" ? "info" : "error",
-  );
+  const { tool, outcome, durationMs, sub, errorKind } = d;
+  runAfter(async () => {
+    let userHash: string | undefined;
+    try {
+      if (sub) {
+        const hashed = await hashPrincipal(sub);
+        if (typeof hashed === "string") userHash = hashed;
+      }
+    } catch (err) {
+      console.error("[telemetry] hashPrincipal failed", err);
+    }
+    await emitServerEvent(
+      "mcp_tool_call",
+      {
+        tool,
+        outcome,
+        duration_ms: durationMs,
+        user_hash: userHash,
+        error_kind: errorKind,
+      },
+      outcome === "success" ? "info" : "error",
+    );
+  });
 }

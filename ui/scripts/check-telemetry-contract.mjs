@@ -1,7 +1,7 @@
 // Server telemetry contract (ARN-436): sign-in + MCP usage stay wired,
-// PII cannot reach Datadog, cron is closed without CRON_SECRET, and the
-// public RUM token is never sent as DD-API-KEY. Greps lock the wiring;
-// the imports below exercise the helpers (this file used to be grep-only).
+// PII cannot reach Datadog, cron is closed without CRON_SECRET, production
+// server events fail closed without DD_API_KEY, and hash+emit never run on
+// the request path. Greps lock the wiring; the imports exercise the helpers.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -11,6 +11,7 @@ import {
   cleanAttrs,
   hashPrincipal,
   isForbiddenAttrKey,
+  principalPepper,
   resolveLogsIntake,
 } from "../src/lib/server-telemetry-core.mjs";
 
@@ -38,15 +39,12 @@ const vercelJson = read("vercel.json");
 }
 
 {
-  const rum = resolveLogsIntake({
-    NEXT_PUBLIC_DD_RUM_CLIENT_TOKEN: "pub-rum-token",
-    NEXT_PUBLIC_DD_RUM_SITE: "datadoghq.com",
-  });
-  assert.ok(rum, "RUM token enables browser intake");
-  assert.equal(rum.headers["DD-API-KEY"], undefined, "RUM token is not DD-API-KEY");
-  assert.match(rum.url, /browser-http-intake\.logs\.datadoghq\.com/);
-  assert.match(rum.url, /dd-api-key=pub-rum-token/);
-  console.log("ok: RUM client token is not sent as DD-API-KEY");
+  assert.equal(
+    resolveLogsIntake({ NEXT_PUBLIC_DD_RUM_CLIENT_TOKEN: "pub-rum-token" }),
+    null,
+    "RUM token alone does not enable server intake",
+  );
+  console.log("ok: public RUM token does not authenticate server events");
 }
 
 {
@@ -54,15 +52,17 @@ const vercelJson = read("vercel.json");
     DD_API_KEY: "real-api-key",
     NEXT_PUBLIC_DD_RUM_CLIENT_TOKEN: "pub-rum-token",
   });
+  assert.ok(api);
   assert.equal(api.headers["DD-API-KEY"], "real-api-key");
   assert.notEqual(api.headers["DD-API-KEY"], "pub-rum-token");
   assert.match(api.url, /https:\/\/http-intake\.logs\./);
+  assert.doesNotMatch(api.url, /browser-http-intake/);
   console.log("ok: DD_API_KEY path uses the server key, not the RUM token");
 }
 
 {
   assert.equal(resolveLogsIntake({}), null);
-  console.log("ok: no credentials → intake is null (no-op)");
+  console.log("ok: no DD_API_KEY → intake is null (fail closed)");
 }
 
 {
@@ -99,13 +99,16 @@ const vercelJson = read("vercel.json");
 
 {
   const sub = "google-oauth2|12345";
-  const hashed = await hashPrincipal(sub);
+  const env = { KATAGAMI_TELEMETRY_PEPPER: "contract-test-pepper" };
+  const hashed = await hashPrincipal(sub, env);
   const raw = createHash("sha256").update(sub).digest("hex").slice(0, 16);
   assert.match(hashed, /^[0-9a-f]{16}$/);
   assert.notEqual(hashed, raw, "hash is not a raw unsalted sha256-16 of the sub");
-  assert.equal(hashed, await hashPrincipal(sub), "hash is stable");
-  assert.notEqual(hashed, await hashPrincipal("other-sub"));
-  console.log("ok: hashPrincipal is peppered HMAC, not raw unsalted sha256-16");
+  assert.equal(hashed, await hashPrincipal(sub, env), "hash is stable");
+  assert.notEqual(hashed, await hashPrincipal("other-sub", env));
+  assert.equal(await hashPrincipal(sub, {}), undefined, "unset pepper omits user_hash");
+  assert.equal(principalPepper({}), "");
+  console.log("ok: hashPrincipal uses env pepper; unset pepper omits user_hash");
 }
 
 // --- Wiring greps -----------------------------------------------------------
@@ -115,8 +118,9 @@ const required = [
   [" /mcp still uses readMcpAuthInfo", mcp, /readMcpAuthInfo\(bearer, verifyReadBearer\)/],
   [" /mcp still sets resourceUrl", mcp, /resourceUrl:\s*mcpPublicOrigin\(\)/],
   ["MCP tools are auto-instrumented", mcp, /withUsageTracking\(server\)/],
-  ["MCP events carry tool, tier, outcome, duration", mcp, /trackMcpToolCall\(\{\s*tool: name,\s*tier: tierOf\(extra\),\s*outcome/],
-  ["MCP caller identity is hashed from extra.sub", mcp, /sub \? await hashPrincipal\(sub\) : undefined/],
+  ["MCP events carry tool, outcome, duration (no sample tier)", mcp, /trackMcpToolCall\(\{\s*tool: name,\s*outcome/],
+  ["MCP wrapper does not hash on the request path", mcp, /^(?![\s\S]*hashPrincipal)[\s\S]*trackMcpToolCall/],
+  ["MCP wrapper passes extra.sub into after(), not a precomputed hash", mcp, /sub: authOf\(extra\)\?\.extra\?\.sub/],
   ["AS still exports SCOPE_READ", oauthAs, /export \{[^}]*SCOPE_READ/],
   ["AS still mints scope from resource", oauthAs, /scopeForResource\(resource\)/],
   ["successful sign-ins emit auth_login", callback, /emitServerEvent\("auth_login"/],
@@ -124,15 +128,19 @@ const required = [
   ["failed sign-ins are visible too", callback, /auth_login_failed/],
   ["Google exchange throws emit auth_login_failed", callback, /Google exchange failed/],
   ["upsert failure omits registration", callback, /\.\.\.\(upsertOk \? \{ registration \} : \{\}\)/],
+  ["sign-in after() is guarded (cookie cannot be skipped)", callback, /runAfter\(/],
+  ["callback does not call after() unguarded", callback, /^(?![\s\S]*\bafter\()[\s\S]*runAfter/],
   ["upsertMember reports created-vs-existing", oauthAs, /Promise<\{ created: boolean \}>/],
   ["countMembers filters on has_identity", oauthAs, /has_identity eq true/],
   ["daily members snapshot emits members_total", snapshot, /emitServerEvent\("members_snapshot"/],
   ["members snapshot uses authorizeCronRequest", snapshot, /authorizeCronRequest\(/],
   ["members snapshot cron is scheduled", vercelJson, /\/api\/telemetry\/members/],
-  ["emission rides next/server after()", telemetry, /after\(send\)/],
+  ["runAfter guards next/server after()", telemetry, /export function runAfter/],
+  ["hash+emit for MCP tools runs inside runAfter", telemetry, /runAfter\(async \(\) => \{[\s\S]*hashPrincipal/],
   ["telemetry no-ops without credentials", telemetry, /if \(!intake\) return/],
-  ["hash is peppered HMAC, not raw sha256(sub)", core, /PRINCIPAL_PEPPER/],
-  ["RUM token path is browser intake, not DD-API-KEY", core, /browser-http-intake\.logs/],
+  ["pepper comes from env, not a repo string", core, /KATAGAMI_TELEMETRY_PEPPER/],
+  ["no compile-time PRINCIPAL_PEPPER fallback", core, /^(?![\s\S]*PRINCIPAL_PEPPER = )[\s\S]*principalPepper/],
+  ["no RUM-token server intake", core, /if \(!apiKey\) return null/],
 ];
 
 let failed = 0;
@@ -145,11 +153,18 @@ for (const [name, source, pattern] of required) {
   }
 }
 
-if (/"DD-API-KEY"\s*:\s*clientToken\(\)/.test(telemetry) || /"DD-API-KEY"\s*:\s*rumToken/.test(core)) {
-  console.error("MISSING: RUM client token must not be assigned to DD-API-KEY");
+if (/"DD-API-KEY"\s*:\s*clientToken\(\)/.test(telemetry) || /NEXT_PUBLIC_DD_RUM_CLIENT_TOKEN/.test(core)) {
+  console.error("MISSING: RUM client token must not be used for server intake");
   failed += 1;
 } else {
-  console.log("ok: no RUM client token assigned to DD-API-KEY");
+  console.log("ok: no RUM client token on the server intake path");
+}
+
+if (/tier:\s*tierOf|tier:\s*"sample"/.test(mcp) || /tier:\s*"sample"/.test(telemetry)) {
+  console.error("MISSING: /mcp telemetry must not emit a dead sample tier");
+  failed += 1;
+} else {
+  console.log("ok: /mcp telemetry does not emit @tier:sample");
 }
 
 if (failed > 0) {

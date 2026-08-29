@@ -4,9 +4,13 @@
 
 const SERVICE = "katagami-server";
 
-/** Compile-time pepper — not a Rita-provisioned secret. Stops user_hash from
- *  being a raw unsalted sha256 of the Google sub (rainbow-table reversible). */
-const PRINCIPAL_PEPPER = "katagami.telemetry.v1";
+/** HMAC pepper for user_hash. Unset → hashPrincipal returns undefined and
+ *  events omit user_hash. Rita/Howl set KATAGAMI_TELEMETRY_PEPPER in Vercel;
+ *  this file does not invent a fallback string (a repo pepper plus 8 members
+ *  is matchable). */
+export function principalPepper(env = process.env) {
+  return env.KATAGAMI_TELEMETRY_PEPPER || "";
+}
 
 const ALLOWED_ATTR_KEYS = new Set(["user_hash"]);
 
@@ -32,12 +36,14 @@ export function cleanAttrs(attributes) {
   return out;
 }
 
-/** HMAC-SHA256(pepper, sub), truncated to 16 hex. Stable per sub, not a raw
- *  unsalted digest of the Google subject. */
-export async function hashPrincipal(sub) {
+/** HMAC-SHA256(pepper, sub), truncated to 16 hex. Returns undefined when
+ *  KATAGAMI_TELEMETRY_PEPPER is unset — never a raw unsalted digest. */
+export async function hashPrincipal(sub, env = process.env) {
+  const pepper = principalPepper(env);
+  if (!pepper) return undefined;
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(PRINCIPAL_PEPPER),
+    new TextEncoder().encode(pepper),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -61,35 +67,23 @@ function logsSite(env) {
 /**
  * Resolve the Datadog logs intake.
  *
- * - `DD_API_KEY` (server-only) → official logs intake + DD-API-KEY header.
- * - else the public RUM client token → browser-http-intake with the token
- *   as a query param. Never put the RUM token in a DD-API-KEY header
- *   (Greptile P1: that header is the secret-API-key slot).
+ * Server events fail closed without `DD_API_KEY`. The public RUM client
+ * token must not authenticate `env:production service:katagami-server`
+ * (anyone who can read the browser bundle could forge those events).
+ * Rita/Howl set `DD_API_KEY` in Vercel; do not invent a value.
  * @returns {{ url: string, headers: Record<string, string> } | null}
  */
 export function resolveLogsIntake(env = process.env) {
   const site = logsSite(env);
   const apiKey = env.DD_API_KEY || "";
-  const rumToken = env.NEXT_PUBLIC_DD_RUM_CLIENT_TOKEN || "";
-  /** @type {Record<string, string>} */
-  const json = { "Content-Type": "application/json" };
-  if (apiKey) {
-    return {
-      url: `https://http-intake.logs.${site}/api/v2/logs`,
-      headers: { ...json, "DD-API-KEY": apiKey },
-    };
-  }
-  if (rumToken) {
-    const qs = new URLSearchParams({
-      "dd-api-key": rumToken,
-      ddsource: "browser",
-    });
-    return {
-      url: `https://browser-http-intake.logs.${site}/api/v2/logs?${qs}`,
-      headers: json,
-    };
-  }
-  return null;
+  if (!apiKey) return null;
+  return {
+    url: `https://http-intake.logs.${site}/api/v2/logs`,
+    headers: {
+      "Content-Type": "application/json",
+      "DD-API-KEY": apiKey,
+    },
+  };
 }
 
 export function telemetryEnabled(env = process.env) {
