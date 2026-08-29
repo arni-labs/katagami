@@ -141,8 +141,8 @@ export default function ConnectPage() {
             <CopyButton text={MCP_URL} label="Copy URL" variant="ink" artifact="mcp-url" />
           </div>
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
-            Works instantly with no login — you get a curated sample of the
-            catalog. Sign in with Google for the full thing.
+            Connecting this URL asks you to sign in with Google — tap the
+            login card, Google, done. That unlocks the full catalog.
           </p>
         </StickyNote>
       </section>
@@ -267,10 +267,9 @@ export default function ConnectPage() {
             Access
           </Stamp>
           <p className="mt-4 text-[17px] leading-relaxed text-foreground">
-            Anonymous gets a curated <strong>sample</strong> of the catalog —
-            no setup, no keys. Sign in with Google for the{" "}
-            <strong>full catalog</strong>: OAuth-capable clients prompt you
-            automatically, and the server advertises its authorization server
+            Connecting asks you to <strong>sign in with Google</strong>.
+            OAuth-capable clients show a login card on the first handshake —
+            tap, Google, done. The server advertises its authorization server
             at{" "}
             <code className="break-all font-mono text-[14px]">
               /.well-known/oauth-protected-resource

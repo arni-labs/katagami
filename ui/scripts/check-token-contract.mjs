@@ -129,6 +129,7 @@ const required = [
   // Agent token → Agent acting for human: keeps agent identity AND now carries
   // the owning human's role + generation so sign-out-everywhere reaches it.
   ["agent token declares agent_type contributor", agent, /agent_type: "contributor"/],
+  ["agent token scope is minted from the resource", agent, /scopeForResource\(resource\)/],
   ["agent token carries client_id", agent, /client_id: p\.client_id/],
   ["agent token carries role", agent, /\brole,/],
   ["agent token carries auth_generation", agent, /auth_generation: generation/],
