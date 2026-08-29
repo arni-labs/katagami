@@ -99,3 +99,58 @@ agents fetching specs — are **not** RUM-visible, since they aren't browser
 interactions. If we want those counted too, add a log line in each `route.ts`
 and a Vercel→Datadog log drain (or count them from Vercel/edge logs). Tracked as
 a follow-up, not part of this change.
+
+## Server-side telemetry: sign-ins, registered users, MCP usage (ARN-436)
+
+RUM only sees the browser. The signals that live in server routes — sign-ins,
+the registered-user count, and every MCP tool call at katagami.ai/mcp — are
+emitted from the Vercel routes as **Datadog logs** with
+`service:katagami-server`, via `ui/src/lib/server-telemetry.ts`.
+
+**Transport.** The Logs HTTP intake (`http-intake.logs.datadoghq.com`)
+authenticated with the SAME public RUM client token the browser SDK uses —
+client tokens may submit logs (verified live 2026-08-29). So this works from
+Vercel serverless with **no agent, no log drain, and no new secret**: if RUM is
+configured, server telemetry is on. Events are sent via `next/server`'s
+`after()`, so they never delay a response and still complete before the
+function freezes. `env:` is `production` on the production deploy, `preview`
+on previews, `local-verify` elsewhere; every dashboard query scopes to
+`env:production`.
+
+**Privacy.** Google subs travel only as truncated sha256 hashes
+(`@user_hash`); emails, names, and bearer tokens never reach Datadog —
+identity-shaped attribute keys are stripped at emit time
+(`FORBIDDEN_ATTR_KEYS`), enforced by `scripts/check-telemetry-contract.mjs`.
+
+**Events** (all under `service:katagami-server`, filter with `@evt:<name>`):
+
+| `@evt` | Fired by | Attributes |
+| --- | --- | --- |
+| `mcp_tool_call` | every tool call at `/mcp` (auto-instrumented via the patched `registerTool` in `ui/src/app/mcp/route.ts`) | `@tool`, `@tier` (sample/full), `@outcome` (success/error/exception), `@duration_ms`, `@user_hash` (full tier) |
+| `auth_login` | every successful Google sign-in (`api/auth/google/callback`) | `@registration` (true = first sign-in of this account), `@user_hash`, `@members_total` |
+| `auth_login_failed` | failed sign-in (state mismatch / Google exchange) | `@reason` |
+| `members_snapshot` | daily Vercel cron → `/api/telemetry/members` (see `ui/vercel.json`) | `@members_total` |
+
+**Registered users — source of truth.** The Temper `Members` entity set
+(created by `upsertMember` at sign-in). "Registered" = `has_identity eq true`,
+which excludes the placeholder rows Temper auto-creates when an action is
+dispatched on a missing id. `countMembers()` in `ui/src/lib/oauth-as.ts` is the
+one counting function; the cron keeps the dashboard tile fresh on days with no
+sign-ins.
+
+**Where to look.**
+
+- Dashboard `2ki-8vx-p5u` — groups **"Accounts — registered users & sign-ins"**
+  and **"MCP usage — katagami.ai/mcp"**, next to the existing RUM groups.
+- Logs Explorer — `service:katagami-server env:production`.
+- Long-term history: log-based metrics `katagami.mcp.tool_calls`
+  (tags: env/tool/tier/outcome), `katagami.auth.logins` (env/registration),
+  `katagami.members.total` (distribution, env). Logs age out with index
+  retention (~15 days); these metrics keep 15 months, counting from
+  2026-08-29 onward.
+
+**Optional hardening.** Set `CRON_SECRET` in Vercel to lock
+`/api/telemetry/members` to the cron caller (without it the route is public
+but only returns a member count and emits one log line per call). A real
+`DD_API_KEY` is still not required by anything here; adding one would unlock
+direct metric submission if the log-based path ever becomes limiting.

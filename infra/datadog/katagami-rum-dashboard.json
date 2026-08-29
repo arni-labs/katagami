@@ -1,629 +1,1777 @@
 {
-  "title": "Katagami — Visitors & Usage (RUM)",
-  "description": "What's getting traction on katagami.ai: unique visitors, visits, page views, which languages get viewed / copied / downloaded, which buttons are clicked on language pages, and what's searched. Fed by Datadog RUM (see infra/datadog/README.md). Import via Datadog → Dashboards → New Dashboard → Import dashboard JSON.\n\nEvery query is scoped to `env:production` (literal) so verification/test events (e.g. env:local-verify) are excluded. Language popularity is measured as UNIQUE VISITORS — CARDINALITY(@usr.anonymous_id) — so one person reopening a page counts once. Language rows link through to katagami.ai.\n\nNames: page-view, copy and download events carry @context.language_id (id). The readable @context.language_name arrives on `language_view`/`copy`/`download` events once the instrumented UI is deployed (no backfill); until then the language rollups key on id / url_path.",
-  "layout_type": "ordered",
-  "reflow_type": "fixed",
-  "template_variables": [],
+  "title": "Katagami \u2014 Visitors & Usage (RUM)",
+  "description": "What's getting traction on katagami.ai: unique visitors, visits, page views, which languages get viewed / copied / downloaded, which buttons are clicked on language pages, and what's searched. Fed by Datadog RUM (see infra/datadog/README.md). Import via Datadog \u2192 Dashboards \u2192 New Dashboard \u2192 Import dashboard JSON.\n\nEvery query is scoped to `env:production` (literal) so verification/test events (e.g. env:local-verify) are excluded. Language popularity is measured as UNIQUE VISITORS \u2014 CARDINALITY(@usr.anonymous_id) \u2014 so one person reopening a page counts once. Language rows link through to katagami.ai.\n\nNames: page-view, copy and download events carry @context.language_id (id). The readable @context.language_name arrives on `language_view`/`copy`/`download` events once the instrumented UI is deployed (no backfill); until then the language rollups key on id / url_path.\n\nServer-side signals (ARN-436): the Accounts group shows total registered users, registrations vs logins per day, and failed sign-ins; the MCP usage group shows tool calls at katagami.ai/mcp by tool, auth tier, outcome, and latency. Both are fed by `service:katagami-server` logs emitted from the Vercel routes (ui/src/lib/server-telemetry.ts) \u2014 see infra/datadog/README.md.",
   "widgets": [
     {
       "definition": {
-        "type": "note",
-        "content": "## Katagami — Visitors & Usage\nUnique visitors, visits, page views, per-language traction (views / copies / downloads), language-page buttons, copies & search. Scoped to env:production. Popularity = unique visitors (deduped by anonymous id). Data starts the day RUM credentials go live; there is no historical backfill.",
         "background_color": "white",
+        "content": "## Katagami \u2014 Visitors & Usage\nUnique visitors, visits, page views, per-language traction (views / copies / downloads), language-page buttons, copies & search. Scoped to env:production. Popularity = unique visitors (deduped by anonymous id). Data starts the day RUM credentials go live; there is no historical backfill.",
         "font_size": "14",
-        "text_align": "left",
-        "vertical_align": "center",
+        "has_padding": true,
         "show_tick": false,
-        "tick_pos": "50%",
+        "text_align": "left",
         "tick_edge": "left",
-        "has_padding": true
+        "tick_pos": "50%",
+        "type": "note",
+        "vertical_align": "center"
       },
-      "layout": { "x": 0, "y": 0, "width": 12, "height": 1 }
+      "layout": {
+        "height": 1,
+        "width": 12,
+        "x": 0,
+        "y": 0
+      }
     },
     {
       "definition": {
+        "layout_type": "ordered",
         "title": "Audience",
         "type": "group",
-        "layout_type": "ordered",
         "widgets": [
           {
             "definition": {
-              "title": "Unique visitors",
-              "type": "query_value",
+              "autoscale": true,
+              "precision": 0,
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "visitors"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "cardinality",
+                        "metric": "@usr.anonymous_id"
+                      },
                       "data_source": "rum",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
                       "name": "visitors",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:session @session.type:user" },
-                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
-                      "group_by": []
+                      "search": {
+                        "query": "env:production @type:session @session.type:user"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "visitors" }]
+                  "response_format": "scalar"
                 }
               ],
-              "autoscale": true,
-              "precision": 0
+              "title": "Unique visitors",
+              "type": "query_value"
             },
-            "layout": { "x": 0, "y": 0, "width": 3, "height": 2 }
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 0
+            }
           },
           {
             "definition": {
-              "title": "Visits (sessions)",
-              "type": "query_value",
+              "autoscale": true,
+              "precision": 0,
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "visits"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
                       "name": "visits",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:session @session.type:user" },
-                      "compute": { "aggregation": "count" },
-                      "group_by": []
+                      "search": {
+                        "query": "env:production @type:session @session.type:user"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "visits" }]
+                  "response_format": "scalar"
                 }
               ],
-              "autoscale": true,
-              "precision": 0
+              "title": "Visits (sessions)",
+              "type": "query_value"
             },
-            "layout": { "x": 3, "y": 0, "width": 3, "height": 2 }
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 3,
+              "y": 0
+            }
           },
           {
             "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "views"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "rum",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "views",
+                      "search": {
+                        "query": "env:production @type:view"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
               "title": "Page views",
-              "type": "query_value",
-              "requests": [
-                {
-                  "response_format": "scalar",
-                  "queries": [
-                    {
-                      "data_source": "rum",
-                      "name": "views",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:view" },
-                      "compute": { "aggregation": "count" },
-                      "group_by": []
-                    }
-                  ],
-                  "formulas": [{ "formula": "views" }]
-                }
-              ],
-              "autoscale": true,
-              "precision": 0
+              "type": "query_value"
             },
-            "layout": { "x": 6, "y": 0, "width": 2, "height": 2 }
+            "layout": {
+              "height": 2,
+              "width": 2,
+              "x": 6,
+              "y": 0
+            }
           },
           {
             "definition": {
-              "title": "Engagement actions (copy / download / clicks)",
-              "type": "query_value",
+              "autoscale": true,
+              "precision": 0,
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "actions"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
                       "name": "actions",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.type:custom" },
-                      "compute": { "aggregation": "count" },
-                      "group_by": []
+                      "search": {
+                        "query": "env:production @type:action @action.type:custom"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "actions" }]
+                  "response_format": "scalar"
                 }
               ],
-              "autoscale": true,
-              "precision": 0
+              "title": "Engagement actions (copy / download / clicks)",
+              "type": "query_value"
             },
-            "layout": { "x": 8, "y": 0, "width": 2, "height": 2 }
+            "layout": {
+              "height": 2,
+              "width": 2,
+              "x": 8,
+              "y": 0
+            }
           },
           {
             "definition": {
-              "title": "Avg pages / session",
-              "type": "query_value",
+              "autoscale": true,
+              "precision": 1,
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "views / sessions"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
                       "name": "views",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:view" },
-                      "compute": { "aggregation": "count" },
-                      "group_by": []
+                      "search": {
+                        "query": "env:production @type:view"
+                      }
                     },
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
                       "name": "sessions",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:session @session.type:user" },
-                      "compute": { "aggregation": "count" },
-                      "group_by": []
+                      "search": {
+                        "query": "env:production @type:session @session.type:user"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "views / sessions" }]
+                  "response_format": "scalar"
                 }
               ],
-              "autoscale": true,
-              "precision": 1
+              "title": "Avg pages / session",
+              "type": "query_value"
             },
-            "layout": { "x": 10, "y": 0, "width": 2, "height": 2 }
+            "layout": {
+              "height": 2,
+              "width": 2,
+              "x": 10,
+              "y": 0
+            }
           },
           {
             "definition": {
-              "title": "Unique visitors over time",
-              "type": "timeseries",
               "requests": [
                 {
-                  "response_format": "timeseries",
-                  "queries": [
+                  "display_type": "bars",
+                  "formulas": [
                     {
-                      "data_source": "rum",
-                      "name": "visitors",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:session @session.type:user" },
-                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
-                      "group_by": []
+                      "formula": "visitors"
                     }
                   ],
-                  "formulas": [{ "formula": "visitors" }],
-                  "display_type": "bars"
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "cardinality",
+                        "metric": "@usr.anonymous_id"
+                      },
+                      "data_source": "rum",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "visitors",
+                      "search": {
+                        "query": "env:production @type:session @session.type:user"
+                      }
+                    }
+                  ],
+                  "response_format": "timeseries"
                 }
-              ]
+              ],
+              "title": "Unique visitors over time",
+              "type": "timeseries"
             },
-            "layout": { "x": 0, "y": 2, "width": 8, "height": 3 }
+            "layout": {
+              "height": 3,
+              "width": 8,
+              "x": 0,
+              "y": 2
+            }
           },
           {
             "definition": {
-              "title": "Visitors by country",
-              "type": "toplist",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "byCountry"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "cardinality",
+                        "metric": "@usr.anonymous_id"
+                      },
                       "data_source": "rum",
-                      "name": "byCountry",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:session @session.type:user" },
-                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
                           "facet": "@geo.country",
                           "limit": 10,
-                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
+                          "sort": {
+                            "aggregation": "cardinality",
+                            "metric": "@usr.anonymous_id",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "byCountry",
+                      "search": {
+                        "query": "env:production @type:session @session.type:user"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "byCountry" }]
+                  "response_format": "scalar"
                 }
-              ]
+              ],
+              "title": "Visitors by country",
+              "type": "toplist"
             },
-            "layout": { "x": 8, "y": 2, "width": 4, "height": 3 }
+            "layout": {
+              "height": 3,
+              "width": 4,
+              "x": 8,
+              "y": 2
+            }
           },
           {
             "definition": {
-              "title": "Visits by device",
-              "type": "toplist",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "byDevice"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
-                      "name": "byDevice",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:session @session.type:user" },
-                      "compute": { "aggregation": "count" },
                       "group_by": [
                         {
                           "facet": "@device.type",
                           "limit": 10,
-                          "sort": { "aggregation": "count", "order": "desc" }
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "byDevice",
+                      "search": {
+                        "query": "env:production @type:session @session.type:user"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "byDevice" }]
+                  "response_format": "scalar"
                 }
-              ]
+              ],
+              "title": "Visits by device",
+              "type": "toplist"
             },
-            "layout": { "x": 0, "y": 5, "width": 6, "height": 3 }
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 5
+            }
           },
           {
             "definition": {
-              "title": "Top referrers",
-              "type": "toplist",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "byReferrer"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
-                      "name": "byReferrer",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:session @session.type:user" },
-                      "compute": { "aggregation": "count" },
                       "group_by": [
                         {
                           "facet": "@session.referrer",
                           "limit": 10,
-                          "sort": { "aggregation": "count", "order": "desc" }
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "byReferrer",
+                      "search": {
+                        "query": "env:production @type:session @session.type:user"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "byReferrer" }]
+                  "response_format": "scalar"
                 }
-              ]
+              ],
+              "title": "Top referrers",
+              "type": "toplist"
             },
-            "layout": { "x": 6, "y": 5, "width": 6, "height": 3 }
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 5
+            }
           }
         ]
       },
-      "layout": { "x": 0, "y": 1, "width": 12, "height": 9 }
+      "layout": {
+        "height": 9,
+        "width": 12,
+        "x": 0,
+        "y": 1
+      }
     },
     {
       "definition": {
+        "layout_type": "ordered",
         "title": "Languages & engagement",
         "type": "group",
-        "layout_type": "ordered",
         "widgets": [
           {
             "definition": {
-              "title": "Top languages — page views (unique visitors)",
-              "type": "toplist",
+              "custom_links": [
+                {
+                  "label": "Open language on katagami.ai",
+                  "link": "https://katagami.ai/language/{{@context.language_id}}"
+                }
+              ],
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "langUV"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "cardinality",
+                        "metric": "@usr.anonymous_id"
+                      },
                       "data_source": "rum",
-                      "name": "langUV",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:language_view" },
-                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
                           "facet": "@context.language_name",
                           "limit": 25,
-                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
+                          "sort": {
+                            "aggregation": "cardinality",
+                            "metric": "@usr.anonymous_id",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "langUV",
+                      "search": {
+                        "query": "env:production @type:action @action.target.name:language_view"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "langUV" }]
+                  "response_format": "scalar"
                 }
               ],
-              "custom_links": [
-                { "label": "Open language on katagami.ai", "link": "https://katagami.ai/language/{{@context.language_id}}" }
-              ]
+              "title": "Top languages \u2014 page views (unique visitors)",
+              "type": "toplist"
             },
-            "layout": { "x": 0, "y": 0, "width": 6, "height": 4 }
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 0
+            }
           },
           {
             "definition": {
-              "title": "Top pages — all routes (unique visitors)",
-              "type": "toplist",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "pageUV"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "cardinality",
+                        "metric": "@usr.anonymous_id"
+                      },
                       "data_source": "rum",
-                      "name": "pageUV",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:view" },
-                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
                           "facet": "@view.url_path_group",
                           "limit": 20,
-                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
+                          "sort": {
+                            "aggregation": "cardinality",
+                            "metric": "@usr.anonymous_id",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "pageUV",
+                      "search": {
+                        "query": "env:production @type:view"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "pageUV" }]
+                  "response_format": "scalar"
                 }
-              ]
+              ],
+              "title": "Top pages \u2014 all routes (unique visitors)",
+              "type": "toplist"
             },
-            "layout": { "x": 6, "y": 0, "width": 6, "height": 4 }
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 0
+            }
           },
           {
             "definition": {
-              "title": "Top languages — take-it clicks (unique visitors)",
-              "type": "toplist",
+              "custom_links": [
+                {
+                  "label": "Open language on katagami.ai",
+                  "link": "https://katagami.ai{{@view.url_path}}"
+                }
+              ],
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "takeUV"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "cardinality",
+                        "metric": "@usr.anonymous_id"
+                      },
                       "data_source": "rum",
-                      "name": "takeUV",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @view.url_path:/language/* @action.target.name:(copy OR download OR link OR tokens OR \"DESIGN.md\" OR \"with shadcn\" OR \"Download DESIGN.md\")" },
-                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
                           "facet": "@view.url_path",
                           "limit": 25,
-                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
+                          "sort": {
+                            "aggregation": "cardinality",
+                            "metric": "@usr.anonymous_id",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "takeUV",
+                      "search": {
+                        "query": "env:production @type:action @view.url_path:/language/* @action.target.name:(copy OR download OR link OR tokens OR \"DESIGN.md\" OR \"with shadcn\" OR \"Download DESIGN.md\")"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "takeUV" }]
+                  "response_format": "scalar"
                 }
               ],
-              "custom_links": [
-                { "label": "Open language on katagami.ai", "link": "https://katagami.ai{{@view.url_path}}" }
-              ]
+              "title": "Top languages \u2014 take-it clicks (unique visitors)",
+              "type": "toplist"
             },
-            "layout": { "x": 0, "y": 4, "width": 6, "height": 4 }
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 4
+            }
           },
           {
             "definition": {
-              "title": "Most-clicked languages (by name)",
-              "type": "toplist",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "clickName"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "cardinality",
+                        "metric": "@usr.anonymous_id"
+                      },
                       "data_source": "rum",
-                      "name": "clickName",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:language_click" },
-                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
                           "facet": "@context.language_name",
                           "limit": 25,
-                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
+                          "sort": {
+                            "aggregation": "cardinality",
+                            "metric": "@usr.anonymous_id",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "clickName",
+                      "search": {
+                        "query": "env:production @type:action @action.target.name:language_click"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "clickName" }]
+                  "response_format": "scalar"
                 }
-              ]
+              ],
+              "title": "Most-clicked languages (by name)",
+              "type": "toplist"
             },
-            "layout": { "x": 6, "y": 4, "width": 6, "height": 4 }
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 4
+            }
           },
           {
             "definition": {
-              "title": "Buttons clicked on language pages (all controls)",
-              "type": "toplist",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "langButtons"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
-                      "name": "langButtons",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @view.url_path:/language/*" },
-                      "compute": { "aggregation": "count" },
                       "group_by": [
                         {
                           "facet": "@action.target.name",
                           "limit": 25,
-                          "sort": { "aggregation": "count", "order": "desc" }
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "langButtons",
+                      "search": {
+                        "query": "env:production @type:action @view.url_path:/language/*"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "langButtons" }]
+                  "response_format": "scalar"
                 }
-              ]
+              ],
+              "title": "Buttons clicked on language pages (all controls)",
+              "type": "toplist"
             },
-            "layout": { "x": 0, "y": 8, "width": 6, "height": 4 }
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 8
+            }
           },
           {
             "definition": {
-              "title": "Language clicks by source (which surface drives clicks)",
-              "type": "toplist",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "clickSource"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
-                      "name": "clickSource",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:language_click" },
-                      "compute": { "aggregation": "count" },
                       "group_by": [
                         {
                           "facet": "@context.source",
                           "limit": 15,
-                          "sort": { "aggregation": "count", "order": "desc" }
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "clickSource",
+                      "search": {
+                        "query": "env:production @type:action @action.target.name:language_click"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "clickSource" }]
+                  "response_format": "scalar"
                 }
-              ]
+              ],
+              "title": "Language clicks by source (which surface drives clicks)",
+              "type": "toplist"
             },
-            "layout": { "x": 6, "y": 8, "width": 6, "height": 4 }
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 8
+            }
           }
         ]
       },
-      "layout": { "x": 0, "y": 10, "width": 12, "height": 13 }
+      "layout": {
+        "height": 13,
+        "width": 12,
+        "x": 0,
+        "y": 10
+      }
     },
     {
       "definition": {
+        "layout_type": "ordered",
         "title": "Copies, downloads & search",
         "type": "group",
-        "layout_type": "ordered",
         "widgets": [
           {
             "definition": {
-              "title": "Engagement by event type",
-              "type": "toplist",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "byEvent"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
-                      "name": "byEvent",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.type:custom" },
-                      "compute": { "aggregation": "count" },
                       "group_by": [
                         {
                           "facet": "@action.target.name",
                           "limit": 15,
-                          "sort": { "aggregation": "count", "order": "desc" }
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "byEvent",
+                      "search": {
+                        "query": "env:production @type:action @action.type:custom"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "byEvent" }]
+                  "response_format": "scalar"
                 }
-              ]
+              ],
+              "title": "Engagement by event type",
+              "type": "toplist"
             },
-            "layout": { "x": 0, "y": 0, "width": 4, "height": 4 }
+            "layout": {
+              "height": 4,
+              "width": 4,
+              "x": 0,
+              "y": 0
+            }
           },
           {
             "definition": {
-              "title": "Top copied artifacts",
-              "type": "toplist",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "copies"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
-                      "name": "copies",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:copy" },
-                      "compute": { "aggregation": "count" },
                       "group_by": [
                         {
                           "facet": "@context.artifact",
                           "limit": 15,
-                          "sort": { "aggregation": "count", "order": "desc" }
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "copies",
+                      "search": {
+                        "query": "env:production @type:action @action.target.name:copy"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "copies" }]
+                  "response_format": "scalar"
                 }
-              ]
+              ],
+              "title": "Top copied artifacts",
+              "type": "toplist"
             },
-            "layout": { "x": 4, "y": 0, "width": 4, "height": 4 }
+            "layout": {
+              "height": 4,
+              "width": 4,
+              "x": 4,
+              "y": 0
+            }
           },
           {
             "definition": {
-              "title": "Top downloads (by file)",
-              "type": "toplist",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "downloads"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
-                      "name": "downloads",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:download" },
-                      "compute": { "aggregation": "count" },
                       "group_by": [
                         {
                           "facet": "@context.file",
                           "limit": 15,
-                          "sort": { "aggregation": "count", "order": "desc" }
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "downloads",
+                      "search": {
+                        "query": "env:production @type:action @action.target.name:download"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "downloads" }]
+                  "response_format": "scalar"
                 }
-              ]
+              ],
+              "title": "Top downloads (by file)",
+              "type": "toplist"
             },
-            "layout": { "x": 8, "y": 0, "width": 4, "height": 4 }
+            "layout": {
+              "height": 4,
+              "width": 4,
+              "x": 8,
+              "y": 0
+            }
           },
           {
             "definition": {
-              "title": "Copies & downloads over time",
-              "type": "timeseries",
               "requests": [
                 {
-                  "response_format": "timeseries",
-                  "queries": [
+                  "display_type": "line",
+                  "formulas": [
                     {
-                      "data_source": "rum",
-                      "name": "copy",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:copy" },
-                      "compute": { "aggregation": "count" },
-                      "group_by": []
+                      "alias": "copies",
+                      "formula": "copy"
                     },
                     {
-                      "data_source": "rum",
-                      "name": "download",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:download" },
-                      "compute": { "aggregation": "count" },
-                      "group_by": []
+                      "alias": "downloads",
+                      "formula": "download"
                     }
                   ],
-                  "formulas": [
-                    { "formula": "copy", "alias": "copies" },
-                    { "formula": "download", "alias": "downloads" }
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "rum",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "copy",
+                      "search": {
+                        "query": "env:production @type:action @action.target.name:copy"
+                      }
+                    },
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "rum",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "download",
+                      "search": {
+                        "query": "env:production @type:action @action.target.name:download"
+                      }
+                    }
                   ],
-                  "display_type": "line"
+                  "response_format": "timeseries"
                 }
-              ]
+              ],
+              "title": "Copies & downloads over time",
+              "type": "timeseries"
             },
-            "layout": { "x": 0, "y": 4, "width": 6, "height": 3 }
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 4
+            }
           },
           {
             "definition": {
-              "title": "Top search terms (what people look for)",
-              "type": "toplist",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "searches"
+                    }
+                  ],
                   "queries": [
                     {
+                      "compute": {
+                        "aggregation": "count"
+                      },
                       "data_source": "rum",
-                      "name": "searches",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:search" },
-                      "compute": { "aggregation": "count" },
                       "group_by": [
                         {
                           "facet": "@context.query",
                           "limit": 25,
-                          "sort": { "aggregation": "count", "order": "desc" }
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
                         }
-                      ]
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "searches",
+                      "search": {
+                        "query": "env:production @type:action @action.target.name:search"
+                      }
                     }
                   ],
-                  "formulas": [{ "formula": "searches" }]
+                  "response_format": "scalar"
                 }
-              ]
+              ],
+              "title": "Top search terms (what people look for)",
+              "type": "toplist"
             },
-            "layout": { "x": 6, "y": 4, "width": 6, "height": 3 }
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 4
+            }
           }
         ]
       },
-      "layout": { "x": 0, "y": 23, "width": 12, "height": 8 }
+      "layout": {
+        "height": 8,
+        "width": 12,
+        "x": 0,
+        "y": 23
+      }
+    },
+    {
+      "definition": {
+        "layout_type": "ordered",
+        "title": "Accounts \u2014 registered users & sign-ins (server events)",
+        "type": "group",
+        "widgets": [
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "default_zero(m)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "max",
+                        "metric": "@members_total"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "m",
+                      "search": {
+                        "query": "service:katagami-server env:production (@evt:members_snapshot OR @evt:auth_login)"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Registered users (total)",
+              "type": "query_value"
+            },
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "default_zero(r)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "r",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:auth_login @registration:true"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Registrations (window)",
+              "type": "query_value"
+            },
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 3,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "default_zero(l)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "l",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:auth_login"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Logins (window)",
+              "type": "query_value"
+            },
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 6,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "default_zero(f)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "f",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:auth_login_failed"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Failed sign-ins (window)",
+              "type": "query_value"
+            },
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 9,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "display_type": "bars",
+                  "formulas": [
+                    {
+                      "alias": "registrations",
+                      "formula": "reg"
+                    },
+                    {
+                      "alias": "logins",
+                      "formula": "log"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count",
+                        "interval": 86400000
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "reg",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:auth_login @registration:true"
+                      }
+                    },
+                    {
+                      "compute": {
+                        "aggregation": "count",
+                        "interval": 86400000
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "log",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:auth_login"
+                      }
+                    }
+                  ],
+                  "response_format": "timeseries"
+                }
+              ],
+              "title": "Registrations & logins per day",
+              "type": "timeseries"
+            },
+            "layout": {
+              "height": 3,
+              "width": 8,
+              "x": 0,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "registered users",
+                      "formula": "m"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "max",
+                        "interval": 86400000,
+                        "metric": "@members_total"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "m",
+                      "search": {
+                        "query": "service:katagami-server env:production (@evt:members_snapshot OR @evt:auth_login)"
+                      }
+                    }
+                  ],
+                  "response_format": "timeseries"
+                }
+              ],
+              "title": "Registered users over time",
+              "type": "timeseries"
+            },
+            "layout": {
+              "height": 3,
+              "width": 4,
+              "x": 8,
+              "y": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "height": 6,
+        "width": 12,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "definition": {
+        "layout_type": "ordered",
+        "title": "MCP usage \u2014 katagami.ai/mcp (server events)",
+        "type": "group",
+        "widgets": [
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "default_zero(c)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "c",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Tool calls (window)",
+              "type": "query_value"
+            },
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "default_zero(u)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "cardinality",
+                        "metric": "@user_hash"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "u",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call @tier:full"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Distinct signed-in callers",
+              "type": "query_value"
+            },
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 3,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "default_zero(ok / all * 100)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "ok",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call @outcome:success"
+                      }
+                    },
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "all",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Success rate %",
+              "type": "query_value"
+            },
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 6,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "default_zero(p)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "pc95",
+                        "metric": "@duration_ms"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "p",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "p95 tool latency (ms)",
+              "type": "query_value"
+            },
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 9,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "display_type": "bars",
+                  "formulas": [
+                    {
+                      "formula": "t"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count",
+                        "interval": 86400000
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@tool",
+                          "limit": 15,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "t",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call"
+                      }
+                    }
+                  ],
+                  "response_format": "timeseries"
+                }
+              ],
+              "title": "Tool calls per day \u2014 by tool",
+              "type": "timeseries"
+            },
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "q"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@tool",
+                          "limit": 15,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "q",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Calls by tool",
+              "type": "toplist"
+            },
+            "layout": {
+              "height": 3,
+              "width": 3,
+              "x": 6,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "q"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@tier",
+                          "limit": 2,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "q",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Calls by tier (anonymous sample vs signed-in full)",
+              "type": "toplist"
+            },
+            "layout": {
+              "height": 3,
+              "width": 3,
+              "x": 9,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "display_type": "bars",
+                  "formulas": [
+                    {
+                      "formula": "o"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count",
+                        "interval": 86400000
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@outcome",
+                          "limit": 3,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "o",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call"
+                      }
+                    }
+                  ],
+                  "response_format": "timeseries"
+                }
+              ],
+              "title": "Outcomes per day (success / error / exception)",
+              "type": "timeseries"
+            },
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "q"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@tool",
+                          "limit": 15,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "q",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call (@outcome:error OR @outcome:exception)"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Errors by tool",
+              "type": "toplist"
+            },
+            "layout": {
+              "height": 3,
+              "width": 3,
+              "x": 6,
+              "y": 5
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "q"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "pc95",
+                        "metric": "@duration_ms"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@tool",
+                          "limit": 15,
+                          "sort": {
+                            "aggregation": "pc95",
+                            "metric": "@duration_ms",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "q",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Slowest tools (p95 ms)",
+              "type": "toplist"
+            },
+            "layout": {
+              "height": 3,
+              "width": 3,
+              "x": 9,
+              "y": 5
+            }
+          }
+        ]
+      },
+      "layout": {
+        "height": 9,
+        "width": 12,
+        "x": 0,
+        "y": 0
+      }
     }
-  ]
+  ],
+  "template_variables": [],
+  "layout_type": "ordered",
+  "reflow_type": "fixed"
 }
