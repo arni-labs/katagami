@@ -1,7 +1,7 @@
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
-import { verifyReadBearer } from "@/lib/catalog-auth";
+import { verifyReadBearer, readMcpAuthInfo, whoamiFromAuth } from "@/lib/catalog-auth";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
 import {
   describeCatalog,
@@ -212,20 +212,7 @@ const baseHandler = createMcpHandler(
         description: "Shows your access tier (sample vs full) and how to unlock the full catalog.",
         inputSchema: {},
       },
-      async (_args, extra) => {
-        const tier = tierOf(extra);
-        const email = authOf(extra)?.extra?.email;
-        return ok(
-          tier === "full"
-            ? { tier: "full", signed_in_as: email ?? "(a Google account)", access: "the complete Katagami catalog" }
-            : {
-                tier: "sample",
-                access: "a curated portion of the catalog (the anonymous sample)",
-                unlock:
-                  "Sign in with Google to unlock the full catalog. In an MCP client that supports OAuth, authenticate when prompted; the server advertises its authorization server at /.well-known/oauth-protected-resource.",
-              },
-        );
-      },
+      async (_args, extra) => ok(whoamiFromAuth(authOf(extra))),
     );
   },
   { serverInfo: { name: "katagami", version: "0.1.0" } },
@@ -236,17 +223,8 @@ const baseHandler = createMcpHandler(
 // that is why Grok Bot's AuthenticateMcpServer returned no_auth_link.
 const handler = withMcpAuth(
   baseHandler,
-  async (_req: Request, bearer?: string): Promise<AuthInfo | undefined> => {
-    if (!bearer) return undefined;
-    const id = await verifyReadBearer(bearer);
-    if (!id) return undefined;
-    return {
-      token: bearer,
-      clientId: "katagami-read",
-      scopes: ["read"],
-      extra: { sub: id.sub, email: id.email },
-    } as AuthInfo;
-  },
+  async (_req: Request, bearer?: string): Promise<AuthInfo | undefined> =>
+    readMcpAuthInfo(bearer, verifyReadBearer) as Promise<AuthInfo | undefined>,
   {
     required: true,
     resourceMetadataPath: MCP_RESOURCE_METADATA_PATH,

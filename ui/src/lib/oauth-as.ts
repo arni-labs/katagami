@@ -13,9 +13,15 @@ import "server-only";
 
 import { SignJWT, jwtVerify, importPKCS8, exportJWK, calculateJwkThumbprint, type JWK } from "jose";
 import { createEntity, dispatchAction } from "@/lib/odata-mutations";
-import { isAllowedRedirectUri, readMcpResource } from "@/lib/mcp-oauth.mjs";
+import {
+  isAllowedRedirectUri,
+  readMcpResource,
+  SCOPE_CONTRIBUTE as SCOPE_CONTRIBUTE_FROM_MCP,
+  SCOPE_READ,
+} from "@/lib/mcp-oauth.mjs";
 
-export { isAllowedRedirectUri, readMcpResource };
+export { isAllowedRedirectUri, readMcpResource, SCOPE_READ };
+export const SCOPE_CONTRIBUTE = SCOPE_CONTRIBUTE_FROM_MCP;
 
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
@@ -23,9 +29,14 @@ const API_KEY = process.env.TEMPER_API_KEY || "";
 
 export const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 export const AUTH_CODE_TTL_SECONDS = 60;
-export const SCOPE_CONTRIBUTE = "contribute";
 
-/** The protected resource this AS mints tokens for (the MCP front door). */
+/** Scope minted for a token: `read` for the gallery /mcp, `contribute` otherwise. */
+export function scopeForResource(resource: string): string {
+  const r = resource.trim().replace(/\/$/, "");
+  return r === readMcpResource().replace(/\/$/, "") ? SCOPE_READ : SCOPE_CONTRIBUTE;
+}
+
+/** The protected resource this AS mints tokens for (the contribution adapter). */
 export function mcpResource(): string {
   return process.env.KATAGAMI_MCP_RESOURCE || "https://mcp.katagami.ai";
 }
@@ -386,7 +397,7 @@ export async function verifyAuthCode(origin: string, code: string): Promise<Code
 export async function issueAccessToken(
   origin: string,
   p: { sub: string; email: string; name: string; client_id: string; grant_id: string; resource: string },
-): Promise<{ token: string; expiresIn: number }> {
+): Promise<{ token: string; expiresIn: number; scope: string }> {
   const { key, kid } = await signingKey();
   // Stamp the owning human's role and current generation so the kernel can put
   // the role on the principal (Cedar) and enforce sign-out-everywhere (ARN-255).
@@ -394,12 +405,14 @@ export async function issueAccessToken(
     roleForSub(p.sub),
     currentGeneration(p.sub),
   ]);
+  const resource = p.resource || mcpResource();
+  const scope = scopeForResource(resource);
   const token = await new SignJWT({
     email: p.email,
     name: p.name,
     client_id: p.client_id,
     grant_id: p.grant_id,
-    scope: SCOPE_CONTRIBUTE,
+    scope,
     agent_type: "contributor",
     role,
     auth_generation: generation,
@@ -407,11 +420,11 @@ export async function issueAccessToken(
     .setProtectedHeader({ alg: "ES256", kid })
     .setSubject(p.sub)
     .setIssuer(issuer(origin))
-    .setAudience(p.resource || mcpResource())
+    .setAudience(resource)
     .setIssuedAt()
     .setExpirationTime(`${ACCESS_TOKEN_TTL_SECONDS}s`)
     .sign(key);
-  return { token, expiresIn: ACCESS_TOKEN_TTL_SECONDS };
+  return { token, expiresIn: ACCESS_TOKEN_TTL_SECONDS, scope };
 }
 
 /** Mint a short-lived Customer token for a signed-in human (option i,

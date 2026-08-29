@@ -141,8 +141,8 @@ export default function ConnectPage() {
             <CopyButton text={MCP_URL} label="Copy URL" variant="ink" artifact="mcp-url" />
           </div>
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
-            Works instantly with no login — you get a curated sample of the
-            catalog. Sign in with Google for the full thing.
+            Connecting this URL asks you to sign in with Google — tap the
+            login card, Google, done. That unlocks the full catalog.
           </p>
         </StickyNote>
       </section>

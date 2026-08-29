@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
         token_type: "Bearer",
         expires_in: access.expiresIn,
         refresh_token: refreshToken,
-        scope: "contribute",
+        scope: access.scope,
       },
       { headers: CORS },
     );
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
         token_type: "Bearer",
         expires_in: access.expiresIn,
         refresh_token: refreshToken,
-        scope: "contribute",
+        scope: access.scope,
       },
       { headers: CORS },
     );
