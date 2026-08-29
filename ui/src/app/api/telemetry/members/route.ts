@@ -9,10 +9,11 @@ export const dynamic = "force-dynamic";
 // sign-ins the "total registered users" tile would go stale — this keeps it
 // fed with one datapoint per day.
 //
-// The count itself is a single non-sensitive number (no ids, no emails). When
-// CRON_SECRET is set in Vercel, Vercel's cron caller sends it as a bearer and
-// everyone else is rejected; without it the route stays callable but only
-// emits one log line per call.
+// Access: CRON_SECRET is set in Vercel production, and Vercel's cron caller
+// sends it as `Authorization: Bearer <secret>` automatically — everyone else
+// gets 401, so the route cannot be used to hammer the Temper backend or spam
+// logs. Locally (no CRON_SECRET) the route stays open for development; it
+// only returns a member count and emits one log line per call.
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
