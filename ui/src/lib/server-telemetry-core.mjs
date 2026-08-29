@@ -2,6 +2,8 @@
 // Next.js wrapper (after(), fetch). Tests import this file directly so they
 // can exercise hash / PII / intake / cron auth without next/server.
 
+import { createHash, timingSafeEqual } from "node:crypto";
+
 const SERVICE = "katagami-server";
 
 /** HMAC pepper for user_hash. Unset → hashPrincipal returns undefined and
@@ -52,12 +54,21 @@ export async function hashPrincipal(sub, env = process.env) {
   return Buffer.from(sig).toString("hex").slice(0, 16);
 }
 
+/** Constant-time string compare. Hash both sides first so unequal lengths
+ *  still go through `timingSafeEqual` (which throws on length mismatch). */
+function timingSafeStringEqual(left, right) {
+  const ha = createHash("sha256").update(String(left)).digest();
+  const hb = createHash("sha256").update(String(right)).digest();
+  return timingSafeEqual(ha, hb);
+}
+
 /** Cron routes 401 when the secret is unset or the bearer does not match.
  *  Unset secret is a closed door, not an open local-dev path — a preview
- *  without CRON_SECRET must not return members_total. */
+ *  without CRON_SECRET must not return members_total. Compare is
+ *  timing-safe so a wrong bearer cannot be walked byte-by-byte. */
 export function authorizeCronRequest(authorizationHeader, secret) {
-  if (!secret) return false;
-  return authorizationHeader === `Bearer ${secret}`;
+  if (!secret || typeof authorizationHeader !== "string") return false;
+  return timingSafeStringEqual(authorizationHeader, `Bearer ${secret}`);
 }
 
 function logsSite(env) {

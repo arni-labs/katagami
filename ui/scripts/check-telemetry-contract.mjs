@@ -38,6 +38,11 @@ const dashboard = read("../infra/datadog/katagami-rum-dashboard.json");
   assert.equal(authorizeCronRequest(null, "s3cret"), false, "missing bearer is closed");
   assert.equal(authorizeCronRequest("Bearer fake", "s3cret"), false, "wrong bearer is closed");
   assert.equal(authorizeCronRequest("Bearer s3cret", "s3cret"), true, "matching bearer is open");
+  assert.equal(
+    authorizeCronRequest("Bearer s3cretX", "s3cret"),
+    false,
+    "length-mismatch bearer is closed (timing-safe path)",
+  );
   console.log("ok: cron auth 401s when CRON_SECRET is unset or bearer is wrong");
 }
 
@@ -157,6 +162,7 @@ const required = [
   ["daily members snapshot emits members_total", snapshot, /emitServerEvent\("members_snapshot"/],
   ["members snapshot does not await Datadog on the request path", snapshot, /runAfter\(\(\) => emitServerEvent\("members_snapshot"/],
   ["members snapshot uses authorizeCronRequest", snapshot, /authorizeCronRequest\(/],
+  ["cron bearer compare is timing-safe", core, /timingSafeEqual/],
   ["sign-in skips countMembers when intake is fail-closed", callback, /if \(!serverTelemetryEnabled\(\)\) return/],
   ["members snapshot cron is scheduled", vercelJson, /\/api\/telemetry\/members/],
   ["runAfter guards next/server after()", telemetry, /export function runAfter/],
