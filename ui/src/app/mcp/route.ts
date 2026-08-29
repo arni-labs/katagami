@@ -3,6 +3,7 @@ import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { verifyReadBearer, readMcpAuthInfo, whoamiFromAuth } from "@/lib/catalog-auth";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
+import { hashPrincipal, trackMcpToolCall } from "@/lib/server-telemetry";
 import {
   describeCatalog,
   searchDesigns,
@@ -26,11 +27,58 @@ import {
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-function authOf(extra: unknown): { extra?: { email?: string } } | undefined {
-  return (extra as { http?: { authInfo?: { extra?: { email?: string } } } })?.http?.authInfo;
+function authOf(extra: unknown): { extra?: { email?: string; sub?: string } } | undefined {
+  return (extra as { http?: { authInfo?: { extra?: { email?: string; sub?: string } } } })?.http
+    ?.authInfo;
 }
 function tierOf(extra: unknown): Tier {
   return authOf(extra) ? "full" : "sample";
+}
+
+// Datadog usage tracking (ARN-436): patch registerTool so EVERY tool —
+// including any added later — reports tool name, auth tier, outcome, and
+// duration. Handlers pass through untouched (the mcp-handler overload gotcha:
+// never re-annotate their params), the wrapper only awaits and observes.
+type ToolResult = { isError?: boolean } | undefined;
+type ToolHandler = (args: unknown, extra: unknown) => Promise<ToolResult> | ToolResult;
+
+function withUsageTracking(server: McpServer): void {
+  const original = server.registerTool.bind(server) as unknown as (
+    name: string,
+    def: unknown,
+    handler: ToolHandler,
+  ) => unknown;
+  (server as unknown as { registerTool: unknown }).registerTool = (
+    name: string,
+    def: unknown,
+    handler: ToolHandler,
+  ) =>
+    original(name, def, async (args: unknown, extra: unknown) => {
+      const started = Date.now();
+      const sub = authOf(extra)?.extra?.sub;
+      const userHash = sub ? await hashPrincipal(sub) : undefined;
+      try {
+        const result = await handler(args, extra);
+        trackMcpToolCall({
+          tool: name,
+          tier: tierOf(extra),
+          outcome: result?.isError ? "error" : "success",
+          durationMs: Date.now() - started,
+          userHash,
+        });
+        return result;
+      } catch (err) {
+        trackMcpToolCall({
+          tool: name,
+          tier: tierOf(extra),
+          outcome: "exception",
+          durationMs: Date.now() - started,
+          userHash,
+          errorKind: err instanceof Error ? err.name : "unknown",
+        });
+        throw err;
+      }
+    });
 }
 function ok(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
@@ -47,6 +95,7 @@ const idArg = z.string().describe("The entity id (en-…) or the slug");
 
 const baseHandler = createMcpHandler(
   (server: McpServer) => {
+    withUsageTracking(server);
     // --- discovery ---------------------------------------------------------
     server.registerTool(
       "describe_catalog",

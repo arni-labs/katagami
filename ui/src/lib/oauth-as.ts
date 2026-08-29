@@ -133,13 +133,16 @@ export async function sha256Hex(input: string): Promise<string> {
 // --- Members ----------------------------------------------------------------
 
 /** Upsert the Member behind a Google sign-in. Fire-and-forget from the
- *  callback: account durability must never block the sign-in itself. */
+ *  callback: account durability must never block the sign-in itself.
+ *  Returns whether this sign-in REGISTERED a new member (first sign-in) or
+ *  was a login of an existing one — the registration/login split the
+ *  Datadog auth events report (ARN-436). */
 export async function upsertMember(user: {
   sub: string;
   email: string;
   name: string;
   picture: string;
-}): Promise<void> {
+}): Promise<{ created: boolean }> {
   // Temper's OData $filter matches raw (snake_case) field names, not the
   // PascalCase CSDL projections — verified live 2026-07-06.
   const existing = await queryEntities("Members", `sub eq '${user.sub}'`);
@@ -151,10 +154,31 @@ export async function upsertMember(user: {
   };
   if (existing.length > 0) {
     await dispatchAction("Members", existing[0].entity_id, "Register", params);
-    return;
+    return { created: false };
   }
   const created = await createEntity("Members");
   await dispatchAction("Members", created.entity_id, "Register", params);
+  return { created: true };
+}
+
+/** Registered humans: Members that completed a Google sign-in. Filters on
+ *  has_identity because dispatching an action on a missing id auto-creates a
+ *  placeholder row (the known Temper gotcha) — those husks carry no identity
+ *  and must not count. Verified live 2026-08-29: 9 rows, 8 with identity. */
+export async function countMembers(): Promise<number> {
+  const params = new URLSearchParams();
+  params.set("$filter", "has_identity eq true");
+  params.set("$count", "true");
+  params.set("$top", "0");
+  const res = await fetch(`${API_BASE}/tdata/Members?${params.toString()}`, {
+    headers,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Count Members failed ${res.status}: ${await res.text()}`);
+  }
+  const body = (await res.json()) as { "@odata.count"?: number };
+  return body["@odata.count"] ?? 0;
 }
 
 export async function memberBySub(sub: string): Promise<EntityRow | null> {

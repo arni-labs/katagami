@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { exchangeGoogleCode } from "@/lib/google-oidc";
-import { upsertMember } from "@/lib/oauth-as";
+import { countMembers, upsertMember } from "@/lib/oauth-as";
+import {
+  emitServerEvent,
+  hashPrincipal,
+  trackServerEvent,
+} from "@/lib/server-telemetry";
 import {
   OAUTH_NEXT_COOKIE,
   OAUTH_NONCE_COOKIE,
@@ -31,22 +37,52 @@ export async function GET(req: NextRequest) {
     !verifier ||
     !nonce
   ) {
+    trackServerEvent("auth_login_failed", { reason: "state" }, "warn");
     return NextResponse.redirect(new URL("/signin?error=state", origin));
   }
 
   const user = await exchangeGoogleCode(origin, code, verifier, nonce);
   const token = user ? await signSession(user) : null;
   if (!token) {
+    trackServerEvent("auth_login_failed", { reason: "google" }, "warn");
     return NextResponse.redirect(new URL("/signin?error=google", origin));
   }
 
   // Durable account behind the stateless session (ARN-151): grants, roles,
   // and submissions anchor on the Member. Best-effort — a backend hiccup
   // must never block the sign-in itself.
+  let registration = false;
+  let upsertOk = true;
   try {
-    if (user) await upsertMember(user);
+    if (user) registration = (await upsertMember(user)).created;
   } catch (err) {
+    upsertOk = false;
     console.error("Member upsert failed at sign-in:", err);
+  }
+
+  // Datadog auth events (ARN-436): every successful sign-in is a login; the
+  // first sign-in of a sub is additionally a registration. Emitted after the
+  // response with a hashed principal — no sub/email ever reaches Datadog.
+  // members_total rides along so "total registered users" always has a fresh
+  // datapoint (best-effort; the daily /api/telemetry/members snapshot is the
+  // steady feed).
+  if (user) {
+    const sub = user.sub;
+    after(async () => {
+      const userHash = await hashPrincipal(sub);
+      let membersTotal: number | undefined;
+      try {
+        membersTotal = await countMembers();
+      } catch {
+        membersTotal = undefined;
+      }
+      await emitServerEvent("auth_login", {
+        registration,
+        upsert_ok: upsertOk,
+        user_hash: userHash,
+        members_total: membersTotal,
+      });
+    });
   }
 
   const next = safeInternalPath(req.cookies.get(OAUTH_NEXT_COOKIE)?.value);
