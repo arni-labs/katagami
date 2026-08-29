@@ -129,7 +129,7 @@ names and common variants) are stripped at emit time, enforced by
 
 | `@evt` | Fired by | Attributes |
 | --- | --- | --- |
-| `mcp_tool_call` | every **tool** call at `/mcp` (auto-instrumented via the patched `registerTool` in `ui/src/app/mcp/route.ts`) | `@tool`, `@outcome` (success/error/exception), `@duration_ms`, `@user_hash`. No `@tier:sample` — `/mcp` requires a bearer, so the sample/full split is dead; initialize 401s are untracked on purpose |
+| `mcp_tool_call` | every **tool** call at `/mcp` (auto-instrumented via the patched `registerTool` in `ui/src/app/mcp/route.ts`) | `@tool`, `@tier` (`full` only — `/mcp` requires a bearer), `@outcome` (success/error/exception), `@duration_ms`, `@user_hash`. Never `@tier:sample`. Initialize 401s are untracked on purpose |
 | `auth_login` | every successful Google sign-in (`api/auth/google/callback`) | `@registration` (true = first sign-in of this account), `@user_hash`, `@members_total` |
 | `auth_login_failed` | failed sign-in (state mismatch / Google exchange) | `@reason` |
 | `members_snapshot` | daily Vercel cron → `/api/telemetry/members` (see `ui/vercel.json`) | `@members_total` |
@@ -147,11 +147,12 @@ sign-ins.
   and **"MCP usage — katagami.ai/mcp"**, next to the existing RUM groups.
 - Logs Explorer — `service:katagami-server env:production`.
 - Long-term history: log-based metrics `katagami.mcp.tool_calls`
-  (tags: env/tool/outcome), `katagami.auth.logins` (env/registration),
-  `katagami.members.total` (distribution, env). The old `tier` tag on the
-  MCP metric will sit at 0 sample — `/mcp` no longer has a sample path.
-  Logs age out with index retention (~15 days); these metrics keep 15
-  months, counting from 2026-08-29 onward.
+  (tags: env/tool/tier/outcome), `katagami.auth.logins` (env/registration),
+  `katagami.members.total` (distribution, env). `@tier` is always `full`
+  on `/mcp` (required bearer). The dashboard tile that used to split
+  "anonymous sample vs signed-in full" is retitled; sample stays at 0
+  because that path is gone. Logs age out with index retention (~15
+  days); these metrics keep 15 months, counting from 2026-08-29 onward.
 
 **Before this route exists on master, Rita/Howl must set in Vercel:**
 

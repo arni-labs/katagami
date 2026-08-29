@@ -111,6 +111,10 @@ export function trackMcpToolCall(d: {
       "mcp_tool_call",
       {
         tool,
+        // Only `full` is reachable on /mcp (required:true). Emit it so
+        // dashboard queries that key on @tier:full stay populated. Never
+        // emit sample — that path is gone; initialize 401s are untracked.
+        tier: "full",
         outcome,
         duration_ms: durationMs,
         user_hash: userHash,

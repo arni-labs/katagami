@@ -1,6 +1,6 @@
 {
   "title": "Katagami \u2014 Visitors & Usage (RUM)",
-  "description": "What's getting traction on katagami.ai: unique visitors, visits, page views, which languages get viewed / copied / downloaded, which buttons are clicked on language pages, and what's searched. Fed by Datadog RUM (see infra/datadog/README.md). Import via Datadog \u2192 Dashboards \u2192 New Dashboard \u2192 Import dashboard JSON.\n\nEvery query is scoped to `env:production` (literal) so verification/test events (e.g. env:local-verify) are excluded. Language popularity is measured as UNIQUE VISITORS \u2014 CARDINALITY(@usr.anonymous_id) \u2014 so one person reopening a page counts once. Language rows link through to katagami.ai.\n\nNames: page-view, copy and download events carry @context.language_id (id). The readable @context.language_name arrives on `language_view`/`copy`/`download` events once the instrumented UI is deployed (no backfill); until then the language rollups key on id / url_path.\n\nServer-side signals (ARN-436): the Accounts group shows total registered users, registrations vs logins per day, and failed sign-ins; the MCP usage group shows tool calls at katagami.ai/mcp by tool, auth tier, outcome, and latency. Both are fed by `service:katagami-server` logs emitted from the Vercel routes (ui/src/lib/server-telemetry.ts) \u2014 see infra/datadog/README.md.",
+  "description": "What's getting traction on katagami.ai: unique visitors, visits, page views, which languages get viewed / copied / downloaded, which buttons are clicked on language pages, and what's searched. Fed by Datadog RUM (see infra/datadog/README.md). Import via Datadog \u2192 Dashboards \u2192 New Dashboard \u2192 Import dashboard JSON.\n\nEvery query is scoped to `env:production` (literal) so verification/test events (e.g. env:local-verify) are excluded. Language popularity is measured as UNIQUE VISITORS \u2014 CARDINALITY(@usr.anonymous_id) \u2014 so one person reopening a page counts once. Language rows link through to katagami.ai.\n\nNames: page-view, copy and download events carry @context.language_id (id). The readable @context.language_name arrives on `language_view`/`copy`/`download` events once the instrumented UI is deployed (no backfill); until then the language rollups key on id / url_path.\n\nServer-side signals (ARN-436): the Accounts group shows total registered users, registrations vs logins per day, and failed sign-ins; the MCP usage group shows tool calls at katagami.ai/mcp by tool, outcome, and latency. @tier is always full (/mcp requires a bearer; there is no anonymous sample path). Both are fed by `service:katagami-server` logs emitted from the Vercel routes (ui/src/lib/server-telemetry.ts) \u2014 see infra/datadog/README.md.",
   "widgets": [
     {
       "definition": {
@@ -1606,7 +1606,7 @@
                   "response_format": "scalar"
                 }
               ],
-              "title": "Calls by tier (anonymous sample vs signed-in full)",
+              "title": "Auth tier (full \u2014 /mcp requires a bearer)",
               "type": "toplist"
             },
             "layout": {

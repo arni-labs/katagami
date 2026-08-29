@@ -26,6 +26,7 @@ const callback = read("src/app/api/auth/google/callback/route.ts");
 const oauthAs = read("src/lib/oauth-as.ts");
 const snapshot = read("src/app/api/telemetry/members/route.ts");
 const vercelJson = read("vercel.json");
+const dashboard = read("../infra/datadog/katagami-rum-dashboard.json");
 
 // --- Behavioral -------------------------------------------------------------
 
@@ -137,7 +138,10 @@ const required = [
   ["members snapshot cron is scheduled", vercelJson, /\/api\/telemetry\/members/],
   ["runAfter guards next/server after()", telemetry, /export function runAfter/],
   ["hash+emit for MCP tools runs inside runAfter", telemetry, /runAfter\(async \(\) => \{[\s\S]*hashPrincipal/],
+  ["MCP emit stamps @tier:full (dashboard filters match)", telemetry, /tier: "full"/],
   ["telemetry no-ops without credentials", telemetry, /if \(!intake\) return/],
+  ["dashboard distinct-callers tile keys on @tier:full", dashboard, /@evt:mcp_tool_call @tier:full/],
+  ["dashboard does not claim a sample-vs-full split", dashboard, /Auth tier \(full/],
   ["pepper comes from env, not a repo string", core, /KATAGAMI_TELEMETRY_PEPPER/],
   ["no compile-time PRINCIPAL_PEPPER fallback", core, /^(?![\s\S]*PRINCIPAL_PEPPER = )[\s\S]*principalPepper/],
   ["no RUM-token server intake", core, /if \(!apiKey\) return null/],
@@ -165,6 +169,13 @@ if (/tier:\s*tierOf|tier:\s*"sample"/.test(mcp) || /tier:\s*"sample"/.test(telem
   failed += 1;
 } else {
   console.log("ok: /mcp telemetry does not emit @tier:sample");
+}
+
+if (/anonymous sample vs signed-in full/.test(dashboard)) {
+  console.error("MISSING: dashboard still claims a sample-vs-full MCP split");
+  failed += 1;
+} else {
+  console.log("ok: dashboard no longer claims anonymous sample vs signed-in full");
 }
 
 if (failed > 0) {
