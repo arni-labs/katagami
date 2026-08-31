@@ -7,6 +7,7 @@ import {
   getDemoDesignLanguage,
   getDemoPaletteSystem,
 } from "@/lib/demo-catalog";
+import { readODataCount } from "@/lib/odata-count.mjs";
 
 function cleanEnv(value: string | undefined, fallback: string): string {
   const cleaned = (value ?? fallback).replace(/\\n/g, "").trim();
@@ -364,8 +365,10 @@ export async function countDesignLanguages(
     const demoCount = demoDesignLanguages().filter(
       (d) => d.status === "Published",
     ).length;
-    return (resp["@odata.count"] ?? 0) + demoCount;
-  } catch {
+    // Strict: a 200 without @odata.count is an error (caught below), not 0.
+    return readODataCount(resp) + demoCount;
+  } catch (err) {
+    console.error("countDesignLanguages failed; hero count renders 0:", err);
     return 0;
   }
 }
@@ -1247,11 +1250,10 @@ async function countLane(set: string, demo: LaneEntity[]): Promise<number> {
     const resp = await odata<ODataResponse<unknown>>(
       `${set}?$filter=Status eq 'Published'&$count=true&$top=0`,
     );
-    return (
-      (resp["@odata.count"] ?? 0) +
-      demo.filter((d) => d.status === "Published").length
-    );
-  } catch {
+    // Strict: a 200 without @odata.count is an error (caught below), not 0.
+    return readODataCount(resp) + demo.filter((d) => d.status === "Published").length;
+  } catch (err) {
+    console.error(`countLane(${set}) failed; hero count falls back to demo:`, err);
     return demo.filter((d) => d.status === "Published").length;
   }
 }

@@ -53,14 +53,16 @@ export function runAfter(task: () => void | Promise<void>): void {
 }
 
 /** POST one event to the logs intake and await the result. Use inside an
- *  after() callback or a cron route; never throws. */
+ *  after() callback or a cron route; never throws. Returns true only when
+ *  Datadog accepted the event — a caller that reports delivery (the members
+ *  cron) must surface this real outcome, never "a key is configured". */
 export async function emitServerEvent(
   evt: string,
   attributes: Record<string, AttrValue> = {},
   status: TelemetryStatus = "info",
-): Promise<void> {
+): Promise<boolean> {
   const intake = resolveLogsIntake();
-  if (!intake) return;
+  if (!intake) return false;
   try {
     const res = await fetch(intake.url, {
       method: "POST",
@@ -70,9 +72,12 @@ export async function emitServerEvent(
     });
     if (!res.ok) {
       console.error(`[telemetry] intake ${res.status} for ${evt}`);
+      return false;
     }
+    return true;
   } catch (err) {
     console.error(`[telemetry] emit failed for ${evt}`, err);
+    return false;
   }
 }
 
@@ -83,14 +88,17 @@ export function trackServerEvent(
   status: TelemetryStatus = "info",
 ): void {
   if (!serverTelemetryEnabled()) return;
-  runAfter(() => emitServerEvent(evt, attributes, status));
+  runAfter(async () => {
+    await emitServerEvent(evt, attributes, status);
+  });
 }
 
 // ---- Typed events (the API routes should use) ------------------------------
 
 /** One MCP tool invocation at /mcp. Hash + emit happen inside after() so a
  *  telemetry failure cannot 500 the tool. /mcp requires a bearer — there is
- *  no sample tier on this URL; initialize 401s are untracked on purpose. */
+ *  no sample tier on this URL; 401s are counted separately as
+ *  mcp_auth_challenge in app/mcp/route.ts so anonymous demand stays visible. */
 export function trackMcpToolCall(d: {
   tool: string;
   outcome: "success" | "error" | "exception";
@@ -115,7 +123,7 @@ export function trackMcpToolCall(d: {
         tool,
         // Only `full` is reachable on /mcp (required:true). Emit it so
         // dashboard queries that key on @tier:full stay populated. Never
-        // emit sample — that path is gone; initialize 401s are untracked.
+        // emit sample — that path is gone; 401s emit mcp_auth_challenge.
         tier: "full",
         outcome,
         duration_ms: durationMs,

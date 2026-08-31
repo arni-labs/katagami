@@ -10,12 +10,16 @@ import { createServer } from "node:http";
 import {
   authorizeCronRequest,
   cleanAttrs,
+  EVENT_ATTRS,
   hashPrincipal,
   intakeAbortSignal,
   isForbiddenAttrKey,
+  logPayload,
   principalPepper,
   resolveLogsIntake,
+  RESERVED_LOG_KEYS,
 } from "../src/lib/server-telemetry-core.mjs";
+import { readODataCount } from "../src/lib/odata-count.mjs";
 
 function read(path) {
   return readFileSync(resolve(path), "utf8");
@@ -29,6 +33,7 @@ const oauthAs = read("src/lib/oauth-as.ts");
 const snapshot = read("src/app/api/telemetry/members/route.ts");
 const vercelJson = read("vercel.json");
 const dashboard = read("../infra/datadog/katagami-rum-dashboard.json");
+const pkg = read("package.json");
 
 // --- Behavioral -------------------------------------------------------------
 
@@ -74,35 +79,89 @@ const dashboard = read("../infra/datadog/katagami-rum-dashboard.json");
 }
 
 {
-  const stripped = cleanAttrs({
-    email: "a@b.c",
-    sub: "google-sub",
-    token: "tok",
-    bearer: "b",
-    user_email: "a@b.c",
-    access_token: "tok",
-    id_token: "jwt",
-    google_sub: "google-sub",
-    signed_in_as: "a@b.c",
+  // The guarantee is a per-event ALLOW-list: a key a call site did not
+  // declare in EVENT_ATTRS never ships. The review proved the old deny-list
+  // passed every one of these natural identity keys — they must all drop.
+  const identityKeys = [
+    "email", "sub", "token", "bearer", "user_email", "access_token",
+    "id_token", "google_sub", "signed_in_as",
+    // the keys that PASSED the deny-list (review finding #5):
+    "user_name", "display_name", "full_name", "caller_sub", "sub_id",
+    "owner_sub", "principal_id", "gmail", "login", "handle", "identity",
+    "account", "note",
+  ];
+  for (const evt of Object.keys(EVENT_ATTRS)) {
+    const attrs = Object.fromEntries(identityKeys.map((k) => [k, "a@b.c"]));
+    const stripped = cleanAttrs(evt, attrs);
+    assert.deepEqual(stripped, {}, `identity keys must not ship on ${evt}`);
+  }
+  const login = cleanAttrs("auth_login", {
     user_hash: "abc123",
-    members_total: 8,
     registration: true,
-    tool: "whoami",
+    upsert_ok: true,
+    email: "a@b.c",
   });
-  assert.equal(stripped.email, undefined);
-  assert.equal(stripped.sub, undefined);
-  assert.equal(stripped.token, undefined);
-  assert.equal(stripped.user_email, undefined);
-  assert.equal(stripped.access_token, undefined);
-  assert.equal(stripped.id_token, undefined);
-  assert.equal(stripped.google_sub, undefined);
-  assert.equal(stripped.signed_in_as, undefined);
-  assert.equal(stripped.user_hash, "abc123");
-  assert.equal(stripped.members_total, 8);
-  assert.equal(stripped.registration, true);
-  assert.equal(stripped.tool, "whoami");
+  assert.deepEqual(login, { user_hash: "abc123", registration: true, upsert_ok: true });
+  const call = cleanAttrs("mcp_tool_call", {
+    tool: "whoami",
+    tier: "full",
+    outcome: "success",
+    duration_ms: 12,
+    user_hash: "abc123",
+    note: "a@b.c failed",
+  });
+  assert.deepEqual(call, {
+    tool: "whoami",
+    tier: "full",
+    outcome: "success",
+    duration_ms: 12,
+    user_hash: "abc123",
+  });
+  // Unknown event → NO attributes ship at all (fail closed).
+  assert.deepEqual(cleanAttrs("made_up_event", { anything: "x" }), {});
+  // Non-primitive values never ship, and strings are capped.
+  assert.deepEqual(cleanAttrs("auth_login_failed", { reason: { deep: "obj" } }), {});
+  assert.equal(cleanAttrs("auth_login_failed", { reason: "x".repeat(500) }).reason.length, 200);
   assert.equal(isForbiddenAttrKey("user_hash"), false);
-  console.log("ok: PII keys (exact + variants) stripped; user_hash kept");
+  console.log("ok: per-event allow-list — undeclared keys (incl. user_name/caller_sub/gmail) never ship");
+}
+
+{
+  // Attribute spread must not override Datadog log routing: a future attr
+  // named "status"/"service"/"ddtags" must not re-level or re-route events.
+  for (const key of RESERVED_LOG_KEYS) {
+    assert.equal(
+      cleanAttrs("mcp_tool_call", { [key]: "evil" })[key],
+      undefined,
+      `reserved log key ${key} must be stripped`,
+    );
+  }
+  const payload = logPayload(
+    "mcp_tool_call",
+    { status: "error", service: "evil", ddtags: "env:prod", message: "spoof", hostname: "evil", tool: "whoami" },
+    "info",
+    { VERCEL_ENV: "production", VERCEL_REGION: "iad1" },
+  );
+  assert.equal(payload.status, "info");
+  assert.equal(payload.service, "katagami-server");
+  assert.equal(payload.message, "mcp_tool_call");
+  assert.equal(payload.hostname, "iad1");
+  assert.match(payload.ddtags, /service:katagami-server/);
+  assert.equal(payload.tool, "whoami");
+  console.log("ok: reserved log-routing keys cannot be overridden by attributes");
+}
+
+{
+  // @odata.count: absent or malformed throws — never a fake zero on the
+  // "Total registered users" tile (or the gallery hero counts).
+  assert.equal(readODataCount({ "@odata.count": 8 }), 8);
+  assert.equal(readODataCount({ "@odata.count": "8" }), 8, "IEEE754-compat string count parses");
+  assert.equal(readODataCount({ "@odata.count": 0 }), 0, "a real zero is still zero");
+  assert.throws(() => readODataCount({}), /missing or malformed/);
+  assert.throws(() => readODataCount({ "@odata.count": "eight" }), /missing or malformed/);
+  assert.throws(() => readODataCount({ "@odata.count": -1 }), /missing or malformed/);
+  assert.throws(() => readODataCount(null), /missing or malformed/);
+  console.log("ok: @odata.count absent/malformed throws instead of counting 0");
 }
 
 {
@@ -160,7 +219,9 @@ const required = [
   ["upsertMember reports created-vs-existing", oauthAs, /Promise<\{ created: boolean \}>/],
   ["countMembers filters on has_identity", oauthAs, /has_identity eq true/],
   ["daily members snapshot emits members_total", snapshot, /emitServerEvent\("members_snapshot"/],
-  ["members snapshot does not await Datadog on the request path", snapshot, /runAfter\(\(\) => emitServerEvent\("members_snapshot"/],
+  ["members cron reports REAL delivery, not config", snapshot, /const emitted = await emitServerEvent\("members_snapshot"/],
+  ["members cron does not report config as delivery", snapshot, /^(?![\s\S]*emitted: serverTelemetryEnabled\(\))[\s\S]*$/],
+  ["members cron snapshot is tagged source:cron", snapshot, /source: "cron"/],
   ["members snapshot uses authorizeCronRequest", snapshot, /authorizeCronRequest\(/],
   ["cron bearer compare is timing-safe", core, /timingSafeEqual/],
   ["sign-in skips countMembers when intake is fail-closed", callback, /if \(!serverTelemetryEnabled\(\)\) return/],
@@ -171,10 +232,41 @@ const required = [
   ["telemetry no-ops without credentials", telemetry, /if \(!intake\) return/],
   ["intake fetch is aborted on hang", telemetry, /signal: intakeAbortSignal\(\)/],
   ["dashboard distinct-callers tile keys on @tier:full", dashboard, /@evt:mcp_tool_call @tier:full/],
-  ["dashboard does not claim a sample-vs-full split", dashboard, /Auth tier \(full/],
+  ["dashboard surfaces MCP auth challenges (401s)", dashboard, /@evt:mcp_auth_challenge/],
+  ["registered-users tiles read members_snapshot only", dashboard, /@evt:members_snapshot"/],
+  ["registered-users tile shows absence as absence (no default_zero)", dashboard, /^(?![\s\S]*default_zero\(m\))[\s\S]*$/],
   ["pepper comes from env, not a repo string", core, /KATAGAMI_TELEMETRY_PEPPER/],
   ["no compile-time PRINCIPAL_PEPPER fallback", core, /^(?![\s\S]*PRINCIPAL_PEPPER = )[\s\S]*principalPepper/],
   ["no RUM-token server intake", core, /if \(!apiKey\) return null/],
+  // --- ARN-436 review round 2 ---------------------------------------------
+  ["auth_login is emitted BEFORE countMembers (a hung Temper cannot eat the login)", callback,
+    /emitServerEvent\("auth_login"[\s\S]*countMembers\(\)/],
+  ["auth_login does not carry members_total (it rides members_snapshot)", "" + (() => {
+    // Structural, not proximity: slice the auth_login emit call and make
+    // sure members_total is not among its attributes.
+    const start = callback.indexOf('emitServerEvent("auth_login"');
+    const end = callback.indexOf("});", start);
+    return start >= 0 && end > start && !callback.slice(start, end).includes("members_total");
+  })(), /^true$/],
+  ["login-path members snapshot is tagged source:login", callback, /source: "login"/],
+  ["state-mismatch emits only when a code came back (bots stay silent)", callback,
+    /else if \(code\) \{\s*trackServerEvent\("auth_login_failed", \{ reason: "state" \}/],
+  ["Google consent errors are their own reason", callback, /reason: "consent"/],
+  ["signSession failures are reason:session, not reason:google", callback, /reason: "session"/],
+  ["countMembers is bounded by default", oauthAs, /AbortSignal\.timeout\(COUNT_MEMBERS_TIMEOUT_MS\)/],
+  ["countMembers reads @odata.count strictly (absent throws, never 0)", oauthAs,
+    /readODataCount\(await res\.json\(\)\)/],
+  ["SDK-level tools/call wrapper sees zod rejections (invalid calls are visible)", mcp,
+    /setRequestHandler[\s\S]*invalid_arguments/],
+  ["tool handlers reserve telemetry headroom under maxDuration", mcp,
+    /TOOL_BUDGET_MS = maxDuration \* 1000 - TELEMETRY_RESERVE_MS/],
+  ["budget-exceeded calls are tracked, not silently killed", mcp, /tool_budget_exceeded/],
+  ["/mcp 401s emit mcp_auth_challenge (anonymous demand is visible)", mcp,
+    /trackServerEvent\("mcp_auth_challenge"/],
+  ["all /mcp verbs go through the auth-challenge counter", mcp,
+    /export \{ get as GET, trackedHandler as POST, trackedHandler as DELETE \}/],
+  ["telemetry contract runs on every build (prebuild), not only npm test", pkg,
+    /"prebuild":[^\n]*check-telemetry-contract\.mjs/],
 ];
 
 let failed = 0;

@@ -16,6 +16,8 @@ export const metadata = {
 const errorCopy: Record<string, string> = {
   state: "That sign-in attempt expired or didn't come back intact. Try again.",
   google: "Google didn't confirm that sign-in. Try again.",
+  session:
+    "Google confirmed you, but we couldn't start your session. Try again in a moment.",
   config:
     "Sign-in isn't configured on this server yet — the Google client and session secret are missing.",
 };

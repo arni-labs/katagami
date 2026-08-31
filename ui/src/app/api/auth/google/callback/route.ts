@@ -38,24 +38,45 @@ export async function GET(req: NextRequest) {
     !verifier ||
     !nonce
   ) {
-    trackServerEvent("auth_login_failed", { reason: "state" }, "warn");
+    // Emit only for hits that look like a real handshake coming back.
+    // Scanners GET this URL bare (no code, no error) constantly; emitting
+    // for them would drown real failures in warn noise and pump ingest cost.
+    if (req.nextUrl.searchParams.get("error")) {
+      // Google redirected back with an explicit error (user denied consent,
+      // policy block, …) — that is Google talking, not a broken handshake.
+      trackServerEvent("auth_login_failed", { reason: "consent" }, "warn");
+    } else if (code) {
+      trackServerEvent("auth_login_failed", { reason: "state" }, "warn");
+    }
     return NextResponse.redirect(new URL("/signin?error=state", origin));
   }
 
+  // reason:"google" = the Google exchange itself failed; reason:"session" =
+  // Google succeeded but WE could not mint the session (secret missing,
+  // generation counter unreadable). Conflating them sent diagnosis at the
+  // wrong dependency — a signSession outage would look like a Google outage.
   let user;
-  let token;
   try {
     user = await exchangeGoogleCode(origin, code, verifier, nonce);
-    token = user ? await signSession(user) : null;
   } catch (err) {
-    // fetch / JWKS / signSession throws used to skip auth_login_failed.
     console.error("Google exchange failed:", err);
     trackServerEvent("auth_login_failed", { reason: "google" }, "warn");
     return NextResponse.redirect(new URL("/signin?error=google", origin));
   }
-  if (!token) {
+  if (!user) {
     trackServerEvent("auth_login_failed", { reason: "google" }, "warn");
     return NextResponse.redirect(new URL("/signin?error=google", origin));
+  }
+  let token;
+  try {
+    token = await signSession(user);
+  } catch (err) {
+    console.error("Session signing failed after Google exchange:", err);
+    token = null;
+  }
+  if (!token) {
+    trackServerEvent("auth_login_failed", { reason: "session" }, "warn");
+    return NextResponse.redirect(new URL("/signin?error=session", origin));
   }
 
   // Durable account behind the stateless session (ARN-151): grants, roles,
@@ -73,9 +94,6 @@ export async function GET(req: NextRequest) {
   // Datadog auth events (ARN-436): every successful sign-in is a login; the
   // first sign-in of a sub is additionally a registration. Emitted after the
   // response with a hashed principal — no sub/email ever reaches Datadog.
-  // members_total rides along so "total registered users" always has a fresh
-  // datapoint (best-effort; the daily /api/telemetry/members snapshot is the
-  // steady feed).
   //
   // If upsert threw, omit `registration` — a first-time login that failed
   // to land must not look like a returning user (registration:false).
@@ -93,18 +111,28 @@ export async function GET(req: NextRequest) {
       } catch (err) {
         console.error("[telemetry] hashPrincipal failed", err);
       }
-      let membersTotal: number | undefined;
-      try {
-        membersTotal = await countMembers();
-      } catch {
-        membersTotal = undefined;
-      }
+      // auth_login FIRST. countMembers must never sit between a successful
+      // sign-in and its own event: with Temper hung, this post-response task dies
+      // at the function duration limit and the login (plus registration:true)
+      // silently under-counts exactly during incidents.
       await emitServerEvent("auth_login", {
         ...(upsertOk ? { registration } : {}),
         upsert_ok: upsertOk,
         user_hash: userHash,
-        members_total: membersTotal,
       });
+      // A fresh members_total rides on its own best-effort snapshot event
+      // (same @evt the daily cron emits, tagged source:login). countMembers
+      // self-bounds at COUNT_MEMBERS_TIMEOUT_MS, so the worst case is a
+      // skipped intraday datapoint — the daily cron remains the steady feed.
+      try {
+        const membersTotal = await countMembers();
+        await emitServerEvent("members_snapshot", {
+          members_total: membersTotal,
+          source: "login",
+        });
+      } catch (err) {
+        console.error("[telemetry] members_snapshot after login skipped:", err);
+      }
     });
   }
 

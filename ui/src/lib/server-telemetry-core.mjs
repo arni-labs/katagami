@@ -17,7 +17,11 @@ export function principalPepper(env = process.env) {
 const ALLOWED_ATTR_KEYS = new Set(["user_hash"]);
 
 // Exact names plus common variants (user_email, access_token, id_token, …).
-// user_hash is allow-listed so the hashed principal still ships.
+// user_hash is allow-listed so the hashed principal still ships. This is a
+// BELT, not the guarantee: the review proved a deny-list passes the most
+// natural identity keys (user_name, caller_sub, gmail, handle, …). The
+// guarantee is the per-event allow-list in EVENT_ATTRS below — an attribute
+// key a call site did not declare here never reaches Datadog.
 const FORBIDDEN_EXACT =
   /^(e-?mails?|subs?|tokens?|bearers?|authorization|names?|pictures?|users?|usernames?|user_ids?|userids?|google_subs?|access_tokens?|id_tokens?|refresh_tokens?|raw_subs?|principals?|signed_in_as|passw(or)?ds?|secrets?|cookies?|api[_-]?keys?)$/i;
 const FORBIDDEN_PART =
@@ -28,12 +32,69 @@ export function isForbiddenAttrKey(key) {
   return FORBIDDEN_EXACT.test(key) || FORBIDDEN_PART.test(key);
 }
 
-export function cleanAttrs(attributes) {
+/** Datadog log-routing keys. An attribute spread must never override these —
+ *  a future attr named "status" would silently re-level events, "ddtags"
+ *  would re-route them. Stripped unconditionally, allow-list or not. */
+export const RESERVED_LOG_KEYS = new Set([
+  "ddsource",
+  "ddtags",
+  "service",
+  "hostname",
+  "status",
+  "message",
+  "evt",
+  "timestamp",
+  "date",
+  "trace_id",
+  "span_id",
+]);
+
+/** The full attribute vocabulary, per event. Adding an attribute means
+ *  adding it here (and to the README table) — a call site cannot leak a new
+ *  key by accident, whatever it is named. */
+export const EVENT_ATTRS = {
+  auth_login: new Set(["registration", "upsert_ok", "user_hash"]),
+  auth_login_failed: new Set(["reason"]),
+  mcp_tool_call: new Set(["tool", "tier", "outcome", "duration_ms", "user_hash", "error_kind"]),
+  mcp_auth_challenge: new Set(["has_auth", "method"]),
+  members_snapshot: new Set(["members_total", "source"]),
+};
+
+// Module-load invariant: no allow-listed key may be identity-shaped or a
+// routing key. Runs on every import (tests, build, runtime), so a bad
+// allow-list edit fails loudly before it ships.
+for (const [evt, keys] of Object.entries(EVENT_ATTRS)) {
+  for (const key of keys) {
+    if (RESERVED_LOG_KEYS.has(key)) {
+      throw new Error(`telemetry: ${evt} allow-lists reserved log key "${key}"`);
+    }
+    if (isForbiddenAttrKey(key)) {
+      throw new Error(`telemetry: ${evt} allow-lists identity-shaped key "${key}"`);
+    }
+  }
+}
+
+/** Bound attr values too: primitives only, strings capped — a free-text blob
+ *  ("a@b.c failed") must not ride an allowed key into the index at length. */
+const MAX_ATTR_STRING = 200;
+
+export function cleanAttrs(evt, attributes) {
+  const allowed = EVENT_ATTRS[evt];
+  if (!allowed) {
+    // Unknown event → no attributes at all (fail closed), and say so:
+    // a dev who forgot to register the event must see it, not lose data.
+    console.error(`[telemetry] event "${evt}" has no attribute allow-list; attrs dropped`);
+    return {};
+  }
   const out = {};
   for (const [k, v] of Object.entries(attributes ?? {})) {
+    if (!allowed.has(k) || RESERVED_LOG_KEYS.has(k)) continue;
     if (v === undefined || v === null || v === "") continue;
-    if (isForbiddenAttrKey(k)) continue;
-    out[k] = v;
+    if (typeof v === "string") {
+      out[k] = v.slice(0, MAX_ATTR_STRING);
+    } else if (typeof v === "number" || typeof v === "boolean") {
+      out[k] = v;
+    }
   }
   return out;
 }
@@ -123,7 +184,7 @@ export function logPayload(evt, attributes, status, env = process.env) {
     status,
     message: evt,
     evt,
-    ...cleanAttrs(attributes),
+    ...cleanAttrs(evt, attributes),
   };
 }
 

@@ -13,6 +13,7 @@ import "server-only";
 
 import { SignJWT, jwtVerify, importPKCS8, exportJWK, calculateJwkThumbprint, type JWK } from "jose";
 import { createEntity, dispatchAction } from "@/lib/odata-mutations";
+import { readODataCount } from "@/lib/odata-count.mjs";
 import {
   isAllowedRedirectUri,
   readMcpResource,
@@ -171,11 +172,21 @@ export async function upsertMember(user: {
   }
 }
 
+/** Every caller of countMembers is telemetry-adjacent (the sign-in after()
+ *  task, the members cron); a hung Temper must cost a bounded wait, never
+ *  the Vercel function duration limit — an unbounded count sitting in the
+ *  login after() task was exactly how logins under-counted during incidents. */
+export const COUNT_MEMBERS_TIMEOUT_MS = 5_000;
+
 /** Registered humans: Members that completed a Google sign-in. Filters on
  *  has_identity because dispatching an action on a missing id auto-creates a
  *  placeholder row (the known Temper gotcha) — those husks carry no identity
- *  and must not count. Verified live 2026-08-29: 9 rows, 8 with identity. */
-export async function countMembers(): Promise<number> {
+ *  and must not count. Verified live 2026-08-29: 9 rows, 8 with identity.
+ *  Throws on a missing/malformed `@odata.count` — a 200 without the field is
+ *  a backend regression, not zero registered users. */
+export async function countMembers(
+  signal: AbortSignal = AbortSignal.timeout(COUNT_MEMBERS_TIMEOUT_MS),
+): Promise<number> {
   const params = new URLSearchParams();
   params.set("$filter", "has_identity eq true");
   params.set("$count", "true");
@@ -183,12 +194,12 @@ export async function countMembers(): Promise<number> {
   const res = await fetch(`${API_BASE}/tdata/Members?${params.toString()}`, {
     headers,
     cache: "no-store",
+    signal,
   });
   if (!res.ok) {
     throw new Error(`Count Members failed ${res.status}: ${await res.text()}`);
   }
-  const body = (await res.json()) as { "@odata.count"?: number };
-  return body["@odata.count"] ?? 0;
+  return readODataCount(await res.json());
 }
 
 export async function memberBySub(sub: string): Promise<EntityRow | null> {

@@ -62,3 +62,70 @@
 - **Options:** omit tier; emit sample-vs-full; emit full only and retitle the panel.
 - **Chose** full only **because** that is the only reachable tier on this URL. Initialize 401s stay untracked.
 - **Where:** `ui/src/lib/server-telemetry.ts`, `infra/datadog/katagami-rum-dashboard.json`, `ui/scripts/check-telemetry-contract.mjs`.
+
+## Review round 2 (Codex + Fable panel, 2026-08-31)
+
+## auth_login emits first; members_total moves to members_snapshot
+- **Decision:** the sign-in after() task emits `auth_login` (registration, upsert_ok, user_hash) FIRST, then best-effort counts Members and emits a `members_snapshot` (`source:login`); `auth_login` no longer carries `members_total`. `countMembers` self-bounds at 5s (`AbortSignal.timeout`, default parameter — every caller is bounded).
+- **Came up because:** Codex + Fable both found the unbounded `countMembers` awaited BEFORE `emitServerEvent("auth_login")`: with Temper hung, the after() task dies at the function duration limit and logins under-count exactly during incidents.
+- **Options:** only bound the count (login still waits on Temper); emit first and keep members_total on auth_login (stale-order attribute); emit first + separate snapshot event (chosen).
+- **Chose** reorder + separate event **because** the login event then has zero Temper dependencies, and members_total lands on the one event (`members_snapshot`) the dashboard already reads — sign-ins now also give the tile intraday freshness. Given up: a members_total facet on login events.
+- **Where:** `ui/src/app/api/auth/google/callback/route.ts`, `ui/src/lib/oauth-as.ts` (`COUNT_MEMBERS_TIMEOUT_MS`), verified live: forced blackhole Temper → `TimeoutError` at 5.2s, bounded 502 on the cron, contract greps lock the order.
+
+## @odata.count is strict — absence is an error, never zero
+- **Decision:** shared `readODataCount()` (`ui/src/lib/odata-count.mjs`): missing/malformed `@odata.count` throws; numeric strings ("8", IEEE754-compat) parse. `countMembers` throws through it; the gallery hero counts (`odata.ts` countDesignLanguages/countLane) route through it too and keep their render-fallback in their existing catch (now with a console.error).
+- **Came up because:** `body["@odata.count"] ?? 0` turned a field-less 200 into "0 registered users", indistinguishable from data loss.
+- **Options:** return null and per-caller branching; throw (chosen); leave odata.ts as-is.
+- **Chose** throw **because** both telemetry callers already have correct error paths (cron → 502, login snapshot → skip emit), and fixing the class in odata.ts was one import — the hero pages still render (their catch), but a malformed 200 now takes the error path and logs instead of silently shipping 0+demo.
+- **Where:** `ui/src/lib/odata-count.mjs`, `ui/src/lib/oauth-as.ts`, `ui/src/lib/odata.ts:369,1253`, unit-tested in `check-telemetry-contract.mjs`.
+
+## Invalid tool calls are visible: a second wrapper at tools/call
+- **Decision:** keep the per-tool registerTool wrapper (layer 1) and add a wrapper around the SDK's `tools/call` request handler (layer 2), installed by patching `server.server.setRequestHandler` before any tool registers. Layer 1 marks the call context with a symbol; layer 2 emits only for calls layer 1 never saw.
+- **Came up because:** `@modelcontextprotocol/server` v2 validates arguments BEFORE invoking the registered callback (`validateToolInput` → `ProtocolError` → `createToolError`, mcp-DXXb3Vv3.mjs:1400-1433), so zod rejections produced zero usage and zero errors. There IS no SDK hook for this — the request-handler patch is the observable seam.
+- **Options:** single wrapper at tools/call only (loses the error-vs-exception split for handler throws); sniff error text (brittle); two layers with a tracked-flag (chosen).
+- **Chose** two layers **because** layer 1 keeps clean outcome semantics and handler-only durations, while layer 2 structurally catches schema rejections (`error_kind:invalid_arguments` — accurate without text sniffing, since flagged calls are excluded) and unknown/disabled tools (`outcome:exception`). This also closes the noted gap: tools registered via legacy `server.tool()` or without inputSchema are dispatched through the same tools/call handler and get counted.
+- **Where:** `ui/src/app/mcp/route.ts` (`withUsageTracking`), verified live: malformed `get_design_language` call → `@error_kind:invalid_arguments` indexed in Datadog; `no_such_tool` → `@outcome:exception @error_kind:ProtocolError`.
+
+## Tool handlers race a budget that reserves telemetry headroom
+- **Decision:** layer 1 races every handler against `TOOL_BUDGET_MS = maxDuration*1000 − 5000` (55s); on timeout the caller gets a clean isError result and telemetry emits `@error_kind:tool_budget_exceeded`.
+- **Came up because:** after() shares the 60s maxDuration, so a call finishing near the limit had under a second to reach the intake — dropping exactly the slowest calls and biasing p95 downward.
+- **Options:** raise maxDuration (moves the cliff); shorten only the intake timeout (cannot recover time already spent); cap the handler (chosen).
+- **Chose** the handler cap **because** a 60s platform kill also destroys the RESPONSE — the cap converts an invisible kill into a visible, counted error with 5s of guaranteed emit headroom. Given up: tools may not legitimately run 55-60s (none comes close; catalog reads are sub-second).
+- **Where:** `ui/src/app/mcp/route.ts`.
+
+## Attributes ship on a per-event allow-list; routing keys are reserved
+- **Decision:** `cleanAttrs(evt, attrs)` keeps only keys declared in `EVENT_ATTRS[evt]`; unknown events ship no attrs (loudly); values are primitives-only with strings capped at 200 chars; `RESERVED_LOG_KEYS` (status/service/ddtags/message/hostname/…) can never be overridden; a module-load invariant rejects any allow-list entry that is identity-shaped or reserved. The old deny-regexes stay as that invariant's belt.
+- **Came up because:** execution proved the deny-list passed user_name, caller_sub, gmail, handle, and friends, and a spread-last attr named "status" could re-level events.
+- **Options:** grow the deny-list (loses the same race next month); allow-list per event (chosen).
+- **Chose** the allow-list **because** the guarantee flips from "we predicted every bad name" to "a call site cannot ship an undeclared key at all". The invariant already earned its keep: it rejected our own `has_bearer` attr name (matched the bearer pattern) — renamed `has_auth`.
+- **Where:** `ui/src/lib/server-telemetry-core.mjs`, contract tests feed every reviewer-listed identity key through every event and assert empty.
+
+## The members cron reports delivery, not configuration
+- **Decision:** `emitServerEvent` returns whether Datadog accepted the event; `/api/telemetry/members` awaits the bounded count (5s) and the bounded intake (2.5s) and returns that real result as `emitted`.
+- **Came up because:** `emitted: serverTelemetryEnabled()` reflected config — a revoked key showed green forever.
+- **Options:** keep fire-and-forget and log only; await and report (chosen).
+- **Chose** awaiting **because** both awaits are bounded (worst case ~7.5s on a daily cron) and the cron is the one place a human checks delivery.
+- **Where:** `ui/src/lib/server-telemetry.ts`, `ui/src/app/api/telemetry/members/route.ts`, verified live: `{"ok":true,"members_total":10,"emitted":true}` with the probe indexed in Datadog.
+
+## Dashboard: absence looks like absence; 401s get the dead tile's slot
+- **Decision:** the "Registered users (total)" tile drops `default_zero` and reads `@evt:members_snapshot` only (the sole `members_total` carrier now); "Registered users over time" follows; the informationally-dead "Auth tier (full)" toplist becomes "Auth challenges — 401s (fresh client vs rejected token)" over the new `mcp_auth_challenge` event (`@has_auth` false = anonymous demand meeting the connect card, true = rejected/expired token).
+- **Came up because:** `default_zero` over a window with no snapshot rendered "0 registered users" — identical to data loss; and with `/mcp` fully authed, a broken OAuth flow was indistinguishable from waning interest (Rita explicitly wants authed-vs-unauthed demand visible).
+- **Options:** keep default_zero (lies); N/A on empty windows (chosen). For 401s: a new tile row vs replacing the constant-valued tier tile (chosen — tier is a facet on every event and a metric tag either way).
+- **Where:** `infra/datadog/katagami-rum-dashboard.json`, `ui/src/app/mcp/route.ts` (`withAuthChallengeCount` on GET-SSE/POST/DELETE), verified live: both `has_auth:true` and `has_auth:false` challenges indexed.
+
+## auth_login_failed is bot-proof and names the failing dependency
+- **Decision:** the callback emits `reason:state` only when a `code` param actually came back; a Google `error` param (user denied consent, …) emits `reason:consent`; a bare cookie-less GET (scanner shape) emits nothing. The Google exchange and local session minting are separate try blocks: `reason:google` = Google failed, `reason:session` = we could not mint the session (redirects to `/signin?error=session` with its own copy).
+- **Came up because:** any bot GET to the callback pumped a warn event and an intake POST (cost + noise drowning real failures), and a `signSession` outage was indistinguishable from a Google outage.
+- **Options:** rate-limit emission (module state does not persist on Vercel); tag bot-shaped hits separately (still pays intake per scan); emit only on real-handshake shapes (chosen).
+- **Chose** the code/error gate **because** a scanner cannot cheaply fake a Google redirect shape by accident, and the consent case (no code, explicit error) still gets counted. Given up: visibility into raw scanner volume on this URL (that lives in access logs, not paid telemetry).
+- **Where:** `ui/src/app/api/auth/google/callback/route.ts`, `ui/src/app/(site)/signin/page.tsx`, verified live: bare GET → zero events; `?error=access_denied` → `reason:consent`; `?code=x&state=y` → `reason:state` — exactly those, indexed.
+
+## Contract check gates every build, not only npm test
+- **Decision:** `check-telemetry-contract.mjs` runs in `prebuild` (Vercel runs it on every deploy) as well as `npm test`, and now locks all of the above (allow-list behavior, reserved keys, strict count, emit order, budget, auth-challenge wiring, cron delivery reporting — including a check that prebuild itself stays wired).
+- **Came up because:** the reviewer noted the check only ran under npm test, which nothing gates.
+- **Where:** `ui/package.json` (`prebuild`), `ui/scripts/check-telemetry-contract.mjs`.
+
+## Noted, judged, not changed
+- **Single intake attempt, no retry:** kept. A retry queue inside a serverless after() adds machinery and can spend the headroom just reserved; a 503 burst loses only that window's events, and the daily cron + 15-month log-based metrics restore the durable trends. Telemetry here is best-effort by contract.
+- **First-sign-in race (duplicate Members):** real but rare — two concurrent first callbacks for one sub can double-create Members and double-count a registration. The correct fix is a uniqueness constraint on `sub` in the Temper app (backend), not another read-then-write dance in the UI. Left as a linked residual risk on ARN-436.
+- **Legacy `server.tool()` / schema-less tools bypassing tracking:** closed structurally by the tools/call layer (see above) — any tool the SDK dispatches is counted regardless of how it was registered.

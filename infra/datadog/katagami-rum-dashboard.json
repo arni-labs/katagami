@@ -1027,7 +1027,7 @@
                 {
                   "formulas": [
                     {
-                      "formula": "default_zero(m)"
+                      "formula": "m"
                     }
                   ],
                   "queries": [
@@ -1043,7 +1043,7 @@
                       ],
                       "name": "m",
                       "search": {
-                        "query": "service:katagami-server env:production (@evt:members_snapshot OR @evt:auth_login)"
+                        "query": "service:katagami-server env:production @evt:members_snapshot"
                       }
                     }
                   ],
@@ -1265,7 +1265,7 @@
                       ],
                       "name": "m",
                       "search": {
-                        "query": "service:katagami-server env:production (@evt:members_snapshot OR @evt:auth_login)"
+                        "query": "service:katagami-server env:production @evt:members_snapshot"
                       }
                     }
                   ],
@@ -1571,22 +1571,26 @@
           },
           {
             "definition": {
+              "title": "Auth challenges \u2014 401s (fresh client vs rejected token)",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "toplist",
               "requests": [
                 {
-                  "formulas": [
-                    {
-                      "formula": "q"
-                    }
-                  ],
+                  "response_format": "scalar",
                   "queries": [
                     {
+                      "data_source": "logs",
+                      "name": "q",
+                      "indexes": [
+                        "*"
+                      ],
                       "compute": {
                         "aggregation": "count"
                       },
-                      "data_source": "logs",
                       "group_by": [
                         {
-                          "facet": "@tier",
+                          "facet": "@has_auth",
                           "limit": 2,
                           "sort": {
                             "aggregation": "count",
@@ -1594,20 +1598,28 @@
                           }
                         }
                       ],
-                      "indexes": [
-                        "*"
-                      ],
-                      "name": "q",
                       "search": {
-                        "query": "service:katagami-server env:production @evt:mcp_tool_call"
+                        "query": "service:katagami-server env:production @evt:mcp_auth_challenge"
                       }
                     }
                   ],
-                  "response_format": "scalar"
+                  "formulas": [
+                    {
+                      "formula": "q"
+                    }
+                  ],
+                  "sort": {
+                    "count": 2,
+                    "order_by": [
+                      {
+                        "type": "formula",
+                        "index": 0,
+                        "order": "desc"
+                      }
+                    ]
+                  }
                 }
-              ],
-              "title": "Auth tier (full \u2014 /mcp requires a bearer)",
-              "type": "toplist"
+              ]
             },
             "layout": {
               "height": 3,
