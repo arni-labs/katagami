@@ -6,6 +6,11 @@
 // the site header). Memoizing the promise keeps that at one request; the
 // module resets on a full navigation, and sign-out is a full navigation, so
 // staleness cannot outlive the page.
+//
+// The fetch aborts at SESSION_ME_TIMEOUT_MS (the 5s telemetry bound). A
+// hung /api/auth/me must resolve as signed-out — never stall RUM init.
+
+import { sessionMeAbortSignal } from "./session-me-core.mjs";
 
 export type SessionMeUser = { name: string; email: string; picture: string };
 
@@ -27,6 +32,7 @@ export function fetchSessionMe(): Promise<SessionMe> {
     inflight = fetch("/api/auth/me", {
       cache: "no-store",
       credentials: "same-origin",
+      signal: sessionMeAbortSignal(),
     })
       .then((r) => (r.ok ? (r.json() as Promise<Partial<SessionMe>>) : SIGNED_OUT))
       .then((d) => ({

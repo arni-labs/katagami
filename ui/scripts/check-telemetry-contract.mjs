@@ -26,6 +26,11 @@ import {
   isValidUserHash,
   utcDayKey,
 } from "../src/lib/member-activity-core.mjs";
+import {
+  SESSION_ME_TIMEOUT_MS,
+  sessionMeAbortSignal,
+  waitForIdentityOrSignedOut,
+} from "../src/lib/session-me-core.mjs";
 
 function read(path) {
   return readFileSync(resolve(path), "utf8");
@@ -45,6 +50,7 @@ const analytics = read("src/lib/analytics.ts");
 const rumInit = read("src/components/rum-init.tsx");
 const userMenu = read("src/components/user-menu.tsx");
 const sessionMe = read("src/lib/session-me.ts");
+const sessionMeCore = read("src/lib/session-me-core.mjs");
 const memberActivity = read("src/lib/member-activity.ts");
 const odataMutations = read("src/lib/odata-mutations.ts");
 const memberSpec = read("../katagami-commons/specs/member.ioa.toml");
@@ -216,6 +222,77 @@ const activityCedar = read(activityCedarLoadedPath);
 }
 
 {
+  const server = createServer(() => {
+    /* blackhole: accept, never write a response */
+  });
+  await new Promise((resolveListen) => server.listen(0, "127.0.0.1", resolveListen));
+  const { port } = server.address();
+  const started = Date.now();
+  let aborted = false;
+  try {
+    await fetch(`http://127.0.0.1:${port}/`, { signal: sessionMeAbortSignal(200) });
+  } catch (err) {
+    aborted = err?.name === "TimeoutError" || err?.name === "AbortError";
+  }
+  await new Promise((resolveClose) => server.close(resolveClose));
+  assert.ok(aborted, "blackhole /api/auth/me must abort");
+  assert.ok(Date.now() - started < 1500, "session-me abort must be prompt, not a platform stall");
+  assert.equal(SESSION_ME_TIMEOUT_MS, 5_000, "session-me abort matches the 5s telemetry bound");
+  console.log("ok: hung /api/auth/me aborts instead of stalling");
+}
+
+{
+  // Hung me must not poison later initRum: identity wait times out as
+  // signed-out, first init completes, a later call is a post-success
+  // no-op — not the old initialized=true + wait-forever skip.
+  let desired;
+  let initialized = false;
+  let inited = 0;
+  async function initRumSim() {
+    if (initialized) return;
+    await waitForIdentityOrSignedOut({
+      isKnown: () => desired !== undefined,
+      markSignedOut: () => {
+        if (desired === undefined) desired = null;
+      },
+      addWaiter: () => {
+        /* hung me: setRumUser / clearRumUser never fire */
+      },
+      timeoutMs: 40,
+    });
+    inited += 1;
+    initialized = true;
+  }
+  const started = Date.now();
+  await initRumSim();
+  assert.ok(Date.now() - started < 1000, "identity wait timeout must be prompt");
+  assert.equal(desired, null, "hung me settles signed-out");
+  assert.equal(inited, 1, "first init completed as signed-out");
+  await initRumSim();
+  assert.equal(inited, 1, "later initRum is a post-success no-op, not a poisoned skip");
+  console.log("ok: hung me cannot poison later initRum");
+}
+
+{
+  // Identity arriving before the timeout still wins (signed-in path).
+  let desired;
+  const waiters = [];
+  const pending = waitForIdentityOrSignedOut({
+    isKnown: () => desired !== undefined,
+    markSignedOut: () => {
+      if (desired === undefined) desired = null;
+    },
+    addWaiter: (w) => waiters.push(w),
+    timeoutMs: 5_000,
+  });
+  desired = "9fc5a227c397eafb";
+  for (const w of waiters) w();
+  await pending;
+  assert.equal(desired, "9fc5a227c397eafb", "arriving identity is not overwritten by the timeout");
+  console.log("ok: identity arriving before the wait timeout is kept");
+}
+
+{
   // --- ARN-451: durable per-user activity rollup helpers --------------------
   assert.equal(utcDayKey(new Date("2026-08-31T23:59:59Z")), "2026-08-31");
   assert.equal(utcDayKey(new Date("2026-09-01T00:00:01Z")), "2026-09-01", "day buckets are UTC");
@@ -357,6 +434,22 @@ const required = [
     /^(?![\s\S]*fetch\("\/api\/auth\/me")[\s\S]*fetchSessionMe\(\)/],
   ["session helper memoizes the fetch (one request per page load)", sessionMe,
     /if \(!inflight\) \{/],
+  ["fetchSessionMe aborts hung /api/auth/me (5s telemetry bound)", sessionMe,
+    /signal: sessionMeAbortSignal\(\)/],
+  ["session-me abort helper is the 5s telemetry bound", sessionMeCore,
+    /SESSION_ME_TIMEOUT_MS = 5_000/],
+  ["initRum waits via waitForIdentityOrSignedOut (hung me → signed-out)", analytics,
+    /waitForIdentityOrSignedOut\(\{/],
+  ["initRum does not mark initialized before the identity wait", "" + (() => {
+    const start = analytics.indexOf("export async function initRum");
+    const end = analytics.indexOf("type AttrValue", start);
+    const body = start >= 0 && end > start ? analytics.slice(start, end) : "";
+    const waitAt = body.indexOf("whenIdentityKnown()");
+    const initAt = body.indexOf("initialized = true");
+    return waitAt >= 0 && initAt > waitAt;
+  })(), /^true$/],
+  ["a hung identity wait marks desiredUserHash signed-out", analytics,
+    /if \(desiredUserHash === undefined\) desiredUserHash = null/],
   // --- ARN-451: user_hash on the Member row ---------------------------------
   ["Member spec declares user_hash on Register", memberSpec,
     /params = \["sub", "email", "display_name", "avatar_url", "user_hash"\]/],

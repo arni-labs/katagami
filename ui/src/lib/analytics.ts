@@ -16,11 +16,17 @@
 //  - Attribution (which surface drove a click), and events that aren't a
 //    navigation at all: copy-to-clipboard, downloads, search, compare.
 
+import { waitForIdentityOrSignedOut } from "./session-me-core.mjs";
+
 type RumModule = typeof import("@datadog/browser-rum");
 type RumGlobal = RumModule["datadogRum"];
 
 let rum: RumGlobal | null = null;
 let initialized = false;
+// In-flight start so a second initRum joins the first instead of no-op'ing
+// while identity is still resolving — and so a throw leaves initialized
+// false for a later retry.
+let starting: Promise<void> | null = null;
 // undefined = never told; null = signed out (clear); string = the hash.
 let desiredUserHash: string | null | undefined;
 // The hash last applied to the SDK (same tri-state as desiredUserHash).
@@ -52,44 +58,57 @@ export function rumEnabled(): boolean {
 /** Initialize the RUM SDK once, in the browser. Safe to call repeatedly. */
 export async function initRum(): Promise<void> {
   if (initialized || typeof window === "undefined") return;
+  if (starting) return starting;
   const e = readEnv();
-  if (!e.applicationId || !e.clientToken) return; // no creds → stay a no-op
-  initialized = true;
-  try {
-    // Import and session identity in parallel (RumInit starts both). Do not
-    // flush until the session is known: otherwise the first language_view
-    // (and anything else buffered during the import) ships with no @usr.id
-    // and the later setRumUser cannot retrofit those events.
-    const [mod] = await Promise.all([
-      import("@datadog/browser-rum"),
-      whenIdentityKnown(),
-    ]);
-    rum = mod.datadogRum;
-    rum.init({
-      applicationId: e.applicationId,
-      clientToken: e.clientToken,
-      site: e.site,
-      service: e.service,
-      env: e.env,
-      version: e.version,
-      sessionSampleRate: Number.isFinite(e.sampleRate) ? e.sampleRate : 100,
-      sessionReplaySampleRate: Number.isFinite(e.replaySampleRate)
-        ? e.replaySampleRate
-        : 0,
-      trackUserInteractions: true, // automatic click map in addition to our actions
-      trackResources: true,
-      trackLongTasks: true,
-      defaultPrivacyLevel: "mask-user-input",
-    });
-    // Identity is already known (whenIdentityKnown). Apply it before
-    // flushPending so replayed actions — language_view on a signed-in
-    // hard reload — carry @usr.id instead of flushing anonymous.
-    applyDesiredUser();
-    flushPending();
-  } catch {
-    // SDK failed to load — leave as a no-op, never surface to the user.
-    rum = null;
-  }
+  const applicationId = e.applicationId;
+  const clientToken = e.clientToken;
+  if (!applicationId || !clientToken) return; // no creds → stay a no-op
+  starting = (async () => {
+    try {
+      // Import and session identity in parallel (RumInit starts both). Do not
+      // flush until the session is known: otherwise the first language_view
+      // (and anything else buffered during the import) ships with no @usr.id
+      // and the later setRumUser cannot retrofit those events.
+      //
+      // Do not mark initialized before that wait: a hung /api/auth/me used
+      // to leave initialized=true with the SDK never started, so later
+      // initRum() no-op'd forever. whenIdentityKnown times out as signed-out.
+      const [mod] = await Promise.all([
+        import("@datadog/browser-rum"),
+        whenIdentityKnown(),
+      ]);
+      rum = mod.datadogRum;
+      rum.init({
+        applicationId,
+        clientToken,
+        site: e.site,
+        service: e.service,
+        env: e.env,
+        version: e.version,
+        sessionSampleRate: Number.isFinite(e.sampleRate) ? e.sampleRate : 100,
+        sessionReplaySampleRate: Number.isFinite(e.replaySampleRate)
+          ? e.replaySampleRate
+          : 0,
+        trackUserInteractions: true, // automatic click map in addition to our actions
+        trackResources: true,
+        trackLongTasks: true,
+        defaultPrivacyLevel: "mask-user-input",
+      });
+      // Identity is already known (whenIdentityKnown). Apply it before
+      // flushPending so replayed actions — language_view on a signed-in
+      // hard reload — carry @usr.id instead of flushing anonymous.
+      applyDesiredUser();
+      flushPending();
+      initialized = true;
+    } catch {
+      // SDK failed to load — leave as a no-op, never surface to the user.
+      // initialized stays false so a later initRum can retry.
+      rum = null;
+    } finally {
+      starting = null;
+    }
+  })();
+  return starting;
 }
 
 type AttrValue = string | number | boolean | undefined | null;
@@ -155,9 +174,12 @@ export function track(name: string, attributes: Attributes = {}): void {
 // flushPending so replayed actions already carry @usr.id.
 
 function whenIdentityKnown(): Promise<void> {
-  if (desiredUserHash !== undefined) return Promise.resolve();
-  return new Promise((resolve) => {
-    identityWaiters.push(resolve);
+  return waitForIdentityOrSignedOut({
+    isKnown: () => desiredUserHash !== undefined,
+    markSignedOut: () => {
+      if (desiredUserHash === undefined) desiredUserHash = null;
+    },
+    addWaiter: (resolve: () => void) => identityWaiters.push(resolve),
   });
 }
 
