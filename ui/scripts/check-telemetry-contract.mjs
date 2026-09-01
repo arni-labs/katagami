@@ -4,7 +4,7 @@
 // the request path. Greps lock the wiring; the imports exercise the helpers.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createServer } from "node:http";
 import {
@@ -49,7 +49,9 @@ const memberActivity = read("src/lib/member-activity.ts");
 const odataMutations = read("src/lib/odata-mutations.ts");
 const memberSpec = read("../katagami-commons/specs/member.ioa.toml");
 const activitySpec = read("../katagami-commons/specs/member_activity.ioa.toml");
-const activityCedar = read("../katagami-commons/policies/member_activity.cedar");
+const activityCedarLoadedPath = "../katagami-commons/policies/member_activity.cedar";
+const activityCedarServedPath = "../katagami-commons/specs/policies/member_activity.cedar";
+const activityCedar = read(activityCedarLoadedPath);
 
 // --- Behavioral -------------------------------------------------------------
 
@@ -240,6 +242,27 @@ const activityCedar = read("../katagami-commons/policies/member_activity.cedar")
     assert.equal(isValidUserHash(bad), false, `"${bad}" must not pass as a user_hash`);
   }
   console.log("ok: only 16-hex hashPrincipal output counts as a user_hash");
+}
+
+{
+  // policies/ is the installed-app copy; specs/policies/ is what `temper
+  // serve` and the e2e harness load. A one-sided add ships lockdown only
+  // on install. Assert both copies exist and are byte-identical so npm
+  // test cannot pass while the serve copy is absent.
+  assert.ok(
+    existsSync(resolve(activityCedarLoadedPath)),
+    "policies/member_activity.cedar (installed-app copy) must exist",
+  );
+  assert.ok(
+    existsSync(resolve(activityCedarServedPath)),
+    "specs/policies/member_activity.cedar (temper serve copy) must exist",
+  );
+  assert.equal(
+    activityCedar,
+    read(activityCedarServedPath),
+    "member_activity.cedar must match between policies/ and specs/policies/",
+  );
+  console.log("ok: member_activity.cedar exists in both policy trees and the copies match");
 }
 
 // --- Wiring greps -----------------------------------------------------------
