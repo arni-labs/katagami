@@ -21,6 +21,11 @@ type RumGlobal = RumModule["datadogRum"];
 
 let rum: RumGlobal | null = null;
 let initialized = false;
+// undefined = never told; null = signed out (clear); string = the hash.
+let desiredUserHash: string | null | undefined;
+// The hash last applied to the SDK (same tri-state as desiredUserHash).
+let appliedUserHash: string | null | undefined;
+const identityWaiters: Array<() => void> = [];
 
 function readEnv() {
   return {
@@ -51,7 +56,14 @@ export async function initRum(): Promise<void> {
   if (!e.applicationId || !e.clientToken) return; // no creds → stay a no-op
   initialized = true;
   try {
-    const mod = await import("@datadog/browser-rum");
+    // Import and session identity in parallel (RumInit starts both). Do not
+    // flush until the session is known: otherwise the first language_view
+    // (and anything else buffered during the import) ships with no @usr.id
+    // and the later setRumUser cannot retrofit those events.
+    const [mod] = await Promise.all([
+      import("@datadog/browser-rum"),
+      whenIdentityKnown(),
+    ]);
     rum = mod.datadogRum;
     rum.init({
       applicationId: e.applicationId,
@@ -69,9 +81,9 @@ export async function initRum(): Promise<void> {
       trackLongTasks: true,
       defaultPrivacyLevel: "mask-user-input",
     });
-    // Apply the session identity first so replayed events already carry it,
-    // then replay any events fired before the SDK finished importing (e.g.
-    // the on-mount `language_view`), which would otherwise have been dropped.
+    // Identity is already known (whenIdentityKnown). Apply it before
+    // flushPending so replayed actions — language_view on a signed-in
+    // hard reload — carry @usr.id instead of flushing anonymous.
     applyDesiredUser();
     flushPending();
   } catch {
@@ -101,6 +113,10 @@ const pending: Array<{ name: string; attributes: Attributes }> = [];
 
 function flushPending(): void {
   if (!rum) return;
+  // A signed-in hash is known but not yet attached — keep buffering.
+  // Flushing now would replay those events as anonymous after the session
+  // is already known; setRumUser/applyDesiredUser flush once it is applied.
+  if (desiredUserHash && appliedUserHash !== desiredUserHash) return;
   const queued = pending.splice(0, pending.length);
   for (const ev of queued) {
     try {
@@ -115,9 +131,9 @@ function flushPending(): void {
  *  permanent no-op when RUM credentials are absent. */
 export function track(name: string, attributes: Attributes = {}): void {
   if (typeof window === "undefined" || !rumEnabled()) return;
-  if (!rum) {
-    // SDK still importing — buffer (capped) so early on-mount events aren't
-    // lost to the init race; flushed by initRum.
+  // Buffer while the SDK is missing OR a signed-in hash is known but not
+  // yet attached — live addAction here would ship without @usr.id.
+  if (!rum || (desiredUserHash && appliedUserHash !== desiredUserHash)) {
     if (pending.length < MAX_PENDING) pending.push({ name, attributes });
     return;
   }
@@ -135,16 +151,28 @@ export function track(name: string, attributes: Attributes = {}): void {
 // @user_hash. ONLY the hash ever reaches this file — never a sub, email, or
 // name (RUM payloads are client-visible, and datadogRum.setUser ships every
 // field it is given). Buffered like events: set/clear before the SDK finishes
-// importing is applied by initRum.
+// importing is applied by initRum, which waits for this identity before
+// flushPending so replayed actions already carry @usr.id.
 
-// undefined = never told; null = signed out (clear); string = the hash.
-let desiredUserHash: string | null | undefined;
+function whenIdentityKnown(): Promise<void> {
+  if (desiredUserHash !== undefined) return Promise.resolve();
+  return new Promise((resolve) => {
+    identityWaiters.push(resolve);
+  });
+}
+
+function notifyIdentityKnown(): void {
+  if (identityWaiters.length === 0) return;
+  const waiters = identityWaiters.splice(0, identityWaiters.length);
+  for (const resolve of waiters) resolve();
+}
 
 function applyDesiredUser(): void {
   if (!rum || desiredUserHash === undefined) return;
   try {
     if (desiredUserHash) rum.setUser({ id: desiredUserHash });
     else rum.clearUser();
+    appliedUserHash = desiredUserHash;
   } catch {
     /* analytics must never throw into the UI */
   }
@@ -154,14 +182,18 @@ function applyDesiredUser(): void {
 export function setRumUser(userHash: string): void {
   if (typeof window === "undefined" || !rumEnabled()) return;
   desiredUserHash = userHash;
+  notifyIdentityKnown();
   applyDesiredUser();
+  flushPending();
 }
 
 /** Drop the RUM user (signed out, or no hash available). */
 export function clearRumUser(): void {
   if (typeof window === "undefined" || !rumEnabled()) return;
   desiredUserHash = null;
+  notifyIdentityKnown();
   applyDesiredUser();
+  flushPending();
 }
 
 // ---- Typed event helpers (the only API the components should use) ----------

@@ -12,16 +12,24 @@ import { fetchSessionMe } from "@/lib/session-me";
  *
  *  Also joins browsing to the account (ARN-451): the session endpoint hands
  *  back the peppered user_hash (never the sub), which becomes @usr.id on
- *  every RUM event. Signed out — including the page load right after
- *  sign-out — clears the user, so a shared browser doesn't keep attributing
- *  views to the previous account. */
+ *  every RUM event. The session is applied before buffered events flush, so
+ *  a signed-in hard reload's first language_view already carries @usr.id.
+ *  Signed out — including the page load right after sign-out — clears the
+ *  user, so a shared browser doesn't keep attributing views to the previous
+ *  account. */
 export function RumInit() {
   useEffect(() => {
-    void initRum();
-    void fetchSessionMe().then((me) => {
+    // Start the SDK import and the session fetch together, but initRum
+    // awaits this identity (setRumUser / clearRumUser) before flushPending.
+    // Flushing earlier would replay buffered events — language_view on a
+    // signed-in hard reload — with no @usr.id.
+    void (async () => {
+      const rumReady = initRum();
+      const me = await fetchSessionMe();
       if (me.user_hash) setRumUser(me.user_hash);
       else clearRumUser();
-    });
+      await rumReady;
+    })();
   }, []);
   return null;
 }
