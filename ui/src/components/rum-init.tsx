@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { clearRumUser, initRum, setRumUser } from "@/lib/analytics";
-import { fetchSessionMe } from "@/lib/session-me";
+import {
+  fetchSessionMe,
+  invalidateSessionMe,
+  SESSION_REVOKED_STORAGE_KEY,
+} from "@/lib/session-me";
 
 /** Initializes Datadog RUM once on the client. Renders nothing.
  *  No-op when NEXT_PUBLIC_DD_RUM_* env vars are absent, so it is safe to
@@ -16,8 +21,29 @@ import { fetchSessionMe } from "@/lib/session-me";
  *  a signed-in hard reload's first language_view already carries @usr.id.
  *  Signed out — including the page load right after sign-out — clears the
  *  user, so a shared browser doesn't keep attributing views to the previous
- *  account. */
+ *  account.
+ *
+ *  Sign out everywhere does not remount this component and does not clear
+ *  cookies. The memoized /api/auth/me would otherwise keep the old hash on
+ *  this document until a full reload. dropRevokedRumUser / resyncRumUser
+ *  run on revoke, visibility, and soft nav so later events do not. */
+
+function dropRevokedRumUser(): void {
+  invalidateSessionMe();
+  clearRumUser();
+}
+
+async function resyncRumUser(): Promise<void> {
+  invalidateSessionMe();
+  const me = await fetchSessionMe();
+  if (me.user_hash) setRumUser(me.user_hash);
+  else clearRumUser();
+}
+
 export function RumInit() {
+  const pathname = usePathname();
+  const skipPathnameResync = useRef(true);
+
   useEffect(() => {
     // Start the SDK import and the session fetch together, but initRum
     // awaits this identity (setRumUser / clearRumUser) before flushPending.
@@ -31,5 +57,31 @@ export function RumInit() {
       await rumReady;
     })();
   }, []);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      void resyncRumUser();
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== SESSION_REVOKED_STORAGE_KEY) return;
+      dropRevokedRumUser();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (skipPathnameResync.current) {
+      skipPathnameResync.current = false;
+      return;
+    }
+    void resyncRumUser();
+  }, [pathname]);
+
   return null;
 }

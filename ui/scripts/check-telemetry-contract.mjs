@@ -50,6 +50,7 @@ const analytics = read("src/lib/analytics.ts");
 const rumInit = read("src/components/rum-init.tsx");
 const userMenu = read("src/components/user-menu.tsx");
 const sessionMe = read("src/lib/session-me.ts");
+const signOutEverywhereForm = read("src/app/(site)/account/agents/SignOutEverywhere.tsx");
 const sessionMeCore = read("src/lib/session-me-core.mjs");
 const memberActivity = read("src/lib/member-activity.ts");
 const odataMutations = read("src/lib/odata-mutations.ts");
@@ -434,6 +435,22 @@ const required = [
     /^(?![\s\S]*fetch\("\/api\/auth\/me")[\s\S]*fetchSessionMe\(\)/],
   ["session helper memoizes the fetch (one request per page load)", sessionMe,
     /if \(!inflight\) \{/],
+  ["session helper can drop the memoized fetch after revoke", sessionMe,
+    /export function invalidateSessionMe[\s\S]*inflight = null/],
+  ["sign-out-everywhere notifies other tabs via a storage key", sessionMe,
+    /SESSION_REVOKED_STORAGE_KEY = "katagami-session-revoked"/],
+  ["revoked-session path clears RUM (not only the initial else clearRumUser)", rumInit,
+    /function dropRevokedRumUser\(\)(?:: void)? \{\s*invalidateSessionMe\(\);\s*clearRumUser\(\);/],
+  ["visibility / soft-nav resync invalidates inflight then clears RUM when signed out", rumInit,
+    /function resyncRumUser[\s\S]*invalidateSessionMe\(\)[\s\S]*else clearRumUser\(\)/],
+  ["RumInit drops RUM user on cross-tab revoke (storage), not only initial else", rumInit,
+    /SESSION_REVOKED_STORAGE_KEY[\s\S]*dropRevokedRumUser\(\)/],
+  ["RumInit resyncs identity on visibilitychange (cross-tab sign-out-everywhere)", rumInit,
+    /addEventListener\("visibilitychange", onVisibility\)/],
+  ["RumInit resyncs identity on soft nav (root layout does not remount)", rumInit,
+    /usePathname\(\)[\s\S]*resyncRumUser\(\)/],
+  ["sign-out-everywhere invalidates the session fetch and clears RUM without remount", signOutEverywhereForm,
+    /notifySessionRevoked\(\)[\s\S]*clearRumUser\(\)/],
   ["fetchSessionMe aborts hung /api/auth/me (5s telemetry bound)", sessionMe,
     /signal: sessionMeAbortSignal\(\)/],
   ["session-me abort helper is the 5s telemetry bound", sessionMeCore,
