@@ -6,14 +6,17 @@ import Link from "next/link";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { KeyRound, LogIn, LogOut, UserRound } from "lucide-react";
 import { CHROME_STAMP, CHROME_STAMP_LABEL } from "@/lib/chrome-stamp";
+import { fetchSessionMe } from "@/lib/session-me";
 
 // Header identity chip — same chrome-stamp as search / theme / menu.
 // Signed out it's a "sign in" stamp; signed in it's your avatar opening a
 // small paper menu (account, sign out). Owner mode stays separate at /owner.
 //
-// The session is fetched client-side from /api/auth/me: reading cookies()
-// in the shared (site) layout would opt every route out of the full-route
-// cache, and this chip is the only personalized element on most pages.
+// The session is fetched client-side via the shared fetchSessionMe helper
+// (one /api/auth/me request per page load, shared with the RUM user join):
+// reading cookies() in the shared (site) layout would opt every route out of
+// the full-route cache, and this chip is the only personalized element on
+// most pages.
 
 export type HeaderUser = { name: string; email: string; picture: string };
 
@@ -29,19 +32,11 @@ export function UserMenu() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/auth/me", { cache: "no-store", credentials: "same-origin" })
-      .then((r) => (r.ok ? r.json() : { user: null, owner: false }))
-      .then((d: { user: HeaderUser | null; owner?: boolean }) => {
-        if (!alive) return;
-        setUser(d.user ?? null);
-        setOwner(Boolean(d.owner));
-      })
-      .catch(() => {
-        if (alive) {
-          setUser(null);
-          setOwner(false);
-        }
-      });
+    void fetchSessionMe().then((d) => {
+      if (!alive) return;
+      setUser(d.user);
+      setOwner(d.owner);
+    });
     return () => {
       alive = false;
     };

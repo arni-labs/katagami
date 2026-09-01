@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { exchangeGoogleCode } from "@/lib/google-oidc";
+import { recordLoginActivity } from "@/lib/member-activity";
 import { countMembers, upsertMember } from "@/lib/oauth-as";
 import {
   emitServerEvent,
@@ -102,8 +103,6 @@ export async function GET(req: NextRequest) {
     // Guarded like trackServerEvent: a throw from Next after must not skip
     // the katagami_user cookie after a successful Google exchange.
     runAfter(async () => {
-      // Fail-closed intake → do not hit Temper $count for a no-op emit.
-      if (!serverTelemetryEnabled()) return;
       let userHash: string | undefined;
       try {
         const hashed = await hashPrincipal(sub);
@@ -111,6 +110,12 @@ export async function GET(req: NextRequest) {
       } catch (err) {
         console.error("[telemetry] hashPrincipal failed", err);
       }
+      // Durable per-user rollup (ARN-451) — deliberately BEFORE the Datadog
+      // fail-closed gate: the Temper MemberActivityDay row is the layer that
+      // outlives log retention, so it must not depend on DD_API_KEY.
+      await recordLoginActivity(userHash);
+      // Fail-closed intake → do not hit Temper $count for a no-op emit.
+      if (!serverTelemetryEnabled()) return;
       // auth_login FIRST. countMembers must never sit between a successful
       // sign-in and its own event: with Temper hung, this post-response task dies
       // at the function duration limit and the login (plus registration:true)

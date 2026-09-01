@@ -1781,6 +1781,322 @@
         "x": 0,
         "y": 0
       }
+    },
+    {
+      "definition": {
+        "title": "Who did what \u2014 per-user activity (ARN-451)",
+        "background_color": "vivid_purple",
+        "show_title": true,
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "note",
+              "content": "**Who is a hash?** `@user_hash` here = `@usr.id` on RUM = `user_hash` on the Temper Member row. Map it to a person: `GET /tdata/Members?$filter=user_hash eq '<hash>'` (returns sub, email, display_name). \n\n**History beyond the ~15-day log window** lives in Temper, not here: one `MemberActivityDays` row per (user_hash, UTC day) with `logins`, `mcp_calls`, `mcp_errors` counters, written at event time. `GET /tdata/MemberActivityDays?$filter=user_hash eq '<hash>'&$orderby=day desc` (paginate @odata.nextLink). These log tiles show the recent window; Temper is the durable record.",
+              "background_color": "yellow",
+              "font_size": "14",
+              "show_tick": false,
+              "tick_edge": "left",
+              "tick_pos": "50%",
+              "text_align": "left",
+              "vertical_align": "top",
+              "has_padding": true
+            },
+            "layout": {
+              "height": 2,
+              "width": 12,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "events",
+                      "limit": {
+                        "count": 25,
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@user_hash",
+                          "limit": 25,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "events",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:auth_login @user_hash:*"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Sign-ins by user (log window)",
+              "type": "toplist"
+            },
+            "layout": {
+              "height": 3,
+              "width": 4,
+              "x": 0,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "events",
+                      "limit": {
+                        "count": 25,
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@user_hash",
+                          "limit": 25,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "events",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call @user_hash:*"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "MCP tool calls by user (log window)",
+              "type": "toplist"
+            },
+            "layout": {
+              "height": 3,
+              "width": 4,
+              "x": 4,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "events",
+                      "limit": {
+                        "count": 25,
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@user_hash",
+                          "limit": 10,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        },
+                        {
+                          "facet": "@tool",
+                          "limit": 10,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "events",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_tool_call @user_hash:*"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "MCP calls by user \u00d7 tool (log window)",
+              "type": "toplist"
+            },
+            "layout": {
+              "height": 3,
+              "width": 4,
+              "x": 8,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "events",
+                      "limit": {
+                        "count": 15,
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "rum",
+                      "group_by": [
+                        {
+                          "facet": "@usr.id",
+                          "limit": 15,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        },
+                        {
+                          "facet": "@view.url_path",
+                          "limit": 15,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "events",
+                      "search": {
+                        "query": "env:production @type:view @usr.id:*"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Signed-in browsing \u2014 pages viewed by user",
+              "type": "toplist"
+            },
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "events",
+                      "limit": {
+                        "count": 15,
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "rum",
+                      "group_by": [
+                        {
+                          "facet": "@usr.id",
+                          "limit": 15,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        },
+                        {
+                          "facet": "@action.target.name",
+                          "limit": 15,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "events",
+                      "search": {
+                        "query": "env:production @type:action @action.type:custom @usr.id:* @action.target.name:(copy OR download OR search OR language_view OR compare)"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Signed-in copy / download / search actions by user",
+              "type": "toplist"
+            },
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 5
+            }
+          }
+        ]
+      },
+      "layout": {
+        "height": 9,
+        "width": 12,
+        "x": 0,
+        "y": 0
+      }
     }
   ],
   "template_variables": [],

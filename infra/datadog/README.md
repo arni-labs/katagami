@@ -164,6 +164,47 @@ sign-ins.
   in a tier split. Logs age out with index retention (~15 days); these
   metrics keep 15 months, counting from 2026-08-29 onward.
 
+## Per-user activity (ARN-451): who browsed, who called, and for how long
+
+Three layers join on one identifier — the peppered `user_hash`
+(HMAC-SHA256 of the Google sub with `KATAGAMI_TELEMETRY_PEPPER`, truncated to
+16 hex; computed only server-side, the raw sub never leaves the server):
+
+1. **Browsing (RUM).** After sign-in, `/api/auth/me` hands the browser the
+   hash (and only the hash) and `RumInit` calls `datadogRum.setUser({ id })`,
+   so every RUM view/copy/download/search carries `@usr.id = user_hash` —
+   joinable to the server events' `@user_hash`. Signed-out page loads call
+   `clearUser()`, so the page load right after sign-out stops attributing.
+   Caveat: `@usr.id` is client-attached and therefore client-spoofable, like
+   all RUM data (the RUM client token is public). It is product analytics,
+   not authorization; the server-attested record is the log events.
+2. **Identity (Temper).** Every sign-in's `Members.Register` upsert now also
+   stores `user_hash` on the Member row (backfilled for pre-existing
+   members). Map a hash to a person:
+   `GET /tdata/Members?$filter=user_hash eq '<hash>'` → sub, email,
+   display_name.
+3. **Durable history (Temper).** Log indexes age out in ~15 days, so per-user
+   history is ALSO accrued at event time into `MemberActivityDays` — one row
+   per (user_hash, UTC day) with `logins`, `mcp_calls`, `mcp_errors`
+   counters (kernel-side increments, race-free). This layer is independent
+   of `DD_API_KEY` on purpose: it must survive Datadog being down. It is the
+   deliberate alternative to a `user_hash`-tagged Datadog metric, which
+   would explode tag cardinality.
+   `GET /tdata/MemberActivityDays?$filter=user_hash eq '<hash>'&$orderby=day desc`
+   (paginate `@odata.nextLink`).
+
+**Where to look, per question:**
+
+- *"What did signed-in people browse / copy / download?"* → dashboard
+  `2ki-8vx-p5u`, group **"Who did what — per-user activity"** (RUM tiles keyed
+  on `@usr.id`), or RUM Explorer with `@usr.id:<hash>`.
+- *"Which of my users is this hash?"* → Temper:
+  `/tdata/Members?$filter=user_hash eq '<hash>'`.
+- *"What has this user done over months?"* → Temper:
+  `/tdata/MemberActivityDays?$filter=user_hash eq '<hash>'` (per-day logins /
+  MCP calls / errors, no retention limit). The dashboard's per-user log tiles
+  show the same signals for the recent window only.
+
 **Vercel secrets** (do not invent values in the repo):
 
 - `DD_API_KEY` — **set** in Production and Preview; server telemetry fails
@@ -172,9 +213,14 @@ sign-ins.
   shows up as `emitted:false`, never green.
 - `CRON_SECRET` — Vercel cron sends `Authorization: Bearer <CRON_SECRET>`
   to `/api/telemetry/members`. Unset → 401 forever, no `members_total`
-  leak. Must be set before this route exists on master.
+  leak. **Set** in Production + Preview (minted 2026-09-01, ARN-451 — it was
+  missing, so the daily cron had been 401ing since it shipped).
 - `KATAGAMI_TELEMETRY_PEPPER` — optional for emit, required for
-  `@user_hash`.
+  `@user_hash` (and therefore for the whole per-user layer above). **Set**
+  in Production + Preview (minted 2026-09-01, ARN-451 — it was missing, so
+  no production event carried a `user_hash` before then). Rotating it
+  re-keys every hash; Member rows self-heal on next sign-in, but old
+  `MemberActivityDays` rows stay under the old hash.
 
 A production Google `auth_login` has not been verified end-to-end on this
 PR (cannot complete a real Google exchange from this agent). Components

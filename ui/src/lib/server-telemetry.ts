@@ -8,6 +8,7 @@ import {
   telemetryEnabled,
   logPayload,
 } from "./server-telemetry-core.mjs";
+import { recordMcpActivity } from "./member-activity";
 
 export { hashPrincipal, authorizeCronRequest } from "./server-telemetry-core.mjs";
 
@@ -117,6 +118,9 @@ export function trackMcpToolCall(d: {
     } catch (err) {
       console.error("[telemetry] hashPrincipal failed", err);
     }
+    // Durable per-user rollup (ARN-451) — independent of the Datadog intake:
+    // the Temper MemberActivityDay counters are what outlive log retention.
+    await recordMcpActivity(userHash, outcome);
     await emitServerEvent(
       "mcp_tool_call",
       {

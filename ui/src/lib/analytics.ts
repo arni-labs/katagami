@@ -69,8 +69,10 @@ export async function initRum(): Promise<void> {
       trackLongTasks: true,
       defaultPrivacyLevel: "mask-user-input",
     });
-    // Replay any events fired before the SDK finished importing (e.g. the
-    // on-mount `language_view`), which would otherwise have been dropped.
+    // Apply the session identity first so replayed events already carry it,
+    // then replay any events fired before the SDK finished importing (e.g.
+    // the on-mount `language_view`), which would otherwise have been dropped.
+    applyDesiredUser();
     flushPending();
   } catch {
     // SDK failed to load — leave as a no-op, never surface to the user.
@@ -124,6 +126,42 @@ export function track(name: string, attributes: Attributes = {}): void {
   } catch {
     /* analytics must never throw into the UI */
   }
+}
+
+// ---- Session identity (ARN-451) --------------------------------------------
+//
+// Joins browsing to the account: after sign-in, RUM events carry the same
+// peppered @usr.id the server stamps on auth_login/mcp_tool_call as
+// @user_hash. ONLY the hash ever reaches this file — never a sub, email, or
+// name (RUM payloads are client-visible, and datadogRum.setUser ships every
+// field it is given). Buffered like events: set/clear before the SDK finishes
+// importing is applied by initRum.
+
+// undefined = never told; null = signed out (clear); string = the hash.
+let desiredUserHash: string | null | undefined;
+
+function applyDesiredUser(): void {
+  if (!rum || desiredUserHash === undefined) return;
+  try {
+    if (desiredUserHash) rum.setUser({ id: desiredUserHash });
+    else rum.clearUser();
+  } catch {
+    /* analytics must never throw into the UI */
+  }
+}
+
+/** Attach the signed-in account's telemetry hash to all RUM events. */
+export function setRumUser(userHash: string): void {
+  if (typeof window === "undefined" || !rumEnabled()) return;
+  desiredUserHash = userHash;
+  applyDesiredUser();
+}
+
+/** Drop the RUM user (signed out, or no hash available). */
+export function clearRumUser(): void {
+  if (typeof window === "undefined" || !rumEnabled()) return;
+  desiredUserHash = null;
+  applyDesiredUser();
 }
 
 // ---- Typed event helpers (the only API the components should use) ----------

@@ -14,6 +14,8 @@ import "server-only";
 import { SignJWT, jwtVerify, importPKCS8, exportJWK, calculateJwkThumbprint, type JWK } from "jose";
 import { createEntity, dispatchAction } from "@/lib/odata-mutations";
 import { readODataCount } from "@/lib/odata-count.mjs";
+import { hashPrincipal } from "@/lib/server-telemetry-core.mjs";
+import { isValidUserHash } from "@/lib/member-activity-core.mjs";
 import {
   isAllowedRedirectUri,
   readMcpResource,
@@ -147,11 +149,22 @@ export async function upsertMember(user: {
   // Temper's OData $filter matches raw (snake_case) field names, not the
   // PascalCase CSDL projections — verified live 2026-07-06.
   const existing = await queryEntities("Members", `sub eq '${user.sub}'`);
+  // Persist the peppered telemetry hash on the Member (ARN-451) so a
+  // @user_hash seen in Datadog/RUM maps back to a person. Refreshes on every
+  // sign-in (Register is idempotent), which also self-heals a pepper rotation.
+  // Unset pepper → no hash → the key is simply omitted; never a raw sub.
+  let userHash: string | undefined;
+  try {
+    userHash = await hashPrincipal(user.sub);
+  } catch (err) {
+    console.error("[telemetry] hashPrincipal failed in upsertMember", err);
+  }
   const params = {
     sub: user.sub,
     email: user.email,
     display_name: user.name,
     avatar_url: user.picture,
+    ...(isValidUserHash(userHash) ? { user_hash: userHash } : {}),
   };
   if (existing.length > 0) {
     await dispatchAction("Members", existing[0].entity_id, "Register", params);

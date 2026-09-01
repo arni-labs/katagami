@@ -1,0 +1,65 @@
+# MemberActivityDay — I/O Automaton Specification
+#
+# Durable per-user activity rollup (ARN-451). Datadog log indexes age out in
+# ~15 days, and Temper compacts its own event log, so per-user login and MCP
+# usage history needs a home whose FIELDS carry the counts: one row per
+# (user_hash, UTC day), accrued at event time from the same server tasks that
+# emit the Datadog events. Kernel-side `increment` effects are serialized per
+# entity actor, so concurrent serverless invocations cannot lose counts.
+#
+# The row is keyed by the peppered telemetry hash (never the Google sub or
+# email) — join back to a person via Members.user_hash. Entity ids are the
+# deterministic `act:<user_hash>:<YYYY-MM-DD>`; dispatching on a missing id
+# auto-creates the row in Active (the same pattern PrincipalGenerations uses).
+#
+# Lifecycle: Active (only state — a tally row has no other life).
+
+[automaton]
+name = "MemberActivityDay"
+states = ["Active"]
+initial = "Active"
+
+allow_indefinite_states = ["Active"]
+
+# --- State Variables ---
+
+[[state]]
+name = "logins"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "mcp_calls"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "mcp_errors"
+type = "counter"
+initial = 0
+
+# --- Actions ---
+
+[[action]]
+name = "RecordLogin"
+kind = "input"
+from = ["Active"]
+effect = [{ type = "increment", field = "logins" }]
+params = ["user_hash", "day"]
+hint = "Count one successful Google sign-in for this (user_hash, day). user_hash is the peppered telemetry hash (same value as Members.user_hash and @user_hash in Datadog); day is the UTC date YYYY-MM-DD. Fired best-effort from the sign-in callback's post-response task."
+
+[[action]]
+name = "RecordMcpCall"
+kind = "input"
+from = ["Active"]
+effect = [{ type = "increment", field = "mcp_calls" }]
+params = ["user_hash", "day"]
+hint = "Count one successful MCP tool call at katagami.ai/mcp for this (user_hash, day). Fired best-effort from the tool-call telemetry task."
+
+[[action]]
+name = "RecordMcpError"
+kind = "input"
+from = ["Active"]
+effect = [{ type = "increment", field = "mcp_calls" }, { type = "increment", field = "mcp_errors" }]
+params = ["user_hash", "day"]
+hint = "Count one failed MCP tool call (error or exception outcome): it is still a call, so mcp_calls increments too, plus mcp_errors. Fired best-effort from the tool-call telemetry task."

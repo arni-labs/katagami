@@ -20,6 +20,12 @@ import {
   RESERVED_LOG_KEYS,
 } from "../src/lib/server-telemetry-core.mjs";
 import { readODataCount } from "../src/lib/odata-count.mjs";
+import {
+  activityActionForOutcome,
+  activityEntityId,
+  isValidUserHash,
+  utcDayKey,
+} from "../src/lib/member-activity-core.mjs";
 
 function read(path) {
   return readFileSync(resolve(path), "utf8");
@@ -34,6 +40,16 @@ const snapshot = read("src/app/api/telemetry/members/route.ts");
 const vercelJson = read("vercel.json");
 const dashboard = read("../infra/datadog/katagami-rum-dashboard.json");
 const pkg = read("package.json");
+const meRoute = read("src/app/api/auth/me/route.ts");
+const analytics = read("src/lib/analytics.ts");
+const rumInit = read("src/components/rum-init.tsx");
+const userMenu = read("src/components/user-menu.tsx");
+const sessionMe = read("src/lib/session-me.ts");
+const memberActivity = read("src/lib/member-activity.ts");
+const odataMutations = read("src/lib/odata-mutations.ts");
+const memberSpec = read("../katagami-commons/specs/member.ioa.toml");
+const activitySpec = read("../katagami-commons/specs/member_activity.ioa.toml");
+const activityCedar = read("../katagami-commons/policies/member_activity.cedar");
 
 // --- Behavioral -------------------------------------------------------------
 
@@ -197,6 +213,35 @@ const pkg = read("package.json");
   console.log("ok: hung intake aborts instead of stalling");
 }
 
+{
+  // --- ARN-451: durable per-user activity rollup helpers --------------------
+  assert.equal(utcDayKey(new Date("2026-08-31T23:59:59Z")), "2026-08-31");
+  assert.equal(utcDayKey(new Date("2026-09-01T00:00:01Z")), "2026-09-01", "day buckets are UTC");
+  assert.match(utcDayKey(), /^\d{4}-\d{2}-\d{2}$/);
+  assert.equal(activityEntityId("9fc5a227c397eafb", "2026-08-31"), "act:9fc5a227c397eafb:2026-08-31");
+  assert.equal(activityActionForOutcome("success"), "RecordMcpCall");
+  assert.equal(activityActionForOutcome("error"), "RecordMcpError");
+  assert.equal(activityActionForOutcome("exception"), "RecordMcpError");
+  console.log("ok: activity rollup keys on (user_hash, UTC day); errors route to RecordMcpError");
+}
+
+{
+  // Only a real 16-hex hashPrincipal output may key a rollup row or land on a
+  // Member — a raw sub, an email, or garbage must never become the key.
+  const hashed = await hashPrincipal("google-oauth2|12345", {
+    KATAGAMI_TELEMETRY_PEPPER: "contract-test-pepper",
+  });
+  assert.equal(isValidUserHash(hashed), true, "hashPrincipal output is a valid user_hash");
+  for (const bad of [
+    undefined, null, "", "google-oauth2|12345", "a@b.c", "9fc5a227c397eaf", // 15 hex
+    "9FC5A227C397EAFB", // uppercase — not what hashPrincipal emits
+    "9fc5a227c397eafb0", // 17 hex
+  ]) {
+    assert.equal(isValidUserHash(bad), false, `"${bad}" must not pass as a user_hash`);
+  }
+  console.log("ok: only 16-hex hashPrincipal output counts as a user_hash");
+}
+
 // --- Wiring greps -----------------------------------------------------------
 
 const required = [
@@ -267,6 +312,48 @@ const required = [
     /export \{ get as GET, trackedHandler as POST, trackedHandler as DELETE \}/],
   ["telemetry contract runs on every build (prebuild), not only npm test", pkg,
     /"prebuild":[^\n]*check-telemetry-contract\.mjs/],
+  // --- ARN-451: RUM ↔ account join ------------------------------------------
+  ["/api/auth/me hands the browser the HASH, never a sub key", meRoute,
+    /^(?![\s\S]*\bsub:)[\s\S]*user_hash: userHash/],
+  ["/api/auth/me hashes with hashPrincipal (peppered, truncated)", meRoute,
+    /hashPrincipal\(user\.sub\)/],
+  ["RUM setUser ships ONLY the id (no email/name fields)", analytics,
+    /^(?![\s\S]*setUser\(\{[^}]*(email|name))[\s\S]*rum\.setUser\(\{ id: desiredUserHash \}\)/],
+  ["RUM user is cleared when signed out", analytics, /rum\.clearUser\(\)/],
+  ["RumInit joins the session hash into RUM on every page load", rumInit,
+    /fetchSessionMe\(\)[\s\S]*setRumUser\(me\.user_hash\)/],
+  ["RumInit clears the RUM user when there is no hash (incl. post-sign-out)", rumInit,
+    /else clearRumUser\(\)/],
+  ["header chip and RUM join share ONE /api/auth/me fetch", userMenu,
+    /^(?![\s\S]*fetch\("\/api\/auth\/me")[\s\S]*fetchSessionMe\(\)/],
+  ["session helper memoizes the fetch (one request per page load)", sessionMe,
+    /if \(!inflight\) \{/],
+  // --- ARN-451: user_hash on the Member row ---------------------------------
+  ["Member spec declares user_hash on Register", memberSpec,
+    /params = \["sub", "email", "display_name", "avatar_url", "user_hash"\]/],
+  ["upsertMember persists the hash only when it IS a hash", oauthAs,
+    /\.\.\.\(isValidUserHash\(userHash\) \? \{ user_hash: userHash \} : \{\}\)/],
+  // --- ARN-451: durable per-user rollup in Temper ---------------------------
+  ["activity spec counts logins, mcp_calls, mcp_errors as counters", activitySpec,
+    /name = "logins"\ntype = "counter"[\s\S]*name = "mcp_calls"\ntype = "counter"[\s\S]*name = "mcp_errors"\ntype = "counter"/],
+  ["an MCP error still counts as a call (RecordMcpError bumps both)", activitySpec,
+    /name = "RecordMcpError"[\s\S]*\{ type = "increment", field = "mcp_calls" \}, \{ type = "increment", field = "mcp_errors" \}/],
+  ["MemberActivityDay writes are locked to server-side principals", activityCedar,
+    /forbid\(principal, action, resource is MemberActivityDay\)/],
+  ["sign-in records the durable rollup BEFORE the Datadog fail-closed gate", callback,
+    /recordLoginActivity\(userHash\);[\s\S]*if \(!serverTelemetryEnabled\(\)\) return;/],
+  ["MCP tool calls record the durable rollup (any outcome)", telemetry,
+    /recordMcpActivity\(userHash, outcome\)/],
+  ["activity dispatch refuses non-hash keys (no raw sub can become a row)", memberActivity,
+    /if \(!isValidUserHash\(userHash\)\) return false;/],
+  ["activity dispatch is bounded (hung Temper costs a timeout, not the limit)", memberActivity,
+    /AbortSignal\.timeout\(ACTIVITY_DISPATCH_TIMEOUT_MS\)/],
+  ["dispatchAction actually honors the abort signal", odataMutations,
+    /signal: opts\?\.signal/],
+  ["dashboard has per-user MCP/login views keyed on @user_hash", dashboard,
+    /@user_hash/],
+  ["dashboard has a signed-in browsing view keyed on @usr.id", dashboard,
+    /@usr\.id/],
 ];
 
 let failed = 0;
