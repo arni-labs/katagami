@@ -3,6 +3,7 @@ import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { verifyReadBearer, readMcpAuthInfo, whoamiFromAuth } from "@/lib/catalog-auth";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
+import { trackMcpToolCall, trackServerEvent } from "@/lib/server-telemetry";
 import {
   describeCatalog,
   searchDesigns,
@@ -26,11 +27,162 @@ import {
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-function authOf(extra: unknown): { extra?: { email?: string } } | undefined {
-  return (extra as { http?: { authInfo?: { extra?: { email?: string } } } })?.http?.authInfo;
+function authOf(extra: unknown): { extra?: { email?: string; sub?: string } } | undefined {
+  return (extra as { http?: { authInfo?: { extra?: { email?: string; sub?: string } } } })?.http
+    ?.authInfo;
 }
 function tierOf(extra: unknown): Tier {
   return authOf(extra) ? "full" : "sample";
+}
+
+// Datadog usage tracking (ARN-436), two layers so nothing is invisible:
+//
+// Layer 1 patches registerTool: every registered handler — including any
+// added later — reports tool name, outcome (success / error / exception),
+// and handler-only duration. Handlers pass through untouched (the
+// mcp-handler overload gotcha: never re-annotate their params); the wrapper
+// awaits, observes, and marks the call context as tracked.
+//
+// Layer 2 patches the SDK's tools/call request handler: the MCP SDK
+// validates arguments against the zod inputSchema BEFORE the registered
+// callback runs, so a client sending malformed calls never reaches layer 1 —
+// it used to show zero usage AND zero errors. Layer 2 emits for exactly the
+// calls layer 1 never saw (schema rejections, unknown/disabled tools —
+// covering legacy server.tool() registrations too, should one appear), so a
+// misbehaving client is a visible error-rate spike, not silence.
+type ToolResult = { isError?: boolean; content?: { type?: string; text?: string }[] } | undefined;
+type ToolHandler = (args: unknown, extra: unknown) => Promise<ToolResult> | ToolResult;
+type ToolCallRequest = { params?: { name?: string } };
+type RpcHandler = (request: ToolCallRequest, extra: unknown) => Promise<unknown> | unknown;
+
+// A slow tool must not eat the telemetry budget: /mcp exports maxDuration 60
+// and after() shares it, so a handler finishing at the kill line drops its
+// own hash+emit — silently biasing the p95 latency widget DOWN by losing
+// precisely the slowest calls. Cap handlers below maxDuration instead: the
+// caller gets a clean isError result and the datapoint ships.
+const TELEMETRY_RESERVE_MS = 5_000;
+const TOOL_BUDGET_MS = maxDuration * 1000 - TELEMETRY_RESERVE_MS;
+
+const TRACKED = Symbol("katagami.mcp.tracked");
+function markTracked(extra: unknown): void {
+  if (extra && typeof extra === "object") {
+    (extra as Record<symbol, boolean>)[TRACKED] = true;
+  }
+}
+function wasTracked(extra: unknown): boolean {
+  return (
+    !!extra && typeof extra === "object" && (extra as Record<symbol, boolean>)[TRACKED] === true
+  );
+}
+
+function budgetExceeded(name: string): ToolResult {
+  return {
+    isError: true,
+    content: [
+      {
+        type: "text" as const,
+        text: `Tool ${name} exceeded its ${Math.round(TOOL_BUDGET_MS / 1000)}s budget.`,
+      },
+    ],
+  };
+}
+
+function withUsageTracking(server: McpServer): void {
+  // Layer 1: per registered tool.
+  const original = server.registerTool.bind(server) as unknown as (
+    name: string,
+    def: unknown,
+    handler: ToolHandler,
+  ) => unknown;
+  (server as unknown as { registerTool: unknown }).registerTool = (
+    name: string,
+    def: unknown,
+    handler: ToolHandler,
+  ) =>
+    original(name, def, async (args: unknown, extra: unknown) => {
+      markTracked(extra);
+      const started = Date.now();
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      let timedOut = false;
+      try {
+        const budget = new Promise<ToolResult>((resolveBudget) => {
+          timer = setTimeout(() => {
+            timedOut = true;
+            resolveBudget(budgetExceeded(name));
+          }, TOOL_BUDGET_MS);
+        });
+        const result = await Promise.race([Promise.resolve(handler(args, extra)), budget]);
+        // Hash + emit only inside after() — a hash/intake throw must not
+        // 500 the tool or inflate duration_ms.
+        trackMcpToolCall({
+          tool: name,
+          outcome: result?.isError ? "error" : "success",
+          durationMs: Date.now() - started,
+          sub: authOf(extra)?.extra?.sub,
+          errorKind: timedOut ? "tool_budget_exceeded" : undefined,
+        });
+        return result;
+      } catch (err) {
+        trackMcpToolCall({
+          tool: name,
+          outcome: "exception",
+          durationMs: Date.now() - started,
+          sub: authOf(extra)?.extra?.sub,
+          errorKind: err instanceof Error ? err.name : "unknown",
+        });
+        throw err;
+      } finally {
+        clearTimeout(timer);
+      }
+    });
+
+  // Layer 2: the tools/call request handler. The SDK installs it via
+  // server.server.setRequestHandler("tools/call", …) on first registration,
+  // which happens after this patch, so the interception always lands.
+  const inner = (
+    server as unknown as {
+      server: { setRequestHandler: (method: string, handler: RpcHandler) => void };
+    }
+  ).server;
+  const originalSet = inner.setRequestHandler.bind(inner);
+  inner.setRequestHandler = (method: string, handler: RpcHandler) => {
+    if (method !== "tools/call") return originalSet(method, handler);
+    originalSet(method, async (request: ToolCallRequest, extra: unknown) => {
+      const tool = request?.params?.name ?? "unknown";
+      const started = Date.now();
+      try {
+        const result = (await handler(request, extra)) as ToolResult;
+        if (!wasTracked(extra)) {
+          // The registered handler never ran: this isError is the SDK's own
+          // rejection — for us, always an inputSchema validation failure
+          // (handler throws are converted to isError AFTER layer 1 tracked
+          // them, so the flag filters those out).
+          trackMcpToolCall({
+            tool,
+            outcome: result?.isError ? "error" : "success",
+            durationMs: Date.now() - started,
+            sub: authOf(extra)?.extra?.sub,
+            errorKind: result?.isError ? "invalid_arguments" : undefined,
+          });
+        }
+        return result;
+      } catch (err) {
+        // Unknown or disabled tool: the SDK throws a ProtocolError before
+        // its own try/catch. Count it — a client calling missing tools is
+        // a signal, not noise.
+        if (!wasTracked(extra)) {
+          trackMcpToolCall({
+            tool,
+            outcome: "exception",
+            durationMs: Date.now() - started,
+            sub: authOf(extra)?.extra?.sub,
+            errorKind: err instanceof Error ? err.name : "unknown",
+          });
+        }
+        throw err;
+      }
+    });
+  };
 }
 function ok(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
@@ -47,6 +199,7 @@ const idArg = z.string().describe("The entity id (en-…) or the slug");
 
 const baseHandler = createMcpHandler(
   (server: McpServer) => {
+    withUsageTracking(server);
     // --- discovery ---------------------------------------------------------
     server.registerTool(
       "describe_catalog",
@@ -232,6 +385,28 @@ const handler = withMcpAuth(
   },
 );
 
+// Anonymous demand must not be structurally invisible (ARN-436 review):
+// every verb on /mcp requires auth, so if the OAuth connect flow breaks,
+// calls just stop — indistinguishable from waning interest. Count each 401
+// as mcp_auth_challenge: has_auth:false is a fresh client meeting the
+// connect card (demand), has_auth:true is a rejected/expired token (a
+// possibly broken flow). Emitted via after(); the 401 response is untouched.
+function withAuthChallengeCount(
+  wrapped: (req: Request) => Promise<Response>,
+): (req: Request) => Promise<Response> {
+  return async (req: Request): Promise<Response> => {
+    const res = await wrapped(req);
+    if (res.status === 401) {
+      trackServerEvent("mcp_auth_challenge", {
+        has_auth: (req.headers.get("authorization") ?? "") !== "",
+        method: req.method,
+      });
+    }
+    return res;
+  };
+}
+const trackedHandler = withAuthChallengeCount(handler);
+
 // A human pasting the MCP URL into a browser sends a plain-HTML GET; a real
 // MCP client opening the optional SSE stream MUST send
 // `Accept: text/event-stream` (Streamable HTTP spec), and POST/DELETE — the
@@ -242,7 +417,7 @@ async function get(req: Request): Promise<Response> {
   if (!accept.toLowerCase().includes("text/event-stream")) {
     return new Response(null, { status: 302, headers: { Location: "/connect" } });
   }
-  return handler(req);
+  return trackedHandler(req);
 }
 
-export { get as GET, handler as POST, handler as DELETE };
+export { get as GET, trackedHandler as POST, trackedHandler as DELETE };

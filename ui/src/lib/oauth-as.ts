@@ -13,6 +13,7 @@ import "server-only";
 
 import { SignJWT, jwtVerify, importPKCS8, exportJWK, calculateJwkThumbprint, type JWK } from "jose";
 import { createEntity, dispatchAction } from "@/lib/odata-mutations";
+import { readODataCount } from "@/lib/odata-count.mjs";
 import {
   isAllowedRedirectUri,
   readMcpResource,
@@ -133,13 +134,16 @@ export async function sha256Hex(input: string): Promise<string> {
 // --- Members ----------------------------------------------------------------
 
 /** Upsert the Member behind a Google sign-in. Fire-and-forget from the
- *  callback: account durability must never block the sign-in itself. */
+ *  callback: account durability must never block the sign-in itself.
+ *  Returns whether this sign-in REGISTERED a new member (first sign-in) or
+ *  was a login of an existing one — the registration/login split the
+ *  Datadog auth events report (ARN-436). */
 export async function upsertMember(user: {
   sub: string;
   email: string;
   name: string;
   picture: string;
-}): Promise<void> {
+}): Promise<{ created: boolean }> {
   // Temper's OData $filter matches raw (snake_case) field names, not the
   // PascalCase CSDL projections — verified live 2026-07-06.
   const existing = await queryEntities("Members", `sub eq '${user.sub}'`);
@@ -151,10 +155,51 @@ export async function upsertMember(user: {
   };
   if (existing.length > 0) {
     await dispatchAction("Members", existing[0].entity_id, "Register", params);
-    return;
+    return { created: false };
   }
-  const created = await createEntity("Members");
-  await dispatchAction("Members", created.entity_id, "Register", params);
+  try {
+    const created = await createEntity("Members");
+    await dispatchAction("Members", created.entity_id, "Register", params);
+    return { created: true };
+  } catch (err) {
+    // First-time create/Register can throw (race, Temper hiccup). Re-query:
+    // if the sub is now registered, this is a returning login. If it is
+    // still missing, throw — the callback must not emit registration:false
+    // for a first-time login that never landed.
+    const again = await queryEntities("Members", `sub eq '${user.sub}'`);
+    if (again.length > 0) return { created: false };
+    throw err;
+  }
+}
+
+/** Every caller of countMembers is telemetry-adjacent (the sign-in after()
+ *  task, the members cron); a hung Temper must cost a bounded wait, never
+ *  the Vercel function duration limit — an unbounded count sitting in the
+ *  login after() task was exactly how logins under-counted during incidents. */
+export const COUNT_MEMBERS_TIMEOUT_MS = 5_000;
+
+/** Registered humans: Members that completed a Google sign-in. Filters on
+ *  has_identity because dispatching an action on a missing id auto-creates a
+ *  placeholder row (the known Temper gotcha) — those husks carry no identity
+ *  and must not count. Verified live 2026-08-29: 9 rows, 8 with identity.
+ *  Throws on a missing/malformed `@odata.count` — a 200 without the field is
+ *  a backend regression, not zero registered users. */
+export async function countMembers(
+  signal: AbortSignal = AbortSignal.timeout(COUNT_MEMBERS_TIMEOUT_MS),
+): Promise<number> {
+  const params = new URLSearchParams();
+  params.set("$filter", "has_identity eq true");
+  params.set("$count", "true");
+  params.set("$top", "0");
+  const res = await fetch(`${API_BASE}/tdata/Members?${params.toString()}`, {
+    headers,
+    cache: "no-store",
+    signal,
+  });
+  if (!res.ok) {
+    throw new Error(`Count Members failed ${res.status}: ${await res.text()}`);
+  }
+  return readODataCount(await res.json());
 }
 
 export async function memberBySub(sub: string): Promise<EntityRow | null> {

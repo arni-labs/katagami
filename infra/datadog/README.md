@@ -99,3 +99,83 @@ agents fetching specs — are **not** RUM-visible, since they aren't browser
 interactions. If we want those counted too, add a log line in each `route.ts`
 and a Vercel→Datadog log drain (or count them from Vercel/edge logs). Tracked as
 a follow-up, not part of this change.
+
+## Server-side telemetry: sign-ins, registered users, MCP usage (ARN-436)
+
+RUM only sees the browser. The signals that live in server routes — sign-ins,
+the registered-user count, and every MCP tool call at katagami.ai/mcp — are
+emitted from the Vercel routes as **Datadog logs** with
+`service:katagami-server`, via `ui/src/lib/server-telemetry.ts`.
+
+**Transport.** Server events use the official Logs intake
+(`http-intake.logs.datadoghq.com`) authenticated with a server-only
+`DD_API_KEY` — and nothing else. There is **no public-RUM fallback and no
+"reuse the RUM client token" path**: a browser token must not authenticate
+`env:production service:katagami-server` (anyone who can read the bundle
+could forge those events). Unset `DD_API_KEY` → fail closed (no emit;
+the members cron reports `emitted:false`). **Status: `DD_API_KEY` is SET
+in Vercel Production and Preview (minted 2026-08, transport verified live:
+`/api/v1/validate` 200, intake POST 202, probe log indexed).** Hash + emit
+run only inside a guarded `after()` so a telemetry throw cannot 500 an MCP
+tool or skip the Google session cookie. `env:` is `production` on the
+production deploy, `preview` on previews, `local-verify` elsewhere; every
+dashboard query scopes to `env:production`.
+
+**Privacy.** Google subs travel only as an HMAC truncated to 16 hex
+(`@user_hash`) when `KATAGAMI_TELEMETRY_PEPPER` is set; unset pepper omits
+`user_hash` rather than falling back to a repo string. Attributes ship on a
+**per-event allow-list** (`EVENT_ATTRS` in
+`ui/src/lib/server-telemetry-core.mjs`): a key a call site did not declare
+never reaches Datadog, whatever it is named — the earlier deny-list passed
+natural identity keys like `user_name` and `caller_sub`. Values are bounded
+too (primitives only, strings capped), and Datadog routing keys (`status`,
+`service`, `ddtags`, `message`, `hostname`, …) can never be overridden by an
+attribute. Enforced by `scripts/check-telemetry-contract.mjs`, which runs in
+`npm test` **and** `prebuild` (so a violation cannot build, locally or on
+Vercel).
+
+**Events** (all under `service:katagami-server`, filter with `@evt:<name>`):
+
+| `@evt` | Fired by | Attributes |
+| --- | --- | --- |
+| `mcp_tool_call` | every **tool** call at `/mcp` — two layers: the patched `registerTool` tracks every registered handler, and a patched `tools/call` request handler additionally catches calls the SDK rejects *before* the handler runs (zod `inputSchema` failures → `@error_kind:invalid_arguments`, unknown tools) so a malformed client is an error spike, not silence | `@tool`, `@tier` (`full` only — `/mcp` requires a bearer), `@outcome` (success/error/exception), `@duration_ms`, `@user_hash`, `@error_kind` (`invalid_arguments`, `tool_budget_exceeded`, exception names) |
+| `mcp_auth_challenge` | every 401 on `/mcp` (initialize included) | `@has_auth` (false = fresh client meeting the connect card — anonymous demand; true = rejected/expired token — possibly a broken OAuth flow), `@method` |
+| `auth_login` | every successful Google sign-in (`api/auth/google/callback`) | `@registration` (true = first sign-in of this account), `@upsert_ok`, `@user_hash` |
+| `auth_login_failed` | failed sign-in — only when a real handshake came back (bare scanner GETs with no `code`/`error` param emit nothing) | `@reason`: `state` (handshake broke), `google` (Google exchange failed), `session` (Google OK, we could not mint the session), `consent` (Google redirected with an explicit error) |
+| `members_snapshot` | the daily Vercel cron → `/api/telemetry/members` (`@source:cron`) and best-effort after each sign-in (`@source:login`) | `@members_total`, `@source`. This is the ONLY carrier of `@members_total`; a missing `@odata.count` from Temper throws instead of shipping a fake 0, and the dashboard tile shows N/A (no `default_zero`) so absence looks like absence |
+
+**Registered users — source of truth.** The Temper `Members` entity set
+(created by `upsertMember` at sign-in). "Registered" = `has_identity eq true`,
+which excludes the placeholder rows Temper auto-creates when an action is
+dispatched on a missing id. `countMembers()` in `ui/src/lib/oauth-as.ts` is the
+one counting function; the cron keeps the dashboard tile fresh on days with no
+sign-ins.
+
+**Where to look.**
+
+- Dashboard `2ki-8vx-p5u` — groups **"Accounts — registered users & sign-ins"**
+  and **"MCP usage — katagami.ai/mcp"**, next to the existing RUM groups.
+- Logs Explorer — `service:katagami-server env:production`.
+- Long-term history: log-based metrics `katagami.mcp.tool_calls`
+  (tags: env/tool/tier/outcome), `katagami.auth.logins` (env/registration),
+  `katagami.members.total` (distribution, env). `@tier` is always `full`
+  on `/mcp` (required bearer); the old "auth tier" tile is now the
+  auth-challenge (401) view, since anonymous demand shows up there, not
+  in a tier split. Logs age out with index retention (~15 days); these
+  metrics keep 15 months, counting from 2026-08-29 onward.
+
+**Vercel secrets** (do not invent values in the repo):
+
+- `DD_API_KEY` — **set** in Production and Preview; server telemetry fails
+  closed without it. The members cron reports actual delivery
+  (`emitted:true` only when Datadog accepted the event), so a revoked key
+  shows up as `emitted:false`, never green.
+- `CRON_SECRET` — Vercel cron sends `Authorization: Bearer <CRON_SECRET>`
+  to `/api/telemetry/members`. Unset → 401 forever, no `members_total`
+  leak. Must be set before this route exists on master.
+- `KATAGAMI_TELEMETRY_PEPPER` — optional for emit, required for
+  `@user_hash`.
+
+A production Google `auth_login` has not been verified end-to-end on this
+PR (cannot complete a real Google exchange from this agent). Components
+are covered; the live sign-in event is a follow-up on a shipped deploy.

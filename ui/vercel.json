@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/telemetry/members",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
