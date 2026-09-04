@@ -14,6 +14,8 @@ import "server-only";
 import { SignJWT, jwtVerify, importPKCS8, exportJWK, calculateJwkThumbprint, type JWK } from "jose";
 import { createEntity, dispatchAction } from "@/lib/odata-mutations";
 import { readODataCount } from "@/lib/odata-count.mjs";
+import { hashPrincipal } from "@/lib/server-telemetry-core.mjs";
+import { isValidUserHash } from "@/lib/member-activity-core.mjs";
 import {
   isAllowedRedirectUri,
   readMcpResource,
@@ -147,11 +149,22 @@ export async function upsertMember(user: {
   // Temper's OData $filter matches raw (snake_case) field names, not the
   // PascalCase CSDL projections — verified live 2026-07-06.
   const existing = await queryEntities("Members", `sub eq '${user.sub}'`);
+  // Persist the peppered telemetry hash on the Member (ARN-451) so a
+  // @user_hash seen in Datadog/RUM maps back to a person. Refreshes on every
+  // sign-in (Register is idempotent), which also self-heals a pepper rotation.
+  // Unset pepper → no hash → the key is simply omitted; never a raw sub.
+  let userHash: string | undefined;
+  try {
+    userHash = await hashPrincipal(user.sub);
+  } catch (err) {
+    console.error("[telemetry] hashPrincipal failed in upsertMember", err);
+  }
   const params = {
     sub: user.sub,
     email: user.email,
     display_name: user.name,
     avatar_url: user.picture,
+    ...(isValidUserHash(userHash) ? { user_hash: userHash } : {}),
   };
   if (existing.length > 0) {
     await dispatchAction("Members", existing[0].entity_id, "Register", params);
@@ -218,13 +231,23 @@ export async function roleForSub(sub: string): Promise<string> {
 
 // --- Sign-out-everywhere generation (kernel-owned; ARN-255 option A) ---------
 
+/** A hung Temper must cost a bounded wait on every generation read: this
+ *  sits on the session-verify path of EVERY personalized request (including
+ *  /api/auth/me, whose owner lookup is bounded — an unbounded read here
+ *  would hang the route past the client's abort and flip a signed-in
+ *  visitor to anonymous for the whole document). */
+// Bounded UNDER the browser's own 5s abort on /api/auth/me. At 5s this read
+// alone tied the client abort, so a slow Temper still produced a signed-out
+// answer for a signed-in visitor (verifier finding, ARN-451).
+export const GENERATION_READ_TIMEOUT_MS = 3_000;
+
 /** The principal's current kernel-side generation (0 if never signed out
  *  everywhere). Read at mint time so a token carries the value it was born
  *  with; the kernel rejects any token older than the current value. */
 export async function currentGeneration(sub: string): Promise<number> {
   const res = await fetch(
     `${API_BASE}/tdata/PrincipalGenerations('${encodeURIComponent(sub)}')`,
-    { headers, cache: "no-store" },
+    { headers, cache: "no-store", signal: AbortSignal.timeout(GENERATION_READ_TIMEOUT_MS) },
   );
   if (res.status === 404) return 0; // never bumped
   if (!res.ok) {

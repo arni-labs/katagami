@@ -8,6 +8,11 @@ import {
   telemetryEnabled,
   logPayload,
 } from "./server-telemetry-core.mjs";
+import {
+  ACTIVITY_FAILURE_EMIT_TIMEOUT_MS,
+  recordMcpActivity,
+  type ActivityFailure,
+} from "./member-activity";
 
 export { hashPrincipal, authorizeCronRequest } from "./server-telemetry-core.mjs";
 
@@ -60,6 +65,7 @@ export async function emitServerEvent(
   evt: string,
   attributes: Record<string, AttrValue> = {},
   status: TelemetryStatus = "info",
+  timeoutMs?: number,
 ): Promise<boolean> {
   const intake = resolveLogsIntake();
   if (!intake) return false;
@@ -68,7 +74,7 @@ export async function emitServerEvent(
       method: "POST",
       headers: intake.headers as HeadersInit,
       body: JSON.stringify([logPayload(evt, attributes, status)]),
-      signal: intakeAbortSignal(),
+      signal: intakeAbortSignal(timeoutMs),
     });
     if (!res.ok) {
       console.error(`[telemetry] intake ${res.status} for ${evt}`);
@@ -93,6 +99,24 @@ export function trackServerEvent(
   });
 }
 
+/** Surface a durable-rollup miss to Datadog. A dead rollup (Temper down,
+ *  spec not installed, Cedar change) must show on the dashboard, never only
+ *  in function logs. Await inside the same after() task. */
+export async function reportActivityFailure(
+  failure: ActivityFailure | null,
+  userHash: string | undefined,
+): Promise<void> {
+  if (!failure) return;
+  // Its own short abort: the signal that reports a dead rollup must not be
+  // killed by the same slow backend it is reporting on (verifier finding).
+  await emitServerEvent(
+    "activity_dispatch_failed",
+    { action: failure.action, error_kind: failure.errorKind, user_hash: userHash },
+    "error",
+    ACTIVITY_FAILURE_EMIT_TIMEOUT_MS,
+  );
+}
+
 // ---- Typed events (the API routes should use) ------------------------------
 
 /** One MCP tool invocation at /mcp. Hash + emit happen inside after() so a
@@ -107,6 +131,7 @@ export function trackMcpToolCall(d: {
   errorKind?: string;
 }): void {
   const { tool, outcome, durationMs, sub, errorKind } = d;
+  const eventAt = new Date(); // request-path time — the post-response task may cross midnight
   runAfter(async () => {
     let userHash: string | undefined;
     try {
@@ -117,6 +142,14 @@ export function trackMcpToolCall(d: {
     } catch (err) {
       console.error("[telemetry] hashPrincipal failed", err);
     }
+    // Durable per-user rollup (ARN-451) — independent of the Datadog intake:
+    // the Temper MemberActivityDay counters are what outlive log retention.
+    // Started here, awaited AFTER the Datadog emit: serializing Temper (5s
+    // bound) in front of the intake (2.5s bound) would let a hung kernel eat
+    // the telemetry reserve and eat the mcp_tool_call event — the one path
+    // that still works when Temper is down. Both stay bounded; neither
+    // waits on the other.
+    const activity = recordMcpActivity(userHash, outcome, eventAt);
     await emitServerEvent(
       "mcp_tool_call",
       {
@@ -132,5 +165,6 @@ export function trackMcpToolCall(d: {
       },
       outcome === "success" ? "info" : "error",
     );
+    await reportActivityFailure(await activity, userHash);
   });
 }

@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/user-auth";
 import { grantsForMember } from "@/lib/oauth-as";
-import { revokeAgentGrant, signOutEverywhere } from "./actions";
+import { revokeAgentGrant } from "./actions";
 import HeadlessMint from "./HeadlessMint";
+import { SignOutEverywhere } from "./SignOutEverywhere";
 
 // Agents & access — the human agency surface for identity (ARN-151): every
 // grant your agents hold, who they are, and the revoke switch. "Agents act,
@@ -101,14 +102,7 @@ export default async function AgentsPage() {
           you. Agents you still want will need authorizing again. Takes effect
           within a minute.
         </p>
-        <form action={signOutEverywhere}>
-          <button
-            type="submit"
-            className="rounded-full bg-black text-white text-[15px] font-medium px-5 py-2.5 hover:bg-neutral-800 transition-colors"
-          >
-            Sign out everywhere
-          </button>
-        </form>
+        <SignOutEverywhere />
       </div>
     </main>
   );

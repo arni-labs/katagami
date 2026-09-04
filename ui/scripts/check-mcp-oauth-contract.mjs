@@ -328,9 +328,9 @@ const required = [
   ["origin metadata serves protectedResourceDocument", originMeta, /protectedResourceDocument\(\)/],
   ["path-scoped metadata re-exports the origin document", pathMeta, /from "\.\.\/route"/],
   ["AS mints scope from resource", as, /scopeForResource\(resource\)/],
-  ["catalog-auth calls verifyReadAccessToken", catalogAuth, /verifyReadAccessToken\(token,/],
-  ["core rejects non-read audience", core, /if \(!audienceIsReadMcp\(payload\.aud\)\) return null/],
-  ["core requires read scope", core, /if \(!scopeIncludesRead\(payload\.scope\)\) return null/],
+  ["catalog-auth calls verifyReadAccessToken", catalogAuth, /verifyReadAccessTokenDetailed\(token,/],
+  ["core rejects non-read audience", core, /if \(!audienceIsReadMcp\(payload\.aud\)\) return "audience"/],
+  ["core requires read scope", core, /if \(!scopeIncludesRead\(payload\.scope\)\) return "scope"/],
   ["register route POSTs handleOauthRegister", register, /handleOauthRegister\(req/],
   ["AS advertises read + contribute", asMeta, /scopes_supported: \["read", "contribute"\]/],
   [
