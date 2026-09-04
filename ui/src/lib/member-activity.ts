@@ -22,8 +22,11 @@ import {
 // logs and returns false, never throws into the caller's after() task.
 
 /** A hung Temper must cost a bounded wait in a post-response task, never the
- *  Vercel function duration limit (the countMembers lesson, ARN-436). */
-export const ACTIVITY_DISPATCH_TIMEOUT_MS = 5_000;
+ *  Vercel function duration limit (the countMembers lesson, ARN-436). Sized
+ *  UNDER the /mcp TELEMETRY_RESERVE_MS (5s): the rollup runs concurrently
+ *  with the Datadog intake in the after() task, and the whole task must fit
+ *  the reserve even when Temper sits on this abort. */
+export const ACTIVITY_DISPATCH_TIMEOUT_MS = 4_000;
 
 async function recordActivity(
   userHash: string | undefined,
