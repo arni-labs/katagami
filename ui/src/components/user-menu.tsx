@@ -86,6 +86,11 @@ export function UserMenu() {
         <button
           type="button"
           aria-label={`Account — ${user.name || user.email}`}
+          // RUM auto-click tracking names actions after the accessible name;
+          // without this override the visitor's NAME/EMAIL would ship as a
+          // RUM action name — now joined to @usr.id (ARN-451). Keep the
+          // aria-label personal for screen readers, keep telemetry generic.
+          data-dd-action-name="account menu"
           title={user.name || user.email}
           className="inline-flex h-7 w-7 items-center justify-center transition-transform duration-200 hover:-translate-y-[1px] data-[state=open]:-translate-y-[1px]"
         >

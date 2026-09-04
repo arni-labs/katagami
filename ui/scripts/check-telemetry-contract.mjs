@@ -565,6 +565,12 @@ const required = [
     /clampRejectionReason\(reason\)/],
   ["dashboard breaks auth challenges down by @reason", dashboard,
     /@evt:mcp_auth_challenge @has_auth:true/],
+  // RUM auto-click tracking names actions after the accessible name — the
+  // account button's aria-label embeds the user's name/email, so it MUST
+  // carry a generic data-dd-action-name override (joined events would
+  // otherwise ship PII as an action name).
+  ["account button overrides RUM action name (no name/email in actions)", userMenu,
+    /data-dd-action-name="account menu"/],
 ];
 
 let failed = 0;
