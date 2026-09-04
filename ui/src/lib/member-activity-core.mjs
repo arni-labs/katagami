@@ -28,3 +28,37 @@ export function activityActionForOutcome(outcome) {
 export function isValidUserHash(userHash) {
   return typeof userHash === "string" && /^[0-9a-f]{16}$/.test(userHash);
 }
+
+/** Closed error-kind vocabulary for a failed activity dispatch — these ride
+ *  to Datadog on activity_dispatch_failed, so the set must stay small and
+ *  free of anything response- or identity-shaped. */
+export const ACTIVITY_ERROR_KINDS = new Set([
+  "timeout",
+  "http_4xx",
+  "http_5xx",
+  "network",
+  "exception",
+]);
+
+export function activityErrorKind(err) {
+  const name = String(err?.name ?? "");
+  if (name === "TimeoutError" || name === "AbortError") return "timeout";
+  const m = /failed (\d{3})\b/.exec(String(err?.message ?? ""));
+  if (m) {
+    const status = Number(m[1]);
+    if (status >= 500) return "http_5xx";
+    if (status >= 400) return "http_4xx";
+  }
+  if (name === "TypeError") return "network"; // fetch network failures throw TypeError
+  return "exception";
+}
+
+/** The kernel's auto-create race: two first-of-day dispatches on the same
+ *  missing id — one creates the row, the other gets 409 "action
+ *  authorization became stale; retry against current state". Verified live
+ *  in production (2026-09-04): without a retry that count is silently lost.
+ *  The kernel message itself names the contract: retry once. */
+export function isCreateRaceError(err) {
+  const msg = String(err?.message ?? "");
+  return msg.includes("authorization became stale") || /failed 409\b/.test(msg);
+}

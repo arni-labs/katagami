@@ -1844,7 +1844,7 @@
           {
             "definition": {
               "type": "note",
-              "content": "**Who is a hash?** `@user_hash` here = `@usr.id` on RUM = `user_hash` on the Temper Member row. Map it to a person: `GET /tdata/Members?$filter=user_hash eq '<hash>'` (returns sub, email, display_name). \n\n**History beyond the ~15-day log window** lives in Temper, not here: one `MemberActivityDays` row per (user_hash, UTC day) with `logins`, `mcp_calls`, `mcp_errors` counters, written at event time. `GET /tdata/MemberActivityDays?$filter=user_hash eq '<hash>'&$orderby=day desc` (paginate @odata.nextLink). These log tiles show the recent window; Temper is the durable record.",
+              "content": "**Who is a hash?** `@user_hash` here = `@usr.id` on RUM = `user_hash` on the Temper Member row. Map it to a person: `GET /tdata/Members?$filter=user_hash eq '<hash>'` (returns sub, email, display_name). \n\n**RUM tiles are ADVISORY**: `@usr.id` is client-attached and spoofable by that client (the RUM client token is public). The server-attested events (`auth_login`, `mcp_tool_call`) and the Temper rollups are the authoritative record.\n\n**History beyond the ~15-day log window** lives in Temper, not here: one `MemberActivityDays` row per (user_hash, **UTC** day) with `logins`, `mcp_calls`, `mcp_errors` counters, written at event time. `GET /tdata/MemberActivityDays?$filter=user_hash eq '<hash>'&$orderby=day desc` (paginate @odata.nextLink). Rollup days are UTC event-time buckets; these log tiles render in YOUR viewer timezone \u2014 set the dashboard timezone to UTC before reconciling counts (after ~16:00 PT the two will otherwise disagree by design).",
               "background_color": "yellow",
               "font_size": "14",
               "show_tick": false,
@@ -2139,11 +2139,58 @@
               "x": 6,
               "y": 5
             }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "failures"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@error_kind",
+                          "limit": 10,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "failures",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:activity_dispatch_failed"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Rollup dispatch FAILURES (a dead durable layer \u2014 must stay 0)",
+              "type": "toplist"
+            },
+            "layout": {
+              "height": 3,
+              "width": 4,
+              "x": 0,
+              "y": 8
+            }
           }
         ]
       },
       "layout": {
-        "height": 9,
+        "height": 12,
         "width": 12,
         "x": 0,
         "y": 0

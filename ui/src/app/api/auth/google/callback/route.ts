@@ -5,6 +5,7 @@ import { countMembers, upsertMember } from "@/lib/oauth-as";
 import {
   emitServerEvent,
   hashPrincipal,
+  reportActivityFailure,
   runAfter,
   serverTelemetryEnabled,
   trackServerEvent,
@@ -118,7 +119,8 @@ export async function GET(req: NextRequest) {
       // intake would let a hung kernel delay/eat the auth_login event — the
       // countMembers lesson again.
       const activity = recordLoginActivity(userHash, eventAt);
-      // Fail-closed intake → do not hit Temper $count for a no-op emit.
+      // Fail-closed intake → do not hit Temper $count for a no-op emit
+      // (and with no intake there is nowhere to report a rollup miss).
       if (!serverTelemetryEnabled()) {
         await activity;
         return;
@@ -145,7 +147,7 @@ export async function GET(req: NextRequest) {
       } catch (err) {
         console.error("[telemetry] members_snapshot after login skipped:", err);
       }
-      await activity;
+      await reportActivityFailure(await activity, userHash);
     });
   }
 

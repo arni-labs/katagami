@@ -8,7 +8,7 @@ import {
   telemetryEnabled,
   logPayload,
 } from "./server-telemetry-core.mjs";
-import { recordMcpActivity } from "./member-activity";
+import { recordMcpActivity, type ActivityFailure } from "./member-activity";
 
 export { hashPrincipal, authorizeCronRequest } from "./server-telemetry-core.mjs";
 
@@ -94,6 +94,21 @@ export function trackServerEvent(
   });
 }
 
+/** Surface a durable-rollup miss to Datadog. A dead rollup (Temper down,
+ *  spec not installed, Cedar change) must show on the dashboard, never only
+ *  in function logs. Await inside the same after() task. */
+export async function reportActivityFailure(
+  failure: ActivityFailure | null,
+  userHash: string | undefined,
+): Promise<void> {
+  if (!failure) return;
+  await emitServerEvent(
+    "activity_dispatch_failed",
+    { action: failure.action, error_kind: failure.errorKind, user_hash: userHash },
+    "error",
+  );
+}
+
 // ---- Typed events (the API routes should use) ------------------------------
 
 /** One MCP tool invocation at /mcp. Hash + emit happen inside after() so a
@@ -142,6 +157,6 @@ export function trackMcpToolCall(d: {
       },
       outcome === "success" ? "info" : "error",
     );
-    await activity;
+    await reportActivityFailure(await activity, userHash);
   });
 }

@@ -37,6 +37,7 @@ export const AUTH_REJECTION_REASONS = new Set([
   "generation", // signed-out-everywhere bumped past this token
   "grant_revoked", // the agent grant behind the token was revoked
   "as_unconfigured", // this deploy cannot verify anything (AS key absent)
+  "backend_unavailable", // Temper unreachable during generation/grant checks — an outage, NOT probing
   "unknown",
 ]);
 
@@ -93,10 +94,19 @@ export async function verifyReadAccessTokenDetailed(token, deps) {
   const sub = String(payload.sub ?? "");
   if (!sub) return { identity: null, reason: "claims" };
   const grantId = String(payload.grant_id ?? "");
-  const ctx = {
-    generation: await deps.currentGeneration(sub),
-    grantActive: grantId ? await deps.grantIsActive(grantId) : true,
-  };
+  let ctx;
+  try {
+    ctx = {
+      generation: await deps.currentGeneration(sub),
+      grantActive: grantId ? await deps.grantIsActive(grantId) : true,
+    };
+  } catch {
+    // Temper down must not read as bot probing: a valid signature whose
+    // liveness checks cannot run is an OUTAGE, its own reason — otherwise a
+    // 10-minute Temper blip shows a "probing spike" while every real user
+    // is locked out (Fable panel finding).
+    return { identity: null, reason: "backend_unavailable" };
+  }
   const reason = accessPayloadRejection(payload, ctx);
   if (reason !== null) return { identity: null, reason };
   return {

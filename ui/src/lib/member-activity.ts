@@ -4,6 +4,8 @@ import { dispatchAction } from "@/lib/odata-mutations";
 import {
   activityActionForOutcome,
   activityEntityId,
+  activityErrorKind,
+  isCreateRaceError,
   isValidUserHash,
   utcDayKey,
 } from "./member-activity-core.mjs";
@@ -28,28 +30,52 @@ import {
  *  the reserve even when Temper sits on this abort. */
 export const ACTIVITY_DISPATCH_TIMEOUT_MS = 4_000;
 
+/** Null = recorded (or nothing to record); otherwise WHY the durable layer
+ *  missed a count. Callers forward this to Datadog as
+ *  activity_dispatch_failed — a dead rollup must be a visible signal, never
+ *  only a server log line (Fable panel finding). */
+export type ActivityFailure = {
+  action: "RecordLogin" | "RecordMcpCall" | "RecordMcpError";
+  errorKind: string;
+};
+
 async function recordActivity(
   userHash: string | undefined,
   action: "RecordLogin" | "RecordMcpCall" | "RecordMcpError",
   eventAt?: Date,
-): Promise<boolean> {
-  if (!isValidUserHash(userHash)) return false;
+): Promise<ActivityFailure | null> {
+  if (!isValidUserHash(userHash)) return null;
   // Bucket on the EVENT time the caller captured on the request path — this
   // code runs in a post-response task, and an event at 23:59:59Z must not
   // count on the next day just because after() started after midnight.
   const day = utcDayKey(eventAt);
-  try {
-    await dispatchAction(
+  const dispatchOnce = () =>
+    dispatchAction(
       "MemberActivityDays",
       activityEntityId(userHash as string, day),
       action,
       { user_hash: userHash, day },
       { signal: AbortSignal.timeout(ACTIVITY_DISPATCH_TIMEOUT_MS) },
     );
-    return true;
+  try {
+    await dispatchOnce();
+    return null;
   } catch (err) {
+    // First-of-day create race (verified live in production): two parallel
+    // dispatches on the same missing id — one creates, the other 409s with
+    // "retry against current state" and would silently lose its count.
+    // The row exists now; one retry increments it.
+    if (isCreateRaceError(err)) {
+      try {
+        await dispatchOnce();
+        return null;
+      } catch (retryErr) {
+        console.error(`[activity] ${action} retry after create race failed`, retryErr);
+        return { action, errorKind: activityErrorKind(retryErr) as string };
+      }
+    }
     console.error(`[activity] ${action} dispatch failed`, err);
-    return false;
+    return { action, errorKind: activityErrorKind(err) as string };
   }
 }
 
@@ -57,7 +83,7 @@ async function recordActivity(
 export function recordLoginActivity(
   userHash: string | undefined,
   eventAt?: Date,
-): Promise<boolean> {
+): Promise<ActivityFailure | null> {
   return recordActivity(userHash, "RecordLogin", eventAt);
 }
 
@@ -66,6 +92,6 @@ export function recordMcpActivity(
   userHash: string | undefined,
   outcome: "success" | "error" | "exception",
   eventAt?: Date,
-): Promise<boolean> {
+): Promise<ActivityFailure | null> {
   return recordActivity(userHash, activityActionForOutcome(outcome), eventAt);
 }

@@ -231,13 +231,20 @@ export async function roleForSub(sub: string): Promise<string> {
 
 // --- Sign-out-everywhere generation (kernel-owned; ARN-255 option A) ---------
 
+/** A hung Temper must cost a bounded wait on every generation read: this
+ *  sits on the session-verify path of EVERY personalized request (including
+ *  /api/auth/me, whose owner lookup is bounded — an unbounded read here
+ *  would hang the route past the client's abort and flip a signed-in
+ *  visitor to anonymous for the whole document). */
+export const GENERATION_READ_TIMEOUT_MS = 5_000;
+
 /** The principal's current kernel-side generation (0 if never signed out
  *  everywhere). Read at mint time so a token carries the value it was born
  *  with; the kernel rejects any token older than the current value. */
 export async function currentGeneration(sub: string): Promise<number> {
   const res = await fetch(
     `${API_BASE}/tdata/PrincipalGenerations('${encodeURIComponent(sub)}')`,
-    { headers, cache: "no-store" },
+    { headers, cache: "no-store", signal: AbortSignal.timeout(GENERATION_READ_TIMEOUT_MS) },
   );
   if (res.status === 404) return 0; // never bumped
   if (!res.ok) {

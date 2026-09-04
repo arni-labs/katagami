@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { clearRumUser, initRum, setRumUser } from "@/lib/analytics";
 import {
   fetchSessionMe,
@@ -24,10 +23,11 @@ import {
  *  user, so a shared browser doesn't keep attributing views to the previous
  *  account.
  *
- *  Sign out everywhere does not remount this component and does not clear
- *  cookies. The memoized /api/auth/me would otherwise keep the old hash on
- *  this document until a full reload. dropRevokedRumUser / resyncRumUser
- *  run on revoke, visibility, and soft nav so later events do not. */
+ *  Sign out everywhere now clears the browser cookie and full-navigates
+ *  (see SignOutEverywhere.tsx), so this component's job is narrow: clear on
+ *  the cross-tab revoke signal, and resync on tab refocus. There is NO
+ *  soft-nav resync — identity cannot change on a soft nav, and each resync
+ *  costs a Temper Member read (Fable panel finding). */
 
 function dropRevokedRumUser(): void {
   invalidateSessionMe();
@@ -51,9 +51,6 @@ async function resyncRumUser(): Promise<void> {
 }
 
 export function RumInit() {
-  const pathname = usePathname();
-  const skipPathnameResync = useRef(true);
-
   useEffect(() => {
     // Start the SDK import and the session fetch together, but initRum
     // awaits this identity (setRumUser / clearRumUser) before flushPending.
@@ -82,14 +79,6 @@ export function RumInit() {
       window.removeEventListener("storage", onStorage);
     };
   }, []);
-
-  useEffect(() => {
-    if (skipPathnameResync.current) {
-      skipPathnameResync.current = false;
-      return;
-    }
-    void resyncRumUser();
-  }, [pathname]);
 
   return null;
 }

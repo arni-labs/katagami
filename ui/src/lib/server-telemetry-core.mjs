@@ -10,8 +10,21 @@ const SERVICE = "katagami-server";
  *  events omit user_hash. Rita/Howl set KATAGAMI_TELEMETRY_PEPPER in Vercel;
  *  this file does not invent a fallback string (a repo pepper plus 8 members
  *  is matchable). */
+/** A short pepper is an offline-searchable pepper: every member knows their
+ *  own Google sub and /api/auth/me hands them the matching hash — a
+ *  known-answer pair. Under 32 chars, refuse it (return "") so hashing
+ *  fails closed instead of shipping reversible hashes. */
+export const MIN_PEPPER_LENGTH = 32;
+
 export function principalPepper(env = process.env) {
-  return env.KATAGAMI_TELEMETRY_PEPPER || "";
+  const pepper = env.KATAGAMI_TELEMETRY_PEPPER || "";
+  if (pepper && pepper.length < MIN_PEPPER_LENGTH) {
+    console.error(
+      `[telemetry] KATAGAMI_TELEMETRY_PEPPER is shorter than ${MIN_PEPPER_LENGTH} chars — refusing it; user_hash will be omitted`,
+    );
+    return "";
+  }
+  return pepper;
 }
 
 const ALLOWED_ATTR_KEYS = new Set(["user_hash"]);
@@ -62,6 +75,11 @@ export const EVENT_ATTRS = {
   // as_unconfigured | unknown) — clamped at the source, never free text.
   mcp_auth_challenge: new Set(["has_auth", "method", "reason"]),
   members_snapshot: new Set(["members_total", "source"]),
+  // A durable-rollup dispatch that failed: the layer that outlives log
+  // retention must not die silently (ARN-451 panel). `action` is the
+  // MemberActivityDay action name; `error_kind` is the closed
+  // ACTIVITY_ERROR_KINDS vocabulary (member-activity-core.mjs).
+  activity_dispatch_failed: new Set(["action", "error_kind", "user_hash"]),
 };
 
 // Module-load invariant: no allow-listed key may be identity-shaped or a

@@ -139,9 +139,10 @@ Vercel).
 | `@evt` | Fired by | Attributes |
 | --- | --- | --- |
 | `mcp_tool_call` | every **tool** call at `/mcp` — two layers: the patched `registerTool` tracks every registered handler, and a patched `tools/call` request handler additionally catches calls the SDK rejects *before* the handler runs (zod `inputSchema` failures → `@error_kind:invalid_arguments`, unknown tools) so a malformed client is an error spike, not silence | `@tool`, `@tier` (`full` only — `/mcp` requires a bearer), `@outcome` (success/error/exception), `@duration_ms`, `@user_hash`, `@error_kind` (`invalid_arguments`, `tool_budget_exceeded`, exception names) |
-| `mcp_auth_challenge` | every 401 on `/mcp` (initialize included) | `@has_auth` (false = fresh client meeting the connect card — anonymous demand, mostly the NORMAL handshake; true = a presented bearer was rejected), `@method`, `@reason` (only when `@has_auth:true`; closed vocabulary from `AUTH_REJECTION_REASONS` in `ui/src/lib/catalog-auth-core.mjs`: `expired`, `signature`, `claims`, `audience`, `scope`, `generation`, `grant_revoked`, `as_unconfigured`, `unknown` — clamped at the source, never free text, never token material). Dashboard: "Rejected bearers — why" in the MCP group |
+| `mcp_auth_challenge` | every 401 on `/mcp` (initialize included) | `@has_auth` (false = fresh client meeting the connect card — anonymous demand, mostly the NORMAL handshake; true = a presented bearer was rejected), `@method`, `@reason` (only when `@has_auth:true`; closed vocabulary from `AUTH_REJECTION_REASONS` in `ui/src/lib/catalog-auth-core.mjs`: `expired`, `signature`, `claims`, `audience`, `scope`, `generation`, `grant_revoked`, `as_unconfigured`, `backend_unavailable` (Temper outage during liveness checks — an outage, not probing), `unknown` — clamped at the source, never free text, never token material). Dashboard: "Rejected bearers — why" in the MCP group |
 | `auth_login` | every successful Google sign-in (`api/auth/google/callback`) | `@registration` (true = first sign-in of this account), `@upsert_ok`, `@user_hash` |
 | `auth_login_failed` | failed sign-in — only when a real handshake came back (bare scanner GETs with no `code`/`error` param emit nothing) | `@reason`: `state` (handshake broke), `google` (Google exchange failed), `session` (Google OK, we could not mint the session), `consent` (Google redirected with an explicit error) |
+| `activity_dispatch_failed` | a durable-rollup dispatch (MemberActivityDay) failed — the layer that outlives log retention died for that event | `@action` (RecordLogin/RecordMcpCall/RecordMcpError), `@error_kind` (closed set: timeout, http_4xx, http_5xx, network, exception), `@user_hash`. Dashboard: "Rollup dispatch FAILURES" tile in the per-user group — must stay 0 |
 | `members_snapshot` | the daily Vercel cron → `/api/telemetry/members` (`@source:cron`) and best-effort after each sign-in (`@source:login`) | `@members_total`, `@source`. This is the ONLY carrier of `@members_total`; a missing `@odata.count` from Temper throws instead of shipping a fake 0, and the dashboard tile shows N/A (no `default_zero`) so absence looks like absence |
 
 **Registered users — source of truth.** The Temper `Members` entity set
@@ -177,7 +178,8 @@ Three layers join on one identifier — the peppered `user_hash`
    `clearUser()`, so the page load right after sign-out stops attributing.
    Caveat: `@usr.id` is client-attached and therefore client-spoofable, like
    all RUM data (the RUM client token is public). It is product analytics,
-   not authorization; the server-attested record is the log events.
+   not authorization; the server-attested record is the log events. The
+  dashboard's RUM tiles are labeled ADVISORY for this reason.
 2. **Identity (Temper).** Every sign-in's `Members.Register` upsert now also
    stores `user_hash` on the Member row (backfilled for pre-existing
    members). Map a hash to a person:
@@ -186,7 +188,9 @@ Three layers join on one identifier — the peppered `user_hash`
 3. **Durable history (Temper).** Log indexes age out in ~15 days, so per-user
    history is ALSO accrued at event time into `MemberActivityDays` — one row
    per (user_hash, UTC day) with `logins`, `mcp_calls`, `mcp_errors`
-   counters (kernel-side increments, race-free). This layer is independent
+   counters (kernel-side increments, race-free; days are UTC event-time
+   buckets — set the dashboard timezone to UTC before reconciling against
+   the log tiles, which render in the viewer's timezone). This layer is independent
    of `DD_API_KEY` on purpose: it must survive Datadog being down. It is the
    deliberate alternative to a `user_hash`-tagged Datadog metric, which
    would explode tag cardinality.
@@ -220,7 +224,11 @@ Three layers join on one identifier — the peppered `user_hash`
   in Production + Preview (minted 2026-09-01, ARN-451 — it was missing, so
   no production event carried a `user_hash` before then). Rotating it
   re-keys every hash; Member rows self-heal on next sign-in, but old
-  `MemberActivityDays` rows stay under the old hash.
+  `MemberActivityDays` rows stay under the old hash. Peppers under 32
+  characters are REFUSED at runtime (hashing fails closed): every member
+  holds a known-answer pair — their own sub plus their hash from
+  `/api/auth/me` — so a short pepper is offline-searchable and would make
+  every stored hash reversible.
 
 A production Google `auth_login` has not been verified end-to-end on this
 PR (cannot complete a real Google exchange from this agent). Components

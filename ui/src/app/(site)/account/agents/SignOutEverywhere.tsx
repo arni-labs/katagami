@@ -5,10 +5,14 @@ import { notifySessionRevoked } from "@/lib/session-me";
 import { signOutEverywhere } from "./actions";
 
 /** Sign out everywhere is a server action: bumpGeneration + revoke grants.
- *  It does not clear cookies and does not remount root RumInit. After it
- *  returns, this tab must drop the memoized /api/auth/me and the RUM user
- *  so later events on this document are not attributed to the revoked
- *  account. Other tabs hear SESSION_REVOKED_STORAGE_KEY. */
+ *  It does not clear cookies by itself — and the kernel generation is cached
+ *  per serverless instance for 30s, so a still-valid cookie could be
+ *  re-validated by ANOTHER instance and re-attach the revoked identity
+ *  (Fable panel finding). So this tab also signs out the BROWSER: POST
+ *  /api/auth/signout (Clear-Site-Data drops the cookie for every tab) and
+ *  full-navigate home. With no cookie left, no cache staleness anywhere can
+ *  resurrect the session. Other tabs hear SESSION_REVOKED_STORAGE_KEY and
+ *  clear RUM immediately; their next fetch is cookieless. */
 export function SignOutEverywhere() {
   async function action() {
     // finally: bumpGeneration lands FIRST inside the server action, so even a
@@ -19,6 +23,16 @@ export function SignOutEverywhere() {
     } finally {
       notifySessionRevoked();
       clearRumUser();
+      try {
+        await fetch("/api/auth/signout", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { accept: "application/json" },
+        });
+      } catch {
+        /* the generation bump already killed the session server-side */
+      }
+      window.location.assign("/");
     }
   }
 

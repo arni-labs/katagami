@@ -69,3 +69,17 @@
 - **Options:** trust call sites; validate values at the emission boundaries.
 - **Chose** boundary validation **because** it closes the class: no call site can leak by accident. Verified live: `alice@example.com` tools/call shipped as `@tool:(unregistered)`.
 - **Where:** `ui/src/app/mcp/route.ts`, `ui/src/lib/server-telemetry-core.mjs` (`cleanAttrs`), `ui/src/lib/analytics.ts`, `ui/src/components/user-menu.tsx`.
+
+## Fable-round: sign-out-everywhere ends the browser session outright
+- **Decision:** Sign out everywhere now also POSTs `/api/auth/signout` (Clear-Site-Data drops the cookie browser-wide) and full-navigates home; the soft-nav RUM resync is deleted; the chip's initial apply and all resyncs honor the session epoch.
+- **Came up because:** the Fable panel showed the 30s per-instance generation cache re-validating a still-present cookie on ANOTHER serverless instance — tab-refocus or soft-nav within 30s of revoking re-attached the revoked identity; the soft-nav resync was also a Temper read per navigation for an identity that cannot change on a soft nav.
+- **Options:** longer epoch machinery reaching into every resync path; shrink the generation cache; delete the cookie and reload.
+- **Chose** delete-and-reload **because** with no cookie left, no cache staleness anywhere can resurrect the session — the class dies rather than the instance; and deleting the soft-nav resync removes both the re-attach vector and the per-navigation Temper cost.
+- **Where:** `ui/src/app/(site)/account/agents/SignOutEverywhere.tsx`, `ui/src/components/rum-init.tsx`, `ui/src/components/user-menu.tsx`.
+
+## Fable-round: outages, dead rollups, and races are all visible or self-healing
+- **Decision:** (a) Temper-outage bearer rejections are their own closed reason `backend_unavailable`; (b) a failed rollup dispatch emits `activity_dispatch_failed` (closed error-kind set) and has a dashboard tile; (c) the first-of-day create race retries once; (d) the generation read is bounded and the owner lookup can no longer flip a signed-in chip to anonymous; (e) peppers under 32 chars are refused (every member holds a known-answer pair, so a short pepper is offline-searchable); (f) the email scrub covers resource URLs and referrers; (g) RUM tiles are labeled advisory and rollup days labeled UTC.
+- **Came up because:** the Fable seat's 11 findings (delivered late — a 65KB prompt as a shell argv to `claude -p` silently yields nothing; stdin works).
+- **Options:** per finding — documented in the PR panel synthesis; the create-race option set was retry-in-caller vs kernel-side idempotent create (kernel fix is ARN-465 territory; the kernel's own 409 message says "retry against current state", so caller-retry matches the kernel's contract).
+- **Chose** the smallest fix that kills each class, each with the contract check that fails if it is removed. **Live probe evidence for the race:** two parallel first-of-day dispatches on a missing production id → one 200, one 409 `ActionFailed: action authorization became stale; retry against current state`, exactly ONE row (auto-create does not duplicate), the 409'd count LOST without a retry; with the retry, two parallel first-of-day calls through the real app both counted (`mcp_calls: 2`).
+- **Where:** `ui/src/lib/catalog-auth-core.mjs`, `member-activity{-core.mjs,.ts}`, `server-telemetry{-core.mjs,.ts}`, `oauth-as.ts`, `api/auth/me/route.ts`, callback route, `analytics.ts`, dashboard JSON, README.

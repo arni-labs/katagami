@@ -99,6 +99,11 @@ export async function initRum(): Promise<void> {
         beforeSend: (event) => {
           try {
             if (event.view?.url) event.view.url = scrubEmails(event.view.url);
+            if (event.view?.referrer) event.view.referrer = scrubEmails(event.view.referrer);
+            // trackResources ships fetch URLs too — /api/search?q=<typed text>
+            // rides on resource events, joined to @usr.id (Fable panel finding).
+            const resource = (event as { resource?: { url?: string } }).resource;
+            if (resource?.url) resource.url = scrubEmails(resource.url);
           } catch {
             /* never block an event on scrubbing */
           }

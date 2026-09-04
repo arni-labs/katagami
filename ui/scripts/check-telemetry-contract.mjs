@@ -38,7 +38,13 @@ import {
   identityFromAccessPayload,
   joseRejectionReason,
   readMcpAuthInfo,
+  verifyReadAccessTokenDetailed,
 } from "../src/lib/catalog-auth-core.mjs";
+import {
+  ACTIVITY_ERROR_KINDS,
+  activityErrorKind,
+  isCreateRaceError,
+} from "../src/lib/member-activity-core.mjs";
 
 function read(path) {
   return readFileSync(resolve(path), "utf8");
@@ -208,7 +214,7 @@ const activityCedar = read(activityCedarLoadedPath);
 
 {
   const sub = "google-oauth2|12345";
-  const env = { KATAGAMI_TELEMETRY_PEPPER: "contract-test-pepper" };
+  const env = { KATAGAMI_TELEMETRY_PEPPER: "contract-test-pepper-with-32-plus-characters" };
   const hashed = await hashPrincipal(sub, env);
   const raw = createHash("sha256").update(sub).digest("hex").slice(0, 16);
   assert.match(hashed, /^[0-9a-f]{16}$/);
@@ -217,7 +223,21 @@ const activityCedar = read(activityCedarLoadedPath);
   assert.notEqual(hashed, await hashPrincipal("other-sub", env));
   assert.equal(await hashPrincipal(sub, {}), undefined, "unset pepper omits user_hash");
   assert.equal(principalPepper({}), "");
-  console.log("ok: hashPrincipal uses env pepper; unset pepper omits user_hash");
+  // Entropy floor (ARN-451 panel): a hand-typed pepper is offline-searchable
+  // because every member holds a known-answer pair (their sub + their hash
+  // from /api/auth/me). Under 32 chars → refused → hashing fails closed.
+  assert.equal(principalPepper({ KATAGAMI_TELEMETRY_PEPPER: "short-pepper" }), "");
+  assert.equal(
+    await hashPrincipal(sub, { KATAGAMI_TELEMETRY_PEPPER: "hunter2hunter2" }),
+    undefined,
+    "a short pepper must not produce hashes",
+  );
+  assert.equal(
+    principalPepper({ KATAGAMI_TELEMETRY_PEPPER: "x".repeat(32) }).length,
+    32,
+    "a 32-char pepper is accepted",
+  );
+  console.log("ok: hashPrincipal uses env pepper; unset/short pepper omits user_hash (32-char floor)");
 }
 
 {
@@ -326,7 +346,7 @@ const activityCedar = read(activityCedarLoadedPath);
   // Only a real 16-hex hashPrincipal output may key a rollup row or land on a
   // Member — a raw sub, an email, or garbage must never become the key.
   const hashed = await hashPrincipal("google-oauth2|12345", {
-    KATAGAMI_TELEMETRY_PEPPER: "contract-test-pepper",
+    KATAGAMI_TELEMETRY_PEPPER: "contract-test-pepper-with-32-plus-characters",
   });
   assert.equal(isValidUserHash(hashed), true, "hashPrincipal output is a valid user_hash");
   for (const bad of [
@@ -411,6 +431,64 @@ const activityCedar = read(activityCedarLoadedPath);
     { has_auth: true, method: "POST", reason: "expired" },
   );
   console.log("ok: mcp_auth_challenge rejection reasons — closed vocabulary, clamped, allow-listed");
+}
+
+{
+  // A Temper outage during liveness checks is backend_unavailable — never
+  // "unknown" (which the dashboard reads as probing). Exercised through the
+  // REAL detailed verifier with throwing deps and a valid signed token.
+  const { SignJWT, generateKeyPair } = await import("jose");
+  const { publicKey, privateKey } = await generateKeyPair("ES256");
+  const token = await new SignJWT({ scope: "read", auth_generation: 0 })
+    .setProtectedHeader({ alg: "ES256" })
+    .setSubject("s1")
+    .setAudience("https://katagami.ai/mcp")
+    .setIssuedAt()
+    .setExpirationTime("5m")
+    .sign(privateKey);
+  const out = await verifyReadAccessTokenDetailed(token, {
+    key: publicKey,
+    currentGeneration: async () => { throw new Error("connect ECONNREFUSED"); },
+    grantIsActive: async () => true,
+  });
+  assert.equal(out.identity, null);
+  assert.equal(out.reason, "backend_unavailable");
+  assert.ok(AUTH_REJECTION_REASONS.has("backend_unavailable"));
+  console.log("ok: Temper outage → backend_unavailable, not a probing signal");
+}
+
+{
+  // Rollup-failure error kinds are a closed set and the classifier lands in it.
+  assert.equal(activityErrorKind({ name: "TimeoutError" }), "timeout");
+  assert.equal(activityErrorKind({ name: "AbortError" }), "timeout");
+  assert.equal(activityErrorKind({ message: "Action X failed 403: denied" }), "http_4xx");
+  assert.equal(activityErrorKind({ message: "Action X failed 502: bad gateway" }), "http_5xx");
+  assert.equal(activityErrorKind(new TypeError("fetch failed")), "network");
+  assert.equal(activityErrorKind(new Error("boom")), "exception");
+  for (const kind of ["timeout", "http_4xx", "http_5xx", "network", "exception"]) {
+    assert.ok(ACTIVITY_ERROR_KINDS.has(kind));
+  }
+  // And the allow-list ships exactly the declared attrs (nothing extra).
+  assert.deepEqual(
+    cleanAttrs("activity_dispatch_failed", {
+      action: "RecordMcpCall", error_kind: "timeout",
+      user_hash: "9fc5a227c397eafb", email: "a@b.c",
+    }),
+    { action: "RecordMcpCall", error_kind: "timeout", user_hash: "9fc5a227c397eafb" },
+  );
+  console.log("ok: activity_dispatch_failed — closed error kinds, allow-listed attrs");
+}
+
+{
+  // The first-of-day create race (verified live in prod, 2026-09-04): one of
+  // two parallel dispatches on a missing id 409s with "authorization became
+  // stale; retry against current state". The classifier must catch both the
+  // kernel message and the raw 409, and nothing else.
+  assert.equal(isCreateRaceError(new Error("Action KatagamiCommons.RecordMcpCall failed 409: action authorization became stale; retry against current state")), true);
+  assert.equal(isCreateRaceError(new Error("action authorization became stale; retry against current state")), true);
+  assert.equal(isCreateRaceError(new Error("Action X failed 403: denied")), false);
+  assert.equal(isCreateRaceError(new Error("boom")), false);
+  console.log("ok: create-race 409s are classified for the one-shot retry");
 }
 
 // --- Wiring greps -----------------------------------------------------------
@@ -518,8 +596,28 @@ const required = [
     /SESSION_REVOKED_STORAGE_KEY[\s\S]*dropRevokedRumUser\(\)/],
   ["RumInit resyncs identity on visibilitychange (cross-tab sign-out-everywhere)", rumInit,
     /addEventListener\("visibilitychange", onVisibility\)/],
-  ["RumInit resyncs identity on soft nav (root layout does not remount)", rumInit,
-    /usePathname\(\)[\s\S]*resyncRumUser\(\)/],
+  ["RumInit has NO soft-nav resync (identity cannot change on a soft nav; every resync costs a Temper read and was the re-attach vector)", rumInit,
+    /^(?![\s\S]*usePathname)[\s\S]*resyncRumUser/],
+  ["sign-out-everywhere signs the BROWSER out too and full-navigates (no cache can resurrect the cookie)", read("src/app/(site)/account/agents/SignOutEverywhere.tsx"),
+    /fetch\("\/api\/auth\/signout"[\s\S]*window\.location\.assign\("\/"\)/],
+  ["the chip's initial apply honors the session epoch", userMenu,
+    /const before = sessionMeEpoch\(\);[\s\S]*if \(before === sessionMeEpoch\(\)\) apply\(d\);/],
+  ["the generation read is bounded (session verify cannot hang the me route)", oauthAs,
+    /AbortSignal\.timeout\(GENERATION_READ_TIMEOUT_MS\)/],
+  ["a Temper outage reads as backend_unavailable, never as probing", read("src/lib/catalog-auth-core.mjs"),
+    /reason: "backend_unavailable"/],
+  ["rollup failures are VISIBLE: both callers forward misses to Datadog", telemetry,
+    /await reportActivityFailure\(await activity, userHash\);/],
+  ["the sign-in path forwards rollup misses too", callback,
+    /await reportActivityFailure\(await activity, userHash\);/],
+  ["activity_dispatch_failed is allow-listed", core,
+    /activity_dispatch_failed: new Set\(\["action", "error_kind", "user_hash"\]\)/],
+  ["dashboard shows rollup dispatch failures", dashboard,
+    /@evt:activity_dispatch_failed/],
+  ["dashboard labels RUM joins advisory", dashboard,
+    /ADVISORY/],
+  ["resource URLs and referrers are email-scrubbed too", analytics,
+    /resource\?\.url\) resource\.url = scrubEmails/],
   ["sign-out-everywhere invalidates the session fetch and clears RUM without remount", signOutEverywhereForm,
     /notifySessionRevoked\(\)[\s\S]*clearRumUser\(\)/],
   ["fetchSessionMe aborts hung /api/auth/me (5s telemetry bound)", sessionMe,
@@ -552,12 +650,14 @@ const required = [
     /forbid\(principal, action, resource is MemberActivityDay\)/],
   ["sign-in starts the durable rollup outside the Datadog gate (not serialized before the intake)", callback,
     /const activity = recordLoginActivity\(userHash, eventAt\);[\s\S]*if \(!serverTelemetryEnabled\(\)\)/],
-  ["a hung Temper cannot eat the Datadog emit: MCP rollup is awaited last", telemetry,
-    /const activity = recordMcpActivity\(userHash, outcome, eventAt\);[\s\S]*await emitServerEvent\([\s\S]*await activity;/],
+  ["a hung Temper cannot eat the Datadog emit: MCP rollup resolves after it", telemetry,
+    /const activity = recordMcpActivity\(userHash, outcome, eventAt\);[\s\S]*await emitServerEvent\([\s\S]*await reportActivityFailure\(await activity, userHash\);/],
   ["MCP tool calls record the durable rollup (any outcome)", telemetry,
     /recordMcpActivity\(userHash, outcome, eventAt\)/],
   ["activity dispatch refuses non-hash keys (no raw sub can become a row)", memberActivity,
-    /if \(!isValidUserHash\(userHash\)\) return false;/],
+    /if \(!isValidUserHash\(userHash\)\) return null;/],
+  ["a first-of-day create race is retried once, not silently lost", memberActivity,
+    /if \(isCreateRaceError\(err\)\) \{[\s\S]*await dispatchOnce\(\);/],
   ["activity dispatch is bounded (hung Temper costs a timeout, not the limit)", memberActivity,
     /AbortSignal\.timeout\(ACTIVITY_DISPATCH_TIMEOUT_MS\)/],
   ["dispatchAction actually honors the abort signal", odataMutations,
