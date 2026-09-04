@@ -53,7 +53,7 @@ export function notifySessionRevoked(): void {
 
 export function fetchSessionMe(): Promise<SessionMe> {
   if (!inflight) {
-    inflight = fetch("/api/auth/me", {
+    const attempt: Promise<SessionMe> = fetch("/api/auth/me", {
       cache: "no-store",
       credentials: "same-origin",
       signal: sessionMeAbortSignal(),
@@ -64,7 +64,17 @@ export function fetchSessionMe(): Promise<SessionMe> {
         owner: Boolean(d.owner),
         user_hash: typeof d.user_hash === "string" ? d.user_hash : null,
       }))
-      .catch(() => SIGNED_OUT);
+      .catch(() => {
+        // A hung/aborted fetch is NOT a signed-out answer — do not pin this
+        // document to SIGNED_OUT. Resolve signed-out for the callers waiting
+        // now, but drop the memo so the next consumer (visibility resync,
+        // soft nav) retries instead of inheriting the failure. Only clear
+        // our own attempt — an invalidate may have already started a newer
+        // fetch this failure must not discard.
+        if (inflight === attempt) inflight = null;
+        return SIGNED_OUT;
+      });
+    inflight = attempt;
   }
   return inflight;
 }

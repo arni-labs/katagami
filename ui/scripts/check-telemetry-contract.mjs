@@ -431,7 +431,8 @@ const required = [
   ["members cron snapshot is tagged source:cron", snapshot, /source: "cron"/],
   ["members snapshot uses authorizeCronRequest", snapshot, /authorizeCronRequest\(/],
   ["cron bearer compare is timing-safe", core, /timingSafeEqual/],
-  ["sign-in skips countMembers when intake is fail-closed", callback, /if \(!serverTelemetryEnabled\(\)\) return/],
+  ["sign-in skips countMembers when intake is fail-closed (still awaiting the rollup)", callback,
+    /if \(!serverTelemetryEnabled\(\)\) \{\s*await activity;\s*return;\s*\}/],
   ["members snapshot cron is scheduled", vercelJson, /\/api\/telemetry\/members/],
   ["runAfter guards next/server after()", telemetry, /export function runAfter/],
   ["hash+emit for MCP tools runs inside runAfter", telemetry, /runAfter\(async \(\) => \{[\s\S]*hashPrincipal/],
@@ -540,8 +541,10 @@ const required = [
     /name = "RecordMcpError"[\s\S]*\{ type = "increment", var = "mcp_calls" \}, \{ type = "increment", var = "mcp_errors" \}/],
   ["MemberActivityDay writes are locked to server-side principals", activityCedar,
     /forbid\(principal, action, resource is MemberActivityDay\)/],
-  ["sign-in records the durable rollup BEFORE the Datadog fail-closed gate", callback,
-    /recordLoginActivity\(userHash\);[\s\S]*if \(!serverTelemetryEnabled\(\)\) return;/],
+  ["sign-in starts the durable rollup outside the Datadog gate (not serialized before the intake)", callback,
+    /const activity = recordLoginActivity\(userHash\);[\s\S]*if \(!serverTelemetryEnabled\(\)\)/],
+  ["a hung Temper cannot eat the Datadog emit: MCP rollup is awaited last", telemetry,
+    /const activity = recordMcpActivity\(userHash, outcome\);[\s\S]*await emitServerEvent\([\s\S]*await activity;/],
   ["MCP tool calls record the durable rollup (any outcome)", telemetry,
     /recordMcpActivity\(userHash, outcome\)/],
   ["activity dispatch refuses non-hash keys (no raw sub can become a row)", memberActivity,
@@ -557,8 +560,8 @@ const required = [
   // --- ARN-451: rejection reasons on mcp_auth_challenge ---------------------
   ["mcp_auth_challenge allow-lists the rejection reason", core,
     /mcp_auth_challenge: new Set\(\["has_auth", "method", "reason"\]\)/],
-  ["401 counter emits the reason only when a bearer was presented", mcp,
-    /reason: hasAuth \? \(authRejectionReasons\.get\(req\) \?\? "unknown"\) : undefined/],
+  ["401 counter emits the reason only when a bearer was presented, clamped at the emit boundary", mcp,
+    /reason: hasAuth \? clampRejectionReason\(authRejectionReasons\.get\(req\)\) : undefined/],
   ["verify callback stashes the rejection reason for the 401 counter", mcp,
     /authRejectionReasons\.set\(req, reason\)/],
   ["verifyReadBearer reports a CLAMPED reason (closed vocabulary)", read("src/lib/catalog-auth.ts"),
@@ -571,6 +574,15 @@ const required = [
   // otherwise ship PII as an action name).
   ["account button overrides RUM action name (no name/email in actions)", userMenu,
     /data-dd-action-name="account menu"/],
+  // --- Grok panel round (ARN-451) -------------------------------------------
+  ["/api/auth/me never caches (previous viewer's name/email/hash must not be served)", meRoute,
+    /"Cache-Control": "no-store"/],
+  ["slow owner lookup costs the owner flag, not the signed-in identity", meRoute,
+    /Promise\.race\(\[\s*isOwner\(\)\.catch\(\(\) => false\)/],
+  ["a failed session fetch is not memoized as signed-out for the document", read("src/lib/session-me.ts"),
+    /if \(inflight === attempt\) inflight = null;/],
+  ["client refuses a non-hash as @usr.id (16-hex or clear)", analytics,
+    /USER_HASH_RE\.test\(userHash\) \? userHash : null/],
 ];
 
 let failed = 0;

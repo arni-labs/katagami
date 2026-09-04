@@ -2,6 +2,7 @@ import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { verifyReadBearer, readMcpAuthInfo, whoamiFromAuth } from "@/lib/catalog-auth";
+import { clampRejectionReason } from "@/lib/catalog-auth-core.mjs";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
 import { trackMcpToolCall, trackServerEvent } from "@/lib/server-telemetry";
 import {
@@ -421,7 +422,10 @@ function withAuthChallengeCount(
         // rejection reason stashed by the verify callback (ARN-451). A 401
         // with a header the verifier never saw (e.g. non-Bearer scheme)
         // reads "unknown" — still enumerable.
-        reason: hasAuth ? (authRejectionReasons.get(req) ?? "unknown") : undefined,
+        // Clamped AGAIN at the emit boundary (defense in depth): even if a
+        // future throw stashes free text, only AUTH_REJECTION_REASONS values
+        // can reach Datadog.
+        reason: hasAuth ? clampRejectionReason(authRejectionReasons.get(req)) : undefined,
       });
     }
     return res;

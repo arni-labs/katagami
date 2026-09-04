@@ -110,12 +110,18 @@ export async function GET(req: NextRequest) {
       } catch (err) {
         console.error("[telemetry] hashPrincipal failed", err);
       }
-      // Durable per-user rollup (ARN-451) — deliberately BEFORE the Datadog
+      // Durable per-user rollup (ARN-451) — independent of the Datadog
       // fail-closed gate: the Temper MemberActivityDay row is the layer that
-      // outlives log retention, so it must not depend on DD_API_KEY.
-      await recordLoginActivity(userHash);
+      // outlives log retention, so it must not depend on DD_API_KEY. Started
+      // here and awaited LAST: serializing Temper (5s bound) in front of the
+      // intake would let a hung kernel delay/eat the auth_login event — the
+      // countMembers lesson again.
+      const activity = recordLoginActivity(userHash);
       // Fail-closed intake → do not hit Temper $count for a no-op emit.
-      if (!serverTelemetryEnabled()) return;
+      if (!serverTelemetryEnabled()) {
+        await activity;
+        return;
+      }
       // auth_login FIRST. countMembers must never sit between a successful
       // sign-in and its own event: with Temper hung, this post-response task dies
       // at the function duration limit and the login (plus registration:true)
@@ -138,6 +144,7 @@ export async function GET(req: NextRequest) {
       } catch (err) {
         console.error("[telemetry] members_snapshot after login skipped:", err);
       }
+      await activity;
     });
   }
 

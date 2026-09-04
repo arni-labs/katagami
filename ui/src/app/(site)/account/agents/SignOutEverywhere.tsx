@@ -20,7 +20,7 @@ export function SignOutEverywhere() {
     <form action={action}>
       <button
         type="submit"
-        className="rounded-full bg-black text-white text-[15px] font-medium px-5 py-2.5 hover:bg-neutral-800 transition-colors"
+        className="bg-black text-white text-[15px] font-medium px-5 py-2.5 hover:bg-neutral-800 transition-colors"
       >
         Sign out everywhere
       </button>

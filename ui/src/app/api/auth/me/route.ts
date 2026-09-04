@@ -15,9 +15,25 @@ import { hashPrincipal } from "@/lib/server-telemetry-core.mjs";
 // signed out or when KATAGAMI_TELEMETRY_PEPPER is unset.
 export const dynamic = "force-dynamic";
 
+/** The owner flag rides a Temper Member-role read. Slow Temper must cost the
+ *  chip the owner shortcut, never the whole signed-in identity: past this
+ *  bound the route answers owner:false and still returns user + user_hash
+ *  (otherwise the shared client fetch aborts at its own 5s and the header
+ *  shows "sign in" to a signed-in visitor for the rest of the document). */
+const OWNER_LOOKUP_TIMEOUT_MS = 3_000;
+
+function ownerWithTimeout(): Promise<boolean> {
+  return Promise.race([
+    isOwner().catch(() => false),
+    new Promise<boolean>((resolve) =>
+      setTimeout(() => resolve(false), OWNER_LOOKUP_TIMEOUT_MS),
+    ),
+  ]);
+}
+
 export async function GET() {
   const user = await getUser();
-  const owner = await isOwner();
+  const owner = await ownerWithTimeout();
   let userHash: string | null = null;
   if (user) {
     try {

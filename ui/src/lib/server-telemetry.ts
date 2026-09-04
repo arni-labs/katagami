@@ -120,7 +120,12 @@ export function trackMcpToolCall(d: {
     }
     // Durable per-user rollup (ARN-451) — independent of the Datadog intake:
     // the Temper MemberActivityDay counters are what outlive log retention.
-    await recordMcpActivity(userHash, outcome);
+    // Started here, awaited AFTER the Datadog emit: serializing Temper (5s
+    // bound) in front of the intake (2.5s bound) would let a hung kernel eat
+    // the telemetry reserve and eat the mcp_tool_call event — the one path
+    // that still works when Temper is down. Both stay bounded; neither
+    // waits on the other.
+    const activity = recordMcpActivity(userHash, outcome);
     await emitServerEvent(
       "mcp_tool_call",
       {
@@ -136,5 +141,6 @@ export function trackMcpToolCall(d: {
       },
       outcome === "success" ? "info" : "error",
     );
+    await activity;
   });
 }

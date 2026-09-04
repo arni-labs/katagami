@@ -200,10 +200,17 @@ function applyDesiredUser(): void {
   }
 }
 
-/** Attach the signed-in account's telemetry hash to all RUM events. */
+/** Exactly the shape hashPrincipal emits — anything else must not become
+ *  @usr.id (mirror of isValidUserHash; kept inline so this stays a leaf
+ *  client module). */
+const USER_HASH_RE = /^[0-9a-f]{16}$/;
+
+/** Attach the signed-in account's telemetry hash to all RUM events. A value
+ *  that is not a 16-hex hash clears instead — an unexpected server response
+ *  must never ride into @usr.id. */
 export function setRumUser(userHash: string): void {
   if (typeof window === "undefined" || !rumEnabled()) return;
-  desiredUserHash = userHash;
+  desiredUserHash = USER_HASH_RE.test(userHash) ? userHash : null;
   notifyIdentityKnown();
   applyDesiredUser();
   flushPending();
