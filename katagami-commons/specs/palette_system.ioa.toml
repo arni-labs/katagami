@@ -70,6 +70,23 @@ name = "featured"
 type = "bool"
 initial = "false"
 
+# The owner-curated allowlist a signed-out visitor may see. Independent of
+# `featured` (a signed-in highlight only): a palette can be featured without
+# being shown to visitors. The website + read MCP gate the anonymous portion on
+# THIS flag; signed-in users still see the full catalog.
+[[state]]
+name = "shown_to_visitors"
+type = "bool"
+initial = "false"
+
+# Shelf position for the anonymous visitor shelf, INDEPENDENT of display_order
+# (which orders the signed-in featured/picks lead). Written only by
+# SetVisitorVisibility; lower comes first.
+[[state]]
+name = "visitor_order"
+type = "counter"
+initial = 0
+
 [[state]]
 name = "display_order"
 type = "counter"
@@ -268,7 +285,14 @@ name = "SetFeatured"
 kind = "input"
 from = ["Draft", "UnderReview", "Published"]
 params = ["featured", "display_order"]
-hint = "Set featured status and display order for gallery sorting."
+hint = "Highlight this palette for signed-in users and set display order for gallery sorting. Featured is a highlight only; it does NOT decide visitor visibility — use SetVisitorVisibility for that."
+
+[[action]]
+name = "SetVisitorVisibility"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["shown_to_visitors", "visitor_order"]
+hint = "Put this palette on the signed-out visitor shelf (shown_to_visitors=true) or take it off (false). This is the only flag that decides what a not-logged-in visitor sees on the website and the read MCP; signed-in users always see the full catalog. Independent of featured. visitor_order sets the shelf position (lower first), independent of display_order/featured; writing it here never changes the featured flag or the featured lead order."
 
 [[action]]
 name = "AddCuratorNotes"

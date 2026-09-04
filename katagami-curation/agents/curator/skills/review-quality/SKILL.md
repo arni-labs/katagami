@@ -13,16 +13,12 @@ Read the knowledge files in your workspace:
 - `/system/knowledge/quality-standards.md` — quality thresholds
 - `/system/knowledge/feedback-log.md` — human feedback (may contain specific notes about target languages)
 
-Load accepted taste rules before judging any language:
-```python
-accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")
-```
-Use only Accepted rules. Positive rules describe patterns to preserve or
-amplify; negative rules describe archive-derived anti-patterns to avoid.
-Proposed, Rejected, and Superseded rules must have no effect on quality review.
-Accepted TasteRules are the authoritative reusable design tests. The knowledge
-files provide orientation and hard artifact context; do not recreate parallel
-anti-slop checklists from prose.
+Obey EVERY rule in the taste rulebook inlined in this prompt — it is the
+authoritative reusable design test. Do not load TasteRule entities; those
+are outdated. Proposed, Rejected, and Superseded TasteRule entities have
+no effect on quality review. The knowledge files provide orientation and
+hard artifact context; do not recreate parallel anti-slop checklists from
+prose.
 
 ## Process
 
@@ -194,9 +190,9 @@ rather than reviewing unrelated languages. A failure here drains only THIS direc
          'design_md_format_version': 'alpha'
      })
      ```
-10. **Evaluate against the spec and Accepted TasteRules.** Fix every concrete
+10. **Evaluate against the spec and the inlined taste rulebook.** Fix every concrete
     violation before completion. Use the language's `curator_notes` first when
-    present, then apply the Accepted TasteRules as the reusable visual quality
+    present, then apply the inlined rulebook as the reusable visual quality
     bar. Hard artifact defects still require direct repair: missing spec
     sections, invalid DESIGN.md, unreadable embodiment files, stale shadcn
     component artifacts, missing responsive CSS, unstyled browser defaults, and

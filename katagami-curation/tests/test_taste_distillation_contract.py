@@ -116,13 +116,14 @@ class TasteDistillationContractTests(unittest.TestCase):
         self.assertIn("Create proposed rules only", skill)
         self.assertIn("temper.list('DesignLanguages', \"Status eq 'Archived'\")", skill)
         self.assertIn("temper.list('DesignLanguages', \"Status eq 'Published'\")", skill)
-        self.assertIn("temper.list('TasteRules', '')", skill)
+        self.assertNotIn("list('TasteRules')", skill)
+        self.assertNotIn("Accepted TasteRules", skill)
+        self.assertIn("taste rulebook inlined in this prompt", skill)
         self.assertIn("evidence_fingerprint", skill)
         self.assertIn("skipped_duplicate_fingerprints", skill)
         self.assertIn("short, general proposed\nprompt directives", skill)
         self.assertIn("Do not recommend catalog actions", skill)
-        self.assertIn("Accepted rules are already incorporated guidance", skill)
-        self.assertIn("Rejected rules are negative meta-evidence", skill)
+        self.assertIn("already-incorporated", skill)
         self.assertIn("normalized_rule_text", skill)
         self.assertIn("skipped_existing_directives", skill)
         self.assertIn("skipped_rejected_precedents", skill)
@@ -141,49 +142,35 @@ class TasteDistillationContractTests(unittest.TestCase):
         self.assertIn("contradiction_rule_candidates", skill)
         self.assertIn("rule_tension_candidates", skill)
         self.assertIn("skipped_contradictory_directives", skill)
-        self.assertIn("Accepted rule reintroduces a Rejected framing", skill)
-        self.assertIn("one Accepted rule requires what another Accepted rule forbids", skill)
         self.assertIn("temper.create('TasteRules'", skill)
         self.assertIn("'CompleteTasteDistillation'", skill)
         self.assertNotIn("temper.action('TasteRules', rule['entity_id'], 'Accept'", skill)
 
-    def test_curator_jobs_load_only_accepted_taste_rules(self):
-        synthesize = (
-            self.root
-            / "agents"
-            / "curator"
-            / "skills"
-            / "synthesize-language"
-            / "SKILL.md"
-        ).read_text()
-        review = (
-            self.root
-            / "agents"
-            / "curator"
-            / "skills"
-            / "review-quality"
-            / "SKILL.md"
-        ).read_text()
+    def test_generation_skills_do_not_list_taste_rule_entities(self):
+        skills = [
+            self.root / "agents" / "curator" / "skills" / "synthesize-language" / "SKILL.md",
+            self.root / "agents" / "curator" / "skills" / "synthesize-palette" / "SKILL.md",
+            self.root / "agents" / "curator" / "skills" / "synthesize-art-style" / "SKILL.md",
+            self.root / "agents" / "curator" / "skills" / "review-quality" / "SKILL.md",
+            self.root / "agents" / "curator" / "skills" / "taste-distillation" / "SKILL.md",
+        ]
+        for path in skills:
+            skill = path.read_text()
+            self.assertNotIn("list('TasteRules')", skill)
+            self.assertNotIn("Accepted TasteRules", skill)
+            self.assertIn("taste rulebook inlined in this prompt", skill)
 
-        for skill in [synthesize, review]:
-            self.assertIn("temper.list('TasteRules', \"Status eq 'Accepted'\")", skill)
-            self.assertIn("Use only Accepted rules", skill)
-            self.assertIn("authoritative reusable design tests", skill)
-            self.assertIn("Proposed", skill)
-            self.assertIn("Rejected", skill)
-            self.assertIn("Superseded", skill)
-
-    def test_foundation_knowledge_delegates_reusable_tests_to_taste_rules(self):
+    def test_foundation_knowledge_points_at_inlined_rulebook(self):
         quality = (self.root / "system" / "knowledge" / "quality-standards.md").read_text()
         principles = (self.root / "system" / "knowledge" / "design-principles.md").read_text()
         feedback = (self.root / "system" / "knowledge" / "feedback-log.md").read_text()
 
-        for doc in [quality, principles, feedback]:
-            self.assertIn("TasteRule", doc)
-
-        self.assertIn("Do not duplicate the full taste checklist", quality)
-        self.assertIn("Use Accepted\n`TasteRules` for concrete pass/fail design guidance", principles)
+        self.assertIn("inlined taste rulebook", quality)
+        self.assertNotIn("list('TasteRules')", quality)
+        self.assertIn("inlined taste rulebook", principles)
+        self.assertNotIn("list('TasteRules')", principles)
         self.assertIn("Foundation TasteRules Extracted", feedback)
+        self.assertIn("Do not duplicate the full taste checklist", quality)
 
 
 if __name__ == "__main__":

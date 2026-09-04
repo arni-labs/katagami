@@ -1,15 +1,18 @@
 // WritingStyle — base grant; the boundaries below narrow it.
 permit(principal, action, resource is WritingStyle);
 
-// Curator/pipeline-owned actions. Contributor agents never invoke these;
-// a human may only if their verified role is owner or curator. Scoped so
-// the pipeline and operator key (no role, no agent_type) keep working.
+// WritingStyle is owner-only intake + curation-service pipeline — there is NO
+// ordinary-human authoring flow. So EVERY mutating action (author/attach/set/
+// submit/curate) requires owner|curator or a service principal; only reads and
+// system events stay open. Deny-by-default for mutations closes the class.
 forbid(
   principal,
   action in [
     Action::"AddCuratorNotes",
     Action::"Archive",
+    Action::"AttachCorpus",
     Action::"AttachPublishedAssets",
+    Action::"SetVoiceLayer",
     Action::"AttachTasteVector",
     Action::"AttestConsent",
     Action::"IncrementFork",
@@ -23,7 +26,21 @@ forbid(
     Action::"Revise",
     Action::"SetFeatured",
     Action::"SetTaxonomy",
-    Action::"UpdateQuality"
+    Action::"UpdateQuality",
+    Action::"AttachReplication",
+    Action::"AttachThumbnail",
+    Action::"AttachVoiceMd",
+    Action::"SetCredits",
+    Action::"SetCrossModal",
+    Action::"SetExemplars",
+    Action::"SetLineage",
+    Action::"SetMechanicalBands",
+    Action::"SetModelProvenance",
+    Action::"SetName",
+    Action::"SetSources",
+    Action::"SetTags",
+    Action::"SubmitForReview",
+    Action::"SubmitWritingStyle"
   ],
   resource is WritingStyle
 )
@@ -35,6 +52,7 @@ unless { principal is System || principal is Admin || (principal has agent_type 
 forbid(
   principal,
   action in [
+    Action::"create",
     Action::"update",
     Action::"delete"
   ],

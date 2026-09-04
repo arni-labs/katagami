@@ -7,6 +7,10 @@ prompt directives for the agents that create and review new design languages.
 This is not a quality-repair job, not a catalog-management job, and it must not
 mutate DesignLanguages.
 
+Obey EVERY rule in the taste rulebook inlined in this prompt. Do not load
+TasteRule entities. Distillation still creates Proposed TasteRules for human
+accept; that is output, not a gen-time read.
+
 The primary output is a compact `rule_text` line that could be pasted directly
 into the creator/reviewer prompt. Evidence belongs in `rationale` and the
 Markdown report, not in the directive itself.
@@ -36,7 +40,10 @@ The job input is optional JSON. Supported keys:
 4. **Non-featured Published is neutral.** Published languages may be used as comparators, but never as positive evidence unless featured.
 5. **Create proposed rules only.** Never call `Accept` on a TasteRule. Proposed rules are inert until the human curator accepts them.
 6. **Do not recommend catalog actions.** Never propose directives that tell the owner to archive, delete, feature, unfeature, restore, or re-review existing languages. The rule must improve future generation/review behavior.
-7. **Previous TasteRules are taste evidence too.** Accepted rules are already incorporated guidance and should not be duplicated. Rejected rules are negative meta-evidence about rule framings the human did not want. Proposed and Superseded rules also count as already processed for duplicate avoidance.
+7. **The inlined rulebook is already-incorporated guidance.** Do not
+   duplicate a directive the rulebook already states. Rejected entity
+   framings are not a gen-time read; do not load them. Proposed TasteRules
+   you create in this job are new candidates for human accept.
 8. **Generalize across themes.** If evidence comes from a specific visual theme, rewrite the rule as a general design criterion. The final `rule_text` must not depend on that theme to make sense.
 
 ## Directive Shape
@@ -73,19 +80,18 @@ Bad examples:
    - If `featured_language_ids` is present, get each one and keep only status `Published` with `featured == true`.
    - Otherwise, call `temper.list('DesignLanguages', "Status eq 'Published'")` and keep only rows where `featured` is true in fields, booleans, counters, or top-level values.
 4. Load the broader comparator catalog with `temper.list('DesignLanguages', "Status eq 'Published'")`. Use non-featured Published languages only as comparators, not as positive evidence.
-5. Load existing rules with `temper.list('TasteRules', '')` and group them by status:
-   - `Accepted`: already-approved prompt directives. Do not duplicate them; use them as positive examples of the right rule shape and only propose adjacent refinements when new evidence clearly adds something.
-   - `Rejected`: negative meta-evidence. Do not re-propose the same directive, framing, or pattern type unless the new evidence is materially different and the rationale explains why.
-   - `Proposed` and `Superseded`: already processed. Avoid duplicate evidence and duplicate directive text.
-   Build processed sets from non-empty `evidence_fingerprint` values and from normalized `rule_text` values across all statuses.
+5. Treat the inlined taste rulebook as the already-incorporated set. Do not
+   load TasteRule entities. Do not duplicate a directive the rulebook already
+   states; only propose adjacent refinements when new archive/featured
+   evidence clearly adds something. Build the processed set from rulebook
+   directives (normalized text) and from drafts in this session.
 6. Perform a rule hygiene audit before proposing anything. This audit is for owner review and duplicate avoidance only; **Do not mutate existing TasteRules during the hygiene audit**.
    - This is a semantic review, not a string-match pass. Use judgment to group rules with the same practical effect even when their wording differs.
-   - Compare all TasteRules across all statuses using normalized `rule_text`, `title`, `polarity`, `pattern_type`, and `source_job_id`.
-   - Record exact duplicates when normalized `rule_text` is identical.
-   - Record near-duplicates when two or more rules express the same reusable design test with different wording, sources, or evidence.
-   - Record contradictions when one Accepted rule requires what another Accepted rule forbids, when numeric thresholds or hard constraints cannot both be satisfied, or when an Accepted rule reintroduces a Rejected framing without a clear narrower scope.
-   - Record tensions when rules are compatible but need scoping, such as one rule banning opacity-only states while another allows opacity as a performant animation property.
-   - Treat `Accepted` versus `Rejected` conflicts as owner-review evidence, not as permission to revive the rejected rule.
+   - Compare each draft to the inlined rulebook and to the other drafts in this session using normalized `rule_text`, `title`, `polarity`, and `pattern_type`.
+   - Record exact duplicates when normalized `rule_text` is identical to a rulebook line or another draft.
+   - Record near-duplicates when two or more drafts express the same reusable design test with different wording, sources, or evidence.
+   - Record contradictions when a draft requires what the rulebook forbids, when two drafts cannot both be satisfied, or when a draft reintroduces a framing the rulebook already rejects.
+   - Record tensions when drafts are compatible with the rulebook but need scoping, such as one rule banning opacity-only states while another allows opacity as a performant animation property.
    - Prefer merge recommendations that preserve the shortest one-line directive and move nuance into rationale.
    - Do not create a new rule for a pattern that belongs inside an existing duplicate cluster.
 7. Normalize every language before analysis:
@@ -122,17 +128,16 @@ Bad examples:
    ])
    ```
    If `evidence_fingerprint` is already in the existing processed set, skip the draft and record it in the report as already processed.
-   If `normalized_rule_text` is already present in Accepted, Proposed, Rejected, or Superseded rules, skip it and record which prior status caused the skip.
-   If the draft resembles a Rejected rule in wording, framing, or pattern_type, skip it unless the rationale explicitly explains the new distinction.
-   If the draft belongs to a duplicate cluster from the rule hygiene audit, skip it and record the existing rule IDs that already cover it.
-   If the draft contradicts an Accepted rule or revives a Rejected framing, skip it and record it in `skipped_contradictory_directives`.
+   If `normalized_rule_text` is already present in the inlined rulebook or in another draft in this session, skip it and record it in `skipped_existing_directives`.
+   If the draft belongs to a duplicate cluster from the rule hygiene audit, skip it and record the rulebook lines or draft titles that already cover it.
+   If the draft contradicts the rulebook, skip it and record it in `skipped_contradictory_directives`.
 11. Write a Markdown evidence report to `/katagami/taste-distillation/{job_id}.md` summarizing:
    - Corpus counts and filtering decisions.
    - Evidence clusters considered, including clusters that did not produce rules.
    - Rule hygiene audit results: `duplicate_rule_candidates`, `contradiction_rule_candidates`, and `rule_tension_candidates`, with statuses and source labels.
    - Proposed prompt directives and their evidence.
-   - Accepted rules that were treated as already incorporated.
-   - Rejected rules that suppressed similar proposals.
+   - Rulebook directives treated as already incorporated.
+   - Rulebook tensions that suppressed similar proposals.
    - Already processed fingerprints or directive texts that were skipped.
    - Proposed directives skipped for duplicate clusters or contradictions.
    - Dedupe recommendations for owner review, such as keep, merge, reject, or supersede.

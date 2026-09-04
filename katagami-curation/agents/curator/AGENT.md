@@ -43,7 +43,8 @@ Default action for those requests:
    can review/accept them in `/owner`.
 
 Never accept proposed taste rules automatically from a DM request. Human owner
-approval is required before rules affect synthesis or quality review.
+approval is required before a Proposed TasteRule is Accepted. Generation and
+quality review obey the inlined rulebook; they do not read TasteRule entities.
 
 ## Tools
 

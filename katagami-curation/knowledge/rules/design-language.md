@@ -83,7 +83,43 @@
 47. Reference images are optional examples, never the backbone. Behavioral proof uses the exact same prompt and exact same four governed, style-neutral sources on both edit models: one human portrait, one other living subject, one still life/product/object, and one landscape/environment, rotated across documentary photograph, black-ink line drawing, neutral synthetic 3D render, and flat vector illustration. Choose concrete subjects and compositions for the style; never impose a recurring house set. Use no style-reference image or user-supplied source. Every edit must preserve recognizable subject/content while fully replacing the source medium; medium/material scores 2/2, every other observable dimension is ≥1/2, and every case/model average is ≥1.5/2, so a lightly tinted source and a strong model hiding a weak model both fail.
 48. Credit and qualify every source. `credits` names all attributable movements, studios, traditions, or people; `source_basis` is authored by a reviewer independent from the prompt author and records authoritative evidence and whether each source is a collective tradition/movement, public-domain artist, licensed/opt-in artist/source, or original synthesis. The review must explicitly reject both a named living artist and an unnamed but recognizably practitioner-specific target. A living person without explicit permission is a hard publication failure; attribution alone is not permission. Even an eligible artist's name stays out of the operative prompt — encode the observable tradition instead. Run a separate LLM contradiction/reference-dependence review, allow at most one revision, then let the WASM finalizer mechanically cross-check the structured evidence and exact prompt before publishing.
 
+## Folded in from the Pushpin → Chiclet curated iterations (2026-07-04) — tagged `·CHnnn`
+
+## Look (additions)
+49. Button and chip text never wraps — a control is never a blob; the layout shrinks or stacks instead. `·CH001`
+50. Links carry the language's own gesture — a sweep, a highlight, an ink-up — never a bare default underline. `·CH002`
+51. One strict type scale: every text size on the page belongs to the declared scale — no one-off sizes anywhere, headings to footers. `·CH003`
+52. Every typeface on the page has a declared role (display / body / mono at most) — no stray fonts outside them. `·CH004`
+53. Shadows follow their element's geometry — shape and softness agree with the corner radius. `·CH005`
+54. Copy and imagery never contest the same ground — text doesn't sit on busy artwork, and artwork never buries information. `·CH006`
+55. Balance density across the canvas — never a crowded cluster beside a starved void. `·CH007`
+56. Ornament forms one page-wide system: recurring elements, coherent through the entire page — never a one-off that appears once and vanishes. (Sharpens rule 18.) `·CH008`
+
+## Responsive (addition)
+57. Design the tablet band (~768–1024) as its own considered layout — never the mobile column stretched wide. `·CH009`
+
+## Folded in from the batch-8 review round (2026-08-06) — curator verdicts, tagged `·B8nnn`
+
+## Look (additions)
+58. Body text is 17–18px at FINE weight — the 17px floor is also a ceiling; never a semibold or blocky body face; body voice reads fine, not chunky. (Sharpens rule 15.) `·B8001`
+59. Compress the whole mid-tier (ledes, subheads, card copy, labels) toward body scale — only earned display moments are large; inflated mid-scale reads chunky and rejects the take. `·B8002`
+60. At most 2 font families per artifact set, plus mono only when the language's own vocabulary earns it — identical set across landing, embodiment, and dashboard. (Sharpens rule 52.) `·B8003`
+61. One radius degree per language, motivated by its own geometry: a square language uses 0 everywhere including cards; a slightly-rounded motif uses exactly that slight degree everywhere. A rounded card in a square language fails even though 16 is an allowed value. (Sharpens rule 14.) `·B8004`
+62. Quiet the ground under every line of copy and give each scene one focal point — "very busy" and "not readable" reject takes on sight; decoration that says nothing gets cut. (Sharpens rule 54.) `·B8005`
+
+## Motion (addition)
+63. Every scroll effect and scene-change is perceivable at natural scroll speed: 80–120vh of travel per effect, tweens spread across the whole window, nothing completes within a single wheel gesture. `·B8006`
+
 ---
 ## Held — adopt after rewording (from the TR review)
 - **TR-028** (accent used consistently across all sections) — adopt, but reword to **exempt documented semantic / heat-scale roles**, so it doesn't fight an intentional scale like Civic Press's ink→amber→ember.
 - **TR-029** (layout-family diversity) — adopt the spirit (**4+ distinct families across 8 sections**), but **soften the absolute "each family at most once"** (three identical grids is the real smell, not a second principled reuse); N/A for dashboards / single-card artifacts.
+
+## ADDENDUM (2026-07-24) — measured contract floors from batches 4–6
+
+The immersive-landing skill §5 "MEASURED FLOORS" is binding for the landing. Contributor-side additions (each failed real takes):
+- `provenance_tier:"agent_generated"` is REQUIRED at submit (missed twice; verifiers hard-fail).
+- preview-shots.json: `scene` is an OBJECT (`headline`+`description`+one-of `rows|fields|stats`), ≥3 scene-bearing shots, ≥16 componentRecipes — node-validate before upload (string scenes failed twice).
+- Embodiment: measure `scrollWidth == viewport` at true-390 (one take shipped 48% horizontal overflow from fixed-width type-specimen rows).
+- Attach*/Set* actions reset entity readiness guards — after your LAST attach, re-arm every false content guard with the ids already on the entity (AttachDesignMd needs the lint params again; AttachShadcn* need file ids + format versions + manifests). Finish UnderReview with all content guards true; `quality_review_passed`/`has_published_assets` stay false — curator-owned, never call MarkQualityPassed/Publish.
+- Landing scroll: native scroll is the base, smooth-scroll libs are enhancement only — prove wheel/touch/CDN-blocked traversal (a curator personally hit an unscrollable page that had passed headless checks).
