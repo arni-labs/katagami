@@ -67,6 +67,7 @@ const sessionMe = read("src/lib/session-me.ts");
 const signOutEverywhereForm = read("src/app/(site)/account/agents/SignOutEverywhere.tsx");
 const sessionMeCore = read("src/lib/session-me-core.mjs");
 const memberActivity = read("src/lib/member-activity.ts");
+const catalogAuth = read("src/lib/catalog-auth.ts");
 const odataMutations = read("src/lib/odata-mutations.ts");
 const memberSpec = read("../katagami-commons/specs/member.ioa.toml");
 const activitySpec = read("../katagami-commons/specs/member_activity_day.ioa.toml");
@@ -525,7 +526,32 @@ const required = [
   ["hash+emit for MCP tools runs inside runAfter", telemetry, /runAfter\(async \(\) => \{[\s\S]*hashPrincipal/],
   ["MCP emit stamps @tier:full (dashboard filters match)", telemetry, /tier: "full"/],
   ["telemetry no-ops without credentials", telemetry, /if \(!intake\) return/],
-  ["intake fetch is aborted on hang", telemetry, /signal: intakeAbortSignal\(\)/],
+  ["intake fetch is aborted on hang", telemetry, /signal: intakeAbortSignal\(/],
+  // The failure emit must carry its own SHORT abort: reporting a dead rollup
+  // cannot be killed by the slow backend it is reporting on (verifier finding).
+  [
+    "activity_dispatch_failed emit has its own short abort",
+    telemetry,
+    /"activity_dispatch_failed",[\s\S]{0,200}ACTIVITY_FAILURE_EMIT_TIMEOUT_MS/,
+  ],
+  // The budget arithmetic is asserted at module load, not left to a comment.
+  [
+    "activity budget is enforced, not documented",
+    memberActivity,
+    /WORST_CASE_MS >= TELEMETRY_RESERVE_MS/,
+  ],
+  // /api/auth/me must not exceed the browser's own 5s abort.
+  [
+    "session route reads identity and owner in parallel",
+    meRoute,
+    /Promise\.all\(\[getUser\(\), ownerWithTimeout\(\)\]\)/,
+  ],
+  // A grants outage must read as an outage, never as revocation.
+  [
+    "transient grant-read failures throw (backend_unavailable, not revoked)",
+    catalogAuth,
+    /throw new BackendUnavailableError/,
+  ],
   ["dashboard distinct-callers tile keys on @tier:full", dashboard, /@evt:mcp_tool_call @tier:full/],
   ["dashboard surfaces MCP auth challenges (401s)", dashboard, /@evt:mcp_auth_challenge/],
   ["registered-users tiles read members_snapshot only", dashboard, /@evt:members_snapshot"/],

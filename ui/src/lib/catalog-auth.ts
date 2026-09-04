@@ -7,6 +7,7 @@ import {
 } from "./catalog-auth-core.mjs";
 
 export { readMcpAuthInfo, whoamiFromAuth } from "./catalog-auth-core.mjs";
+import { BackendUnavailableError } from "./catalog-auth-core.mjs";
 
 export type ReadIdentity = { sub: string; email: string };
 
@@ -41,6 +42,9 @@ const API_KEY = process.env.TEMPER_API_KEY || "";
 // round-trip on every single MCP call.
 const grantCache = new Map<string, { active: boolean; at: number }>();
 const GRANT_TTL_MS = 15_000;
+/** The grant read sits on the /mcp request path; a hung grants endpoint must
+ *  cost a bounded wait, not the caller's whole budget. */
+const GRANT_READ_TIMEOUT_MS = 2_000;
 
 async function grantIsActive(grantId: string): Promise<boolean> {
   const hit = grantCache.get(grantId);
@@ -52,15 +56,24 @@ async function grantIsActive(grantId: string): Promise<boolean> {
       {
         headers: { "X-Tenant-Id": TENANT, ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}) },
         cache: "no-store",
+        // Bounded on the request path: an unbounded grant read let a
+        // grants-endpoint outage hang a call that the caller already
+        // budgeted (verifier finding, ARN-451).
+        signal: AbortSignal.timeout(GRANT_READ_TIMEOUT_MS),
       },
     );
-  } catch {
-    return false; // transient failure: deny this call, but don't cache it
+  } catch (err) {
+    // THROW rather than deny. Returning false here reported a backend outage
+    // as grant_revoked on the auth dashboard — a real user locked out looked
+    // identical to a revoked grant. The caller maps a throw to
+    // backend_unavailable (verifier finding, ARN-451).
+    throw new BackendUnavailableError("agent grant read failed", { cause: err });
   }
   // Only cache a DEFINITIVE answer: 200 (Active or not) or 404 (grant gone).
-  // A 5xx/other is transient — deny now, retry next call rather than pinning a
-  // legitimate token to the sample tier for the whole cache window.
-  if (!res.ok && res.status !== 404) return false;
+  // A 5xx/other is transient and must read as an outage, not as revocation.
+  if (!res.ok && res.status !== 404) {
+    throw new BackendUnavailableError(`agent grant read returned ${res.status}`);
+  }
   const active = res.status === 404 ? false : ((await res.json()) as { status?: string }).status === "Active";
   grantCache.set(grantId, { active, at: Date.now() });
   return active;

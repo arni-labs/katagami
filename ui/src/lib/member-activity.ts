@@ -24,11 +24,33 @@ import {
 // logs and returns false, never throws into the caller's after() task.
 
 /** A hung Temper must cost a bounded wait in a post-response task, never the
- *  Vercel function duration limit (the countMembers lesson, ARN-436). Sized
- *  UNDER the /mcp TELEMETRY_RESERVE_MS (5s): the rollup runs concurrently
- *  with the Datadog intake in the after() task, and the whole task must fit
- *  the reserve even when Temper sits on this abort. */
-export const ACTIVITY_DISPATCH_TIMEOUT_MS = 4_000;
+ *  Vercel function duration limit (the countMembers lesson, ARN-436).
+ *
+ *  The whole failure path must fit the /mcp TELEMETRY_RESERVE_MS (5s), and
+ *  the worst case is SEQUENTIAL: dispatch, then the create-race retry, then
+ *  the activity_dispatch_failed emit. At 4s each that reached 10.5s — so
+ *  precisely when Temper is slow, the signal that exists to report it was
+ *  the thing being killed (verifier finding, ARN-451). Sized so
+ *  2 x dispatch + failure emit stays under the reserve, asserted at module
+ *  load rather than left to a comment that drifts. */
+export const ACTIVITY_DISPATCH_TIMEOUT_MS = 1_800;
+
+/** The failure emit gets its own short abort: reporting a dead rollup must
+ *  not itself be killed by the budget it is reporting on. */
+export const ACTIVITY_FAILURE_EMIT_TIMEOUT_MS = 900;
+
+/** Mirrors app/mcp/route.ts. Kept here so the arithmetic below is checkable
+ *  in one place. */
+const TELEMETRY_RESERVE_MS = 5_000;
+
+// The invariant, enforced not merely documented.
+const WORST_CASE_MS =
+  ACTIVITY_DISPATCH_TIMEOUT_MS * 2 + ACTIVITY_FAILURE_EMIT_TIMEOUT_MS;
+if (WORST_CASE_MS >= TELEMETRY_RESERVE_MS) {
+  throw new Error(
+    `activity budget ${WORST_CASE_MS}ms (2 dispatches + failure emit) must stay under the ${TELEMETRY_RESERVE_MS}ms telemetry reserve`,
+  );
+}
 
 /** Null = recorded (or nothing to record); otherwise WHY the durable layer
  *  missed a count. Callers forward this to Datadog as

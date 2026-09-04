@@ -83,3 +83,27 @@
 - **Options:** per finding — documented in the PR panel synthesis; the create-race option set was retry-in-caller vs kernel-side idempotent create (kernel fix is ARN-465 territory; the kernel's own 409 message says "retry against current state", so caller-retry matches the kernel's contract).
 - **Chose** the smallest fix that kills each class, each with the contract check that fails if it is removed. **Live probe evidence for the race:** two parallel first-of-day dispatches on a missing production id → one 200, one 409 `ActionFailed: action authorization became stale; retry against current state`, exactly ONE row (auto-create does not duplicate), the 409'd count LOST without a retry; with the retry, two parallel first-of-day calls through the real app both counted (`mcp_calls: 2`).
 - **Where:** `ui/src/lib/catalog-auth-core.mjs`, `member-activity{-core.mjs,.ts}`, `server-telemetry{-core.mjs,.ts}`, `oauth-as.ts`, `api/auth/me/route.ts`, callback route, `analytics.ts`, dashboard JSON, README.
+
+**Decision** — Enforce the activity budget at module load instead of documenting it.
+**Came up because** the verifier's arithmetic on the fable round: the failure path ran 4s dispatch + 4s create-race retry + 2.5s emit = 10.5s against a 5s TELEMETRY_RESERVE_MS. Precisely when Temper is slow — the case activity_dispatch_failed exists to report — the report itself was the thing being killed.
+**Options** (a) shave ACTIVITY_DISPATCH_TIMEOUT_MS and keep the comment; (b) give the failure emit its own abort and assert the arithmetic at module load.
+**Chose (b) over (a)** because a comment that says "sized UNDER the reserve" had already drifted once. ACTIVITY_DISPATCH_TIMEOUT_MS 4000 to 1800, a dedicated ACTIVITY_FAILURE_EMIT_TIMEOUT_MS of 900, and a throw at load if 2 x dispatch + emit reaches the reserve. Worst case 4500ms. Gained: the budget cannot drift silently again. Gave up: less patience for a slow-but-alive Temper on the rollup path.
+**Where** ui/src/lib/member-activity.ts, ui/src/lib/server-telemetry.ts (emitServerEvent takes an optional timeout; every other caller keeps the 2500ms default).
+
+**Decision** — Read identity and owner in parallel in /api/auth/me rather than lowering a constant.
+**Came up because** Fable finding 2 was reported fixed but was not: GENERATION_READ_TIMEOUT_MS 5000 plus OWNER_LOOKUP_TIMEOUT_MS 3000 ran sequentially, so the worst case was 8s against the browser's own 5s abort. The route then resolved SIGNED_OUT and blanked RUM for the whole document — the exact failure the owner bound exists to prevent.
+**Options** (a) lower the generation read to ~1.5s; (b) run both reads in parallel.
+**Chose (b) over (a)** because the two reads are independent and sequencing them was the actual defect; wall clock is now the slower of the two, not their sum. Also bounded the generation read 5000 to 3000 so that read alone can no longer tie the client abort. Gained: no signed-out answer for a signed-in visitor under slow Temper. Gave up: nothing measurable.
+**Where** ui/src/app/api/auth/me/route.ts, ui/src/lib/oauth-as.ts.
+
+**Decision** — Transient grant-read failures throw instead of returning false.
+**Came up because** grantIsActive returned false on a fetch throw or a non-ok non-404, so a grants-endpoint outage was reported as grant_revoked. That reintroduced Fable finding 3 on one path: a locked-out real user looked identical to a revoked grant on the auth dashboard. Its fetch was also unbounded on the /mcp request path.
+**Options** (a) special-case the reason at the call site; (b) throw a typed error and let the existing liveness catch map it.
+**Chose (b) over (a)** because identityFromAccessPayload already maps any throw from the liveness block to backend_unavailable, so a BackendUnavailableError needs no new plumbing and cannot drift from the reason vocabulary. Added GRANT_READ_TIMEOUT_MS 2000. Gained: an outage reads as an outage. Gave up: a grants blip now denies rather than silently sample-tiering, which is the honest behaviour.
+**Where** ui/src/lib/catalog-auth.ts, ui/src/lib/catalog-auth-core.mjs.
+
+**Decision** — Four new contract assertions, and one loosened.
+**Came up because** the pepper floor changed emitServerEvent's call shape and broke the literal grep "intake fetch is aborted on hang".
+**Options** (a) revert the signature; (b) loosen that one grep and pin the new invariants.
+**Chose (b)**: the grep now matches intakeAbortSignal( with any argument, and four assertions pin what the verifier found — the failure emit's own abort, the load-time budget assert, the parallel session reads, and the throwing grant read. Gained: each of these three fixes now has the test that would have caught its absence.
+**Where** ui/scripts/check-telemetry-contract.mjs (429 checks green, tsc clean).

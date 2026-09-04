@@ -8,7 +8,11 @@ import {
   telemetryEnabled,
   logPayload,
 } from "./server-telemetry-core.mjs";
-import { recordMcpActivity, type ActivityFailure } from "./member-activity";
+import {
+  ACTIVITY_FAILURE_EMIT_TIMEOUT_MS,
+  recordMcpActivity,
+  type ActivityFailure,
+} from "./member-activity";
 
 export { hashPrincipal, authorizeCronRequest } from "./server-telemetry-core.mjs";
 
@@ -61,6 +65,7 @@ export async function emitServerEvent(
   evt: string,
   attributes: Record<string, AttrValue> = {},
   status: TelemetryStatus = "info",
+  timeoutMs?: number,
 ): Promise<boolean> {
   const intake = resolveLogsIntake();
   if (!intake) return false;
@@ -69,7 +74,7 @@ export async function emitServerEvent(
       method: "POST",
       headers: intake.headers as HeadersInit,
       body: JSON.stringify([logPayload(evt, attributes, status)]),
-      signal: intakeAbortSignal(),
+      signal: intakeAbortSignal(timeoutMs),
     });
     if (!res.ok) {
       console.error(`[telemetry] intake ${res.status} for ${evt}`);
@@ -102,10 +107,13 @@ export async function reportActivityFailure(
   userHash: string | undefined,
 ): Promise<void> {
   if (!failure) return;
+  // Its own short abort: the signal that reports a dead rollup must not be
+  // killed by the same slow backend it is reporting on (verifier finding).
   await emitServerEvent(
     "activity_dispatch_failed",
     { action: failure.action, error_kind: failure.errorKind, user_hash: userHash },
     "error",
+    ACTIVITY_FAILURE_EMIT_TIMEOUT_MS,
   );
 }
 

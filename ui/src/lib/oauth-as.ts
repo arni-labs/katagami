@@ -236,7 +236,10 @@ export async function roleForSub(sub: string): Promise<string> {
  *  /api/auth/me, whose owner lookup is bounded — an unbounded read here
  *  would hang the route past the client's abort and flip a signed-in
  *  visitor to anonymous for the whole document). */
-export const GENERATION_READ_TIMEOUT_MS = 5_000;
+// Bounded UNDER the browser's own 5s abort on /api/auth/me. At 5s this read
+// alone tied the client abort, so a slow Temper still produced a signed-out
+// answer for a signed-in visitor (verifier finding, ARN-451).
+export const GENERATION_READ_TIMEOUT_MS = 3_000;
 
 /** The principal's current kernel-side generation (0 if never signed out
  *  everywhere). Read at mint time so a token carries the value it was born

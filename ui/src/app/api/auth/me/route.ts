@@ -32,8 +32,13 @@ function ownerWithTimeout(): Promise<boolean> {
 }
 
 export async function GET() {
-  const user = await getUser();
-  const owner = await ownerWithTimeout();
+  // Parallel, not sequential: the two reads are independent, and awaiting
+  // them in series made the worst case (generation read + owner lookup)
+  // exceed the client's own 5s abort — which resolves SIGNED_OUT and blanks
+  // RUM for the whole document, the exact failure OWNER_LOOKUP_TIMEOUT_MS
+  // exists to prevent (verifier finding, ARN-451). Wall clock is now the
+  // slower of the two, not their sum.
+  const [user, owner] = await Promise.all([getUser(), ownerWithTimeout()]);
   let userHash: string | null = null;
   if (user) {
     try {

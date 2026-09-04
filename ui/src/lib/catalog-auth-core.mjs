@@ -41,6 +41,17 @@ export const AUTH_REJECTION_REASONS = new Set([
   "unknown",
 ]);
 
+/** Thrown when a liveness check could not RUN (Temper unreachable, grants
+ *  endpoint down), as opposed to answering "revoked". identityFromAccessPayload
+ *  maps any throw from the liveness block to backend_unavailable; this class
+ *  makes the intent explicit at the throw site. */
+export class BackendUnavailableError extends Error {
+  constructor(message, options) {
+    super(message, options);
+    this.name = "BackendUnavailableError";
+  }
+}
+
 export function clampRejectionReason(reason) {
   return AUTH_REJECTION_REASONS.has(reason) ? reason : "unknown";
 }
