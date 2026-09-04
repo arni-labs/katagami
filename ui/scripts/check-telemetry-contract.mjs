@@ -31,6 +31,14 @@ import {
   sessionMeAbortSignal,
   waitForIdentityOrSignedOut,
 } from "../src/lib/session-me-core.mjs";
+import {
+  accessPayloadRejection,
+  AUTH_REJECTION_REASONS,
+  clampRejectionReason,
+  identityFromAccessPayload,
+  joseRejectionReason,
+  readMcpAuthInfo,
+} from "../src/lib/catalog-auth-core.mjs";
 
 function read(path) {
   return readFileSync(resolve(path), "utf8");
@@ -55,7 +63,7 @@ const sessionMeCore = read("src/lib/session-me-core.mjs");
 const memberActivity = read("src/lib/member-activity.ts");
 const odataMutations = read("src/lib/odata-mutations.ts");
 const memberSpec = read("../katagami-commons/specs/member.ioa.toml");
-const activitySpec = read("../katagami-commons/specs/member_activity.ioa.toml");
+const activitySpec = read("../katagami-commons/specs/member_activity_day.ioa.toml");
 const activityCedarLoadedPath = "../katagami-commons/policies/member_activity.cedar";
 const activityCedarServedPath = "../katagami-commons/specs/policies/member_activity.cedar";
 const activityCedar = read(activityCedarLoadedPath);
@@ -343,6 +351,59 @@ const activityCedar = read(activityCedarLoadedPath);
   console.log("ok: member_activity.cedar exists in both policy trees and the copies match");
 }
 
+{
+  // --- ARN-451: mcp_auth_challenge rejection reasons ------------------------
+  // The vocabulary is CLOSED: every reason the claim path can produce is in
+  // AUTH_REJECTION_REASONS, and anything else clamps to "unknown" — a rogue
+  // string (or a token) can never ride @reason into Datadog.
+  const base = {
+    aud: "https://katagami.ai/mcp",
+    scope: "read",
+    sub: "s",
+    auth_generation: 0,
+  };
+  const ctx = { generation: 0, grantActive: true };
+  const cases = [
+    [{ ...base, typ: "katagami_code" }, "claims"],
+    [{ ...base, aud: "https://mcp.katagami.ai" }, "audience"],
+    [{ ...base, scope: "contribute" }, "scope"],
+    [{ ...base, sub: "" }, "claims"],
+    [{ ...base, auth_generation: 1 }, "generation"],
+  ];
+  for (const [payload, want] of cases) {
+    assert.equal(accessPayloadRejection(payload, ctx), want);
+    assert.equal(identityFromAccessPayload(payload, ctx), null, `${want} must also reject identity`);
+    assert.ok(AUTH_REJECTION_REASONS.has(want), `${want} must be in the closed vocabulary`);
+  }
+  assert.equal(
+    accessPayloadRejection({ ...base, grant_id: "g1" }, { generation: 0, grantActive: false }),
+    "grant_revoked",
+  );
+  assert.equal(accessPayloadRejection(base, ctx), null, "a good payload has no rejection");
+  assert.deepEqual(identityFromAccessPayload({ ...base, email: "a@b.c" }, ctx), { sub: "s", email: "a@b.c" });
+  assert.equal(joseRejectionReason({ code: "ERR_JWT_EXPIRED" }), "expired");
+  assert.equal(joseRejectionReason({ code: "ERR_JWT_CLAIM_VALIDATION_FAILED" }), "claims");
+  assert.equal(joseRejectionReason({ code: "ERR_JWS_SIGNATURE_VERIFICATION_FAILED" }), "signature");
+  assert.equal(joseRejectionReason({}), "signature");
+  assert.equal(clampRejectionReason("expired"), "expired");
+  assert.equal(clampRejectionReason("a@b.c stole my token"), "unknown", "free text clamps to unknown");
+  assert.equal(clampRejectionReason(undefined), "unknown");
+  // The thrown InvalidToken carries the clamped reason for the 401 counter.
+  const thrown = await readMcpAuthInfo("bad-bearer", async () => ({ identity: null, reason: "expired" }))
+    .then(() => null, (e) => e);
+  assert.equal(thrown?.name, "InvalidToken");
+  assert.equal(thrown?.rejectionReason, "expired");
+  const legacyThrown = await readMcpAuthInfo("bad-bearer", async () => null)
+    .then(() => null, (e) => e);
+  assert.equal(legacyThrown?.rejectionReason, "unknown", "legacy null verifier still yields a clamped reason");
+  // And the allow-list actually ships it — with reason declared, has_auth kept.
+  assert.deepEqual(
+    cleanAttrs("mcp_auth_challenge", { has_auth: true, method: "POST", reason: "expired", token: "x" }),
+    { has_auth: true, method: "POST", reason: "expired" },
+  );
+  console.log("ok: mcp_auth_challenge rejection reasons — closed vocabulary, clamped, allow-listed");
+}
+
 // --- Wiring greps -----------------------------------------------------------
 
 const required = [
@@ -476,7 +537,7 @@ const required = [
   ["activity spec counts logins, mcp_calls, mcp_errors as counters", activitySpec,
     /name = "logins"\ntype = "counter"[\s\S]*name = "mcp_calls"\ntype = "counter"[\s\S]*name = "mcp_errors"\ntype = "counter"/],
   ["an MCP error still counts as a call (RecordMcpError bumps both)", activitySpec,
-    /name = "RecordMcpError"[\s\S]*\{ type = "increment", field = "mcp_calls" \}, \{ type = "increment", field = "mcp_errors" \}/],
+    /name = "RecordMcpError"[\s\S]*\{ type = "increment", var = "mcp_calls" \}, \{ type = "increment", var = "mcp_errors" \}/],
   ["MemberActivityDay writes are locked to server-side principals", activityCedar,
     /forbid\(principal, action, resource is MemberActivityDay\)/],
   ["sign-in records the durable rollup BEFORE the Datadog fail-closed gate", callback,
@@ -493,6 +554,17 @@ const required = [
     /@user_hash/],
   ["dashboard has a signed-in browsing view keyed on @usr.id", dashboard,
     /@usr\.id/],
+  // --- ARN-451: rejection reasons on mcp_auth_challenge ---------------------
+  ["mcp_auth_challenge allow-lists the rejection reason", core,
+    /mcp_auth_challenge: new Set\(\["has_auth", "method", "reason"\]\)/],
+  ["401 counter emits the reason only when a bearer was presented", mcp,
+    /reason: hasAuth \? \(authRejectionReasons\.get\(req\) \?\? "unknown"\) : undefined/],
+  ["verify callback stashes the rejection reason for the 401 counter", mcp,
+    /authRejectionReasons\.set\(req, reason\)/],
+  ["verifyReadBearer reports a CLAMPED reason (closed vocabulary)", read("src/lib/catalog-auth.ts"),
+    /clampRejectionReason\(reason\)/],
+  ["dashboard breaks auth challenges down by @reason", dashboard,
+    /@evt:mcp_auth_challenge @has_auth:true/],
 ];
 
 let failed = 0;

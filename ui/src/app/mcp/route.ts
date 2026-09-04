@@ -374,10 +374,26 @@ const baseHandler = createMcpHandler(
 // Required auth: no/invalid token → 401 + WWW-Authenticate (the connect card).
 // A valid token → full catalog. Do not answer initialize 200 anonymously —
 // that is why Grok Bot's AuthenticateMcpServer returned no_auth_link.
+//
+// Rejection reasons (ARN-451): when a PRESENTED bearer is rejected, the
+// verify callback stashes WHY (a value from AUTH_REJECTION_REASONS — closed,
+// low-cardinality, never token material) keyed on the request, so the 401
+// counter below can tell an expired token from a wrong audience from a
+// probing bot. WeakMap: no cleanup needed, and a request that never 401s
+// simply never reads it.
+const authRejectionReasons = new WeakMap<Request, string>();
+
 const handler = withMcpAuth(
   baseHandler,
-  async (_req: Request, bearer?: string): Promise<AuthInfo | undefined> =>
-    readMcpAuthInfo(bearer, verifyReadBearer) as Promise<AuthInfo | undefined>,
+  async (req: Request, bearer?: string): Promise<AuthInfo | undefined> => {
+    try {
+      return (await readMcpAuthInfo(bearer, verifyReadBearer)) as AuthInfo | undefined;
+    } catch (err) {
+      const reason = (err as { rejectionReason?: string }).rejectionReason;
+      if (req && reason) authRejectionReasons.set(req, reason);
+      throw err;
+    }
+  },
   {
     required: true,
     resourceMetadataPath: MCP_RESOURCE_METADATA_PATH,
@@ -397,9 +413,15 @@ function withAuthChallengeCount(
   return async (req: Request): Promise<Response> => {
     const res = await wrapped(req);
     if (res.status === 401) {
+      const hasAuth = (req.headers.get("authorization") ?? "") !== "";
       trackServerEvent("mcp_auth_challenge", {
-        has_auth: (req.headers.get("authorization") ?? "") !== "",
+        has_auth: hasAuth,
         method: req.method,
+        // Only meaningful when a bearer WAS presented: the closed-vocabulary
+        // rejection reason stashed by the verify callback (ARN-451). A 401
+        // with a header the verifier never saw (e.g. non-Bearer scheme)
+        // reads "unknown" — still enumerable.
+        reason: hasAuth ? (authRejectionReasons.get(req) ?? "unknown") : undefined,
       });
     }
     return res;

@@ -1772,11 +1772,62 @@
               "x": 9,
               "y": 5
             }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "rejections",
+                      "limit": {
+                        "count": 10,
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@reason",
+                          "limit": 10,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "rejections",
+                      "search": {
+                        "query": "service:katagami-server env:production @evt:mcp_auth_challenge @has_auth:true"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Rejected bearers \u2014 why (expired / audience / scope / signature / \u2026)",
+              "type": "toplist"
+            },
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 8
+            }
           }
         ]
       },
       "layout": {
-        "height": 9,
+        "height": 12,
         "width": 12,
         "x": 0,
         "y": 0

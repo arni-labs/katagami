@@ -56,7 +56,11 @@ export const EVENT_ATTRS = {
   auth_login: new Set(["registration", "upsert_ok", "user_hash"]),
   auth_login_failed: new Set(["reason"]),
   mcp_tool_call: new Set(["tool", "tier", "outcome", "duration_ms", "user_hash", "error_kind"]),
-  mcp_auth_challenge: new Set(["has_auth", "method"]),
+  // `reason` is the closed bearer-rejection vocabulary from
+  // AUTH_REJECTION_REASONS in catalog-auth-core.mjs (expired | signature |
+  // claims | audience | scope | generation | grant_revoked |
+  // as_unconfigured | unknown) — clamped at the source, never free text.
+  mcp_auth_challenge: new Set(["has_auth", "method", "reason"]),
   members_snapshot: new Set(["members_total", "source"]),
 };
 

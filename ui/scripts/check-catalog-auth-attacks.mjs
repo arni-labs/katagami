@@ -110,7 +110,7 @@ const required = [
   [
     "catalog-auth delegates to verifyReadAccessToken",
     auth,
-    /verifyReadAccessToken\(token,/,
+    /verifyReadAccessTokenDetailed\(token,/,
   ],
   [
     "catalog-auth threads currentGeneration",
@@ -125,27 +125,27 @@ const required = [
   [
     "core requires gallery /mcp audience only",
     core,
-    /if \(!audienceIsReadMcp\(payload\.aud\)\) return null/,
+    /if \(!audienceIsReadMcp\(payload\.aud\)\) return "audience"/,
   ],
   [
     "core requires read scope",
     core,
-    /if \(!scopeIncludesRead\(payload\.scope\)\) return null/,
+    /if \(!scopeIncludesRead\(payload\.scope\)\) return "scope"/,
   ],
   [
     "core rejects any typ (authorization codes)",
     core,
-    /if \(payload\.typ\) return null/,
+    /if \(payload\.typ\) return "claims"/,
   ],
   [
     "core checks auth_generation",
     core,
-    /if \(gen !== ctx\.generation\) return null/,
+    /if \(gen !== ctx\.generation\) return "generation"/,
   ],
   [
     "core checks grant_id liveness",
     core,
-    /if \(grantId && !ctx\.grantActive\) return null/,
+    /if \(grantId && !ctx\.grantActive\) return "grant_revoked"/,
   ],
 ];
 

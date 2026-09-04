@@ -1,11 +1,18 @@
 import "server-only";
 import { importJWK } from "jose";
 import { publicJwks, isAsConfigured, currentGeneration } from "./oauth-as";
-import { verifyReadAccessToken } from "./catalog-auth-core.mjs";
+import {
+  clampRejectionReason,
+  verifyReadAccessTokenDetailed,
+} from "./catalog-auth-core.mjs";
 
 export { readMcpAuthInfo, whoamiFromAuth } from "./catalog-auth-core.mjs";
 
 export type ReadIdentity = { sub: string; email: string };
+
+/** Why a bearer was rejected — always a value from AUTH_REJECTION_REASONS
+ *  (catalog-auth-core.mjs), never free text, never token material. */
+export type ReadRejection = { identity: ReadIdentity | null; reason: string | null };
 
 // Verify an MCP bearer for the gallery read server at /mcp (ARN-360). A
 // valid, live access token minted by our own AS (ARN-151) for THIS resource
@@ -59,19 +66,27 @@ async function grantIsActive(grantId: string): Promise<boolean> {
   return active;
 }
 
-export async function verifyReadBearer(token: string): Promise<ReadIdentity | null> {
-  if (!isAsConfigured()) return null;
+/** verifyReadBearer with the rejection reason attached (ARN-451). The /mcp
+ *  route's readMcpAuthInfo accepts this detailed shape and carries the reason
+ *  onto the thrown InvalidToken, so the 401 counter can report WHY a
+ *  presented bearer was rejected — with a closed, low-cardinality vocabulary
+ *  and never the token itself. */
+export async function verifyReadBearer(token: string): Promise<ReadRejection> {
+  if (!isAsConfigured()) return { identity: null, reason: "as_unconfigured" };
   try {
     const { keys } = await publicJwks();
-    if (!keys.length) return null;
+    if (!keys.length) return { identity: null, reason: "as_unconfigured" };
     const key = await importJWK(keys[0], "ES256");
-    return await verifyReadAccessToken(token, {
+    const { identity, reason } = await verifyReadAccessTokenDetailed(token, {
       key,
       issuer: process.env.KATAGAMI_AS_ISSUER,
       currentGeneration,
       grantIsActive,
     });
+    return identity
+      ? { identity, reason: null }
+      : { identity: null, reason: clampRejectionReason(reason) };
   } catch {
-    return null;
+    return { identity: null, reason: "unknown" };
   }
 }

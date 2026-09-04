@@ -44,7 +44,7 @@ initial = 0
 name = "RecordLogin"
 kind = "input"
 from = ["Active"]
-effect = [{ type = "increment", field = "logins" }]
+effect = [{ type = "increment", var = "logins" }]
 params = ["user_hash", "day"]
 hint = "Count one successful Google sign-in for this (user_hash, day). user_hash is the peppered telemetry hash (same value as Members.user_hash and @user_hash in Datadog); day is the UTC date YYYY-MM-DD. Fired best-effort from the sign-in callback's post-response task."
 
@@ -52,7 +52,7 @@ hint = "Count one successful Google sign-in for this (user_hash, day). user_hash
 name = "RecordMcpCall"
 kind = "input"
 from = ["Active"]
-effect = [{ type = "increment", field = "mcp_calls" }]
+effect = [{ type = "increment", var = "mcp_calls" }]
 params = ["user_hash", "day"]
 hint = "Count one successful MCP tool call at katagami.ai/mcp for this (user_hash, day). Fired best-effort from the tool-call telemetry task."
 
@@ -60,6 +60,6 @@ hint = "Count one successful MCP tool call at katagami.ai/mcp for this (user_has
 name = "RecordMcpError"
 kind = "input"
 from = ["Active"]
-effect = [{ type = "increment", field = "mcp_calls" }, { type = "increment", field = "mcp_errors" }]
+effect = [{ type = "increment", var = "mcp_calls" }, { type = "increment", var = "mcp_errors" }]
 params = ["user_hash", "day"]
 hint = "Count one failed MCP tool call (error or exception outcome): it is still a call, so mcp_calls increments too, plus mcp_errors. Fired best-effort from the tool-call telemetry task."
