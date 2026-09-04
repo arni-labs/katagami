@@ -108,6 +108,7 @@ export function trackMcpToolCall(d: {
   errorKind?: string;
 }): void {
   const { tool, outcome, durationMs, sub, errorKind } = d;
+  const eventAt = new Date(); // request-path time — the post-response task may cross midnight
   runAfter(async () => {
     let userHash: string | undefined;
     try {
@@ -125,7 +126,7 @@ export function trackMcpToolCall(d: {
     // the telemetry reserve and eat the mcp_tool_call event — the one path
     // that still works when Temper is down. Both stay bounded; neither
     // waits on the other.
-    const activity = recordMcpActivity(userHash, outcome);
+    const activity = recordMcpActivity(userHash, outcome, eventAt);
     await emitServerEvent(
       "mcp_tool_call",
       {

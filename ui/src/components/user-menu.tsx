@@ -6,7 +6,7 @@ import Link from "next/link";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { KeyRound, LogIn, LogOut, UserRound } from "lucide-react";
 import { CHROME_STAMP, CHROME_STAMP_LABEL } from "@/lib/chrome-stamp";
-import { fetchSessionMe } from "@/lib/session-me";
+import { fetchSessionMe, subscribeSessionMe } from "@/lib/session-me";
 
 // Header identity chip — same chrome-stamp as search / theme / menu.
 // Signed out it's a "sign in" stamp; signed in it's your avatar opening a
@@ -32,13 +32,19 @@ export function UserMenu() {
 
   useEffect(() => {
     let alive = true;
-    void fetchSessionMe().then((d) => {
+    const apply = (d: { user: HeaderUser | null; owner: boolean }) => {
       if (!alive) return;
       setUser(d.user);
       setOwner(d.owner);
-    });
+    };
+    void fetchSessionMe().then(apply);
+    // Stay in step with RUM: any later resync (visibility, soft nav,
+    // sign-out-everywhere in another tab) that refetches the session also
+    // updates the chip — otherwise RUM and the header drift apart.
+    const unsubscribe = subscribeSessionMe(apply);
     return () => {
       alive = false;
+      unsubscribe();
     };
   }, []);
 

@@ -31,9 +31,13 @@ export const ACTIVITY_DISPATCH_TIMEOUT_MS = 4_000;
 async function recordActivity(
   userHash: string | undefined,
   action: "RecordLogin" | "RecordMcpCall" | "RecordMcpError",
+  eventAt?: Date,
 ): Promise<boolean> {
   if (!isValidUserHash(userHash)) return false;
-  const day = utcDayKey();
+  // Bucket on the EVENT time the caller captured on the request path — this
+  // code runs in a post-response task, and an event at 23:59:59Z must not
+  // count on the next day just because after() started after midnight.
+  const day = utcDayKey(eventAt);
   try {
     await dispatchAction(
       "MemberActivityDays",
@@ -49,17 +53,19 @@ async function recordActivity(
   }
 }
 
-/** Count one successful sign-in for today. */
+/** Count one successful sign-in on the day it happened. */
 export function recordLoginActivity(
   userHash: string | undefined,
+  eventAt?: Date,
 ): Promise<boolean> {
-  return recordActivity(userHash, "RecordLogin");
+  return recordActivity(userHash, "RecordLogin", eventAt);
 }
 
 /** Count one MCP tool call (any outcome; errors also bump mcp_errors). */
 export function recordMcpActivity(
   userHash: string | undefined,
   outcome: "success" | "error" | "exception",
+  eventAt?: Date,
 ): Promise<boolean> {
-  return recordActivity(userHash, activityActionForOutcome(outcome));
+  return recordActivity(userHash, activityActionForOutcome(outcome), eventAt);
 }

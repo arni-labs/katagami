@@ -88,6 +88,16 @@ function budgetExceeded(name: string): ToolResult {
   };
 }
 
+// @tool is caller-controlled on the tools/call path: an unknown-tool call
+// copies the REQUESTED name into telemetry, so "alice@example.com" (or a
+// pasted token) would ship to Datadog as @tool. Only names this server
+// actually registered may travel; anything else collapses to one bucket.
+const REGISTERED_TOOL_NAMES = new Set<string>();
+
+function clampToolName(requested: string): string {
+  return REGISTERED_TOOL_NAMES.has(requested) ? requested : "(unregistered)";
+}
+
 function withUsageTracking(server: McpServer): void {
   // Layer 1: per registered tool.
   const original = server.registerTool.bind(server) as unknown as (
@@ -99,8 +109,9 @@ function withUsageTracking(server: McpServer): void {
     name: string,
     def: unknown,
     handler: ToolHandler,
-  ) =>
-    original(name, def, async (args: unknown, extra: unknown) => {
+  ) => {
+    REGISTERED_TOOL_NAMES.add(name);
+    return original(name, def, async (args: unknown, extra: unknown) => {
       markTracked(extra);
       const started = Date.now();
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -136,6 +147,7 @@ function withUsageTracking(server: McpServer): void {
         clearTimeout(timer);
       }
     });
+  };
 
   // Layer 2: the tools/call request handler. The SDK installs it via
   // server.server.setRequestHandler("tools/call", …) on first registration,
@@ -149,7 +161,7 @@ function withUsageTracking(server: McpServer): void {
   inner.setRequestHandler = (method: string, handler: RpcHandler) => {
     if (method !== "tools/call") return originalSet(method, handler);
     originalSet(method, async (request: ToolCallRequest, extra: unknown) => {
-      const tool = request?.params?.name ?? "unknown";
+      const tool = clampToolName(request?.params?.name ?? "unknown");
       const started = Date.now();
       try {
         const result = (await handler(request, extra)) as ToolResult;

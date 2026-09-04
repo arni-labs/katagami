@@ -100,6 +100,7 @@ export async function GET(req: NextRequest) {
   // to land must not look like a returning user (registration:false).
   if (user) {
     const sub = user.sub;
+    const eventAt = new Date(); // request-path time — the post-response task may cross midnight
     // Guarded like trackServerEvent: a throw from Next after must not skip
     // the katagami_user cookie after a successful Google exchange.
     runAfter(async () => {
@@ -116,7 +117,7 @@ export async function GET(req: NextRequest) {
       // here and awaited LAST: serializing Temper (5s bound) in front of the
       // intake would let a hung kernel delay/eat the auth_login event — the
       // countMembers lesson again.
-      const activity = recordLoginActivity(userHash);
+      const activity = recordLoginActivity(userHash, eventAt);
       // Fail-closed intake → do not hit Temper $count for a no-op emit.
       if (!serverTelemetryEnabled()) {
         await activity;

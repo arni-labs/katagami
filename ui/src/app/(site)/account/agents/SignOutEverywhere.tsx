@@ -11,9 +11,15 @@ import { signOutEverywhere } from "./actions";
  *  account. Other tabs hear SESSION_REVOKED_STORAGE_KEY. */
 export function SignOutEverywhere() {
   async function action() {
-    await signOutEverywhere();
-    notifySessionRevoked();
-    clearRumUser();
+    // finally: bumpGeneration lands FIRST inside the server action, so even a
+    // partial failure (a later grant revoke throwing) means the session is
+    // already dead — this tab and the others must still drop the identity.
+    try {
+      await signOutEverywhere();
+    } finally {
+      notifySessionRevoked();
+      clearRumUser();
+    }
   }
 
   return (

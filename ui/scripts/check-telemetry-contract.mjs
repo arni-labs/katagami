@@ -129,18 +129,27 @@ const activityCedar = read(activityCedarLoadedPath);
     assert.deepEqual(stripped, {}, `identity keys must not ship on ${evt}`);
   }
   const login = cleanAttrs("auth_login", {
-    user_hash: "abc123",
+    user_hash: "9fc5a227c397eafb",
     registration: true,
     upsert_ok: true,
     email: "a@b.c",
   });
-  assert.deepEqual(login, { user_hash: "abc123", registration: true, upsert_ok: true });
+  assert.deepEqual(login, { user_hash: "9fc5a227c397eafb", registration: true, upsert_ok: true });
+  // The user_hash VALUE is validated too: a raw sub, an email, or any
+  // non-16-hex string routed through the allowed key still never ships.
+  for (const bad of ["abc123", "a@b.c", "google-oauth2|12345", "9FC5A227C397EAFB"]) {
+    assert.deepEqual(
+      cleanAttrs("auth_login", { user_hash: bad, upsert_ok: true }),
+      { upsert_ok: true },
+      `non-hash user_hash value "${bad}" must drop`,
+    );
+  }
   const call = cleanAttrs("mcp_tool_call", {
     tool: "whoami",
     tier: "full",
     outcome: "success",
     duration_ms: 12,
-    user_hash: "abc123",
+    user_hash: "9fc5a227c397eafb",
     note: "a@b.c failed",
   });
   assert.deepEqual(call, {
@@ -148,7 +157,7 @@ const activityCedar = read(activityCedarLoadedPath);
     tier: "full",
     outcome: "success",
     duration_ms: 12,
-    user_hash: "abc123",
+    user_hash: "9fc5a227c397eafb",
   });
   // Unknown event → NO attributes ship at all (fail closed).
   assert.deepEqual(cleanAttrs("made_up_event", { anything: "x" }), {});
@@ -490,9 +499,9 @@ const required = [
   ["initRum awaits session identity before flushing the pending buffer", analytics,
     /whenIdentityKnown\(\)[\s\S]*applyDesiredUser\(\)[\s\S]*flushPending\(\)/],
   ["flushPending will not replay the buffer anonymously once a signed-in hash is known", analytics,
-    /if \(desiredUserHash && appliedUserHash !== desiredUserHash\) return;/],
+    /if \(desiredUserHash !== undefined && appliedUserHash !== desiredUserHash\) return;/],
   ["RumInit applies session identity before awaiting initRum's flush", rumInit,
-    /initRum\(\)[\s\S]*await fetchSessionMe\(\)[\s\S]*setRumUser\(me\.user_hash\)[\s\S]*clearRumUser\(\)[\s\S]*await rumReady/],
+    /initRum\(\)[\s\S]*await applySessionToRum\(\)[\s\S]*await rumReady/],
   ["header chip and RUM join share ONE /api/auth/me fetch", userMenu,
     /^(?![\s\S]*fetch\("\/api\/auth\/me")[\s\S]*fetchSessionMe\(\)/],
   ["session helper memoizes the fetch (one request per page load)", sessionMe,
@@ -504,7 +513,7 @@ const required = [
   ["revoked-session path clears RUM (not only the initial else clearRumUser)", rumInit,
     /function dropRevokedRumUser\(\)(?:: void)? \{\s*invalidateSessionMe\(\);\s*clearRumUser\(\);/],
   ["visibility / soft-nav resync invalidates inflight then clears RUM when signed out", rumInit,
-    /function resyncRumUser[\s\S]*invalidateSessionMe\(\)[\s\S]*else clearRumUser\(\)/],
+    /function applySessionToRum[\s\S]*sessionMeEpoch\(\)[\s\S]*else clearRumUser\(\)[\s\S]*function resyncRumUser[\s\S]*invalidateSessionMe\(\)[\s\S]*applySessionToRum\(\)/],
   ["RumInit drops RUM user on cross-tab revoke (storage), not only initial else", rumInit,
     /SESSION_REVOKED_STORAGE_KEY[\s\S]*dropRevokedRumUser\(\)/],
   ["RumInit resyncs identity on visibilitychange (cross-tab sign-out-everywhere)", rumInit,
@@ -542,11 +551,11 @@ const required = [
   ["MemberActivityDay writes are locked to server-side principals", activityCedar,
     /forbid\(principal, action, resource is MemberActivityDay\)/],
   ["sign-in starts the durable rollup outside the Datadog gate (not serialized before the intake)", callback,
-    /const activity = recordLoginActivity\(userHash\);[\s\S]*if \(!serverTelemetryEnabled\(\)\)/],
+    /const activity = recordLoginActivity\(userHash, eventAt\);[\s\S]*if \(!serverTelemetryEnabled\(\)\)/],
   ["a hung Temper cannot eat the Datadog emit: MCP rollup is awaited last", telemetry,
-    /const activity = recordMcpActivity\(userHash, outcome\);[\s\S]*await emitServerEvent\([\s\S]*await activity;/],
+    /const activity = recordMcpActivity\(userHash, outcome, eventAt\);[\s\S]*await emitServerEvent\([\s\S]*await activity;/],
   ["MCP tool calls record the durable rollup (any outcome)", telemetry,
-    /recordMcpActivity\(userHash, outcome\)/],
+    /recordMcpActivity\(userHash, outcome, eventAt\)/],
   ["activity dispatch refuses non-hash keys (no raw sub can become a row)", memberActivity,
     /if \(!isValidUserHash\(userHash\)\) return false;/],
   ["activity dispatch is bounded (hung Temper costs a timeout, not the limit)", memberActivity,
@@ -583,6 +592,27 @@ const required = [
     /if \(inflight === attempt\) inflight = null;/],
   ["client refuses a non-hash as @usr.id (16-hex or clear)", analytics,
     /USER_HASH_RE\.test\(userHash\) \? userHash : null/],
+  // --- Codex panel round (ARN-451) ------------------------------------------
+  ["caller-controlled tool names never ship: only registered names, else one bucket", mcp,
+    /REGISTERED_TOOL_NAMES\.has\(requested\) \? requested : "\(unregistered\)"/],
+  ["tools/call telemetry goes through the tool-name clamp", mcp,
+    /const tool = clampToolName\(request\?\.params\?\.name \?\? "unknown"\)/],
+  ["search queries are email-scrubbed before they ride next to @usr.id", analytics,
+    /const q = scrubEmails\(\(d\.query \|\| ""\)\.trim\(\)\)/],
+  ["view URLs are email-scrubbed in beforeSend (gallery mirrors search into ?q=)", analytics,
+    /event\.view\?\.url\) event\.view\.url = scrubEmails\(event\.view\.url\)/],
+  ["a partial sign-out-everywhere still clears the identity (finally)", read("src/app/(site)/account/agents/SignOutEverywhere.tsx"),
+    /\} finally \{\s*notifySessionRevoked\(\);\s*clearRumUser\(\);/],
+  ["the header chip subscribes to session resyncs (no RUM/chip drift)", userMenu,
+    /subscribeSessionMe\(apply\)/],
+  ["activity days bucket on request-path event time, not after() start", memberActivity,
+    /const day = utcDayKey\(eventAt\)/],
+  ["rollup spec pins the login increment", activitySpec,
+    /name = "RecordLogin"[\s\S]*?\{ type = "increment", var = "logins" \}/],
+  ["rollup spec pins the call increment", activitySpec,
+    /name = "RecordMcpCall"[\s\S]*?\{ type = "increment", var = "mcp_calls" \}/],
+  ["Cedar lockdown names the trusted principals, not just a forbid header", activityCedar,
+    /unless \{ principal is System \|\| principal is Admin \|\| \(principal has agent_type && principal\.agent_type == "operator"\) \}/],
 ];
 
 let failed = 0;

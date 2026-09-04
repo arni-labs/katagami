@@ -6,6 +6,7 @@ import { clearRumUser, initRum, setRumUser } from "@/lib/analytics";
 import {
   fetchSessionMe,
   invalidateSessionMe,
+  sessionMeEpoch,
   SESSION_REVOKED_STORAGE_KEY,
 } from "@/lib/session-me";
 
@@ -33,11 +34,20 @@ function dropRevokedRumUser(): void {
   clearRumUser();
 }
 
-async function resyncRumUser(): Promise<void> {
-  invalidateSessionMe();
+/** Apply a session fetch to RUM — but only if no invalidate happened while
+ *  it was in flight. An out-of-order pre-revocation response must never
+ *  restore a revoked identity (epoch check). */
+async function applySessionToRum(): Promise<void> {
+  const before = sessionMeEpoch();
   const me = await fetchSessionMe();
+  if (before !== sessionMeEpoch()) return; // superseded — a newer sync owns it
   if (me.user_hash) setRumUser(me.user_hash);
   else clearRumUser();
+}
+
+async function resyncRumUser(): Promise<void> {
+  invalidateSessionMe();
+  await applySessionToRum();
 }
 
 export function RumInit() {
@@ -51,9 +61,7 @@ export function RumInit() {
     // signed-in hard reload — with no @usr.id.
     void (async () => {
       const rumReady = initRum();
-      const me = await fetchSessionMe();
-      if (me.user_hash) setRumUser(me.user_hash);
-      else clearRumUser();
+      await applySessionToRum();
       await rumReady;
     })();
   }, []);

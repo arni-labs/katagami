@@ -93,6 +93,17 @@ export async function initRum(): Promise<void> {
         trackResources: true,
         trackLongTasks: true,
         defaultPrivacyLevel: "mask-user-input",
+        // The gallery mirrors the search box into ?q= — view.url rides on
+        // every event, so an email typed into search would otherwise reach
+        // Datadog joined to @usr.id. Scrub email-shaped text from URLs.
+        beforeSend: (event) => {
+          try {
+            if (event.view?.url) event.view.url = scrubEmails(event.view.url);
+          } catch {
+            /* never block an event on scrubbing */
+          }
+          return true;
+        },
       });
       // Identity is already known (whenIdentityKnown). Apply it before
       // flushPending so replayed actions — language_view on a signed-in
@@ -132,10 +143,11 @@ const pending: Array<{ name: string; attributes: Attributes }> = [];
 
 function flushPending(): void {
   if (!rum) return;
-  // A signed-in hash is known but not yet attached — keep buffering.
-  // Flushing now would replay those events as anonymous after the session
-  // is already known; setRumUser/applyDesiredUser flush once it is applied.
-  if (desiredUserHash && appliedUserHash !== desiredUserHash) return;
+  // The known identity is not yet attached — keep buffering. This covers
+  // both directions: a signed-in hash not yet applied (events would ship
+  // anonymous) AND a clear not yet applied because rum.clearUser threw
+  // (events would ship under the previous account's hash).
+  if (desiredUserHash !== undefined && appliedUserHash !== desiredUserHash) return;
   const queued = pending.splice(0, pending.length);
   for (const ev of queued) {
     try {
@@ -150,9 +162,9 @@ function flushPending(): void {
  *  permanent no-op when RUM credentials are absent. */
 export function track(name: string, attributes: Attributes = {}): void {
   if (typeof window === "undefined" || !rumEnabled()) return;
-  // Buffer while the SDK is missing OR a signed-in hash is known but not
-  // yet attached — live addAction here would ship without @usr.id.
-  if (!rum || (desiredUserHash && appliedUserHash !== desiredUserHash)) {
+  // Buffer while the SDK is missing OR the known identity is not yet
+  // attached (either direction — see flushPending).
+  if (!rum || (desiredUserHash !== undefined && appliedUserHash !== desiredUserHash)) {
     if (pending.length < MAX_PENDING) pending.push({ name, attributes });
     return;
   }
@@ -301,11 +313,20 @@ export function trackDownload(d: {
 }
 
 /** Search usage. Query text is truncated; we never store more than 100 chars. */
+/** Email-shaped tokens must not ride into Datadog next to @usr.id — a
+ *  visitor pasting an address into search would otherwise join PII to their
+ *  account hash (the join is what makes this matter — ARN-451 panel). */
+const EMAIL_RE = /[^\s@,;:"']+@[^\s@,;:"']+\.[^\s@,;:"']+/g;
+
+export function scrubEmails(text: string): string {
+  return text.replace(EMAIL_RE, "[email]");
+}
+
 export function trackSearch(d: {
   query: string;
   resultsCount?: number;
 }): void {
-  const q = (d.query || "").trim();
+  const q = scrubEmails((d.query || "").trim());
   if (!q) return;
   track("search", {
     query: q.slice(0, 100),

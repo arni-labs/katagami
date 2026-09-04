@@ -94,6 +94,9 @@ export function cleanAttrs(evt, attributes) {
   for (const [k, v] of Object.entries(attributes ?? {})) {
     if (!allowed.has(k) || RESERVED_LOG_KEYS.has(k)) continue;
     if (v === undefined || v === null || v === "") continue;
+    // The user_hash VALUE must be shaped like hashPrincipal output — a raw
+    // sub or email routed through the allowed key must still never ship.
+    if (k === "user_hash" && !/^[0-9a-f]{16}$/.test(String(v))) continue;
     if (typeof v === "string") {
       out[k] = v.slice(0, MAX_ATTR_STRING);
     } else if (typeof v === "number" || typeof v === "boolean") {
