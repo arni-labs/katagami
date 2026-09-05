@@ -125,3 +125,9 @@
 ## Still open
 
 The GitHub-to-Genesis direction. Genesis lacks `test_commons_authz_conformance.py` and carries an older commons pin. A push would need the same selective treatment, since `push_app` also rsyncs with `--delete`.
+
+**Decision** — Bump the commons pin in the contract test alongside app.toml.
+**Came up because** the Grok review seat caught that `katagami-curation/tests/test_genesis_source_contract.py:12` hardcodes the same dependency map, so bumping `app.toml` alone left `test_curation_depends_on_current_genesis_apps` asserting the old `7c158eef`. The pin bump would have merged red.
+**Options** (a) bump only app.toml and let the test break; (b) bump both; (c) make the test read the pin from app.toml instead of duplicating it.
+**Chose (b) over (c)** for this PR because the duplication is the point of that test — it is a deliberate tripwire that forces a human to notice a pin move, and deriving it from app.toml would make the assertion vacuous. Gained: the tripwire keeps working. Gave up: two places to edit on every pin move, which is the intended cost.
+**Where** `katagami-curation/tests/test_genesis_source_contract.py:12`. All 3 tests in that file pass.
