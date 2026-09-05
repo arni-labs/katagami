@@ -487,6 +487,25 @@
         <Property Name="Role" Type="Edm.String" Nullable="false" DefaultValue="contributor" />
         <Property Name="FeatureTags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="HasIdentity" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="UserHash" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- MemberActivityDay: per-user-per-day activity tallies (ARN-451) — the durable
+           layer that outlives Datadog log retention. Keyed by the peppered telemetry
+           hash (never sub/email); id form act:<user_hash>:<YYYY-MM-DD>. -->
+      <EntityType Name="MemberActivityDay">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Active" />
+        <Property Name="UserHash" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Day" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Logins" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="McpCalls" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="McpErrors" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
@@ -543,6 +562,7 @@
         <EntitySet Name="FeedbackResponses" EntityType="Katagami.FeedbackResponse" />
         <EntitySet Name="Directions" EntityType="Katagami.Direction" />
         <EntitySet Name="Members" EntityType="Katagami.Member" />
+        <EntitySet Name="MemberActivityDays" EntityType="Katagami.MemberActivityDay" />
         <EntitySet Name="OAuthClients" EntityType="Katagami.OAuthClient" />
         <EntitySet Name="AgentGrants" EntityType="Katagami.AgentGrant" />
       </EntityContainer>
