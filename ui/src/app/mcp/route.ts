@@ -2,6 +2,7 @@ import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { verifyReadBearer, readMcpAuthInfo, whoamiFromAuth } from "@/lib/catalog-auth";
+import { clampRejectionReason } from "@/lib/catalog-auth-core.mjs";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
 import { trackMcpToolCall, trackServerEvent } from "@/lib/server-telemetry";
 import {
@@ -87,6 +88,16 @@ function budgetExceeded(name: string): ToolResult {
   };
 }
 
+// @tool is caller-controlled on the tools/call path: an unknown-tool call
+// copies the REQUESTED name into telemetry, so "alice@example.com" (or a
+// pasted token) would ship to Datadog as @tool. Only names this server
+// actually registered may travel; anything else collapses to one bucket.
+const REGISTERED_TOOL_NAMES = new Set<string>();
+
+function clampToolName(requested: string): string {
+  return REGISTERED_TOOL_NAMES.has(requested) ? requested : "(unregistered)";
+}
+
 function withUsageTracking(server: McpServer): void {
   // Layer 1: per registered tool.
   const original = server.registerTool.bind(server) as unknown as (
@@ -98,8 +109,9 @@ function withUsageTracking(server: McpServer): void {
     name: string,
     def: unknown,
     handler: ToolHandler,
-  ) =>
-    original(name, def, async (args: unknown, extra: unknown) => {
+  ) => {
+    REGISTERED_TOOL_NAMES.add(name);
+    return original(name, def, async (args: unknown, extra: unknown) => {
       markTracked(extra);
       const started = Date.now();
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -135,6 +147,7 @@ function withUsageTracking(server: McpServer): void {
         clearTimeout(timer);
       }
     });
+  };
 
   // Layer 2: the tools/call request handler. The SDK installs it via
   // server.server.setRequestHandler("tools/call", …) on first registration,
@@ -148,7 +161,7 @@ function withUsageTracking(server: McpServer): void {
   inner.setRequestHandler = (method: string, handler: RpcHandler) => {
     if (method !== "tools/call") return originalSet(method, handler);
     originalSet(method, async (request: ToolCallRequest, extra: unknown) => {
-      const tool = request?.params?.name ?? "unknown";
+      const tool = clampToolName(request?.params?.name ?? "unknown");
       const started = Date.now();
       try {
         const result = (await handler(request, extra)) as ToolResult;
@@ -374,10 +387,26 @@ const baseHandler = createMcpHandler(
 // Required auth: no/invalid token → 401 + WWW-Authenticate (the connect card).
 // A valid token → full catalog. Do not answer initialize 200 anonymously —
 // that is why Grok Bot's AuthenticateMcpServer returned no_auth_link.
+//
+// Rejection reasons (ARN-451): when a PRESENTED bearer is rejected, the
+// verify callback stashes WHY (a value from AUTH_REJECTION_REASONS — closed,
+// low-cardinality, never token material) keyed on the request, so the 401
+// counter below can tell an expired token from a wrong audience from a
+// probing bot. WeakMap: no cleanup needed, and a request that never 401s
+// simply never reads it.
+const authRejectionReasons = new WeakMap<Request, string>();
+
 const handler = withMcpAuth(
   baseHandler,
-  async (_req: Request, bearer?: string): Promise<AuthInfo | undefined> =>
-    readMcpAuthInfo(bearer, verifyReadBearer) as Promise<AuthInfo | undefined>,
+  async (req: Request, bearer?: string): Promise<AuthInfo | undefined> => {
+    try {
+      return (await readMcpAuthInfo(bearer, verifyReadBearer)) as AuthInfo | undefined;
+    } catch (err) {
+      const reason = (err as { rejectionReason?: string }).rejectionReason;
+      if (req && reason) authRejectionReasons.set(req, reason);
+      throw err;
+    }
+  },
   {
     required: true,
     resourceMetadataPath: MCP_RESOURCE_METADATA_PATH,
@@ -397,9 +426,18 @@ function withAuthChallengeCount(
   return async (req: Request): Promise<Response> => {
     const res = await wrapped(req);
     if (res.status === 401) {
+      const hasAuth = (req.headers.get("authorization") ?? "") !== "";
       trackServerEvent("mcp_auth_challenge", {
-        has_auth: (req.headers.get("authorization") ?? "") !== "",
+        has_auth: hasAuth,
         method: req.method,
+        // Only meaningful when a bearer WAS presented: the closed-vocabulary
+        // rejection reason stashed by the verify callback (ARN-451). A 401
+        // with a header the verifier never saw (e.g. non-Bearer scheme)
+        // reads "unknown" — still enumerable.
+        // Clamped AGAIN at the emit boundary (defense in depth): even if a
+        // future throw stashes free text, only AUTH_REJECTION_REASONS values
+        // can reach Datadog.
+        reason: hasAuth ? clampRejectionReason(authRejectionReasons.get(req)) : undefined,
       });
     }
     return res;

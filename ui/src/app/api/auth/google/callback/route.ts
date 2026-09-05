@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { exchangeGoogleCode } from "@/lib/google-oidc";
+import { recordLoginActivity } from "@/lib/member-activity";
 import { countMembers, upsertMember } from "@/lib/oauth-as";
 import {
   emitServerEvent,
   hashPrincipal,
+  reportActivityFailure,
   runAfter,
   serverTelemetryEnabled,
   trackServerEvent,
@@ -99,17 +101,29 @@ export async function GET(req: NextRequest) {
   // to land must not look like a returning user (registration:false).
   if (user) {
     const sub = user.sub;
+    const eventAt = new Date(); // request-path time — the post-response task may cross midnight
     // Guarded like trackServerEvent: a throw from Next after must not skip
     // the katagami_user cookie after a successful Google exchange.
     runAfter(async () => {
-      // Fail-closed intake → do not hit Temper $count for a no-op emit.
-      if (!serverTelemetryEnabled()) return;
       let userHash: string | undefined;
       try {
         const hashed = await hashPrincipal(sub);
         if (typeof hashed === "string") userHash = hashed;
       } catch (err) {
         console.error("[telemetry] hashPrincipal failed", err);
+      }
+      // Durable per-user rollup (ARN-451) — independent of the Datadog
+      // fail-closed gate: the Temper MemberActivityDay row is the layer that
+      // outlives log retention, so it must not depend on DD_API_KEY. Started
+      // here and awaited LAST: serializing Temper (5s bound) in front of the
+      // intake would let a hung kernel delay/eat the auth_login event — the
+      // countMembers lesson again.
+      const activity = recordLoginActivity(userHash, eventAt);
+      // Fail-closed intake → do not hit Temper $count for a no-op emit
+      // (and with no intake there is nowhere to report a rollup miss).
+      if (!serverTelemetryEnabled()) {
+        await activity;
+        return;
       }
       // auth_login FIRST. countMembers must never sit between a successful
       // sign-in and its own event: with Temper hung, this post-response task dies
@@ -133,6 +147,7 @@ export async function GET(req: NextRequest) {
       } catch (err) {
         console.error("[telemetry] members_snapshot after login skipped:", err);
       }
+      await reportActivityFailure(await activity, userHash);
     });
   }
 

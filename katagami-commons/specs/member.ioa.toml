@@ -36,8 +36,8 @@ kind = "input"
 from = ["Invited", "Active"]
 to = "Active"
 effect = [{ type = "set_bool", var = "has_identity", value = "true" }]
-params = ["sub", "email", "display_name", "avatar_url"]
-hint = "Upsert the member's Google identity at sign-in: stable subject id (the key — survives email/name changes), email, display name, avatar. Idempotent from Active so every sign-in can refresh the profile fields."
+params = ["sub", "email", "display_name", "avatar_url", "user_hash"]
+hint = "Upsert the member's Google identity at sign-in: stable subject id (the key — survives email/name changes), email, display name, avatar, and the peppered telemetry hash (HMAC of the sub, the same @user_hash Datadog events carry — ARN-451) so a hash seen in analytics maps back to a person. Idempotent from Active so every sign-in can refresh the profile fields."
 
 [[action]]
 name = "SetRole"

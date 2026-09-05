@@ -16,11 +16,22 @@
 //  - Attribution (which surface drove a click), and events that aren't a
 //    navigation at all: copy-to-clipboard, downloads, search, compare.
 
+import { waitForIdentityOrSignedOut } from "./session-me-core.mjs";
+
 type RumModule = typeof import("@datadog/browser-rum");
 type RumGlobal = RumModule["datadogRum"];
 
 let rum: RumGlobal | null = null;
 let initialized = false;
+// In-flight start so a second initRum joins the first instead of no-op'ing
+// while identity is still resolving — and so a throw leaves initialized
+// false for a later retry.
+let starting: Promise<void> | null = null;
+// undefined = never told; null = signed out (clear); string = the hash.
+let desiredUserHash: string | null | undefined;
+// The hash last applied to the SDK (same tri-state as desiredUserHash).
+let appliedUserHash: string | null | undefined;
+const identityWaiters: Array<() => void> = [];
 
 function readEnv() {
   return {
@@ -47,35 +58,73 @@ export function rumEnabled(): boolean {
 /** Initialize the RUM SDK once, in the browser. Safe to call repeatedly. */
 export async function initRum(): Promise<void> {
   if (initialized || typeof window === "undefined") return;
+  if (starting) return starting;
   const e = readEnv();
-  if (!e.applicationId || !e.clientToken) return; // no creds → stay a no-op
-  initialized = true;
-  try {
-    const mod = await import("@datadog/browser-rum");
-    rum = mod.datadogRum;
-    rum.init({
-      applicationId: e.applicationId,
-      clientToken: e.clientToken,
-      site: e.site,
-      service: e.service,
-      env: e.env,
-      version: e.version,
-      sessionSampleRate: Number.isFinite(e.sampleRate) ? e.sampleRate : 100,
-      sessionReplaySampleRate: Number.isFinite(e.replaySampleRate)
-        ? e.replaySampleRate
-        : 0,
-      trackUserInteractions: true, // automatic click map in addition to our actions
-      trackResources: true,
-      trackLongTasks: true,
-      defaultPrivacyLevel: "mask-user-input",
-    });
-    // Replay any events fired before the SDK finished importing (e.g. the
-    // on-mount `language_view`), which would otherwise have been dropped.
-    flushPending();
-  } catch {
-    // SDK failed to load — leave as a no-op, never surface to the user.
-    rum = null;
-  }
+  const applicationId = e.applicationId;
+  const clientToken = e.clientToken;
+  if (!applicationId || !clientToken) return; // no creds → stay a no-op
+  starting = (async () => {
+    try {
+      // Import and session identity in parallel (RumInit starts both). Do not
+      // flush until the session is known: otherwise the first language_view
+      // (and anything else buffered during the import) ships with no @usr.id
+      // and the later setRumUser cannot retrofit those events.
+      //
+      // Do not mark initialized before that wait: a hung /api/auth/me used
+      // to leave initialized=true with the SDK never started, so later
+      // initRum() no-op'd forever. whenIdentityKnown times out as signed-out.
+      const [mod] = await Promise.all([
+        import("@datadog/browser-rum"),
+        whenIdentityKnown(),
+      ]);
+      rum = mod.datadogRum;
+      rum.init({
+        applicationId,
+        clientToken,
+        site: e.site,
+        service: e.service,
+        env: e.env,
+        version: e.version,
+        sessionSampleRate: Number.isFinite(e.sampleRate) ? e.sampleRate : 100,
+        sessionReplaySampleRate: Number.isFinite(e.replaySampleRate)
+          ? e.replaySampleRate
+          : 0,
+        trackUserInteractions: true, // automatic click map in addition to our actions
+        trackResources: true,
+        trackLongTasks: true,
+        defaultPrivacyLevel: "mask-user-input",
+        // The gallery mirrors the search box into ?q= — view.url rides on
+        // every event, so an email typed into search would otherwise reach
+        // Datadog joined to @usr.id. Scrub email-shaped text from URLs.
+        beforeSend: (event) => {
+          try {
+            if (event.view?.url) event.view.url = scrubEmails(event.view.url);
+            if (event.view?.referrer) event.view.referrer = scrubEmails(event.view.referrer);
+            // trackResources ships fetch URLs too — /api/search?q=<typed text>
+            // rides on resource events, joined to @usr.id (Fable panel finding).
+            const resource = (event as { resource?: { url?: string } }).resource;
+            if (resource?.url) resource.url = scrubEmails(resource.url);
+          } catch {
+            /* never block an event on scrubbing */
+          }
+          return true;
+        },
+      });
+      // Identity is already known (whenIdentityKnown). Apply it before
+      // flushPending so replayed actions — language_view on a signed-in
+      // hard reload — carry @usr.id instead of flushing anonymous.
+      applyDesiredUser();
+      flushPending();
+      initialized = true;
+    } catch {
+      // SDK failed to load — leave as a no-op, never surface to the user.
+      // initialized stays false so a later initRum can retry.
+      rum = null;
+    } finally {
+      starting = null;
+    }
+  })();
+  return starting;
 }
 
 type AttrValue = string | number | boolean | undefined | null;
@@ -99,6 +148,11 @@ const pending: Array<{ name: string; attributes: Attributes }> = [];
 
 function flushPending(): void {
   if (!rum) return;
+  // The known identity is not yet attached — keep buffering. This covers
+  // both directions: a signed-in hash not yet applied (events would ship
+  // anonymous) AND a clear not yet applied because rum.clearUser threw
+  // (events would ship under the previous account's hash).
+  if (desiredUserHash !== undefined && appliedUserHash !== desiredUserHash) return;
   const queued = pending.splice(0, pending.length);
   for (const ev of queued) {
     try {
@@ -113,9 +167,9 @@ function flushPending(): void {
  *  permanent no-op when RUM credentials are absent. */
 export function track(name: string, attributes: Attributes = {}): void {
   if (typeof window === "undefined" || !rumEnabled()) return;
-  if (!rum) {
-    // SDK still importing — buffer (capped) so early on-mount events aren't
-    // lost to the init race; flushed by initRum.
+  // Buffer while the SDK is missing OR the known identity is not yet
+  // attached (either direction — see flushPending).
+  if (!rum || (desiredUserHash !== undefined && appliedUserHash !== desiredUserHash)) {
     if (pending.length < MAX_PENDING) pending.push({ name, attributes });
     return;
   }
@@ -124,6 +178,68 @@ export function track(name: string, attributes: Attributes = {}): void {
   } catch {
     /* analytics must never throw into the UI */
   }
+}
+
+// ---- Session identity (ARN-451) --------------------------------------------
+//
+// Joins browsing to the account: after sign-in, RUM events carry the same
+// peppered @usr.id the server stamps on auth_login/mcp_tool_call as
+// @user_hash. ONLY the hash ever reaches this file — never a sub, email, or
+// name (RUM payloads are client-visible, and datadogRum.setUser ships every
+// field it is given). Buffered like events: set/clear before the SDK finishes
+// importing is applied by initRum, which waits for this identity before
+// flushPending so replayed actions already carry @usr.id.
+
+function whenIdentityKnown(): Promise<void> {
+  return waitForIdentityOrSignedOut({
+    isKnown: () => desiredUserHash !== undefined,
+    markSignedOut: () => {
+      if (desiredUserHash === undefined) desiredUserHash = null;
+    },
+    addWaiter: (resolve: () => void) => identityWaiters.push(resolve),
+  });
+}
+
+function notifyIdentityKnown(): void {
+  if (identityWaiters.length === 0) return;
+  const waiters = identityWaiters.splice(0, identityWaiters.length);
+  for (const resolve of waiters) resolve();
+}
+
+function applyDesiredUser(): void {
+  if (!rum || desiredUserHash === undefined) return;
+  try {
+    if (desiredUserHash) rum.setUser({ id: desiredUserHash });
+    else rum.clearUser();
+    appliedUserHash = desiredUserHash;
+  } catch {
+    /* analytics must never throw into the UI */
+  }
+}
+
+/** Exactly the shape hashPrincipal emits — anything else must not become
+ *  @usr.id (mirror of isValidUserHash; kept inline so this stays a leaf
+ *  client module). */
+const USER_HASH_RE = /^[0-9a-f]{16}$/;
+
+/** Attach the signed-in account's telemetry hash to all RUM events. A value
+ *  that is not a 16-hex hash clears instead — an unexpected server response
+ *  must never ride into @usr.id. */
+export function setRumUser(userHash: string): void {
+  if (typeof window === "undefined" || !rumEnabled()) return;
+  desiredUserHash = USER_HASH_RE.test(userHash) ? userHash : null;
+  notifyIdentityKnown();
+  applyDesiredUser();
+  flushPending();
+}
+
+/** Drop the RUM user (signed out, or no hash available). */
+export function clearRumUser(): void {
+  if (typeof window === "undefined" || !rumEnabled()) return;
+  desiredUserHash = null;
+  notifyIdentityKnown();
+  applyDesiredUser();
+  flushPending();
 }
 
 // ---- Typed event helpers (the only API the components should use) ----------
@@ -202,11 +318,20 @@ export function trackDownload(d: {
 }
 
 /** Search usage. Query text is truncated; we never store more than 100 chars. */
+/** Email-shaped tokens must not ride into Datadog next to @usr.id — a
+ *  visitor pasting an address into search would otherwise join PII to their
+ *  account hash (the join is what makes this matter — ARN-451 panel). */
+const EMAIL_RE = /[^\s@,;:"']+@[^\s@,;:"']+\.[^\s@,;:"']+/g;
+
+export function scrubEmails(text: string): string {
+  return text.replace(EMAIL_RE, "[email]");
+}
+
 export function trackSearch(d: {
   query: string;
   resultsCount?: number;
 }): void {
-  const q = (d.query || "").trim();
+  const q = scrubEmails((d.query || "").trim());
   if (!q) return;
   track("search", {
     query: q.slice(0, 100),

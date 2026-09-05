@@ -1,11 +1,19 @@
 import "server-only";
 import { importJWK } from "jose";
 import { publicJwks, isAsConfigured, currentGeneration } from "./oauth-as";
-import { verifyReadAccessToken } from "./catalog-auth-core.mjs";
+import {
+  clampRejectionReason,
+  verifyReadAccessTokenDetailed,
+} from "./catalog-auth-core.mjs";
 
 export { readMcpAuthInfo, whoamiFromAuth } from "./catalog-auth-core.mjs";
+import { BackendUnavailableError } from "./catalog-auth-core.mjs";
 
 export type ReadIdentity = { sub: string; email: string };
+
+/** Why a bearer was rejected — always a value from AUTH_REJECTION_REASONS
+ *  (catalog-auth-core.mjs), never free text, never token material. */
+export type ReadRejection = { identity: ReadIdentity | null; reason: string | null };
 
 // Verify an MCP bearer for the gallery read server at /mcp (ARN-360). A
 // valid, live access token minted by our own AS (ARN-151) for THIS resource
@@ -34,6 +42,9 @@ const API_KEY = process.env.TEMPER_API_KEY || "";
 // round-trip on every single MCP call.
 const grantCache = new Map<string, { active: boolean; at: number }>();
 const GRANT_TTL_MS = 15_000;
+/** The grant read sits on the /mcp request path; a hung grants endpoint must
+ *  cost a bounded wait, not the caller's whole budget. */
+const GRANT_READ_TIMEOUT_MS = 2_000;
 
 async function grantIsActive(grantId: string): Promise<boolean> {
   const hit = grantCache.get(grantId);
@@ -45,33 +56,50 @@ async function grantIsActive(grantId: string): Promise<boolean> {
       {
         headers: { "X-Tenant-Id": TENANT, ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}) },
         cache: "no-store",
+        // Bounded on the request path: an unbounded grant read let a
+        // grants-endpoint outage hang a call that the caller already
+        // budgeted (verifier finding, ARN-451).
+        signal: AbortSignal.timeout(GRANT_READ_TIMEOUT_MS),
       },
     );
-  } catch {
-    return false; // transient failure: deny this call, but don't cache it
+  } catch (err) {
+    // THROW rather than deny. Returning false here reported a backend outage
+    // as grant_revoked on the auth dashboard — a real user locked out looked
+    // identical to a revoked grant. The caller maps a throw to
+    // backend_unavailable (verifier finding, ARN-451).
+    throw new BackendUnavailableError("agent grant read failed", { cause: err });
   }
   // Only cache a DEFINITIVE answer: 200 (Active or not) or 404 (grant gone).
-  // A 5xx/other is transient — deny now, retry next call rather than pinning a
-  // legitimate token to the sample tier for the whole cache window.
-  if (!res.ok && res.status !== 404) return false;
+  // A 5xx/other is transient and must read as an outage, not as revocation.
+  if (!res.ok && res.status !== 404) {
+    throw new BackendUnavailableError(`agent grant read returned ${res.status}`);
+  }
   const active = res.status === 404 ? false : ((await res.json()) as { status?: string }).status === "Active";
   grantCache.set(grantId, { active, at: Date.now() });
   return active;
 }
 
-export async function verifyReadBearer(token: string): Promise<ReadIdentity | null> {
-  if (!isAsConfigured()) return null;
+/** verifyReadBearer with the rejection reason attached (ARN-451). The /mcp
+ *  route's readMcpAuthInfo accepts this detailed shape and carries the reason
+ *  onto the thrown InvalidToken, so the 401 counter can report WHY a
+ *  presented bearer was rejected — with a closed, low-cardinality vocabulary
+ *  and never the token itself. */
+export async function verifyReadBearer(token: string): Promise<ReadRejection> {
+  if (!isAsConfigured()) return { identity: null, reason: "as_unconfigured" };
   try {
     const { keys } = await publicJwks();
-    if (!keys.length) return null;
+    if (!keys.length) return { identity: null, reason: "as_unconfigured" };
     const key = await importJWK(keys[0], "ES256");
-    return await verifyReadAccessToken(token, {
+    const { identity, reason } = await verifyReadAccessTokenDetailed(token, {
       key,
       issuer: process.env.KATAGAMI_AS_ISSUER,
       currentGeneration,
       grantIsActive,
     });
+    return identity
+      ? { identity, reason: null }
+      : { identity: null, reason: clampRejectionReason(reason) };
   } catch {
-    return null;
+    return { identity: null, reason: "unknown" };
   }
 }

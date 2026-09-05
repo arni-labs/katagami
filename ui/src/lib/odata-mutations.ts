@@ -31,7 +31,9 @@ export async function dispatchAction(
   // Values may be arrays/objects: list-typed spec fields (e.g. corpus_file_ids)
   // must arrive as real JSON arrays for cross-entity guard resolution.
   params: Record<string, unknown>,
-  opts?: { bearer?: string },
+  // `signal` bounds the wait for callers on post-response telemetry paths —
+  // a hung Temper must cost a timeout there, never the function duration limit.
+  opts?: { bearer?: string; signal?: AbortSignal },
 ): Promise<void> {
   const reqHeaders = authHeaders(opts?.bearer);
   const namespaces = ["KatagamiCommons", "Katagami.Curation", "Katagami", "Temper"];
@@ -43,6 +45,7 @@ export async function dispatchAction(
         method: "POST",
         headers: reqHeaders,
         body: JSON.stringify(params),
+        signal: opts?.signal,
       },
     );
     if (res.ok) return;

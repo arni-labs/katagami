@@ -6,14 +6,17 @@ import Link from "next/link";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { KeyRound, LogIn, LogOut, UserRound } from "lucide-react";
 import { CHROME_STAMP, CHROME_STAMP_LABEL } from "@/lib/chrome-stamp";
+import { fetchSessionMe, sessionMeEpoch, subscribeSessionMe } from "@/lib/session-me";
 
 // Header identity chip — same chrome-stamp as search / theme / menu.
 // Signed out it's a "sign in" stamp; signed in it's your avatar opening a
 // small paper menu (account, sign out). Owner mode stays separate at /owner.
 //
-// The session is fetched client-side from /api/auth/me: reading cookies()
-// in the shared (site) layout would opt every route out of the full-route
-// cache, and this chip is the only personalized element on most pages.
+// The session is fetched client-side via the shared fetchSessionMe helper
+// (one /api/auth/me request per page load, shared with the RUM user join):
+// reading cookies() in the shared (site) layout would opt every route out of
+// the full-route cache, and this chip is the only personalized element on
+// most pages.
 
 export type HeaderUser = { name: string; email: string; picture: string };
 
@@ -29,21 +32,24 @@ export function UserMenu() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/auth/me", { cache: "no-store", credentials: "same-origin" })
-      .then((r) => (r.ok ? r.json() : { user: null, owner: false }))
-      .then((d: { user: HeaderUser | null; owner?: boolean }) => {
-        if (!alive) return;
-        setUser(d.user ?? null);
-        setOwner(Boolean(d.owner));
-      })
-      .catch(() => {
-        if (alive) {
-          setUser(null);
-          setOwner(false);
-        }
-      });
+    const apply = (d: { user: HeaderUser | null; owner: boolean }) => {
+      if (!alive) return;
+      setUser(d.user);
+      setOwner(d.owner);
+    };
+    // Epoch-guarded initial apply: a slow first fetch superseded by a
+    // visibility resync must not land LAST and show a pre-revocation user.
+    const before = sessionMeEpoch();
+    void fetchSessionMe().then((d) => {
+      if (before === sessionMeEpoch()) apply(d);
+    });
+    // Stay in step with RUM: any later resync (visibility,
+    // sign-out-everywhere in another tab) that refetches the session also
+    // updates the chip — otherwise RUM and the header drift apart.
+    const unsubscribe = subscribeSessionMe(apply);
     return () => {
       alive = false;
+      unsubscribe();
     };
   }, []);
 
@@ -91,6 +97,11 @@ export function UserMenu() {
         <button
           type="button"
           aria-label={`Account — ${user.name || user.email}`}
+          // RUM auto-click tracking names actions after the accessible name;
+          // without this override the visitor's NAME/EMAIL would ship as a
+          // RUM action name — now joined to @usr.id (ARN-451). Keep the
+          // aria-label personal for screen readers, keep telemetry generic.
+          data-dd-action-name="account menu"
           title={user.name || user.email}
           className="inline-flex h-7 w-7 items-center justify-center transition-transform duration-200 hover:-translate-y-[1px] data-[state=open]:-translate-y-[1px]"
         >
