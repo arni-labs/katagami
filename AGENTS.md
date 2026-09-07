@@ -60,6 +60,7 @@ These are the rules the **curation agents** apply to everything they generate - 
 
 ## Pipeline quality
 
+- Encyclopedia examples are exempt from the house design contract above. Preserve their own colors, textures, typography, framing, and composition. Apply house styling only to the surrounding interface and explanations. Do not silently recolor examples, crop their inspection view, overlay grain, or limit a representative palette to three accents. This exception does not change the contract for ordinary curated-language synthesis.
 - Seed and demo content is produced by the same pipeline, contracts, and quality gates as real content. Hand-built stand-ins are not acceptable.
 - Design languages are referenced by URL (`https://katagami.ai/language/<id>/DESIGN.md`). When asked to apply one, honor its tokens exactly.
 - Published languages must generate a `DESIGN.md` projection that passes `katagami-design-md-contract` with zero errors and zero warnings. The native Katagami spec stays the source of truth; `DESIGN.md` is the portable export.
