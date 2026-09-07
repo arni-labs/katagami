@@ -30,6 +30,16 @@ assert.match(html, /This page does not submit or save your answers/);
 assert.doesNotMatch(html, /<form\b|<script\b|maximum-scale|user-scalable/i);
 }
 const current = readFileSync(join(directory, 'index.html'), 'utf8');
+const proposal = readFileSync(join(directory, 'proposal.html'), 'utf8');
+assert.match(proposal, /name="viewport"/);
+assert.match(proposal, /noindex, nofollow, noarchive/);
+assert.doesNotMatch(proposal, /<form\b|<script\b|maximum-scale|user-scalable/i);
+for (const phrase of ['12 images', 'two-item', 'no independent proof checker', 'not the finished formal model', 'This page does not submit or save your answers']) {
+  assert.ok(proposal.includes(phrase), `Proposal missing scope disclosure: ${phrase}`);
+}
+for (const page of ['index.html', 'round-01.html']) {
+  assert.ok(proposal.includes(`href="${page}"`), `Proposal missing archive link: ${page}`);
+}
 assert.match(current, /Calibration · 02/);
 assert.match(current, /href="round-01.html"/);
 assert.match(current, /footer a \{ display:inline-block; padding:12px 0; white-space:nowrap; \}/, 'Archive link needs an unbroken mobile tap target.');
@@ -40,4 +50,5 @@ assert.ok(deployment.headers.some(rule => rule.headers.some(header => header.key
 const exclusions = readFileSync(join(directory, '.vercelignore'), 'utf8');
 assert.ok(exclusions.includes('.env*'), 'Environment files must be excluded.');
 assert.ok(exclusions.includes('!round-01.html'), 'Previous round must remain deployable.');
+assert.ok(exclusions.includes('!proposal.html'), 'Proposal must be deployable.');
 console.log('PASS: current and archived rounds, eight PNGs, full-size links, alt text, zoom, no form or scripts, noindex, credential exclusions.');

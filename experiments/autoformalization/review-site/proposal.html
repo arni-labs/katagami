@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive"><meta name="referrer" content="no-referrer">
+<title>Katagami · The revised experiment</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root { --paper:#fff; --ink:#101010; --surface:#f4f1ea; --cyan:#00aeef; --yellow:#f6e800; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:17px/1.6 'IBM Plex Sans',sans-serif; letter-spacing:-.02em; }
+main { max-width:1000px; margin:auto; padding:40px 24px 80px; }
+nav { display:flex; flex-wrap:wrap; gap:24px; margin-bottom:48px; }
+a { color:inherit; text-underline-offset:4px; }
+nav a,footer a { display:inline-block; padding:12px 0; white-space:nowrap; }
+a:focus-visible,summary:focus-visible { outline:3px solid var(--cyan); outline-offset:4px; }
+.mono { font:13px/1.5 'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; }
+.tag { display:inline-block; background:var(--yellow); padding:6px 10px; }
+h1,h2,h3 { font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; line-height:1.08; letter-spacing:-.02em; }
+h1 { font-size:clamp(42px,7vw,66px); margin:24px 0; max-width:750px; }
+h2 { font-size:38px; margin:16px 0; } h3 { font-size:29px; margin:8px 0 12px; }
+p,li { max-width:72ch; } p { margin:14px 0; } section { margin-top:64px; }
+.lead { font-size:22px; line-height:1.45; }
+.note { background:var(--surface); padding:24px; margin:24px 0; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:32px; margin:24px 0; }
+ul,ol { padding-left:24px; } li { margin:12px 0; }
+details { margin:20px 0; } summary { cursor:pointer; padding:12px 0; font-weight:500; }
+pre { white-space:pre-wrap; overflow-wrap:anywhere; background:var(--surface); padding:20px; font:14px/1.65 'IBM Plex Mono',monospace; letter-spacing:0; }
+.result { background:var(--cyan); display:inline-block; padding:3px 8px; font:13px/1.6 'IBM Plex Mono',monospace; }
+footer { margin-top:56px; font-size:15px; }
+@media(max-width:650px) { main { padding:24px 20px 56px; } .grid { grid-template-columns:1fr; gap:24px; } section { margin-top:48px; } .note { padding:20px; } }
+</style></head><body><main>
+<nav aria-label="Experiment navigation"><span class="mono">Katagami / ARN-469</span><a href="index.html">Earlier comparisons</a></nav>
+<header><span class="tag mono">Proposal + running solver example</span>
+<h1>A different task.<br>The same visual language?</h1>
+<p class="lead">I expect the language description to help more than solver assistance. We should test those contributions separately.</p>
+<p>You accepted both languages’ images in both rounds, but the designs were still too close. Those variations are acceptable to you; we have not demonstrated improved creativity.</p></header>
+
+<section><span class="mono">01 / What we formalize</span><h2>Visual elements, roles, and possible uses.</h2>
+<p>The draft records visual elements, their roles, and ways to combine them. It separates instructions specific to an example page. Each entry records its source, scope, interpretation, status, and intended enforcement.</p>
+<div class="grid"><article><h3>Galley</h3>
+<p>Cormorant for editorial display, Plex Sans for work text, Plex Mono for proof labels. White fields, limited paper grouping, square forms, crop marks, and rectangular colour marks.</p>
+<p>In verdicts, cyan signals “on press,” yellow “hold,” vermilion “recut.” That does not mean every red object is a recut.</p>
+<p>The source asks for asymmetry and substantial negative space. We retain this written norm without claiming it is necessary for perceived identity.</p></article>
+<article><h3>Aya</h3><p>Light condensed serif display, monospaced labels, washi texture, ink text, charcoal areas, and role-specific colour. Display, labels, and prose have different treatments.</p>
+<p>The branch’s coordinates and goal-row arrangement describe particular pages. They should not force an evidence workspace to resemble the standup page.</p>
+<p>The source specifies one active arc. You accepted a repeated-arc image, so the draft retains both the norm and that observation.</p></article></div>
+<details><summary>See a concrete representation entry</summary><pre>id: annotation_presentation
+source: Galley DESIGN.md, line 116
+source_convention: edge-overlapping scrap
+tested_alternative: shared keyed strip
+observation: user accepted both tested images
+identity_necessity: not established
+
+candidate_operation:
+  move annotation into shared index
+  retain the intended item's unique key
+
+machine_claim:
+  key lookup preserves annotation ownership
+
+human_questions:
+  does it still feel like Galley?
+  does this presentation help the task?</pre>
+<p>The ownership rule is an agent-authored task contract, not a discovered law of art. YAML is structured data; only the precisely defined operation has been translated into mathematics.</p></details>
+<p>This is my first formalization draft from the documents and your feedback. A general system that reliably extracts these descriptions automatically has not been built yet.</p></section>
+
+<section><span class="mono">02 / What actually runs</span><h2>A small SMT experiment.</h2>
+<p>I ran Z3 4.15.4 on a symbolic two-item model. It inspects neither screenshots nor HTML. The model defines two annotation presentations and an operation that converts an attached note into an indexed note.</p>
+<ol><li><span class="result">SAT</span> The colour rules allow the declared attached presentation with a cyan on-press verdict.</li>
+<li><span class="result">SAT</span> The colour rules also allow the declared keyed presentation with a cyan on-press verdict. These two cases model no geometry and establish no layout feasibility.</li>
+<li><span class="result">UNSAT</span> Requiring an on-press verdict to be vermilion conflicts with the selected cyan rule.</li>
+<li><span class="result">UNSAT</span> With unique keys, no choice of owner or integer keys makes the defined transformation resolve to the wrong item.</li>
+<li><span class="result">SAT</span> Without unique keys, a wrong-owner example exists: both keys are 0, the note belongs to item 1, but lookup returns item 0.</li></ol>
+<details><summary>Read the mathematical claim and solver output</summary><pre>owner ∈ {0, 1}
+emitted_key = key[owner]
+resolve(k) = first item whose key equals k
+
+Can this happen?
+key[0] ≠ key[1] AND
+resolve(emitted_key) ≠ owner
+
+Z3: unsat
+
+Remove the unique-key assumption:
+Z3: sat
+key0 = 0, key1 = 0
+owner = 1, resolved_owner = 0
+
+Case sequence:
+sat / sat / unsat / unsat / sat
+
+Conflict core:
+(source_on_press_cyan
+ requested_on_press_vermilion)</pre></details>
+<div class="note"><p>This establishes a property of the defined two-item operation under its assumptions. It does not prove that a generated image preserves the note, belongs to Galley, or is creative. We trust Z3 here; no independent proof checker has verified a certificate.</p></div>
+<p>The solver reasons about possible symbolic constructions before rendering. For this tiny example, ordinary code could also do the job. We have not shown that solver assistance is worth the complexity.</p>
+<p>Mechanics: <a href="https://microsoft.github.io/z3guide/docs/logic/basiccommands/">Z3 commands and result types</a>; <a href="https://microsoft.github.io/z3guide/docs/logic/propositional-logic/">validity and conflict cores</a>. A conflict core is not automatically minimal.</p></section>
+
+<section><span class="mono">03 / Proposed tasks</span><h2>Change the design problem.</h2>
+<div class="grid"><article><h3>Galley: exhibition operations</h3><p>Coordinate installation tasks, dependencies, owners, and release holds. Show what is blocked and what can proceed.</p><p>No artwork-card gallery as the organizing structure. Explore how editorial and proofing treatments handle operational information. Density and Galley’s whitespace norm are an explicit tradeoff, not permission to discard the norm silently.</p></article>
+<article><h3>Aya: evidence comparison</h3><p>Compare conflicting sources for a decision. Separate observations from interpretations, preserve source ownership, and show unresolved disagreement.</p><p>No numbered-goals page with a branch added beside it. Let the task determine the organization, using Aya’s type, material, and marking conventions where they help.</p></article></div>
+<p>These are proposed briefs, awaiting your alignment before image generation. The annotation example is a demonstration, not the finished formal model for these tasks.</p></section>
+
+<section><span class="mono">04 / Comparison</span><h2>Test the description, then the solver.</h2>
+<ol><li><strong>Prose guidance.</strong> The language, exceptions, and brief written as ordinary instructions.</li>
+<li><strong>Structured guidance.</strong> The same semantic information organized into roles, relationships, and possible operations. No solver.</li>
+<li><strong>Structured guidance + solver.</strong> The same description, with solver-assisted construction or repair of the symbolic plan.</li></ol>
+<p>All conditions get the same information, references, content, dimensions, and generation budget. Each attempt gets one initial planning call and one revision call using the same planner model and reasoning setting. Before running, we will record those settings and context packets. Solver time is an additional measured cost. We retain every output, interleave generation order, and hide condition labels for your final comparison.</p>
+<p>Proposed size: two languages × one brief × three conditions × two independent plan-and-image attempts = <strong>12 images</strong>. Each attempt starts from the frozen packet and cannot see another attempt's plans or images. We will record any context-isolation limitation. Built-in image generation only. The tool does not expose enough controls to promise identical seeds or backend versions.</p>
+<p>This is a development pilot: we know these tasks while drafting the representation. A later test would freeze the description before choosing a new brief.</p>
+<div class="note"><p>You judge identity, novelty relative to the source, usefulness for the brief, and craft separately. Ties, neither, and uncertainty are valid. We also record whether each image follows its plan. A valid symbolic plan can still produce a faulty image; a mockup cannot establish interaction usability.</p></div>
+<ul><li>Better identity alone means preservation, not improved creativity.</li><li>More difference without usefulness is not enough.</li><li>If structure helps but the solver does not, develop the description without solver machinery.</li><li>If neither helps, report no observed benefit. Two languages and one reviewer cannot establish a general result.</li></ul></section>
+
+<section><span class="mono">05 / Collaboration premise</span><h2>What Katagami could contribute.</h2>
+<p>Katagami could supply an editable description of a language, its conventions, accepted departures, and possible transformations. A design agent could use it to solve a new brief, then create, inspect, and refine the result.</p>
+<p>This is a proposed interface to test with Paul, not an existing Impeccable integration. We are changing no Impeccable code. The experiment asks whether the additional description helps enough to justify a collaboration.</p>
+<p>The earlier “identity proof versus contract proof” distinction was too strong. The proposed solver checks declared relationships. People still judge whether the result feels like the language. Writing a formal rule does not establish that it describes perceived identity.</p></section>
+
+<section class="note"><h2>Before the next images</h2><p class="lead">Do exhibition operations for Galley and evidence comparison for Aya test the kind of different use you have in mind?</p><p>Reply in our chat. This page does not submit or save your answers.</p></section>
+<footer><p>Implemented: structured draft and runnable SMT example. Pending: brief alignment, task models, matched images, and blind judgments.</p><p><a href="index.html">Calibration round 02</a> · <a href="round-01.html">Calibration round 01</a></p><p>Source: <a href="https://katagami.ai/language/en-019f2e78-8711-7072-b72d-200b095d9a51/DESIGN.md">Galley DESIGN.md</a>; approved Aya DESIGN.md at revision d5177d7. Both source hashes are recorded in the specification.</p></footer>
+</main></body></html>

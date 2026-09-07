@@ -1,5 +1,29 @@
 # Decisions
 
+## Separate representation from solver assistance
+
+Decision: Compare prose, structured language guidance, and the same structured guidance with a solver on different functional tasks.
+
+Came up because: The user accepted both calibration rounds as belonging to the languages but found the outputs too similar. Source page recipes were being treated as identity requirements without evidence.
+
+Options: Continue composition edits, keep the prose/checker/formal comparison, or isolate representation and solver effects on new tasks.
+
+Chose the revised comparison because: It can show whether the representation helps without attributing that benefit to the solver. The proposed first run has 12 images rather than 24 and is a development pilot, since its tasks are known during representation design. This sacrifices breadth until the user confirms the tasks test meaningful transfer.
+
+Where: `docs/efforts/ARN-469/spec.md` and `experiments/autoformalization/language-draft.yaml`.
+
+## Keep the demonstration's guarantee narrow
+
+Decision: Demonstrate a two-item annotation transformation in native SMT-LIB and label identity and pixel fidelity as unproved.
+
+Came up because: The user wants a Pramaana-like experiment rather than another image or DOM linter, but no evidence supports a mathematical identity predicate.
+
+Options: Encode identity as an arbitrary score, build another checker, or prove a declared meaning-preservation property of a symbolic operation.
+
+Chose the symbolic operation because: It makes construction, contradiction, and a missing-assumption counterexample executable. It does not establish creativity or complete the proposed solver-assisted generation condition.
+
+Where: `experiments/autoformalization/annotation-transfer.smt2` and `verify-solver.mjs`.
+
 ## Use the approved Aya scroll
 
 Decision: Use the ikebana scroll as Aya's source language.
