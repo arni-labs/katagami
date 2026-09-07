@@ -47,3 +47,15 @@ Options: Repeat inline images, provide local files, or publish a verified review
 Chose a review page because: It lets the user read both pairs and enlarge the images on the phone. Answers return through chat, without a second submission system.
 
 Where: `experiments/autoformalization/review-site/index.html` and `docs/efforts/ARN-469/plan.md`.
+
+## Keep the deployed preview protected pending permission
+
+Decision: Keep Vercel sign-in required until the user explicitly approves a report-specific share link.
+
+Came up because: The permission reviewer rejected creating a 30-day login-free link without explicit approval of that access change.
+
+Options: Send the protected preview, request scoped sharing permission, or change project-wide protection.
+
+Chose the protected preview and a scoped permission request because: This preserves existing access controls. Project-wide protection changes are outside the request.
+
+Where: Vercel preview `proof-reports-ln4bzpdx7-rita-agafonovas-projects.vercel.app` and the permission request in chat.
