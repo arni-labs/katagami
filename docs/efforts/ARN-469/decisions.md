@@ -35,3 +35,15 @@ Options: Apply repository defaults to every mockup or preserve the user-selected
 Chose source fidelity because: The experiment measures preservation of these languages. Applying generic styling would change the subject being tested.
 
 Where: User selection and both source DESIGN.md files.
+
+## Deliver judgments through Vercel
+
+Decision: Publish the current comparison on a mobile-readable Vercel page before asking for visual judgment.
+
+Came up because: The user sees only chat on mobile and cannot use local paths or the desktop image display.
+
+Options: Repeat inline images, provide local files, or publish a verified review page.
+
+Chose a review page because: It lets the user read both pairs and enlarge the images on the phone. Answers return through chat, without a second submission system.
+
+Where: `experiments/autoformalization/review-site/index.html` and `docs/efforts/ARN-469/plan.md`.
