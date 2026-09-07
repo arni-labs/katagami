@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light">
+  <title>Galley &amp; Aya · Calibration review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root { --paper:#fff; --ink:#101010; --muted:#6e6960; --surface:#f4f1ea; --cyan:#00aeef; --yellow:#f6e800; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; scroll-padding-top:80px; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:17px/1.55 'IBM Plex Sans',sans-serif; letter-spacing:-.02em; }
+    a { color:inherit; text-underline-offset:4px; }
+    a:focus-visible { outline:3px solid var(--cyan); outline-offset:5px; }
+    .mono { font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:.08em; text-transform:uppercase; }
+    .top { padding:16px max(20px,calc((100vw - 1280px)/2)); display:flex; align-items:center; gap:24px; background:var(--paper); }
+    .wordmark { font:600 29px/1 'Cormorant Garamond',Georgia,serif; margin-right:auto; }
+    .top a { padding:10px 0; text-decoration:none; }
+    main { max-width:1280px; margin:auto; padding:20px 24px 80px; }
+    header { max-width:780px; margin-bottom:48px; }
+    .tag { display:inline-block; padding:5px 10px; background:var(--yellow); }
+    h1,h2 { font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; line-height:1.05; letter-spacing:-.02em; }
+    h1 { font-size:clamp(38px,6vw,66px); margin:20px 0 16px; }
+    h2 { font-size:clamp(38px,4vw,50px); margin:10px 0 16px; }
+    p { max-width:70ch; margin:12px 0; }
+    .hint { color:var(--muted); }
+    section { margin-bottom:72px; }
+    .question { max-width:850px; font-size:22px; line-height:1.4; }
+    .pairs { display:grid; grid-template-columns:1fr 1fr; gap:32px; margin:28px 0 20px; }
+    figure { margin:0; min-width:0; }
+    figcaption { display:flex; align-items:baseline; gap:12px; margin-bottom:12px; }
+    .label { background:var(--ink); color:var(--paper); padding:5px 10px; white-space:nowrap; }
+    .image-link { display:block; text-decoration:none; }
+    img { display:block; width:100%; height:auto; aspect-ratio:3/2; object-fit:contain; }
+    .enlarge { display:inline-block; padding:12px 0; text-decoration:underline; font-size:15px; }
+    .answer { background:var(--surface); padding:24px; max-width:850px; }
+    .answer p { margin:6px 0; }
+    details { max-width:850px; margin-top:20px; }
+    summary { cursor:pointer; padding:12px 0; }
+    .reply { padding-top:24px; }
+    .reply code { font:15px/1.6 'IBM Plex Mono',monospace; overflow-wrap:anywhere; }
+    footer { color:var(--muted); font-size:15px; }
+    @media(max-width:700px) {
+      main { padding:12px 20px 56px; }
+      .top { gap:20px; padding:12px 20px; }
+      header { margin-bottom:40px; }
+      .pairs { grid-template-columns:1fr; gap:24px; margin-top:24px; }
+      .question { font-size:20px; }
+      .answer { padding:20px; }
+      section { margin-bottom:48px; }
+    }
+    @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+  </style>
+</head>
+<body>
+  <nav class="top" aria-label="Review sections">
+    <span class="wordmark">Katagami</span>
+    <a class="mono" href="#galley">Galley</a>
+    <a class="mono" href="#aya">Aya</a>
+  </nav>
+  <main>
+    <header>
+      <span class="tag mono">Calibration · 01</span>
+      <h1>What can change<br>and still feel right?</h1>
+      <p>Two image pairs, two decisions about the language. We are checking which rearrangements you permit before testing formalization.</p>
+      <p class="hint">Tap any image to open it full-size, then pinch to zoom. Return here with your browser’s Back button. Send your answers in our chat.</p>
+    </header>
+
+    <section id="galley" aria-labelledby="galley-title">
+      <span class="mono">Pair 01 · Galley</span>
+      <h2 id="galley-title">Move the annotated artwork.</h2>
+      <p class="question">Can both arrangements express Galley if each artwork keeps its own caption, crop marks, and verdict?</p>
+      <div class="pairs">
+        <figure>
+          <figcaption><span class="label mono">G-A</span><span>Large vessel on the left</span></figcaption>
+          <a class="image-link" href="images/galley-a.png" aria-label="Open Galley G-A at full resolution">
+            <img src="images/galley-a.png" width="1536" height="1024" alt="Galley G-A: large vessel study at left with its cyan On press scrap; smaller folded-paper study at lower right with its yellow Hold scrap." fetchpriority="high">
+            <span class="enlarge">Open G-A full-size</span>
+          </a>
+        </figure>
+        <figure>
+          <figcaption><span class="label mono">G-B</span><span>Large vessel on the right</span></figcaption>
+          <a class="image-link" href="images/galley-b.png" aria-label="Open Galley G-B at full resolution">
+            <img src="images/galley-b.png" width="1536" height="1024" alt="Galley G-B: the vessel and its cyan On press scrap are on the right; the folded paper and its yellow Hold scrap are on the left." loading="lazy">
+            <span class="enlarge">Open G-B full-size</span>
+          </a>
+        </figure>
+      </div>
+      <div class="answer">
+        <p>Tell me whether <strong>both work as Galley, only G-A, only G-B, neither, or you’re unsure.</strong></p>
+        <p>You can prefer one composition while accepting both as part of the language. What, if anything, feels lost?</p>
+      </div>
+      <details>
+        <summary>What this pair changes</summary>
+        <p>G-A is a new mockup generated from Galley’s design document. G-B rearranges its two artwork groups. Captions and verdicts remain attached to their artwork.</p>
+        <p>The edit also altered some frame sizes and drawing details. Those are unintended generation differences, not proposed language rules.</p>
+      </details>
+    </section>
+
+    <section id="aya" aria-labelledby="aya-title">
+      <span class="mono">Pair 02 · Aya</span>
+      <h2 id="aya-title">Move the branch and the text.</h2>
+      <p class="question">Does Aya still feel like Aya with the branch on the left, or is the original branch-on-right relationship essential?</p>
+      <div class="pairs">
+        <figure>
+          <figcaption><span class="label mono">A-A</span><span>Approved original</span></figcaption>
+          <a class="image-link" href="images/aya-a.png" aria-label="Open Aya A-A at full resolution">
+            <img src="images/aya-a.png" width="1536" height="1024" alt="Aya A-A: approved warm-washi comp with six numbered goals on the left, a fruit branch on the right, and a charcoal key-results band below." loading="lazy">
+            <span class="enlarge">Open A-A full-size</span>
+          </a>
+        </figure>
+        <figure>
+          <figcaption><span class="label mono">A-B</span><span>Relocated reading column</span></figcaption>
+          <a class="image-link" href="images/aya-b.png" aria-label="Open Aya A-B at full resolution">
+            <img src="images/aya-b.png" width="1536" height="1024" alt="Aya A-B: fruit branch on the left and the six numbered goals on the right. The indigo arc remains below goal 03 and the charcoal foot remains below." loading="lazy">
+            <span class="enlarge">Open A-B full-size</span>
+          </a>
+        </figure>
+      </div>
+      <div class="answer">
+        <p>Tell me whether <strong>both work as Aya, only A-A, only A-B, neither, or you’re unsure.</strong></p>
+        <p>Is the exact left/right arrangement part of the identity, or can it change while order, grouping, materials, and typography remain?</p>
+      </div>
+      <details>
+        <summary>What this pair changes</summary>
+        <p>A-A is Impeccable’s approved ikebana scroll for Aya. A-B moves the reading column to the right and the branch to the left, without reversing words or goal order.</p>
+        <p>The current design document specifies the branch on the right. Permitting A-B would explicitly generalize that rule; I have not assumed that permission. Some branch detail, texture, and type proportions also changed during generation.</p>
+      </details>
+    </section>
+
+    <section class="reply" aria-labelledby="reply-title">
+      <span class="mono">Your reply</span>
+      <h2 id="reply-title">Two short answers in chat.</h2>
+      <p><code>Galley: both / G-A / G-B / neither / unsure<br>Aya: both / A-A / A-B / neither / unsure</code></p>
+      <p>Add what feels essential or what the edit lost. This page does not submit or save your answers.</p>
+    </section>
+    <footer>
+      <p>Calibration only. These pairs will not count in the blind final comparison. No formal proof or creativity improvement has been established.</p>
+      <p>ARN-469 · Images remain unchanged from the calibration run.</p>
+    </footer>
+  </main>
+</body>
+</html>

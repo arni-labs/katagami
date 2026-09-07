@@ -19,9 +19,9 @@ The formal subset describes roles, ownership of annotations, grouping, order, an
 
 ## Calibration
 
-Present one contrasting pair per language. Change one proposed compositional freedom per pair and keep other instructions matched. Record incidental differences introduced by image generation. Ask explicitly whether the changed relationship is acceptable, because image preference alone does not approve a rule. Do not score calibration images as final results. The user can accept, reject, or revise a proposed freedom. Freeze the accepted grammar and evaluation protocol before final generation.
+Present one contrasting pair per language. After the user found relocation-only comparisons too weak, use a new task composition and an edited alternative that changes a proposed annotation or emphasis relationship. Keep other instructions matched. Record incidental differences introduced by image generation. Ask explicitly whether the changed relationship is acceptable, because image preference alone does not approve a rule. If an edit changes coupled properties, do not infer their separate effects. Do not score calibration images as final results. The user can accept, reject, or revise a proposed freedom. Freeze the accepted grammar and evaluation protocol before final generation.
 
-Candidate questions: may Galley's annotated artwork groups change composition while scraps remain attached to the correct artwork? May Aya's named relationships move beyond the precise approved scroll coordinates? Do not silently remove an explicit rule to admit a preferred result.
+Round 01 outcome: the user accepts both tested group relocations. Round 02 questions: can Galley's verdict scraps become a shared plate-keyed strip without losing identity? Can Aya use equal goal emphasis and repeated arcs without losing identity? Both pairs use new content and compositions. Do not silently remove an explicit source rule to admit a preferred result. If the user accepts a source-rule violation, record that distinction between written conformance and perceived identity.
 
 ## Comparison
 

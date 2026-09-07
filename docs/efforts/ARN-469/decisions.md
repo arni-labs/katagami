@@ -59,3 +59,27 @@ Options: Send the protected preview, request scoped sharing permission, or chang
 Chose the protected preview and a scoped permission request because: This preserves existing access controls. Project-wide protection changes are outside the request.
 
 Where: Vercel preview `proof-reports-ln4bzpdx7-rita-agafonovas-projects.vercel.app` and the permission request in chat.
+
+## Test new tasks and possible identity boundaries
+
+Decision: Replace relocation-only calibration with new task compositions and matched edits to annotation or emphasis relationships.
+
+Came up because: The user accepted both earlier pairs and said that moving images does not change the language.
+
+Options: Freeze the rules from those swaps, generate more swaps, or test a new expression and a plausible alternative for each language.
+
+Chose new expressions and alternatives because: They test more than coordinate freedom. Galley changes to an issue-planning desk and tests attached verdict scraps against a shared keyed strip. Aya changes to a weekly focus arrangement and tests unequal emphasis against equal repeated emphasis. Neither alternative is assumed invalid, and the Aya edit cannot identify a separate cause for each of its coupled changes.
+
+Where: `docs/efforts/ARN-469/calibration.md`; recorded image briefs in the experiment evidence archive. These calibration briefs are excluded from final evaluation.
+
+## Keep report publication preview-only
+
+Decision: Publish calibration updates only with an explicit preview target and preserve the user's existing share expiry.
+
+Came up because: The existing proof-reports project's production domain serves another effort, and the first page review identified the risk of overwriting it.
+
+Options: Publish to production, rely on the CLI's implicit preview default, or name the preview target explicitly.
+
+Chose the explicit preview target because: `vercel deploy --target preview --yes --scope rita-agafonovas-projects` cannot be mistaken for a production command. Link access is limited to the same report the user approved for 30 days, ending at Unix 1791334346. Do not change project-wide protection or extend access on updates.
+
+Where: staged report directory `/private/tmp/arn469-review-deploy`, Vercel project `proof-reports`.
