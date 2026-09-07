@@ -7,4 +7,4 @@
 5. Run the three matched conditions through built-in image generation. Save every prompt and output, then publish and verify the randomized comparison on the same Vercel review page before requesting judgment.
 6. Collect blind human judgments and analyze identity, creativity, craft, and formal results separately. Review the experiment and report its limitations.
 
-Current status: source acquisition and calibration preparation. No final experiment results yet.
+Current status: the user accepts both Galley images and both Aya images. The user identified relocation-only calibration as too weak. Before freezing the grammar, use new compositions and content to test generalization and plausible near-misses to test proposed identity-defining relationships. Position swaps count only as basic checks, not evidence of creativity or sufficient validation of the grammar. No final experiment results yet.
