@@ -1,0 +1,9 @@
+**/*
+!index.html
+!vercel.json
+!images
+!images/*.png
+.env*
+.git
+.vercel
+node_modules
