@@ -33,3 +33,11 @@ The user accepted both images in both pairs: "Both in both cases". They also cor
 Galley G-A and G-B are accepted, and Aya A-A and A-B are accepted. These decisions permit the tested group relocations. They do not establish that every position change preserves identity, validate the other inferred rules, or demonstrate creativity improvement.
 
 The calibration was too conservative. Relocation-only examples are basic checks and cannot be the main evidence for language generalization. Before freezing the grammar, test new compositions and content, and include plausible near-misses that retain familiar typography and colours while changing a proposed identity-defining relationship. Treat those relationships as hypotheses until the user judges the images. Record identity separately from preference and craft.
+
+## Round 02 judgment
+
+The user answered "Both for both". Record G-C, G-D, A-C, and A-D as accepted expressions of their respective languages.
+
+G-D uses detached verdict scraps in a shared plate-keyed strip. A-D uses equal goal columns with repeated indigo arcs. Acceptance of these images prevents treating edge attachment or a unique active-goal arc as necessary conditions for perceived identity. The source documents still specify those conventions; written conformance and the user's identity judgment are separate observations.
+
+This judgment applies to the displayed images. It does not grant unrestricted permission for every related transformation. Rendering drift remains recorded, including G-D's resized plate and A-D's changed heading face. Preference, usefulness, and whether the compositions are meaningfully new remain unanswered. Ask the remaining novelty question before freezing a test that might still be too conservative.
