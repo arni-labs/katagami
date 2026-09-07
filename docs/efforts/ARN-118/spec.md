@@ -36,7 +36,7 @@ Use independent cells. Keep containment and other relationships separately label
 
 ## Review and publication
 
-Use a Temper lifecycle: Draft, Validating, UnderReview, Published, and Archived. Defining or revising a document clears previous validation and review. The validator checks the document format and example metadata. Successful validation permits review. On failure, the cell returns to Draft with specific findings.
+Use a Temper lifecycle: Draft, ValidatingDocument, UnderReview, ValidatingReview, Published, and Archived. Defining or revising a document clears previous validation and review. The validator checks the document format and example metadata. Successful validation permits review. Review validation checks that the recorded attestation covers this exact document. On failure, the cell returns to Draft with specific findings.
 
 Publication requires successful document validation and an approving review. The reviewer checks permission for each representation's intended use, the examples and relationships, and living-creator imitation (including imitation under a renamed style). Any revision requires another review. Generic updates must not bypass those transitions or set validation and review fields directly.
 

@@ -1,0 +1,163 @@
+# A revisable region of the encyclopedia. The document describes examples
+# and relationships; validation checks its format, not aesthetic value.
+[automaton]
+name = "EncyclopediaCell"
+states = ["Draft", "ValidatingDocument", "UnderReview", "ValidatingReview", "Published", "Archived"]
+initial = "Draft"
+allow_indefinite_states = ["Draft", "ValidatingDocument", "UnderReview", "ValidatingReview", "Published", "Archived"]
+
+[[state]]
+name = "document_validated"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "review_approved"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "version"
+type = "counter"
+initial = 0
+
+[[action]]
+name = "Define"
+kind = "input"
+from = ["Draft"]
+to = "Draft"
+params = ["document"]
+effect = [
+  { type = "set_bool", var = "document_validated", value = "false" },
+  { type = "set_bool", var = "review_approved", value = "false" }
+]
+hint = "Set the versioned cell document. Examples and narrower cells may coexist."
+
+[[action]]
+name = "SubmitForValidation"
+kind = "input"
+from = ["Draft"]
+to = "ValidatingDocument"
+effect = [
+  { type = "set_bool", var = "document_validated", value = "false" },
+  { type = "set_bool", var = "review_approved", value = "false" },
+  { type = "trigger", name = "validate_document" }
+]
+
+[[action.triggers]]
+name = "validate_document"
+kind = "wasm"
+module = "validate_encyclopedia_cell"
+on_success = "DocumentValidated"
+on_failure = "ValidationFailed"
+timeout_secs = "30"
+
+[action.triggers.config]
+phase = "document"
+
+[[action]]
+name = "DocumentValidated"
+kind = "internal"
+from = ["ValidatingDocument"]
+to = "UnderReview"
+params = ["document_hash"]
+effect = [{ type = "set_bool", var = "document_validated", value = "true" }]
+hint = "Validator callback. Records format validation only."
+
+[[action]]
+name = "RecordReview"
+kind = "input"
+from = ["UnderReview"]
+to = "ValidatingReview"
+guard = "is_true document_validated"
+params = ["review"]
+effect = [
+  { type = "set_bool", var = "review_approved", value = "false" },
+  { type = "trigger", name = "validate_review" }
+]
+hint = "Curator records an approving review with evidence and the exact document hash. This is an attestation, not a proof of rights or historical truth."
+
+[[action.triggers]]
+name = "validate_review"
+kind = "wasm"
+module = "validate_encyclopedia_cell"
+on_success = "ReviewValidated"
+on_failure = "ValidationFailed"
+timeout_secs = "30"
+
+[action.triggers.config]
+phase = "review"
+
+[[action]]
+name = "ReviewValidated"
+kind = "internal"
+from = ["ValidatingReview"]
+to = "UnderReview"
+guard = "is_true document_validated"
+params = ["review_document_hash"]
+effect = [{ type = "set_bool", var = "review_approved", value = "true" }]
+
+[[action]]
+name = "ValidationFailed"
+kind = "internal"
+from = ["ValidatingDocument", "ValidatingReview"]
+to = "Draft"
+params = ["error"]
+effect = [
+  { type = "set_bool", var = "document_validated", value = "false" },
+  { type = "set_bool", var = "review_approved", value = "false" }
+]
+
+[[action]]
+name = "RequestChanges"
+kind = "input"
+from = ["UnderReview"]
+to = "Draft"
+params = ["review_findings"]
+effect = [
+  { type = "set_bool", var = "document_validated", value = "false" },
+  { type = "set_bool", var = "review_approved", value = "false" }
+]
+
+[[action]]
+name = "Publish"
+kind = "input"
+from = ["UnderReview"]
+to = "Published"
+guard = [
+  { type = "is_true", var = "document_validated" },
+  { type = "is_true", var = "review_approved" }
+]
+effect = [{ type = "increment", var = "version" }]
+
+[[action]]
+name = "Revise"
+kind = "input"
+from = ["UnderReview", "Published"]
+to = "Draft"
+effect = [
+  { type = "set_bool", var = "document_validated", value = "false" },
+  { type = "set_bool", var = "review_approved", value = "false" }
+]
+hint = "Retain the cell identifier and document, but require validation and review again."
+
+[[action]]
+name = "Archive"
+kind = "input"
+from = ["Published"]
+to = "Archived"
+
+[[invariant]]
+name = "PublishedDocumentValidated"
+when = ["Published"]
+assert = "document_validated"
+
+[[invariant]]
+name = "PublishedReviewApproved"
+when = ["Published"]
+assert = "review_approved"
+
+[[invariant]]
+name = "ArchivedIsFinal"
+when = ["Archived"]
+assert = "no_further_transitions"
