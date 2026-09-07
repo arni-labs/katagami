@@ -32,6 +32,7 @@ assert.doesNotMatch(html, /<form\b|<script\b|maximum-scale|user-scalable/i);
 const current = readFileSync(join(directory, 'index.html'), 'utf8');
 assert.match(current, /Calibration · 02/);
 assert.match(current, /href="round-01.html"/);
+assert.match(current, /footer a \{ display:inline-block; padding:12px 0; white-space:nowrap; \}/, 'Archive link needs an unbroken mobile tap target.');
 assert.match(current, /neither/);
 assert.match(current, /unsure/);
 const deployment = JSON.parse(readFileSync(join(directory, 'vercel.json'), 'utf8'));
