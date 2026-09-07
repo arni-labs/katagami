@@ -41,3 +41,11 @@ The user answered "Both for both". Record G-C, G-D, A-C, and A-D as accepted exp
 G-D uses detached verdict scraps in a shared plate-keyed strip. A-D uses equal goal columns with repeated indigo arcs. Acceptance of these images prevents treating edge attachment or a unique active-goal arc as necessary conditions for perceived identity. The source documents still specify those conventions; written conformance and the user's identity judgment are separate observations.
 
 This judgment applies to the displayed images. It does not grant unrestricted permission for every related transformation. Rendering drift remains recorded, including G-D's resized plate and A-D's changed heading face. Preference, usefulness, and whether the compositions are meaningfully new remain unanswered. Ask the remaining novelty question before freezing a test that might still be too conservative.
+
+## Round 02 novelty correction
+
+The user says the outputs are still too close to the originals and questions whether composition was part of language identity at all. Mark the requested degree of compositional novelty as unmet for round 02. The identity judgments remain accepted; preference and usefulness remain unanswered.
+
+Stop this sequence of rearrangement calibration. Distinguish a page's particular composition, a language's possible compositional tendencies, and its broader visual identity. Galley's source explicitly calls asymmetry essential, while Aya's source mixes an approved page's measurements with material and typographic rules. Neither document by itself establishes which traits are necessary for the user's perception of identity.
+
+Do not generate another calibration batch or freeze the existing formal grammar without a revised experiment proposal. The proposal must identify what is being formalized and compare it with equivalent prose guidance on genuinely different tasks. The current evidence does not demonstrate formalization, improved creativity, or a reliable identity classifier.
