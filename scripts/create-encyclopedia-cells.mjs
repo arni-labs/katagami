@@ -110,7 +110,7 @@ async function sourceAnswers(url) {
   if (checked.has(url)) return checked.get(url);
   let ok = false;
   try {
-    const response = await fetch(url, { method: "GET", redirect: "follow", signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "katagami-encyclopedia-verifier" } });
+    const response = await fetch(url, { method: "GET", redirect: "follow", signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "Mozilla/5.0 (compatible; katagami-encyclopedia-verifier)" } });
     ok = response.ok;
   } catch { ok = false; }
   checked.set(url, ok);
