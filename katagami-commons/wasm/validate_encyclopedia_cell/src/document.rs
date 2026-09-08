@@ -257,12 +257,18 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
         ("recollected", _) if !cell.sources.is_empty() => {
             return Err("a cell with a source is cited, not recollected".into());
         }
+        // The note opens with the fixed sentence, so a reader sees the same
+        // words on every recollected cell and nothing can precede them to
+        // negate it. What follows — why no source was found — is free text.
         ("recollected", note)
-            if !note
-                .as_deref()
-                .is_some_and(|n| n.to_lowercase().contains("training data")) =>
+            if !note.as_deref().is_some_and(|n| {
+                n.strip_prefix("Written from model training data")
+                    .is_some_and(|rest| rest.chars().next().is_none_or(|c| !c.is_alphanumeric()))
+            }) =>
         {
-            return Err("a recollected cell's note must say in plain words that it was written from training data".into());
+            return Err(
+                "a recollected cell's note must begin \"Written from model training data\"".into(),
+            );
         }
         (_, Some(note)) => text(note)?,
         _ => {}

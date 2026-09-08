@@ -99,8 +99,33 @@ mod tests {
         assert!(validate_document(&bare.to_string()).is_err());
         bare["provenance"] = serde_json::json!({"basis": "recollected"});
         assert!(validate_document(&bare.to_string()).is_err());
-        bare["provenance"] = serde_json::json!({"basis": "recollected", "note": "From training data; no reference found."});
+        bare["provenance"] = serde_json::json!({"basis": "recollected", "note": "Written from model training data; no reference found."});
         assert!(validate_document(&bare.to_string()).is_ok());
+        // The note must open with the fixed sentence; nothing may precede or bend it.
+        for bad in [
+            "banana",
+            "This was not written from model training data.",
+            "Written from model training datasets",
+        ] {
+            bare["provenance"] = serde_json::json!({"basis": "recollected", "note": bad});
+            assert!(validate_document(&bare.to_string()).is_err(), "{bad}");
+        }
+        // A source makes a cell cited; recollected with sources is a contradiction.
+        let mut sourced: Value = serde_json::from_str(FIXTURE).expect("fixture");
+        sourced["provenance"] = serde_json::json!({"basis": "recollected", "note": "Written from model training data."});
+        assert!(validate_document(&sourced.to_string()).is_err());
+        // JSON null is neither absent nor a string; TypeScript rejects it, so this must too.
+        let mut null_note: Value = serde_json::from_str(FIXTURE).expect("fixture");
+        null_note["provenance"] = serde_json::json!({"basis": "cited", "note": null});
+        assert!(validate_document(&null_note.to_string()).is_err());
+        let mut null_generator: Value = serde_json::from_str(FIXTURE).expect("fixture");
+        null_generator["studies"][0]["generatedBy"] = serde_json::json!(null);
+        assert!(validate_document(&null_generator.to_string()).is_err());
+        // The shape the 20 production cells held before migration.
+        let mut v1: Value = serde_json::from_str(FIXTURE).expect("fixture");
+        v1["version"] = serde_json::json!(1);
+        v1.as_object_mut().expect("object").remove("provenance");
+        assert!(validate_document(&v1.to_string()).is_err());
     }
 
     #[test]

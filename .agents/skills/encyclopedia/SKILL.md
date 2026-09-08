@@ -213,7 +213,8 @@ browsing human and a learning agent both depend on.
   means at least one entry in `sources` — an encyclopedia reference, a museum
   essay, a standard history — that a reader can follow to learn more.
   Recollected means the model wrote the account from its training data and no
-  external reference was located; the `note` must say so in plain words, and a
+  external reference was located; the `note` begins with the fixed sentence
+  "Written from model training data" followed by why no source was found, and a
   recollected cell carries no sources — if you have one, you are cited. A cell
   with neither is refused by the validator. Prefer cited. Recollected is an
   honest interim state, not a destination: a maintenance sweep should be

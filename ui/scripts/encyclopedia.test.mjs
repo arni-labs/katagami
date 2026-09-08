@@ -106,9 +106,11 @@ test("a cell either cites a source or says it was recollected", () => {
   const bare = { ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [] };
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "cited" } }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected" } }).success, false);
-  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "From training data; no reference found." } }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data; no reference found." } }).success, true);
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "banana" } }).success, false);
-  assert.equal(cellDocumentSchema.safeParse({ ...fixture, provenance: { basis: "recollected", note: "From training data." } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "This was not written from model training data." } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training datasets" } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, provenance: { basis: "recollected", note: "Written from model training data." } }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, provenance: { basis: "cited" } }).success, true);
 });
 

@@ -110,8 +110,11 @@ export const cellDocumentSchema = z.strictObject({
   if (cell.provenance.basis === "recollected" && cell.sources.length > 0) {
     context.addIssue({ code: "custom", path: ["provenance"], message: "A cell with a source is cited, not recollected" });
   }
-  if (cell.provenance.basis === "recollected" && !/training data/i.test(cell.provenance.note ?? "")) {
-    context.addIssue({ code: "custom", path: ["provenance", "note"], message: "A recollected cell's note must say in plain words that it was written from training data" });
+  // The note opens with the fixed sentence, so a reader sees the same words on
+  // every recollected cell and nothing can be written in front of them to
+  // negate it. What follows the sentence — why no source was found — is free.
+  if (cell.provenance.basis === "recollected" && !/^Written from model training data\b/.test(cell.provenance.note ?? "")) {
+    context.addIssue({ code: "custom", path: ["provenance", "note"], message: "A recollected cell's note must begin \"Written from model training data\"" });
   }
   unique(cell.maps, ["maps"]);
   unique(cell.sources.map((source) => source.id), ["sources"]);
