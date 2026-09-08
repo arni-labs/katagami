@@ -287,3 +287,27 @@ Options: Remove AbandonValidation so a run can never be orphaned, bind the callb
 Chose the pair because: Binding a callback to its run is not expressible here. Guards compare a state variable against a literal; there is no comparison between an action parameter and stored state, so nothing in the specification can reject a callback from an earlier run. Removing AbandonValidation would close the window but leave a cell stranded by a server restart with no way back, and Archived is final, so its identifier could never be reused. The pair is sound in a way the gate alone is not: only the runtime may dispatch the callback, and every action an external principal may invoke clears the gate, so a true gate whose hash matches the stored bytes can only come from a run over exactly those bytes. The harness reproduces the race and asserts the pair rejects the cell; the creation readback checks it for every approved record.
 
 Where: `scripts/verify-encyclopedia.mjs`, the stale-callback section and `attested`; `scripts/create-encyclopedia-cells.mjs`, the readback; `.agents/skills/verify-katagami/features/encyclopedia-cells.md`.
+
+## D25 Make the creation script survive its own failure modes
+
+Decision: Check the payload against an operator-supplied count and its stated operation, attempt every cell instead of aborting the batch, recover a cell left mid-validation before rewriting it, refuse an identifier already holding a different cell, and treat a cell as settled only when it is attested.
+
+Came up because: The second review round found the script fragile in ways that only appear on a rerun. `Define` is valid only from Draft, so a cell left in ValidatingDocument by an interrupted run failed and aborted every remaining cell. The skip test used the gate rather than the attestation, so a cell carrying a stale hash was skipped forever and failed the readback on every rerun. The payload's own `allowedOperation` was printed and never checked, and nothing checked how many cells the file held. Two approved names can slug to one identifier, and the collision check only looked inside the payload, so an already-deployed cell could be overwritten.
+
+Options: Document the constraints as operator procedure, or make the script enforce them.
+
+Chose enforcement because: This script writes production records from a file, and a rerun after a partial failure is the expected case, not the exception. `--expect <n>` makes the count an explicit confirmation rather than whatever the file happens to contain, and the `allowedOperation` check refuses a payload authorizing anything but creation.
+
+Where: `scripts/create-encyclopedia-cells.mjs`.
+
+## D26 Assert the stale-callback race instead of logging it
+
+Decision: Require the race to reproduce, so the test fails when it no longer does.
+
+Came up because: The regression logged whether it reproduced and passed either way. A runtime fix that bound callbacks to their run would have produced the same silent pass as a run where the race simply did not land.
+
+Options: Leave it as a log line, or make it a tripwire.
+
+Chose the tripwire because: The assertions that matter live inside the reproduction, so a run that does not reproduce proves nothing. Failing loudly is the signal to tighten the test against a corrected runtime, the same shape as the assertion that the injected document is still merged.
+
+Where: `scripts/verify-encyclopedia.mjs`, the stale-callback section.

@@ -202,8 +202,9 @@ for (const name of ["Define", "SubmitForValidation", "AbandonValidation", "Archi
   assert.match(block, /set_bool", var = "document_validated", value = "false"/,
     `${name} can be invoked externally and must clear the validation gate`);
 }
-// The create verb is the other way a body reaches an entity. On an existing
-// cell it changes nothing, and on a new one the gate is not set at all.
+// The create verb is the other way a body reaches an entity, and it carries no
+// effects at all. It does not need to clear the gate: on a new cell the gate is
+// not set by a body, and on an existing cell the body is dropped.
 const recreated = await request("/tdata/EncyclopediaCells", "POST", { id: tamper, document: "RECREATED" });
 assert.equal(recreated.status, 201);
 row = await expectState("Archived", () => true, tamperPath);
@@ -212,7 +213,7 @@ const seeded = `encyclopedia-test-seeded-${randomUUID()}`;
 assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: seeded, document: "SEEDED", document_hash: createHash("sha256").update("SEEDED").digest("hex"), document_validated: true })).status, 201);
 row = (await request(`/tdata/EncyclopediaCells('${seeded}')`)).data;
 assert.ok(!row.booleans.document_validated, "a create body set the validation gate");
-console.log("Every externally invocable action clears the validation gate, so an injected document cannot arrive validated");
+console.log("Every action that transitions a cell clears the validation gate, and the create verb cannot set it, so an injected document cannot arrive validated");
 
 const recovery = `encyclopedia-test-recovery-${randomUUID()}`;
 const recoveryPath = `/tdata/EncyclopediaCells('${recovery}')`;
@@ -274,7 +275,7 @@ function attested(row) {
     && createHash("sha256").update(row.fields.document).digest("hex") === row.fields.document_hash;
 }
 let reproduced = false;
-for (let attempt = 0; attempt < 25 && !reproduced; attempt++) {
+for (let attempt = 0; attempt < 40 && !reproduced; attempt++) {
   const raced = `encyclopedia-test-race-${randomUUID()}`;
   const racedPath = `/tdata/EncyclopediaCells('${raced}')`;
   assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: raced })).status, 201);
@@ -291,9 +292,10 @@ for (let attempt = 0; attempt < 25 && !reproduced; attempt++) {
   assert.notEqual(createHash("sha256").update("{}").digest("hex"), row.fields.document_hash);
   assert.equal(attested(row), false, "a stale callback produced an attested cell");
 }
-console.log(reproduced
-  ? "A stale callback can set the gate for a document it never read, and the hash pairing rejects that cell"
-  : "The stale-callback race did not occur in 25 attempts; the hash pairing is still what the readback checks");
+// A tripwire, not a log line: when the runtime binds a callback to its run,
+// this stops reproducing and the failure is the signal to tighten the test.
+assert.ok(reproduced, "the stale-callback race no longer reproduces; the runtime may bind callbacks now, so tighten this test");
+console.log("A stale callback can set the gate for a document it never read, and the hash pairing rejects that cell");
 
 const second = `encyclopedia-test-${randomUUID()}`;
 const secondPath = `/tdata/EncyclopediaCells('${second}')`;

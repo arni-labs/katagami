@@ -6,27 +6,42 @@
 // empty enrichment set; relationships, manifestations, studies, and sources
 // need their own numbered approval.
 //
-// Rerunning is safe. Identifiers are derived from the approved names, creation
-// is idempotent, and a cell whose stored document already matches is left alone.
+//   node scripts/create-encyclopedia-cells.mjs <approved.json> --expect <n> [--apply]
 //
-//   node scripts/create-encyclopedia-cells.mjs <approved.json> [--apply]
+// `--expect` is how many cells the operator believes were approved. It is
+// checked against the payload, so a swapped or truncated file stops here rather
+// than being written. Without --apply the script reports what it would do.
 //
-// Without --apply it reports what it would do and reads back what exists.
+// Rerunning is safe. Identifiers derive from the approved names, a cell is left
+// alone only when it already holds exactly this document with a matching
+// attestation, and a cell stranded mid-validation is recovered before rewriting.
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { cellDocumentSchema } from "../ui/src/lib/encyclopedia-schema.ts";
 
-const [payloadPath] = process.argv.slice(2).filter((argument) => !argument.startsWith("--"));
-const apply = process.argv.includes("--apply");
+const flags = process.argv.slice(2);
+const expectAt = flags.indexOf("--expect");
+const expected = Number(flags[expectAt + 1]);
+const payloadPath = flags.find((argument, index) => !argument.startsWith("--") && index !== expectAt + 1);
+const apply = flags.includes("--apply");
 const origin = process.env.TEMPER_API_URL ?? "https://openpaw-production.up.railway.app";
 const key = process.env.TEMPER_API_KEY;
 assert.ok(payloadPath, "pass the approved payload path");
 assert.ok(key, "TEMPER_API_KEY is required");
+assert.ok(Number.isInteger(expected) && expected > 0, "pass --expect <n>, the number of approved cells");
 
 const payload = JSON.parse(readFileSync(payloadPath, "utf8"));
-assert.ok(Array.isArray(payload.cells) && payload.cells.length > 0, "the payload has no cells");
+assert.ok(Array.isArray(payload.cells), "the payload has no cells");
+assert.equal(payload.cells.length, expected, `the payload holds ${payload.cells.length} cells, not the ${expected} expected`);
+// The payload states what it authorizes. This script performs exactly one
+// operation, so it refuses a payload that authorizes anything else.
+assert.match(payload.allowedOperation ?? "", /^Create private Draft EncyclopediaCell records/,
+  `this script only creates private Draft cells; the payload authorizes: ${payload.allowedOperation}`);
+assert.doesNotMatch(payload.allowedOperation, /\bpublish/i);
+const numbers = payload.cells.map((cell) => cell.number);
+assert.equal(new Set(numbers).size, numbers.length, "two approved cells share a number");
 console.log(`Batch ${payload.batch}: ${payload.cells.length} approved cells`);
 console.log(`Allowed operation: ${payload.allowedOperation}`);
 
@@ -66,43 +81,71 @@ const planned = payload.cells.map((cell) => {
 });
 assert.equal(new Set(planned.map((cell) => cell.id)).size, planned.length, "two approved names produce one identifier");
 console.log(`Prepared ${planned.length} documents, all valid against the shared contract`);
-
 if (!apply) console.log("Reporting only. Pass --apply to create the records.");
 
-async function readCell(cell) {
+const read = async (cell) => {
   const row = await request(`/tdata/EncyclopediaCells('${cell.id}')`);
   return row.status === 200 ? row.data : null;
+};
+
+// `document_validated` alone is not the attestation. An abandoned validation
+// run keeps executing and its callback can set the gate while naming the bytes
+// it read rather than the bytes now stored, so a cell counts as validated only
+// when the gate is true and the stored document hashes to `document_hash`.
+function attested(row) {
+  return Boolean(row?.booleans.document_validated)
+    && typeof row.fields.document === "string"
+    && createHash("sha256").update(row.fields.document).digest("hex") === row.fields.document_hash;
 }
+const settled = (row, cell) => attested(row) && row.status === "Draft" && row.fields.document === cell.document;
 
-for (const cell of planned) {
-  const existing = await readCell(cell);
-  if (existing?.fields.document === cell.document && existing.booleans.document_validated) {
-    console.log(`${String(cell.number).padStart(2)} ${cell.id}: already stored and validated`);
-    continue;
-  }
-  if (!apply) {
-    console.log(`${String(cell.number).padStart(2)} ${cell.id}: would ${existing ? "update" : "create"}`);
-    continue;
-  }
-  const created = await request("/tdata/EncyclopediaCells", "POST", { id: cell.id });
-  assert.ok([200, 201].includes(created.status), `create ${cell.id}: ${JSON.stringify(created.data)}`);
-  const defined = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.Define`, "POST", { document: cell.document });
-  assert.equal(defined.status, 200, `Define ${cell.id}: ${JSON.stringify(defined.data)}`);
-  const submitted = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.SubmitForValidation`, "POST", {});
-  assert.equal(submitted.status, 200, `SubmitForValidation ${cell.id}: ${JSON.stringify(submitted.data)}`);
-  console.log(`${String(cell.number).padStart(2)} ${cell.id}: created and submitted`);
-}
-
-if (!apply) process.exit(0);
-
-// Read back every record from the deployment. A successful dispatch is not
-// evidence: the stored document, its state, its validation, and its hash are.
+// One cell's failure must not strand the rest of the batch: every cell is
+// attempted, and the run fails at the end with everything that went wrong.
 const failures = [];
 for (const cell of planned) {
+  const label = `${String(cell.number).padStart(2)} ${cell.id}`;
+  try {
+    let existing = await read(cell);
+    // Two approved names can slug to one identifier. The approval's identity is
+    // the name, so refuse rather than overwrite another cell.
+    if (existing && typeof existing.fields.document === "string" && existing.fields.document !== cell.document) {
+      const stored = JSON.parse(existing.fields.document);
+      assert.equal(stored.name, cell.name, `'${cell.id}' already holds a different cell, "${stored.name}"`);
+    }
+    if (settled(existing, cell)) { console.log(`${label}: already stored and attested`); continue; }
+    if (!apply) { console.log(`${label}: would ${existing ? "update" : "create"}`); continue; }
+
+    assert.ok([200, 201].includes((await request("/tdata/EncyclopediaCells", "POST", { id: cell.id })).status), "create refused");
+    // Define is valid only from Draft, so recover a cell left mid-validation by
+    // an interrupted run before rewriting it.
+    existing = await read(cell);
+    if (existing?.status === "ValidatingDocument") {
+      const abandoned = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.AbandonValidation`, "POST", {});
+      assert.ok([200, 409].includes(abandoned.status), `AbandonValidation: ${JSON.stringify(abandoned.data)}`);
+      console.log(`${label}: recovered from an interrupted validation`);
+    }
+    const defined = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.Define`, "POST", { document: cell.document });
+    assert.equal(defined.status, 200, `Define: ${JSON.stringify(defined.data)}`);
+    const submitted = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.SubmitForValidation`, "POST", {});
+    assert.equal(submitted.status, 200, `SubmitForValidation: ${JSON.stringify(submitted.data)}`);
+    console.log(`${label}: created and submitted`);
+  } catch (error) {
+    failures.push(`${cell.id}: ${error.message}`);
+    console.log(`${label}: ${error.message}`);
+  }
+}
+
+if (!apply) process.exit(failures.length === 0 ? 0 : 1);
+
+// Read back every record from the deployment. A successful dispatch is not
+// evidence: the stored bytes, the state, and the attestation are.
+for (const cell of planned) {
   let row = null;
-  for (let attempt = 0; attempt < 60 && !(row?.booleans.document_validated); attempt++) {
-    row = await readCell(cell);
-    if (row?.booleans.document_validated) break;
+  // Wait for the attestation, not for the gate: a stale callback can set the
+  // gate before the live run reports on the bytes actually stored.
+  for (let attempt = 0; attempt < 60; attempt++) {
+    row = await read(cell);
+    if (settled(row, cell)) break;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   const problems = [];
@@ -110,29 +153,24 @@ for (const cell of planned) {
   else {
     const stored = row.fields.document;
     if (row.status !== "Draft") problems.push(`state ${row.status}`);
-    if (stored !== cell.document) problems.push("stored document differs from the approved document");
-    if (row.fields.document_hash !== cell.hash) problems.push("recorded hash is not the approved document's hash");
-    if (typeof stored === "string" && createHash("sha256").update(stored).digest("hex") !== row.fields.document_hash) {
-      problems.push("stored document does not match its own recorded hash");
-    }
-    // The attestation is the pair, not the flag: an abandoned validation run
-    // can still report success after the document changed, and it then names
-    // bytes the cell no longer holds.
-    if (!row.booleans.document_validated) problems.push("not validated");
-    // `error` records the last validation run and no action can clear it, so a
-    // non-empty error on a validated cell means the readback is looking at
-    // something other than a clean run.
-    if (row.fields.error !== "") problems.push(`error is set: ${row.fields.error}`);
-    if (typeof stored === "string") {
+    if (typeof stored !== "string") problems.push("document is not stored inline, so it cannot be checked against its hash");
+    else {
+      if (stored !== cell.document) problems.push("stored document differs from the approved document");
+      if (createHash("sha256").update(stored).digest("hex") !== row.fields.document_hash) {
+        problems.push("stored document does not match its own recorded hash");
+      }
       const parsed = JSON.parse(stored);
       for (const field of ["broader", "relations", "questions", "sources", "manifestations", "studies"]) {
         if (parsed[field].length !== 0) problems.push(`${field} is not empty`);
       }
     }
+    if (row.fields.document_hash !== cell.hash) problems.push("recorded hash is not the approved document's hash");
+    if (!row.booleans.document_validated) problems.push("not validated");
+    if (row.fields.error !== "") problems.push(`error is set: ${row.fields.error}`);
   }
   if (problems.length > 0) failures.push(`${cell.id}: ${problems.join("; ")}`);
-  console.log(`${String(cell.number).padStart(2)} ${cell.id}: ${problems.length === 0 ? `Draft, validated, ${cell.hash.slice(0, 12)}` : problems.join("; ")}`);
+  console.log(`${String(cell.number).padStart(2)} ${cell.id}: ${problems.length === 0 ? `Draft, attested, ${cell.hash.slice(0, 12)}` : problems.join("; ")}`);
 }
 
-assert.equal(failures.length, 0, `readback failed:\n${failures.join("\n")}`);
-console.log(`\nAll ${planned.length} approved cells are stored as private validated Drafts with no enrichment.`);
+assert.equal(failures.length, 0, `${failures.length} cell(s) failed:\n${failures.join("\n")}`);
+console.log(`\nAll ${planned.length} approved cells are stored as private attested Drafts with no enrichment.`);
