@@ -1,6 +1,6 @@
 # Manifestation encyclopedia maps
 
-Design draft. Cell validation and graph helpers exist, but the reader interface and collection workflow below are not complete. The current document parser still uses the earlier example definition of manifestation and must change before population.
+Design draft. Cell storage, validation, and the shared document contract are implemented. The reader interface and collection workflow below are not complete. The immediate approved delivery is 20 private Draft cells with names and scopes only.
 
 ## Reader experience
 
@@ -71,7 +71,7 @@ Representative examples retain their own colors, textures, typography, framing, 
 
 Each example identifies whether it is a historical source, an original demonstration, or a generated study. Revisions and additional representations of the same example retain its example identifier. Generated studies do not count as historical evidence.
 
-Writing examples are English-only for this effort. The collection may use English translations with evidence for the particular edition. Describing a historical tradition does not require imitating a living creator.
+Writing examples are English-only for this effort. The collection may use English translations with evidence for the particular edition. This limits writing proposals and their review; it does not ban non-English text in representations of art traditions. A language tag alone is not proof of the actual language. Describing a historical tradition does not require imitating a living creator.
 
 ### Inventory and expansion
 

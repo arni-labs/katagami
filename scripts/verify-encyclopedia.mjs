@@ -57,15 +57,15 @@ const created = await request("/tdata/EncyclopediaCells", "POST", { id });
 assert.equal(created.status, 201, JSON.stringify(created.data));
 assert.equal(created.data.entity_id, id);
 
-async function action(name, body = {}) {
-  const result = await request(`${path}/Temper.${name}`, "POST", body);
+async function action(name, body = {}, entityPath = path) {
+  const result = await request(`${entityPath}/Temper.${name}`, "POST", body);
   if (result.status !== 200) console.log(`${name}:`, JSON.stringify(result));
   return result;
 }
-async function expectState(expected, matches = () => true) {
+async function expectState(expected, matches = () => true, entityPath = path) {
   let last;
   for (let attempt = 0; attempt < 100; attempt++) {
-    const row = await request(path);
+    const row = await request(entityPath);
     assert.equal(row.status, 200, JSON.stringify(row.data));
     last = row.data;
     if (row.data.status === expected && matches(row.data)) return row.data;
@@ -137,3 +137,22 @@ assert.equal((await action("Archive")).status, 200);
 await expectState("Archived");
 assert.equal((await action("Define", { document: draft })).status, 409);
 console.log("An unwanted Draft can be archived without deleting its history");
+
+// Inline integration dispatch uses a separate runtime path from the background
+// callback. Exercise both without changing the installed authorization policy.
+const inlineId = `encyclopedia-test-inline-${randomUUID()}`;
+const inlinePath = `/tdata/EncyclopediaCells('${inlineId}')`;
+assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: inlineId })).status, 201);
+assert.equal((await action("Define", { document: fixture }, inlinePath)).status, 200);
+for (const callback of ["DocumentValidated", "ReviewValidated", "ValidationFailed"]) {
+  assert.equal((await action(`${callback}?await_integration=true`, {}, inlinePath)).status, 403);
+}
+assert.equal((await action("SubmitForValidation?await_integration=true", {}, inlinePath)).status, 200);
+row = await expectState("UnderReview", (value) => value.booleans.document_validated === true, inlinePath);
+assert.equal(row.fields.document_hash, hash);
+assert.equal((await action("RecordReview?await_integration=true", { review: JSON.stringify(review) }, inlinePath)).status, 200);
+row = await expectState("UnderReview", (value) => value.booleans.review_approved === true, inlinePath);
+assert.equal(row.fields.review_document_hash, hash);
+assert.equal((await action("Archive", {}, inlinePath)).status, 200);
+await expectState("Archived", () => true, inlinePath);
+console.log("Inline document and review validation pass; UnderReview can be archived:", inlineId);

@@ -35,6 +35,7 @@ Enumerated from the code's registration points, not from the docs. Each row cite
 | Language exports | language-exports.md | DESIGN.md projection, shadcn export, KATAGAMI.MD, the design-md contract |
 | Curation pipeline | curation-pipeline.md | curation specs, WASM modules, job templates, curator skills |
 | Contribution front door | contribution-front-door.md | `mcp/`, `cli/`, OAuth routes, Member roles |
+| Encyclopedia cell storage | encyclopedia-cells.md | cell IOA, document contract, validator, policy, packaging, local cell harness |
 | Genesis publish and install | genesis-publish.md | `katagami-commons/`, `katagami-curation/`, app.toml pins |
 
 ## Not yet mapped

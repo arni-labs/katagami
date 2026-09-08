@@ -3,7 +3,8 @@ permit(principal, action, resource is EncyclopediaCell);
 // Generic writes must never replace the reviewed document or its gate fields.
 forbid(principal, action in [Action::"update", Action::"delete"], resource is EncyclopediaCell);
 
-// Only the runtime validation callback may mark a document or review valid.
+// Reject external caller-supplied callbacks. The runtime dispatches its own
+// validation results internally; this policy guards the public action endpoint.
 forbid(
   principal,
   action in [Action::"DocumentValidated", Action::"ReviewValidated", Action::"ValidationFailed"],
@@ -19,6 +20,7 @@ forbid(
 )
 unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
 
-// Drafts and the review evidence stay private at the data boundary.
+// Raw rows include private review evidence, even after publication.
+// Public browsing must use a separately authorized projection, not raw rows.
 forbid(principal, action == Action::"read", resource is EncyclopediaCell)
 unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };

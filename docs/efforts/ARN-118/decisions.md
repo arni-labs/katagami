@@ -1,6 +1,6 @@
 # Decisions and tradeoffs
 
-## Keep encyclopedia cells separate from gallery taxonomy
+## D1 Keep encyclopedia cells separate from gallery taxonomy
 
 Decision: Add independent encyclopedia cells and preserve the existing gallery taxonomy.
 
@@ -12,7 +12,7 @@ Chose independent cells because: The encyclopedia can expand without restructuri
 
 Where: `docs/efforts/ARN-118/spec.md`, Records. The conflicting organizer is `katagami-curation/agents/curator/skills/organize-taxonomy/SKILL.md`.
 
-## Exempt representative examples from interface styling
+## D2 Exempt representative examples from interface styling
 
 Decision: Apply Katagami's interface rules to navigation and explanation, while preserving each example's own visual treatment.
 
@@ -24,7 +24,7 @@ Chose isolated example rendering because: Readers need faithful examples for com
 
 Where: `docs/efforts/ARN-118/spec.md`, Examples and source restrictions.
 
-## Validator callbacks
+## D3 Validator callbacks
 
 Decision: Give document validation and review validation distinct lifecycle states.
 
@@ -32,11 +32,11 @@ Came up because: The local verifier rejects the `is_false` guard used to route d
 
 Options: Add another boolean to select a phase, or represent the two phases as separate states.
 
-Chose separate states because: Each callback is permitted only during its matching validation phase. The two phases replace `Validating` with `ValidatingDocument` and `ValidatingReview`, without weakening the publication requirements.
+Chose separate states because: Each callback is permitted only during its matching validation phase. The two phases replace `Validating` with `ValidatingDocument` and `ValidatingReview`, without weakening the publication requirements. Both failures return to Draft and clear the gates. A rejected review therefore requires document revalidation; this keeps one fail-closed recovery path instead of adding a separate recovery action.
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, ValidatingDocument and ValidatingReview.
 
-## Use a nested browser for the main navigation
+## D4 Use a nested browser for the main navigation
 
 Decision: Show examples alongside narrower cells and separately labeled related cells, with linked pages for inspection and comparison.
 
@@ -48,7 +48,7 @@ Chose the nested browser because: In browser sketches at desktop and 390 px widt
 
 Where: `docs/efforts/ARN-118/spec.md`, Reader experience. The application pages have not been implemented yet.
 
-## Separate manifestations from direct studies
+## D5 Separate manifestations from direct studies
 
 Decision: Reference reusable ArtStyle, WritingStyle, PaletteSystem, and DesignLanguage records as manifestations, and attach studies or source examples directly to cells.
 
@@ -56,11 +56,11 @@ Came up because: The earlier draft treated manifestations as sample works. The u
 
 Options: Keep specimen records inside the manifestations field, duplicate typed styles into cells, or separate typed references from direct studies.
 
-Chose separate references and studies because: A cell can contain several kinds of reusable language and independent examples without creating extra style records. Update the parser, validator, read functions, and tests to use this distinction before populating cells.
+Chose separate references and studies because: A cell can contain several kinds of reusable language and independent examples without creating extra style records. The document contract and validator use this distinction; future readers must preserve it.
 
-Where: `docs/efforts/ARN-118/spec.md`, Records and Development and distance; `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`. The parser, validator, readers, and shared test fixtures now separate manifestations from studies.
+Where: `docs/efforts/ARN-118/spec.md`, Records and Development and distance; `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; shared test fixtures.
 
-## Obtain scoped decisions in numbered batches
+## D6 Obtain scoped decisions in numbered batches
 
 Decision: Require the user's selection of numbered, revision-specific proposals before agents add cells, enrichment, or manifestations.
 
@@ -72,7 +72,7 @@ Chose numbered batches because: The user can approve several proposals in one re
 
 Where: `docs/efforts/ARN-118/spec.md`, Numbered proposal batches. Batch execution is not implemented or deployed.
 
-## Inventory before commissioning additions
+## D7 Inventory before commissioning additions
 
 Decision: Compare published availability with unfinished and archived records before proposing breadth or depth work, and use English writing examples only.
 
@@ -80,11 +80,11 @@ Came up because: The user identified dense art-style clusters, does not know the
 
 Options: Generate missing-looking categories from a preset taxonomy, count published records only, or inspect the complete collection and propose evidence-backed gaps.
 
-Chose the complete inventory because: Unfinished records may already cover an apparent gap, and similar descriptions need comparison before merging. The first pass records the inventory and obtains approval before generation.
+Chose the complete inventory because: Unfinished records may already cover an apparent gap, and similar descriptions need comparison before merging. The first pass records the inventory and obtains approval before generation. English-only is the approved writing-collection scope, not a universal restriction on text representations in art traditions. The current B2 operation creates no studies or writing-style manifestations. Future writing proposals must check their actual language during review, not trust a language tag as proof.
 
 Where: `docs/efforts/ARN-118/spec.md`, Inventory and expansion, and `docs/efforts/ARN-118/plan.md`, step 2. Per-record draft material remains in private working evidence.
 
-## Create the approved cells in TemperPaw
+## D8 Create the approved cells in TemperPaw
 
 Decision: Create all 20 cells approved in batch B2 as Draft EncyclopediaCell records in the existing TemperPaw production deployment, tenant default.
 
@@ -96,7 +96,7 @@ Chose deployed Draft records because: The user can start the encyclopedia before
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, `scripts/verify-encyclopedia.mjs`, and the private approval source `/private/tmp/encyclopedia-inventory.2xasm8/batch-B2-proposal.md`. The execution copy is `/private/tmp/encyclopedia-b2.hWoBq9/approved-b2.json`. Execution must preserve the 20 approved names and scopes, use stable record identifiers, and read each record back from production.
 
-## Permit unenriched cells
+## D9 Permit unenriched cells
 
 Decision: Allow an empty source list and an empty description in the cell format while retaining evidence requirements on individual relationships and manifestations.
 
@@ -108,7 +108,7 @@ Chose empty enrichment fields because: They record the actual development of the
 
 Where: `ui/src/lib/encyclopedia-schema.ts`, `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`, and the shared fixtures and tests.
 
-## Authenticate the isolated local verifier
+## D10 Authenticate the isolated local verifier
 
 Decision: Start the isolated local test server with a test-only API key, using the documented authentication middleware.
 
@@ -120,7 +120,7 @@ Chose configured test authentication because: It exercises the real authenticate
 
 Where: `scripts/verify-encyclopedia.mjs`; local verification evidence for ARN-118.
 
-## Separate test installation from cell authorization
+## D11 Separate test installation from cell authorization
 
 Decision: Give a disposable localhost fixture narrowly scoped installation permissions, then replace them with the exact commons app policies before testing cell operations.
 
@@ -132,7 +132,7 @@ Chose temporary fixture grants because: The production policy remains unchanged 
 
 Where: `scripts/verify-encyclopedia.mjs`; private test configuration `/private/tmp/encyclopedia-b2.hWoBq9/test-specs/policies/local_test_install.cedar`.
 
-## Archive unwanted Drafts
+## D12 Archive unwanted Drafts
 
 Decision: Allow Archive from Draft and UnderReview as well as Published, while retaining the generic update and delete forbids.
 
@@ -142,16 +142,28 @@ Options: Permit destructive generic deletion, retain unremovable Drafts, or allo
 
 Chose archival because: It preserves the cell's identity and history and keeps edits governed by declared actions. Archived remains final.
 
-Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, Archive; `scripts/verify-encyclopedia.mjs`, Draft archival check.
+Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, Archive; `scripts/verify-encyclopedia.mjs`, Draft and UnderReview archival checks.
 
-## Remove the unwired public loader
+## D13 Remove the unwired public reader
 
-Decision: Remove the server loader and OData list function that had no consuming page.
+Decision: Remove the server loader, OData list function, graph traversal, and public projection helpers that had no consuming page.
 
-Came up because: Review found latent pagination and owner-access errors in code unused by the approved Draft-cell delivery.
+Came up because: Review found latent pagination and owner-access errors in code unused by the approved Draft-cell delivery. A subsequent review identified the remaining graph and projection helpers as unused outside tests.
 
-Options: Expand this delivery into public map pages or remove the unused loader while retaining the tested document and graph functions.
+Options: Expand this delivery into public map pages, retain test-only reader modules, or remove the unused reader while retaining the shared document contract and validator tests.
 
 Chose removal because: The immediate delivery creates private records in TemperPaw. The broader map objective remains in the plan; its reader must be implemented and tested with those pages.
 
-Where: Removed `ui/src/lib/encyclopedia.ts` and `listEncyclopediaRows` from `ui/src/lib/odata.ts`.
+Where: Removed `ui/src/lib/encyclopedia.ts`, `ui/src/lib/encyclopedia-graph.ts`, `ui/src/lib/encyclopedia-public.ts`, and `listEncyclopediaRows` from `ui/src/lib/odata.ts`. Raw OData records remain private because they contain review evidence. Publication does not grant raw-row access.
+
+## D14 Match the runtime trigger contract
+
+Decision: Place timeout_secs in each trigger's config table and test background and inline validation against the actual runtime.
+
+Came up because: Review found the timeout at the trigger root, which the runtime ignores, and questioned whether inline integration dispatch could complete validation.
+
+Options: Alter callback permissions, rely on the runtime's default timeout, or correct the config and test both dispatch paths without changing permissions.
+
+Chose config correction and live tests because: The independent inline probe completed document and review validation with matching hashes under the unchanged commons policy. Runtime source confirms inline callbacks use internal dispatch. The timeout belongs in config; a regression test now checks that location. Public attempts to supply either callback remain forbidden in both modes.
+
+Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`; `scripts/verify-encyclopedia.mjs`; `ui/scripts/encyclopedia.test.mjs`. Independent probe evidence remains outside the repository.

@@ -50,10 +50,10 @@ kind = "wasm"
 module = "validate_encyclopedia_cell"
 on_success = "DocumentValidated"
 on_failure = "ValidationFailed"
-timeout_secs = "30"
 
 [action.triggers.config]
 phase = "document"
+timeout_secs = "30"
 
 [[action]]
 name = "DocumentValidated"
@@ -83,10 +83,10 @@ kind = "wasm"
 module = "validate_encyclopedia_cell"
 on_success = "ReviewValidated"
 on_failure = "ValidationFailed"
-timeout_secs = "30"
 
 [action.triggers.config]
 phase = "review"
+timeout_secs = "30"
 
 [[action]]
 name = "ReviewValidated"
