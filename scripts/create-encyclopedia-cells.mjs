@@ -136,7 +136,8 @@ async function exists(path) {
 // addresses are refused for the URL and for every redirect hop, so a source
 // cannot steer the runner into something on its own network.
 function privateAddress(address) {
-  if (isIP(address) === 6) return /^(::1|::|f[cd][0-9a-f]{2}:|fe[89ab][0-9a-f]:)/i.test(address) || /^::ffff:(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(address);
+  // Loopback, unspecified, unique-local, link-local, multicast, and IPv4-mapped private ranges.
+  if (isIP(address) === 6) return /^(::1|::|f[cd][0-9a-f]{2}:|fe[89ab][0-9a-f]:|ff[0-9a-f]{2}:)/i.test(address) || /^::ffff:(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)/i.test(address);
   const [a, b] = address.split(".").map(Number);
   // 100.64.0.0/10 is carrier-grade NAT, which Tailscale uses for its hosts.
   return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
