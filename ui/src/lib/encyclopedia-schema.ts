@@ -12,7 +12,12 @@ const sourceIds = z.array(id).min(1);
 
 const encyclopediaMapSchema = z.enum(["art", "writing", "palettes", "design"]);
 
-const sourceSchema = z.strictObject({ id, title: text, url: httpsUrl });
+// A source is shown as unverified until a named human opened it on a date.
+const sourceSchema = z.strictObject({
+  id, title: text, url: httpsUrl,
+  verifiedBy: text.optional(),
+  verifiedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+}).refine((source) => (source.verifiedBy === undefined) === (source.verifiedOn === undefined), "verifiedBy and verifiedOn go together");
 const rightsSchema = z.strictObject({
   basis: z.enum(["public-domain", "cc0", "open-license", "permission", "original"]),
   evidenceUrl: httpsUrl,
@@ -95,8 +100,8 @@ export const cellDocumentSchema = z.strictObject({
   if (cell.provenance.basis === "recollected" && cell.sources.length > 0) {
     context.addIssue({ code: "custom", path: ["provenance"], message: "A cell with a source is cited, not recollected" });
   }
-  if (cell.provenance.basis === "recollected" && !cell.provenance.note) {
-    context.addIssue({ code: "custom", path: ["provenance", "note"], message: "A recollected cell must say that it was written from training data and why no source was found" });
+  if (cell.provenance.basis === "recollected" && !/training data/i.test(cell.provenance.note ?? "")) {
+    context.addIssue({ code: "custom", path: ["provenance", "note"], message: "A recollected cell's note must say in plain words that it was written from training data" });
   }
   unique(cell.maps, ["maps"]);
   unique(cell.sources.map((source) => source.id), ["sources"]);

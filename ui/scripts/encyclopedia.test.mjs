@@ -107,7 +107,16 @@ test("a cell either cites a source or says it was recollected", () => {
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "cited" } }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected" } }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "From training data; no reference found." } }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "banana" } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, provenance: { basis: "recollected", note: "From training data." } }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, provenance: { basis: "cited" } }).success, true);
+});
+
+test("a source is unverified until a named human opened it on a date", () => {
+  const source = fixture.sources[0];
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedBy: "Rita", verifiedOn: "2026-09-08" }] }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedBy: "Rita" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "yesterday", verifiedBy: "Rita" }] }).success, false);
 });
 
 test("a generated study names its generator and a historical one does not", () => {

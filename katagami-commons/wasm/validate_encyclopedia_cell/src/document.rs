@@ -59,6 +59,10 @@ pub(crate) struct Source {
     pub(crate) id: String,
     title: String,
     url: String,
+    #[serde(default, deserialize_with = "present_string", rename = "verifiedBy")]
+    verified_by: Option<String>,
+    #[serde(default, deserialize_with = "present_string", rename = "verifiedOn")]
+    verified_on: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -253,8 +257,12 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
         ("recollected", _) if !cell.sources.is_empty() => {
             return Err("a cell with a source is cited, not recollected".into());
         }
-        ("recollected", None) => {
-            return Err("a recollected cell must say it was written from training data and why no source was found".into());
+        ("recollected", note)
+            if !note
+                .as_deref()
+                .is_some_and(|n| n.to_lowercase().contains("training data")) =>
+        {
+            return Err("a recollected cell's note must say in plain words that it was written from training data".into());
         }
         (_, Some(note)) => text(note)?,
         _ => {}
@@ -272,6 +280,24 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
         identifier(&source.id)?;
         text(&source.title)?;
         https_url(&source.url)?;
+        match (&source.verified_by, &source.verified_on) {
+            (None, None) => {}
+            (Some(by), Some(on)) => {
+                text(by)?;
+                if on.len() != 10
+                    || !on.bytes().enumerate().all(|(i, b)| {
+                        if i == 4 || i == 7 {
+                            b == b'-'
+                        } else {
+                            b.is_ascii_digit()
+                        }
+                    })
+                {
+                    return Err("verifiedOn must be a YYYY-MM-DD date".into());
+                }
+            }
+            _ => return Err("verifiedBy and verifiedOn go together".into()),
+        }
     }
     unique(
         cell.broader.iter().map(|link| link.cell_id.as_str()),

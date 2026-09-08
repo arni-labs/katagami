@@ -115,6 +115,17 @@ mod tests {
     }
 
     #[test]
+    fn a_source_is_unverified_until_a_named_human_opened_it_on_a_date() {
+        let mut input: Value = serde_json::from_str(FIXTURE).expect("fixture");
+        input["sources"][0]["verifiedBy"] = serde_json::json!("Rita");
+        assert!(validate_document(&input.to_string()).is_err());
+        input["sources"][0]["verifiedOn"] = serde_json::json!("yesterday");
+        assert!(validate_document(&input.to_string()).is_err());
+        input["sources"][0]["verifiedOn"] = serde_json::json!("2026-09-08");
+        assert!(validate_document(&input.to_string()).is_ok());
+    }
+
+    #[test]
     fn rejects_duplicate_manifestations() {
         let mut input: Value = serde_json::from_str(FIXTURE).expect("fixture");
         let duplicate = input["manifestations"][0].clone();

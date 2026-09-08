@@ -125,9 +125,10 @@ until then. Do not resurrect it to unblock a page.
 | `AbandonValidation` | ValidatingDocument | Recovery for an interrupted run |
 | `Archive` | Draft, ValidatingDocument | Final. Nothing follows |
 
-Validation checks *format*, not truth: the document parses and its internal
-references resolve. It never says a rights claim or a historical claim is
-correct.
+Validation checks *format*, not truth: the document parses and its `sourceIds`
+resolve within the document. It does not look up other cells or records — the
+apply script does that before writing — and it never says a rights claim or a
+historical claim is correct.
 
 ## The attestation rule
 
@@ -258,9 +259,11 @@ by that record, fetches every source and requires it to stay on its host and
 mention its subject, recovers a cell left mid-validation, refuses an identifier
 already holding a different cell, and reads every record back.
 
-A page a script cannot reach — some museum sites refuse automated requests — may
-be cited when a human has opened it: give the source `verifiedBy` and
-`verifiedOn`, and the run records it as human-verified rather than fetched.
+A source is shown as unverified until a named human opened it: `verifiedBy`
+and `verifiedOn` live on the source itself, set by the owner's verify button
+or by the payload. The script fetches unverified sources as its own gate
+against dead links and skips the fetch for verified ones, which is how a page
+that refuses automated requests gets cited.
 
 To enrich, `Define` the full document — it replaces, never merges — then
 `SubmitForValidation`, then read back and check the attestation pair. Revision
@@ -270,8 +273,10 @@ keeps the cell's id and history. Verify on a local fixture first: see
 
 ## Maintaining
 
-- **Integrity sweep**: every cell's attestation pair; every `cellId` and
-  manifestation pointer resolves; sources still answer. Dangling links are the
+- **Integrity sweep**: every cell's attestation pair *and* that its document
+  parses under the current contract (an attested cell written under an older
+  version is not current); every `cellId` and manifestation pointer resolves;
+  sources still answer. Dangling links are the
   failure this collection accumulates.
 - **Gap watch**: maps with no cells, cells with no manifestations, recollected
   cells that could now be cited, clusters of made work with no cell over them.
@@ -285,8 +290,9 @@ keeps the cell's id and history. Verify on a local fixture first: see
 - **Archive, never delete.** Archived keeps identity and history and is final;
   the id cannot be reused.
 - **A revision needs the same numbered approval as an addition.**
-- `error` records the last validation run, not the current document; no action
-  clears it, so read it with the attestation pair.
+- `error` records the last validation run, not the current document: a
+  successful run sets it empty, a failed one fills it, and `Define` leaves it
+  alone. Read it with the attestation pair.
 
 ## Two runtime defects you must not trip over
 

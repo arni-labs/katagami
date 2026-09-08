@@ -47,6 +47,10 @@ assert.equal(payload.cells.length, expected, `the payload holds ${payload.cells.
 assert.match(payload.allowedOperation ?? "", /^(Create|Define) private Draft EncyclopediaCell/,
   `this script only writes private Draft cells; the payload authorizes: ${payload.allowedOperation}`);
 assert.doesNotMatch(payload.allowedOperation, /\bpublish/i);
+// The verb selects the operation. A Create batch may not rewrite a cell that
+// already holds something; a Define batch says which of its cells are new, and
+// may neither create an undeclared one nor "create" one that exists.
+const creating = payload.allowedOperation.startsWith("Create");
 const numbers = payload.cells.map((cell) => cell.number);
 assert.equal(new Set(numbers).size, numbers.length, "two approved cells share a number");
 console.log(`Batch ${payload.batch}: ${payload.cells.length} approved cells`);
@@ -92,7 +96,11 @@ const planned = payload.cells.map((cell) => {
   const parsed = cellDocumentSchema.safeParse(document);
   assert.ok(parsed.success, `cell ${cell.number} (${cell.name}) is not a valid document: ${JSON.stringify(parsed.error?.issues)}`);
   const serialized = JSON.stringify(document);
-  return { id: identifierFor(cell.name), number: cell.number, name: cell.name, document: serialized, parsed: document, hash: createHash("sha256").update(serialized).digest("hex") };
+  // Above the runtime's inline threshold a document is returned as a blob
+  // reference and cannot be read back byte-for-byte, so it is refused here
+  // rather than failing after it was written.
+  assert.ok(Buffer.byteLength(serialized, "utf8") < 128 * 1024, `cell ${cell.number} (${cell.name}) is over 128 KiB; split its studies out or link them`);
+  return { id: identifierFor(cell.name), number: cell.number, name: cell.name, new: Boolean(cell.new), document: serialized, parsed: document, hash: createHash("sha256").update(serialized).digest("hex") };
 });
 assert.equal(new Set(planned.map((cell) => cell.id)).size, planned.length, "two approved names produce one identifier");
 console.log(`Prepared ${planned.length} documents, all valid against the shared contract`);
@@ -225,7 +233,11 @@ for (const cell of ordered) {
       }
     }
     if (settled(existing, cell)) { console.log(`${label}: already stored and attested`); continue; }
-    if (!apply) { console.log(`${label}: would ${existing ? "update" : "create"}`); continue; }
+    const holdsSomething = Boolean(existing && existing.fields.document !== "");
+    if (creating) assert.ok(!holdsSomething, `a Create batch may not rewrite '${cell.id}', which already holds a document`);
+    else if (cell.new) assert.ok(!holdsSomething, `'${cell.id}' is marked new but already holds a document`);
+    else assert.ok(holdsSomething, `'${cell.id}' does not exist and the payload does not mark it new`);
+    if (!apply) { console.log(`${label}: would ${holdsSomething ? "update" : "create"}`); continue; }
 
     assert.ok([200, 201].includes((await request("/tdata/EncyclopediaCells", "POST", { id: cell.id })).status), "create refused");
     // Define is valid only from Draft, so recover a cell left mid-validation by
