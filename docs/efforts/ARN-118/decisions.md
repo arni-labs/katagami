@@ -371,3 +371,15 @@ Options: Keep extending the fixed text, forbid free text entirely, or fix the fu
 Chose the full sentence with the boundary stated because: The purpose of the rule is that every reader sees the same plain statement on every recollected cell, in front, where it cannot be hidden. That is achieved. What follows — which sources were tried, what remains uncertain — is content, and content is what the human's numbered approval reads. Forbidding the free text would remove the one place an agent records why no source was found.
 
 Where: `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; tests on both sides, including one that asserts free text after the sentence is accepted by design.
+
+## D32 The apply script is a loader
+
+Decision: The apply script writes an approved batch and reads it back. It guarantees that every linked record exists, every unverified source answers on its own host, and parents are written before children. It does not judge whether a record expresses a cell or whether a page is a good reference, and it does not undo a partial batch.
+
+Came up because: Three review rounds and a synthesis kept asking the script to be smarter — to judge relevance, to roll back, to become a Temper entity. The arbiter assessment named this a rabbit hole. Rita, asked to choose between a loader and a judge, chose the loader and called the alternative "way too much."
+
+Options: A loader that checks what is mechanically checkable, or a script that also tries to decide what is true.
+
+Chose the loader because: Truth about a cell is decided when a human approves it by number; a script that pretends otherwise invites trust it cannot earn and grows a new surface with every round. An agent could call the API directly instead, but then every agent re-implements the boring step — did it land, is it attested, do not overwrite the wrong cell — and the script is the one tested way to do it.
+
+Where: `scripts/create-encyclopedia-cells.mjs`; D29, D30, D31; arbiter assessment kept outside the repository.
