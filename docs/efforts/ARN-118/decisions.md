@@ -296,7 +296,7 @@ Came up because: The second review round found the script fragile in ways that o
 
 Options: Document the constraints as operator procedure, or make the script enforce them.
 
-Chose enforcement because: This script writes production records from a file, and a rerun after a partial failure is the expected case, not the exception. `--expect <n>` makes the count an explicit confirmation rather than whatever the file happens to contain, and the `allowedOperation` check refuses a payload authorizing anything but creation.
+Chose enforcement because: This script writes production records from a file, and a rerun after a partial failure is the expected case, not the exception. `--expect <n>` makes the count an explicit confirmation rather than whatever the file happens to contain, and the `allowedOperation` check refuses a payload authorizing anything but writing private Drafts (creation at first; since D27, full approved documents).
 
 Where: `scripts/create-encyclopedia-cells.mjs`.
 
@@ -311,3 +311,75 @@ Options: Leave it as a log line, or make it a tripwire.
 Chose the tripwire because: The assertions that matter live inside the reproduction, so a run that does not reproduce proves nothing. Failing loudly is the signal to tighten the test against a corrected runtime, the same shape as the assertion that the injected document is still merged.
 
 Where: `scripts/verify-encyclopedia.mjs`, the stale-callback section.
+
+## D27 A cell must say where it came from
+
+Decision: Bump the cell document contract to version 2 with a provenance rule, enforced identically in the TypeScript schema and the WASM validator: `provenance.basis` is `cited` (at least one source, and no note required) or `recollected` (a note saying the model wrote it from training data and no reference was located, and no sources); a `generated` study names `generatedBy`, and no other study does. JSON `null` is rejected for both optional fields on both sides.
+
+Came up because: Rita asked, on 2026-09-08, for every cell to cite something a reader can learn from, and where nothing exists, to say plainly that the model recollected it; and for every example, text or image, to say whether it is real with a link or AI-generated. Version 1 allowed a cell with no source and no statement at all.
+
+Options: Leave provenance as convention in the skill, add an optional field, or make it mandatory and version the contract.
+
+Chose a mandatory field and a version bump because: A reader's trust depends on this, and a convention is exactly what a busy agent drops. Versioning is honest about the break: the 20 production cells are version 1 and stop re-validating once the new module is installed, so the module and the migration batch (B3) deploy in one sequence, with B3 re-defining every cell. The apply script no longer invents a provenance when a payload omits one; stating it is content the human approves.
+
+Where: `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; fixtures; `scripts/create-encyclopedia-cells.mjs`; `.agents/skills/encyclopedia/SKILL.md`, Provenance.
+
+## D28 Preflight proves the claim, not only the pointer
+
+Decision: Before writing, the apply script checks that each manifestation's quoted credit is actually declared in that record's `credits`, that each source stays on its host and mentions its subject, and that a child cell is written only after its broader cell; a human may vouch for a page a script cannot reach, and the run records that.
+
+Came up because: Review showed the first preflight proved only that a row existed and a URL returned 200 — a soft-404, an off-site redirect, or any existing record attached to any cell would have passed, and a batch failure could leave a child attested pointing at a parent that was never written.
+
+Options: Accept existence checks as sufficient, attempt to judge citation quality, or check the specific claim each link makes.
+
+Chose checking the specific claim because: The explanation says which credit the record declares; that is mechanically verifiable and is the whole basis for the link. Judging whether a page is a *good* reference is not mechanical and would become a rabbit hole; whether it stays on its host and mentions its subject is. Museum sites that refuse scripts are cited only when a named human opened them on a named date.
+
+Where: `scripts/create-encyclopedia-cells.mjs`, `sourceAnswers`, `declaredCredit`, write ordering.
+
+## D29 The preflight proves existence and order; relevance is the approval
+
+Decision: Remove the two relevance heuristics added after round one — "the page mentions its subject" and "the record's quoted credit matches" — and keep the preflight to what it can prove: every linked record exists, every unverified source answers on its own host, broader cells are written and attested before their children, and a source a named human opened is recorded as such on the record.
+
+Came up because: Round two showed both heuristics could be satisfied by a wrong page or a wrong record, and could be tightened only by inventing a judgement the script has no basis for. Rita had asked that the review not become a rabbit hole. Whether a record truly expresses a cell, or a page is a good reference, is exactly what the human's numbered approval decides; a script that pretends to check it invites trust it cannot earn.
+
+Options: Add a third, stricter heuristic; keep the weak ones as "better than nothing"; or delete them and state the boundary.
+
+Chose deletion because: A check that can be passed by the wrong thing is worse than no check, since it reports coverage it does not have. The boundary is now written where an agent reads it: the preflight guards against dead links and wrong order, and the approval guards against wrong content. Alongside: a Create batch can resume an interrupted run (a cell holding exactly this document is a resume, not a conflict), a child is written only after its parent has attested rather than after the parent's request returned, the two validators share one explicit definition of blank (JavaScript's and Rust's trim() disagree on U+0085 and U+FEFF), and `verifiedOn` must be a real calendar date.
+
+Where: `scripts/create-encyclopedia-cells.mjs`; `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; `.agents/skills/encyclopedia/SKILL.md`.
+
+## D30 What the apply script does about a partner that failed
+
+Decision: When a cell in a batch fails to write, cells that relate to it are still written, the readback names the failed partner as a problem on each of them, the run exits non-zero, and the rerun repairs the gap. The batch is not made a Temper entity.
+
+Came up because: Review kept returning to two objections. First, that an attested cell can be left relating to a partner that failed later in the same run. Second, from Greptile, that the script orchestrates a batch imperatively where the repository prefers entities with state machines.
+
+Options: Roll back or rewrite the surviving cell, order relations, make the batch an entity, or report and rerun.
+
+Chose report and rerun because: Relations are symmetric, so no write order removes the window. Rolling back means archiving, which is final and would destroy an approved cell over a transient failure; rewriting means altering approved content. What is left is to say exactly what happened, which the readback does, and to make the rerun idempotent, which it is. A batch entity would be a state machine for a curator's one-off script over a few dozen cells — machinery that looks architectural and does the same thing more slowly. Redirects, meanwhile, are now followed hop by hop, and every hop must be public HTTPS on the original host with no private, loopback or link-local address.
+
+Where: `scripts/create-encyclopedia-cells.mjs`, the write loop, readback, `publicHost`; `.agents/skills/encyclopedia/SKILL.md`, which now sends enrichment through the script rather than direct actions.
+
+## D31 The recollection note is a fixed sentence, and free text after it is the human's to read
+
+Decision: A recollected cell's note must begin with the complete sentence "Written from model training data; no external reference was located". Anything after it is free text that no validator judges.
+
+Came up because: Review escalated from "the note can say anything" to "the fixed prefix can be followed by a contradiction". The first was a defect and is fixed. The second cannot be fixed by a validator: no check on a string can stop free text from contradicting itself, and a longer fixed sentence only moves the contradiction further right.
+
+Options: Keep extending the fixed text, forbid free text entirely, or fix the full sentence and state the boundary.
+
+Chose the full sentence with the boundary stated because: The purpose of the rule is that every reader sees the same plain statement on every recollected cell, in front, where it cannot be hidden. That is achieved. What follows — which sources were tried, what remains uncertain — is content, and content is what the human's numbered approval reads. Forbidding the free text would remove the one place an agent records why no source was found.
+
+Where: `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; tests on both sides, including one that asserts free text after the sentence is accepted by design.
+
+## D32 The apply script is a loader
+
+Decision: The apply script writes an approved batch and reads it back. It guarantees that every linked record exists, every unverified source answers on its own host, and parents are written before children. It does not judge whether a record expresses a cell or whether a page is a good reference, and it does not undo a partial batch.
+
+Came up because: Three review rounds and a synthesis kept asking the script to be smarter — to judge relevance, to roll back, to become a Temper entity. The arbiter assessment named this a rabbit hole. Rita, asked to choose between a loader and a judge, chose the loader and called the alternative "way too much."
+
+Options: A loader that checks what is mechanically checkable, or a script that also tries to decide what is true.
+
+Chose the loader because: Truth about a cell is decided when a human approves it by number; a script that pretends otherwise invites trust it cannot earn and grows a new surface with every round. An agent could call the API directly instead, but then every agent re-implements the boring step — did it land, is it attested, do not overwrite the wrong cell — and the script is the one tested way to do it.
+
+Where: `scripts/create-encyclopedia-cells.mjs`; D29, D30, D31; arbiter assessment kept outside the repository.

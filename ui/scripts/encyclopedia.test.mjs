@@ -93,10 +93,55 @@ test("broad cells need not have examples or be leaves", () => {
 test("an approved name and scope can exist before research and examples", () => {
   const cell = cellDocumentSchema.parse({
     ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [],
+    provenance: { basis: "recollected", note: "Written from model training data; no external reference was located yet." },
   });
   assert.equal(cell.sources.length, 0);
   assert.equal(cell.studies.length, 0);
   assert.equal(cell.manifestations.length, 0);
+});
+
+// A reader must always be able to tell where a cell's account came from: a
+// source to follow, or an explicit statement that the model recollected it.
+test("a cell either cites a source or says it was recollected", () => {
+  const bare = { ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [] };
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "cited" } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected" } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data; no external reference was located." } }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "banana" } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "This was not written from model training data." } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training datasets" } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data." } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data; no external reference was located_yet" } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data; no external reference was locatedé" } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data; no external reference was located" } }).success, true);
+  // Free text after the fixed sentence is not judged by a validator; the human who approves the cell reads it.
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data; no external reference was located; searched Tate and the Met." } }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, provenance: { basis: "recollected", note: "Written from model training data; no external reference was located." } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, provenance: { basis: "cited" } }).success, true);
+});
+
+test("a source is unverified until a named human opened it on a date", () => {
+  const source = fixture.sources[0];
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedBy: "Rita", verifiedOn: "2026-09-08" }] }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedBy: "Rita" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "yesterday", verifiedBy: "Rita" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "0000-00-00", verifiedBy: "Rita" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "2026-02-30", verifiedBy: "Rita" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "0099-12-31", verifiedBy: "Rita" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "1000-01-01", verifiedBy: "Rita" }] }).success, true);
+});
+
+test("blank means the same thing to both validators", () => {
+  for (const blank of ["", " ", "\u0085", "\ufeff", "\u3000\n"]) {
+    assert.equal(cellDocumentSchema.safeParse({ ...fixture, name: blank }).success, false, JSON.stringify(blank));
+  }
+});
+
+test("a generated study names its generator and a historical one does not", () => {
+  const study = fixture.studies[0];
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, studies: [{ ...study, kind: "generated" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, studies: [{ ...study, kind: "generated", generatedBy: "gpt-image-1 via Codex" }] }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, studies: [{ ...study, kind: "historical", generatedBy: "x" }] }).success, false);
 });
 
 test("a name-only cell can have an empty description", () => {

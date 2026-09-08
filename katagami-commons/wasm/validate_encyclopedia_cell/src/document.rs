@@ -1,7 +1,13 @@
 use std::collections::BTreeSet;
 
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use url::Url;
+
+/// An optional field that must be absent or a string. `Option<String>` alone
+/// would read JSON `null` as absent, which the TypeScript contract rejects.
+fn present_string<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<String>, D::Error> {
+    String::deserialize(deserializer).map(Some)
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -9,6 +15,7 @@ pub(crate) struct CellDocument {
     version: u32,
     name: String,
     description: String,
+    provenance: Provenance,
     maps: Vec<String>,
     broader: Vec<Broader>,
     relations: Vec<Relation>,
@@ -16,6 +23,17 @@ pub(crate) struct CellDocument {
     pub(crate) sources: Vec<Source>,
     manifestations: Vec<Manifestation>,
     studies: Vec<Study>,
+}
+
+/// Where the cell's own account comes from. `cited` needs a source a reader
+/// can follow; `recollected` means the model wrote it from training data and
+/// nothing external was located, which the note must say.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Provenance {
+    basis: String,
+    #[serde(default, deserialize_with = "present_string")]
+    note: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -41,6 +59,10 @@ pub(crate) struct Source {
     pub(crate) id: String,
     title: String,
     url: String,
+    #[serde(default, deserialize_with = "present_string", rename = "verifiedBy")]
+    verified_by: Option<String>,
+    #[serde(default, deserialize_with = "present_string", rename = "verifiedOn")]
+    verified_on: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -61,12 +83,14 @@ enum EntitySet {
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Study {
     id: String,
     title: String,
     kind: String,
     description: String,
+    #[serde(default, deserialize_with = "present_string")]
+    generated_by: Option<String>,
     representations: Vec<Representation>,
 }
 
@@ -214,12 +238,48 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
         return Err("cell document exceeds 2 MB; link large representations instead".into());
     }
     let cell: CellDocument = serde_json::from_str(raw).map_err(|error| error.to_string())?;
-    if cell.version != 1 {
+    if cell.version != 2 {
         return Err("unsupported cell document version".into());
     }
     text(&cell.name)?;
     if !cell.description.is_empty() {
         text(&cell.description)?;
+    }
+    one_of(
+        &cell.provenance.basis,
+        &["cited", "recollected"],
+        "provenance basis",
+    )?;
+    match (cell.provenance.basis.as_str(), &cell.provenance.note) {
+        ("cited", _) if cell.sources.is_empty() => {
+            return Err("a cited cell must carry at least one source".into());
+        }
+        ("recollected", _) if !cell.sources.is_empty() => {
+            return Err("a cell with a source is cited, not recollected".into());
+        }
+        // The note opens with the fixed sentence, so a reader sees the same
+        // words on every recollected cell and nothing can precede them to
+        // negate it. What follows — why no source was found — is free text.
+        ("recollected", note)
+            if !note.as_deref().is_some_and(|n| {
+                n.strip_prefix(
+                    "Written from model training data; no external reference was located",
+                )
+                // The same explicit set as the TypeScript schema: \b and Unicode
+                // alphanumerics disagree on "_" and accented letters.
+                .is_some_and(|rest| {
+                    rest.chars()
+                        .next()
+                        .is_none_or(|c| " \t\n.,;:!?)-".contains(c))
+                })
+            }) =>
+        {
+            return Err(
+                "a recollected cell's note must begin \"Written from model training data; no external reference was located\"".into(),
+            );
+        }
+        (_, Some(note)) => text(note)?,
+        _ => {}
     }
     nonempty(&cell.maps, "maps")?;
     unique(cell.maps.iter().map(String::as_str), "maps")?;
@@ -234,6 +294,16 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
         identifier(&source.id)?;
         text(&source.title)?;
         https_url(&source.url)?;
+        match (&source.verified_by, &source.verified_on) {
+            (None, None) => {}
+            (Some(by), Some(on)) => {
+                text(by)?;
+                if !calendar_date(on) {
+                    return Err("verifiedOn must be a real YYYY-MM-DD calendar date".into());
+                }
+            }
+            _ => return Err("verifiedBy and verifiedOn go together".into()),
+        }
     }
     unique(
         cell.broader.iter().map(|link| link.cell_id.as_str()),
@@ -296,6 +366,16 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
             &["historical", "original", "generated"],
             "example provenance",
         )?;
+        match (example.kind.as_str(), &example.generated_by) {
+            ("generated", None) => {
+                return Err(
+                    "a generated study must name the model or tool that produced it".into(),
+                );
+            }
+            ("generated", Some(generator)) => text(generator)?,
+            (_, Some(_)) => return Err("only a generated study names a generator".into()),
+            _ => {}
+        }
         nonempty(&example.representations, "representations")?;
         unique(
             example
@@ -311,8 +391,54 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
     Ok(cell)
 }
 
+/// One explicit definition of blank, shared with the TypeScript schema:
+/// JavaScript's trim() and Rust's trim() disagree on U+0085 and U+FEFF.
+fn is_blank_char(c: char) -> bool {
+    matches!(
+        c,
+        '\t' | '\n'
+            | '\u{0B}'
+            | '\u{0C}'
+            | '\r'
+            | ' '
+            | '\u{85}'
+            | '\u{A0}'
+            | '\u{1680}'
+            | '\u{2000}'
+            ..='\u{200A}'
+                | '\u{2028}'
+                | '\u{2029}'
+                | '\u{202F}'
+                | '\u{205F}'
+                | '\u{3000}'
+                | '\u{FEFF}'
+    )
+}
+
+fn calendar_date(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    if bytes.len() != 10 || bytes[4] != b'-' || bytes[7] != b'-' {
+        return false;
+    }
+    let num = |s: &str| s.parse::<u32>().ok();
+    let (Some(y), Some(m), Some(d)) = (num(&value[0..4]), num(&value[5..7]), num(&value[8..10]))
+    else {
+        return false;
+    };
+    let leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
+    let days = match m {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if leap => 29,
+        2 => 28,
+        _ => return false,
+    };
+    // Years below 1000 are refused on both sides, matching the TypeScript schema.
+    y >= 1000 && (1..=days).contains(&d)
+}
+
 pub(crate) fn text(value: &str) -> Result<(), String> {
-    if value.trim().is_empty() || value.chars().count() > 100_000 {
+    if value.chars().all(is_blank_char) || value.chars().count() > 100_000 {
         return Err("text must be nonblank and at most 100,000 characters".into());
     }
     Ok(())
