@@ -179,16 +179,26 @@ One JSON document per cell, validated against
   "description": "Light and colour relationships, broken brushwork, and fleeting observation.",
   "provenance": {"basis": "cited"},
   "maps": ["art"],
-  "broader": [{"cellId": "...", "explanation": "...", "sourceIds": ["..."]}],
-  "relations": [{"cellId": "...", "label": "influenced", "explanation": "...", "sourceIds": ["..."]}],
-  "questions": ["..."],
-  "sources": [{"id": "...", "title": "...", "url": "https://..."}],
-  "manifestations": [{"entitySet": "ArtStyles", "entityId": "...", "explanation": "...", "sourceIds": ["..."]}],
-  "studies": [
-    {"id": "...", "title": "...", "kind": "historical", "description": "...", "representations": [...]},
-    {"id": "...", "title": "...", "kind": "generated", "generatedBy": "gpt-image-1 via Codex", "description": "...", "representations": [...]}
-  ]
+  "broader": [{"cellId": "early-modernist-european-painting", "explanation": "Opened the reorganisation of picture space.", "sourceIds": ["tate-modernism"]}],
+  "relations": [{"cellId": "pictorialist-photography", "label": "influenced", "explanation": "Pictorialists borrowed its soft atmosphere.", "sourceIds": ["wp-pictorialism"]}],
+  "questions": ["Where does literary impressionism sit relative to this cell?"],
+  "sources": [
+    {"id": "tate-modernism", "title": "Modernism — Tate art term", "url": "https://www.tate.org.uk/art/art-terms/m/modernism", "verifiedBy": "Rita", "verifiedOn": "2026-09-08"},
+    {"id": "wp-pictorialism", "title": "Pictorialism — Wikipedia", "url": "https://en.wikipedia.org/wiki/Pictorialism"}
+  ],
+  "manifestations": [{"entitySet": "DesignLanguages", "entityId": "en-01a068c9-845d-7e63-a1ff-a08069e046e2", "explanation": "Ombrelle declares French Impressionism as its lineage.", "sourceIds": ["tate-modernism"]}],
+  "studies": []
 }
+```
+
+The first source is human-verified; the second is unverified until someone
+opens it. A study looks like this — `kind` is `historical`, `original`, or
+`generated`, and only a generated one carries `generatedBy`:
+
+```json
+{"id": "haystacks-1891", "title": "Haystacks, end of summer", "kind": "historical", "description": "Monet's series painting.",
+ "representations": [{"id": "plate", "kind": "image", "sourceId": "musee-dorsay", "url": "https://...", "alt": "...",
+   "rights": {"basis": "public-domain", "evidenceUrl": "https://...", "jurisdiction": "...", "uses": ["display"], "attribution": "...", "restrictions": []}}]}
 ```
 
 `kind` is one of `historical`, `original`, `generated`. Only a generated study
@@ -253,10 +263,10 @@ node scripts/create-encyclopedia-cells.mjs <approved.json> --expect <n> --apply
 `--expect` is your own count of the approval, checked against the payload. The
 payload states each cell's provenance; the script never invents one. It refuses
 a payload authorizing anything but writing private Drafts, writes broader cells
-before their children and skips a child whose parent failed, resolves every
-linked cell, checks that each manifestation's quoted credit is really declared
-by that record, fetches every source and requires it to stay on its host and
-mention its subject, recovers a cell left mid-validation, refuses an identifier
+before their children, waits for each cell to attest before moving on, and
+skips a child whose parent failed; resolves every linked cell and manifestation
+record; fetches every unverified source and requires it to answer on its own
+host; recovers a cell left mid-validation, refuses an identifier
 already holding a different cell, and reads every record back.
 
 A source is shown as unverified until a named human opened it: `verifiedBy`

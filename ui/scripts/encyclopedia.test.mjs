@@ -117,6 +117,14 @@ test("a source is unverified until a named human opened it on a date", () => {
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedBy: "Rita", verifiedOn: "2026-09-08" }] }).success, true);
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedBy: "Rita" }] }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "yesterday", verifiedBy: "Rita" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "0000-00-00", verifiedBy: "Rita" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "2026-02-30", verifiedBy: "Rita" }] }).success, false);
+});
+
+test("blank means the same thing to both validators", () => {
+  for (const blank of ["", " ", "\u0085", "\ufeff", "\u3000\n"]) {
+    assert.equal(cellDocumentSchema.safeParse({ ...fixture, name: blank }).success, false, JSON.stringify(blank));
+  }
 });
 
 test("a generated study names its generator and a historical one does not", () => {

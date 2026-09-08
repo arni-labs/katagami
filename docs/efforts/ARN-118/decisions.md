@@ -335,3 +335,15 @@ Options: Accept existence checks as sufficient, attempt to judge citation qualit
 Chose checking the specific claim because: The explanation says which credit the record declares; that is mechanically verifiable and is the whole basis for the link. Judging whether a page is a *good* reference is not mechanical and would become a rabbit hole; whether it stays on its host and mentions its subject is. Museum sites that refuse scripts are cited only when a named human opened them on a named date.
 
 Where: `scripts/create-encyclopedia-cells.mjs`, `sourceAnswers`, `declaredCredit`, write ordering.
+
+## D29 The preflight proves existence and order; relevance is the approval
+
+Decision: Remove the two relevance heuristics added after round one — "the page mentions its subject" and "the record's quoted credit matches" — and keep the preflight to what it can prove: every linked record exists, every unverified source answers on its own host, broader cells are written and attested before their children, and a source a named human opened is recorded as such on the record.
+
+Came up because: Round two showed both heuristics could be satisfied by a wrong page or a wrong record, and could be tightened only by inventing a judgement the script has no basis for. Rita had asked that the review not become a rabbit hole. Whether a record truly expresses a cell, or a page is a good reference, is exactly what the human's numbered approval decides; a script that pretends to check it invites trust it cannot earn.
+
+Options: Add a third, stricter heuristic; keep the weak ones as "better than nothing"; or delete them and state the boundary.
+
+Chose deletion because: A check that can be passed by the wrong thing is worse than no check, since it reports coverage it does not have. The boundary is now written where an agent reads it: the preflight guards against dead links and wrong order, and the approval guards against wrong content. Alongside: a Create batch can resume an interrupted run (a cell holding exactly this document is a resume, not a conflict), a child is written only after its parent has attested rather than after the parent's request returned, the two validators share one explicit definition of blank (JavaScript's and Rust's trim() disagree on U+0085 and U+FEFF), and `verifiedOn` must be a real calendar date.
+
+Where: `scripts/create-encyclopedia-cells.mjs`; `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; `.agents/skills/encyclopedia/SKILL.md`.

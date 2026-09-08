@@ -105,76 +105,54 @@ const planned = payload.cells.map((cell) => {
 assert.equal(new Set(planned.map((cell) => cell.id)).size, planned.length, "two approved names produce one identifier");
 console.log(`Prepared ${planned.length} documents, all valid against the shared contract`);
 
-// Every link must land on something that exists, and every citation must
-// answer and be about its subject. A cell in this batch may reference another
-// cell in this batch; those are checked by write order below, not here.
+// Every link must land on something that exists, and every citation must be
+// reachable. Whether a record truly expresses a cell, or a page is a good
+// reference, is what the human's numbered approval decides; this preflight
+// does not pretend to judge it. A cell in this batch may reference another
+// cell in this batch; those are enforced by write order below.
 const batchIds = new Set(planned.map((cell) => cell.id));
 const checked = new Map();
-async function fetchRecord(path) {
+async function exists(path) {
   if (!checked.has(path)) {
-    try { const row = await request(path); checked.set(path, row.status === 200 ? row.data : null); }
-    catch { checked.set(path, null); }
+    try { checked.set(path, (await request(path)).status === 200); } catch { checked.set(path, false); }
   }
   return checked.get(path);
 }
-// A source answers when the page is reachable without leaving its host and
-// mentions its own subject. A human may vouch for a page a script cannot
-// reach; that is recorded in the run rather than silently accepted.
-function subjectWords(title) {
-  return title.split(/\s[—–-]\s/)[0].toLowerCase().match(/[a-z\u00c0-\u024f]{4,}/g) ?? [];
-}
-async function sourceAnswers(source) {
-  if (source.verifiedBy) {
-    assert.match(source.verifiedOn ?? "", /^\d{4}-\d{2}-\d{2}$/, `source '${source.id}' names a verifier but no date`);
-    return `verified by ${source.verifiedBy} on ${source.verifiedOn}, not fetched`;
-  }
+// A source is reachable when it answers on its own host. A source a named
+// human has opened carries verifiedBy and verifiedOn on the record and is not
+// fetched; the run says so.
+async function reachable(source) {
+  if (source.verifiedBy) return `verified by ${source.verifiedBy} on ${source.verifiedOn}, not fetched`;
   if (checked.has(source.url)) return checked.get(source.url);
   let verdict = "fetched";
   try {
     const response = await fetch(source.url, { method: "GET", redirect: "follow", signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "Mozilla/5.0 (compatible; katagami-encyclopedia-verifier)" } });
     if (!response.ok) verdict = `HTTP ${response.status}`;
     else if (new URL(response.url).host !== new URL(source.url).host) verdict = `redirected off-site to ${new URL(response.url).host}`;
-    else {
-      const body = (await response.text()).slice(0, 600_000).toLowerCase();
-      const words = subjectWords(source.title);
-      if (words.length > 0 && !words.some((word) => body.includes(word))) verdict = `page does not mention ${words.join("/")}`;
-    }
   } catch (error) { verdict = `unreachable (${error.name})`; }
   checked.set(source.url, verdict);
   return verdict;
-}
-// The explanation quotes the record's own declared lineage; that quote must
-// actually appear in the record's credits, or the link is asserted, not cited.
-function declaredCredit(record, explanation) {
-  const quoted = explanation.match(/"([^"]+)"/)?.[1];
-  if (!quoted) return "the explanation quotes no credit";
-  let credits = record.fields?.credits ?? [];
-  if (typeof credits === "string") { try { credits = JSON.parse(credits); } catch { credits = []; } }
-  return credits.some((credit) => credit?.name === quoted) ? "declared" : `credits do not declare "${quoted}"`;
 }
 const unresolved = [];
 const vouched = [];
 for (const cell of planned) {
   for (const link of [...cell.parsed.broader, ...cell.parsed.relations]) {
-    if (!batchIds.has(link.cellId) && !(await fetchRecord(`/tdata/EncyclopediaCells('${link.cellId}')`))) {
+    if (!batchIds.has(link.cellId) && !(await exists(`/tdata/EncyclopediaCells('${link.cellId}')`))) {
       unresolved.push(`${cell.id}: linked cell '${link.cellId}' does not exist`);
     }
   }
   for (const entry of cell.parsed.manifestations) {
-    const record = await fetchRecord(`/tdata/${entry.entitySet}('${entry.entityId}')`);
-    if (!record) { unresolved.push(`${cell.id}: ${entry.entitySet} '${entry.entityId}' does not exist`); continue; }
-    const declared = declaredCredit(record, entry.explanation);
-    if (declared !== "declared") unresolved.push(`${cell.id}: ${entry.entitySet} '${entry.entityId}' — ${declared}`);
+    if (!(await exists(`/tdata/${entry.entitySet}('${entry.entityId}')`))) unresolved.push(`${cell.id}: ${entry.entitySet} '${entry.entityId}' does not exist`);
   }
   for (const source of cell.parsed.sources) {
-    const verdict = await sourceAnswers(source);
+    const verdict = await reachable(source);
     if (verdict.startsWith("verified by")) vouched.push(`${cell.id}: '${source.id}' ${verdict}`);
     else if (verdict !== "fetched") unresolved.push(`${cell.id}: source '${source.id}' — ${verdict} (${source.url})`);
   }
 }
 assert.equal(unresolved.length, 0, `${unresolved.length} reference(s) do not resolve:\n${unresolved.join("\n")}`);
 for (const line of vouched) console.log(`  ${line}`);
-console.log(`Resolved every linked cell, every manifestation record and its declared credit, and every source (${checked.size} checks, ${vouched.length} human-verified)`);
+console.log(`Resolved every linked cell and manifestation record; every source is reachable or human-verified (${checked.size} checks, ${vouched.length} human-verified)`);
 if (!apply) console.log("Reporting only. Pass --apply to write the records.");
 
 const read = async (cell) => {
@@ -233,11 +211,13 @@ for (const cell of ordered) {
       }
     }
     if (settled(existing, cell)) { console.log(`${label}: already stored and attested`); continue; }
-    const holdsSomething = Boolean(existing && existing.fields.document !== "");
-    if (creating) assert.ok(!holdsSomething, `a Create batch may not rewrite '${cell.id}', which already holds a document`);
-    else if (cell.new) assert.ok(!holdsSomething, `'${cell.id}' is marked new but already holds a document`);
-    else assert.ok(holdsSomething, `'${cell.id}' does not exist and the payload does not mark it new`);
-    if (!apply) { console.log(`${label}: would ${holdsSomething ? "update" : "create"}`); continue; }
+    // A cell already holding exactly this document is an interrupted earlier
+    // run being resumed; only a different document is a conflict for the verb.
+    const holdsOther = Boolean(existing && existing.fields.document !== "" && existing.fields.document !== cell.document);
+    if (creating) assert.ok(!holdsOther, `a Create batch may not rewrite '${cell.id}', which already holds a different document`);
+    else if (cell.new) assert.ok(!holdsOther, `'${cell.id}' is marked new but already holds a different document`);
+    else assert.ok(existing, `'${cell.id}' does not exist and the payload does not mark it new`);
+    if (!apply) { console.log(`${label}: would ${existing ? "update" : "create"}`); continue; }
 
     assert.ok([200, 201].includes((await request("/tdata/EncyclopediaCells", "POST", { id: cell.id })).status), "create refused");
     // Define is valid only from Draft, so recover a cell left mid-validation by
@@ -257,7 +237,17 @@ for (const cell of ordered) {
     }
     const submitted = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.SubmitForValidation`, "POST", {});
     assert.equal(submitted.status, 200, `SubmitForValidation: ${JSON.stringify(submitted.data)}`);
-    console.log(`${label}: written and submitted`);
+    // Wait for this cell's attestation before moving on, so a child is only
+    // ever written after its broader cell is a validated Draft, not merely
+    // after the parent's request returned. A stale callback can set the gate
+    // without the hash, so the wait is for the pair.
+    let row = null;
+    for (let attempt = 0; attempt < 60 && !settled(row, cell); attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      row = await read(cell);
+    }
+    assert.ok(settled(row, cell), `written but not attested after 60s (state ${row?.status}, error ${JSON.stringify(row?.fields.error ?? "")})`);
+    console.log(`${label}: written and attested`);
   } catch (error) {
     failures.push(`${cell.id}: ${error.message}`);
     failedIds.add(cell.id);

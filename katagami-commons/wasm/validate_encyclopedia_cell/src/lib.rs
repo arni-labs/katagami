@@ -123,6 +123,19 @@ mod tests {
         assert!(validate_document(&input.to_string()).is_err());
         input["sources"][0]["verifiedOn"] = serde_json::json!("2026-09-08");
         assert!(validate_document(&input.to_string()).is_ok());
+        for bad in ["0000-00-00", "2026-02-30", "2026-13-01"] {
+            input["sources"][0]["verifiedOn"] = serde_json::json!(bad);
+            assert!(validate_document(&input.to_string()).is_err(), "{bad}");
+        }
+    }
+
+    #[test]
+    fn blank_means_the_same_thing_to_both_validators() {
+        for blank in ["", " ", "\u{85}", "\u{FEFF}", "\u{3000}\n"] {
+            let mut input: Value = serde_json::from_str(FIXTURE).expect("fixture");
+            input["name"] = serde_json::json!(blank);
+            assert!(validate_document(&input.to_string()).is_err(), "{blank:?}");
+        }
     }
 
     #[test]

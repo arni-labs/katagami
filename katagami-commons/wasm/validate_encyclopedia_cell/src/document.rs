@@ -284,16 +284,8 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
             (None, None) => {}
             (Some(by), Some(on)) => {
                 text(by)?;
-                if on.len() != 10
-                    || !on.bytes().enumerate().all(|(i, b)| {
-                        if i == 4 || i == 7 {
-                            b == b'-'
-                        } else {
-                            b.is_ascii_digit()
-                        }
-                    })
-                {
-                    return Err("verifiedOn must be a YYYY-MM-DD date".into());
+                if !calendar_date(on) {
+                    return Err("verifiedOn must be a real YYYY-MM-DD calendar date".into());
                 }
             }
             _ => return Err("verifiedBy and verifiedOn go together".into()),
@@ -385,8 +377,53 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
     Ok(cell)
 }
 
+/// One explicit definition of blank, shared with the TypeScript schema:
+/// JavaScript's trim() and Rust's trim() disagree on U+0085 and U+FEFF.
+fn is_blank_char(c: char) -> bool {
+    matches!(
+        c,
+        '\t' | '\n'
+            | '\u{0B}'
+            | '\u{0C}'
+            | '\r'
+            | ' '
+            | '\u{85}'
+            | '\u{A0}'
+            | '\u{1680}'
+            | '\u{2000}'
+            ..='\u{200A}'
+                | '\u{2028}'
+                | '\u{2029}'
+                | '\u{202F}'
+                | '\u{205F}'
+                | '\u{3000}'
+                | '\u{FEFF}'
+    )
+}
+
+fn calendar_date(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    if bytes.len() != 10 || bytes[4] != b'-' || bytes[7] != b'-' {
+        return false;
+    }
+    let num = |s: &str| s.parse::<u32>().ok();
+    let (Some(y), Some(m), Some(d)) = (num(&value[0..4]), num(&value[5..7]), num(&value[8..10]))
+    else {
+        return false;
+    };
+    let leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
+    let days = match m {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if leap => 29,
+        2 => 28,
+        _ => return false,
+    };
+    y >= 1 && (1..=days).contains(&d)
+}
+
 pub(crate) fn text(value: &str) -> Result<(), String> {
-    if value.trim().is_empty() || value.chars().count() > 100_000 {
+    if value.chars().all(is_blank_char) || value.chars().count() > 100_000 {
         return Err("text must be nonblank and at most 100,000 characters".into());
     }
     Ok(())

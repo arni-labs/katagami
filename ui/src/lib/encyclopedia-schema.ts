@@ -1,7 +1,10 @@
 import { z } from "zod";
 
+// One explicit definition of blank, shared with the WASM validator: JavaScript's
+// trim() and Rust's trim() disagree on U+0085 and U+FEFF, so neither is used.
+const BLANK = /^[\t\n\v\f\r \u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*$/;
 const text = z.string()
-  .refine((value) => value.trim().length > 0, "Must not be blank")
+  .refine((value) => !BLANK.test(value), "Must not be blank")
   .refine((value) => Array.from(value).length <= 100_000, "Must not exceed 100,000 Unicode code points");
 const id = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,159}$/);
 const httpsUrl = z.url().pipe(z.string().refine((value) => {
@@ -16,7 +19,11 @@ const encyclopediaMapSchema = z.enum(["art", "writing", "palettes", "design"]);
 const sourceSchema = z.strictObject({
   id, title: text, url: httpsUrl,
   verifiedBy: text.optional(),
-  verifiedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  verifiedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
+    const [y, m, d] = value.split("-").map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d));
+    return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+  }, "verifiedOn must be a real calendar date").optional(),
 }).refine((source) => (source.verifiedBy === undefined) === (source.verifiedOn === undefined), "verifiedBy and verifiedOn go together");
 const rightsSchema = z.strictObject({
   basis: z.enum(["public-domain", "cc0", "open-license", "permission", "original"]),
