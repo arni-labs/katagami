@@ -4755,14 +4755,15 @@ fn verify_voice_md_body(
                 "## Corpus must link each listed corpus file exactly once, and only listed files".to_string(),
             );
         }
+        // A numbered sample line is `<digits>.` followed by the quote; a bare
+        // number inside prose ("1984") is not a slot.
         let empty_sample = trimmed.lines().any(|line| {
             let l = line.trim();
-            let mut digits = l.chars().take_while(|c| c.is_ascii_digit());
-            let has_number = digits.next().is_some();
-            if !has_number {
+            let digits: String = l.chars().take_while(|c| c.is_ascii_digit()).collect();
+            if digits.is_empty() || !l[digits.len()..].starts_with('.') {
                 return false;
             }
-            let rest = l.trim_start_matches(|c: char| c.is_ascii_digit()).trim_start_matches('.').trim();
+            let rest = l[digits.len() + 1..].trim();
             matches!(rest, "\"\"" | "“”" | "''" | "")
         });
         if empty_sample {
@@ -7255,6 +7256,8 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
         assert!(verify_voice_md_body("ws", "fl-v", &doubled).is_err());
         let two_files_two_links = missing_link.replace("- [S](/api/file/fl-1)\n", "- [S](/api/file/fl-1)\n- [T](/api/file/fl-2)\n");
         assert!(verify_voice_md_body("ws", "fl-v", &two_files_two_links).is_ok());
+        let bare_number = good.replace("## Never\nx\n", "## Never\nx\n1984\n");
+        assert!(verify_voice_md_body("ws", "fl-v", &bare_number).is_ok());
         // a v3.2 file is untouched by the v3.3 rules
         let v32 = good.replace("version: v3.3-lean", "version: v3.2-lean").replace("## Corpus\n- [S](/api/file/fl-1)\n", "");
         assert!(verify_voice_md_body("ws", "fl-v", &v32).is_ok());

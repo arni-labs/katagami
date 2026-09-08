@@ -42,7 +42,7 @@ export function validateSource(source, file) {
     if (!nonBlank(term.ref)) fail(`${where}.ref must be a non-blank string (the source page or record)`);
     if (!allowed.includes(term.decision)) fail(`${where}.decision must be one of ${allowed.join(", ")}`);
     if (!nonBlank(term.batch)) fail(`${where}.batch must name the proposal (e.g. B5)`);
-    if (!nonBlank(term.note)) fail(`${where}.note must say why, in one line`);
+    if (!nonBlank(term.note) || /[\r\n]/.test(term.note)) fail(`${where}.note must say why, in one line`);
     const needsCell = source.use === "cleanup" ? allowed.includes(term.decision) : ["merge", "live"].includes(term.decision);
     if (needsCell && !nonBlank(term.cellId)) {
       fail(`${where}.cellId is required when the decision is ${term.decision}`);
@@ -100,7 +100,7 @@ function renderTable(sources) {
       use: source.use,
       total: source.total === null ? "—" : String(source.total),
       decided: String(decided),
-      coverage: source.use === "backbone" ? `${decided} cells with an id` : coverage === null ? "—" : `${Math.round(coverage * 100)}%`,
+      coverage: source.use === "backbone" ? `${source.terms.filter((term) => nonBlank(term.cellId)).length} cells with an id` : coverage === null ? "—" : `${Math.round(coverage * 100)}%`,
       decisions: Object.entries(counts).map(([key, value]) => `${key} ${value}`).join(", ") || "—",
     };
   });

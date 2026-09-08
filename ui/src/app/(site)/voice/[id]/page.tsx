@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getWritingStyle, getFileUrl, getFileText, parseJson } from "@/lib/odata";
+import { getWritingStyle, getFileText, parseJson } from "@/lib/odata";
 import { voiceComposition } from "@/lib/lane-items";
 import { isOwner } from "@/lib/owner";
 import { PageHero } from "@/components/page-hero";
