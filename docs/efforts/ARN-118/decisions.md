@@ -179,3 +179,63 @@ Options: Clear historical fields during revision, cap documents below the blob t
 Chose the current-request check and SDK reader because: They require fresh review submission without deleting history and preserve support for documents up to the declared 2 MB limit. The live regression also established that deferred blobs retain the original field's JSON string encoding, while inline fields are already unquoted. The app decodes that declared blob encoding at its input boundary; it does not change the runtime or SDK. No permission or lifecycle-state change is needed. Successful callbacks explicitly set an empty error. The TypeScript fixture validator now checks canonical JSON UTF-8 size as well; the server remains authoritative for raw input size, including whitespace.
 
 Where: `katagami-commons/wasm/validate_encyclopedia_cell/src/lib.rs`; `katagami-commons/specs/encyclopedia_cell.ioa.toml`; `ui/src/lib/encyclopedia-schema.ts`; `scripts/verify-encyclopedia.mjs`; `ui/scripts/encyclopedia.test.mjs`.
+
+## D16 Deploy the Draft-only slice and remove the publication lifecycle
+
+Decision: Delete Publish, RecordReview, RequestChanges, Revise, the review states, the review fields, and the review half of the validator from this deployment, leaving Draft, ValidatingDocument, and Archived.
+
+Came up because: Three review rounds each found defects, and all of them lived in the review and publication machinery. The convergence rule treats a fourth repair round as a signal that the design is carrying too much, not that the next patch will land. Batch B2 authorizes private Draft cells with names and scopes; it authorizes no review, no publication, and no enrichment. The publication half was therefore unapproved code that generated every remaining finding.
+
+Options: Repair the publication lifecycle for a fourth round and deploy it unused, deploy it behind a policy that forbids the publication actions, or remove it from this deployment and reintroduce it with the approval that authorizes publication.
+
+Chose removal because: A Published state asserts that a curator reviewed the content, and nothing in this delivery performs that review, so shipping the state at all misstates what the records are. Removal also deletes the surface the findings live on rather than defending it. The domain model is unchanged: cells, their documents, manifestations, and studies are defined by the document contract, which is untouched. Reintroducing publication is a specification change, a policy change, and its own review round, which is the correct cost for an unapproved capability. A contract test fails if the surface returns without that approval.
+
+Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`; `katagami-commons/specs/model.csdl.xml`; `katagami-commons/policies/encyclopedia_cell.cedar`; `katagami-commons/wasm/validate_encyclopedia_cell/src/lib.rs`; `ui/scripts/encyclopedia.test.mjs`, "the deployed cell carries no review or publication surface".
+
+## D17 Close the cell's authorization instead of narrowing a blanket grant
+
+Decision: Replace `permit(principal, action, resource is EncyclopediaCell)` with a permit that enumerates the eight actions this deployment uses, keeping the existing forbids behind it.
+
+Came up because: The reported publication bypass reached the runtime through an action the policy had never considered. A blanket permit narrowed by forbid rules is open by default, so any action absent from a forbid list is allowed, including one added to the specification later without a policy decision.
+
+Options: Keep the house blanket-permit shape and add the missing actions to the forbid lists, or enumerate the permitted actions and rely on Cedar's default deny.
+
+Chose enumeration because: An unanticipated action then fails closed rather than open, and a specification change cannot quietly widen the deployed surface. A contract test asserts the permit list and the declared actions stay in step, so adding an action without a policy decision fails before deployment. This is stricter than the other commons entities, not a weakening of the shared pattern.
+
+Where: `katagami-commons/policies/encyclopedia_cell.cedar`; `ui/scripts/encyclopedia.test.mjs`, "cell authorization is a closed allow-list, not a blanket grant".
+
+## D18 Record the undeclared-parameter merge as a runtime defect this app contains but cannot fix
+
+Decision: Report the parameter overwrite as a Temper runtime defect, do not claim an application fix, and verify what the deployment actually relies on instead.
+
+Came up because: The reported bypass was attributed to Publish accepting a `document` parameter. A direct probe showed the cause is general: any action persists a submitted string parameter whose name matches a field, including an action that declares no parameters at all. `Archive`, which declares nothing, replaced a validated document while `document_validated` stayed true. Cedar never sees action parameters, so no policy can filter them, and the specification's `params` list is not what the runtime enforces.
+
+Options: Rename fields to obscure them, add a guard that cannot see parameters, delay the delivery until the runtime is fixed, or contain the defect and verify the containment.
+
+Chose containment plus a runtime issue because: Declared booleans and counters are written only by specification effects, so no parameter can forge `document_validated` or `version`; the probe confirms this. Only a principal already permitted to call `Define` can reach any action on a cell, so the injection grants no authority its caller lacks. The validated hash is stored beside the document, so a replaced document is detectable, and the readback of the approved records checks that hash for every cell. The fix belongs in the kernel, where the declared parameter list should bound what an action may write.
+
+Where: `scripts/verify-encyclopedia.mjs`, the undeclared-parameter section, whose assertions record today's runtime behaviour and fail when the runtime is corrected. Reproduction evidence is kept outside the repository.
+
+## D19 Give an interrupted validation an exit
+
+Decision: Add AbandonValidation from ValidatingDocument to Draft, and allow Archive from ValidatingDocument.
+
+Came up because: Review reported that a cell in a validating state had no permitted retry, recovery, or archive operation, and the earlier evidence did not establish what happens after an interrupted validation or a restart.
+
+Options: Rely on the trigger timeout, add a scheduled sweep, or declare an explicit recovery transition.
+
+Chose the explicit transition because: A timeout that never fires, because the process restarted between dispatch and callback, leaves the record stranded with no operation available. The recovery asserts nothing about the document; it returns the cell to Draft with its validation gate cleared. The harness proves it by racing the recovery against a live validation until one lands while the cell is still validating.
+
+Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, AbandonValidation and Archive; `scripts/verify-encyclopedia.mjs`, `recoverDuringValidation`.
+
+## D20 Prove the non-curator denial with a real credential
+
+Decision: Mint one contributor AgentCredential inside the disposable fixture's setup window and test the denial with that credential.
+
+Came up because: The privacy evidence gap was that no test used a legitimate authenticated identity that is not a curator. Sending identity headers proves nothing: the runtime strips inbound `x-temper-principal-*` headers before authorization, so a header-only identity silently resolves to the operator key instead.
+
+Options: Send identity headers, extend the commons policy to grant credential management, or issue one credential during the fixture's existing setup grants.
+
+Chose the fixture credential because: The commons policy denies credential management to everyone in production, and the fixture already has a documented, user-authorized setup window that the harness replaces with the exact commons policy before any test runs. The denial is then evaluated on a principal the resolver actually resolves to `agent_type` "contributor".
+
+Where: `scripts/verify-encyclopedia.mjs`, contributor registration and the non-curator checks; the fixture's `local_test_install.cedar`, which stays outside the repository.

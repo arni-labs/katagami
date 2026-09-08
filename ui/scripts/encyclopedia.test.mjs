@@ -28,14 +28,45 @@ test("local and installed cell policies are identical", () => {
   );
 });
 
+const cellSpec = readFileSync(new URL("../../katagami-commons/specs/encyclopedia_cell.ioa.toml", import.meta.url), "utf8");
+const cellPolicy = readFileSync(new URL("../../katagami-commons/policies/encyclopedia_cell.cedar", import.meta.url), "utf8");
+
 test("validator timeouts are inside the runtime trigger config", () => {
-  const spec = readFileSync(new URL("../../katagami-commons/specs/encyclopedia_cell.ioa.toml", import.meta.url), "utf8");
+  const spec = cellSpec;
   const triggers = spec.split("[[action.triggers]]").slice(1).map((part) => part.split("[[action]]")[0]);
-  assert.equal(triggers.length, 2);
+  assert.equal(triggers.length, 1);
   for (const trigger of triggers) {
     const [declaration, config] = trigger.split("[action.triggers.config]");
     assert.doesNotMatch(declaration, /timeout_secs/);
     assert.match(config, /^timeout_secs = "30"$/m);
+  }
+});
+
+// Publication was never approved for this deployment, and a published state
+// would assert a curator review that nothing here performs. Reintroducing it
+// needs its own approval and its own review round, so it fails here first.
+test("the deployed cell carries no review or publication surface", () => {
+  for (const term of ["Publish", "Published", "RecordReview", "ReviewValidated", "RequestChanges", "review_approved"]) {
+    assert.doesNotMatch(cellSpec, new RegExp(term), `${term} is outside the approved Draft-only scope`);
+  }
+  const csdl = readFileSync(new URL("../../katagami-commons/specs/model.csdl.xml", import.meta.url), "utf8");
+  const entity = csdl.split('<EntityType Name="EncyclopediaCell">')[1].split("</EntityType>")[0];
+  assert.doesNotMatch(entity, /Review/);
+});
+
+// Cedar denies by default. Enumerating the permitted actions keeps an action
+// that reaches the runtime without a matching policy decision failing closed.
+test("cell authorization is a closed allow-list, not a blanket grant", () => {
+  assert.doesNotMatch(cellPolicy, /^permit\(principal, action, resource is EncyclopediaCell\);/m);
+  const permitted = cellPolicy.split("forbid(")[0].match(/Action::"([^"]+)"/g) ?? [];
+  const actions = new Set(permitted.map((entry) => entry.slice(9, -1)));
+  const declared = new Set(cellSpec.split("[[action]]").slice(1).map((block) => block.match(/^name = "(\w+)"$/m)[1]));
+  assert.ok(declared.size >= 5);
+  for (const action of declared) {
+    assert.ok(actions.has(action), `${action} is declared in the specification but not permitted`);
+  }
+  for (const action of actions) {
+    assert.ok(["create", "read"].includes(action) || declared.has(action), `${action} is permitted but not declared`);
   }
 });
 

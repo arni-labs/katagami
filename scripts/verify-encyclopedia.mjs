@@ -40,6 +40,33 @@ if (process.argv.includes("--install") || process.argv.includes("--upload")) {
   console.log("Uploaded validator:", result);
 }
 
+// One authenticated identity that is not a curator. The runtime strips inbound
+// identity headers, so a non-curator principal only exists as a credential the
+// resolver can resolve. This mints one in the fixture's setup window; the exact
+// commons policy is installed immediately afterwards and grants nothing here.
+const contributorToken = "contributor-local-test-key";
+const contributorKey = { Authorization: `Bearer ${contributorToken}` };
+if (process.argv.includes("--policies")) {
+  const keyHash = createHash("sha256").update(contributorToken).digest("hex");
+  const registrations = [
+    ["AgentTypes", "contributor-type", "Define", {
+      name: "contributor", system_prompt: "Local verification contributor", tool_set: "local",
+      model: "none", max_turns: "0", adapter_config: "{}", default_budget_cents: "0",
+    }],
+    ["AgentCredentials", keyHash, "Issue", {
+      agent_type_id: "contributor-type", agent_instance_id: "local-test-contributor",
+      key_hash: keyHash, key_prefix: contributorToken.slice(0, 8),
+      description: "Local verification contributor", created_by: "verify-encyclopedia", expires_at: "",
+    }],
+  ];
+  for (const [set, entityId, name, body] of registrations) {
+    assert.equal((await request(`/tdata/${set}`, "POST", { id: entityId })).status, 201);
+    const issued = await request(`/tdata/${set}('${entityId}')/Temper.${name}`, "POST", body);
+    assert.equal(issued.status, 200, JSON.stringify(issued.data));
+  }
+  console.log("Registered one non-curator contributor credential for the authorization tests");
+}
+
 // Apply app policy after installation: it deliberately does not grant tenant
 // management access. Re-installation requires a fresh disposable test instance.
 if (process.argv.includes("--policies")) {
@@ -87,75 +114,136 @@ console.log("Name-and-scope cell persists as a private draft; repeated creation 
 
 const anonymous = await fetch(`${origin}${path}`, { headers: { "X-Tenant-Id": "default" } });
 assert.equal(anonymous.status, 401);
-for (const callback of ["DocumentValidated", "ReviewValidated", "ValidationFailed"]) {
+for (const callback of ["DocumentValidated", "ValidationFailed"]) {
   assert.equal((await action(callback)).status, 403);
 }
 console.log("Unauthenticated reads and caller-supplied validation callbacks are refused");
 
-assert.equal((await action("Publish")).status, 409);
-assert.equal((await action("Define", { document: fixture })).status, 200);
-assert.equal((await action("SubmitForValidation")).status, 200);
-let row = await expectState("UnderReview");
-assert.equal(row.booleans.document_validated, true);
-assert.equal((await action("Publish")).status, 409);
-console.log("Valid document accepted; publication without a review refused");
-
-const hash = createHash("sha256").update(fixture).digest("hex");
-const review = {
-  documentHash: hash, reviewer: "Local verification harness", evidenceSourceIds: ["fixture"],
-  findings: "Synthetic test review. Never publish this fixture to production.", limitations: ["Synthetic data"],
-  rightsReviewed: true, relationshipsReviewed: true, examplesReviewed: true, livingCreatorImitationExcluded: true,
-};
-assert.equal((await action("RecordReview", { review: JSON.stringify(review) })).status, 200);
-row = await expectState("UnderReview", (value) => value.booleans.review_approved === true);
-assert.equal(row.booleans.review_approved, true);
-assert.equal((await action("Publish")).status, 200);
-row = await expectState("Published");
-assert.equal(row.fields.document_hash, hash);
-assert.equal(row.fields.review_document_hash, hash);
-console.log("Reviewed fixture published through the declared actions:", id);
-
-for (const method of ["PATCH", "PUT", "DELETE"]) {
-  const result = await request(path, method, method === "DELETE" ? undefined : { document: "overwritten", review_approved: true });
-  assert.ok([403, 405].includes(result.status), `${method} bypass returned ${result.status}: ${JSON.stringify(result.data)}`);
+// A verified identity that is authenticated but is not a curator. Its
+// credential resolves to agent_type "contributor"; nothing about the request
+// asserts its own identity, so the policy decides on the resolved principal.
+const contributorRead = await request(path, "GET", undefined, contributorKey);
+assert.equal(contributorRead.status, 403, JSON.stringify(contributorRead.data));
+const contributorWrite = await request(`${path}/Temper.Define`, "POST", { document: draft }, contributorKey);
+assert.equal(contributorWrite.status, 403, JSON.stringify(contributorWrite.data));
+const contributorList = await request("/tdata/EncyclopediaCells", "GET", undefined, contributorKey);
+assert.ok([403, 200].includes(contributorList.status), JSON.stringify(contributorList.data));
+if (contributorList.status === 200) {
+  assert.deepEqual(contributorList.data.value ?? [], [], "a non-curator listed private cells");
 }
-assert.equal((await request(path)).data.fields.document, fixture);
-console.log("Generic PATCH, PUT, and DELETE cannot replace the reviewed artifact");
+console.log("An authenticated non-curator contributor identity can neither read nor author a private cell");
 
-assert.equal((await action("Revise")).status, 200);
-row = await expectState("Draft", (value) => value.booleans.document_validated === false && value.booleans.review_approved === false);
-assert.equal(row.booleans.document_validated, false);
-assert.equal(row.booleans.review_approved, false);
-assert.equal(row.entity_id, id);
-assert.equal((await action("SubmitForValidation")).status, 200);
-await expectState("UnderReview", (value) => value.booleans.document_validated === true);
-assert.equal((await action("RecordReview")).status, 200);
-row = await expectState("Draft", (value) => Boolean(value.fields.error));
-assert.equal(row.booleans.review_approved, false);
-assert.match(row.fields.error, /requires a new review/);
-console.log("An empty review request cannot reuse the prior version's review");
-
-assert.equal((await action("Define", { document: "{}" })).status, 200);
-assert.equal((await action("SubmitForValidation")).status, 200);
-row = await expectState("Draft", (value) => Boolean(value.fields.error));
-assert.ok(row.fields.error);
-console.log("Revision retains identity and clears review; malformed document refused");
+// Removed surface. Publication asserts a curator review that this deployment
+// performs nowhere, so those actions must not exist on the installed machine.
+for (const removed of ["Publish", "RecordReview", "RequestChanges", "Revise", "ReviewValidated"]) {
+  const result = await action(removed, { document: "{}" });
+  assert.ok(result.status >= 400, `${removed} unexpectedly succeeded: ${JSON.stringify(result.data)}`);
+}
+draftRow = await expectState("Draft");
+assert.equal(draftRow.fields.document, draft);
+assert.equal(draftRow.booleans.document_validated, false);
+console.log("Publication and review actions are absent, and calling them leaves the stored document untouched");
 
 assert.equal((await action("Define", { document: fixture })).status, 200);
 assert.equal((await action("SubmitForValidation")).status, 200);
-row = await expectState("UnderReview", (value) => value.booleans.document_validated === true);
+const hash = createHash("sha256").update(fixture).digest("hex");
+let row = await expectState("Draft", (value) => value.booleans.document_validated === true);
+assert.equal(row.fields.document_hash, hash);
 assert.equal(row.fields.error, "");
-assert.equal((await action("RecordReview", { review: JSON.stringify(review) })).status, 200);
-row = await expectState("UnderReview", (value) => value.booleans.review_approved === true);
-assert.equal(row.fields.error, "");
-assert.equal((await action("Revise")).status, 200);
-await expectState("Draft");
-console.log("Correcting a failed document clears its error and requires an explicit review");
+console.log("A valid document validates and returns to Draft with its hash recorded");
 
-assert.equal((await action("Archive")).status, 200);
+// The reported publication bypass is one case of a runtime defect: an action
+// persists a submitted string parameter that matches a field name even when the
+// action declares no parameters at all. It is not repairable from this
+// application, so what this deployment relies on is recorded and checked here.
+//
+// 1. Declared state cannot be forged. `document_validated` and `version` are
+//    written only by the effects in the specification, so no parameter can
+//    assert that unvalidated content was validated.
+const tamper = `encyclopedia-test-tamper-${randomUUID()}`;
+const tamperPath = `/tdata/EncyclopediaCells('${tamper}')`;
+assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: tamper })).status, 201);
+assert.equal((await action("Define", { document: fixture }, tamperPath)).status, 200);
+assert.equal((await action("SubmitForValidation", {}, tamperPath)).status, 200);
+row = await expectState("Draft", (value) => value.booleans.document_validated === true, tamperPath);
+const versionBefore = row.counters.version;
+assert.equal((await action("Archive", { document: "TAMPERED", document_validated: false, version: 99 }, tamperPath)).status, 200);
+row = await expectState("Archived", () => true, tamperPath);
+assert.equal(row.booleans.document_validated, true, "a parameter changed a declared boolean");
+assert.equal(row.counters.version, versionBefore, "a parameter changed a counter");
+// 2. This asserts the runtime's present behaviour, not a desired one: the
+//    parameter did replace the stored document. When the runtime stops merging
+//    undeclared parameters, this assertion fails, and the correct replacement
+//    is `assert.equal(row.fields.document, fixture)`.
+assert.equal(row.fields.document, "TAMPERED", "the runtime no longer merges undeclared parameters; tighten this test");
+// 3. Because the validated hash is stored beside the document, tampering is
+//    detectable by anything that reads a cell, which is how the readback of the
+//    approved records checks each stored document.
+assert.notEqual(createHash("sha256").update(row.fields.document).digest("hex"), row.fields.document_hash);
+assert.equal(createHash("sha256").update(fixture).digest("hex"), row.fields.document_hash);
+console.log("Undeclared parameters cannot forge validation or version, and a replaced document no longer matches its recorded hash");
+
+const recovery = `encyclopedia-test-recovery-${randomUUID()}`;
+const recoveryPath = `/tdata/EncyclopediaCells('${recovery}')`;
+assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: recovery })).status, 201);
+assert.equal((await action("Define", { document: fixture }, recoveryPath)).status, 200);
+assert.equal((await action("SubmitForValidation", {}, recoveryPath)).status, 200);
+row = await expectState("Draft", (value) => value.booleans.document_validated === true, recoveryPath);
+assert.equal((await action("Define", { document: draft }, recoveryPath)).status, 200);
+row = await expectState("Draft", (value) => value.fields.document === draft, recoveryPath);
+assert.equal(row.booleans.document_validated, false);
+console.log("Rewriting a document through its declared action clears the validation gate");
+
+// Interrupted validation. A cell must never be able to strand in the
+// validating state with no operation permitted on it.
+// Validation is quick, so the window is caught by racing the recovery action
+// against it and resubmitting until one lands while the cell is still
+// validating. Each attempt asserts the outcome it actually got.
+const slowDocument = JSON.stringify({ ...JSON.parse(fixture), questions: Array(20).fill("A".repeat(99_000)) });
+async function recoverDuringValidation(name, entityPath) {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    assert.equal((await action("Define", { document: slowDocument }, entityPath)).status, 200);
+    assert.equal((await action("SubmitForValidation", {}, entityPath)).status, 200);
+    const attempted = await request(`${entityPath}/Temper.${name}`, "POST", {});
+    if (attempted.status === 200) return true;
+    assert.equal(attempted.status, 409, JSON.stringify(attempted.data));
+    await expectState("Draft", () => true, entityPath);
+  }
+  return false;
+}
+assert.ok(await recoverDuringValidation("AbandonValidation", path), "no attempt landed during validation");
+row = await expectState("Draft");
+assert.equal(row.booleans.document_validated, false);
+// A document this large is returned as a deferred blob reference holding the
+// JSON encoding of the field, not as an inline string.
+assert.equal(row.fields.document.__temper_blob_encoding, "json");
+assert.equal(row.fields.document.__temper_blob_size, Buffer.byteLength(JSON.stringify(slowDocument), "utf8"));
+assert.ok(await recoverDuringValidation("Archive", path), "no attempt landed during validation");
 await expectState("Archived");
 assert.equal((await action("Define", { document: draft })).status, 409);
-console.log("An unwanted Draft can be archived without deleting its history");
+console.log("An interrupted validation can be abandoned or archived; an archived cell accepts nothing further");
+
+const second = `encyclopedia-test-${randomUUID()}`;
+const secondPath = `/tdata/EncyclopediaCells('${second}')`;
+assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: second })).status, 201);
+assert.equal((await action("Define", { document: "{}" }, secondPath)).status, 200);
+assert.equal((await action("SubmitForValidation", {}, secondPath)).status, 200);
+row = await expectState("Draft", (value) => Boolean(value.fields.error), secondPath);
+assert.equal(row.booleans.document_validated, false);
+assert.equal((await action("Define", { document: fixture }, secondPath)).status, 200);
+assert.equal((await action("SubmitForValidation", {}, secondPath)).status, 200);
+row = await expectState("Draft", (value) => value.booleans.document_validated === true, secondPath);
+assert.equal(row.fields.error, "");
+console.log("A malformed document is refused, and correcting it clears the recorded error");
+
+for (const method of ["PATCH", "PUT", "DELETE"]) {
+  const result = await request(secondPath, method, method === "DELETE" ? undefined : { document: "overwritten", document_validated: true });
+  assert.ok([403, 405].includes(result.status), `${method} bypass returned ${result.status}: ${JSON.stringify(result.data)}`);
+}
+row = await request(secondPath);
+assert.equal(row.data.fields.document, fixture);
+assert.equal(row.data.booleans.document_validated, true);
+console.log("Generic PATCH, PUT, and DELETE cannot replace the stored document or its validation gate");
 
 // Inline integration dispatch uses a separate runtime path from the background
 // callback. Exercise both without changing the installed authorization policy.
@@ -163,20 +251,15 @@ const inlineId = `encyclopedia-test-inline-${randomUUID()}`;
 const inlinePath = `/tdata/EncyclopediaCells('${inlineId}')`;
 const largeDocument = JSON.stringify({ ...JSON.parse(fixture), questions: ["A".repeat(70_000), "B".repeat(70_000)] });
 const largeHash = createHash("sha256").update(largeDocument).digest("hex");
-const largeReview = JSON.stringify({ ...review, documentHash: largeHash, limitations: ["C".repeat(70_000), "D".repeat(70_000)] });
 assert.ok(Buffer.byteLength(largeDocument, "utf8") > 128 * 1024);
-assert.ok(Buffer.byteLength(largeReview, "utf8") > 128 * 1024);
 assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: inlineId })).status, 201);
 assert.equal((await action("Define", { document: largeDocument }, inlinePath)).status, 200);
-for (const callback of ["DocumentValidated", "ReviewValidated", "ValidationFailed"]) {
+for (const callback of ["DocumentValidated", "ValidationFailed"]) {
   assert.equal((await action(`${callback}?await_integration=true`, {}, inlinePath)).status, 403);
 }
 assert.equal((await action("SubmitForValidation?await_integration=true", {}, inlinePath)).status, 200);
-row = await expectState("UnderReview", (value) => value.booleans.document_validated === true, inlinePath);
+row = await expectState("Draft", (value) => value.booleans.document_validated === true, inlinePath);
 assert.equal(row.fields.document_hash, largeHash);
-assert.equal((await action("RecordReview?await_integration=true", { review: largeReview }, inlinePath)).status, 200);
-row = await expectState("UnderReview", (value) => value.booleans.review_approved === true, inlinePath);
-assert.equal(row.fields.review_document_hash, largeHash);
 assert.equal((await action("Archive", {}, inlinePath)).status, 200);
 await expectState("Archived", () => true, inlinePath);
-console.log("Inline validation resolves document and review blobs over 128 KiB; UnderReview can be archived:", inlineId);
+console.log("Inline validation resolves a document blob over 128 KiB and hashes the stored bytes:", inlineId);

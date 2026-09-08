@@ -160,7 +160,9 @@
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
 
-      <!-- EncyclopediaCell: nested representative work with source and review evidence -->
+      <!-- EncyclopediaCell: a private, revisable region of the encyclopedia.
+           Review and publication fields are absent: this deployment stores
+           Draft cells only and no field here asserts curator review. -->
       <EntityType Name="EncyclopediaCell">
         <Key><PropertyRef Name="Id" /></Key>
         <Property Name="Id" Type="Edm.String" Nullable="false" />
@@ -168,10 +170,6 @@
         <Property Name="Document" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DocumentHash" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DocumentValidated" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="Review" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="ReviewDocumentHash" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="ReviewApproved" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ReviewFindings" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="Error" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="Version" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
       </EntityType>

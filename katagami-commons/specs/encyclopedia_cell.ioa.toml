@@ -1,18 +1,18 @@
 # A revisable region of the encyclopedia. The document describes examples
 # and relationships; validation checks its format, not aesthetic value.
+#
+# This deployment carries the authorised slice only: private Draft cells with
+# a validated document. Review and publication are a separate approval and a
+# separate delivery; their states and actions are deliberately absent here so
+# that no state of this machine asserts that stored content was reviewed.
 [automaton]
 name = "EncyclopediaCell"
-states = ["Draft", "ValidatingDocument", "UnderReview", "ValidatingReview", "Published", "Archived"]
+states = ["Draft", "ValidatingDocument", "Archived"]
 initial = "Draft"
-allow_indefinite_states = ["Draft", "ValidatingDocument", "UnderReview", "ValidatingReview", "Published", "Archived"]
+allow_indefinite_states = ["Draft", "ValidatingDocument", "Archived"]
 
 [[state]]
 name = "document_validated"
-type = "bool"
-initial = "false"
-
-[[state]]
-name = "review_approved"
 type = "bool"
 initial = "false"
 
@@ -29,7 +29,7 @@ to = "Draft"
 params = ["document"]
 effect = [
   { type = "set_bool", var = "document_validated", value = "false" },
-  { type = "set_bool", var = "review_approved", value = "false" }
+  { type = "increment", var = "version" }
 ]
 hint = "Set the versioned cell document. Examples and narrower cells may coexist."
 
@@ -40,7 +40,6 @@ from = ["Draft"]
 to = "ValidatingDocument"
 effect = [
   { type = "set_bool", var = "document_validated", value = "false" },
-  { type = "set_bool", var = "review_approved", value = "false" },
   { type = "trigger", name = "validate_document" }
 ]
 
@@ -59,103 +58,32 @@ timeout_secs = "30"
 name = "DocumentValidated"
 kind = "internal"
 from = ["ValidatingDocument"]
-to = "UnderReview"
+to = "Draft"
 params = ["document_hash", "error"]
 effect = [{ type = "set_bool", var = "document_validated", value = "true" }]
-hint = "Validator callback. Records format validation only."
-
-[[action]]
-name = "RecordReview"
-kind = "input"
-from = ["UnderReview"]
-to = "ValidatingReview"
-guard = "is_true document_validated"
-params = ["review"]
-effect = [
-  { type = "set_bool", var = "review_approved", value = "false" },
-  { type = "trigger", name = "validate_review" }
-]
-hint = "Curator records an approving review with evidence and the exact document hash. The curator remains responsible for the rights and historical claims in this attestation."
-
-[[action.triggers]]
-name = "validate_review"
-kind = "wasm"
-module = "validate_encyclopedia_cell"
-on_success = "ReviewValidated"
-on_failure = "ValidationFailed"
-
-[action.triggers.config]
-phase = "review"
-timeout_secs = "30"
-
-[[action]]
-name = "ReviewValidated"
-kind = "internal"
-from = ["ValidatingReview"]
-to = "UnderReview"
-guard = "is_true document_validated"
-params = ["review_document_hash", "error"]
-effect = [{ type = "set_bool", var = "review_approved", value = "true" }]
+hint = "Validator callback. Records format validation only, and never that a curator reviewed the content."
 
 [[action]]
 name = "ValidationFailed"
 kind = "internal"
-from = ["ValidatingDocument", "ValidatingReview"]
+from = ["ValidatingDocument"]
 to = "Draft"
 params = ["error"]
-effect = [
-  { type = "set_bool", var = "document_validated", value = "false" },
-  { type = "set_bool", var = "review_approved", value = "false" }
-]
+effect = [{ type = "set_bool", var = "document_validated", value = "false" }]
 
 [[action]]
-name = "RequestChanges"
+name = "AbandonValidation"
 kind = "input"
-from = ["UnderReview"]
+from = ["ValidatingDocument"]
 to = "Draft"
-params = ["review_findings"]
-effect = [
-  { type = "set_bool", var = "document_validated", value = "false" },
-  { type = "set_bool", var = "review_approved", value = "false" }
-]
-
-[[action]]
-name = "Publish"
-kind = "input"
-from = ["UnderReview"]
-to = "Published"
-guard = [
-  { type = "is_true", var = "document_validated" },
-  { type = "is_true", var = "review_approved" }
-]
-effect = [{ type = "increment", var = "version" }]
-
-[[action]]
-name = "Revise"
-kind = "input"
-from = ["UnderReview", "Published"]
-to = "Draft"
-effect = [
-  { type = "set_bool", var = "document_validated", value = "false" },
-  { type = "set_bool", var = "review_approved", value = "false" }
-]
-hint = "Retain the cell identifier and document, but require validation and review again."
+effect = [{ type = "set_bool", var = "document_validated", value = "false" }]
+hint = "Curator recovery when a validation run is interrupted, times out, or is superseded by a restart. Returns the cell to Draft without asserting validation."
 
 [[action]]
 name = "Archive"
 kind = "input"
-from = ["Draft", "UnderReview", "Published"]
+from = ["Draft", "ValidatingDocument"]
 to = "Archived"
-
-[[invariant]]
-name = "PublishedDocumentValidated"
-when = ["Published"]
-assert = "document_validated"
-
-[[invariant]]
-name = "PublishedReviewApproved"
-when = ["Published"]
-assert = "review_approved"
 
 [[invariant]]
 name = "ArchivedIsFinal"
