@@ -326,6 +326,8 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
         if cell.provenance.basis == "cited" && membership.source_ids.is_empty() {
             return Err("a cited cell's map membership must cite a source".into());
         }
+        // One id at a time on purpose: check_sources refuses an empty list, and a
+        // recollected cell's membership is legitimately `[]`.
         for source_id in &membership.source_ids {
             check_sources(&[source_id.as_str()], &sources)?;
         }

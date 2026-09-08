@@ -235,8 +235,8 @@ browsing human and a learning agent both depend on.
 
 Enforced by the contract, so plan for it:
 
-- **Every link cites evidence.** `broader`, `relations`, and `manifestations`
-  each require `sourceIds` resolving into this cell's `sources`. Sources are
+- **Every link cites evidence.** `broader`, `relations`, `manifestations`, and
+  `maps` each require `sourceIds` resolving into this cell's `sources`. Sources are
   citations — title plus HTTPS URL — not reproduced material. The apply script
   fetches every source URL and resolves every link target before writing.
 - **A map membership is a cited claim.** `maps` entries are `{map, explanation,
