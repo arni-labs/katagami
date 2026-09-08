@@ -6,6 +6,6 @@ dependencies = ["temperpaw/paw-fs@65f3ee9659500d11a54c22b9e5519d52dd0db1d4"]
 
 [[wasm_modules]]
 name = "validate_encyclopedia_cell"
-path = "wasm/validate_encyclopedia_cell/module.wasm"
+target = "wasm32-wasip1"
 criticality = "app-required"
-instantiate = "lazy"
+startup_loading = "lazy"

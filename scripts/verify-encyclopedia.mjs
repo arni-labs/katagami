@@ -21,26 +21,34 @@ async function request(path, method = "GET", body, extra = {}) {
 
 if (process.argv.includes("--install")) {
   const specDirectory = new URL("specs/", app);
-  const specs = Object.fromEntries(readdirSync(specDirectory).filter((name) => name.endsWith(".ioa.toml") || name === "model.csdl.xml")
+  const specs = Object.fromEntries(["encyclopedia_cell.ioa.toml", "model.csdl.xml"]
     .map((name) => [name, readFileSync(new URL(name, specDirectory), "utf8")]));
-  const policyDirectory = new URL("policies/", app);
-  const cedar_policies = readdirSync(policyDirectory).filter((name) => name.endsWith(".cedar"))
-    .map((name) => readFileSync(new URL(name, policyDirectory), "utf8")).join("\n");
-  const loaded = await request("/api/specs/load-inline", "POST", { tenant: "default", specs, cedar_policies });
+  const loaded = await request("/api/specs/load-inline", "POST", { tenant: "default", specs });
   assert.equal(loaded.status, 200, JSON.stringify(loaded.data));
   assert.equal(loaded.data.type, "summary");
   assert.equal(loaded.data.all_passed, true, JSON.stringify(loaded.data));
-  console.log("Loaded actual commons specifications and policies");
+  console.log("Loaded the actual cell specification and commons metadata");
 }
 if (process.argv.includes("--install") || process.argv.includes("--upload")) {
   const response = await fetch(`${origin}/api/wasm/modules/validate_encyclopedia_cell`, {
     method: "POST", headers: { ...headers, "Content-Type": "application/wasm" },
-    body: readFileSync(new URL("wasm/validate_encyclopedia_cell/module.wasm", app)),
+    body: readFileSync(new URL("wasm/validate_encyclopedia_cell/validate_encyclopedia_cell.wasm", app)),
     signal: AbortSignal.timeout(30_000),
   });
   const result = await response.text();
   assert.equal(response.status, 200, result);
   console.log("Uploaded validator:", result);
+}
+
+// Apply app policy after installation: it deliberately does not grant tenant
+// management access. Re-installation requires a fresh disposable test instance.
+if (process.argv.includes("--policies")) {
+  const policyDirectory = new URL("policies/", app);
+  const policy_text = readdirSync(policyDirectory).filter((name) => name.endsWith(".cedar"))
+    .sort().map((name) => readFileSync(new URL(name, policyDirectory), "utf8")).join("\n");
+  const loaded = await request("/api/tenants/default/policies", "PUT", { policy_text });
+  assert.equal(loaded.status, 200, JSON.stringify(loaded.data));
+  console.log("Loaded actual commons policies through the separate authorized policy endpoint");
 }
 
 const id = `encyclopedia-test-${randomUUID()}`;
@@ -50,24 +58,25 @@ assert.equal(created.status, 201, JSON.stringify(created.data));
 assert.equal(created.data.entity_id, id);
 
 async function action(name, body = {}) {
-  return request(`${path}/Temper.${name}`, "POST", body);
+  const result = await request(`${path}/Temper.${name}`, "POST", body);
+  if (result.status !== 200) console.log(`${name}:`, JSON.stringify(result));
+  return result;
 }
-async function expectState(expected) {
+async function expectState(expected, matches = () => true) {
+  let last;
   for (let attempt = 0; attempt < 100; attempt++) {
     const row = await request(path);
     assert.equal(row.status, 200, JSON.stringify(row.data));
-    if (row.data.status === expected) return row.data;
-    if (!String(row.data.status).startsWith("Validating")) {
-      throw new Error(`Expected ${expected}; got ${row.data.status}: ${JSON.stringify(row.data)}`);
-    }
+    last = row.data;
+    if (row.data.status === expected && matches(row.data)) return row.data;
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  throw new Error(`Timed out waiting for ${expected}`);
+  throw new Error(`Timed out waiting for ${expected}; last state=${last?.status}, error=${last?.fields?.error}`);
 }
 
 const draft = JSON.stringify({ version: 1, name: "Synthetic draft", description: "Approved scope only", maps: ["art"], broader: [], relations: [], questions: [], sources: [], manifestations: [], studies: [] });
 assert.equal((await action("Define", { document: draft })).status, 200);
-let draftRow = await expectState("Draft");
+let draftRow = await expectState("Draft", (row) => row.fields.document === draft);
 assert.equal(draftRow.fields.document, draft);
 const repeated = await request("/tdata/EncyclopediaCells", "POST", { id });
 assert.equal(repeated.status, 201, JSON.stringify(repeated.data));
@@ -75,6 +84,13 @@ assert.equal(repeated.data.entity_id, id);
 draftRow = await expectState("Draft");
 assert.equal(draftRow.fields.document, draft);
 console.log("Name-and-scope cell persists as a private draft; repeated creation preserves its identity and document");
+
+const anonymous = await fetch(`${origin}${path}`, { headers: { "X-Tenant-Id": "default" } });
+assert.equal(anonymous.status, 401);
+for (const callback of ["DocumentValidated", "ReviewValidated", "ValidationFailed"]) {
+  assert.equal((await action(callback)).status, 403);
+}
+console.log("Unauthenticated reads and caller-supplied validation callbacks are refused");
 
 assert.equal((await action("Publish")).status, 409);
 assert.equal((await action("Define", { document: fixture })).status, 200);
@@ -91,7 +107,7 @@ const review = {
   rightsReviewed: true, relationshipsReviewed: true, examplesReviewed: true, livingCreatorImitationExcluded: true,
 };
 assert.equal((await action("RecordReview", { review: JSON.stringify(review) })).status, 200);
-row = await expectState("UnderReview");
+row = await expectState("UnderReview", (value) => value.booleans.review_approved === true);
 assert.equal(row.booleans.review_approved, true);
 assert.equal((await action("Publish")).status, 200);
 row = await expectState("Published");
@@ -107,12 +123,17 @@ assert.equal((await request(path)).data.fields.document, fixture);
 console.log("Generic PATCH, PUT, and DELETE cannot replace the reviewed artifact");
 
 assert.equal((await action("Revise")).status, 200);
-row = await expectState("Draft");
+row = await expectState("Draft", (value) => value.booleans.document_validated === false && value.booleans.review_approved === false);
 assert.equal(row.booleans.document_validated, false);
 assert.equal(row.booleans.review_approved, false);
 assert.equal(row.entity_id, id);
 assert.equal((await action("Define", { document: "{}" })).status, 200);
 assert.equal((await action("SubmitForValidation")).status, 200);
-row = await expectState("Draft");
+row = await expectState("Draft", (value) => Boolean(value.fields.error));
 assert.ok(row.fields.error);
 console.log("Revision retains identity and clears review; malformed document refused");
+
+assert.equal((await action("Archive")).status, 200);
+await expectState("Archived");
+assert.equal((await action("Define", { document: draft })).status, 409);
+console.log("An unwanted Draft can be archived without deleting its history");

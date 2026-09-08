@@ -24,6 +24,10 @@ The user approved all 20 cells in batch B2 and requested their creation in the e
 
 The parser, validator, readers, and shared fixtures now separate manifestations from studies. The local upload denial was traced to a server started without authentication; an explicitly approved restart configured a test-only key on the isolated instance. Runtime verification is still required before production installation.
 
+The user approved repair of the isolated test and reviewer setup; the existing Ask is answered and the Effort resumed Building. The full local lifecycle now passes on the newer runtime: Draft create/Define/read/retry, authenticated access, blocked public callbacks, WASM validation, review-gated publication, blocked generic writes, revision, malformed-document rejection, and Draft archival. Installation uses the packaged validator filename and applies the actual commons policies after the fixture's temporary setup grants. No production permissions changed and no pending authorization decision was self-approved.
+
+The two new packaging and policy-copy regression tests failed before the fixes and now pass; the encyclopedia and inventory suite has 48 passing tests. Fresh Grok, Codex, and Fable reviews are required against the final commit. No B2 production cells exist yet. The unwired server loader was removed; public map pages remain part of the broader effort.
+
 ## Completion evidence
 
 The effort report must link the PR, commits, installed app revisions, deployed encyclopedia, local and live test results, and unresolved source limitations. Keep proof and review evidence outside the repository. Do not report the collection as deployed before opening and checking the deployed pages.

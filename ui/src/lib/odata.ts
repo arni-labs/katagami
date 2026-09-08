@@ -126,10 +126,6 @@ async function collectODataPages<T>(path: string): Promise<T[]> {
   return rows;
 }
 
-export function listEncyclopediaRows(): Promise<unknown[]> {
-  return collectODataPages<unknown>("EncyclopediaCells?$filter=Status eq 'Published'&$top=100");
-}
-
 // ── Design Languages ──
 
 export interface DesignLanguage {

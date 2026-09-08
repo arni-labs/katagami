@@ -94,7 +94,7 @@ Options: Wait for all map views and enrichment tools, retain proposal files only
 
 Chose deployed Draft records because: The user can start the encyclopedia before its entries have examples, manifestations, or relationships. The existing Katagami commons app on TemperPaw remains the storage system. Local records are synthetic verification data only. Creating these records does not complete the broader map effort or authorize enrichment or publication.
 
-Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, `scripts/verify-encyclopedia.mjs`, and the private B2 approval record. Execution must preserve the 20 approved names and scopes, use stable record identifiers, and read each record back from production.
+Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, `scripts/verify-encyclopedia.mjs`, and the private approval source `/private/tmp/encyclopedia-inventory.2xasm8/batch-B2-proposal.md`. The execution copy is `/private/tmp/encyclopedia-b2.hWoBq9/approved-b2.json`. Execution must preserve the 20 approved names and scopes, use stable record identifiers, and read each record back from production.
 
 ## Permit unenriched cells
 
@@ -119,3 +119,39 @@ Options: Change Cedar policies, inject an identity header, or configure authenti
 Chose configured test authentication because: It exercises the real authenticated path without modifying production credentials or Cedar policies. The restart was submitted for explicit execution approval. The test database is isolated under a private temporary directory.
 
 Where: `scripts/verify-encyclopedia.mjs`; local verification evidence for ARN-118.
+
+## Separate test installation from cell authorization
+
+Decision: Give a disposable localhost fixture narrowly scoped installation permissions, then replace them with the exact commons app policies before testing cell operations.
+
+Came up because: The current runtime separately authorizes spec installation, validator upload, and policy management. Loading app policies first removes those setup permissions. The user explicitly approved repairing this isolated test setup.
+
+Options: Broaden the deployed app policy, self-approve denied requests, or configure an isolated fixture with temporary setup grants.
+
+Chose temporary fixture grants because: The production policy remains unchanged and the lifecycle runs under the actual app restrictions. Only the cell specification is resubmitted after startup; re-verifying unrelated commons entities had delayed the test and replaced the metadata during initialization. Readback waits for the exact expected state and fields because the persisted projection is asynchronous.
+
+Where: `scripts/verify-encyclopedia.mjs`; private test configuration `/private/tmp/encyclopedia-b2.hWoBq9/test-specs/policies/local_test_install.cedar`.
+
+## Archive unwanted Drafts
+
+Decision: Allow Archive from Draft and UnderReview as well as Published, while retaining the generic update and delete forbids.
+
+Came up because: Review identified that an accidentally duplicated or unwanted Draft otherwise had no removal path from the active collection.
+
+Options: Permit destructive generic deletion, retain unremovable Drafts, or allow lifecycle archival.
+
+Chose archival because: It preserves the cell's identity and history and keeps edits governed by declared actions. Archived remains final.
+
+Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, Archive; `scripts/verify-encyclopedia.mjs`, Draft archival check.
+
+## Remove the unwired public loader
+
+Decision: Remove the server loader and OData list function that had no consuming page.
+
+Came up because: Review found latent pagination and owner-access errors in code unused by the approved Draft-cell delivery.
+
+Options: Expand this delivery into public map pages or remove the unused loader while retaining the tested document and graph functions.
+
+Chose removal because: The immediate delivery creates private records in TemperPaw. The broader map objective remains in the plan; its reader must be implemented and tested with those pages.
+
+Where: Removed `ui/src/lib/encyclopedia.ts` and `listEncyclopediaRows` from `ui/src/lib/odata.ts`.

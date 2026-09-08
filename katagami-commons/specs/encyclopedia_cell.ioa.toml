@@ -75,7 +75,7 @@ effect = [
   { type = "set_bool", var = "review_approved", value = "false" },
   { type = "trigger", name = "validate_review" }
 ]
-hint = "Curator records an approving review with evidence and the exact document hash. This is an attestation, not a proof of rights or historical truth."
+hint = "Curator records an approving review with evidence and the exact document hash. The curator remains responsible for the rights and historical claims in this attestation."
 
 [[action.triggers]]
 name = "validate_review"
@@ -144,7 +144,7 @@ hint = "Retain the cell identifier and document, but require validation and revi
 [[action]]
 name = "Archive"
 kind = "input"
-from = ["Published"]
+from = ["Draft", "UnderReview", "Published"]
 to = "Archived"
 
 [[invariant]]

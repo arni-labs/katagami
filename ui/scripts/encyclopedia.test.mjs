@@ -9,6 +9,28 @@ import { parsePublishedCell, visibleCells } from "../src/lib/encyclopedia-public
 const fixture = JSON.parse(readFileSync(new URL("../../katagami-commons/fixtures/encyclopedia-cell.json", import.meta.url), "utf8"));
 const invalidCases = JSON.parse(readFileSync(new URL("../../katagami-commons/fixtures/encyclopedia-invalid.json", import.meta.url), "utf8"));
 
+test("the validator is packaged at the installer's declared-module path", () => {
+  const app = new URL("../../katagami-commons/", import.meta.url);
+  const manifest = readFileSync(new URL("app.toml", app), "utf8");
+  const declaration = manifest.split("[[wasm_modules]]").find((section) => section.includes('name = "validate_encyclopedia_cell"'));
+  assert.ok(declaration);
+  assert.match(declaration, /startup_loading = "lazy"/);
+  assert.match(declaration, /target = "wasm32-wasip1"/);
+  assert.doesNotMatch(declaration, /^(path|instantiate)\s*=/m);
+  const binary = readFileSync(new URL("wasm/validate_encyclopedia_cell/validate_encyclopedia_cell.wasm", app));
+  assert.deepEqual([...binary.subarray(0, 4)], [0, 97, 115, 109]);
+  assert.ok(binary.includes(Buffer.from("wasi_snapshot_preview1")));
+  assert.equal(binary.includes(Buffer.from("__wbindgen")), false);
+});
+
+test("local and installed cell policies are identical", () => {
+  const app = new URL("../../katagami-commons/", import.meta.url);
+  assert.equal(
+    readFileSync(new URL("policies/encyclopedia_cell.cedar", app), "utf8"),
+    readFileSync(new URL("specs/policies/encyclopedia_cell.cedar", app), "utf8"),
+  );
+});
+
 test("a cell separates typed manifestations from direct studies", () => {
   const cell = cellDocumentSchema.parse(fixture);
   assert.deepEqual(cell.manifestations.map((entry) => entry.entitySet), ["ArtStyles", "DesignLanguages"]);
