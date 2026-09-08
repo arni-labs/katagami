@@ -44,8 +44,9 @@ WritingStyle to `Published`. Do NOT call `AttestConsent`,
 - **Credit openly, name independently.** Credits name the register/movement
   and, for PD corpora, the authors/works (`{name, kind (register|movement|
   tradition|writer|corpus), note}`); credit ALL influences. The STYLE is
-  named for its register quality (e.g. "Drawing-Room Irony"), never marketed
-  as "write like <author>" — a reference document, not a clone.
+  named by the source vocabulary (see "Names and where a style sits" below:
+  "Epistolary fiction", "Field notes"), never as "write like <author>" and
+  never with a coined name.
 - The personal-voice intake is the only place `basis: "opt_in"` originates;
   this lane never fabricates it.
 
@@ -53,7 +54,7 @@ WritingStyle to `Published`. Do NOT call `AttestConsent`,
 
 - Read `/system/knowledge/design-principles.md` and `/system/knowledge/quality-standards.md`.
 - `existing = temper.list('WritingStyles', '')` — your register must be distinct.
-- Naming: a real, ownable name; match the name's culture to the register; vary widely.
+- Naming: the source-vocabulary name (LCGFT term or movement name); see "Names and where a style sits".
 
 ## SPEC PHASE
 
@@ -177,7 +178,7 @@ verification record and never gates a publish.
 
 Frontmatter `version: v3.2-lean`; sections `## Never`, `## Gold standard
 samples`, `## Signature vocabulary`, `## Measured fingerprint`, then the bands
-JSON. The finalizer accepts only these headings for this version.
+JSON. The finalizer requires these headings for this version; extra sections are allowed.
 
 The handoff is the file. An agent given VOICE.md alone must be able to write in
 the voice, so the file carries the corpus, in two forms:
@@ -186,11 +187,13 @@ the voice, so the file carries the corpus, in two forms:
   continuous excerpt that reads on its own (300 words or more where the source
   allows), quoted verbatim and labeled with its source. Never a fixed count of
   slots: write exactly as many entries as there are passages, and never an
-  empty or placeholder entry. An entry like `5. ""` fails the file.
-- **Corpus**: a `corpus:` list in the frontmatter with one line per corpus
-  file: `- {file_id, source, words}`, and after the bands block a
-  `## Corpus` section linking each file at `/api/file/<file_id>` with its
-  source line, so a reader can pull the full text.
+  empty or placeholder entry. An entry like `5. ""` is a defect; nothing
+  enforces this mechanically yet, so check the file before attaching it.
+- **Corpus**: the existing `corpus:` mapping in the frontmatter (consent,
+  author, license, samples, provenance) gains a `files:` list with one entry
+  per corpus file: `- {file_id, source, words}`; and after the bands block a
+  `## Corpus` section links each file at `/api/file/<file_id>` with its source
+  line, so a reader can pull the full text.
 
 Regenerating an existing style's VOICE.md is content work: propose it, get the
 number approved, then `AttachVoiceMd` with the new file.

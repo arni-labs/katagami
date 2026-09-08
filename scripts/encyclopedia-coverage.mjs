@@ -9,7 +9,7 @@ import path from "node:path";
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const SOURCES_DIR = path.join(here, "..", ".agents", "skills", "encyclopedia", "sources");
 
-const USES = ["cleanup", "read-and-cite", "names-only", "read-never-copy", "with-care", "edges", "backbone", "human-read-cite-only"];
+const USES = ["cleanup", "read-and-cite", "names-only", "read-never-copy", "with-care", "edges", "backbone", "human-read-cite-only", "cite-only"];
 const READING_DECISIONS = ["cell", "merge", "declined", "deferred", "live"];
 const CLEANUP_DECISIONS = ["keep", "revise", "merge", "archive", "live"];
 const nonBlank = (value) => typeof value === "string" && value.trim().length > 0;
@@ -17,6 +17,10 @@ const nonBlank = (value) => typeof value === "string" && value.trim().length > 0
 export function validateSource(source, file) {
   const errors = [];
   const fail = (message) => errors.push(`${file}: ${message}`);
+  if (source === null || typeof source !== "object" || Array.isArray(source)) {
+    fail("the ledger must be a JSON object");
+    return errors;
+  }
   for (const key of ["source", "name", "url", "licence", "use", "totalDerivedFrom", "lane"]) {
     if (!nonBlank(source[key])) fail(`${key} must be a non-blank string`);
   }
@@ -26,35 +30,54 @@ export function validateSource(source, file) {
   if (!Array.isArray(source.terms)) fail("terms must be an array");
   const allowed = source.use === "cleanup" ? CLEANUP_DECISIONS : READING_DECISIONS;
   const seen = new Set();
-  for (const [index, term] of (source.terms ?? []).entries()) {
+  const seenRefs = new Set();
+  const terms = Array.isArray(source.terms) ? source.terms : [];
+  for (const [index, term] of terms.entries()) {
     const where = `terms[${index}]`;
+    if (term === null || typeof term !== "object") {
+      fail(`${where} must be an object`);
+      continue;
+    }
     if (!nonBlank(term.term)) fail(`${where}.term must be a non-blank string`);
     if (!nonBlank(term.ref)) fail(`${where}.ref must be a non-blank string (the source page or record)`);
     if (!allowed.includes(term.decision)) fail(`${where}.decision must be one of ${allowed.join(", ")}`);
     if (!nonBlank(term.batch)) fail(`${where}.batch must name the proposal (e.g. B5)`);
     if (!nonBlank(term.note)) fail(`${where}.note must say why, in one line`);
-    if (["merge", "live", "keep", "revise"].includes(term.decision) && !nonBlank(term.cellId)) {
+    const needsCell = source.use === "cleanup" ? allowed.includes(term.decision) : ["merge", "live"].includes(term.decision);
+    if (needsCell && !nonBlank(term.cellId)) {
       fail(`${where}.cellId is required when the decision is ${term.decision}`);
     }
+    if (term.cellId !== undefined && !nonBlank(term.cellId)) fail(`${where}.cellId must be a non-blank string when present`);
     if (nonBlank(term.term)) {
-      const key = term.term.trim().toLowerCase();
+      const key = term.term.trim().toLowerCase().replace(/\s+/g, " ");
       if (seen.has(key)) fail(`${where}.term "${term.term}" is decided twice`);
       seen.add(key);
     }
+    if (nonBlank(term.ref)) {
+      const ref = term.ref.trim();
+      if (seenRefs.has(ref)) fail(`${where}.ref "${ref}" is decided twice`);
+      seenRefs.add(ref);
+    }
   }
-  if (source.total !== null && (source.terms ?? []).length > source.total) fail("more terms decided than the source holds");
+  if (source.total !== null && terms.length > source.total) fail("more terms decided than the source holds");
   return errors;
 }
 
 export function loadSources(dir = SOURCES_DIR) {
-  const files = readdirSync(dir).filter((name) => name.endsWith(".json")).sort();
+  const files = readdirSync(dir).filter((name) => name.toLowerCase().endsWith(".json")).sort();
   const sources = [];
   const errors = [];
   for (const file of files) {
-    const source = JSON.parse(readFileSync(path.join(dir, file), "utf8"));
+    let source;
+    try {
+      source = JSON.parse(readFileSync(path.join(dir, file), "utf8"));
+    } catch (error) {
+      errors.push(`${file}: not valid JSON (${error.message})`);
+      continue;
+    }
     errors.push(...validateSource(source, file));
-    if (`${source.source}.json` !== file) errors.push(`${file}: file name must equal the source id`);
-    sources.push(source);
+    if (source && `${source.source}.json` !== file) errors.push(`${file}: file name must equal the source id`);
+    if (source && typeof source === "object") sources.push({ ...source, terms: Array.isArray(source.terms) ? source.terms : [] });
   }
   return { sources, errors };
 }
@@ -63,7 +86,7 @@ export function summarize(source) {
   const counts = {};
   for (const term of source.terms) counts[term.decision] = (counts[term.decision] ?? 0) + 1;
   const decided = source.terms.length;
-  const coverage = source.total ? decided / source.total : null;
+  const coverage = source.total && source.use !== "backbone" ? decided / source.total : null;
   return { decided, counts, coverage };
 }
 
@@ -77,7 +100,7 @@ function renderTable(sources) {
       use: source.use,
       total: source.total === null ? "—" : String(source.total),
       decided: String(decided),
-      coverage: coverage === null ? "—" : `${Math.round(coverage * 100)}%`,
+      coverage: source.use === "backbone" ? `${decided} cells with an id` : coverage === null ? "—" : `${Math.round(coverage * 100)}%`,
       decisions: Object.entries(counts).map(([key, value]) => `${key} ${value}`).join(", ") || "—",
     };
   });

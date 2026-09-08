@@ -338,19 +338,22 @@ Per-source use, decided with the human on 2026-09-08:
 
 Two ledgers are cleanup passes over what existed before the sources were read
 (`katagami-cells-2026-09`, `katagami-writing-styles-2026-09`); their decisions
-are `keep` / `revise` / `merge` / `archive`, made against the same sources.
+are `keep` / `revise` / `merge` / `archive` (and `live` once a revision has been
+written), made against the same sources. Cite-only sources have no ledger: they
+are never processed, only cited.
 
 **The tracker** is one file per source in `.agents/skills/encyclopedia/sources/`
 (`source`, `name`, `url`, `licence`, `use`, `total`, `totalDerivedFrom`, `lane`,
 `terms[]` with `term`, `ref`, `decision`, `batch`, `note`, optional `cellId`).
-Coverage of a source is terms decided over its total. Render all of them with:
+Coverage of a source is terms decided over its total; for the Getty backbone a
+row is a cell that gained its AAT id, and the command reports the count. Render all of them with:
 
 ```bash
 node scripts/encyclopedia-coverage.mjs
 ```
 
-It validates every row and refuses a malformed ledger; `npm test` runs the same
-check. Write a row when you decide, not when you report.
+It validates every row and refuses a malformed ledger; `cd ui && npm test` runs
+the same check. Write a row when you decide, not when you report.
 
 ## Maintaining
 
