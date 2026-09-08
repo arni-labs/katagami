@@ -15,6 +15,7 @@ pub(crate) struct CellDocument {
     questions: Vec<String>,
     pub(crate) sources: Vec<Source>,
     manifestations: Vec<Manifestation>,
+    studies: Vec<Study>,
 }
 
 #[derive(Deserialize)]
@@ -43,8 +44,25 @@ pub(crate) struct Source {
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Manifestation {
+    entity_set: EntitySet,
+    entity_id: String,
+    explanation: String,
+    source_ids: Vec<String>,
+}
+
+#[derive(Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+enum EntitySet {
+    DesignLanguages,
+    ArtStyles,
+    WritingStyles,
+    PaletteSystems,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Study {
     id: String,
     title: String,
     kind: String,
@@ -98,16 +116,6 @@ enum Representation {
         colors: Vec<Color>,
         construction: String,
     },
-    Katagami {
-        id: String,
-        #[serde(rename = "sourceId")]
-        source_id: String,
-        rights: Rights,
-        #[serde(rename = "entitySet")]
-        entity_set: String,
-        #[serde(rename = "entityId")]
-        entity_id: String,
-    },
 }
 
 impl Representation {
@@ -126,12 +134,6 @@ impl Representation {
                 ..
             }
             | Self::Palette {
-                id,
-                source_id,
-                rights,
-                ..
-            }
-            | Self::Katagami {
                 id,
                 source_id,
                 rights,
@@ -202,23 +204,6 @@ impl Representation {
                     }
                 }
             }
-            Self::Katagami {
-                entity_set,
-                entity_id,
-                ..
-            } => {
-                one_of(
-                    entity_set,
-                    &[
-                        "DesignLanguages",
-                        "ArtStyles",
-                        "WritingStyles",
-                        "PaletteSystems",
-                    ],
-                    "linked record type",
-                )?;
-                identifier(entity_id)?;
-            }
         }
         Ok(())
     }
@@ -233,13 +218,14 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
         return Err("unsupported cell document version".into());
     }
     text(&cell.name)?;
-    text(&cell.description)?;
+    if !cell.description.is_empty() {
+        text(&cell.description)?;
+    }
     nonempty(&cell.maps, "maps")?;
     unique(cell.maps.iter().map(String::as_str), "maps")?;
     for map in &cell.maps {
         one_of(map, &["art", "writing", "palettes", "design"], "map")?;
     }
-    nonempty(&cell.sources, "sources")?;
     let sources = unique(
         cell.sources.iter().map(|source| source.id.as_str()),
         "source identifiers",
@@ -281,13 +267,27 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
     for question in &cell.questions {
         text(question)?;
     }
+    let mut manifestations = BTreeSet::new();
+    for entry in &cell.manifestations {
+        identifier(&entry.entity_id)?;
+        text(&entry.explanation)?;
+        if !manifestations.insert((&entry.entity_set, &entry.entity_id)) {
+            return Err("duplicate manifestation reference".into());
+        }
+        check_sources(
+            &entry
+                .source_ids
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>(),
+            &sources,
+        )?;
+    }
     unique(
-        cell.manifestations
-            .iter()
-            .map(|example| example.id.as_str()),
+        cell.studies.iter().map(|example| example.id.as_str()),
         "example identifiers",
     )?;
-    for example in &cell.manifestations {
+    for example in &cell.studies {
         identifier(&example.id)?;
         text(&example.title)?;
         text(&example.description)?;

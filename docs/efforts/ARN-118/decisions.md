@@ -58,7 +58,7 @@ Options: Keep specimen records inside the manifestations field, duplicate typed 
 
 Chose separate references and studies because: A cell can contain several kinds of reusable language and independent examples without creating extra style records. Update the parser, validator, read functions, and tests to use this distinction before populating cells.
 
-Where: `docs/efforts/ARN-118/spec.md`, Records and Development and distance. The implementation correction is pending.
+Where: `docs/efforts/ARN-118/spec.md`, Records and Development and distance; `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`. The parser, validator, readers, and shared test fixtures now separate manifestations from studies.
 
 ## Obtain scoped decisions in numbered batches
 
@@ -83,3 +83,39 @@ Options: Generate missing-looking categories from a preset taxonomy, count publi
 Chose the complete inventory because: Unfinished records may already cover an apparent gap, and similar descriptions need comparison before merging. The first pass records the inventory and obtains approval before generation.
 
 Where: `docs/efforts/ARN-118/spec.md`, Inventory and expansion, and `docs/efforts/ARN-118/plan.md`, step 2. Per-record draft material remains in private working evidence.
+
+## Create the approved cells in TemperPaw
+
+Decision: Create all 20 cells approved in batch B2 as Draft EncyclopediaCell records in the existing TemperPaw production deployment, tenant default.
+
+Came up because: The user approved all of B2, asked for actual cells, and clarified that the encyclopedia must be in the TemperPaw deployment.
+
+Options: Wait for all map views and enrichment tools, retain proposal files only, or install cell support and create the approved records now.
+
+Chose deployed Draft records because: The user can start the encyclopedia before its entries have examples, manifestations, or relationships. The existing Katagami commons app on TemperPaw remains the storage system. Local records are synthetic verification data only. Creating these records does not complete the broader map effort or authorize enrichment or publication.
+
+Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, `scripts/verify-encyclopedia.mjs`, and the private B2 approval record. Execution must preserve the 20 approved names and scopes, use stable record identifiers, and read each record back from production.
+
+## Permit unenriched cells
+
+Decision: Allow an empty source list and an empty description in the cell format while retaining evidence requirements on individual relationships and manifestations.
+
+Came up because: A cell can start with a name or a name and scope before anyone researches or enriches it.
+
+Options: Invent source evidence, require enrichment before creating a cell, or permit empty enrichment fields.
+
+Chose empty enrichment fields because: They record the actual development of the entry. Format validation does not approve historical claims or publication.
+
+Where: `ui/src/lib/encyclopedia-schema.ts`, `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`, and the shared fixtures and tests.
+
+## Authenticate the isolated local verifier
+
+Decision: Start the isolated local test server with a test-only API key, using the documented authentication middleware.
+
+Came up because: The previous server had no configured API key and did not authenticate the credential sent by the test harness, so validator upload was denied.
+
+Options: Change Cedar policies, inject an identity header, or configure authentication on the isolated test server.
+
+Chose configured test authentication because: It exercises the real authenticated path without modifying production credentials or Cedar policies. The restart was submitted for explicit execution approval. The test database is isolated under a private temporary directory.
+
+Where: `scripts/verify-encyclopedia.mjs`; local verification evidence for ARN-118.

@@ -34,16 +34,17 @@ export const representationSchema = z.discriminatedUnion("kind", [
     colors: z.array(z.strictObject({ name: text, value: z.string().regex(/^#[0-9a-fA-F]{6}$/) })).min(1),
     construction: text,
   }),
-  z.strictObject({
-    ...representationFields,
-    kind: z.literal("katagami"),
-    entitySet: z.enum(["DesignLanguages", "ArtStyles", "WritingStyles", "PaletteSystems"]),
-    entityId: id,
-  }),
 ]);
 export type EncyclopediaRepresentation = z.infer<typeof representationSchema>;
 
 const manifestationSchema = z.strictObject({
+  entitySet: z.enum(["DesignLanguages", "ArtStyles", "WritingStyles", "PaletteSystems"]),
+  entityId: id,
+  explanation: text,
+  sourceIds,
+});
+
+const studySchema = z.strictObject({
   id,
   title: text,
   kind: z.enum(["historical", "original", "generated"]),
@@ -54,13 +55,14 @@ const manifestationSchema = z.strictObject({
 export const cellDocumentSchema = z.strictObject({
   version: z.literal(1),
   name: text,
-  description: text,
+  description: z.union([z.literal(""), text]),
   maps: z.array(encyclopediaMapSchema).min(1),
   broader: z.array(z.strictObject({ cellId: id, explanation: text, sourceIds })),
   relations: z.array(z.strictObject({ cellId: id, label: text, explanation: text, sourceIds })),
   questions: z.array(text),
-  sources: z.array(sourceSchema).min(1),
+  sources: z.array(sourceSchema),
   manifestations: z.array(manifestationSchema),
+  studies: z.array(studySchema),
 }).superRefine((cell, context) => {
   function unique(values: string[], path: (string | number)[]) {
     if (new Set(values).size !== values.length) {
@@ -69,7 +71,8 @@ export const cellDocumentSchema = z.strictObject({
   }
   unique(cell.maps, ["maps"]);
   unique(cell.sources.map((source) => source.id), ["sources"]);
-  unique(cell.manifestations.map((example) => example.id), ["manifestations"]);
+  unique(cell.manifestations.map((entry) => `${entry.entitySet}:${entry.entityId}`), ["manifestations"]);
+  unique(cell.studies.map((example) => example.id), ["studies"]);
   unique(cell.broader.map((link) => link.cellId), ["broader"]);
   const knownSources = new Set(cell.sources.map((source) => source.id));
   function checkSources(ids: string[], path: (string | number)[]) {
@@ -82,16 +85,18 @@ export const cellDocumentSchema = z.strictObject({
   for (const field of ["broader", "relations"] as const) {
     cell[field].forEach((link, index) => checkSources(link.sourceIds, [field, index, "sourceIds"]));
   }
-  cell.manifestations.forEach((example, index) => {
-    unique(example.representations.map((representation) => representation.id), ["manifestations", index, "representations"]);
+  cell.manifestations.forEach((entry, index) => checkSources(entry.sourceIds, ["manifestations", index, "sourceIds"]));
+  cell.studies.forEach((example, index) => {
+    unique(example.representations.map((representation) => representation.id), ["studies", index, "representations"]);
     example.representations.forEach((representation, representationIndex) => {
-      checkSources([representation.sourceId], ["manifestations", index, "representations", representationIndex, "sourceId"]);
+      checkSources([representation.sourceId], ["studies", index, "representations", representationIndex, "sourceId"]);
     });
   });
 });
 
 export type CellDocument = z.infer<typeof cellDocumentSchema>;
 export type EncyclopediaManifestation = CellDocument["manifestations"][number];
+export type EncyclopediaStudy = CellDocument["studies"][number];
 
 export type EncyclopediaCell = {
   id: string;

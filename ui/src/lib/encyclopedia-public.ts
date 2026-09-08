@@ -23,9 +23,8 @@ export function parsePublishedCell(row: unknown): EncyclopediaCell {
 }
 
 export function visibleCells(cells: EncyclopediaCell[], allowedReferences: ReadonlySet<string>): EncyclopediaCell[] {
-  const visible = cells.filter((cell) => cell.document.manifestations.every((example) =>
-    example.representations.every((representation) => representation.kind !== "katagami"
-      || allowedReferences.has(`${representation.entitySet}:${representation.entityId}`))));
+  const visible = cells.filter((cell) => cell.document.manifestations.every((entry) =>
+    allowedReferences.has(`${entry.entitySet}:${entry.entityId}`)));
   const visibleIds = new Set(visible.map((cell) => cell.id));
   const withheldIds = new Set(cells.filter((cell) => !visibleIds.has(cell.id)).map((cell) => cell.id));
   // Remove known withheld targets rather than disclose their identifiers as gaps.

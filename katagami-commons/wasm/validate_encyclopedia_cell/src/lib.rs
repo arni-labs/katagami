@@ -111,6 +111,31 @@ mod tests {
     }
 
     #[test]
+    fn accepts_name_and_scope_before_enrichment() {
+        let mut input = serde_json::json!({
+            "version": 1, "name": "Synthetic draft", "description": "Approved scope",
+            "maps": ["art"], "broader": [], "relations": [], "questions": [],
+            "sources": [], "manifestations": [], "studies": []
+        });
+        assert!(validate_document(&input.to_string()).is_ok());
+        input["description"] = serde_json::json!("");
+        assert!(validate_document(&input.to_string()).is_ok());
+        input["description"] = serde_json::json!("  ");
+        assert!(validate_document(&input.to_string()).is_err());
+    }
+
+    #[test]
+    fn rejects_duplicate_manifestations() {
+        let mut input: Value = serde_json::from_str(FIXTURE).expect("fixture");
+        let duplicate = input["manifestations"][0].clone();
+        input["manifestations"]
+            .as_array_mut()
+            .expect("array")
+            .push(duplicate);
+        assert!(validate_document(&input.to_string()).is_err());
+    }
+
+    #[test]
     fn counts_code_points_for_text_and_bytes_for_documents() {
         let mut input: Value = serde_json::from_str(FIXTURE).expect("fixture");
         let description = "\u{10348}".repeat(100_000);

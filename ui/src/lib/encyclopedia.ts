@@ -8,8 +8,7 @@ import { buildCellGraph } from "@/lib/encyclopedia-graph";
 
 export const getEncyclopedia = cache(async () => {
   const cells = (await listEncyclopediaRows()).map(parsePublishedCell);
-  const references = cells.flatMap((cell) => cell.document.manifestations
-    .flatMap((example) => example.representations.filter((representation) => representation.kind === "katagami")));
+  const references = cells.flatMap((cell) => cell.document.manifestations);
   const allowedReferences = new Set<string>();
   if (references.length) {
     const fullAccess = await hasFullGalleryAccess();

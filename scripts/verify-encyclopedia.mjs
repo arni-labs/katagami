@@ -11,11 +11,11 @@ const app = new URL("../katagami-commons/", import.meta.url);
 const fixture = readFileSync(new URL("fixtures/encyclopedia-cell.json", app), "utf8");
 
 async function request(path, method = "GET", body, extra = {}) {
-  const response = await fetch(`${origin}${path}`, { method, headers: { ...headers, ...extra }, body: body === undefined ? undefined : JSON.stringify(body) });
+  const response = await fetch(`${origin}${path}`, { method, headers: { ...headers, ...extra }, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(180_000) });
   const text = await response.text();
   const data = response.headers.get("content-type")?.includes("application/x-ndjson")
     ? text.trim().split("\n").map((line) => JSON.parse(line)).at(-1)
-    : text ? JSON.parse(text) : null;
+    : response.headers.get("content-type")?.includes("application/json") ? JSON.parse(text) : text;
   return { status: response.status, data };
 }
 
@@ -36,6 +36,7 @@ if (process.argv.includes("--install") || process.argv.includes("--upload")) {
   const response = await fetch(`${origin}/api/wasm/modules/validate_encyclopedia_cell`, {
     method: "POST", headers: { ...headers, "Content-Type": "application/wasm" },
     body: readFileSync(new URL("wasm/validate_encyclopedia_cell/module.wasm", app)),
+    signal: AbortSignal.timeout(30_000),
   });
   const result = await response.text();
   assert.equal(response.status, 200, result);
@@ -44,8 +45,9 @@ if (process.argv.includes("--install") || process.argv.includes("--upload")) {
 
 const id = `encyclopedia-test-${randomUUID()}`;
 const path = `/tdata/EncyclopediaCells('${id}')`;
-const created = await request("/tdata/EncyclopediaCells", "POST", { Id: id });
+const created = await request("/tdata/EncyclopediaCells", "POST", { id });
 assert.equal(created.status, 201, JSON.stringify(created.data));
+assert.equal(created.data.entity_id, id);
 
 async function action(name, body = {}) {
   return request(`${path}/Temper.${name}`, "POST", body);
@@ -62,6 +64,17 @@ async function expectState(expected) {
   }
   throw new Error(`Timed out waiting for ${expected}`);
 }
+
+const draft = JSON.stringify({ version: 1, name: "Synthetic draft", description: "Approved scope only", maps: ["art"], broader: [], relations: [], questions: [], sources: [], manifestations: [], studies: [] });
+assert.equal((await action("Define", { document: draft })).status, 200);
+let draftRow = await expectState("Draft");
+assert.equal(draftRow.fields.document, draft);
+const repeated = await request("/tdata/EncyclopediaCells", "POST", { id });
+assert.equal(repeated.status, 201, JSON.stringify(repeated.data));
+assert.equal(repeated.data.entity_id, id);
+draftRow = await expectState("Draft");
+assert.equal(draftRow.fields.document, draft);
+console.log("Name-and-scope cell persists as a private draft; repeated creation preserves its identity and document");
 
 assert.equal((await action("Publish")).status, 409);
 assert.equal((await action("Define", { document: fixture })).status, 200);

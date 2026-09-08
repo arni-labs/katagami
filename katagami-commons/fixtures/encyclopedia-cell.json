@@ -7,7 +7,11 @@
   "relations": [{"cellId": "sequence-study", "label": "shares a technique", "explanation": "Both arrange a sequence, without making one a child of the other.", "sourceIds": ["fixture"]}],
   "questions": ["Which further examples would challenge this grouping?"],
   "sources": [{"id": "fixture", "title": "Synthetic test source", "url": "https://example.org/fixture"}],
-  "manifestations": [{
+  "manifestations": [
+    {"entitySet": "ArtStyles", "entityId": "fixture-art", "explanation": "Synthetic reusable art-style reference.", "sourceIds": ["fixture"]},
+    {"entitySet": "DesignLanguages", "entityId": "fixture-language", "explanation": "Synthetic reusable design-language reference.", "sourceIds": ["fixture"]}
+  ],
+  "studies": [{
     "id": "spectrum-example",
     "title": "Six-color test",
     "kind": "original",

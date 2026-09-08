@@ -9,17 +9,31 @@ import { parsePublishedCell, visibleCells } from "../src/lib/encyclopedia-public
 const fixture = JSON.parse(readFileSync(new URL("../../katagami-commons/fixtures/encyclopedia-cell.json", import.meta.url), "utf8"));
 const invalidCases = JSON.parse(readFileSync(new URL("../../katagami-commons/fixtures/encyclopedia-invalid.json", import.meta.url), "utf8"));
 
-test("a cell holds several representations of one example and more than three colors", () => {
+test("a cell separates typed manifestations from direct studies", () => {
   const cell = cellDocumentSchema.parse(fixture);
-  assert.equal(cell.manifestations.length, 1);
-  assert.equal(cell.manifestations[0].representations.length, 2);
-  assert.equal(cell.manifestations[0].representations[0].colors.length, 6);
+  assert.deepEqual(cell.manifestations.map((entry) => entry.entitySet), ["ArtStyles", "DesignLanguages"]);
+  assert.equal(cell.studies.length, 1);
+  assert.equal(cell.studies[0].representations.length, 2);
+  assert.equal(cell.studies[0].representations[0].colors.length, 6);
   assert.deepEqual(cell.maps, ["art", "palettes"]);
 });
 
 test("broad cells need not have examples or be leaves", () => {
-  const cell = cellDocumentSchema.parse({ ...fixture, manifestations: [] });
+  const cell = cellDocumentSchema.parse({ ...fixture, manifestations: [], studies: [] });
   assert.equal(cell.broader.length, 1);
+});
+
+test("an approved name and scope can exist before research and examples", () => {
+  const cell = cellDocumentSchema.parse({
+    ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [],
+  });
+  assert.equal(cell.sources.length, 0);
+  assert.equal(cell.studies.length, 0);
+  assert.equal(cell.manifestations.length, 0);
+});
+
+test("a name-only cell can have an empty description", () => {
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, description: "" }).success, true);
 });
 
 test("text limits count Unicode code points", () => {
@@ -66,8 +80,8 @@ test("containment preserves depth while cross-links do not create children", () 
   const graph = buildCellGraph([cell("root"), cell("child", ["root"]), cell("leaf", ["child"], ["root"]), cell("other")]);
   assert.deepEqual(graph.children.get("root"), ["child"]);
   assert.deepEqual(descendantIds(graph, "root"), ["child", "leaf"]);
-  assert.equal(graph.cells.get("root").document.manifestations.length, 1);
-  assert.equal(graph.cells.get("leaf").document.manifestations.length, 1);
+  assert.equal(graph.cells.get("root").document.studies.length, 1);
+  assert.equal(graph.cells.get("leaf").document.studies.length, 1);
   assert.deepEqual(mapEntryPoints(graph, "art"), ["other", "root"]);
 });
 
@@ -111,11 +125,12 @@ test("public reads require published state, real booleans, and matching evidence
 
 test("a hidden linked language does not escape through a cell or its incoming links", () => {
   const privateCell = cell("private-cell");
-  privateCell.document.manifestations[0].representations = [{
-    id: "private-language", sourceId: "fixture", rights: fixture.manifestations[0].representations[0].rights,
-    kind: "katagami", entitySet: "DesignLanguages", entityId: "private-language-id",
+  privateCell.document.manifestations = [{
+    entitySet: "DesignLanguages", entityId: "private-language-id",
+    explanation: "Synthetic private reference", sourceIds: ["fixture"],
   }];
   const linked = cell("visible-cell", ["private-cell"], ["private-cell"]);
+  linked.document.manifestations = [];
   const result = visibleCells([privateCell, linked], new Set());
   assert.equal(result.length, 1);
   assert.equal(JSON.stringify(result).includes("private-"), false);

@@ -20,7 +20,9 @@ Each step must leave a testable result. Record deviations and technical decision
 
 ## Current checkpoint
 
-The existing parser and validator still model manifestations as examples and need the correction in step 3. The local WASM upload permission denial prevents the required runtime check, and its existing Effort Ask remains open. Do not use production as the test environment or bypass the denial. Inventory, source research, and batch preparation can continue while runtime verification is blocked.
+The user approved all 20 cells in batch B2 and requested their creation in the existing TemperPaw deployment. Deliver that approved part now: verify cell storage locally, install the cell specification into Katagami commons on TemperPaw, create the 20 private Draft records with their approved names and scopes, and read them back. Do not wait for map views or add relationships, existing manifestations, examples, or generated enrichment without a further numbered approval. Proposal files and local test records do not count as created encyclopedia cells.
+
+The parser, validator, readers, and shared fixtures now separate manifestations from studies. The local upload denial was traced to a server started without authentication; an explicitly approved restart configured a test-only key on the isolated instance. Runtime verification is still required before production installation.
 
 ## Completion evidence
 
