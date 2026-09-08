@@ -262,12 +262,14 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
         // negate it. What follows — why no source was found — is free text.
         ("recollected", note)
             if !note.as_deref().is_some_and(|n| {
-                n.strip_prefix("Written from model training data")
-                    .is_some_and(|rest| rest.chars().next().is_none_or(|c| !c.is_alphanumeric()))
+                n.strip_prefix(
+                    "Written from model training data; no external reference was located",
+                )
+                .is_some_and(|rest| rest.chars().next().is_none_or(|c| !c.is_alphanumeric()))
             }) =>
         {
             return Err(
-                "a recollected cell's note must begin \"Written from model training data\"".into(),
+                "a recollected cell's note must begin \"Written from model training data; no external reference was located\"".into(),
             );
         }
         (_, Some(note)) => text(note)?,

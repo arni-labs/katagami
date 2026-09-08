@@ -101,7 +101,7 @@ async function expectState(expected, matches = () => true, entityPath = path) {
   throw new Error(`Timed out waiting for ${expected}; last state=${last?.status}, error=${last?.fields?.error}`);
 }
 
-const draft = JSON.stringify({ version: 2, name: "Synthetic draft", description: "Approved scope only", provenance: { basis: "recollected", note: "Written from model training data for a synthetic harness cell; nothing external to cite." }, maps: ["art"], broader: [], relations: [], questions: [], sources: [], manifestations: [], studies: [] });
+const draft = JSON.stringify({ version: 2, name: "Synthetic draft", description: "Approved scope only", provenance: { basis: "recollected", note: "Written from model training data; no external reference was located; synthetic harness cell." }, maps: ["art"], broader: [], relations: [], questions: [], sources: [], manifestations: [], studies: [] });
 assert.equal((await action("Define", { document: draft })).status, 200);
 let draftRow = await expectState("Draft", (row) => row.fields.document === draft);
 assert.equal(draftRow.fields.document, draft);

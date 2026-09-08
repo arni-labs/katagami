@@ -359,3 +359,15 @@ Options: Roll back or rewrite the surviving cell, order relations, make the batc
 Chose report and rerun because: Relations are symmetric, so no write order removes the window. Rolling back means archiving, which is final and would destroy an approved cell over a transient failure; rewriting means altering approved content. What is left is to say exactly what happened, which the readback does, and to make the rerun idempotent, which it is. A batch entity would be a state machine for a curator's one-off script over a few dozen cells — machinery that looks architectural and does the same thing more slowly. Redirects, meanwhile, are now followed hop by hop, and every hop must be public HTTPS on the original host with no private, loopback or link-local address.
 
 Where: `scripts/create-encyclopedia-cells.mjs`, the write loop, readback, `publicHost`; `.agents/skills/encyclopedia/SKILL.md`, which now sends enrichment through the script rather than direct actions.
+
+## D31 The recollection note is a fixed sentence, and free text after it is the human's to read
+
+Decision: A recollected cell's note must begin with the complete sentence "Written from model training data; no external reference was located". Anything after it is free text that no validator judges.
+
+Came up because: Review escalated from "the note can say anything" to "the fixed prefix can be followed by a contradiction". The first was a defect and is fixed. The second cannot be fixed by a validator: no check on a string can stop free text from contradicting itself, and a longer fixed sentence only moves the contradiction further right.
+
+Options: Keep extending the fixed text, forbid free text entirely, or fix the full sentence and state the boundary.
+
+Chose the full sentence with the boundary stated because: The purpose of the rule is that every reader sees the same plain statement on every recollected cell, in front, where it cannot be hidden. That is achieved. What follows — which sources were tried, what remains uncertain — is content, and content is what the human's numbered approval reads. Forbidding the free text would remove the one place an agent records why no source was found.
+
+Where: `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; tests on both sides, including one that asserts free text after the sentence is accepted by design.

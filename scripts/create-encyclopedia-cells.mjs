@@ -154,6 +154,7 @@ async function reachable(source) {
   let verdict = "fetched";
   try {
     let url = source.url;
+    verdict = "too many redirects";
     for (let hop = 0; hop < 5; hop++) {
       const refused = await publicHost(url);
       if (refused) { verdict = refused; break; }
@@ -163,7 +164,7 @@ async function reachable(source) {
         if (next.host !== new URL(source.url).host) { verdict = `redirected off-site to ${next.host}`; break; }
         url = next.href; continue;
       }
-      if (!response.ok) verdict = `HTTP ${response.status}`;
+      verdict = response.ok ? "fetched" : `HTTP ${response.status}`;
       break;
     }
   } catch (error) { verdict = `unreachable (${error.name})`; }

@@ -71,7 +71,7 @@ mod tests {
     fn accepts_name_and_scope_before_enrichment() {
         let mut input = serde_json::json!({
             "version": 2, "name": "Synthetic draft", "description": "Approved scope",
-            "provenance": {"basis": "recollected", "note": "Written from model training data; no reference located."},
+            "provenance": {"basis": "recollected", "note": "Written from model training data; no external reference was located."},
             "maps": ["art"], "broader": [], "relations": [], "questions": [],
             "sources": [], "manifestations": [], "studies": []
         });
@@ -99,20 +99,21 @@ mod tests {
         assert!(validate_document(&bare.to_string()).is_err());
         bare["provenance"] = serde_json::json!({"basis": "recollected"});
         assert!(validate_document(&bare.to_string()).is_err());
-        bare["provenance"] = serde_json::json!({"basis": "recollected", "note": "Written from model training data; no reference found."});
+        bare["provenance"] = serde_json::json!({"basis": "recollected", "note": "Written from model training data; no external reference was located."});
         assert!(validate_document(&bare.to_string()).is_ok());
         // The note must open with the fixed sentence; nothing may precede or bend it.
         for bad in [
             "banana",
             "This was not written from model training data.",
             "Written from model training datasets",
+            "Written from model training data.",
         ] {
             bare["provenance"] = serde_json::json!({"basis": "recollected", "note": bad});
             assert!(validate_document(&bare.to_string()).is_err(), "{bad}");
         }
         // A source makes a cell cited; recollected with sources is a contradiction.
         let mut sourced: Value = serde_json::from_str(FIXTURE).expect("fixture");
-        sourced["provenance"] = serde_json::json!({"basis": "recollected", "note": "Written from model training data."});
+        sourced["provenance"] = serde_json::json!({"basis": "recollected", "note": "Written from model training data; no external reference was located."});
         assert!(validate_document(&sourced.to_string()).is_err());
         // JSON null is neither absent nor a string; TypeScript rejects it, so this must too.
         let mut null_note: Value = serde_json::from_str(FIXTURE).expect("fixture");

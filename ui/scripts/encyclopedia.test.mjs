@@ -93,7 +93,7 @@ test("broad cells need not have examples or be leaves", () => {
 test("an approved name and scope can exist before research and examples", () => {
   const cell = cellDocumentSchema.parse({
     ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [],
-    provenance: { basis: "recollected", note: "Written from model training data; no external reference located yet." },
+    provenance: { basis: "recollected", note: "Written from model training data; no external reference was located yet." },
   });
   assert.equal(cell.sources.length, 0);
   assert.equal(cell.studies.length, 0);
@@ -106,11 +106,14 @@ test("a cell either cites a source or says it was recollected", () => {
   const bare = { ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [] };
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "cited" } }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected" } }).success, false);
-  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data; no reference found." } }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data; no external reference was located." } }).success, true);
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "banana" } }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "This was not written from model training data." } }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training datasets" } }).success, false);
-  assert.equal(cellDocumentSchema.safeParse({ ...fixture, provenance: { basis: "recollected", note: "Written from model training data." } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data." } }).success, false);
+  // Free text after the fixed sentence is not judged by a validator; the human who approves the cell reads it.
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data; no external reference was located; searched Tate and the Met." } }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, provenance: { basis: "recollected", note: "Written from model training data; no external reference was located." } }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, provenance: { basis: "cited" } }).success, true);
 });
 
