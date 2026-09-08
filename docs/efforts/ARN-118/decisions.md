@@ -275,3 +275,15 @@ Options: Add a `schedule` effect that fires AbandonValidation, declare a `[[stat
 Chose explicit recovery because: Neither mechanism is durable in this runtime. `schedule` and `schedule_at` are an in-memory `tokio::spawn` with a `sleep` and are lost on restart, with no replay hook. A `[[state_timeout]]` is re-armed from the event log but only during the next dispatch to that same entity, which a stranded cell never receives, and there is no background sweeper. The trigger's `timeout_secs` is the WASM invocation deadline, so a validator that hangs while the server runs already fails through it and returns the cell to Draft. Adding a timer would therefore add machinery that does not cover the one case it is meant for. The strand is instead made visible: the creation script waits for a validated Draft and reports any cell that never arrives, and a curator recovers it with one call.
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, AbandonValidation and Archive; `scripts/create-encyclopedia-cells.mjs`, the readback; `.agents/skills/verify-katagami/features/encyclopedia-cells.md`.
+
+## D24 Treat the validated hash and the gate as one attestation
+
+Decision: Define a validated cell as one whose gate is true and whose stored document hashes to `document_hash`, check that pair on every read, and report the unbound callback as a runtime gap.
+
+Came up because: An independent review predicted, and a direct probe then reproduced, that an abandoned validation run keeps executing and its callback becomes valid again as soon as the cell re-enters ValidatingDocument. The run reports the hash of the document it read. The observed result was a cell holding `{}`, an invalid document, with `document_validated` true and `document_hash` naming the abandoned document.
+
+Options: Remove AbandonValidation so a run can never be orphaned, bind the callback to its run, or define the attestation as the pair and check it.
+
+Chose the pair because: Binding a callback to its run is not expressible here. Guards compare a state variable against a literal; there is no comparison between an action parameter and stored state, so nothing in the specification can reject a callback from an earlier run. Removing AbandonValidation would close the window but leave a cell stranded by a server restart with no way back, and Archived is final, so its identifier could never be reused. The pair is sound in a way the gate alone is not: only the runtime may dispatch the callback, and every action an external principal may invoke clears the gate, so a true gate whose hash matches the stored bytes can only come from a run over exactly those bytes. The harness reproduces the race and asserts the pair rejects the cell; the creation readback checks it for every approved record.
+
+Where: `scripts/verify-encyclopedia.mjs`, the stale-callback section and `attested`; `scripts/create-encyclopedia-cells.mjs`, the readback; `.agents/skills/verify-katagami/features/encyclopedia-cells.md`.

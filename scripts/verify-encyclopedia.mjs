@@ -141,7 +141,13 @@ console.log("A resolved non-curator contributor identity can neither read, list,
 
 // Removed surface. Publication asserts a curator review that this deployment
 // performs nowhere, so those actions must not exist on the installed machine.
+// A refusal is not enough on its own: an installed Publish would also refuse
+// from Draft. The deployed action list is what settles it.
+const advertised = new Set((draftRow["@odata.actions"] ?? []).map((entry) => entry.name));
+assert.deepEqual([...advertised].sort(), ["Archive", "Define", "SubmitForValidation"],
+  `the deployed cell advertises ${[...advertised].join(", ")}`);
 for (const removed of ["Publish", "RecordReview", "RequestChanges", "Revise", "ReviewValidated"]) {
+  assert.equal(advertised.has(removed), false, `${removed} is still installed`);
   const result = await action(removed, { document: "{}" });
   assert.ok(result.status >= 400, `${removed} unexpectedly succeeded: ${JSON.stringify(result.data)}`);
 }
@@ -243,6 +249,41 @@ assert.ok(await recoverDuringValidation("Archive", path), "no attempt landed dur
 await expectState("Archived");
 assert.equal((await action("Define", { document: draft })).status, 409);
 console.log("An interrupted validation can be abandoned or archived; an archived cell accepts nothing further");
+
+// A validation run that is abandoned keeps running, and its callback is valid
+// again as soon as the cell re-enters ValidatingDocument. It then reports the
+// hash of the document it read, which is no longer the stored one. So
+// `document_validated` alone is not the attestation: a cell is validated only
+// when the gate is true AND the stored document hashes to `document_hash`.
+// Every action an external principal may invoke clears the gate, and only the
+// runtime may dispatch the callback, so that pair can only come from a run over
+// exactly those bytes.
+function attested(row) {
+  return row.booleans.document_validated
+    && typeof row.fields.document === "string"
+    && createHash("sha256").update(row.fields.document).digest("hex") === row.fields.document_hash;
+}
+let reproduced = false;
+for (let attempt = 0; attempt < 25 && !reproduced; attempt++) {
+  const raced = `encyclopedia-test-race-${randomUUID()}`;
+  const racedPath = `/tdata/EncyclopediaCells('${raced}')`;
+  assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: raced })).status, 201);
+  assert.equal((await action("Define", { document: slowDocument }, racedPath)).status, 200);
+  assert.equal((await action("SubmitForValidation", {}, racedPath)).status, 200);
+  if ((await request(`${racedPath}/Temper.AbandonValidation`, "POST", {})).status !== 200) continue;
+  assert.equal((await action("Define", { document: "{}" }, racedPath)).status, 200);
+  assert.equal((await action("SubmitForValidation", {}, racedPath)).status, 200);
+  await new Promise((resolve) => setTimeout(resolve, 4_000));
+  row = (await request(racedPath)).data;
+  if (!row.booleans.document_validated) continue;
+  reproduced = true;
+  assert.equal(row.fields.document, "{}");
+  assert.notEqual(createHash("sha256").update("{}").digest("hex"), row.fields.document_hash);
+  assert.equal(attested(row), false, "a stale callback produced an attested cell");
+}
+console.log(reproduced
+  ? "A stale callback can set the gate for a document it never read, and the hash pairing rejects that cell"
+  : "The stale-callback race did not occur in 25 attempts; the hash pairing is still what the readback checks");
 
 const second = `encyclopedia-test-${randomUUID()}`;
 const secondPath = `/tdata/EncyclopediaCells('${second}')`;

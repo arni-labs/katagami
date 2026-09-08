@@ -115,6 +115,9 @@ for (const cell of planned) {
     if (typeof stored === "string" && createHash("sha256").update(stored).digest("hex") !== row.fields.document_hash) {
       problems.push("stored document does not match its own recorded hash");
     }
+    // The attestation is the pair, not the flag: an abandoned validation run
+    // can still report success after the document changed, and it then names
+    // bytes the cell no longer holds.
     if (!row.booleans.document_validated) problems.push("not validated");
     // `error` records the last validation run and no action can clear it, so a
     // non-empty error on a validated cell means the readback is looking at
