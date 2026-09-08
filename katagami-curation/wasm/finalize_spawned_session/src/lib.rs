@@ -4734,14 +4734,26 @@ fn verify_voice_md_body(
         if !lower.contains("\nfiles:") && !lower.contains("\n  files:") {
             problems.push("front matter missing corpus files: list".to_string());
         }
-        let file_entries = lower.matches("file_id: fl-").count();
-        let corpus_links = trimmed.matches("/api/file/fl-").count();
-        if corpus_links == 0 {
+        let id_after = |text: &str, marker: &str| -> Vec<String> {
+            text.match_indices(marker)
+                .map(|(at, _)| {
+                    text[at + marker.len()..]
+                        .chars()
+                        .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
+                        .collect::<String>()
+                })
+                .collect()
+        };
+        let listed = id_after(&lower, "file_id: fl-");
+        let linked = id_after(&lower, "/api/file/fl-");
+        let listed_set: std::collections::BTreeSet<&String> = listed.iter().collect();
+        let linked_set: std::collections::BTreeSet<&String> = linked.iter().collect();
+        if linked.is_empty() {
             problems.push("## Corpus links no corpus file (/api/file/<file_id>)".to_string());
-        } else if file_entries != corpus_links {
-            problems.push(format!(
-                "corpus files: lists {file_entries} entries but ## Corpus links {corpus_links}; one link per corpus file"
-            ));
+        } else if listed_set != linked_set || linked.len() != linked_set.len() {
+            problems.push(
+                "## Corpus must link each listed corpus file exactly once, and only listed files".to_string(),
+            );
         }
         let empty_sample = trimmed.lines().any(|line| {
             let l = line.trim();
@@ -7237,6 +7249,12 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
         assert!(verify_voice_md_body("ws", "fl-v", &empty_slot).is_err());
         let missing_link = good.replace("  files:\n    - {file_id: fl-1, source: S, words: 900}\n", "  files:\n    - {file_id: fl-1, source: S, words: 900}\n    - {file_id: fl-2, source: T, words: 700}\n");
         assert!(verify_voice_md_body("ws", "fl-v", &missing_link).is_err());
+        let wrong_link = good.replace("- [S](/api/file/fl-1)", "- [S](/api/file/fl-9)");
+        assert!(verify_voice_md_body("ws", "fl-v", &wrong_link).is_err());
+        let doubled = missing_link.replace("- [S](/api/file/fl-1)\n", "- [S](/api/file/fl-1)\n- [S](/api/file/fl-1)\n");
+        assert!(verify_voice_md_body("ws", "fl-v", &doubled).is_err());
+        let two_files_two_links = missing_link.replace("- [S](/api/file/fl-1)\n", "- [S](/api/file/fl-1)\n- [T](/api/file/fl-2)\n");
+        assert!(verify_voice_md_body("ws", "fl-v", &two_files_two_links).is_ok());
         // a v3.2 file is untouched by the v3.3 rules
         let v32 = good.replace("version: v3.3-lean", "version: v3.2-lean").replace("## Corpus\n- [S](/api/file/fl-1)\n", "");
         assert!(verify_voice_md_body("ws", "fl-v", &v32).is_ok());

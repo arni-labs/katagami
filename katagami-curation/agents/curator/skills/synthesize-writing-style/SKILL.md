@@ -179,8 +179,9 @@ verification record and never gates a publish.
 Frontmatter `version: v3.3-lean`; sections `## Never`, `## Gold standard
 samples`, `## Signature vocabulary`, `## Measured fingerprint`, the bands JSON,
 then `## Corpus`. The finalizer (`verify_voice_md_body`) requires these
-headings, a `files:` list in the corpus front matter, exactly one
-`/api/file/<file_id>` link per listed file, and refuses an empty sample slot.
+headings, a `files:` list in the corpus front matter, a `## Corpus` section
+that links every listed file exactly once and nothing else, and refuses an
+empty sample slot.
 The passage count is authored, one per corpus item; the finalizer checks the
 links, the list, and the empty slot. Files that still
 declare `v3.2-lean` are checked by the v3.2 rules; new files declare v3.3.
