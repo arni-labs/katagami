@@ -148,7 +148,7 @@ export function SpecimenCard({ manifestation, compact = false }: { manifestation
       )}
       <div className="p-3">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">{setLabel}</span>
+          <span className="whitespace-nowrap font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">{setLabel}</span>
           <StatusStamp status={record.status} tilt={-1} />
         </div>
         <div className="mt-1.5 flex items-baseline gap-1 font-display text-[16px] font-bold leading-tight tracking-[-0.02em]">
@@ -366,7 +366,7 @@ export function CellSheet({
         <Section eyebrow={cell.manifestations.length ? `${cell.manifestations.length} made ${cell.manifestations.length === 1 ? "thing" : "things"}` : "Made things"} ink="var(--ramune)">
           {cell.manifestations.length ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              {cell.manifestations.map((m) => <SpecimenCard key={`${m.entitySet}:${m.entityId}`} manifestation={m} />)}
+              {cell.manifestations.map((m) => <SpecimenCard key={`${m.entitySet}:${m.entityId}`} manifestation={m} compact={cell.manifestations.length > 8} />)}
             </div>
           ) : (
             <Empty>No Katagami record expresses this cell yet. An empty seat is a real finding: it is a region with no made work.</Empty>
@@ -385,17 +385,17 @@ export function CellSheet({
 
         <Section eyebrow="Nearby" ink="var(--graphite)" aside={<span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">1 hop</span>}>
           {nearby.length ? (
-            <ul className="flex flex-wrap gap-1.5">
+            <ul className="grid gap-1.5">
               {nearby.map((n) => (
                 <li key={n.cell.id}>
                   <button
                     type="button"
                     onClick={() => onSelect(n.cell.id)}
                     title={n.explanation}
-                    className="inline-flex h-8 items-center gap-2 bg-[var(--paper-sticker)] px-3 shadow-[var(--shadow-sticker)] transition-transform hover:-translate-y-[1px] motion-reduce:hover:translate-y-0"
+                    className="flex w-full items-baseline gap-3 bg-[var(--paper-sticker)] px-3 py-2 text-left shadow-[var(--shadow-sticker)] transition-transform hover:-translate-y-[1px] motion-reduce:hover:translate-y-0"
                   >
-                    <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">{n.via}</span>
-                    <span className="font-display text-[14px] font-bold tracking-[-0.02em]">{n.cell.name}</span>
+                    <span className="w-28 shrink-0 font-mono text-[9px] uppercase leading-snug tracking-[0.12em] text-muted-foreground">{n.via}</span>
+                    <span className="font-display text-[15px] font-bold leading-tight tracking-[-0.02em]">{n.cell.name}</span>
                   </button>
                 </li>
               ))}

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Bookmark, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { applyFilters, buildFacets, type FacetKey, type FacetSelection, type WritingStyleSpecimen } from "@/lib/writing-styles";
 import { SearchBox, Tape, CHIP, inkChipStyle } from "@/components/encyclopedia/chrome";
-import { usePrefersReducedMotion } from "@/components/encyclopedia/use-pan-zoom";
+import { useMounted, usePrefersReducedMotion } from "@/components/encyclopedia/use-pan-zoom";
 import { CellLinks, CreditLine, FacetControls, Passage, StatusStamp, TagChips, VoiceMdLink } from "./parts";
 import { CompareBoard } from "./compare";
 
@@ -84,6 +85,7 @@ export function WritingA({ specimens }: { specimens: WritingStyleSpecimen[] }) {
   const [railOpen, setRailOpen] = useState(false);
   const reduced = usePrefersReducedMotion();
   const compareRef = useRef<HTMLDivElement | null>(null);
+  const mounted = useMounted();
 
   const facets = useMemo(() => buildFacets(specimens), [specimens]);
   const shown = useMemo(() => applyFilters(specimens, selection, query), [specimens, selection, query]);
@@ -149,9 +151,12 @@ export function WritingA({ specimens }: { specimens: WritingStyleSpecimen[] }) {
         </div>
       </div>
 
-      {/* the shortlist bar */}
+      {/* The shortlist bar is fixed to the window, so it renders through a
+          portal: the route transition leaves a transform on the page wrapper,
+          which would otherwise turn "fixed" into "relative to the page". */}
+      {mounted ? createPortal(
       <div
-        className={`fixed inset-x-0 bottom-0 z-40 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${shortlist.length ? "translate-y-0" : "translate-y-full"}`}
+        className={`fixed inset-x-0 bottom-0 z-40 max-md:bottom-[64px] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${shortlist.length ? "translate-y-0" : "translate-y-full"}`}
         aria-hidden={!shortlist.length}
       >
         <div className="mx-auto max-w-7xl px-4 pb-3">
@@ -175,7 +180,9 @@ export function WritingA({ specimens }: { specimens: WritingStyleSpecimen[] }) {
             </span>
           </div>
         </div>
-      </div>
+      </div>,
+        document.body,
+      ) : null}
     </div>
   );
 }

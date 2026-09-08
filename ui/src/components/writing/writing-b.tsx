@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import { ArrowLeft, Pin, PinOff } from "lucide-react";
 import { applyFilters, buildFacets, type FacetKey, type FacetSelection, type WritingStyleSpecimen } from "@/lib/writing-styles";
 import { SearchBox, Tape, inkChipStyle } from "@/components/encyclopedia/chrome";
+import { useMounted } from "@/components/encyclopedia/use-pan-zoom";
 import { BulletList, CellLinks, CreditLine, CreditsList, FacetControls, KeyValueTable, Passage, Section, StatusStamp, TagChips, VoiceMdLink } from "./parts";
 import { CompareBoard } from "./compare";
 
@@ -73,6 +75,7 @@ export function WritingB({ specimens }: { specimens: WritingStyleSpecimen[] }) {
   const [chosen, setSelected] = useState<string | null>(specimens[0]?.id ?? null);
   const [pinned, setPinned] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mounted = useMounted();
   const listRef = useRef<HTMLOListElement | null>(null);
 
   const facets = useMemo(() => buildFacets(specimens), [specimens]);
@@ -104,6 +107,19 @@ export function WritingB({ specimens }: { specimens: WritingStyleSpecimen[] }) {
     else if (event.key === "ArrowUp" || event.key === "k") { move(-1); event.preventDefault(); }
     else if (event.key === "Enter") { setMobileOpen(true); }
   };
+
+  const pane = current ? (
+    comparing && pinnedSpecimen ? (
+      <div className="grid gap-4">
+        <CompareBoard specimens={[pinnedSpecimen, current]} onRemove={(id) => { if (id === pinned) setPinned(null); else setSelected(pinned); }} onClose={() => setPinned(null)} />
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Pick another style in the index to compare it against {pinnedSpecimen.name}. Unpin to return to reading.</p>
+      </div>
+    ) : (
+      <Reading specimen={current} pinned={pinned === current.id} onPin={() => setPinned(pinned === current.id ? null : current.id)} />
+    )
+  ) : (
+    <div className="sticker-card p-6"><p className="text-[16px] text-muted-foreground">Pick a style from the index to read it here.</p></div>
+  );
 
   return (
     <div className="pb-16">
@@ -159,25 +175,16 @@ export function WritingB({ specimens }: { specimens: WritingStyleSpecimen[] }) {
         </ol>
 
         {/* the reading pane: a column on desktop, a full sheet on phones */}
-        <div className={`${mobileOpen ? "fixed inset-0 z-40 overflow-y-auto bg-[var(--washi)] p-3 pb-28 pt-4" : "hidden"} lg:static lg:block lg:overflow-visible lg:bg-transparent lg:p-0`}>
-          {mobileOpen ? (
-            <button type="button" onClick={() => setMobileOpen(false)} className="mb-3 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground lg:hidden">
+        <div className="hidden lg:block">{pane}</div>
+        {mobileOpen && mounted ? createPortal(
+          <div className="fixed inset-0 z-40 overflow-y-auto bg-[var(--washi)] p-3 pb-28 pt-4 lg:hidden" role="dialog" aria-modal="true" aria-label="Reading">
+            <button type="button" onClick={() => setMobileOpen(false)} className="mb-3 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
               <ArrowLeft size={13} aria-hidden /> back to the index
             </button>
-          ) : null}
-          {current ? (
-            comparing && pinnedSpecimen ? (
-              <div className="grid gap-4">
-                <CompareBoard specimens={[pinnedSpecimen, current]} onRemove={(id) => { if (id === pinned) setPinned(null); else setSelected(pinned); }} onClose={() => setPinned(null)} />
-                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Pick another style in the index to compare it against {pinnedSpecimen.name}. Unpin to return to reading.</p>
-              </div>
-            ) : (
-              <Reading specimen={current} pinned={pinned === current.id} onPin={() => setPinned(pinned === current.id ? null : current.id)} />
-            )
-          ) : (
-            <div className="sticker-card p-6"><p className="text-[16px] text-muted-foreground">Pick a style from the index to read it here.</p></div>
-          )}
-        </div>
+            {pane}
+          </div>,
+          document.body,
+        ) : null}
       </div>
     </div>
   );

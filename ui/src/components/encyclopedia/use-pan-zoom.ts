@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 // A pannable, zoomable camera over a field of nodes. Pointer drag pans, wheel
 // and pinch zoom about the cursor, buttons zoom about the viewport centre, and
@@ -33,6 +33,14 @@ export function usePrefersReducedMotion(): boolean {
     return () => media.removeEventListener("change", update);
   }, []);
   return reduced;
+}
+
+const noop = () => () => {};
+
+/** False during server render and hydration, true once on the client — for
+ *  portals to document.body. */
+export function useMounted(): boolean {
+  return useSyncExternalStore(noop, () => true, () => false);
 }
 
 export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
