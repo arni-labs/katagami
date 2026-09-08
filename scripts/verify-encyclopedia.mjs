@@ -176,12 +176,28 @@ assert.equal(row.counters.version, versionBefore, "a parameter changed a counter
 //    undeclared parameters, this assertion fails, and the correct replacement
 //    is `assert.equal(row.fields.document, fixture)`.
 assert.equal(row.fields.document, "TAMPERED", "the runtime no longer merges undeclared parameters; tighten this test");
-// 3. Because the validated hash is stored beside the document, tampering is
-//    detectable by anything that reads a cell, which is how the readback of the
-//    approved records checks each stored document.
+// 3. A replaced document no longer matches its recorded hash, so a partial
+//    overwrite is detectable. This is not a defence: `document_hash` is a
+//    string field and is injectable the same way, so a caller that sets both
+//    leaves a self-consistent record whose content never reached the validator.
+//    What actually bounds the damage is that only a principal already permitted
+//    to call Define can invoke any action here, and that principal can rewrite
+//    the document through Define anyway.
 assert.notEqual(createHash("sha256").update(row.fields.document).digest("hex"), row.fields.document_hash);
 assert.equal(createHash("sha256").update(fixture).digest("hex"), row.fields.document_hash);
-console.log("Undeclared parameters cannot forge validation or version, and a replaced document no longer matches its recorded hash");
+const forged = "FORGED";
+const forgery = `encyclopedia-test-forgery-${randomUUID()}`;
+const forgeryPath = `/tdata/EncyclopediaCells('${forgery}')`;
+assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: forgery })).status, 201);
+assert.equal((await action("Define", { document: fixture }, forgeryPath)).status, 200);
+assert.equal((await action("SubmitForValidation", {}, forgeryPath)).status, 200);
+await expectState("Draft", (value) => value.booleans.document_validated === true, forgeryPath);
+assert.equal((await action("Archive", { document: forged, document_hash: createHash("sha256").update(forged).digest("hex") }, forgeryPath)).status, 200);
+row = await expectState("Archived", (value) => value.fields.document === forged, forgeryPath);
+assert.equal(row.booleans.document_validated, true);
+assert.equal(createHash("sha256").update(row.fields.document).digest("hex"), row.fields.document_hash,
+  "the runtime no longer merges undeclared parameters; tighten this test");
+console.log("Undeclared parameters cannot forge validation or version; they can forge a document and its hash together, so the hash detects only a partial overwrite");
 
 const recovery = `encyclopedia-test-recovery-${randomUUID()}`;
 const recoveryPath = `/tdata/EncyclopediaCells('${recovery}')`;
