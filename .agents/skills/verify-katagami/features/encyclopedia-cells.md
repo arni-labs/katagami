@@ -59,6 +59,7 @@ Read back each state and the expected fields, allowing for asynchronous projecti
 - Rewriting a document through Define clears validation; a malformed document returns to Draft with an error, and correcting it clears that error. `error` describes the last validation run, not the current document: Define cannot clear it, because no specification effect can write a string field.
 - Inline validation resolves documents larger than 128 KiB from the runtime's blob storage.
 - An interrupted validation can be abandoned or archived, and a late callback from the abandoned run cannot revive the gate; Archived cannot be redefined.
+- A cell that cites nothing and does not say it was recollected is refused.
 - Undeclared parameters cannot forge a declared boolean or counter; they can replace a document and its hash, and the record is then left unvalidated.
 - A callback from an abandoned run can set the gate for a document it never read, and the hash pairing rejects that cell.
 
@@ -70,4 +71,4 @@ Recovery from an interrupted validation is deliberate, not automatic. The runtim
 
 Run `npm test` in `ui/`, plus Rust tests, formatting, and clippy in the validator directory. The shared fixture tests check the document contract; they do not prove source rights, historical claims, or aesthetic quality. English-only writing collection scope belongs to the approved proposal and content review, not a universal ban on text languages in the format.
 
-For deployment, follow `genesis-publish.md`, verify the installed app pin and OData metadata, and read back only the approved production records. Never create local test fixtures in production. Record names, scopes, Draft status, and empty enrichment fields, and compare each stored document against the approved bytes rather than trusting its recorded hash; a successful dispatch alone is insufficient.
+For deployment, follow `genesis-publish.md`, verify the installed app pin and OData metadata, and read back only the approved production records. Never create local test fixtures in production. Record names, scopes, Draft status, provenance, and whichever links and sources the batch approved, and compare each stored document against the approved bytes rather than trusting its recorded hash; a successful dispatch alone is insufficient.

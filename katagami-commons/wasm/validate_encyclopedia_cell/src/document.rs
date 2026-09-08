@@ -1,7 +1,13 @@
 use std::collections::BTreeSet;
 
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use url::Url;
+
+/// An optional field that must be absent or a string. `Option<String>` alone
+/// would read JSON `null` as absent, which the TypeScript contract rejects.
+fn present_string<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<String>, D::Error> {
+    String::deserialize(deserializer).map(Some)
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -26,6 +32,7 @@ pub(crate) struct CellDocument {
 #[serde(deny_unknown_fields)]
 struct Provenance {
     basis: String,
+    #[serde(default, deserialize_with = "present_string")]
     note: Option<String>,
 }
 
@@ -78,6 +85,7 @@ struct Study {
     title: String,
     kind: String,
     description: String,
+    #[serde(default, deserialize_with = "present_string")]
     generated_by: Option<String>,
     representations: Vec<Representation>,
 }
@@ -241,6 +249,9 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
     match (cell.provenance.basis.as_str(), &cell.provenance.note) {
         ("cited", _) if cell.sources.is_empty() => {
             return Err("a cited cell must carry at least one source".into());
+        }
+        ("recollected", _) if !cell.sources.is_empty() => {
+            return Err("a cell with a source is cited, not recollected".into());
         }
         ("recollected", None) => {
             return Err("a recollected cell must say it was written from training data and why no source was found".into());

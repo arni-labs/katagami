@@ -55,6 +55,10 @@ Only the human decides. Accepted items authorize the displayed revision and oper
 
 Permission to generate is not approval of the generated result. Present those results for selection before attaching them to the collection or publishing them. Edits to an approved proposal require a new revision and decision. Batch preparation must not create encyclopedia cell records. Existing manifestation review and access rules continue to apply.
 
+### Provenance
+
+Every cell states where its own account comes from: `cited`, with at least one source a reader can follow, or `recollected`, with a note saying the model wrote it from training data and no reference was located, and no sources. Every relationship and manifestation cites a source. Every study says whether it is historical, original, or generated, and a generated study names its generator. The validator refuses a document that leaves any of this unsaid. (Rita, 2026-09-08.)
+
 ### Cell lifecycle
 
 The deployed lifecycle is Draft, ValidatingDocument, and Archived. Defining a document clears previous validation. The validator checks the document format and example metadata. On failure the cell returns to Draft with the specific finding recorded. An interrupted validation returns to Draft through AbandonValidation, or is archived. Archived is final. Generic updates must not bypass those transitions or set validation fields directly.

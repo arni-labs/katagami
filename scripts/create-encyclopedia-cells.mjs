@@ -5,8 +5,8 @@
 // nothing to it. A cell is written as a private Draft holding exactly the
 // approved document — name, scope, maps, provenance, and whichever links,
 // sources, and studies the batch authorized. Anything the payload omits stays
-// empty, and a cell that names no source is recorded as recollected from model
-// training data rather than left silent.
+// empty. Provenance is never invented here: the payload states it, because
+// saying a cell is cited or recollected is content the human approved.
 //
 //   node scripts/create-encyclopedia-cells.mjs <approved.json> --expect <n> [--apply]
 //
@@ -71,8 +71,6 @@ export function identifierFor(name) {
   return id;
 }
 
-const RECOLLECTED = "Written from model training data; no external reference was located for this cell yet.";
-
 // Build and validate every document before touching the deployment, so a
 // rejected document is found here rather than half way through the batch.
 const planned = payload.cells.map((cell) => {
@@ -81,7 +79,7 @@ const planned = payload.cells.map((cell) => {
     version: 2,
     name: cell.name,
     description: cell.description ?? "",
-    provenance: cell.provenance ?? (sources.length > 0 ? { basis: "cited" } : { basis: "recollected", note: RECOLLECTED }),
+    provenance: cell.provenance,
     maps: cell.maps,
     broader: cell.broader ?? [],
     relations: cell.relations ?? [],
@@ -90,6 +88,7 @@ const planned = payload.cells.map((cell) => {
     manifestations: cell.manifestations ?? [],
     studies: cell.studies ?? [],
   };
+  assert.ok(cell.provenance, `cell ${cell.number} (${cell.name}) states no provenance; the payload must say cited or recollected`);
   const parsed = cellDocumentSchema.safeParse(document);
   assert.ok(parsed.success, `cell ${cell.number} (${cell.name}) is not a valid document: ${JSON.stringify(parsed.error?.issues)}`);
   const serialized = JSON.stringify(document);
@@ -99,41 +98,75 @@ assert.equal(new Set(planned.map((cell) => cell.id)).size, planned.length, "two 
 console.log(`Prepared ${planned.length} documents, all valid against the shared contract`);
 
 // Every link must land on something that exists, and every citation must
-// answer. A cell in this batch may reference another cell in this batch.
+// answer and be about its subject. A cell in this batch may reference another
+// cell in this batch; those are checked by write order below, not here.
 const batchIds = new Set(planned.map((cell) => cell.id));
 const checked = new Map();
-async function exists(path) {
-  if (!checked.has(path)) checked.set(path, (await request(path)).status === 200);
+async function fetchRecord(path) {
+  if (!checked.has(path)) {
+    try { const row = await request(path); checked.set(path, row.status === 200 ? row.data : null); }
+    catch { checked.set(path, null); }
+  }
   return checked.get(path);
 }
-async function sourceAnswers(url) {
-  if (checked.has(url)) return checked.get(url);
-  let ok = false;
+// A source answers when the page is reachable without leaving its host and
+// mentions its own subject. A human may vouch for a page a script cannot
+// reach; that is recorded in the run rather than silently accepted.
+function subjectWords(title) {
+  return title.split(/\s[—–-]\s/)[0].toLowerCase().match(/[a-z\u00c0-\u024f]{4,}/g) ?? [];
+}
+async function sourceAnswers(source) {
+  if (source.verifiedBy) {
+    assert.match(source.verifiedOn ?? "", /^\d{4}-\d{2}-\d{2}$/, `source '${source.id}' names a verifier but no date`);
+    return `verified by ${source.verifiedBy} on ${source.verifiedOn}, not fetched`;
+  }
+  if (checked.has(source.url)) return checked.get(source.url);
+  let verdict = "fetched";
   try {
-    const response = await fetch(url, { method: "GET", redirect: "follow", signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "Mozilla/5.0 (compatible; katagami-encyclopedia-verifier)" } });
-    ok = response.ok;
-  } catch { ok = false; }
-  checked.set(url, ok);
-  return ok;
+    const response = await fetch(source.url, { method: "GET", redirect: "follow", signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "Mozilla/5.0 (compatible; katagami-encyclopedia-verifier)" } });
+    if (!response.ok) verdict = `HTTP ${response.status}`;
+    else if (new URL(response.url).host !== new URL(source.url).host) verdict = `redirected off-site to ${new URL(response.url).host}`;
+    else {
+      const body = (await response.text()).slice(0, 600_000).toLowerCase();
+      const words = subjectWords(source.title);
+      if (words.length > 0 && !words.some((word) => body.includes(word))) verdict = `page does not mention ${words.join("/")}`;
+    }
+  } catch (error) { verdict = `unreachable (${error.name})`; }
+  checked.set(source.url, verdict);
+  return verdict;
+}
+// The explanation quotes the record's own declared lineage; that quote must
+// actually appear in the record's credits, or the link is asserted, not cited.
+function declaredCredit(record, explanation) {
+  const quoted = explanation.match(/"([^"]+)"/)?.[1];
+  if (!quoted) return "the explanation quotes no credit";
+  let credits = record.fields?.credits ?? [];
+  if (typeof credits === "string") { try { credits = JSON.parse(credits); } catch { credits = []; } }
+  return credits.some((credit) => credit?.name === quoted) ? "declared" : `credits do not declare "${quoted}"`;
 }
 const unresolved = [];
+const vouched = [];
 for (const cell of planned) {
   for (const link of [...cell.parsed.broader, ...cell.parsed.relations]) {
-    if (!batchIds.has(link.cellId) && !(await exists(`/tdata/EncyclopediaCells('${link.cellId}')`))) {
+    if (!batchIds.has(link.cellId) && !(await fetchRecord(`/tdata/EncyclopediaCells('${link.cellId}')`))) {
       unresolved.push(`${cell.id}: linked cell '${link.cellId}' does not exist`);
     }
   }
   for (const entry of cell.parsed.manifestations) {
-    if (!(await exists(`/tdata/${entry.entitySet}('${entry.entityId}')`))) {
-      unresolved.push(`${cell.id}: ${entry.entitySet} '${entry.entityId}' does not exist`);
-    }
+    const record = await fetchRecord(`/tdata/${entry.entitySet}('${entry.entityId}')`);
+    if (!record) { unresolved.push(`${cell.id}: ${entry.entitySet} '${entry.entityId}' does not exist`); continue; }
+    const declared = declaredCredit(record, entry.explanation);
+    if (declared !== "declared") unresolved.push(`${cell.id}: ${entry.entitySet} '${entry.entityId}' — ${declared}`);
   }
   for (const source of cell.parsed.sources) {
-    if (!(await sourceAnswers(source.url))) unresolved.push(`${cell.id}: source '${source.id}' does not answer at ${source.url}`);
+    const verdict = await sourceAnswers(source);
+    if (verdict.startsWith("verified by")) vouched.push(`${cell.id}: '${source.id}' ${verdict}`);
+    else if (verdict !== "fetched") unresolved.push(`${cell.id}: source '${source.id}' — ${verdict} (${source.url})`);
   }
 }
 assert.equal(unresolved.length, 0, `${unresolved.length} reference(s) do not resolve:\n${unresolved.join("\n")}`);
-console.log(`Resolved every linked cell, manifestation record, and source URL (${checked.size} checks)`);
+for (const line of vouched) console.log(`  ${line}`);
+console.log(`Resolved every linked cell, every manifestation record and its declared credit, and every source (${checked.size} checks, ${vouched.length} human-verified)`);
 if (!apply) console.log("Reporting only. Pass --apply to write the records.");
 
 const read = async (cell) => {
@@ -154,9 +187,29 @@ const settled = (row, cell) => attested(row) && row.status === "Draft" && row.fi
 
 // One cell's failure must not strand the rest of the batch: every cell is
 // attempted, and the run fails at the end with everything that went wrong.
+// `broader` links form a tree, so parents are written first and a child whose
+// parent failed is skipped rather than attested pointing at nothing. Relations
+// are symmetric and cannot be ordered; a relation whose partner failed is
+// reported at readback and repaired by the rerun.
+const parentsOf = (cell) => cell.parsed.broader.map((link) => link.cellId).filter((id) => batchIds.has(id));
+const ordered = [];
+const placed = new Set();
+while (ordered.length < planned.length) {
+  const next = planned.find((cell) => !placed.has(cell.id) && parentsOf(cell).every((id) => placed.has(id)));
+  assert.ok(next, "the batch's broader links form a cycle");
+  ordered.push(next); placed.add(next.id);
+}
 const failures = [];
-for (const cell of planned) {
+const failedIds = new Set();
+for (const cell of ordered) {
   const label = `${String(cell.number).padStart(2)} ${cell.id}`;
+  const blockedBy = parentsOf(cell).filter((id) => failedIds.has(id));
+  if (blockedBy.length > 0) {
+    failures.push(`${cell.id}: not written, its broader cell(s) ${blockedBy.join(", ")} failed`);
+    failedIds.add(cell.id);
+    console.log(`${label}: skipped, broader ${blockedBy.join(", ")} failed`);
+    continue;
+  }
   try {
     let existing = await read(cell);
     // Two approved names can slug to one identifier. The approval's identity is
@@ -195,6 +248,7 @@ for (const cell of planned) {
     console.log(`${label}: written and submitted`);
   } catch (error) {
     failures.push(`${cell.id}: ${error.message}`);
+    failedIds.add(cell.id);
     console.log(`${label}: ${error.message}`);
   }
 }
@@ -203,7 +257,8 @@ if (!apply) process.exit(failures.length === 0 ? 0 : 1);
 
 // Read back every record from the deployment. A successful dispatch is not
 // evidence: the stored bytes, the state, and the attestation are.
-for (const cell of planned) {
+for (const cell of ordered) {
+  if (failedIds.has(cell.id)) continue;
   let row = null;
   // Wait for the attestation, not for the gate: a stale callback can set the
   // gate before the live run reports on the bytes actually stored.
@@ -230,6 +285,9 @@ for (const cell of planned) {
       }
     }
     if (row.fields.document_hash !== cell.hash) problems.push("recorded hash is not the approved document's hash");
+    for (const link of cell.parsed.relations) {
+      if (failedIds.has(link.cellId)) problems.push(`relation to '${link.cellId}', which failed in this run`);
+    }
     if (!row.booleans.document_validated) problems.push("not validated");
     if (row.fields.error !== "") problems.push(`error is set: ${row.fields.error}`);
   }

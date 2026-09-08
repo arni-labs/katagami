@@ -296,7 +296,7 @@ Came up because: The second review round found the script fragile in ways that o
 
 Options: Document the constraints as operator procedure, or make the script enforce them.
 
-Chose enforcement because: This script writes production records from a file, and a rerun after a partial failure is the expected case, not the exception. `--expect <n>` makes the count an explicit confirmation rather than whatever the file happens to contain, and the `allowedOperation` check refuses a payload authorizing anything but creation.
+Chose enforcement because: This script writes production records from a file, and a rerun after a partial failure is the expected case, not the exception. `--expect <n>` makes the count an explicit confirmation rather than whatever the file happens to contain, and the `allowedOperation` check refuses a payload authorizing anything but writing private Drafts (creation at first; since D27, full approved documents).
 
 Where: `scripts/create-encyclopedia-cells.mjs`.
 
@@ -311,3 +311,27 @@ Options: Leave it as a log line, or make it a tripwire.
 Chose the tripwire because: The assertions that matter live inside the reproduction, so a run that does not reproduce proves nothing. Failing loudly is the signal to tighten the test against a corrected runtime, the same shape as the assertion that the injected document is still merged.
 
 Where: `scripts/verify-encyclopedia.mjs`, the stale-callback section.
+
+## D27 A cell must say where it came from
+
+Decision: Bump the cell document contract to version 2 with a provenance rule, enforced identically in the TypeScript schema and the WASM validator: `provenance.basis` is `cited` (at least one source, and no note required) or `recollected` (a note saying the model wrote it from training data and no reference was located, and no sources); a `generated` study names `generatedBy`, and no other study does. JSON `null` is rejected for both optional fields on both sides.
+
+Came up because: Rita asked, on 2026-09-08, for every cell to cite something a reader can learn from, and where nothing exists, to say plainly that the model recollected it; and for every example, text or image, to say whether it is real with a link or AI-generated. Version 1 allowed a cell with no source and no statement at all.
+
+Options: Leave provenance as convention in the skill, add an optional field, or make it mandatory and version the contract.
+
+Chose a mandatory field and a version bump because: A reader's trust depends on this, and a convention is exactly what a busy agent drops. Versioning is honest about the break: the 20 production cells are version 1 and stop re-validating once the new module is installed, so the module and the migration batch (B3) deploy in one sequence, with B3 re-defining every cell. The apply script no longer invents a provenance when a payload omits one; stating it is content the human approves.
+
+Where: `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; fixtures; `scripts/create-encyclopedia-cells.mjs`; `.agents/skills/encyclopedia/SKILL.md`, Provenance.
+
+## D28 Preflight proves the claim, not only the pointer
+
+Decision: Before writing, the apply script checks that each manifestation's quoted credit is actually declared in that record's `credits`, that each source stays on its host and mentions its subject, and that a child cell is written only after its broader cell; a human may vouch for a page a script cannot reach, and the run records that.
+
+Came up because: Review showed the first preflight proved only that a row existed and a URL returned 200 — a soft-404, an off-site redirect, or any existing record attached to any cell would have passed, and a batch failure could leave a child attested pointing at a parent that was never written.
+
+Options: Accept existence checks as sufficient, attempt to judge citation quality, or check the specific claim each link makes.
+
+Chose checking the specific claim because: The explanation says which credit the record declares; that is mechanically verifiable and is the whole basis for the link. Judging whether a page is a *good* reference is not mechanical and would become a rabbit hole; whether it stays on its host and mentions its subject is. Museum sites that refuse scripts are cited only when a named human opened them on a named date.
+
+Where: `scripts/create-encyclopedia-cells.mjs`, `sourceAnswers`, `declaredCredit`, write ordering.

@@ -183,9 +183,15 @@ One JSON document per cell, validated against
   "questions": ["..."],
   "sources": [{"id": "...", "title": "...", "url": "https://..."}],
   "manifestations": [{"entitySet": "ArtStyles", "entityId": "...", "explanation": "...", "sourceIds": ["..."]}],
-  "studies": [{"id": "...", "title": "...", "kind": "historical|original|generated", "generatedBy": "<only when generated>", "description": "...", "representations": [...]}]
+  "studies": [
+    {"id": "...", "title": "...", "kind": "historical", "description": "...", "representations": [...]},
+    {"id": "...", "title": "...", "kind": "generated", "generatedBy": "gpt-image-1 via Codex", "description": "...", "representations": [...]}
+  ]
 }
 ```
+
+`kind` is one of `historical`, `original`, `generated`. Only a generated study
+carries `generatedBy`; putting it on a historical one is refused.
 
 ## Provenance: a reader must always know where something came from
 
@@ -196,7 +202,8 @@ browsing human and a learning agent both depend on.
   means at least one entry in `sources` — an encyclopedia reference, a museum
   essay, a standard history — that a reader can follow to learn more.
   Recollected means the model wrote the account from its training data and no
-  external reference was located; the `note` must say so in plain words. A cell
+  external reference was located; the `note` must say so in plain words, and a
+  recollected cell carries no sources — if you have one, you are cited. A cell
   with neither is refused by the validator. Prefer cited. Recollected is an
   honest interim state, not a destination: a maintenance sweep should be
   turning recollected cells into cited ones.
@@ -243,10 +250,17 @@ node scripts/create-encyclopedia-cells.mjs <approved.json> --expect <n> --apply
 ```
 
 `--expect` is your own count of the approval, checked against the payload. The
-script refuses a payload authorizing anything but creation, attempts every cell
-so one failure does not strand the batch, recovers a cell left mid-validation,
-refuses an identifier already holding a different cell, and reads every record
-back.
+payload states each cell's provenance; the script never invents one. It refuses
+a payload authorizing anything but writing private Drafts, writes broader cells
+before their children and skips a child whose parent failed, resolves every
+linked cell, checks that each manifestation's quoted credit is really declared
+by that record, fetches every source and requires it to stay on its host and
+mention its subject, recovers a cell left mid-validation, refuses an identifier
+already holding a different cell, and reads every record back.
+
+A page a script cannot reach — some museum sites refuse automated requests — may
+be cited when a human has opened it: give the source `verifiedBy` and
+`verifiedOn`, and the run records it as human-verified rather than fetched.
 
 To enrich, `Define` the full document — it replaces, never merges — then
 `SubmitForValidation`, then read back and check the attestation pair. Revision

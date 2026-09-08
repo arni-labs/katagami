@@ -92,6 +92,9 @@ export const cellDocumentSchema = z.strictObject({
   if (cell.provenance.basis === "cited" && cell.sources.length === 0) {
     context.addIssue({ code: "custom", path: ["provenance"], message: "A cited cell must carry at least one source" });
   }
+  if (cell.provenance.basis === "recollected" && cell.sources.length > 0) {
+    context.addIssue({ code: "custom", path: ["provenance"], message: "A cell with a source is cited, not recollected" });
+  }
   if (cell.provenance.basis === "recollected" && !cell.provenance.note) {
     context.addIssue({ code: "custom", path: ["provenance", "note"], message: "A recollected cell must say that it was written from training data and why no source was found" });
   }
