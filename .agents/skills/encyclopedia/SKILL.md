@@ -276,9 +276,11 @@ or by the payload. The script fetches unverified sources as its own gate
 against dead links and skips the fetch for verified ones, which is how a page
 that refuses automated requests gets cited.
 
-To enrich, `Define` the full document — it replaces, never merges — then
-`SubmitForValidation`, then read back and check the attestation pair. Revision
-keeps the cell's id and history. Verify on a local fixture first: see
+To enrich, put the full approved document in a `Define` payload and run the
+apply script; do not call `Define` and `SubmitForValidation` by hand, because
+only the script resolves links, fetches sources, orders writes, and reads back
+the attestation pair. `Define` replaces the document, never merges, and
+revision keeps the cell's id and history. Verify on a local fixture first: see
 `.agents/skills/verify-katagami/features/encyclopedia-cells.md` and
 `scripts/verify-encyclopedia.mjs`.
 

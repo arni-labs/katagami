@@ -347,3 +347,15 @@ Options: Add a third, stricter heuristic; keep the weak ones as "better than not
 Chose deletion because: A check that can be passed by the wrong thing is worse than no check, since it reports coverage it does not have. The boundary is now written where an agent reads it: the preflight guards against dead links and wrong order, and the approval guards against wrong content. Alongside: a Create batch can resume an interrupted run (a cell holding exactly this document is a resume, not a conflict), a child is written only after its parent has attested rather than after the parent's request returned, the two validators share one explicit definition of blank (JavaScript's and Rust's trim() disagree on U+0085 and U+FEFF), and `verifiedOn` must be a real calendar date.
 
 Where: `scripts/create-encyclopedia-cells.mjs`; `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; `.agents/skills/encyclopedia/SKILL.md`.
+
+## D30 What the apply script does about a partner that failed
+
+Decision: When a cell in a batch fails to write, cells that relate to it are still written, the readback names the failed partner as a problem on each of them, the run exits non-zero, and the rerun repairs the gap. The batch is not made a Temper entity.
+
+Came up because: Review kept returning to two objections. First, that an attested cell can be left relating to a partner that failed later in the same run. Second, from Greptile, that the script orchestrates a batch imperatively where the repository prefers entities with state machines.
+
+Options: Roll back or rewrite the surviving cell, order relations, make the batch an entity, or report and rerun.
+
+Chose report and rerun because: Relations are symmetric, so no write order removes the window. Rolling back means archiving, which is final and would destroy an approved cell over a transient failure; rewriting means altering approved content. What is left is to say exactly what happened, which the readback does, and to make the rerun idempotent, which it is. A batch entity would be a state machine for a curator's one-off script over a few dozen cells — machinery that looks architectural and does the same thing more slowly. Redirects, meanwhile, are now followed hop by hop, and every hop must be public HTTPS on the original host with no private, loopback or link-local address.
+
+Where: `scripts/create-encyclopedia-cells.mjs`, the write loop, readback, `publicHost`; `.agents/skills/encyclopedia/SKILL.md`, which now sends enrichment through the script rather than direct actions.
