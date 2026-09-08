@@ -10,8 +10,7 @@ const httpsUrl = z.url().pipe(z.string().refine((value) => {
 }, "Use an HTTPS URL without credentials"));
 const sourceIds = z.array(id).min(1);
 
-export const encyclopediaMapSchema = z.enum(["art", "writing", "palettes", "design"]);
-export type EncyclopediaMap = z.infer<typeof encyclopediaMapSchema>;
+const encyclopediaMapSchema = z.enum(["art", "writing", "palettes", "design"]);
 
 const sourceSchema = z.strictObject({ id, title: text, url: httpsUrl });
 const rightsSchema = z.strictObject({
@@ -25,7 +24,7 @@ const rightsSchema = z.strictObject({
 });
 
 const representationFields = { id, sourceId: id, rights: rightsSchema };
-export const representationSchema = z.discriminatedUnion("kind", [
+const representationSchema = z.discriminatedUnion("kind", [
   z.strictObject({ ...representationFields, kind: z.literal("image"), url: httpsUrl, alt: text }),
   z.strictObject({ ...representationFields, kind: z.literal("text"), text, language: text, edition: text }),
   z.strictObject({
@@ -35,7 +34,6 @@ export const representationSchema = z.discriminatedUnion("kind", [
     construction: text,
   }),
 ]);
-export type EncyclopediaRepresentation = z.infer<typeof representationSchema>;
 
 const manifestationSchema = z.strictObject({
   entitySet: z.enum(["DesignLanguages", "ArtStyles", "WritingStyles", "PaletteSystems"]),
@@ -64,6 +62,9 @@ export const cellDocumentSchema = z.strictObject({
   manifestations: z.array(manifestationSchema),
   studies: z.array(studySchema),
 }).superRefine((cell, context) => {
+  if (new TextEncoder().encode(JSON.stringify(cell)).byteLength > 2_000_000) {
+    context.addIssue({ code: "custom", message: "Document must not exceed 2,000,000 UTF-8 bytes" });
+  }
   function unique(values: string[], path: (string | number)[]) {
     if (new Set(values).size !== values.length) {
       context.addIssue({ code: "custom", path, message: "Identifiers must be unique within this list" });
@@ -93,12 +94,3 @@ export const cellDocumentSchema = z.strictObject({
     });
   });
 });
-
-export type CellDocument = z.infer<typeof cellDocumentSchema>;
-export type EncyclopediaManifestation = CellDocument["manifestations"][number];
-export type EncyclopediaStudy = CellDocument["studies"][number];
-
-export type EncyclopediaCell = {
-  id: string;
-  document: CellDocument;
-};

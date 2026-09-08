@@ -60,7 +60,7 @@ name = "DocumentValidated"
 kind = "internal"
 from = ["ValidatingDocument"]
 to = "UnderReview"
-params = ["document_hash"]
+params = ["document_hash", "error"]
 effect = [{ type = "set_bool", var = "document_validated", value = "true" }]
 hint = "Validator callback. Records format validation only."
 
@@ -94,7 +94,7 @@ kind = "internal"
 from = ["ValidatingReview"]
 to = "UnderReview"
 guard = "is_true document_validated"
-params = ["review_document_hash"]
+params = ["review_document_hash", "error"]
 effect = [{ type = "set_bool", var = "review_approved", value = "true" }]
 
 [[action]]

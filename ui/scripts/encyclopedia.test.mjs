@@ -72,6 +72,13 @@ test("text limits count Unicode code points", () => {
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, description: `${description}x` }).success, false);
 });
 
+test("the complete document limit counts canonical JSON UTF-8 bytes", () => {
+  const document = { ...fixture, questions: Array(7).fill("\u6f22".repeat(100_000)) };
+  assert.ok(JSON.stringify(document).length < 2_000_000);
+  assert.ok(Buffer.byteLength(JSON.stringify(document), "utf8") > 2_000_000);
+  assert.equal(cellDocumentSchema.safeParse(document).success, false);
+});
+
 for (const change of invalidCases) {
   test(`rejects ${change.name}`, () => {
     const input = structuredClone(fixture);

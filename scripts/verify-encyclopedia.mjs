@@ -127,11 +127,30 @@ row = await expectState("Draft", (value) => value.booleans.document_validated ==
 assert.equal(row.booleans.document_validated, false);
 assert.equal(row.booleans.review_approved, false);
 assert.equal(row.entity_id, id);
+assert.equal((await action("SubmitForValidation")).status, 200);
+await expectState("UnderReview", (value) => value.booleans.document_validated === true);
+assert.equal((await action("RecordReview")).status, 200);
+row = await expectState("Draft", (value) => Boolean(value.fields.error));
+assert.equal(row.booleans.review_approved, false);
+assert.match(row.fields.error, /requires a new review/);
+console.log("An empty review request cannot reuse the prior version's review");
+
 assert.equal((await action("Define", { document: "{}" })).status, 200);
 assert.equal((await action("SubmitForValidation")).status, 200);
 row = await expectState("Draft", (value) => Boolean(value.fields.error));
 assert.ok(row.fields.error);
 console.log("Revision retains identity and clears review; malformed document refused");
+
+assert.equal((await action("Define", { document: fixture })).status, 200);
+assert.equal((await action("SubmitForValidation")).status, 200);
+row = await expectState("UnderReview", (value) => value.booleans.document_validated === true);
+assert.equal(row.fields.error, "");
+assert.equal((await action("RecordReview", { review: JSON.stringify(review) })).status, 200);
+row = await expectState("UnderReview", (value) => value.booleans.review_approved === true);
+assert.equal(row.fields.error, "");
+assert.equal((await action("Revise")).status, 200);
+await expectState("Draft");
+console.log("Correcting a failed document clears its error and requires an explicit review");
 
 assert.equal((await action("Archive")).status, 200);
 await expectState("Archived");
@@ -142,17 +161,22 @@ console.log("An unwanted Draft can be archived without deleting its history");
 // callback. Exercise both without changing the installed authorization policy.
 const inlineId = `encyclopedia-test-inline-${randomUUID()}`;
 const inlinePath = `/tdata/EncyclopediaCells('${inlineId}')`;
+const largeDocument = JSON.stringify({ ...JSON.parse(fixture), questions: ["A".repeat(70_000), "B".repeat(70_000)] });
+const largeHash = createHash("sha256").update(largeDocument).digest("hex");
+const largeReview = JSON.stringify({ ...review, documentHash: largeHash, limitations: ["C".repeat(70_000), "D".repeat(70_000)] });
+assert.ok(Buffer.byteLength(largeDocument, "utf8") > 128 * 1024);
+assert.ok(Buffer.byteLength(largeReview, "utf8") > 128 * 1024);
 assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: inlineId })).status, 201);
-assert.equal((await action("Define", { document: fixture }, inlinePath)).status, 200);
+assert.equal((await action("Define", { document: largeDocument }, inlinePath)).status, 200);
 for (const callback of ["DocumentValidated", "ReviewValidated", "ValidationFailed"]) {
   assert.equal((await action(`${callback}?await_integration=true`, {}, inlinePath)).status, 403);
 }
 assert.equal((await action("SubmitForValidation?await_integration=true", {}, inlinePath)).status, 200);
 row = await expectState("UnderReview", (value) => value.booleans.document_validated === true, inlinePath);
-assert.equal(row.fields.document_hash, hash);
-assert.equal((await action("RecordReview?await_integration=true", { review: JSON.stringify(review) }, inlinePath)).status, 200);
+assert.equal(row.fields.document_hash, largeHash);
+assert.equal((await action("RecordReview?await_integration=true", { review: largeReview }, inlinePath)).status, 200);
 row = await expectState("UnderReview", (value) => value.booleans.review_approved === true, inlinePath);
-assert.equal(row.fields.review_document_hash, hash);
+assert.equal(row.fields.review_document_hash, largeHash);
 assert.equal((await action("Archive", {}, inlinePath)).status, 200);
 await expectState("Archived", () => true, inlinePath);
-console.log("Inline document and review validation pass; UnderReview can be archived:", inlineId);
+console.log("Inline validation resolves document and review blobs over 128 KiB; UnderReview can be archived:", inlineId);

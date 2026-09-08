@@ -167,3 +167,15 @@ Options: Alter callback permissions, rely on the runtime's default timeout, or c
 Chose config correction and live tests because: The independent inline probe completed document and review validation with matching hashes under the unchanged commons policy. Runtime source confirms inline callbacks use internal dispatch. The timeout belongs in config; a regression test now checks that location. Public attempts to supply either callback remain forbidden in both modes.
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`; `scripts/verify-encyclopedia.mjs`; `ui/scripts/encyclopedia.test.mjs`. Independent probe evidence remains outside the repository.
+
+## D15 Validate the current request and resolve stored fields
+
+Decision: Require an explicitly submitted review on each RecordReview action, resolve document and review fields through the existing SDK, and clear the current error after successful validation.
+
+Came up because: Independent live probes reproduced three failures: an empty request reused a previous version's review, valid documents over 128 KiB failed when stored as blobs, and corrected documents retained old validation errors. The new regression harness failed against the preceding candidate before these fixes.
+
+Options: Clear historical fields during revision, cap documents below the blob threshold, or check current action parameters and use the runtime's existing field reader.
+
+Chose the current-request check and SDK reader because: They require fresh review submission without deleting history and preserve support for documents up to the declared 2 MB limit. The live regression also established that deferred blobs retain the original field's JSON string encoding, while inline fields are already unquoted. The app decodes that declared blob encoding at its input boundary; it does not change the runtime or SDK. No permission or lifecycle-state change is needed. Successful callbacks explicitly set an empty error. The TypeScript fixture validator now checks canonical JSON UTF-8 size as well; the server remains authoritative for raw input size, including whitespace.
+
+Where: `katagami-commons/wasm/validate_encyclopedia_cell/src/lib.rs`; `katagami-commons/specs/encyclopedia_cell.ioa.toml`; `ui/src/lib/encyclopedia-schema.ts`; `scripts/verify-encyclopedia.mjs`; `ui/scripts/encyclopedia.test.mjs`.

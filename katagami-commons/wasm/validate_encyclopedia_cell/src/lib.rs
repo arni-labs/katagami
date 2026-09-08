@@ -26,7 +26,7 @@ struct Review {
 
 pub fn validate_review(raw_document: &str, raw_review: &str) -> Result<String, String> {
     let cell = document::parse(raw_document)?;
-    let document_hash = validate_document(raw_document)?;
+    let document_hash = format!("{:x}", Sha256::digest(raw_document.as_bytes()));
     let review: Review = serde_json::from_str(raw_review).map_err(|error| error.to_string())?;
     if review.document_hash != document_hash {
         return Err("review does not identify the current document hash".into());
@@ -66,19 +66,39 @@ pub fn validate_review(raw_document: &str, raw_review: &str) -> Result<String, S
 mod wasm {
     use temper_wasm_sdk::prelude::*;
 
+    fn read_string(ctx: &Context, field_name: &str) -> Result<String, String> {
+        let field = &ctx.entity_state["fields"][field_name];
+        let raw = ctx.read_field_string(field_name)?;
+        if field.get("__temper_blob_ref").is_some() {
+            // Deferred blobs retain the JSON encoding of the original field;
+            // the host returns those bytes, unlike an inlined string field.
+            if field.get("__temper_blob_encoding").and_then(Value::as_str) != Some("json") {
+                return Err(format!("unsupported blob encoding for '{field_name}'"));
+            }
+            serde_json::from_str(&raw)
+                .map_err(|_| format!("blob field '{field_name}' must contain a JSON string"))
+        } else if field.is_string() {
+            Ok(raw)
+        } else {
+            Err(format!("field '{field_name}' must be a string"))
+        }
+    }
+
     temper_module! {
         fn run(ctx: Context) -> Result<Value> {
-            let fields = ctx.entity_state.get("fields").ok_or("missing entity fields")?;
-            let raw_document = fields.get("document").and_then(Value::as_str).ok_or("missing document")?;
+            let raw_document = read_string(&ctx, "document")?;
             match ctx.config.get("phase").map(String::as_str) {
                 Some("document") => {
-                    let document_hash = super::validate_document(raw_document)?;
-                    Ok(json!({"document_hash": document_hash}))
+                    let document_hash = super::validate_document(&raw_document)?;
+                    Ok(json!({"document_hash": document_hash, "error": ""}))
                 }
                 Some("review") => {
-                    let raw_review = fields.get("review").and_then(Value::as_str).ok_or("missing review")?;
-                    let review_document_hash = super::validate_review(raw_document, raw_review)?;
-                    Ok(json!({"review_document_hash": review_document_hash}))
+                    if ctx.trigger_params.get("review").is_none_or(Value::is_null) {
+                        return Err("RecordReview requires a new review in this request".into());
+                    }
+                    let raw_review = read_string(&ctx, "review")?;
+                    let review_document_hash = super::validate_review(&raw_document, &raw_review)?;
+                    Ok(json!({"review_document_hash": review_document_hash, "error": ""}))
                 }
                 _ => Err("unknown validation phase".into()),
             }

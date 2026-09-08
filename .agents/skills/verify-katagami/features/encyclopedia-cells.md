@@ -48,7 +48,12 @@ Read back each state and the expected fields, allowing for asynchronous projecti
 - Publication requires validated document and review; review hashes match the document.
 - Generic PATCH, PUT, and DELETE cannot replace the document or gate fields.
 - Revision clears validation; a malformed document returns to Draft with an error.
+- An empty RecordReview request after revision cannot reuse the prior review.
+- Correcting a failed document clears its error; review still requires an explicit submission.
+- Inline validation resolves both documents and reviews larger than 128 KiB from the runtime's blob storage.
 - Draft and UnderReview records can be archived; Archived cannot be redefined.
+
+The fixture's operator is a curator. Anonymous rejection proves authentication is required, not that Cedar denies an authenticated non-curator. That identity path needs a separately configured test identity before claiming live non-curator privacy coverage; never forge caller headers or borrow another principal's credentials.
 
 Run `npm test` in `ui/`, plus Rust tests, formatting, and clippy in the validator directory. The shared fixture tests check the document contract; they do not prove source rights, historical claims, or aesthetic quality. English-only writing collection scope belongs to the approved proposal and content review, not a universal ban on text languages in the format.
 
