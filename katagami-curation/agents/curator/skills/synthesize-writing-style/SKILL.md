@@ -174,11 +174,14 @@ Delta over 500 most-frequent words; bake-off champion over StyleDistance and
 Wegmann embeddings on the PD catalog). It is REPORT-ONLY: it appears in the
 verification record and never gates a publish.
 
-## VOICE.md format v3.2-lean (2026-07-08) — the current format, and what it carries (2026-09-08)
+## VOICE.md format v3.3-lean (2026-09-08) — the current format: v3.2-lean plus the corpus
 
-Frontmatter `version: v3.2-lean`; sections `## Never`, `## Gold standard
-samples`, `## Signature vocabulary`, `## Measured fingerprint`, then the bands
-JSON. The finalizer requires these headings for this version; extra sections are allowed.
+Frontmatter `version: v3.3-lean`; sections `## Never`, `## Gold standard
+samples`, `## Signature vocabulary`, `## Measured fingerprint`, the bands JSON,
+then `## Corpus`. The finalizer (`verify_voice_md_body`) requires these
+headings, a `files:` list in the corpus front matter, at least one
+`/api/file/<file_id>` link, and refuses an empty sample slot. Files that still
+declare `v3.2-lean` are checked by the v3.2 rules; new files declare v3.3.
 
 The handoff is the file. An agent given VOICE.md alone must be able to write in
 the voice, so the file carries the corpus, in two forms:
@@ -187,8 +190,7 @@ the voice, so the file carries the corpus, in two forms:
   continuous excerpt that reads on its own (300 words or more where the source
   allows), quoted verbatim and labeled with its source. Never a fixed count of
   slots: write exactly as many entries as there are passages, and never an
-  empty or placeholder entry. An entry like `5. ""` is a defect; nothing
-  enforces this mechanically yet, so check the file before attaching it.
+  empty or placeholder entry. An entry like `5. ""` fails verification.
 - **Corpus**: the existing `corpus:` mapping in the frontmatter (consent,
   author, license, samples, provenance) gains a `files:` list with one entry
   per corpus file: `- {file_id, source, words}`; and after the bands block a
