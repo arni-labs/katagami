@@ -202,6 +202,16 @@ for (const name of ["Define", "SubmitForValidation", "AbandonValidation", "Archi
   assert.match(block, /set_bool", var = "document_validated", value = "false"/,
     `${name} can be invoked externally and must clear the validation gate`);
 }
+// The create verb is the other way a body reaches an entity. On an existing
+// cell it changes nothing, and on a new one the gate is not set at all.
+const recreated = await request("/tdata/EncyclopediaCells", "POST", { id: tamper, document: "RECREATED" });
+assert.equal(recreated.status, 201);
+row = await expectState("Archived", () => true, tamperPath);
+assert.equal(row.fields.document, "TAMPERED", "create replaced an existing cell's document");
+const seeded = `encyclopedia-test-seeded-${randomUUID()}`;
+assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: seeded, document: "SEEDED", document_hash: createHash("sha256").update("SEEDED").digest("hex"), document_validated: true })).status, 201);
+row = (await request(`/tdata/EncyclopediaCells('${seeded}')`)).data;
+assert.ok(!row.booleans.document_validated, "a create body set the validation gate");
 console.log("Every externally invocable action clears the validation gate, so an injected document cannot arrive validated");
 
 const recovery = `encyclopedia-test-recovery-${randomUUID()}`;
