@@ -42,9 +42,9 @@ export interface DrawersLayout {
 }
 
 const LEAF_W = 250;
-const LEAF_H = 160;
+const LEAF_H = 190;
 const GAP = 22;
-const HEADER = 64;
+const HEADER = 60;
 const PAD = 22;
 const BOARD_HEADER = 84;
 const BOARD_PAD = 34;
@@ -85,7 +85,7 @@ export function layoutDrawers(index: GraphIndex): DrawersLayout {
   const boards: Board[] = [];
 
   function place(cell: EncyclopediaCell, m: Measured, x: number, y: number, depth: number, parent: string | null) {
-    tiles.push({ id: cell.id, cell, x, y, w: m.w, h: m.h, depth, parent, headerH: m.children.length ? HEADER : m.h, ghost: false });
+    tiles.push({ id: cell.id, cell, x, y, w: m.w, h: m.h, depth, parent, headerH: HEADER, ghost: false });
     if (!m.children.length) return;
     const cellW = Math.max(LEAF_W, ...m.children.map((c) => c.size?.w ?? LEAF_W));
     const cellH = Math.max(LEAF_H * 0.6, ...m.children.map((c) => c.size?.h ?? LEAF_H * 0.6));
@@ -103,21 +103,37 @@ export function layoutDrawers(index: GraphIndex): DrawersLayout {
     });
   }
 
+  // Boards side by side. Inside a board, roots pack into rows — biggest sheets
+  // first — up to a target width that grows with the count, so a board of ten
+  // is a squarish drawer and not a tall column.
   let boardX = 0;
   for (const map of MAP_NAMES_ORDER) {
     const roots = index.roots.filter((cell) => index.primaryMap(cell) === map);
     const measured = roots.map((root) => measure(index, root, owner, new Set()));
     const count = index.graph.cells.filter((cell) => cell.maps.some((mm) => mm.map === map)).length;
-    // Roots stack in a column, widest first, so each board is a tall drawer.
     const order = roots.map((_, i) => i).sort((a, b) => measured[b].w * measured[b].h - measured[a].w * measured[a].h);
-    const boardW = Math.max(LEAF_W + BOARD_PAD * 2, ...measured.map((m) => m.w + BOARD_PAD * 2));
-    let cursorY = BOARD_HEADER + BOARD_PAD;
+    const leafCols = Math.max(2, Math.ceil(Math.sqrt(Math.max(1, roots.length) * 1.3)));
+    const targetW = Math.max(leafCols * LEAF_W + (leafCols - 1) * GAP, ...measured.map((m) => m.w));
+    // Row packing.
+    const rows: Array<{ items: number[]; w: number; h: number }> = [];
     for (const i of order) {
       const m = measured[i];
-      place(roots[i], m, boardX + (boardW - m.w) / 2, cursorY, 0, null);
-      cursorY += m.h + GAP * 1.6;
+      const row = rows[rows.length - 1];
+      if (row && row.w + GAP + m.w <= targetW) { row.items.push(i); row.w += GAP + m.w; row.h = Math.max(row.h, m.h); }
+      else rows.push({ items: [i], w: m.w, h: m.h });
     }
-    const boardH = Math.max(BOARD_HEADER + BOARD_PAD * 2 + LEAF_H, cursorY - GAP * 1.6 + BOARD_PAD);
+    const boardW = Math.max(LEAF_W + BOARD_PAD * 2, ...rows.map((r) => r.w + BOARD_PAD * 2));
+    let cursorY = BOARD_HEADER + BOARD_PAD;
+    for (const row of rows) {
+      let cursorX = boardX + (boardW - row.w) / 2;
+      for (const i of row.items) {
+        const m = measured[i];
+        place(roots[i], m, cursorX, cursorY, 0, null);
+        cursorX += m.w + GAP;
+      }
+      cursorY += row.h + GAP * 1.4;
+    }
+    const boardH = Math.max(BOARD_HEADER + BOARD_PAD * 2 + LEAF_H, cursorY - GAP * 1.4 + BOARD_PAD);
     boards.push({ map, x: boardX, y: 0, w: boardW, h: boardH, headerH: BOARD_HEADER, count });
     boardX += boardW + BOARD_GAP;
   }

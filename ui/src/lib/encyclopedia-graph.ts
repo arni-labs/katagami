@@ -27,11 +27,23 @@ export interface FarJump {
   path: string[];
 }
 
+/** One drawn line between two cells, carrying every relation stated between
+ *  them in either direction (A "influenced" B and B "influenced by" A are one
+ *  line with two entries). */
+export interface RelationLine {
+  key: string;
+  a: string;
+  b: string;
+  ink: RelationInk;
+  entries: Edge[];
+}
+
 export class GraphIndex {
   readonly byId: Map<string, EncyclopediaCell>;
   readonly children: Map<string, EncyclopediaCell[]>;
   readonly edges: Edge[];
   readonly roots: EncyclopediaCell[];
+  readonly relationLines: RelationLine[];
   private readonly adjacency: Map<string, Set<string>>;
 
   constructor(readonly graph: EncyclopediaGraph) {
@@ -57,6 +69,19 @@ export class GraphIndex {
       }
     }
     for (const list of this.children.values()) list.sort((a, b) => a.name.localeCompare(b.name));
+    const lines = new Map<string, RelationLine>();
+    for (const edge of this.edges) {
+      if (edge.kind !== "relation") continue;
+      const [a, b] = [edge.from, edge.to].sort();
+      const key = `${a}|${b}`;
+      const line = lines.get(key) ?? { key, a, b, ink: relationInk(edge.label), entries: [] };
+      line.entries.push(edge);
+      // Opposition wins the line's ink if any entry states it; then influence.
+      const inks = line.entries.map((e) => relationInk(e.label));
+      line.ink = inks.includes("sakura") ? "sakura" : inks.includes("ramune") ? "ramune" : "yuzu";
+      lines.set(key, line);
+    }
+    this.relationLines = [...lines.values()];
     // A root is a cell none of whose broader cells is in the library. A broader
     // pointer to a cell that is not here is shown on the sheet, not hidden.
     this.roots = graph.cells.filter((cell) => !cell.broader.some((link) => this.byId.has(link.cellId)));
@@ -188,12 +213,33 @@ export class GraphIndex {
 }
 
 /** Relation labels draw in the three inks and nothing else. Influence flows
- *  in ramune, opposition in sakura, every other kind in yuzu. */
+ *  in ramune, opposition in sakura, every other kinship in yuzu. */
 export function relationInk(label: string): RelationInk {
   const l = label.toLowerCase();
   if (/react|oppos|against|reject|counter|break/.test(l)) return "sakura";
-  if (/influenc|descend|derive|inherit|grew|precursor|inspir/.test(l)) return "ramune";
+  if (/influenc|descend|derive|inherit|grew|precursor|inspir|anticipat/.test(l)) return "ramune";
   return "yuzu";
+}
+
+export const RELATION_FAMILY: Record<RelationInk, string> = {
+  ramune: "influence",
+  sakura: "opposition",
+  yuzu: "kinship",
+};
+
+/** The legend: one entry per ink family present, listing the labels it holds. */
+export function relationLegend(index: GraphIndex): Array<{ ink: RelationInk; family: string; labels: string[] }> {
+  const byInk = new Map<RelationInk, Set<string>>();
+  for (const edge of index.edges) {
+    if (edge.kind !== "relation") continue;
+    const ink = relationInk(edge.label);
+    const set = byInk.get(ink) ?? new Set<string>();
+    set.add(edge.label);
+    byInk.set(ink, set);
+  }
+  return (["ramune", "sakura", "yuzu"] as RelationInk[])
+    .filter((ink) => byInk.has(ink))
+    .map((ink) => ({ ink, family: RELATION_FAMILY[ink], labels: [...byInk.get(ink)!].sort() }));
 }
 
 export const MAP_NAMES_ORDER: MapName[] = ["art", "writing", "palettes", "design"];

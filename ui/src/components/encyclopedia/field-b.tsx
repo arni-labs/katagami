@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowUp, ChevronRight, CornerDownRight } from "lucide-react";
 import type { EncyclopediaCell, EncyclopediaGraph, MapName } from "@/lib/encyclopedia";
-import { GraphIndex, MAP_INK, MAP_LABEL, relationInk, studyImage, type Edge } from "@/lib/encyclopedia-graph";
+import { GraphIndex, MAP_INK, MAP_LABEL, relationLegend, studyImage, type RelationLine } from "@/lib/encyclopedia-graph";
 import { layoutDrawers, type Tile } from "./drawers-layout";
 import { usePanZoom, usePrefersReducedMotion } from "./use-pan-zoom";
 import { CellSheet } from "./cell-sheet";
-import { Eyebrow, InkStamp, MapChips, ProvenanceStamp, RELATION_INK_VAR, RelationLegend, SearchBox, ZoomControls } from "./chrome";
+import { Eyebrow, InkStamp, MapChips, ProvenanceStamp, RELATION_INK_VAR, RelationLegend, RelationTooltip, SearchBox, ZoomControls } from "./chrome";
 
 // Variation B — the drawers. The hierarchy is laid out once as sheets inside
 // sheets: a cell is a sheet with a title strip, its narrower cells are smaller
@@ -20,7 +20,7 @@ function tileImage(cell: EncyclopediaCell): { url: string; label: string } | nul
   const study = studyImage(cell);
   if (study) return { url: study.url, label: study.kind === "generated" ? `Generated · ${study.generatedBy ?? ""}`.trim() : study.kind === "original" ? "Original study" : "Historical study" };
   const record = cell.manifestations.find((m) => m.record?.image)?.record;
-  if (record) return { url: record.image!, label: record.name };
+  if (record) return { url: record.image!, label: `made · ${record.name}` };
   return null;
 }
 
@@ -96,16 +96,23 @@ function DrawerTile({
         }}
       >
         {/* title strip */}
-        <span className="absolute left-0 right-0 top-0 block overflow-hidden" style={{ height: tile.headerH }}>
+        <span className="absolute left-0 right-0 top-0 block overflow-hidden" style={{ height: sw < 170 ? tile.h : tile.headerH }}>
           {sw < 70 ? (
             <span aria-hidden className="absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ width: Math.max(8, tile.w * 0.22), height: Math.max(8, tile.w * 0.22), background: ink, mixBlendMode: "var(--ink-blend)" as never }} />
           ) : sw < 170 ? (
-            <span className="absolute inset-0 flex items-center justify-center px-2 text-center font-display font-bold leading-tight tracking-[-0.02em] text-foreground" style={{ fontSize: Math.min(40, Math.max(12, 12.5 / k)) }}>
-              {cell.name}
+            <span className="absolute inset-0 flex items-center justify-center px-3 text-center font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: Math.min(26, Math.max(13, 12.5 / k)) }}>
+              <span className="line-clamp-2">{cell.name}</span>
+            </span>
+          ) : sw < 460 ? (
+            <span className="absolute inset-0 flex items-center gap-3 px-4">
+              <span className="min-w-0 flex-1 font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: Math.min(28, Math.max(17, 14 / k)) }}>
+                <span className="line-clamp-2">{cell.name}</span>
+              </span>
+              {kids ? <span className="shrink-0 font-mono font-bold tabular-nums" style={{ fontSize: Math.min(20, Math.max(10, 10 / k)), color: `color-mix(in oklch, ${ink} 72%, var(--foreground))` }}>{kids}</span> : null}
             </span>
           ) : (
             <span className="absolute inset-0 flex items-center gap-3 px-4">
-              {image && sw >= 460 && !leaf ? (
+              {image && !leaf ? (
                 <span className="relative block h-[48px] w-[72px] shrink-0 overflow-hidden bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={image.url} alt="" className="h-full w-full object-cover" loading="lazy" draggable={false} />
@@ -116,19 +123,19 @@ function DrawerTile({
                   <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: ink }} />
                   {cell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}
                   {kids ? <span className="tabular-nums" style={{ color: `color-mix(in oklch, ${ink} 72%, var(--foreground))` }}>· {kids} narrower</span> : null}
-                  {sw >= 460 && cell.manifestations.length ? <span className="tabular-nums">· {cell.manifestations.length} made</span> : null}
+                  {cell.manifestations.length ? <span className="tabular-nums">· {cell.manifestations.length} made</span> : null}
                 </span>
-                <span className="mt-0.5 block truncate font-display font-bold leading-tight tracking-[-0.02em] text-foreground" style={{ fontSize: sw >= 460 ? 21 : 17 }}>{cell.name}</span>
+                <span className="mt-0.5 block truncate font-display text-[21px] font-bold leading-tight tracking-[-0.02em] text-foreground">{cell.name}</span>
               </span>
-              {sw >= 460 ? <ProvenanceStamp basis={cell.provenance.basis} tilt={-1} /> : null}
+              <ProvenanceStamp basis={cell.provenance.basis} tilt={-1} />
             </span>
           )}
         </span>
         {/* a leaf uses its body as the specimen */}
         {leaf && sw >= 170 ? (
-          <span className="absolute inset-x-0 bottom-0 block overflow-hidden px-4 pb-4" style={{ top: 56 }}>
+          <span className="absolute inset-x-0 bottom-0 block overflow-hidden px-4 pb-4" style={{ top: tile.headerH }}>
             {image && sw >= 300 ? (
-              <span className="relative mb-2 block h-[52%] w-full overflow-hidden bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]">
+              <span className="relative mb-2 block h-[46%] w-full overflow-hidden bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={image.url} alt="" className="h-full w-full object-cover" loading="lazy" draggable={false} />
                 <span className="absolute bottom-1.5 left-1.5 bg-[var(--paper-sticker)] px-1.5 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.12em] text-foreground/80">{image.label}</span>
@@ -136,9 +143,6 @@ function DrawerTile({
             ) : null}
             {cell.description ? <span className="line-clamp-3 block text-[13.5px] leading-snug text-muted-foreground">{cell.description}</span> : <span className="block font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground/70">name and scope only</span>}
           </span>
-        ) : null}
-        {!leaf && sw >= 170 && focused ? (
-          <span className="absolute right-4 bottom-3 block font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">entered · click a sheet inside</span>
         ) : null}
       </button>
     </div>
@@ -148,11 +152,12 @@ function DrawerTile({
 export function FieldB({ graph, initialCellId }: { graph: EncyclopediaGraph; initialCellId?: string | null }) {
   const index = useMemo(() => new GraphIndex(graph), [graph]);
   const layout = useMemo(() => layoutDrawers(index), [index]);
-  const [focus, setFocus] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  const initial = initialCellId && layout.byId.has(initialCellId) ? initialCellId : null;
+  const [focus, setFocus] = useState<string | null>(initial);
+  const [selected, setSelected] = useState<string | null>(initial);
   const [query, setQuery] = useState("");
   const [map, setMap] = useState<MapName | null>(null);
-  const [hoverEdge, setHoverEdge] = useState<{ edge: Edge; x: number; y: number } | null>(null);
+  const [hoverLine, setHoverLine] = useState<{ line: RelationLine; x: number; y: number } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const reduced = usePrefersReducedMotion();
@@ -172,10 +177,20 @@ export function FieldB({ graph, initialCellId }: { graph: EncyclopediaGraph; ini
     if (!el) return;
     const inset = sheetInset();
     const vw = el.clientWidth - inset;
-    const vh = el.clientWidth >= 768 ? el.clientHeight : el.clientHeight * 0.34;
-    const k = Math.min(2.4, Math.max(0.18, Math.min((vw - padding * 2) / tile.w, (vh - padding * 2) / tile.h)));
+    // A sheet with children fills the view; a leaf stops short so its
+    // neighbours stay in sight around it.
+    const maxK = index.childrenOf(tile.id).length ? 2.4 : 1.45;
+    if (el.clientWidth < 768) {
+      // On a phone the sheet rises over the lower part of the field: fit the
+      // sheet's width and pin its top edge to the band that stays visible.
+      const k = Math.min(maxK, Math.max(0.18, (vw - 24) / tile.w));
+      setCamera({ k, x: (vw - tile.w * k) / 2 - tile.x * k, y: 16 - tile.y * k });
+      return;
+    }
+    const vh = el.clientHeight;
+    const k = Math.min(maxK, Math.max(0.18, Math.min((vw - padding * 2) / tile.w, (vh - padding * 2) / tile.h)));
     setCamera({ k, x: (vw - tile.w * k) / 2 - tile.x * k, y: (vh - tile.h * k) / 2 - tile.y * k });
-  }, [viewportRef, sheetInset, setCamera]);
+  }, [viewportRef, sheetInset, setCamera, index]);
 
   const enter = useCallback((tile: Tile) => {
     if (dragging) return;
@@ -197,18 +212,17 @@ export function FieldB({ graph, initialCellId }: { graph: EncyclopediaGraph; ini
   }, [layout.byId, frameTile]);
 
   // Frame everything once the viewport has a size — or, arriving with ?cell=,
-  // enter that cell straight away.
-  const goToRef = useRef(goTo);
-  useEffect(() => { goToRef.current = goTo; }, [goTo]);
+  // frame that cell's sheet.
   useEffect(() => {
     if (framed.current) return;
     framed.current = true;
     const id = requestAnimationFrame(() => {
-      if (initialCellId && layout.byId.has(initialCellId)) goToRef.current(initialCellId);
+      const tile = initial ? layout.byId.get(initial) : undefined;
+      if (tile) frameTile(tile);
       else fitAll();
     });
     return () => cancelAnimationFrame(id);
-  }, [fitAll, initialCellId, layout.byId]);
+  }, [fitAll, frameTile, initial, layout.byId]);
 
   const up = useCallback(() => {
     const current = focus ? layout.byId.get(focus) : null;
@@ -227,17 +241,13 @@ export function FieldB({ graph, initialCellId }: { graph: EncyclopediaGraph; ini
     glideTimer.current = window.setTimeout(() => setGlideOn(false), 560);
   }, []);
 
-  const legend = useMemo(() => {
-    const seen = new Map<string, ReturnType<typeof relationInk>>();
-    for (const edge of index.edges) if (edge.kind === "relation" && !seen.has(edge.label)) seen.set(edge.label, relationInk(edge.label));
-    return [...seen.entries()].map(([label, ink]) => ({ label, ink }));
-  }, [index]);
+  const legend = useMemo(() => relationLegend(index), [index]);
   const counts = useMemo(() => {
     const out = { art: 0, writing: 0, palettes: 0, design: 0 } as Record<MapName, number>;
     for (const cell of graph.cells) for (const m of cell.maps) out[m.map]++;
     return out;
   }, [graph]);
-  const relationEdges = useMemo(() => index.edges.filter((edge) => edge.kind === "relation" && layout.byId.has(edge.from) && layout.byId.has(edge.to)), [index, layout.byId]);
+  const lines = useMemo(() => index.relationLines.filter((line) => layout.byId.has(line.a) && layout.byId.has(line.b)), [index, layout.byId]);
 
   const crumbs = useMemo(() => {
     const chain: Tile[] = [];
@@ -336,7 +346,7 @@ export function FieldB({ graph, initialCellId }: { graph: EncyclopediaGraph; ini
 
       <div
         ref={viewportRef}
-        className="relative h-[min(78dvh,900px)] min-h-[540px] w-full select-none overflow-hidden bg-[var(--washi)] shadow-[var(--shadow-card)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]"
+        className="relative h-[max(560px,calc(100dvh-180px))] w-full select-none overflow-hidden bg-[var(--washi)] shadow-[var(--shadow-card)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]"
         style={{ touchAction: "none", cursor: dragging ? "grabbing" : "grab" }}
         tabIndex={0}
         role="application"
@@ -362,9 +372,9 @@ export function FieldB({ graph, initialCellId }: { graph: EncyclopediaGraph; ini
               onDoubleClick={(event) => { if (event.target === event.currentTarget) withGlide(up); }}
             >
               <span aria-hidden className="halftone-wash pointer-events-none absolute -right-10 -top-10 h-64 w-96" style={{ ["--wash-ink" as string]: MAP_INK[board.map], opacity: 0.5 }} />
-              <div className="pointer-events-none absolute left-8 top-6 flex items-baseline gap-3">
+              <div className={`pointer-events-none absolute left-8 top-6 flex ${board.count ? "flex-wrap items-baseline gap-x-3 gap-y-1" : "flex-col gap-1"}`} style={{ transform: `scale(${Math.max(1, Math.min(2.4, 0.7 / camera.k))})`, transformOrigin: "0 0", maxWidth: board.w - 64 }}>
                 <span className="font-mono text-[26px] font-bold uppercase tracking-[0.3em]" style={{ color: `color-mix(in oklch, ${MAP_INK[board.map]} 72%, var(--foreground))` }}>{MAP_LABEL[board.map]}</span>
-                <span className="font-mono text-[12px] uppercase tracking-[0.2em] text-muted-foreground">{board.count} on this map</span>
+                <span className="font-mono text-[12px] uppercase leading-snug tracking-[0.2em] text-muted-foreground">{board.count ? `${board.count} on this map` : "no cells here yet"}</span>
               </div>
             </div>
           ))}
@@ -385,25 +395,25 @@ export function FieldB({ graph, initialCellId }: { graph: EncyclopediaGraph; ini
           ))}
 
           <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden>
-            {relationEdges.map((edge) => {
-              const a = headerCentre(layout.byId.get(edge.from)!);
-              const b = headerCentre(layout.byId.get(edge.to)!);
-              const ink = RELATION_INK_VAR[relationInk(edge.label)];
-              const hovered = hoverEdge?.edge === edge;
-              const lit = !focusSet || focusSet.has(edge.from) || focusSet.has(edge.to);
-              const dim = map ? dimmedFor(index.byId.get(edge.from)!) && dimmedFor(index.byId.get(edge.to)!) : false;
+            {lines.map((line) => {
+              const a = headerCentre(layout.byId.get(line.a)!);
+              const b = headerCentre(layout.byId.get(line.b)!);
+              const ink = RELATION_INK_VAR[line.ink];
+              const hovered = hoverLine?.line === line;
+              const lit = !focusSet || focusSet.has(line.a) || focusSet.has(line.b);
+              const dim = map ? dimmedFor(index.byId.get(line.a)!) && dimmedFor(index.byId.get(line.b)!) : false;
               // A gentle bow so parallel relations do not stack on one line.
               const mx = (a.x + b.x) / 2 - (b.y - a.y) * 0.12;
               const my = (a.y + b.y) / 2 + (b.x - a.x) * 0.12;
               const d = `M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`;
               return (
-                <g key={`${edge.from}-${edge.to}-${edge.label}`} className="pointer-events-auto" opacity={dim ? 0.12 : lit ? 1 : 0.28}>
+                <g key={line.key} className="pointer-events-auto" opacity={dim ? 0.12 : lit ? 1 : 0.28}>
                   <path d={d} fill="none" stroke={ink} strokeWidth={hovered ? strokeW * 2.2 : strokeW * 1.4} strokeDasharray={dash} strokeLinecap="round" style={{ mixBlendMode: "var(--ink-blend)" as never }} />
                   <path
                     d={d} fill="none" stroke="transparent" strokeWidth={Math.max(14 / camera.k, 10)} className="cursor-help"
-                    onPointerEnter={() => setHoverEdge({ edge, x: mx, y: my })}
-                    onPointerLeave={() => setHoverEdge((h) => (h?.edge === edge ? null : h))}
-                    onClick={(event) => { event.stopPropagation(); setHoverEdge((h) => (h?.edge === edge ? null : { edge, x: mx, y: my })); }}
+                    onPointerEnter={() => setHoverLine({ line, x: mx, y: my })}
+                    onPointerLeave={() => setHoverLine((h) => (h?.line === line ? null : h))}
+                    onClick={(event) => { event.stopPropagation(); setHoverLine((h) => (h?.line === line ? null : { line, x: mx, y: my })); }}
                   />
                 </g>
               );
@@ -411,12 +421,9 @@ export function FieldB({ graph, initialCellId }: { graph: EncyclopediaGraph; ini
           </svg>
         </div>
 
-        {hoverEdge ? (
-          <div className="pointer-events-none absolute z-20 w-64 bg-[var(--paper-sticker-hover)] p-3 shadow-[var(--shadow-card-hover)] backdrop-blur-sm" style={{ left: hoverEdge.x * camera.k + camera.x + 12, top: hoverEdge.y * camera.k + camera.y + 12 }} role="tooltip">
-            <div className="font-mono text-[9.5px] font-bold uppercase tracking-[0.14em]" style={{ color: `color-mix(in oklch, ${RELATION_INK_VAR[relationInk(hoverEdge.edge.label)]} 72%, var(--foreground))` }}>
-              {index.byId.get(hoverEdge.edge.from)?.name} · {hoverEdge.edge.label} · {index.byId.get(hoverEdge.edge.to)?.name}
-            </div>
-            <p className="mt-1.5 text-[14px] leading-snug text-foreground">{hoverEdge.edge.explanation}</p>
+        {hoverLine ? (
+          <div className="pointer-events-none absolute z-20 w-72 bg-[var(--paper-sticker-hover)] p-3 shadow-[var(--shadow-card-hover)] backdrop-blur-sm" style={{ left: hoverLine.x * camera.k + camera.x + 12, top: hoverLine.y * camera.k + camera.y + 12 }} role="tooltip">
+            <RelationTooltip line={hoverLine.line} index={index} />
           </div>
         ) : null}
 
@@ -425,12 +432,11 @@ export function FieldB({ graph, initialCellId }: { graph: EncyclopediaGraph; ini
           <InkStamp ink="var(--graphite)" tilt={0}>{focus ? `depth ${crumbs.length}` : "all maps"}</InkStamp>
         </div>
 
-        <div className={`absolute z-30 md:inset-y-3 md:right-3 md:w-[440px] max-md:inset-x-0 max-md:bottom-0 max-md:h-[64%] ${sheetOpen ? "" : "pointer-events-none"}`} style={{ opacity: sheetOpen ? 1 : 0, transition: reduced ? undefined : "opacity 240ms ease" }} aria-hidden={!sheetOpen}>
+        <div className={`absolute z-30 md:inset-y-3 md:right-3 md:w-[440px] max-md:inset-x-0 max-md:bottom-0 max-md:h-[58%] ${sheetOpen ? "" : "pointer-events-none"}`} style={{ opacity: sheetOpen ? 1 : 0, transition: reduced ? undefined : "opacity 240ms ease" }} aria-hidden={!sheetOpen}>
           {selectedCell ? (
             <CellSheet
               cell={selectedCell}
               index={index}
-              frame="side"
               onSelect={(id) => withGlide(() => goTo(id))}
               onClose={() => setSelected(null)}
             />

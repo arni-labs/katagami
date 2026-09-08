@@ -109,7 +109,6 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
   const onWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
     const el = viewportRef.current;
     if (!el) return;
-    event.preventDefault();
     const rect = el.getBoundingClientRect();
     const sx = event.clientX - rect.left;
     const sy = event.clientY - rect.top;
@@ -124,9 +123,12 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
     const el = viewportRef.current;
     if (!el) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    el.setPointerCapture(event.pointerId);
+    // Capture only once a drag or pinch is real: capturing on pointerdown
+    // would redirect the pointerup, and the click a node needs would land on
+    // the viewport instead of the node.
     pinch.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (pinch.current.size === 2) {
+      for (const id of pinch.current.keys()) { try { el.setPointerCapture(id); } catch { /* pointer already gone */ } }
       const [a, b] = [...pinch.current.values()];
       const rect = el.getBoundingClientRect();
       pinchStart.current = {
@@ -159,7 +161,11 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
     if (!d || d.id !== event.pointerId) return;
     const dx = event.clientX - d.x;
     const dy = event.clientY - d.y;
-    if (!d.moved && Math.hypot(dx, dy) > 4) { d.moved = true; setDragging(true); }
+    if (!d.moved && Math.hypot(dx, dy) > 4) {
+      d.moved = true;
+      setDragging(true);
+      try { viewportRef.current?.setPointerCapture(event.pointerId); } catch { /* pointer already gone */ }
+    }
     if (d.moved) setCamera((cam) => ({ ...cam, x: d.cx + dx, y: d.cy + dy }));
   }, []);
 

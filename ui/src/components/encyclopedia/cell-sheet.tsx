@@ -168,7 +168,6 @@ export function CellSheet({
   onSelect,
   onClose,
   onLocate,
-  frame,
 }: {
   cell: EncyclopediaCell;
   index: GraphIndex;
@@ -176,7 +175,6 @@ export function CellSheet({
   onClose: () => void;
   /** Bring the cell into view on the field without changing selection. */
   onLocate?: (id: string) => void;
-  frame: "side" | "bottom";
 }) {
   const scroller = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -193,7 +191,8 @@ export function CellSheet({
 
   return (
     <div
-      className={`relative flex h-full flex-col bg-[var(--paper-sticker)] shadow-[var(--shadow-card-hover)] backdrop-blur-sm ${frame === "bottom" ? "" : ""}`}
+      className="relative flex h-full flex-col shadow-[var(--shadow-card-hover)] backdrop-blur-md"
+      style={{ background: "color-mix(in srgb, var(--washi) 94%, transparent)" }}
       role="dialog"
       aria-modal="false"
       aria-labelledby="cell-sheet-title"
@@ -218,7 +217,7 @@ export function CellSheet({
         </button>
       </div>
 
-      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-6 pb-8">
+      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-6 pb-8 max-md:pb-24">
         <h2 id="cell-sheet-title" className="mt-4 font-display text-[30px] font-bold leading-[1.02] tracking-[-0.03em] sm:text-[34px]">
           {cell.name}
         </h2>
@@ -301,7 +300,7 @@ export function CellSheet({
               ))}
             </ol>
           ) : (
-            <Empty>No sources. This cell's account was written from model training data and is waiting to be cited.</Empty>
+            <Empty>No sources. The account was written from model training data and is waiting to be cited.</Empty>
           )}
         </Section>
 

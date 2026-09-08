@@ -46,7 +46,7 @@ export default async function EncyclopediaDrawersPage({ searchParams }: { search
           {graph.withheld} {graph.withheld === 1 ? "cell is" : "cells are"} withheld: not attested under the current contract.
         </p>
       ) : null}
-      <div className="mt-8">
+      <div className="mt-6">
         <FieldB graph={graph} initialCellId={initialCellId} />
       </div>
     </div>

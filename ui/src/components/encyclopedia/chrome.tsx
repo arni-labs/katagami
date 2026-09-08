@@ -3,7 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Minus, Plus, Maximize2, Search, X } from "lucide-react";
 import type { MapName } from "@/lib/encyclopedia";
-import { MAP_INK, MAP_LABEL, STATUS_LABEL, type RelationInk } from "@/lib/encyclopedia-graph";
+import { MAP_INK, MAP_LABEL, STATUS_LABEL, relationInk, type GraphIndex, type RelationInk, type RelationLine } from "@/lib/encyclopedia-graph";
 
 // Shared chrome for both encyclopedia variations: ink stamps, the zoom
 // cluster, the search + map filter row, and the relation legend. Everything
@@ -197,17 +197,19 @@ export const RELATION_INK_VAR: Record<RelationInk, string> = {
   yuzu: "var(--yuzu)",
 };
 
-/** The dashed-line legend, built from the relation labels actually present. */
-export function RelationLegend({ entries }: { entries: Array<{ label: string; ink: RelationInk }> }) {
-  if (!entries.length) return null;
+/** The dashed-line legend: one entry per ink family actually present, with
+ *  the relation labels it carries on hover. */
+export function RelationLegend({ entries, showBroader = true }: { entries: Array<{ ink: RelationInk; family: string; labels: string[] }>; showBroader?: boolean }) {
   return (
     <dl className="flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-      <div className="flex items-center gap-2">
-        <span aria-hidden className="inline-block h-[2px] w-6" style={{ background: "color-mix(in oklch, var(--foreground) 45%, transparent)" }} />
-        <dd>broader → narrower</dd>
-      </div>
+      {showBroader ? (
+        <div className="flex items-center gap-2">
+          <span aria-hidden className="inline-block h-[2px] w-6" style={{ background: "color-mix(in oklch, var(--foreground) 45%, transparent)" }} />
+          <dd>broader → narrower</dd>
+        </div>
+      ) : null}
       {entries.map((entry) => (
-        <div key={entry.label} className="flex items-center gap-2">
+        <div key={entry.ink} className="flex items-center gap-2" title={entry.labels.join(" · ")}>
           <span
             aria-hidden
             className="inline-block h-[2px] w-6"
@@ -215,7 +217,7 @@ export function RelationLegend({ entries }: { entries: Array<{ label: string; in
               backgroundImage: `repeating-linear-gradient(90deg, ${RELATION_INK_VAR[entry.ink]} 0 4px, transparent 4px 7px)`,
             }}
           />
-          <dd>{entry.label}</dd>
+          <dd>{entry.family} <span className="hidden normal-case tracking-normal opacity-70 lg:inline">({entry.labels.join(", ")})</span></dd>
         </div>
       ))}
     </dl>
@@ -227,6 +229,23 @@ export function Eyebrow({ children, ink = "var(--ramune)", className = "" }: { c
     <div className={`flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.2em] text-muted-foreground ${className}`}>
       <span aria-hidden className="inline-block h-[3px] w-7" style={{ background: ink }} />
       {children}
+    </div>
+  );
+}
+
+/** What a dashed line says: every relation stated between its two cells,
+ *  each in its own direction, with the explanation the cell gives. */
+export function RelationTooltip({ line, index }: { line: RelationLine; index: GraphIndex }) {
+  return (
+    <div className="grid gap-2.5">
+      {line.entries.map((edge) => (
+        <div key={`${edge.from}-${edge.label}`}>
+          <div className="font-mono text-[9.5px] font-bold uppercase tracking-[0.14em]" style={{ color: `color-mix(in oklch, ${RELATION_INK_VAR[relationInk(edge.label)]} 72%, var(--foreground))` }}>
+            {index.byId.get(edge.from)?.name} · {edge.label} · {index.byId.get(edge.to)?.name}
+          </div>
+          <p className="mt-1 text-[14px] leading-snug text-foreground">{edge.explanation}</p>
+        </div>
+      ))}
     </div>
   );
 }

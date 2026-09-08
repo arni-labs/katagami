@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUpRight, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { InkStamp, StatusStamp, inkChipStyle, CHIP } from "@/components/encyclopedia/chrome";
 import { BASIS_LABEL, CREDIT_KIND_LABEL, creditLine, type Exemplar, type Facet, type FacetKey, type FacetSelection, type WritingStyleSpecimen } from "@/lib/writing-styles";
 
@@ -183,10 +183,30 @@ export function FacetControls({ facets, selection, onToggle, onClear, layout }: 
   return (
     <div className="grid gap-6">
       {facets.map((facet) => (
-        <fieldset key={facet.key}>
-          <legend className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{facet.label}</legend>
-          <ul className="grid gap-1">
-            {facet.values.map((entry) => {
+        <RailFacet key={facet.key} facet={facet} selection={selection} onToggle={onToggle} />
+      ))}
+      {active ? (
+        <button type="button" onClick={onClear} className={`${CHIP} w-fit`} style={{ background: "var(--paper-sticker)", color: "var(--muted-foreground)" }}>
+          <X size={12} aria-hidden /> Clear all
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+const RAIL_SHOWN = 8;
+
+/** One rail facet; long lists (register keys run past forty) fold to the
+ *  first eight and the chosen ones, with a toggle for the rest. */
+function RailFacet({ facet, selection, onToggle }: { facet: Facet; selection: FacetSelection; onToggle: (key: FacetKey, value: string) => void }) {
+  const [all, setAll] = useState(false);
+  const chosen = selection[facet.key] ?? [];
+  const values = all || facet.values.length <= RAIL_SHOWN ? facet.values : facet.values.filter((entry, i) => i < RAIL_SHOWN || chosen.includes(entry.value));
+  return (
+    <fieldset>
+      <legend className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{facet.label}</legend>
+      <ul className="grid gap-1">
+        {values.map((entry) => {
               const on = selection[facet.key]?.includes(entry.value) ?? false;
               return (
                 <li key={entry.value}>
@@ -200,15 +220,13 @@ export function FacetControls({ facets, selection, onToggle, onClear, layout }: 
                   </label>
                 </li>
               );
-            })}
-          </ul>
-        </fieldset>
-      ))}
-      {active ? (
-        <button type="button" onClick={onClear} className={`${CHIP} w-fit`} style={{ background: "var(--paper-sticker)", color: "var(--muted-foreground)" }}>
-          <X size={12} aria-hidden /> Clear all
+        })}
+      </ul>
+      {facet.values.length > RAIL_SHOWN ? (
+        <button type="button" onClick={() => setAll((v) => !v)} className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground underline decoration-[var(--yuzu)] decoration-2 underline-offset-[3px] hover:text-foreground">
+          {all ? "Fewer" : `All ${facet.values.length}`}
         </button>
       ) : null}
-    </div>
+    </fieldset>
   );
 }

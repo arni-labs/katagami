@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowLeft, Pin, PinOff } from "lucide-react";
 import { applyFilters, buildFacets, type FacetKey, type FacetSelection, type WritingStyleSpecimen } from "@/lib/writing-styles";
 import { SearchBox, Tape, inkChipStyle } from "@/components/encyclopedia/chrome";
@@ -70,7 +70,7 @@ function Reading({ specimen, pinned, onPin }: { specimen: WritingStyleSpecimen; 
 export function WritingB({ specimens }: { specimens: WritingStyleSpecimen[] }) {
   const [query, setQuery] = useState("");
   const [selection, setSelection] = useState<FacetSelection>({});
-  const [selected, setSelected] = useState<string | null>(specimens[0]?.id ?? null);
+  const [chosen, setSelected] = useState<string | null>(specimens[0]?.id ?? null);
   const [pinned, setPinned] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const listRef = useRef<HTMLOListElement | null>(null);
@@ -78,6 +78,9 @@ export function WritingB({ specimens }: { specimens: WritingStyleSpecimen[] }) {
   const facets = useMemo(() => buildFacets(specimens), [specimens]);
   const shown = useMemo(() => applyFilters(specimens, selection, query), [specimens, selection, query]);
   const byId = useMemo(() => new Map(specimens.map((s) => [s.id, s])), [specimens]);
+  // Keep the selection on something visible: if the filter hides the chosen
+  // style, the first visible one is read instead.
+  const selected = chosen && shown.some((s) => s.id === chosen) ? chosen : shown[0]?.id ?? null;
   const current = selected ? byId.get(selected) ?? null : null;
   const pinnedSpecimen = pinned ? byId.get(pinned) ?? null : null;
   const comparing = Boolean(pinnedSpecimen && current && pinnedSpecimen.id !== current.id);
@@ -87,11 +90,6 @@ export function WritingB({ specimens }: { specimens: WritingStyleSpecimen[] }) {
       const list = cur[key] ?? [];
       return { ...cur, [key]: list.includes(value) ? list.filter((v) => v !== value) : [...list, value] };
     });
-
-  // Keep the selection on something visible.
-  useEffect(() => {
-    if (shown.length && !shown.some((s) => s.id === selected)) setSelected(shown[0].id);
-  }, [shown, selected]);
 
   const move = (delta: number) => {
     if (!shown.length) return;
@@ -161,7 +159,7 @@ export function WritingB({ specimens }: { specimens: WritingStyleSpecimen[] }) {
         </ol>
 
         {/* the reading pane: a column on desktop, a full sheet on phones */}
-        <div className={`${mobileOpen ? "fixed inset-0 z-50 overflow-y-auto bg-[var(--washi)] p-3 pt-4" : "hidden"} lg:static lg:block lg:overflow-visible lg:bg-transparent lg:p-0`}>
+        <div className={`${mobileOpen ? "fixed inset-0 z-40 overflow-y-auto bg-[var(--washi)] p-3 pb-28 pt-4" : "hidden"} lg:static lg:block lg:overflow-visible lg:bg-transparent lg:p-0`}>
           {mobileOpen ? (
             <button type="button" onClick={() => setMobileOpen(false)} className="mb-3 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground lg:hidden">
               <ArrowLeft size={13} aria-hidden /> back to the index

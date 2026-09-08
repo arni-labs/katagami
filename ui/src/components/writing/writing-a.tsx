@@ -101,9 +101,6 @@ export function WritingA({ specimens }: { specimens: WritingStyleSpecimen[] }) {
   useEffect(() => {
     if (comparing) compareRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   }, [comparing, reduced]);
-  useEffect(() => {
-    if (chosen.length < 2) setComparing(false);
-  }, [chosen.length]);
 
   return (
     <div className="pb-28">

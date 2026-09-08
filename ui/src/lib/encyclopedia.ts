@@ -3,18 +3,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { cellDocumentSchema } from "@/lib/encyclopedia-schema";
-import {
-  getArtStyle,
-  getDesignLanguage,
-  getFileUrl,
-  getPaletteSystem,
-  getWritingStyle,
-  listWritingStyles,
-  paletteCore,
-  parseJson,
-  type LaneEntity,
-} from "@/lib/odata";
-import { artStyleImages } from "@/lib/lane-items";
+import { getFileUrl, listWritingStyles, paletteCore, parseJson, type LaneEntity } from "@/lib/odata";
 
 // The encyclopedia read model. Server-side: fetch the raw EncyclopediaCells
 // rows, keep only attested documents (document_validated AND the stored hash
@@ -86,6 +75,7 @@ interface RawCellRow {
   document_validated?: unknown;
   document_hash?: unknown;
   fields?: Record<string, unknown>;
+  booleans?: Record<string, unknown>;
 }
 
 function cleanEnv(value: string | undefined, fallback: string): string {
@@ -125,24 +115,27 @@ async function readCellRows(): Promise<RawCellRow[]> {
 function field<T = unknown>(row: RawCellRow, key: keyof RawCellRow & string): T | undefined {
   const direct = row[key];
   if (direct !== undefined) return direct as T;
+  if (row.booleans?.[key] !== undefined) return row.booleans[key] as T;
   return row.fields?.[key] as T | undefined;
 }
 
 /** Attested = validated flag AND sha256(document) == document_hash. A document
  *  that arrives as anything but a string cannot be hashed and is unattested. */
-export function isAttested(row: RawCellRow): row is RawCellRow & { document: string } {
+export function attestedDocument(row: RawCellRow): string | null {
   const document = field(row, "document");
   const validated = field(row, "document_validated");
   const hash = field<string>(row, "document_hash");
-  if (typeof document !== "string" || !hash) return false;
-  if (!(validated === true || validated === "true")) return false;
-  return createHash("sha256").update(document, "utf8").digest("hex") === hash;
+  if (typeof document !== "string" || !hash) return null;
+  if (!(validated === true || validated === "true")) return null;
+  return createHash("sha256").update(document, "utf8").digest("hex") === hash ? document : null;
 }
 
-function parseCell(row: RawCellRow & { document: string }): Omit<EncyclopediaCell, "manifestations"> & { manifestations: CellDocument["manifestations"] } | null {
+function parseCell(row: RawCellRow): Omit<EncyclopediaCell, "manifestations"> & { manifestations: CellDocument["manifestations"] } | null {
+  const bytes = attestedDocument(row);
+  if (bytes === null) return null;
   let json: unknown;
   try {
-    json = JSON.parse(row.document);
+    json = JSON.parse(bytes);
   } catch {
     return null;
   }
@@ -168,6 +161,54 @@ function parseCell(row: RawCellRow & { document: string }): Omit<EncyclopediaCel
 }
 
 // ── Manifestation records ────────────────────────────────────────────────────
+// Cells point at hundreds of records (one cell alone names sixty), so records
+// are fetched per set in batches of ids with $select, never one request per
+// pointer. A pointer whose record does not come back resolves to null and the
+// card says so.
+
+const SELECT: Record<ManifestationSet, string[]> = {
+  ArtStyles: ["Id", "name", "slug", "status", "thumbnail_asset_url", "thumbnail_file_id", "medium"],
+  DesignLanguages: ["Id", "name", "slug", "status", "thumbnail_asset_url", "landing_thumbnail_asset_url", "thumbnail_file_id", "tokens", "philosophy"],
+  PaletteSystems: ["Id", "name", "slug", "status", "signature", "mood"],
+  WritingStyles: ["Id", "name", "slug", "status", "persona", "thumbnail_asset_url", "thumbnail_file_id"],
+};
+
+const BATCH = 20;
+
+function flatFields(row: Record<string, unknown>): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [key, value] of Object.entries(row)) {
+    if (key.startsWith("@odata")) continue;
+    if (typeof value === "string") out[key] = value;
+    else if (value != null) out[key] = JSON.stringify(value);
+  }
+  return out;
+}
+
+async function fetchRecords(set: ManifestationSet, ids: string[]): Promise<Map<string, Record<string, string | undefined>>> {
+  const out = new Map<string, Record<string, string | undefined>>();
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const chunk = ids.slice(i, i + BATCH);
+    const filter = chunk.map((id) => `Id eq '${id.replace(/'/g, "''")}'`).join(" or ");
+    const params = new URLSearchParams({ $filter: filter, $select: SELECT[set].join(","), $top: String(chunk.length) });
+    try {
+      const res = await fetch(`${API_BASE}/tdata/${set}?${params}`, {
+        headers: { "X-Tenant-Id": TENANT, ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}) },
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(`${set} ${res.status}: ${await res.text()}`);
+      const page = (await res.json()) as { value?: Array<Record<string, unknown>> };
+      for (const raw of page.value ?? []) {
+        const fields = flatFields(raw);
+        const id = fields.Id ?? fields.id;
+        if (id) out.set(id, fields);
+      }
+    } catch (err) {
+      console.error(`[encyclopedia] batch read of ${set} failed; ${chunk.length} pointers left unresolved`, err);
+    }
+  }
+  return out;
+}
 
 function firstHttps(...values: Array<string | undefined>): string | undefined {
   for (const value of values) {
@@ -190,99 +231,50 @@ function truncate(value: string | undefined, max = 140): string | undefined {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
 
-async function resolveRecord(set: ManifestationSet, id: string): Promise<ManifestationRecord | null> {
-  try {
-    switch (set) {
-      case "DesignLanguages": {
-        const row = await getDesignLanguage(id);
-        const colors = parseJson<{ colors?: Record<string, string | undefined> }>(row.fields.tokens)?.colors ?? {};
-        const swatches = [colors.primary, colors.secondary, colors.accent, colors.background]
-          .filter((hex): hex is string => typeof hex === "string" && /^#[0-9a-f]{3,8}$/i.test(hex));
-        const f = row.fields as Record<string, string | undefined>;
-        return {
-          set, id,
-          name: row.fields.name ?? "Untitled language",
-          status: row.status,
-          href: `/language/${row.fields.slug || id}`,
-          image: laneImage(f),
-          swatches: swatches.length ? swatches : undefined,
-          line: truncate(row.fields.philosophy),
-        };
-      }
-      case "ArtStyles": {
-        const row: LaneEntity = await getArtStyle(id);
-        const images = artStyleImages(row.fields);
-        return {
-          set, id,
-          name: row.fields.name ?? "Untitled art style",
-          status: row.status,
-          href: `/art-styles/${row.fields.slug || id}`,
-          image: images.thumb || images.refs[0] || undefined,
-          line: truncate(row.fields.medium, 80),
-        };
-      }
-      case "PaletteSystems": {
-        const row: LaneEntity = await getPaletteSystem(id);
-        const core = paletteCore(row.fields);
-        const swatches = core.signature.map((s) => (s.hex.startsWith("#") ? s.hex : `#${s.hex}`));
-        return {
-          set, id,
-          name: row.fields.name ?? "Untitled palette",
-          status: row.status,
-          href: `/palettes/${id}`,
-          swatches: swatches.length ? swatches : undefined,
-          line: truncate(core.mood.summary),
-        };
-      }
-      case "WritingStyles": {
-        const row: LaneEntity = await getWritingStyle(id);
-        return {
-          set, id,
-          name: row.fields.name ?? "Untitled writing style",
-          status: row.status,
-          href: `/voice/${id}`,
-          image: laneImage(row.fields),
-          line: truncate(row.fields.persona),
-        };
-      }
+function toRecord(set: ManifestationSet, id: string, f: Record<string, string | undefined>): ManifestationRecord {
+  const status = f.status ?? f.Status ?? "";
+  switch (set) {
+    case "DesignLanguages": {
+      const colors = parseJson<{ colors?: Record<string, string | undefined> }>(f.tokens)?.colors ?? {};
+      const swatches = [colors.primary, colors.secondary, colors.accent, colors.background]
+        .filter((hex): hex is string => typeof hex === "string" && /^#[0-9a-f]{3,8}$/i.test(hex));
+      return { set, id, name: f.name ?? "Untitled language", status, href: `/language/${f.slug || id}`, image: laneImage(f), swatches: swatches.length ? swatches : undefined, line: truncate(f.philosophy) };
     }
-  } catch (err) {
-    console.error(`[encyclopedia] manifestation ${set}('${id}') did not resolve`, err);
-    return null;
-  }
-}
-
-async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let index = 0;
-  async function worker() {
-    while (index < items.length) {
-      const i = index++;
-      results[i] = await fn(items[i]);
+    case "ArtStyles":
+      return { set, id, name: f.name ?? "Untitled art style", status, href: `/art-styles/${f.slug || id}`, image: laneImage(f), line: truncate(f.medium, 80) };
+    case "PaletteSystems": {
+      const core = paletteCore(f);
+      const swatches = core.signature.map((sw) => (sw.hex.startsWith("#") ? sw.hex : `#${sw.hex}`));
+      return { set, id, name: f.name ?? "Untitled palette", status, href: `/palettes/${id}`, swatches: swatches.length ? swatches : undefined, line: truncate(core.mood.summary) };
     }
+    case "WritingStyles":
+      return { set, id, name: f.name ?? "Untitled writing style", status, href: `/voice/${id}`, image: laneImage(f), line: truncate(f.persona) };
   }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-  return results;
 }
 
 /** The whole encyclopedia as the pages read it. Owner-gated by the caller. */
 export async function loadEncyclopedia(): Promise<EncyclopediaGraph> {
   const rows = await readCellRows();
   const parsed = rows
-    .filter(isAttested)
     .map(parseCell)
     .filter((cell): cell is NonNullable<typeof cell> => cell !== null);
 
-  const pointers = new Map<string, { set: ManifestationSet; id: string }>();
+  const idsBySet = new Map<ManifestationSet, Set<string>>();
   for (const cell of parsed) {
-    for (const m of cell.manifestations) pointers.set(`${m.entitySet}:${m.entityId}`, { set: m.entitySet, id: m.entityId });
+    for (const m of cell.manifestations) {
+      const set = idsBySet.get(m.entitySet) ?? new Set<string>();
+      set.add(m.entityId);
+      idsBySet.set(m.entitySet, set);
+    }
   }
-  const keys = [...pointers.keys()];
-  const records = await mapLimit(keys, 8, (key) => {
-    const pointer = pointers.get(key)!;
-    return resolveRecord(pointer.set, pointer.id);
-  });
-  const recordByKey = new Map(keys.map((key, i) => [key, records[i]]));
+  const recordByKey = new Map<string, ManifestationRecord | null>();
+  await Promise.all([...idsBySet.entries()].map(async ([set, ids]) => {
+    const fetched = await fetchRecords(set, [...ids]);
+    for (const id of ids) {
+      const fields = fetched.get(id);
+      recordByKey.set(`${set}:${id}`, fields ? toRecord(set, id, fields) : null);
+    }
+  }));
 
   const cells: EncyclopediaCell[] = parsed
     .map((cell) => ({
