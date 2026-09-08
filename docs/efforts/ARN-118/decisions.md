@@ -194,7 +194,7 @@ Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`; `katagami-commons/sp
 
 ## D17 Close the cell's authorization instead of narrowing a blanket grant
 
-Decision: Replace `permit(principal, action, resource is EncyclopediaCell)` with a permit that enumerates the eight actions this deployment uses, keeping the existing forbids behind it.
+Decision: Replace `permit(principal, action, resource is EncyclopediaCell)` with a permit that enumerates the actions this deployment uses, keeping the existing forbids behind it.
 
 Came up because: The reported publication bypass reached the runtime through an action the policy had never considered. A blanket permit narrowed by forbid rules is open by default, so any action absent from a forbid list is allowed, including one added to the specification later without a policy decision.
 

@@ -124,8 +124,13 @@ for (const cell of planned) {
       assert.ok([200, 409].includes(abandoned.status), `AbandonValidation: ${JSON.stringify(abandoned.data)}`);
       console.log(`${label}: recovered from an interrupted validation`);
     }
-    const defined = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.Define`, "POST", { document: cell.document });
-    assert.equal(defined.status, 200, `Define: ${JSON.stringify(defined.data)}`);
+    // Define counts a document revision, so a rerun over bytes already stored
+    // only needs its validation, not another revision.
+    existing = await read(cell);
+    if (existing?.fields.document !== cell.document) {
+      const defined = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.Define`, "POST", { document: cell.document });
+      assert.equal(defined.status, 200, `Define: ${JSON.stringify(defined.data)}`);
+    }
     const submitted = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.SubmitForValidation`, "POST", {});
     assert.equal(submitted.status, 200, `SubmitForValidation: ${JSON.stringify(submitted.data)}`);
     console.log(`${label}: created and submitted`);
@@ -152,6 +157,7 @@ for (const cell of planned) {
   if (!row) problems.push("not found");
   else {
     const stored = row.fields.document;
+    if (row.entity_id !== cell.id) problems.push(`read back ${row.entity_id}, not ${cell.id}`);
     if (row.status !== "Draft") problems.push(`state ${row.status}`);
     if (typeof stored !== "string") problems.push("document is not stored inline, so it cannot be checked against its hash");
     else {
