@@ -136,8 +136,18 @@ async function exists(path) {
 // addresses are refused for the URL and for every redirect hop, so a source
 // cannot steer the runner into something on its own network.
 function privateAddress(address) {
-  // Loopback, unspecified, unique-local, link-local, multicast, and IPv4-mapped private ranges.
-  if (isIP(address) === 6) return /^(::1|::)$/i.test(address) || /^(f[cd][0-9a-f]{2}:|fe[89ab][0-9a-f]:|ff[0-9a-f]{2}:)/i.test(address) || /^::ffff:(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)/i.test(address);
+  if (isIP(address) === 6) {
+    // An IPv4-mapped address arrives either dotted (::ffff:10.0.0.1) or, after
+    // URL canonicalisation, as two hex groups (::ffff:a00:1); judge both as IPv4.
+    const mapped = address.match(/^::ffff:(?:(\d+\.\d+\.\d+\.\d+)|([0-9a-f]{1,4}):([0-9a-f]{1,4}))$/i);
+    if (mapped) {
+      if (mapped[1]) return privateAddress(mapped[1]);
+      const [hi, lo] = [parseInt(mapped[2], 16), parseInt(mapped[3], 16)];
+      return privateAddress(`${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`);
+    }
+    // Loopback, unspecified, unique-local, link-local, multicast.
+    return /^(::1|::)$/i.test(address) || /^(f[cd][0-9a-f]{2}:|fe[89ab][0-9a-f]:|ff[0-9a-f]{2}:)/i.test(address);
+  }
   const [a, b] = address.split(".").map(Number);
   // 100.64.0.0/10 is carrier-grade NAT, which Tailscale uses for its hosts.
   return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
