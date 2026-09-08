@@ -1,0 +1,93 @@
+# A revisable region of the encyclopedia. The document describes examples
+# and relationships; validation checks its format, not aesthetic value.
+#
+# This deployment carries the authorised slice only: private Draft cells with
+# a validated document. Review and publication are a separate approval and a
+# separate delivery; their states and actions are deliberately absent here so
+# that no state of this machine asserts that stored content was reviewed.
+[automaton]
+name = "EncyclopediaCell"
+states = ["Draft", "ValidatingDocument", "Archived"]
+initial = "Draft"
+allow_indefinite_states = ["Draft", "ValidatingDocument", "Archived"]
+
+[[state]]
+name = "document_validated"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "version"
+type = "counter"
+initial = 0
+
+[[action]]
+name = "Define"
+kind = "input"
+from = ["Draft"]
+to = "Draft"
+params = ["document"]
+effect = [
+  { type = "set_bool", var = "document_validated", value = "false" },
+  { type = "increment", var = "version" }
+]
+hint = "Set the versioned cell document. Examples and narrower cells may coexist."
+
+[[action]]
+name = "SubmitForValidation"
+kind = "input"
+from = ["Draft"]
+to = "ValidatingDocument"
+effect = [
+  { type = "set_bool", var = "document_validated", value = "false" },
+  { type = "trigger", name = "validate_document" }
+]
+
+[[action.triggers]]
+name = "validate_document"
+kind = "wasm"
+module = "validate_encyclopedia_cell"
+on_success = "DocumentValidated"
+on_failure = "ValidationFailed"
+
+[action.triggers.config]
+phase = "document"
+timeout_secs = "30"
+
+[[action]]
+name = "DocumentValidated"
+kind = "internal"
+from = ["ValidatingDocument"]
+to = "Draft"
+params = ["document_hash", "error"]
+effect = [{ type = "set_bool", var = "document_validated", value = "true" }]
+hint = "Validator callback. Records format validation only, and never that a curator reviewed the content."
+
+[[action]]
+name = "ValidationFailed"
+kind = "internal"
+from = ["ValidatingDocument"]
+to = "Draft"
+params = ["error"]
+effect = [{ type = "set_bool", var = "document_validated", value = "false" }]
+
+[[action]]
+name = "AbandonValidation"
+kind = "input"
+from = ["ValidatingDocument"]
+to = "Draft"
+effect = [{ type = "set_bool", var = "document_validated", value = "false" }]
+hint = "Curator recovery when a validation run is interrupted, times out, or is superseded by a restart. Returns the cell to Draft without asserting validation."
+
+[[action]]
+name = "Archive"
+kind = "input"
+from = ["Draft", "ValidatingDocument"]
+to = "Archived"
+effect = [{ type = "set_bool", var = "document_validated", value = "false" }]
+hint = "Archived is final and asserts nothing about its content. Clearing the gate here keeps every transition one that clears it, so a document arriving as an undeclared parameter can never land already marked validated."
+
+[[invariant]]
+name = "ArchivedIsFinal"
+when = ["Archived"]
+assert = "no_further_transitions"

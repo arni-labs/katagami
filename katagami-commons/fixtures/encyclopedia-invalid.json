@@ -1,0 +1,23 @@
+[
+  {"name": "unknown version", "path": ["version"], "value": 2},
+  {"name": "blank name", "path": ["name"], "value": "   "},
+  {"name": "no map", "path": ["maps"], "value": []},
+  {"name": "unknown map", "path": ["maps", 0], "value": "universal-taste"},
+  {"name": "unsafe source URL", "path": ["sources", 0, "url"], "value": "javascript:alert(1)"},
+  {"name": "credential-bearing source", "path": ["sources", 0, "url"], "value": "https://user:secret@example.org/image"},
+  {"name": "missing relationship evidence", "path": ["relations", 0, "sourceIds"], "value": []},
+  {"name": "unresolved source", "path": ["studies", 0, "representations", 0, "sourceId"], "value": "missing"},
+  {"name": "empty rights evidence", "path": ["studies", 0, "representations", 0, "rights", "evidenceUrl"], "value": ""},
+  {"name": "display not permitted", "path": ["studies", 0, "representations", 0, "rights", "uses"], "value": ["adapt"]},
+  {"name": "unsafe CSS color", "path": ["studies", 0, "representations", 0, "colors", 0, "value"], "value": "url(https://example.org/track)"},
+  {"name": "no representation", "path": ["studies", 0, "representations"], "value": []},
+  {"name": "unknown provenance", "path": ["studies", 0, "kind"], "value": "deceased-safe"},
+  {"name": "duplicate representation id", "path": ["studies", 0, "representations", 1, "id"], "value": "swatches"},
+  {"name": "missing required field", "path": ["studies", 0, "representations", 0, "rights", "attribution"], "remove": true},
+  {"name": "sample used as manifestation", "path": ["manifestations", 0], "value": {"id": "sample", "title": "Sample", "kind": "original", "description": "Wrong record type", "representations": []}},
+  {"name": "unknown manifestation type", "path": ["manifestations", 0, "entitySet"], "value": "Images"},
+  {"name": "missing manifestation evidence", "path": ["manifestations", 0, "sourceIds"], "value": []},
+  {"name": "unknown manifestation evidence", "path": ["manifestations", 0, "sourceIds"], "value": ["missing"]},
+  {"name": "reusable style used as a study representation", "path": ["studies", 0, "representations", 0, "kind"], "value": "katagami"},
+  {"name": "unrecognized data", "path": ["hiddenHtml"], "value": "<script>alert(1)</script>"}
+]

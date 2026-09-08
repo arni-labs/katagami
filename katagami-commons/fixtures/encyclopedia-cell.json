@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "name": "Spectrum studies (test fixture)",
+  "description": "Synthetic parser fixture, not a published encyclopedia entry.",
+  "maps": ["art", "palettes"],
+  "broader": [{"cellId": "color-study", "explanation": "A narrower study within the test collection.", "sourceIds": ["fixture"]}],
+  "relations": [{"cellId": "sequence-study", "label": "shares a technique", "explanation": "Both arrange a sequence, without making one a child of the other.", "sourceIds": ["fixture"]}],
+  "questions": ["Which further examples would challenge this grouping?"],
+  "sources": [{"id": "fixture", "title": "Synthetic test source", "url": "https://example.org/fixture"}],
+  "manifestations": [
+    {"entitySet": "ArtStyles", "entityId": "fixture-art", "explanation": "Synthetic reusable art-style reference.", "sourceIds": ["fixture"]},
+    {"entitySet": "DesignLanguages", "entityId": "fixture-language", "explanation": "Synthetic reusable design-language reference.", "sourceIds": ["fixture"]}
+  ],
+  "studies": [{
+    "id": "spectrum-example",
+    "title": "Six-color test",
+    "kind": "original",
+    "description": "The test must not impose Katagami's three-accent interface rule.",
+    "representations": [{
+      "id": "swatches",
+      "sourceId": "fixture",
+      "rights": {
+        "basis": "original",
+        "evidenceUrl": "https://example.org/fixture/rights",
+        "jurisdiction": "Test fixture only",
+        "uses": ["display"],
+        "attribution": "Synthetic test data",
+        "restrictions": ["Not research evidence"]
+      },
+      "kind": "palette",
+      "colors": [
+        {"name": "Red", "value": "#FF0000"},
+        {"name": "Orange", "value": "#FF8000"},
+        {"name": "Yellow", "value": "#FFFF00"},
+        {"name": "Green", "value": "#00FF00"},
+        {"name": "Blue", "value": "#0000FF"},
+        {"name": "Violet", "value": "#8000FF"}
+      ],
+      "construction": "Synthetic swatches. No claim that this is a historical palette."
+    }, {
+      "id": "description",
+      "sourceId": "fixture",
+      "rights": {
+        "basis": "original",
+        "evidenceUrl": "https://example.org/fixture/rights",
+        "jurisdiction": "Test fixture only",
+        "uses": ["display"],
+        "attribution": "Synthetic test data",
+        "restrictions": []
+      },
+      "kind": "text",
+      "text": "A second representation of the same example, not another style.",
+      "language": "en",
+      "edition": "Synthetic test text"
+    }]
+  }]
+}
