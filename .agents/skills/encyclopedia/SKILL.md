@@ -5,29 +5,81 @@ description: Build and maintain the Katagami encyclopedia — cells, their relat
 
 # The Katagami encyclopedia
 
-A map of creative directions. Each region of the map is a **cell**: a name, a
-scope, and — as it grows — links to neighbouring cells and to work that
-manifests it. The map is recursive and incomplete by design. A cell with only a
-name is valid; a cell with no neighbours is valid.
+## Why it exists
 
-Cells live in Katagami commons as `EncyclopediaCells` and are private.
+Katagami holds hundreds of made things — art styles, writing styles, palettes,
+design languages. What it lacks is the map: where each thing sits in the space
+of creative directions, what its neighbours are, and where the empty regions
+are. The encyclopedia is that map.
+
+It serves two readers. A **human** browses it for understanding and
+inspiration: what is this direction, what is near it, what did it grow out of,
+what reacted against it. An **agent** uses it to escape its own defaults: when
+everything it generates for "clean editorial" collapses to the same three
+moves, the map shows what is adjacent-but-different, what is far, and which
+regions have no made work at all. Distance is the working tool — near cells
+give variation, far cells give contrast, and a deliberate jump across the map
+is how an agent goes out of distribution *on purpose* instead of by accident.
+
+The founding note (Rita + Howl, 22 Aug 2026) draws one line the whole design
+follows: **two graphs that connect but never merge.** The *theory* graph holds
+claims you can disagree with — sentences, disputes, budgets. The
+*manifestation* graph holds regions of made things and the things themselves.
+The cells here are the **manifestation** graph. A cell may cite claims; it
+never becomes one. Made things point at cells; a cluster of made things can
+suggest a missing cell; a cell plus an empty seat can later be compiled into a
+made thing. Cite, induce, compile — three arrows, no merge.
+
+Cross-modal jumps are first-class: a page inspired by a novel, a painting from
+prose. That is why `maps` is a role on the cell, not a parent category — a cell
+like Surrealism legitimately sits in both art and writing, and a jump between
+media stays legal because medium was never a wall.
+
+## What is and is not a cell
+
+A cell is a **direction, movement, tradition, or family of made work** —
+something with a recognisable practice behind it, whose scope you could
+illustrate and whose boundary you could argue about.
+
+- Cells: Surrealism. Bauhaus. Edo-period ukiyo-e prints. Ligne claire
+  illustration. Gothic atmospheric prose. CRT/phosphor graphics.
+- Not cells: "poetic language" (a quality, not a practice), "beauty" (a mood
+  word), "blue" (an attribute), "websites" (a medium), a single artwork (that
+  is a study inside a cell), a Katagami language (that is a manifestation —
+  Galley points at cells, it does not get a cell named after itself), a
+  fail-able claim like "contrast has a budget" (theory graph, not here).
+
+The test: could this have a museum wall text, a movement history, or a body of
+work by multiple hands? If it names a vibe or a single artefact, it is not a
+cell. When unsure, propose it with the uncertainty stated and let the human
+decide — never mint quietly.
+
+Structure is recursive and deliberately incomplete. A cell can have several
+broader cells. Disconnected cells are fine. The top stays open — a few
+provisional roots, allowed to be wrong. Do not invent a tidy taxonomy to make
+the graph look finished, do not partition by kind-of-thing, and do not force
+directions through a national or ethnic frame; movements, techniques, and
+attitudes are categories too. Split when two arguments share a page; merge when
+two pages cannot state a difference. Distance lives in the edges: `broader`
+gives vertical distance, `relations` (influenced, reacted against, shares a
+technique) give lateral distance, and the labels matter because "reacted
+against" is near-by-opposition, which is exactly what a creativity jump wants.
 
 ## The three kinds of thing, and why they stay separate
 
-- **Cell** — a direction or family. "Impressionism". "Ligne claire illustration".
-  Revisable. Can sit under several broader cells at once.
+- **Cell** — the region. Revisable, recursive, may be nearly empty.
 - **Manifestation** — a reusable Katagami record that expresses the cell: an
   `ArtStyles`, `WritingStyles`, `PaletteSystems`, or `DesignLanguages` entry.
   A pointer, never a copy.
-- **Study** — a direct example: an image, a text sample, a palette. Historical
-  source, original demonstration, or generated study, and it says which.
+- **Study** — a direct example inside the cell: an image, a text sample, a
+  palette. Historical source, original demonstration, or generated study — and
+  it says which, because a generated study is never historical evidence.
 
-A study is not a manifestation. Do not promote one to the other. A cell's theory
-claims stay separate from the things that manifest them, with the connection
-stated explicitly, because a claim about a movement and a made artefact fail
-differently.
+A study is not a manifestation. A cell's descriptive scope is not a generation
+rule — do not compile "broken brushwork and fleeting observation" into
+generator instructions or claim a movement has a measurable definition.
 
-## Identity
+## Identity and visibility
 
 ```
 $TEMPER_API_URL/tdata          # https://openpaw-production.up.railway.app
@@ -35,15 +87,35 @@ X-Tenant-Id: default
 Authorization: Bearer $TEMPER_API_KEY
 ```
 
-Cells are curator-owned. Only System, Admin, an `operator` or
-`curation-service` agent, or a Customer whose role is `owner` or `curator` may
-read, list, or act on one. A contributor identity is refused everything. Do not
-try to widen this; a public reader needs its own authorized projection, which
-does not exist yet.
+**The encyclopedia is owner-only for now.** Raw cells are readable only by
+System, Admin, an `operator` or `curation-service` agent, or a Customer whose
+role is `owner` or `curator`. A contributor identity is refused everything.
 
-## The lifecycle you actually have
+The intended public model, for when a reader ships (the rule is Rita's,
+2026-09-08 — implement it exactly):
 
-`Draft` → `ValidatingDocument` → `Draft`, and `Archived` as a final exit.
+- Others see **published material only**.
+- An unpublished cell is invisible in full, even where it links to published
+  styles. Visibility cuts off at the first unpublished thing.
+- A published cell that references an under-review style **is** visible — the
+  cell shows, the link target does not. The cut is per-node, not viral upward.
+
+Cells may reference styles at any status (Draft, UnderReview, Published); the
+reference is always legal, and visibility is resolved at read time by the
+projection, never by forbidding the link. That projection does not exist yet
+and needs its own authorization; never widen raw-row access to fake it.
+
+## Lifecycle
+
+Intended: `Draft` → validation → review → `Published`, with `Archived` final —
+the same shape as the rest of Katagami, so cells and styles review alike.
+
+**Deployed today: Draft only.** `Draft` → `ValidatingDocument` → `Draft`, and
+`Archived`. There is no `Publish`, no review states, no `review_*` fields —
+deliberately, because a `Published` state asserts a curator review that nothing
+currently performs. Reintroducing publication is a specification change, a
+policy change, and its own approval and review round; a contract test fails
+until then. Do not resurrect it to unblock a page.
 
 | Action | From | What it does |
 |---|---|---|
@@ -53,15 +125,9 @@ does not exist yet.
 | `AbandonValidation` | ValidatingDocument | Recovery for an interrupted run |
 | `Archive` | Draft, ValidatingDocument | Final. Nothing follows |
 
-**There is no publication.** No `Publish`, no review states, no `review_*`
-fields. That is deliberate: a published state asserts a curator reviewed the
-content, and nothing here performs that review. Adding it back is a
-specification change, a policy change, and its own review round — a contract
-test fails until then. Never reintroduce it to "unblock" a page.
-
-Validation checks *format*, not truth. It says the document parses and its
-internal references resolve. It never says a rights claim or a historical claim
-is correct.
+Validation checks *format*, not truth: the document parses and its internal
+references resolve. It never says a rights claim or a historical claim is
+correct.
 
 ## The attestation rule
 
@@ -71,34 +137,34 @@ A cell is validated when **both** hold:
 document_validated == true    AND    sha256(document) == document_hash
 ```
 
-The boolean alone is not enough. An abandoned validation run keeps executing and
-its callback can set the gate while naming the bytes it read rather than the
-bytes now stored. Check the pair on every read. A document large enough to be
-returned as a blob reference cannot be checked this way — treat it as
-unattested rather than assuming.
+The boolean alone is not enough: an abandoned validation run keeps executing
+and its callback can set the gate while naming the bytes it read rather than
+the bytes now stored. Check the pair on every read. A document returned as a
+blob reference cannot be checked this way — treat it as unattested.
 
 ## Building: the approval discipline
 
 **Every content operation needs the user's numbered approval before it runs.**
-This is the rule the whole thing rests on. An agent proposes; a human selects.
+An agent proposes; a human selects. This holds for a background agent exactly
+as for an interactive one — autonomy covers *preparing* proposals and
+*maintaining* integrity, never minting content.
 
 1. **Propose.** A numbered batch: batch id, a fixed number per item, the exact
    operation, the target, supporting evidence, the expected result, and any
-   dependency on another item. Include uncertain placements and say why they are
-   uncertain. Preparing a proposal must not write anything.
-2. **Wait.** The user accepts or rejects **by number**. Unselected items stay
-   pending. Do not reuse a rejected number for a replacement. Do not run an item
-   whose prerequisite was rejected. A repeated approval message is not a licence
-   to rerun completed work.
+   dependency between items. Include uncertain placements and say why they are
+   uncertain. Preparing a proposal writes nothing.
+2. **Wait.** The user accepts or rejects by number. Unselected items stay
+   pending. Never reuse a rejected number for a replacement, never run an item
+   whose prerequisite was rejected, and a repeated approval message is not a
+   licence to rerun completed work.
 3. **Execute only what was selected**, then record the result separately from
    the approval.
 
-Permission to *generate* is not approval of the *generated result*. Bring
-results back for selection before attaching them.
-
-Scope creep to watch for: a batch approving names and scopes does not authorize
-relationships; one approving relationships does not authorize studies; none of
-them authorize publication.
+Permission to *generate* is not approval of the *generated result* — bring
+results back for selection before attaching them. Scope creep to watch: a batch
+approving names and scopes does not authorize relationships; relationships do
+not authorize studies; nothing short of an explicit approval authorizes
+publication.
 
 ## Writing a cell document
 
@@ -120,94 +186,93 @@ One JSON document per cell, validated against
 }
 ```
 
-Rules the contract enforces, so plan for them:
+Enforced by the contract, so plan for it:
 
-- **Every link needs evidence.** `broader`, `relations`, and `manifestations`
-  each require at least one `sourceIds` entry that exists in this cell's
-  `sources`. You cannot assert a relationship without citing something. Sources
-  are citations — a title and an HTTPS URL — not reproduced material.
-- Maps are `art`, `writing`, `palettes`, `design`. A cell may sit in several.
-- Ids are stable and derived from the approved name. Identifiers are the cell's
-  identity: never repoint one at a different cell.
-- Identifiers are unique within each list; the whole document is capped at
-  2,000,000 UTF-8 bytes and each text field at 100,000 code points.
-- `description` may be empty. A name and a scope is a complete cell.
+- **Every link cites evidence.** `broader`, `relations`, and `manifestations`
+  each require `sourceIds` resolving into this cell's `sources`. Sources are
+  citations — title plus HTTPS URL — not reproduced material. Verify a URL
+  resolves and says what you claim before writing it.
+- Maps are `art`, `writing`, `palettes`, `design`; a cell may wear several.
+- Ids derive from the approved name and are the cell's identity — never
+  repoint one at a different cell.
+- Identifiers are unique per list; the document caps at 2,000,000 UTF-8 bytes,
+  each text field at 100,000 code points. `description` may be empty — a name
+  and a scope is a complete cell.
 
-Rules the contract cannot enforce, which are yours to hold:
+Yours to hold, because the contract cannot:
 
-- **Rights belong to study representations**, and each one records its basis,
-  evidence URL, jurisdiction, permitted uses, and attribution. Check rights per
-  source, individually, before adding a representation.
+- **Rights belong to study representations**: basis, evidence URL,
+  jurisdiction, permitted uses, attribution — checked per source, individually.
 - **No imitation of living creators**, including under a renamed style.
-- **Writing examples are English-only** for now. That is the approved scope of
-  the initial writing collection, not a rule about the format: non-English text
-  is legitimate in art cells and elsewhere.
-- **A scope is descriptive, not a generation rule.** Do not turn a cell's
-  description into instructions for a generator, and do not claim a movement has
-  a correct or measurable definition.
-- Prefer the cell's own vocabulary. Do not force every direction through a
-  national or ethnic frame; movements, techniques, and attitudes are categories
-  too.
+- **Writing examples are English-only for now** — the approved scope of the
+  initial writing collection, not a format rule; non-English text is legitimate
+  in art cells.
 
 ## Doing the work
 
 ```bash
-# Propose (writes nothing), then apply only what was approved.
-node scripts/create-encyclopedia-cells.mjs <approved.json> --expect <n>
+node scripts/create-encyclopedia-cells.mjs <approved.json> --expect <n>          # dry run
 node scripts/create-encyclopedia-cells.mjs <approved.json> --expect <n> --apply
 ```
 
-`--expect` is your own count of what was approved, checked against the payload,
-so a swapped or truncated file stops before anything is written. The script
-refuses a payload that authorizes anything but creation, attempts every cell so
-one failure does not strand the batch, recovers a cell left mid-validation,
+`--expect` is your own count of the approval, checked against the payload. The
+script refuses a payload authorizing anything but creation, attempts every cell
+so one failure does not strand the batch, recovers a cell left mid-validation,
 refuses an identifier already holding a different cell, and reads every record
-back afterwards.
+back.
 
-To enrich an existing cell, `Define` the full document — it replaces, it does
-not merge — then `SubmitForValidation`, then read back and check the
-attestation pair. Revision keeps the cell's id and history.
-
-Verify against a local fixture before touching production. See
-`.agents/skills/verify-katagami/features/encyclopedia-cells.md` for the fixture
-setup and `scripts/verify-encyclopedia.mjs` for the lifecycle harness.
+To enrich, `Define` the full document — it replaces, never merges — then
+`SubmitForValidation`, then read back and check the attestation pair. Revision
+keeps the cell's id and history. Verify on a local fixture first: see
+`.agents/skills/verify-katagami/features/encyclopedia-cells.md` and
+`scripts/verify-encyclopedia.mjs`.
 
 ## Maintaining
 
-- **Integrity sweep.** List the cells and check each one's attestation pair,
-  that its links resolve to cells and records that exist, and that its sources
-  still answer. A dangling `cellId` or a dead manifestation pointer is the
+- **Integrity sweep**: every cell's attestation pair; every `cellId` and
+  manifestation pointer resolves; sources still answer. Dangling links are the
   failure this collection accumulates.
-- **A cell stuck in `ValidatingDocument`** means a validation run was
-  interrupted, usually by a restart. Call `AbandonValidation`, then re-`Define`
-  and resubmit. There is no timer that will do this for you.
-- **An unwanted cell is archived, never deleted.** `Archive` keeps its identity
-  and history. Archived is final: its identifier cannot be reused.
-- **A revision needs the same approval discipline as an addition.** Rewriting a
-  scope is a content change.
-- `error` describes the last validation run, not the current document — no
-  action can clear it, so read it together with the attestation pair.
+- **Gap watch**: maps with no cells, cells with no manifestations, clusters of
+  made work with no cell over them. These become the next proposal, not a
+  quiet fix.
+- **Stuck in `ValidatingDocument`** means an interrupted run — call
+  `AbandonValidation`, re-`Define`, resubmit. No timer does this for you.
+- **Archive, never delete.** Archived keeps identity and history and is final;
+  the id cannot be reused.
+- **A revision needs the same numbered approval as an addition.**
+- `error` records the last validation run, not the current document; no action
+  clears it, so read it with the attestation pair.
 
 ## Two runtime defects you must not trip over
 
-Both are Temper defects, reported, contained here, not fixed:
+Temper defects — reported, contained here, not fixed:
 
-1. **Undeclared parameters are persisted.** Any action writes a submitted string
-   parameter whose name matches a field, even an action declaring no parameters.
-   Contained because every transition clears `document_validated`, so injected
-   content can never land attested. Never rely on a parameter an action does not
-   declare, and never assume a field was written by the action you called.
-2. **A validation callback is not bound to its run.** See the attestation rule.
+1. **Undeclared parameters persist.** Any action writes a submitted string
+   parameter matching a field name, even an action declaring no parameters.
+   Contained: every transition clears `document_validated`, so injected content
+   never lands attested. Never rely on an undeclared parameter; never assume a
+   field was written by the action you called.
+2. **A validation callback is not bound to its run.** Hence the attestation
+   rule.
 
 If either stops reproducing, the runtime was fixed and the regressions in
-`scripts/verify-encyclopedia.mjs` will fail loudly. That failure is the signal
-to tighten them, not to delete them.
+`scripts/verify-encyclopedia.mjs` fail loudly — the signal to tighten them,
+not delete them.
 
 ## Never
 
-- Publish a cell, or add a publication surface, without an approval that says so.
-- Create, enrich, or link anything that was not approved by number.
-- Widen the cell policy, or read cells with a non-curator identity.
+- Publish a cell, or add a publication surface, without an approval saying so.
+- Create, enrich, or link anything not approved by number.
+- Mint a cell for a vibe, an attribute, a single artefact, or a Katagami
+  language.
+- Widen the cell policy or read cells with a non-curator identity.
 - Present a generated study as historical evidence.
 - Claim a cell is validated on the boolean alone.
 - Point an existing identifier at a different cell.
+
+## Source material
+
+The founding note: `encyclopedia-taste-pack/01-encyclopedia/encyclopedia.md`
+(two graphs, gardener, verification axes, cross-modal). The effort record:
+`docs/efforts/ARN-118/` — intent, spec, plan, and decisions D1–D26, which carry
+the reasoning behind every rule above.
