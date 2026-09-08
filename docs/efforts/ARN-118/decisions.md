@@ -263,3 +263,15 @@ Options: Record the findings as accepted risk, or make each check discriminate.
 Chose making them discriminate because: A test that cannot fail is worse than no test, since it reports coverage it does not have. The 401 baseline is what turns "contributor got 403" into evidence that the credential resolved and Cedar refused the principal it resolved to.
 
 Where: `ui/scripts/encyclopedia.test.mjs`; `scripts/verify-encyclopedia.mjs`, the non-curator section; `docs/efforts/ARN-118/spec.md`, Cell lifecycle.
+
+## D23 Keep validation recovery explicit rather than adding a timer
+
+Decision: Leave AbandonValidation and Archive as the recovery path, document that recovery is deliberate, and add no scheduled sweep.
+
+Came up because: Review pointed out that a cell can still sit in ValidatingDocument indefinitely if the process dies between dispatching the validator and its callback, since `allow_indefinite_states` includes that state and the recovery actions are manual.
+
+Options: Add a `schedule` effect that fires AbandonValidation, declare a `[[state_timeout]]`, or keep recovery explicit and make the strand visible.
+
+Chose explicit recovery because: Neither mechanism is durable in this runtime. `schedule` and `schedule_at` are an in-memory `tokio::spawn` with a `sleep` and are lost on restart, with no replay hook. A `[[state_timeout]]` is re-armed from the event log but only during the next dispatch to that same entity, which a stranded cell never receives, and there is no background sweeper. The trigger's `timeout_secs` is the WASM invocation deadline, so a validator that hangs while the server runs already fails through it and returns the cell to Draft. Adding a timer would therefore add machinery that does not cover the one case it is meant for. The strand is instead made visible: the creation script waits for a validated Draft and reports any cell that never arrives, and a curator recovers it with one call.
+
+Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, AbandonValidation and Archive; `scripts/create-encyclopedia-cells.mjs`, the readback; `.agents/skills/verify-katagami/features/encyclopedia-cells.md`.

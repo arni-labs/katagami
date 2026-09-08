@@ -229,6 +229,12 @@ async function recoverDuringValidation(name, entityPath) {
 assert.ok(await recoverDuringValidation("AbandonValidation", path), "no attempt landed during validation");
 row = await expectState("Draft");
 assert.equal(row.booleans.document_validated, false);
+// The abandoned run is still in flight. Its callback is declared only from
+// ValidatingDocument, so it cannot revive the gate after the recovery.
+await new Promise((resolve) => setTimeout(resolve, 3_000));
+row = (await request(path)).data;
+assert.equal(row.status, "Draft");
+assert.equal(row.booleans.document_validated, false, "a late validation callback revived an abandoned run");
 // A document this large is returned as a deferred blob reference holding the
 // JSON encoding of the field, not as an inline string.
 assert.equal(row.fields.document.__temper_blob_encoding, "json");

@@ -116,6 +116,10 @@ for (const cell of planned) {
       problems.push("stored document does not match its own recorded hash");
     }
     if (!row.booleans.document_validated) problems.push("not validated");
+    // `error` records the last validation run and no action can clear it, so a
+    // non-empty error on a validated cell means the readback is looking at
+    // something other than a clean run.
+    if (row.fields.error !== "") problems.push(`error is set: ${row.fields.error}`);
     if (typeof stored === "string") {
       const parsed = JSON.parse(stored);
       for (const field of ["broader", "relations", "questions", "sources", "manifestations", "studies"]) {
