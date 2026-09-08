@@ -1,0 +1,11 @@
+{
+  "source": "wikidata-literary-movements",
+  "name": "Wikidata items that are instances of literary movement (Q3326717)",
+  "url": "https://query.wikidata.org/",
+  "licence": "CC0",
+  "use": "names-only",
+  "total": 416,
+  "totalDerivedFrom": "SPARQL P31 Q3326717, 2026-09-08",
+  "lane": "writing",
+  "terms": []
+}

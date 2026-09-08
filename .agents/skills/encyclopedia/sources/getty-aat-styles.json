@@ -1,0 +1,11 @@
+{
+  "source": "getty-aat-styles",
+  "name": "Getty AAT, Styles and Periods facet",
+  "url": "https://vocab.getty.edu/sparql",
+  "licence": "ODC-By-1.0",
+  "use": "backbone",
+  "total": 6198,
+  "totalDerivedFrom": "concepts under the Styles and Periods facet, 2026-09-08; not read end to end, coverage is cells carrying an AAT id",
+  "lane": "visual",
+  "terms": []
+}

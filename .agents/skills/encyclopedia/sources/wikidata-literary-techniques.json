@@ -1,0 +1,11 @@
+{
+  "source": "wikidata-literary-techniques",
+  "name": "Wikidata stylistic devices, literary techniques, narrative techniques",
+  "url": "https://query.wikidata.org/",
+  "licence": "CC0",
+  "use": "with-care",
+  "total": 440,
+  "totalDerivedFrom": "P31 counts 338 + 60 + 42, 2026-09-08",
+  "lane": "writing",
+  "terms": []
+}

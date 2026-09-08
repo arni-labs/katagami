@@ -395,3 +395,15 @@ Options: Leave `maps` as words and rely on review, or make membership a link lik
 Chose the link because: Every other connection on a cell must say why and cite; placement on a map is the connection that decides which readers see the cell at all. The recollected case follows from D27: a cell with no sources cannot cite its placement, so its placement is recollected with it, and the reader sees that on the cell.
 
 Where: `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; fixtures; `scripts/verify-encyclopedia.mjs`; `.agents/skills/encyclopedia/SKILL.md`. Migration of the 24 live cells is batch B4, applied with the version-3 validator in one sequence, as B3 was with version 2.
+
+## D34 The collection grows by reading passes, tracked per source
+
+Decision: Sources enter the encyclopedia through reading passes: an agent reads a slice of one source and records one decision per term (cell, merge, declined, deferred) in that source's committed ledger, then brings a numbered proposal. Coverage of a source is terms decided over its total. Writing goes first, alternating with visual passes; a cleanup pass over the 24 existing cells and 19 WritingStyle records runs before new cells land beside them. A cell is named by the source vocabulary, never by an invented label; a record credited to one writer is a manifestation under a cell.
+
+Came up because: The research found the node layer already exists several times over (Getty, Wikidata, Artsy) and Rita refused a blind import: "we will just gradually collect, consolidate, and organize", with a way "to track how much of each source we have processed and integrated". She also found the existing WritingStyle names ("Plainhand" over a single author) senseless, and asked that Surrealism and the other early cells be re-read against the sources.
+
+Options: An import script per source; a Temper entity per source with its own approval flow; a committed ledger file per source plus a read-only coverage command.
+
+Chose the ledger because: Declines are most of the work and cells cannot record a decline, so coverage cannot be derived from the cells alone. A file next to the skill is state any agent can read without a client, it is versioned with the decisions it records, and it adds no runtime. An entity can come later if the ledger ever needs approval flows of its own.
+
+Where: `.agents/skills/encyclopedia/SKILL.md` "Sources and reading passes"; `.agents/skills/encyclopedia/sources/*.json`; `scripts/encyclopedia-coverage.mjs`; `ui/scripts/encyclopedia-coverage.test.mjs`. The population plan is kept in Rita's vault, not committed.

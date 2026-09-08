@@ -11,7 +11,7 @@
     "backfill:published-assets": "node scripts/backfill-published-assets.mjs",
     "backfill:taste-vectors": "node scripts/backfill-taste-vectors.mjs",
     "test": "npm run test:gallery && npm run test:shadcn-export && npm run test:auth && npm run test:tokens && npm run test:contracts && npm run test:encyclopedia",
-    "test:encyclopedia": "node --test scripts/encyclopedia.test.mjs scripts/encyclopedia-inventory.test.mjs",
+    "test:encyclopedia": "node --test scripts/encyclopedia.test.mjs scripts/encyclopedia-inventory.test.mjs scripts/encyclopedia-coverage.test.mjs",
     "test:gallery": "node scripts/check-gallery-renders-all-cards.mjs",
     "test:shadcn-export": "node scripts/check-shadcn-preview-contract.mjs",
     "test:auth": "node scripts/check-auth-contract.mjs && node scripts/check-catalog-auth-attacks.mjs && node scripts/check-mcp-oauth-contract.mjs && node scripts/check-telemetry-contract.mjs",

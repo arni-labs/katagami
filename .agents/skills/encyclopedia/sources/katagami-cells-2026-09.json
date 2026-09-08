@@ -1,0 +1,11 @@
+{
+  "source": "katagami-cells-2026-09",
+  "name": "The 24 cells live before the reading passes began",
+  "url": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells",
+  "licence": "internal",
+  "use": "cleanup",
+  "total": 24,
+  "totalDerivedFrom": "EncyclopediaCells read back after batch B4, 2026-09-08",
+  "lane": "both",
+  "terms": []
+}

@@ -1,0 +1,11 @@
+{
+  "source": "wikidata-art-movement-influence",
+  "name": "Wikidata movement-to-movement influence statements (P737)",
+  "url": "https://query.wikidata.org/",
+  "licence": "CC0",
+  "use": "edges",
+  "total": 205,
+  "totalDerivedFrom": "P737 edges among P31 Q968159 items, 2026-09-08",
+  "lane": "visual",
+  "terms": []
+}
