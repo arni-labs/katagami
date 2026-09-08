@@ -9,6 +9,7 @@ pub(crate) struct CellDocument {
     version: u32,
     name: String,
     description: String,
+    provenance: Provenance,
     maps: Vec<String>,
     broader: Vec<Broader>,
     relations: Vec<Relation>,
@@ -16,6 +17,16 @@ pub(crate) struct CellDocument {
     pub(crate) sources: Vec<Source>,
     manifestations: Vec<Manifestation>,
     studies: Vec<Study>,
+}
+
+/// Where the cell's own account comes from. `cited` needs a source a reader
+/// can follow; `recollected` means the model wrote it from training data and
+/// nothing external was located, which the note must say.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Provenance {
+    basis: String,
+    note: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -61,12 +72,13 @@ enum EntitySet {
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Study {
     id: String,
     title: String,
     kind: String,
     description: String,
+    generated_by: Option<String>,
     representations: Vec<Representation>,
 }
 
@@ -214,12 +226,27 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
         return Err("cell document exceeds 2 MB; link large representations instead".into());
     }
     let cell: CellDocument = serde_json::from_str(raw).map_err(|error| error.to_string())?;
-    if cell.version != 1 {
+    if cell.version != 2 {
         return Err("unsupported cell document version".into());
     }
     text(&cell.name)?;
     if !cell.description.is_empty() {
         text(&cell.description)?;
+    }
+    one_of(
+        &cell.provenance.basis,
+        &["cited", "recollected"],
+        "provenance basis",
+    )?;
+    match (cell.provenance.basis.as_str(), &cell.provenance.note) {
+        ("cited", _) if cell.sources.is_empty() => {
+            return Err("a cited cell must carry at least one source".into());
+        }
+        ("recollected", None) => {
+            return Err("a recollected cell must say it was written from training data and why no source was found".into());
+        }
+        (_, Some(note)) => text(note)?,
+        _ => {}
     }
     nonempty(&cell.maps, "maps")?;
     unique(cell.maps.iter().map(String::as_str), "maps")?;
@@ -296,6 +323,16 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
             &["historical", "original", "generated"],
             "example provenance",
         )?;
+        match (example.kind.as_str(), &example.generated_by) {
+            ("generated", None) => {
+                return Err(
+                    "a generated study must name the model or tool that produced it".into(),
+                );
+            }
+            ("generated", Some(generator)) => text(generator)?,
+            (_, Some(_)) => return Err("only a generated study names a generator".into()),
+            _ => {}
+        }
         nonempty(&example.representations, "representations")?;
         unique(
             example

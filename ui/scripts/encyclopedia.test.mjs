@@ -93,10 +93,28 @@ test("broad cells need not have examples or be leaves", () => {
 test("an approved name and scope can exist before research and examples", () => {
   const cell = cellDocumentSchema.parse({
     ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [],
+    provenance: { basis: "recollected", note: "Written from model training data; no external reference located yet." },
   });
   assert.equal(cell.sources.length, 0);
   assert.equal(cell.studies.length, 0);
   assert.equal(cell.manifestations.length, 0);
+});
+
+// A reader must always be able to tell where a cell's account came from: a
+// source to follow, or an explicit statement that the model recollected it.
+test("a cell either cites a source or says it was recollected", () => {
+  const bare = { ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [] };
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "cited" } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected" } }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "From training data; no reference found." } }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, provenance: { basis: "cited" } }).success, true);
+});
+
+test("a generated study names its generator and a historical one does not", () => {
+  const study = fixture.studies[0];
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, studies: [{ ...study, kind: "generated" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, studies: [{ ...study, kind: "generated", generatedBy: "gpt-image-1 via Codex" }] }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, studies: [{ ...study, kind: "historical", generatedBy: "x" }] }).success, false);
 });
 
 test("a name-only cell can have an empty description", () => {

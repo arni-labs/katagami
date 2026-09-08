@@ -101,7 +101,7 @@ async function expectState(expected, matches = () => true, entityPath = path) {
   throw new Error(`Timed out waiting for ${expected}; last state=${last?.status}, error=${last?.fields?.error}`);
 }
 
-const draft = JSON.stringify({ version: 1, name: "Synthetic draft", description: "Approved scope only", maps: ["art"], broader: [], relations: [], questions: [], sources: [], manifestations: [], studies: [] });
+const draft = JSON.stringify({ version: 2, name: "Synthetic draft", description: "Approved scope only", provenance: { basis: "recollected", note: "Synthetic harness cell; nothing external to cite." }, maps: ["art"], broader: [], relations: [], questions: [], sources: [], manifestations: [], studies: [] });
 assert.equal((await action("Define", { document: draft })).status, 200);
 let draftRow = await expectState("Draft", (row) => row.fields.document === draft);
 assert.equal(draftRow.fields.document, draft);
@@ -309,6 +309,19 @@ assert.equal((await action("SubmitForValidation", {}, secondPath)).status, 200);
 row = await expectState("Draft", (value) => value.booleans.document_validated === true, secondPath);
 assert.equal(row.fields.error, "");
 console.log("A malformed document is refused, and correcting it clears the recorded error");
+// The contract's provenance rule, checked against the installed validator: a
+// cell with no source and no recollection note has no stated origin.
+const silent = JSON.stringify({ ...JSON.parse(draft), provenance: { basis: "cited" } });
+const silentId = `encyclopedia-test-silent-${randomUUID()}`;
+const silentPath = `/tdata/EncyclopediaCells('${silentId}')`;
+assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: silentId })).status, 201);
+assert.equal((await action("Define", { document: silent }, silentPath)).status, 200);
+assert.equal((await action("SubmitForValidation", {}, silentPath)).status, 200);
+row = await expectState("Draft", (value) => Boolean(value.fields.error), silentPath);
+assert.match(row.fields.error, /at least one source/);
+assert.equal(row.booleans.document_validated, false);
+console.log("A cell that cites nothing and does not say it was recollected is refused");
+
 
 for (const method of ["PATCH", "PUT", "DELETE"]) {
   const result = await request(secondPath, method, method === "DELETE" ? undefined : { document: "overwritten", document_validated: true });

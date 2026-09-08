@@ -1,16 +1,23 @@
-// Create the approved encyclopedia cells and read every one of them back.
+// Apply approved encyclopedia cell documents and read every one of them back.
 //
 // The approved payload lives outside this repository: it is the record of what
-// the user selected, and it is the only source of names, scopes, and maps. This
-// script adds nothing to it. Every cell is created as a private Draft with an
-// empty enrichment set; relationships, manifestations, studies, and sources
-// need their own numbered approval.
+// the user selected, and it is the only source of content. This script adds
+// nothing to it. A cell is written as a private Draft holding exactly the
+// approved document — name, scope, maps, provenance, and whichever links,
+// sources, and studies the batch authorized. Anything the payload omits stays
+// empty, and a cell that names no source is recorded as recollected from model
+// training data rather than left silent.
 //
 //   node scripts/create-encyclopedia-cells.mjs <approved.json> --expect <n> [--apply]
 //
 // `--expect` is how many cells the operator believes were approved. It is
 // checked against the payload, so a swapped or truncated file stops here rather
 // than being written. Without --apply the script reports what it would do.
+//
+// Before anything is written, every link target is resolved against the
+// deployment and every source URL is fetched, so a dangling relationship, a
+// manifestation of a record that does not exist, or a dead citation stops the
+// batch instead of landing.
 //
 // Rerunning is safe. Identifiers derive from the approved names, a cell is left
 // alone only when it already holds exactly this document with a matching
@@ -35,10 +42,10 @@ assert.ok(Number.isInteger(expected) && expected > 0, "pass --expect <n>, the nu
 const payload = JSON.parse(readFileSync(payloadPath, "utf8"));
 assert.ok(Array.isArray(payload.cells), "the payload has no cells");
 assert.equal(payload.cells.length, expected, `the payload holds ${payload.cells.length} cells, not the ${expected} expected`);
-// The payload states what it authorizes. This script performs exactly one
-// operation, so it refuses a payload that authorizes anything else.
-assert.match(payload.allowedOperation ?? "", /^Create private Draft EncyclopediaCell records/,
-  `this script only creates private Draft cells; the payload authorizes: ${payload.allowedOperation}`);
+// The payload states what it authorizes. This script writes private Draft
+// documents and nothing else, so it refuses a payload that authorizes more.
+assert.match(payload.allowedOperation ?? "", /^(Create|Define) private Draft EncyclopediaCell/,
+  `this script only writes private Draft cells; the payload authorizes: ${payload.allowedOperation}`);
 assert.doesNotMatch(payload.allowedOperation, /\bpublish/i);
 const numbers = payload.cells.map((cell) => cell.number);
 assert.equal(new Set(numbers).size, numbers.length, "two approved cells share a number");
@@ -58,30 +65,76 @@ async function request(path, method = "GET", body) {
   return { status: response.status, data };
 }
 
-function identifierFor(name) {
+export function identifierFor(name) {
   const id = name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   assert.match(id, /^[a-z0-9][a-z0-9-]{0,159}$/, `cannot derive an identifier from ${name}`);
   return id;
 }
 
+const RECOLLECTED = "Written from model training data; no external reference was located for this cell yet.";
+
 // Build and validate every document before touching the deployment, so a
 // rejected document is found here rather than half way through the batch.
 const planned = payload.cells.map((cell) => {
+  const sources = cell.sources ?? [];
   const document = {
-    version: 1,
+    version: 2,
     name: cell.name,
     description: cell.description ?? "",
+    provenance: cell.provenance ?? (sources.length > 0 ? { basis: "cited" } : { basis: "recollected", note: RECOLLECTED }),
     maps: cell.maps,
-    broader: [], relations: [], questions: [], sources: [], manifestations: [], studies: [],
+    broader: cell.broader ?? [],
+    relations: cell.relations ?? [],
+    questions: cell.questions ?? [],
+    sources,
+    manifestations: cell.manifestations ?? [],
+    studies: cell.studies ?? [],
   };
   const parsed = cellDocumentSchema.safeParse(document);
   assert.ok(parsed.success, `cell ${cell.number} (${cell.name}) is not a valid document: ${JSON.stringify(parsed.error?.issues)}`);
   const serialized = JSON.stringify(document);
-  return { id: identifierFor(cell.name), number: cell.number, name: cell.name, document: serialized, hash: createHash("sha256").update(serialized).digest("hex") };
+  return { id: identifierFor(cell.name), number: cell.number, name: cell.name, document: serialized, parsed: document, hash: createHash("sha256").update(serialized).digest("hex") };
 });
 assert.equal(new Set(planned.map((cell) => cell.id)).size, planned.length, "two approved names produce one identifier");
 console.log(`Prepared ${planned.length} documents, all valid against the shared contract`);
-if (!apply) console.log("Reporting only. Pass --apply to create the records.");
+
+// Every link must land on something that exists, and every citation must
+// answer. A cell in this batch may reference another cell in this batch.
+const batchIds = new Set(planned.map((cell) => cell.id));
+const checked = new Map();
+async function exists(path) {
+  if (!checked.has(path)) checked.set(path, (await request(path)).status === 200);
+  return checked.get(path);
+}
+async function sourceAnswers(url) {
+  if (checked.has(url)) return checked.get(url);
+  let ok = false;
+  try {
+    const response = await fetch(url, { method: "GET", redirect: "follow", signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "katagami-encyclopedia-verifier" } });
+    ok = response.ok;
+  } catch { ok = false; }
+  checked.set(url, ok);
+  return ok;
+}
+const unresolved = [];
+for (const cell of planned) {
+  for (const link of [...cell.parsed.broader, ...cell.parsed.relations]) {
+    if (!batchIds.has(link.cellId) && !(await exists(`/tdata/EncyclopediaCells('${link.cellId}')`))) {
+      unresolved.push(`${cell.id}: linked cell '${link.cellId}' does not exist`);
+    }
+  }
+  for (const entry of cell.parsed.manifestations) {
+    if (!(await exists(`/tdata/${entry.entitySet}('${entry.entityId}')`))) {
+      unresolved.push(`${cell.id}: ${entry.entitySet} '${entry.entityId}' does not exist`);
+    }
+  }
+  for (const source of cell.parsed.sources) {
+    if (!(await sourceAnswers(source.url))) unresolved.push(`${cell.id}: source '${source.id}' does not answer at ${source.url}`);
+  }
+}
+assert.equal(unresolved.length, 0, `${unresolved.length} reference(s) do not resolve:\n${unresolved.join("\n")}`);
+console.log(`Resolved every linked cell, manifestation record, and source URL (${checked.size} checks)`);
+if (!apply) console.log("Reporting only. Pass --apply to write the records.");
 
 const read = async (cell) => {
   const row = await request(`/tdata/EncyclopediaCells('${cell.id}')`);
@@ -109,8 +162,7 @@ for (const cell of planned) {
     // Two approved names can slug to one identifier. The approval's identity is
     // the name, so refuse rather than overwrite another cell. A document too
     // large to be stored inline comes back as a blob reference and cannot be
-    // compared here, so it is refused rather than assumed to be this cell:
-    // approved cells are a name and a scope, and never that large.
+    // compared here, so it is refused rather than assumed to be this cell's.
     if (existing && existing.fields.document !== "") {
       assert.equal(typeof existing.fields.document, "string",
         `'${cell.id}' already holds a document too large to inspect, so it is not this cell's`);
@@ -140,7 +192,7 @@ for (const cell of planned) {
     }
     const submitted = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.SubmitForValidation`, "POST", {});
     assert.equal(submitted.status, 200, `SubmitForValidation: ${JSON.stringify(submitted.data)}`);
-    console.log(`${label}: created and submitted`);
+    console.log(`${label}: written and submitted`);
   } catch (error) {
     failures.push(`${cell.id}: ${error.message}`);
     console.log(`${label}: ${error.message}`);
@@ -174,7 +226,7 @@ for (const cell of planned) {
       }
       const parsed = JSON.parse(stored);
       for (const field of ["broader", "relations", "questions", "sources", "manifestations", "studies"]) {
-        if (parsed[field].length !== 0) problems.push(`${field} is not empty`);
+        if (parsed[field].length !== cell.parsed[field].length) problems.push(`${field} holds ${parsed[field].length} entries, not ${cell.parsed[field].length}`);
       }
     }
     if (row.fields.document_hash !== cell.hash) problems.push("recorded hash is not the approved document's hash");
@@ -182,8 +234,9 @@ for (const cell of planned) {
     if (row.fields.error !== "") problems.push(`error is set: ${row.fields.error}`);
   }
   if (problems.length > 0) failures.push(`${cell.id}: ${problems.join("; ")}`);
-  console.log(`${String(cell.number).padStart(2)} ${cell.id}: ${problems.length === 0 ? `Draft, attested, ${cell.hash.slice(0, 12)}` : problems.join("; ")}`);
+  const summary = `${cell.parsed.provenance.basis}, ${cell.parsed.sources.length} sources, ${cell.parsed.relations.length + cell.parsed.broader.length} links, ${cell.parsed.manifestations.length} manifestations`;
+  console.log(`${String(cell.number).padStart(2)} ${cell.id}: ${problems.length === 0 ? `Draft, attested, ${summary}` : problems.join("; ")}`);
 }
 
 assert.equal(failures.length, 0, `${failures.length} cell(s) failed:\n${failures.join("\n")}`);
-console.log(`\nAll ${planned.length} approved cells are stored as private attested Drafts with no enrichment.`);
+console.log(`\nAll ${planned.length} approved cells are stored as private attested Drafts holding exactly the approved documents.`);

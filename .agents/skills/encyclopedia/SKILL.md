@@ -173,25 +173,52 @@ One JSON document per cell, validated against
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "name": "Impressionism",
   "description": "Light and colour relationships, broken brushwork, and fleeting observation.",
+  "provenance": {"basis": "cited"},
   "maps": ["art"],
   "broader": [{"cellId": "...", "explanation": "...", "sourceIds": ["..."]}],
   "relations": [{"cellId": "...", "label": "influenced", "explanation": "...", "sourceIds": ["..."]}],
   "questions": ["..."],
   "sources": [{"id": "...", "title": "...", "url": "https://..."}],
   "manifestations": [{"entitySet": "ArtStyles", "entityId": "...", "explanation": "...", "sourceIds": ["..."]}],
-  "studies": [{"id": "...", "title": "...", "kind": "historical|original|generated", "description": "...", "representations": [...]}]
+  "studies": [{"id": "...", "title": "...", "kind": "historical|original|generated", "generatedBy": "<only when generated>", "description": "...", "representations": [...]}]
 }
 ```
+
+## Provenance: a reader must always know where something came from
+
+This is the rule the contract enforces hardest, because it is the one a
+browsing human and a learning agent both depend on.
+
+- **The cell itself.** `provenance.basis` is `cited` or `recollected`. Cited
+  means at least one entry in `sources` — an encyclopedia reference, a museum
+  essay, a standard history — that a reader can follow to learn more.
+  Recollected means the model wrote the account from its training data and no
+  external reference was located; the `note` must say so in plain words. A cell
+  with neither is refused by the validator. Prefer cited. Recollected is an
+  honest interim state, not a destination: a maintenance sweep should be
+  turning recollected cells into cited ones.
+- **Every link.** `broader`, `relations`, and `manifestations` each cite a
+  source. For a manifestation the natural source is the record's own page,
+  because the record declares its lineage in its `credits`; that is the record
+  citing the cell.
+- **Every study.** `kind` says what it is: `historical` — a real work, and its
+  representation links to where it came from with rights recorded;
+  `original` — a demonstration a human made for this cell; `generated` — made
+  by a model, and `generatedBy` names the model or tool. A generated study
+  never passes as evidence of anything, and a historical study never carries a
+  generator. This holds for text as much as images: an AI-written prose sample
+  is `generated`, and a real passage is `historical` with its edition and its
+  source.
 
 Enforced by the contract, so plan for it:
 
 - **Every link cites evidence.** `broader`, `relations`, and `manifestations`
   each require `sourceIds` resolving into this cell's `sources`. Sources are
-  citations — title plus HTTPS URL — not reproduced material. Verify a URL
-  resolves and says what you claim before writing it.
+  citations — title plus HTTPS URL — not reproduced material. The apply script
+  fetches every source URL and resolves every link target before writing.
 - Maps are `art`, `writing`, `palettes`, `design`; a cell may wear several.
 - Ids derive from the approved name and are the cell's identity — never
   repoint one at a different cell.
@@ -232,9 +259,13 @@ keeps the cell's id and history. Verify on a local fixture first: see
 - **Integrity sweep**: every cell's attestation pair; every `cellId` and
   manifestation pointer resolves; sources still answer. Dangling links are the
   failure this collection accumulates.
-- **Gap watch**: maps with no cells, cells with no manifestations, clusters of
-  made work with no cell over them. These become the next proposal, not a
-  quiet fix.
+- **Gap watch**: maps with no cells, cells with no manifestations, recollected
+  cells that could now be cited, clusters of made work with no cell over them.
+  These become the next proposal, not a quiet fix.
+- **Finding manifestations**: search records' `credits`, not their names. A
+  record declares its lineage there (`{kind: "movement", name: "French
+  Impressionism"}`), across every status — Draft, UnderReview, Published all
+  count. A search on names alone misses most of them.
 - **Stuck in `ValidatingDocument`** means an interrupted run — call
   `AbandonValidation`, re-`Define`, resubmit. No timer does this for you.
 - **Archive, never delete.** Archived keeps identity and history and is final;
@@ -266,7 +297,8 @@ not delete them.
 - Mint a cell for a vibe, an attribute, a single artefact, or a Katagami
   language.
 - Widen the cell policy or read cells with a non-curator identity.
-- Present a generated study as historical evidence.
+- Present a generated study as historical evidence, or store any example
+  without saying whether it is real or generated and where it came from.
 - Claim a cell is validated on the boolean alone.
 - Point an existing identifier at a different cell.
 

@@ -42,18 +42,37 @@ const manifestationSchema = z.strictObject({
   sourceIds,
 });
 
+// Where a study came from must be unmistakable to a reader. A generated study
+// names what generated it; a historical or original one carries no such claim.
 const studySchema = z.strictObject({
   id,
   title: text,
   kind: z.enum(["historical", "original", "generated"]),
   description: text,
+  generatedBy: text.optional(),
   representations: z.array(representationSchema).min(1),
+}).superRefine((study, context) => {
+  if (study.kind === "generated" && !study.generatedBy) {
+    context.addIssue({ code: "custom", path: ["generatedBy"], message: "A generated study must name the model or tool that produced it" });
+  }
+  if (study.kind !== "generated" && study.generatedBy !== undefined) {
+    context.addIssue({ code: "custom", path: ["generatedBy"], message: "Only a generated study names a generator" });
+  }
+});
+
+// A cell says where its own account comes from. "cited" means at least one
+// source a reader can follow; "recollected" means the model wrote it from
+// training data and nothing external was located, which the note must say.
+const provenanceSchema = z.strictObject({
+  basis: z.enum(["cited", "recollected"]),
+  note: text.optional(),
 });
 
 export const cellDocumentSchema = z.strictObject({
-  version: z.literal(1),
+  version: z.literal(2),
   name: text,
   description: z.union([z.literal(""), text]),
+  provenance: provenanceSchema,
   maps: z.array(encyclopediaMapSchema).min(1),
   broader: z.array(z.strictObject({ cellId: id, explanation: text, sourceIds })),
   relations: z.array(z.strictObject({ cellId: id, label: text, explanation: text, sourceIds })),
@@ -69,6 +88,12 @@ export const cellDocumentSchema = z.strictObject({
     if (new Set(values).size !== values.length) {
       context.addIssue({ code: "custom", path, message: "Identifiers must be unique within this list" });
     }
+  }
+  if (cell.provenance.basis === "cited" && cell.sources.length === 0) {
+    context.addIssue({ code: "custom", path: ["provenance"], message: "A cited cell must carry at least one source" });
+  }
+  if (cell.provenance.basis === "recollected" && !cell.provenance.note) {
+    context.addIssue({ code: "custom", path: ["provenance", "note"], message: "A recollected cell must say that it was written from training data and why no source was found" });
   }
   unique(cell.maps, ["maps"]);
   unique(cell.sources.map((source) => source.id), ["sources"]);

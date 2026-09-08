@@ -70,7 +70,8 @@ mod tests {
     #[test]
     fn accepts_name_and_scope_before_enrichment() {
         let mut input = serde_json::json!({
-            "version": 1, "name": "Synthetic draft", "description": "Approved scope",
+            "version": 2, "name": "Synthetic draft", "description": "Approved scope",
+            "provenance": {"basis": "recollected", "note": "Written from model training data; no reference located."},
             "maps": ["art"], "broader": [], "relations": [], "questions": [],
             "sources": [], "manifestations": [], "studies": []
         });
@@ -78,6 +79,38 @@ mod tests {
         input["description"] = serde_json::json!("");
         assert!(validate_document(&input.to_string()).is_ok());
         input["description"] = serde_json::json!("  ");
+        assert!(validate_document(&input.to_string()).is_err());
+    }
+
+    #[test]
+    fn a_cell_either_cites_a_source_or_says_it_was_recollected() {
+        let mut bare: Value = serde_json::from_str(FIXTURE).expect("fixture");
+        for field in [
+            "broader",
+            "relations",
+            "sources",
+            "manifestations",
+            "studies",
+            "questions",
+        ] {
+            bare[field] = serde_json::json!([]);
+        }
+        bare["provenance"] = serde_json::json!({"basis": "cited"});
+        assert!(validate_document(&bare.to_string()).is_err());
+        bare["provenance"] = serde_json::json!({"basis": "recollected"});
+        assert!(validate_document(&bare.to_string()).is_err());
+        bare["provenance"] = serde_json::json!({"basis": "recollected", "note": "From training data; no reference found."});
+        assert!(validate_document(&bare.to_string()).is_ok());
+    }
+
+    #[test]
+    fn a_generated_study_names_its_generator_and_a_historical_one_does_not() {
+        let mut input: Value = serde_json::from_str(FIXTURE).expect("fixture");
+        input["studies"][0]["kind"] = serde_json::json!("generated");
+        assert!(validate_document(&input.to_string()).is_err());
+        input["studies"][0]["generatedBy"] = serde_json::json!("gpt-image-1 via Codex");
+        assert!(validate_document(&input.to_string()).is_ok());
+        input["studies"][0]["kind"] = serde_json::json!("historical");
         assert!(validate_document(&input.to_string()).is_err());
     }
 
