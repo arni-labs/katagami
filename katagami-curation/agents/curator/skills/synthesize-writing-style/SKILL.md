@@ -173,6 +173,28 @@ Delta over 500 most-frequent words; bake-off champion over StyleDistance and
 Wegmann embeddings on the PD catalog). It is REPORT-ONLY: it appears in the
 verification record and never gates a publish.
 
+## VOICE.md format v3.2-lean (2026-07-08) — the current format, and what it carries (2026-09-08)
+
+Frontmatter `version: v3.2-lean`; sections `## Never`, `## Gold standard
+samples`, `## Signature vocabulary`, `## Measured fingerprint`, then the bands
+JSON. The finalizer accepts only these headings for this version.
+
+The handoff is the file. An agent given VOICE.md alone must be able to write in
+the voice, so the file carries the corpus, in two forms:
+
+- **Gold standard samples**: one passage per corpus item, each the longest
+  continuous excerpt that reads on its own (300 words or more where the source
+  allows), quoted verbatim and labeled with its source. Never a fixed count of
+  slots: write exactly as many entries as there are passages, and never an
+  empty or placeholder entry. An entry like `5. ""` fails the file.
+- **Corpus**: a `corpus:` list in the frontmatter with one line per corpus
+  file: `- {file_id, source, words}`, and after the bands block a
+  `## Corpus` section linking each file at `/api/file/<file_id>` with its
+  source line, so a reader can pull the full text.
+
+Regenerating an existing style's VOICE.md is content work: propose it, get the
+number approved, then `AttachVoiceMd` with the new file.
+
 ## Replication — the round-trip proof (required, 2026-07-06)
 
 Every writing style MUST attach replication before it can pass verification:
@@ -187,14 +209,21 @@ Every writing style MUST attach replication before it can pass verification:
    fails verification with missing_replication or voice_bands_violation.
 Replicas are displayed in the UI labeled as replicas — never as author text.
 
-## The two-level shape (curator decision, 2026-07-06)
+## Names and where a style sits (owner decision, 2026-09-08; replaces the two-level shape of 2026-07-06)
 
-- A single-PD-author style is an AUTHOR VOICE: named for what it is
-  ("Samuel Pepys — diary (1660s)"), parent_ids [], generation 0. Never an
-  invented brand name. Author voices are the adherence calibration set.
-- A blend is a LINEAGE CHILD: parent_ids name the author voices it mixes,
-  lineage_type "blend", generation >= 1, its own merged corpus and derived
-  bands. Plain register names ("Ship's log"), never cute compounds.
+- **A writing style is named by the source vocabulary** the encyclopedia reads
+  (Library of Congress Genre/Form Terms, the literary-movement lists): "Field
+  notes", "Ship's log", "Epistolary fiction", "Plain-language technical
+  writing". Never a coined name. "Plainhand" is the example of what is not
+  allowed.
+- **A record built from one writer's work is a manifestation, not a style.**
+  It keeps its honest name ("Samuel Pepys — diary (1660s)"), credits the
+  writer, and is attached under the encyclopedia cell for its genre or
+  movement (see `.agents/skills/encyclopedia/SKILL.md`). It is never presented
+  as a style of its own.
+- A blend keeps `parent_ids` naming the records it mixes, `lineage_type`
+  "blend", its own merged corpus and derived bands, and a source-vocabulary
+  name.
 - tone_scales stays "{}" — numeric dials are never authored. Tone lives in
   the persona prose, the exemplars, and the measured bands.
 
