@@ -82,7 +82,7 @@ export function identifierFor(name) {
 const planned = payload.cells.map((cell) => {
   const sources = cell.sources ?? [];
   const document = {
-    version: 2,
+    version: 3,
     name: cell.name,
     description: cell.description ?? "",
     provenance: cell.provenance,

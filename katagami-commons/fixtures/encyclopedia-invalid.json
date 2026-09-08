@@ -4,7 +4,7 @@
     "path": [
       "version"
     ],
-    "value": 3
+    "value": 4
   },
   {
     "name": "blank name",
@@ -24,9 +24,10 @@
     "name": "unknown map",
     "path": [
       "maps",
-      0
+      0,
+      "map"
     ],
-    "value": "universal-taste"
+    "value": "sound"
   },
   {
     "name": "unsafe source URL",
@@ -255,5 +256,49 @@
       "provenance"
     ],
     "remove": true
+  },
+  {
+    "name": "version 2 no longer accepted",
+    "path": [
+      "version"
+    ],
+    "value": 2
+  },
+  {
+    "name": "map membership as a bare word",
+    "path": [
+      "maps",
+      0
+    ],
+    "value": "art"
+  },
+  {
+    "name": "map membership without evidence",
+    "path": [
+      "maps",
+      0,
+      "sourceIds"
+    ],
+    "value": []
+  },
+  {
+    "name": "map membership with unresolved evidence",
+    "path": [
+      "maps",
+      0,
+      "sourceIds"
+    ],
+    "value": [
+      "nowhere"
+    ]
+  },
+  {
+    "name": "map membership without explanation",
+    "path": [
+      "maps",
+      0,
+      "explanation"
+    ],
+    "value": " "
   }
 ]

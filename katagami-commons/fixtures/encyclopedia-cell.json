@@ -1,9 +1,12 @@
 {
-  "version": 2,
+  "version": 3,
   "name": "Spectrum studies (test fixture)",
   "description": "Synthetic parser fixture, not a published encyclopedia entry.",
   "provenance": {"basis": "cited", "note": "Synthetic fixture; the source below is a placeholder."},
-  "maps": ["art", "palettes"],
+  "maps": [
+    {"map": "art", "explanation": "The fixture's studies are painted colour sequences.", "sourceIds": ["fixture"]},
+    {"map": "palettes", "explanation": "One study is a six-colour palette.", "sourceIds": ["fixture"]}
+  ],
   "broader": [{"cellId": "color-study", "explanation": "A narrower study within the test collection.", "sourceIds": ["fixture"]}],
   "relations": [{"cellId": "sequence-study", "label": "shares a technique", "explanation": "Both arrange a sequence, without making one a child of the other.", "sourceIds": ["fixture"]}],
   "questions": ["Which further examples would challenge this grouping?"],

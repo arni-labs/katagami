@@ -383,3 +383,15 @@ Options: A loader that checks what is mechanically checkable, or a script that a
 Chose the loader because: Truth about a cell is decided when a human approves it by number; a script that pretends otherwise invites trust it cannot earn and grows a new surface with every round. An agent could call the API directly instead, but then every agent re-implements the boring step — did it land, is it attested, do not overwrite the wrong cell — and the script is the one tested way to do it.
 
 Where: `scripts/create-encyclopedia-cells.mjs`; D29, D30, D31; arbiter assessment kept outside the repository.
+
+## D33 A map membership is a cited claim
+
+Decision: Contract version 3. `maps` entries are `{map, explanation, sourceIds}` rather than bare map names. On a cited cell each membership cites a source; on a recollected cell the placement is recollected too, so the explanation is required and a citation cannot exist.
+
+Came up because: The cross-modal research found the failure mode this prevents in a real, professionally curated vocabulary: the Library of Congress carries "Gothic fiction", "Gothic poetry" and "Gothic rock music" as three unrelated terms with near-identical scope notes, because medium was a parent and the direction was minted once per medium. Katagami's `maps`-as-role structure avoids that, but `maps` was the one link on a cell that carried no explanation and no source, so a cell could be placed on the writing map by its name alone — the same drag in the other direction. Rita approved closing it before the build-out agents start adding cells.
+
+Options: Leave `maps` as words and rely on review, or make membership a link like every other.
+
+Chose the link because: Every other connection on a cell must say why and cite; placement on a map is the connection that decides which readers see the cell at all. The recollected case follows from D27: a cell with no sources cannot cite its placement, so its placement is recollected with it, and the reader sees that on the cell.
+
+Where: `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; fixtures; `scripts/verify-encyclopedia.mjs`; `.agents/skills/encyclopedia/SKILL.md`. Migration of the 24 live cells is batch B4, applied with the version-3 validator in one sequence, as B3 was with version 2.

@@ -16,7 +16,7 @@ pub(crate) struct CellDocument {
     name: String,
     description: String,
     provenance: Provenance,
-    maps: Vec<String>,
+    maps: Vec<MapMembership>,
     broader: Vec<Broader>,
     relations: Vec<Relation>,
     questions: Vec<String>,
@@ -34,6 +34,16 @@ struct Provenance {
     basis: String,
     #[serde(default, deserialize_with = "present_string")]
     note: Option<String>,
+}
+
+/// Why this cell sits on a map. A bare map name would let a cell be dragged
+/// across media by its name alone; a membership is cited like every other link.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct MapMembership {
+    map: String,
+    explanation: String,
+    source_ids: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -238,7 +248,7 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
         return Err("cell document exceeds 2 MB; link large representations instead".into());
     }
     let cell: CellDocument = serde_json::from_str(raw).map_err(|error| error.to_string())?;
-    if cell.version != 2 {
+    if cell.version != 3 {
         return Err("unsupported cell document version".into());
     }
     text(&cell.name)?;
@@ -282,9 +292,14 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
         _ => {}
     }
     nonempty(&cell.maps, "maps")?;
-    unique(cell.maps.iter().map(String::as_str), "maps")?;
-    for map in &cell.maps {
-        one_of(map, &["art", "writing", "palettes", "design"], "map")?;
+    unique(cell.maps.iter().map(|m| m.map.as_str()), "maps")?;
+    for membership in &cell.maps {
+        one_of(
+            &membership.map,
+            &["art", "writing", "palettes", "design"],
+            "map",
+        )?;
+        text(&membership.explanation)?;
     }
     let sources = unique(
         cell.sources.iter().map(|source| source.id.as_str()),
@@ -303,6 +318,16 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
                 }
             }
             _ => return Err("verifiedBy and verifiedOn go together".into()),
+        }
+    }
+    for membership in &cell.maps {
+        // A cited cell's map membership is a claim and cites like every other
+        // link; on a recollected cell placement is recollected too.
+        if cell.provenance.basis == "cited" && membership.source_ids.is_empty() {
+            return Err("a cited cell's map membership must cite a source".into());
+        }
+        for source_id in &membership.source_ids {
+            check_sources(&[source_id.as_str()], &sources)?;
         }
     }
     unique(

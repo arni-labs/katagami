@@ -82,7 +82,7 @@ test("a cell separates typed manifestations from direct studies", () => {
   assert.equal(cell.studies.length, 1);
   assert.equal(cell.studies[0].representations.length, 2);
   assert.equal(cell.studies[0].representations[0].colors.length, 6);
-  assert.deepEqual(cell.maps, ["art", "palettes"]);
+  assert.deepEqual(cell.maps.map((m) => m.map), ["art", "palettes"]);
 });
 
 test("broad cells need not have examples or be leaves", () => {
@@ -93,6 +93,7 @@ test("broad cells need not have examples or be leaves", () => {
 test("an approved name and scope can exist before research and examples", () => {
   const cell = cellDocumentSchema.parse({
     ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [],
+    maps: [{ map: "art", explanation: "Placed from the model's own account.", sourceIds: [] }],
     provenance: { basis: "recollected", note: "Written from model training data; no external reference was located yet." },
   });
   assert.equal(cell.sources.length, 0);
@@ -103,7 +104,8 @@ test("an approved name and scope can exist before research and examples", () => 
 // A reader must always be able to tell where a cell's account came from: a
 // source to follow, or an explicit statement that the model recollected it.
 test("a cell either cites a source or says it was recollected", () => {
-  const bare = { ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [] };
+  const bare = { ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [],
+    maps: [{ map: "art", explanation: "Placed from the model's own account.", sourceIds: [] }] };
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "cited" } }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected" } }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...bare, provenance: { basis: "recollected", note: "Written from model training data; no external reference was located." } }).success, true);
@@ -142,6 +144,19 @@ test("a generated study names its generator and a historical one does not", () =
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, studies: [{ ...study, kind: "generated" }] }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, studies: [{ ...study, kind: "generated", generatedBy: "gpt-image-1 via Codex" }] }).success, true);
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, studies: [{ ...study, kind: "historical", generatedBy: "x" }] }).success, false);
+});
+
+// Placement on a map is a claim: on a cited cell it cites like every other
+// link; a recollected cell's placement is recollected too, explanation still required.
+test("a map membership is cited on a cited cell and explained on any cell", () => {
+  const membership = fixture.maps[0];
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, maps: [{ ...membership, sourceIds: [] }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, maps: [{ ...membership, sourceIds: ["nowhere"] }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, maps: ["art"] }).success, false);
+  const bare = { ...fixture, broader: [], relations: [], sources: [], manifestations: [], studies: [], questions: [],
+    provenance: { basis: "recollected", note: "Written from model training data; no external reference was located." } };
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, maps: [{ map: "art", explanation: "Placed from the model's own account.", sourceIds: [] }] }).success, true);
+  assert.equal(cellDocumentSchema.safeParse({ ...bare, maps: [{ map: "art", explanation: " ", sourceIds: [] }] }).success, false);
 });
 
 test("a name-only cell can have an empty description", () => {
