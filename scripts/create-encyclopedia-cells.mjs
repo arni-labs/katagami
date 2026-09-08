@@ -107,10 +107,17 @@ for (const cell of planned) {
   try {
     let existing = await read(cell);
     // Two approved names can slug to one identifier. The approval's identity is
-    // the name, so refuse rather than overwrite another cell.
-    if (existing && typeof existing.fields.document === "string" && existing.fields.document !== cell.document) {
-      const stored = JSON.parse(existing.fields.document);
-      assert.equal(stored.name, cell.name, `'${cell.id}' already holds a different cell, "${stored.name}"`);
+    // the name, so refuse rather than overwrite another cell. A document too
+    // large to be stored inline comes back as a blob reference and cannot be
+    // compared here, so it is refused rather than assumed to be this cell:
+    // approved cells are a name and a scope, and never that large.
+    if (existing && existing.fields.document !== "") {
+      assert.equal(typeof existing.fields.document, "string",
+        `'${cell.id}' already holds a document too large to inspect, so it is not this cell's`);
+      if (existing.fields.document !== cell.document) {
+        const stored = JSON.parse(existing.fields.document);
+        assert.equal(stored.name, cell.name, `'${cell.id}' already holds a different cell, "${stored.name}"`);
+      }
     }
     if (settled(existing, cell)) { console.log(`${label}: already stored and attested`); continue; }
     if (!apply) { console.log(`${label}: would ${existing ? "update" : "create"}`); continue; }
