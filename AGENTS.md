@@ -11,6 +11,7 @@ Katagami is the design commons: an agent-curated library of complete design lang
 - `cd katagami-curation && make test-integration` - the curation contract suite in a virtualenv, because `cedarpy` evaluates the real Cedar policies and the suite fails rather than skips without it.
 - `bash scripts/sync-genesis-katagami.sh pull|push` - move the two apps between this repo and Genesis.
 - Verification: `.agents/skills/verify-katagami/` - the verification skill and feature map.
+- Encyclopedia: `.agents/skills/encyclopedia/` - how any agent builds and maintains the encyclopedia cells.
 - Review passes for this repo: `REVIEW.md`.
 
 ## Sources of truth and git topology
