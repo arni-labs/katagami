@@ -204,17 +204,17 @@ Chose enumeration because: An unanticipated action then fails closed rather than
 
 Where: `katagami-commons/policies/encyclopedia_cell.cedar`; `ui/scripts/encyclopedia.test.mjs`, "cell authorization is a closed allow-list, not a blanket grant".
 
-## D18 Record the undeclared-parameter merge as a runtime defect this app contains but cannot fix
+## D18 Close the undeclared-parameter merge in the specification, and report the runtime defect
 
-Decision: Report the parameter overwrite as a Temper runtime defect, do not claim an application fix, and verify what the deployment actually relies on instead.
+Decision: Make every action an external principal may invoke clear `document_validated`, report the parameter overwrite as a Temper runtime defect, and claim no application fix for the merge itself.
 
-Came up because: The reported bypass was attributed to Publish accepting a `document` parameter. A direct probe showed the cause is general: any action persists a submitted string parameter whose name matches a field, including an action that declares no parameters at all. `Archive`, which declares nothing, replaced a validated document while `document_validated` stayed true. Cedar never sees action parameters, so no policy can filter them, and the specification's `params` list is not what the runtime enforces.
+Came up because: The reported bypass was attributed to Publish accepting a `document` parameter. A direct probe showed the cause is general: any action persists a submitted string parameter whose name matches a field, including an action that declares no parameters at all. Cedar never sees action parameters, so no policy can filter them, and the specification's `params` list is not what the runtime enforces. Root cause is `crates/temper-server/src/entity_actor/effects.rs:894-928`, `sync_fields_with_metadata`, which never receives the action name.
 
-Options: Rename fields to obscure them, add a guard that cannot see parameters, delay the delivery until the runtime is fixed, or contain the defect and verify the containment.
+Options: Rename fields to obscure them, treat the stored hash as tamper evidence, delay the delivery until the runtime is fixed, or remove every path that could leave injected content marked validated.
 
-Chose containment plus a runtime issue because: Declared booleans and counters are written only by specification effects, so no parameter can forge `document_validated` or `version`; the probe confirms this. Only a principal already permitted to call `Define` can reach any action on a cell, and that principal can rewrite the document through `Define` anyway, so the injection grants no authority its caller lacks. The stored hash is weaker than it first appears: `document_hash` is a string field and is injectable the same way, so a caller that sets document and hash together leaves a self-consistent record whose content never reached the validator. The hash therefore detects a partial overwrite, not a deliberate one, and the readback of the approved records compares each stored document against the approved bytes rather than trusting the hash. The fix belongs in the kernel, where the declared parameter list should bound what an action may write.
+Chose clearing the gate everywhere because: The stored hash is not evidence. `document_hash` is a string field and travels the same merge path, so a caller that sets document and hash together leaves a self-consistent record whose content never reached the validator; the first version of this decision claimed otherwise and was wrong. Declared booleans and counters, by contrast, are written only by specification effects, and the runtime writes typed state over merged parameters. `Define`, `SubmitForValidation`, and `ValidationFailed` already cleared the gate; `Archive` did not, which made it the one action that could accept an injected document and leave it marked validated. Adding the same effect to `Archive` closes that, and the harness now asserts the property for every externally invocable action rather than for the instances found. What remains is that such a principal can replace stored bytes through an action other than `Define`, which is a defect the kernel must fix: the declared parameter list should bound what an action may write.
 
-Where: `scripts/verify-encyclopedia.mjs`, the undeclared-parameter section, whose assertions record today's runtime behaviour and fail when the runtime is corrected. Reproduction evidence is kept outside the repository.
+Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, Archive; `scripts/verify-encyclopedia.mjs`, the undeclared-parameter section, whose assertions record today's runtime behaviour and fail when the runtime is corrected. Reproduction and root cause are kept outside the repository.
 
 ## D19 Give an interrupted validation an exit
 
@@ -251,3 +251,15 @@ Options: Return to a blanket permit, leave enumeration denied, or name `list` in
 Chose naming it because: Losing enumeration would remove a capability that worked, and returning to a blanket permit would undo the reason for the change. The harness now checks both halves: a curator can list, a contributor cannot. This is the failure mode a closed allow-list is meant to produce, caught by the live run rather than in production.
 
 Where: `katagami-commons/policies/encyclopedia_cell.cedar`; `scripts/verify-encyclopedia.mjs`, the non-curator section.
+
+## D22 Answer the review findings the harness could not see
+
+Decision: Widen the removed-surface test to every removed identifier, require exactly one permit in the policy file, prove the contributor denial against a 401 baseline and across every action, and align the effort specification with the deployed lifecycle.
+
+Came up because: The independent review found that each of these checks passed for the wrong reason. The removed-surface test banned six identifiers but not `Revise`, `UnderReview`, `ValidatingReview`, `review_document_hash`, or `review_findings`, so most of the deleted machine could return without failing it. The closed-list test read only the text before the first `forbid(`, so a second blanket permit after it would pass. The contributor test accepted 403 or an empty 200 for a collection read, which was indistinguishable from `list` being denied to everyone, and it never established that an unresolvable bearer returns 401 rather than 403. The effort specification still described the review and publication lifecycle as the contract.
+
+Options: Record the findings as accepted risk, or make each check discriminate.
+
+Chose making them discriminate because: A test that cannot fail is worse than no test, since it reports coverage it does not have. The 401 baseline is what turns "contributor got 403" into evidence that the credential resolved and Cedar refused the principal it resolved to.
+
+Where: `ui/scripts/encyclopedia.test.mjs`; `scripts/verify-encyclopedia.mjs`, the non-curator section; `docs/efforts/ARN-118/spec.md`, Cell lifecycle.

@@ -56,12 +56,12 @@ Read back each state and the expected fields, allowing for asynchronous projecti
 - An authenticated contributor credential can neither read nor author a cell.
 - The removed publication actions are absent, and calling them changes nothing.
 - Generic PATCH, PUT, and DELETE cannot replace the document or its validation gate.
-- Rewriting a document through Define clears validation; a malformed document returns to Draft with an error, and correcting it clears that error.
+- Rewriting a document through Define clears validation; a malformed document returns to Draft with an error, and correcting it clears that error. `error` describes the last validation run, not the current document: Define cannot clear it, because no specification effect can write a string field.
 - Inline validation resolves documents larger than 128 KiB from the runtime's blob storage.
 - An interrupted validation can be abandoned or archived; Archived cannot be redefined.
-- Undeclared parameters cannot forge a declared boolean or counter; they can replace a document, and can replace its hash alongside it.
+- Undeclared parameters cannot forge a declared boolean or counter; they can replace a document and its hash, and the record is then left unvalidated.
 
-The runtime persists a submitted string parameter whose name matches a field even when the action declares no parameters. That is a Temper defect the app cannot fix: Cedar never sees action parameters. What holds is that declared booleans and counters are written only by specification effects, and that only a principal already permitted to call Define can reach any action at all, which is a principal that can rewrite the document through Define anyway. The stored hash is not a defence: `document_hash` is injectable the same way, so setting both leaves a self-consistent record that never reached the validator. It catches a partial overwrite only. The harness asserts today's behaviour explicitly, so it fails when the runtime is corrected and the assertions can be tightened.
+The runtime persists a submitted string parameter whose name matches a field even when the action declares no parameters. That is a Temper defect the app cannot fix: Cedar never sees action parameters. What closes it here is the specification: every action an external principal may invoke clears `document_validated`, so an injected document always lands with the gate false. The stored hash is not a defence — `document_hash` is injectable the same way — and the harness checks the clearing property for every such action, not only the ones already known to fail. The harness asserts today's behaviour explicitly, so it fails when the runtime is corrected and the assertions can be tightened.
 
 Run `npm test` in `ui/`, plus Rust tests, formatting, and clippy in the validator directory. The shared fixture tests check the document contract; they do not prove source rights, historical claims, or aesthetic quality. English-only writing collection scope belongs to the approved proposal and content review, not a universal ban on text languages in the format.
 

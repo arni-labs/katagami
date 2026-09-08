@@ -122,16 +122,22 @@ console.log("Unauthenticated reads and caller-supplied validation callbacks are 
 // A verified identity that is authenticated but is not a curator. Its
 // credential resolves to agent_type "contributor"; nothing about the request
 // asserts its own identity, so the policy decides on the resolved principal.
+// An unresolvable bearer is 401, so a 403 below means the credential resolved
+// and Cedar refused the principal it resolved to.
+assert.equal((await request(path, "GET", undefined, { Authorization: "Bearer not-a-registered-key" })).status, 401);
 const contributorRead = await request(path, "GET", undefined, contributorKey);
 assert.equal(contributorRead.status, 403, JSON.stringify(contributorRead.data));
-const contributorWrite = await request(`${path}/Temper.Define`, "POST", { document: draft }, contributorKey);
-assert.equal(contributorWrite.status, 403, JSON.stringify(contributorWrite.data));
 assert.equal((await request("/tdata/EncyclopediaCells", "GET", undefined, contributorKey)).status, 403);
+assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: `contributor-${randomUUID()}` }, contributorKey)).status, 403);
+for (const name of ["Define", "SubmitForValidation", "AbandonValidation", "Archive"]) {
+  const attempted = await request(`${path}/Temper.${name}`, "POST", { document: draft }, contributorKey);
+  assert.equal(attempted.status, 403, `${name} as a contributor: ${JSON.stringify(attempted.data)}`);
+}
 // Enumeration authorizes as its own action, so a curator must still be able to
 // list what it may read.
 const curatorList = await request("/tdata/EncyclopediaCells?$top=1");
 assert.equal(curatorList.status, 200, JSON.stringify(curatorList.data));
-console.log("An authenticated non-curator contributor identity can neither read, list, nor author a private cell, and a curator can still list");
+console.log("A resolved non-curator contributor identity can neither read, list, create, nor act on a private cell, and a curator can still list");
 
 // Removed surface. Publication asserts a curator review that this deployment
 // performs nowhere, so those actions must not exist on the installed machine.
@@ -155,7 +161,9 @@ console.log("A valid document validates and returns to Draft with its hash recor
 // The reported publication bypass is one case of a runtime defect: an action
 // persists a submitted string parameter that matches a field name even when the
 // action declares no parameters at all. It is not repairable from this
-// application, so what this deployment relies on is recorded and checked here.
+// application, so what closes it here is the specification: every action an
+// external principal may invoke clears `document_validated`, so an injected
+// document can never land already marked validated.
 //
 // 1. Declared state cannot be forged. `document_validated` and `version` are
 //    written only by the effects in the specification, so no parameter can
@@ -167,37 +175,28 @@ assert.equal((await action("Define", { document: fixture }, tamperPath)).status,
 assert.equal((await action("SubmitForValidation", {}, tamperPath)).status, 200);
 row = await expectState("Draft", (value) => value.booleans.document_validated === true, tamperPath);
 const versionBefore = row.counters.version;
-assert.equal((await action("Archive", { document: "TAMPERED", document_validated: false, version: 99 }, tamperPath)).status, 200);
+assert.equal((await action("Archive", { document: "TAMPERED", document_hash: createHash("sha256").update("TAMPERED").digest("hex"), document_validated: true, version: 99 }, tamperPath)).status, 200);
 row = await expectState("Archived", () => true, tamperPath);
-assert.equal(row.booleans.document_validated, true, "a parameter changed a declared boolean");
 assert.equal(row.counters.version, versionBefore, "a parameter changed a counter");
 // 2. This asserts the runtime's present behaviour, not a desired one: the
-//    parameter did replace the stored document. When the runtime stops merging
-//    undeclared parameters, this assertion fails, and the correct replacement
-//    is `assert.equal(row.fields.document, fixture)`.
+//    parameters did replace the stored document and its hash. When the runtime
+//    stops merging undeclared parameters, this fails and the correct
+//    replacement is `assert.equal(row.fields.document, fixture)`.
 assert.equal(row.fields.document, "TAMPERED", "the runtime no longer merges undeclared parameters; tighten this test");
-// 3. A replaced document no longer matches its recorded hash, so a partial
-//    overwrite is detectable. This is not a defence: `document_hash` is a
-//    string field and is injectable the same way, so a caller that sets both
-//    leaves a self-consistent record whose content never reached the validator.
-//    What actually bounds the damage is that only a principal already permitted
-//    to call Define can invoke any action here, and that principal can rewrite
-//    the document through Define anyway.
-assert.notEqual(createHash("sha256").update(row.fields.document).digest("hex"), row.fields.document_hash);
-assert.equal(createHash("sha256").update(fixture).digest("hex"), row.fields.document_hash);
-const forged = "FORGED";
-const forgery = `encyclopedia-test-forgery-${randomUUID()}`;
-const forgeryPath = `/tdata/EncyclopediaCells('${forgery}')`;
-assert.equal((await request("/tdata/EncyclopediaCells", "POST", { id: forgery })).status, 201);
-assert.equal((await action("Define", { document: fixture }, forgeryPath)).status, 200);
-assert.equal((await action("SubmitForValidation", {}, forgeryPath)).status, 200);
-await expectState("Draft", (value) => value.booleans.document_validated === true, forgeryPath);
-assert.equal((await action("Archive", { document: forged, document_hash: createHash("sha256").update(forged).digest("hex") }, forgeryPath)).status, 200);
-row = await expectState("Archived", (value) => value.fields.document === forged, forgeryPath);
-assert.equal(row.booleans.document_validated, true);
-assert.equal(createHash("sha256").update(row.fields.document).digest("hex"), row.fields.document_hash,
-  "the runtime no longer merges undeclared parameters; tighten this test");
-console.log("Undeclared parameters cannot forge validation or version; they can forge a document and its hash together, so the hash detects only a partial overwrite");
+assert.equal(row.fields.document_hash, createHash("sha256").update("TAMPERED").digest("hex"));
+// 3. The bytes were replaced, and the gate is false, so nothing claims the
+//    stored content was validated. This is what makes the injection harmless
+//    here, not the recorded hash, which is a string field and travels the same
+//    way as the document.
+assert.equal(row.booleans.document_validated, false, "an injected document was left marked validated");
+
+for (const name of ["Define", "SubmitForValidation", "AbandonValidation", "Archive"]) {
+  const block = readFileSync(new URL("specs/encyclopedia_cell.ioa.toml", app), "utf8")
+    .split("[[action]]").find((part) => part.includes(`name = "${name}"`));
+  assert.match(block, /set_bool", var = "document_validated", value = "false"/,
+    `${name} can be invoked externally and must clear the validation gate`);
+}
+console.log("Every externally invocable action clears the validation gate, so an injected document cannot arrive validated");
 
 const recovery = `encyclopedia-test-recovery-${randomUUID()}`;
 const recoveryPath = `/tdata/EncyclopediaCells('${recovery}')`;

@@ -46,8 +46,11 @@ test("validator timeouts are inside the runtime trigger config", () => {
 // would assert a curator review that nothing here performs. Reintroducing it
 // needs its own approval and its own review round, so it fails here first.
 test("the deployed cell carries no review or publication surface", () => {
-  for (const term of ["Publish", "Published", "RecordReview", "ReviewValidated", "RequestChanges", "review_approved"]) {
-    assert.doesNotMatch(cellSpec, new RegExp(term), `${term} is outside the approved Draft-only scope`);
+  // Identifiers only: the file's prose explains why the surface is absent.
+  const declarations = cellSpec.split("\n").filter((line) => !line.trim().startsWith("#")).join("\n");
+  for (const term of ["Publish", "Published", "RecordReview", "ReviewValidated", "RequestChanges", "Revise",
+    "UnderReview", "ValidatingReview", "review_approved", "review_document_hash", "review_findings"]) {
+    assert.doesNotMatch(declarations, new RegExp(term), `${term} is outside the approved Draft-only scope`);
   }
   const csdl = readFileSync(new URL("../../katagami-commons/specs/model.csdl.xml", import.meta.url), "utf8");
   const entity = csdl.split('<EntityType Name="EncyclopediaCell">')[1].split("</EntityType>")[0];
@@ -57,9 +60,12 @@ test("the deployed cell carries no review or publication surface", () => {
 // Cedar denies by default. Enumerating the permitted actions keeps an action
 // that reaches the runtime without a matching policy decision failing closed.
 test("cell authorization is a closed allow-list, not a blanket grant", () => {
-  assert.doesNotMatch(cellPolicy, /^permit\(principal, action, resource is EncyclopediaCell\);/m);
-  const permitted = cellPolicy.split("forbid(")[0].match(/Action::"([^"]+)"/g) ?? [];
-  const actions = new Set(permitted.map((entry) => entry.slice(9, -1)));
+  // Every permit in the file, not only the first: a later blanket permit would
+  // reopen the surface behind the enumerated one.
+  const permits = cellPolicy.split(/^permit\(/m).slice(1).map((rule) => rule.split(/^\)?;/m)[0]);
+  assert.equal(permits.length, 1, "the cell should carry exactly one permit");
+  const actions = new Set(permits.flatMap((rule) => rule.match(/Action::"([^"]+)"/g) ?? []).map((entry) => entry.slice(9, -1)));
+  assert.ok(actions.size > 0, "the permit names no actions, so it is a blanket grant");
   const declared = new Set(cellSpec.split("[[action]]").slice(1).map((block) => block.match(/^name = "(\w+)"$/m)[1]));
   assert.ok(declared.size >= 5);
   for (const action of declared) {

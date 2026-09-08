@@ -84,6 +84,8 @@ name = "Archive"
 kind = "input"
 from = ["Draft", "ValidatingDocument"]
 to = "Archived"
+effect = [{ type = "set_bool", var = "document_validated", value = "false" }]
+hint = "Archived is final and asserts nothing about its content. Clearing the gate here keeps every externally invocable action one that clears it, so a document arriving as an undeclared parameter can never land already marked validated."
 
 [[invariant]]
 name = "ArchivedIsFinal"
