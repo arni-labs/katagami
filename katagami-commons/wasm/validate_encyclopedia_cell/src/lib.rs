@@ -70,9 +70,10 @@ mod tests {
     #[test]
     fn accepts_name_and_scope_before_enrichment() {
         let mut input = serde_json::json!({
-            "version": 2, "name": "Synthetic draft", "description": "Approved scope",
+            "version": 3, "name": "Synthetic draft", "description": "Approved scope",
             "provenance": {"basis": "recollected", "note": "Written from model training data; no external reference was located."},
-            "maps": ["art"], "broader": [], "relations": [], "questions": [],
+            "maps": [{"map": "art", "explanation": "Placed from the model's own account.", "sourceIds": []}],
+            "broader": [], "relations": [], "questions": [],
             "sources": [], "manifestations": [], "studies": []
         });
         assert!(validate_document(&input.to_string()).is_ok());
@@ -95,6 +96,7 @@ mod tests {
         ] {
             bare[field] = serde_json::json!([]);
         }
+        bare["maps"] = serde_json::json!([{"map": "art", "explanation": "Placed from the model's own account.", "sourceIds": []}]);
         bare["provenance"] = serde_json::json!({"basis": "cited"});
         assert!(validate_document(&bare.to_string()).is_err());
         bare["provenance"] = serde_json::json!({"basis": "recollected"});
@@ -171,6 +173,33 @@ mod tests {
             input["name"] = serde_json::json!(blank);
             assert!(validate_document(&input.to_string()).is_err(), "{blank:?}");
         }
+    }
+
+    #[test]
+    fn a_map_membership_is_cited_on_a_cited_cell_and_explained_on_any_cell() {
+        let mut input: Value = serde_json::from_str(FIXTURE).expect("fixture");
+        input["maps"][0]["sourceIds"] = serde_json::json!([]);
+        assert!(validate_document(&input.to_string()).is_err());
+        input["maps"][0]["sourceIds"] = serde_json::json!(["nowhere"]);
+        assert!(validate_document(&input.to_string()).is_err());
+        input["maps"] = serde_json::json!(["art"]);
+        assert!(validate_document(&input.to_string()).is_err());
+        let mut bare: Value = serde_json::from_str(FIXTURE).expect("fixture");
+        for field in [
+            "broader",
+            "relations",
+            "sources",
+            "manifestations",
+            "studies",
+            "questions",
+        ] {
+            bare[field] = serde_json::json!([]);
+        }
+        bare["provenance"] = serde_json::json!({"basis": "recollected", "note": "Written from model training data; no external reference was located."});
+        bare["maps"] = serde_json::json!([{"map": "art", "explanation": "Placed from the model's own account.", "sourceIds": []}]);
+        assert!(validate_document(&bare.to_string()).is_ok());
+        bare["maps"][0]["explanation"] = serde_json::json!(" ");
+        assert!(validate_document(&bare.to_string()).is_err());
     }
 
     #[test]

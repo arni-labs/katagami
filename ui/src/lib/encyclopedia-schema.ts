@@ -83,12 +83,21 @@ const provenanceSchema = z.strictObject({
   note: text.optional(),
 });
 
+// A map membership is a claim like any other link: this cell belongs on the
+// writing map because of something a reader can check. A bare word would let a
+// cell be dragged across media by its name alone.
+const mapMembershipSchema = z.strictObject({
+  map: encyclopediaMapSchema,
+  explanation: text,
+  sourceIds: z.array(id),
+});
+
 export const cellDocumentSchema = z.strictObject({
-  version: z.literal(2),
+  version: z.literal(3),
   name: text,
   description: z.union([z.literal(""), text]),
   provenance: provenanceSchema,
-  maps: z.array(encyclopediaMapSchema).min(1),
+  maps: z.array(mapMembershipSchema).min(1),
   broader: z.array(z.strictObject({ cellId: id, explanation: text, sourceIds })),
   relations: z.array(z.strictObject({ cellId: id, label: text, explanation: text, sourceIds })),
   questions: z.array(text),
@@ -107,6 +116,16 @@ export const cellDocumentSchema = z.strictObject({
   if (cell.provenance.basis === "cited" && cell.sources.length === 0) {
     context.addIssue({ code: "custom", path: ["provenance"], message: "A cited cell must carry at least one source" });
   }
+  // On a cited cell, a map membership is a claim and cites like every other
+  // link; on a recollected cell everything is recollected, placement included,
+  // so the explanation is required and the citation cannot exist.
+  if (cell.provenance.basis === "cited") {
+    cell.maps.forEach((membership, index) => {
+      if (membership.sourceIds.length === 0) {
+        context.addIssue({ code: "custom", path: ["maps", index, "sourceIds"], message: "A cited cell's map membership must cite a source" });
+      }
+    });
+  }
   if (cell.provenance.basis === "recollected" && cell.sources.length > 0) {
     context.addIssue({ code: "custom", path: ["provenance"], message: "A cell with a source is cited, not recollected" });
   }
@@ -119,7 +138,7 @@ export const cellDocumentSchema = z.strictObject({
   if (cell.provenance.basis === "recollected" && !/^Written from model training data; no external reference was located(?:$|[ \t\n.,;:!?)-])/.test(cell.provenance.note ?? "")) {
     context.addIssue({ code: "custom", path: ["provenance", "note"], message: "A recollected cell's note must begin \"Written from model training data; no external reference was located\"" });
   }
-  unique(cell.maps, ["maps"]);
+  unique(cell.maps.map((membership) => membership.map), ["maps"]);
   unique(cell.sources.map((source) => source.id), ["sources"]);
   unique(cell.manifestations.map((entry) => `${entry.entitySet}:${entry.entityId}`), ["manifestations"]);
   unique(cell.studies.map((example) => example.id), ["studies"]);
@@ -132,7 +151,7 @@ export const cellDocumentSchema = z.strictObject({
       }
     }
   }
-  for (const field of ["broader", "relations"] as const) {
+  for (const field of ["broader", "relations", "maps"] as const) {
     cell[field].forEach((link, index) => checkSources(link.sourceIds, [field, index, "sourceIds"]));
   }
   cell.manifestations.forEach((entry, index) => checkSources(entry.sourceIds, ["manifestations", index, "sourceIds"]));

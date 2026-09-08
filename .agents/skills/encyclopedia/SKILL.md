@@ -33,7 +33,8 @@ made thing. Cite, induce, compile — three arrows, no merge.
 Cross-modal jumps are first-class: a page inspired by a novel, a painting from
 prose. That is why `maps` is a role on the cell, not a parent category — a cell
 like Surrealism legitimately sits in both art and writing, and a jump between
-media stays legal because medium was never a wall.
+media stays legal because medium was never a wall. Each membership says why, and
+on a cited cell cites it, so the role is earned, not assumed.
 
 ## What is and is not a cell
 
@@ -174,11 +175,11 @@ One JSON document per cell, validated against
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "name": "Impressionism",
   "description": "Light and colour relationships, broken brushwork, and fleeting observation.",
   "provenance": {"basis": "cited"},
-  "maps": ["art"],
+  "maps": [{"map": "art", "explanation": "A movement in painting; its writing counterpart is a separate relation, not a membership.", "sourceIds": ["tate-modernism"]}],
   "broader": [{"cellId": "early-modernist-european-painting", "explanation": "Opened the reorganisation of picture space.", "sourceIds": ["tate-modernism"]}],
   "relations": [{"cellId": "pictorialist-photography", "label": "influenced", "explanation": "Pictorialists borrowed its soft atmosphere.", "sourceIds": ["wp-pictorialism"]}],
   "questions": ["Where does literary impressionism sit relative to this cell?"],
@@ -234,11 +235,17 @@ browsing human and a learning agent both depend on.
 
 Enforced by the contract, so plan for it:
 
-- **Every link cites evidence.** `broader`, `relations`, and `manifestations`
-  each require `sourceIds` resolving into this cell's `sources`. Sources are
+- **Every link cites evidence.** `broader`, `relations`, `manifestations`, and
+  `maps` each require `sourceIds` resolving into this cell's `sources`. Sources are
   citations — title plus HTTPS URL — not reproduced material. The apply script
   fetches every source URL and resolves every link target before writing.
-- Maps are `art`, `writing`, `palettes`, `design`; a cell may wear several.
+- **A map membership is a cited claim.** `maps` entries are `{map, explanation,
+  sourceIds}`, not bare words: a cell sits on the writing map because of
+  something a reader can check, so a cell cannot be dragged across media by its
+  name alone. On a cited cell each membership cites; on a recollected cell the
+  placement is recollected too — `"sourceIds": []`, key present and empty — and
+  the explanation is still required. Maps are `art`, `writing`, `palettes`,
+  `design`; a cell may wear several.
 - Ids derive from the approved name and are the cell's identity — never
   repoint one at a different cell.
 - Identifiers are unique per list; the document caps at 2,000,000 UTF-8 bytes,
