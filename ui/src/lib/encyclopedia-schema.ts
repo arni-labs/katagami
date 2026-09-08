@@ -21,6 +21,9 @@ const sourceSchema = z.strictObject({
   verifiedBy: text.optional(),
   verifiedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
     const [y, m, d] = value.split("-").map(Number);
+    // Years below 1000 are refused on both sides: nothing was verified then,
+    // and Date.UTC remaps 0-99, which would split the two validators.
+    if (y < 1000) return false;
     const date = new Date(Date.UTC(y, m - 1, d));
     return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
   }, "verifiedOn must be a real calendar date").optional(),

@@ -419,7 +419,8 @@ fn calendar_date(value: &str) -> bool {
         2 => 28,
         _ => return false,
     };
-    y >= 1 && (1..=days).contains(&d)
+    // Years below 1000 are refused on both sides, matching the TypeScript schema.
+    y >= 1000 && (1..=days).contains(&d)
 }
 
 pub(crate) fn text(value: &str) -> Result<(), String> {

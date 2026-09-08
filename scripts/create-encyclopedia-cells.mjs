@@ -105,6 +105,15 @@ const planned = payload.cells.map((cell) => {
 assert.equal(new Set(planned.map((cell) => cell.id)).size, planned.length, "two approved names produce one identifier");
 console.log(`Prepared ${planned.length} documents, all valid against the shared contract`);
 
+// `document_validated` alone is not the attestation. An abandoned validation
+// run keeps executing and its callback can set the gate while naming the bytes
+// it read rather than the bytes now stored, so a cell counts as validated only
+// when the gate is true and the stored document hashes to `document_hash`.
+function attested(row) {
+  return Boolean(row?.booleans.document_validated)
+    && typeof row.fields.document === "string"
+    && createHash("sha256").update(row.fields.document).digest("hex") === row.fields.document_hash;
+}
 // Every link must land on something that exists, and every citation must be
 // reachable. Whether a record truly expresses a cell, or a page is a good
 // reference, is what the human's numbered approval decides; this preflight
@@ -135,10 +144,20 @@ async function reachable(source) {
 }
 const unresolved = [];
 const vouched = [];
+// A linked cell outside this batch must be an attested Draft, not merely a
+// row: a link to an empty or unvalidated cell is a link to nothing yet.
+async function attestedCell(id) {
+  const key = `attested:${id}`;
+  if (!checked.has(key)) {
+    try { const row = await request(`/tdata/EncyclopediaCells('${id}')`); checked.set(key, row.status === 200 && attested(row.data)); }
+    catch { checked.set(key, false); }
+  }
+  return checked.get(key);
+}
 for (const cell of planned) {
   for (const link of [...cell.parsed.broader, ...cell.parsed.relations]) {
-    if (!batchIds.has(link.cellId) && !(await exists(`/tdata/EncyclopediaCells('${link.cellId}')`))) {
-      unresolved.push(`${cell.id}: linked cell '${link.cellId}' does not exist`);
+    if (!batchIds.has(link.cellId) && !(await attestedCell(link.cellId))) {
+      unresolved.push(`${cell.id}: linked cell '${link.cellId}' does not exist or is not attested`);
     }
   }
   for (const entry of cell.parsed.manifestations) {
@@ -160,15 +179,6 @@ const read = async (cell) => {
   return row.status === 200 ? row.data : null;
 };
 
-// `document_validated` alone is not the attestation. An abandoned validation
-// run keeps executing and its callback can set the gate while naming the bytes
-// it read rather than the bytes now stored, so a cell counts as validated only
-// when the gate is true and the stored document hashes to `document_hash`.
-function attested(row) {
-  return Boolean(row?.booleans.document_validated)
-    && typeof row.fields.document === "string"
-    && createHash("sha256").update(row.fields.document).digest("hex") === row.fields.document_hash;
-}
 const settled = (row, cell) => attested(row) && row.status === "Draft" && row.fields.document === cell.document;
 
 // One cell's failure must not strand the rest of the batch: every cell is

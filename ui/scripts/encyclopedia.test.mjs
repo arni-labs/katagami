@@ -119,6 +119,8 @@ test("a source is unverified until a named human opened it on a date", () => {
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "yesterday", verifiedBy: "Rita" }] }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "0000-00-00", verifiedBy: "Rita" }] }).success, false);
   assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "2026-02-30", verifiedBy: "Rita" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "0099-12-31", verifiedBy: "Rita" }] }).success, false);
+  assert.equal(cellDocumentSchema.safeParse({ ...fixture, sources: [{ ...source, verifiedOn: "1000-01-01", verifiedBy: "Rita" }] }).success, true);
 });
 
 test("blank means the same thing to both validators", () => {

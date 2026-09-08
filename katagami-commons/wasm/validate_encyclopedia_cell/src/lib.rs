@@ -123,7 +123,9 @@ mod tests {
         assert!(validate_document(&input.to_string()).is_err());
         input["sources"][0]["verifiedOn"] = serde_json::json!("2026-09-08");
         assert!(validate_document(&input.to_string()).is_ok());
-        for bad in ["0000-00-00", "2026-02-30", "2026-13-01"] {
+        input["sources"][0]["verifiedOn"] = serde_json::json!("1000-01-01");
+        assert!(validate_document(&input.to_string()).is_ok());
+        for bad in ["0000-00-00", "2026-02-30", "2026-13-01", "0099-12-31"] {
             input["sources"][0]["verifiedOn"] = serde_json::json!(bad);
             assert!(validate_document(&input.to_string()).is_err(), "{bad}");
         }
