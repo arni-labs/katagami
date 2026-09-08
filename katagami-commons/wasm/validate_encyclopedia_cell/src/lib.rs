@@ -99,14 +99,21 @@ mod tests {
         assert!(validate_document(&bare.to_string()).is_err());
         bare["provenance"] = serde_json::json!({"basis": "recollected"});
         assert!(validate_document(&bare.to_string()).is_err());
-        bare["provenance"] = serde_json::json!({"basis": "recollected", "note": "Written from model training data; no external reference was located."});
-        assert!(validate_document(&bare.to_string()).is_ok());
+        for ok in [
+            "Written from model training data; no external reference was located.",
+            "Written from model training data; no external reference was located",
+        ] {
+            bare["provenance"] = serde_json::json!({"basis": "recollected", "note": ok});
+            assert!(validate_document(&bare.to_string()).is_ok(), "{ok}");
+        }
         // The note must open with the fixed sentence; nothing may precede or bend it.
         for bad in [
             "banana",
             "This was not written from model training data.",
             "Written from model training datasets",
             "Written from model training data.",
+            "Written from model training data; no external reference was located_yet",
+            "Written from model training data; no external reference was located\u{E9}",
         ] {
             bare["provenance"] = serde_json::json!({"basis": "recollected", "note": bad});
             assert!(validate_document(&bare.to_string()).is_err(), "{bad}");

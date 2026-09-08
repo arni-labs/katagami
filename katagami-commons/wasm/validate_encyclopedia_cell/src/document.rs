@@ -265,7 +265,13 @@ pub(crate) fn parse(raw: &str) -> Result<CellDocument, String> {
                 n.strip_prefix(
                     "Written from model training data; no external reference was located",
                 )
-                .is_some_and(|rest| rest.chars().next().is_none_or(|c| !c.is_alphanumeric()))
+                // The same explicit set as the TypeScript schema: \b and Unicode
+                // alphanumerics disagree on "_" and accented letters.
+                .is_some_and(|rest| {
+                    rest.chars()
+                        .next()
+                        .is_none_or(|c| " \t\n.,;:!?)-".contains(c))
+                })
             }) =>
         {
             return Err(

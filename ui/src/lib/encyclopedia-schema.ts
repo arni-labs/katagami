@@ -113,7 +113,10 @@ export const cellDocumentSchema = z.strictObject({
   // The note opens with the fixed sentence, so a reader sees the same words on
   // every recollected cell and nothing can be written in front of them to
   // negate it. What follows the sentence — why no source was found — is free.
-  if (cell.provenance.basis === "recollected" && !/^Written from model training data; no external reference was located\b/.test(cell.provenance.note ?? "")) {
+  // The sentence must end, or be followed by punctuation or space — the same
+  // explicit set the WASM validator uses, since \b and Unicode alphanumerics
+  // do not agree on "_" or accented letters.
+  if (cell.provenance.basis === "recollected" && !/^Written from model training data; no external reference was located(?:$|[ \t\n.,;:!?)-])/.test(cell.provenance.note ?? "")) {
     context.addIssue({ code: "custom", path: ["provenance", "note"], message: "A recollected cell's note must begin \"Written from model training data; no external reference was located\"" });
   }
   unique(cell.maps, ["maps"]);

@@ -138,10 +138,13 @@ async function exists(path) {
 function privateAddress(address) {
   if (isIP(address) === 6) return /^(::1|::|f[cd][0-9a-f]{2}:|fe[89ab][0-9a-f]:)/i.test(address) || /^::ffff:(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(address);
   const [a, b] = address.split(".").map(Number);
-  return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31) || a >= 224;
+  // 100.64.0.0/10 is carrier-grade NAT, which Tailscale uses for its hosts.
+  return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
 }
 async function publicHost(url) {
-  const { protocol, hostname } = new URL(url);
+  const { protocol, hostname: rawHostname } = new URL(url);
+  // URL keeps the brackets on an IPv6 literal; isIP does not want them.
+  const hostname = rawHostname.replace(/^\[|\]$/g, "");
   if (protocol !== "https:") return `not https (${protocol})`;
   if (hostname === "localhost" || hostname.endsWith(".local") || hostname.endsWith(".internal")) return `local hostname ${hostname}`;
   const addresses = isIP(hostname) ? [{ address: hostname }] : await lookup(hostname, { all: true });
