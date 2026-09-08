@@ -12,6 +12,7 @@ permit(
   action in [
     Action::"create",
     Action::"read",
+    Action::"list",
     Action::"Define",
     Action::"SubmitForValidation",
     Action::"AbandonValidation",
@@ -42,8 +43,8 @@ forbid(
 )
 unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
 
-// Cells are private. Raw rows carry unreviewed working material, so reading
-// them stays curator-only; public browsing needs a separately authorized
-// projection, not raw rows.
-forbid(principal, action == Action::"read", resource is EncyclopediaCell)
+// Cells are private. Raw rows carry unreviewed working material, so reading and
+// enumerating them stays curator-only; public browsing needs a separately
+// authorized projection, not raw rows.
+forbid(principal, action in [Action::"read", Action::"list"], resource is EncyclopediaCell)
 unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };

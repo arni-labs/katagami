@@ -239,3 +239,15 @@ Options: Send identity headers, extend the commons policy to grant credential ma
 Chose the fixture credential because: The commons policy denies credential management to everyone in production, and the fixture already has a documented, user-authorized setup window that the harness replaces with the exact commons policy before any test runs. The denial is then evaluated on a principal the resolver actually resolves to `agent_type` "contributor".
 
 Where: `scripts/verify-encyclopedia.mjs`, contributor registration and the non-curator checks; the fixture's `local_test_install.cedar`, which stays outside the repository.
+
+## D21 Permit enumeration explicitly
+
+Decision: Add `Action::"list"` to the cell's permit and to the curator-only forbid.
+
+Came up because: The closed allow-list denied collection reads to everyone, including curators, because OData authorizes enumeration as its own `list` action (`crates/temper-server/src/odata/authz.rs:17`) rather than as `read`. The live fixture returned 403 for a curator listing cells, a capability the previous blanket permit allowed.
+
+Options: Return to a blanket permit, leave enumeration denied, or name `list` in both rules.
+
+Chose naming it because: Losing enumeration would remove a capability that worked, and returning to a blanket permit would undo the reason for the change. The harness now checks both halves: a curator can list, a contributor cannot. This is the failure mode a closed allow-list is meant to produce, caught by the live run rather than in production.
+
+Where: `katagami-commons/policies/encyclopedia_cell.cedar`; `scripts/verify-encyclopedia.mjs`, the non-curator section.

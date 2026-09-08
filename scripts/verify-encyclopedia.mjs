@@ -126,12 +126,12 @@ const contributorRead = await request(path, "GET", undefined, contributorKey);
 assert.equal(contributorRead.status, 403, JSON.stringify(contributorRead.data));
 const contributorWrite = await request(`${path}/Temper.Define`, "POST", { document: draft }, contributorKey);
 assert.equal(contributorWrite.status, 403, JSON.stringify(contributorWrite.data));
-const contributorList = await request("/tdata/EncyclopediaCells", "GET", undefined, contributorKey);
-assert.ok([403, 200].includes(contributorList.status), JSON.stringify(contributorList.data));
-if (contributorList.status === 200) {
-  assert.deepEqual(contributorList.data.value ?? [], [], "a non-curator listed private cells");
-}
-console.log("An authenticated non-curator contributor identity can neither read nor author a private cell");
+assert.equal((await request("/tdata/EncyclopediaCells", "GET", undefined, contributorKey)).status, 403);
+// Enumeration authorizes as its own action, so a curator must still be able to
+// list what it may read.
+const curatorList = await request("/tdata/EncyclopediaCells?$top=1");
+assert.equal(curatorList.status, 200, JSON.stringify(curatorList.data));
+console.log("An authenticated non-curator contributor identity can neither read, list, nor author a private cell, and a curator can still list");
 
 // Removed surface. Publication asserts a curator review that this deployment
 // performs nowhere, so those actions must not exist on the installed machine.

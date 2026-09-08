@@ -66,7 +66,7 @@ test("cell authorization is a closed allow-list, not a blanket grant", () => {
     assert.ok(actions.has(action), `${action} is declared in the specification but not permitted`);
   }
   for (const action of actions) {
-    assert.ok(["create", "read"].includes(action) || declared.has(action), `${action} is permitted but not declared`);
+    assert.ok(["create", "read", "list"].includes(action) || declared.has(action), `${action} is permitted but not declared`);
   }
 });
 
