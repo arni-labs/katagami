@@ -149,6 +149,28 @@ function withUsageTracking(server: McpServer): void {
     });
   };
 
+  // When the SDK rejects a call we know only THAT the arguments were invalid,
+  // not WHICH. That gap cost a real diagnosis: 8 failed get_* calls read as
+  // "invalid_arguments" and the cause (an agent passing `id`, the field search
+  // hands back, where the schema wanted `id_or_slug`) had to be inferred from
+  // reading the schemas. Report the argument KEY NAMES the caller sent —
+  // never values, clamped to a known vocabulary so an arbitrary key cannot
+  // blow up cardinality or smuggle content.
+  const KNOWN_ARG_KEYS = new Set([
+    "id_or_slug", "id", "slug", "kind", "format", "query", "medium", "tag",
+    "taxonomy", "family", "limit", "cursor", "color", "role",
+  ]);
+  const argKeysOf = (request: ToolCallRequest): string | undefined => {
+    const args = (request?.params as { arguments?: unknown })?.arguments;
+    if (!args || typeof args !== "object") return "(none)";
+    const keys = Object.keys(args as Record<string, unknown>)
+      .map((k) => (KNOWN_ARG_KEYS.has(k) ? k : "(other)"))
+      .filter((k, i, a) => a.indexOf(k) === i)
+      .sort()
+      .slice(0, 6);
+    return keys.length ? keys.join(",") : "(none)";
+  };
+
   // Layer 2: the tools/call request handler. The SDK installs it via
   // server.server.setRequestHandler("tools/call", …) on first registration,
   // which happens after this patch, so the interception always lands.
@@ -176,6 +198,7 @@ function withUsageTracking(server: McpServer): void {
             durationMs: Date.now() - started,
             sub: authOf(extra)?.extra?.sub,
             errorKind: result?.isError ? "invalid_arguments" : undefined,
+            argKeys: result?.isError ? argKeysOf(request) : undefined,
           });
         }
         return result;
@@ -208,7 +231,49 @@ function gone(tier: Tier) {
   return { content: [{ type: "text" as const, text: JSON.stringify(body, null, 2) }], isError: true };
 }
 
-const idArg = z.string().describe("The entity id (en-…) or the slug");
+// Agents reach for the field name search HANDED them. Search results carry
+// `id` (lib/catalog.ts toRow), so `get_art_style({id})` is the natural next
+// call — and it used to be rejected by the SDK before our handler ran, which
+// is how 8 of one real user's 26 get_* calls failed in a single session
+// (ARN-478). Accept the three names an agent will actually try. All optional
+// at the schema layer so a missing id reaches OUR error message instead of a
+// bare SDK validation failure the caller cannot act on.
+const idArg = z
+  .string()
+  .describe("The entity id (en-…) or the slug")
+  .optional();
+const ID_ALIASES = { id_or_slug: idArg, id: idArg, slug: idArg };
+
+/** The one place an id is resolved. Returns the caller's value, or null with
+ *  the message to hand back. */
+function idOf(a: unknown): string | null {
+  const o = (a ?? {}) as Record<string, unknown>;
+  for (const k of ["id_or_slug", "id", "slug"]) {
+    const v = o[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return null;
+}
+
+function missingId() {
+  return {
+    content: [
+      {
+        type: "text" as const,
+        text: JSON.stringify(
+          {
+            error: "missing_id",
+            message:
+              "Pass the entity id or slug. Any of `id_or_slug`, `id` or `slug` works — search results return it as `id`.",
+          },
+          null,
+          2,
+        ),
+      },
+    ],
+    isError: true,
+  };
+}
 
 const baseHandler = createMcpHandler(
   (server: McpServer) => {
@@ -250,11 +315,13 @@ const baseHandler = createMcpHandler(
         title: "Get a design language",
         description:
           "Full spec of one design language: tokens (color/type/spacing/radii/shadows/motion), rules, layout principles, philosophy, guidance, plus its gallery and DESIGN.md URLs.",
-        inputSchema: { id_or_slug: idArg },
+        inputSchema: { ...ID_ALIASES },
       },
       async (a, extra) => {
         const tier = tierOf(extra);
-        const d = await getDesign("language", a.id_or_slug, tier);
+        const id = idOf(a);
+        if (!id) return missingId();
+        const d = await getDesign("language", id, tier);
         return d ? ok(d) : gone(tier);
       },
     );
@@ -264,11 +331,13 @@ const baseHandler = createMcpHandler(
         title: "Get DESIGN.md",
         description:
           "The portable DESIGN.md for a design language (Google's format) — the URL to drop straight into a coding agent's working directory so it builds in that style.",
-        inputSchema: { id_or_slug: idArg },
+        inputSchema: { ...ID_ALIASES },
       },
       async (a, extra) => {
         const tier = tierOf(extra);
-        const d = await getDesignMd(a.id_or_slug, tier);
+        const id = idOf(a);
+        if (!id) return missingId();
+        const d = await getDesignMd(id, tier);
         return d ? ok(d) : gone(tier);
       },
     );
@@ -280,13 +349,15 @@ const baseHandler = createMcpHandler(
           "Just the design tokens for a language (or palette/art_style), optionally emitted as a ready-to-paste Tailwind config or CSS variables.",
         inputSchema: {
           kind: z.enum(["language", "palette", "art_style"]).optional(),
-          id_or_slug: idArg,
+          ...ID_ALIASES,
           format: z.enum(["json", "tailwind", "css"]).optional(),
         },
       },
       async (a, extra) => {
         const tier = tierOf(extra);
-        const d = await getTokens(a.kind ?? "language", a.id_or_slug, tier, a.format ?? "json");
+        const id = idOf(a);
+        if (!id) return missingId();
+        const d = await getTokens(a.kind ?? "language", id, tier, a.format ?? "json");
         return d ? ok(d) : gone(tier);
       },
     );
@@ -314,11 +385,13 @@ const baseHandler = createMcpHandler(
         title: "Get a palette system",
         description:
           "Full spec of one palette system: signature colors, neutrals, semantic roles, ramps, tokens, guidance.",
-        inputSchema: { id_or_slug: idArg },
+        inputSchema: { ...ID_ALIASES },
       },
       async (a, extra) => {
         const tier = tierOf(extra);
-        const d = await getDesign("palette", a.id_or_slug, tier);
+        const id = idOf(a);
+        if (!id) return missingId();
+        const d = await getDesign("palette", id, tier);
         return d ? ok(d) : gone(tier);
       },
     );
@@ -347,11 +420,13 @@ const baseHandler = createMcpHandler(
         title: "Get an art style",
         description:
           "Full spec of one art style: its medium, prompt template, slot recipes, negative prompt, guidance, tags — everything an image-gen agent needs to render in-style.",
-        inputSchema: { id_or_slug: idArg },
+        inputSchema: { ...ID_ALIASES },
       },
       async (a, extra) => {
         const tier = tierOf(extra);
-        const d = await getDesign("art_style", a.id_or_slug, tier);
+        const id = idOf(a);
+        if (!id) return missingId();
+        const d = await getDesign("art_style", id, tier);
         return d ? ok(d) : gone(tier);
       },
     );
@@ -363,11 +438,13 @@ const baseHandler = createMcpHandler(
         title: "Get the rendered reference page",
         description:
           "The URL of the rendered reference page for a language/palette/art_style — open it to see the style across real UI elements before using it.",
-        inputSchema: { kind: z.enum(["language", "palette", "art_style"]), id_or_slug: idArg },
+        inputSchema: { kind: z.enum(["language", "palette", "art_style"]), ...ID_ALIASES },
       },
       async (a, extra) => {
         const tier = tierOf(extra);
-        const d = await getEmbodiment(a.kind, a.id_or_slug, tier);
+        const id = idOf(a);
+        if (!id) return missingId();
+        const d = await getEmbodiment(a.kind, id, tier);
         return d ? ok(d) : gone(tier);
       },
     );

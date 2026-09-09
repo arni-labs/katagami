@@ -1,0 +1,20 @@
+{
+  "name": "[Katagami] Someone's MCP token keeps being rejected",
+  "type": "log alert",
+  "query": "logs(\"service:katagami-server env:production @evt:mcp_auth_challenge @has_auth:true\").index(\"*\").rollup(\"count\").last(\"1h\") >= 20",
+  "message": "Twenty or more MCP requests in the last hour arrived WITH a bearer token and were rejected. A fresh client discovering it needs auth sends no token at all, so these are callers who believe they are authenticated and are not.\n\nGroup by @reason to tell the cases apart:\n  expired \u2014 their agent is not refreshing; a real user is locked out and probably does not know why\n  signature / audience / scope \u2014 misconfigured client\n  generation / grant_revoked \u2014 a deliberate sign-out taking effect, usually fine\n  backend_unavailable \u2014 Temper is down; this is an outage, not a user problem\n\nLogs: https://app.datadoghq.com/logs?query=service%3Akatagami-server%20env%3Aproduction%20%40evt%3Amcp_auth_challenge%20%40has_auth%3Atrue\n\n@rita.mirai@gmail.com",
+  "tags": [
+    "katagami",
+    "friction",
+    "mcp",
+    "auth"
+  ],
+  "options": {
+    "notify_no_data": false,
+    "renotify_interval": 1440,
+    "thresholds": {
+      "critical": 20
+    },
+    "include_tags": true
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "[Katagami] Humans are hitting errors on katagami.ai",
+  "type": "rum alert",
+  "query": "rum(\"env:production @type:error\").rollup(\"count\").last(\"1h\") >= 10",
+  "message": "Ten or more browser errors on katagami.ai in the last hour. This is the human half of the friction picture \u2014 the MCP monitors only see agents.\n\nGroup by @error.message and @view.url_path to find the page. A spike on one route after a deploy is a regression; a steady trickle is usually a third-party or extension.\n\nRUM: https://app.datadoghq.com/rum/explorer?query=env%3Aproduction%20%40type%3Aerror\n\n@rita.mirai@gmail.com",
+  "tags": [
+    "katagami",
+    "friction",
+    "web"
+  ],
+  "options": {
+    "notify_no_data": false,
+    "renotify_interval": 1440,
+    "thresholds": {
+      "critical": 10
+    },
+    "include_tags": true
+  }
+}

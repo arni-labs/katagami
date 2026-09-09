@@ -1,0 +1,19 @@
+{
+  "name": "[Katagami] The durable activity rollup has stopped writing",
+  "type": "log alert",
+  "query": "logs(\"service:katagami-server env:production @evt:activity_dispatch_failed\").index(\"*\").rollup(\"count\").last(\"1h\") >= 1",
+  "message": "A per-user activity rollup dispatch failed. This is the layer meant to outlive Datadog's ~15-day log retention, so while it is down you are losing durable per-user history that cannot be reconstructed later.\n\nCauses in order of likelihood: the katagami-commons spec was un-installed or its pin moved, Temper is unreachable, or the Cedar policy on MemberActivityDay changed.\n\nCheck the pinned ref matches production, then dispatch RecordMcpCall by hand against /tdata/MemberActivityDays to see the real error.\n\nLogs: https://app.datadoghq.com/logs?query=service%3Akatagami-server%20env%3Aproduction%20%40evt%3Aactivity_dispatch_failed\n\n@rita.mirai@gmail.com",
+  "tags": [
+    "katagami",
+    "reliability",
+    "rollup"
+  ],
+  "options": {
+    "notify_no_data": false,
+    "renotify_interval": 720,
+    "thresholds": {
+      "critical": 1
+    },
+    "include_tags": true
+  }
+}

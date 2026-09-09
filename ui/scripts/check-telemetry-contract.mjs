@@ -18,6 +18,7 @@ import {
   principalPepper,
   resolveLogsIntake,
   RESERVED_LOG_KEYS,
+  telemetryEnv,
 } from "../src/lib/server-telemetry-core.mjs";
 import { readODataCount } from "../src/lib/odata-count.mjs";
 import {
@@ -527,6 +528,29 @@ const required = [
   ["MCP emit stamps @tier:full (dashboard filters match)", telemetry, /tier: "full"/],
   ["telemetry no-ops without credentials", telemetry, /if \(!intake\) return/],
   ["intake fetch is aborted on hang", telemetry, /signal: intakeAbortSignal\(/],
+  // Friction visibility (ARN-478): a rejected call must say WHICH argument
+  // names the caller sent, and the get_* tools must accept the name search
+  // actually hands back.
+  [
+    "rejected tool calls report the argument names sent",
+    telemetry,
+    /arg_keys: argKeys/,
+  ],
+  [
+    "argument names are clamped to a known vocabulary, never free text",
+    mcp,
+    /KNOWN_ARG_KEYS\.has\(k\) \? k : "\(other\)"/,
+  ],
+  [
+    "get_* tools accept id and slug, not just id_or_slug",
+    mcp,
+    /ID_ALIASES = \{ id_or_slug: idArg, id: idArg, slug: idArg \}/,
+  ],
+  [
+    "a missing id returns our message, not a bare SDK rejection",
+    mcp,
+    /function missingId\(\)/,
+  ],
   // The failure emit must carry its own SHORT abort: reporting a dead rollup
   // cannot be killed by the slow backend it is reporting on (verifier finding).
   [
@@ -770,6 +794,36 @@ if (/anonymous sample vs signed-in full/.test(dashboard)) {
   failed += 1;
 } else {
   console.log("ok: dashboard no longer claims anonymous sample vs signed-in full");
+}
+
+// A laptop must not be able to write into the production stream. `vercel env
+// pull` writes VERCEL_ENV=production and VERCEL=1 into .env.local, so the env
+// tag has to hang on something only a real invocation sets: VERCEL_REGION.
+// Without this, verification traffic pages a human and inflates the usage
+// numbers, and it did (2026-09-09).
+{
+  const pulled = { VERCEL_ENV: "production", VERCEL: "1", VERCEL_URL: "katagami.ai" };
+  assert.equal(
+    telemetryEnv(pulled),
+    "local-verify",
+    "a pulled production env with no VERCEL_REGION must tag as local-verify",
+  );
+  assert.equal(
+    telemetryEnv({ ...pulled, VERCEL_REGION: "iad1" }),
+    "production",
+    "a real deployed invocation must still tag as production",
+  );
+  assert.equal(
+    telemetryEnv({ VERCEL_ENV: "preview", VERCEL_REGION: "iad1" }),
+    "preview",
+    "preview deployments keep their own tag",
+  );
+  assert.match(
+    logPayload("probe", {}, "info", pulled).ddtags,
+    /env:local-verify/,
+    "the emitted payload carries the local tag, not just the helper",
+  );
+  console.log("ok: only a real Vercel invocation can tag events production");
 }
 
 if (failed > 0) {
