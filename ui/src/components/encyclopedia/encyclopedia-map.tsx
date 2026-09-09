@@ -105,16 +105,37 @@ export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph:
   // The viewport's size in state, kept current by a ResizeObserver. Both the
   // culling below and the minimap read it during render, so it cannot live in
   // the ref alone.
+  //
+  // Measured from a callback ref rather than an effect, because the map is not
+  // always on the page when this component mounts: on a phone it appears only
+  // when the reader asks for it. An effect keyed on the ref object ran once,
+  // found nothing, and never ran again — so the phone's map had no measured
+  // viewport, fell back to drawing by card size alone, and mounted every plate
+  // in the library exactly as it did before any of this. The element tells us
+  // when it arrives and when it leaves.
   const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
-  useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    const measure = () => setViewportSize((at) => (at.w === el.clientWidth && at.h === el.clientHeight ? at : { w: el.clientWidth, h: el.clientHeight }));
+  const sizeObserver = useRef<ResizeObserver | null>(null);
+  // Whether the camera has been framed yet. Declared here because the ref
+  // callback below clears it: a map mounted again is framed again rather than
+  // left wherever its initial camera happened to be.
+  const framed = useRef(false);
+  const attachViewport = useCallback((el: HTMLDivElement | null) => {
+    viewportRef.current = el;
+    sizeObserver.current?.disconnect();
+    sizeObserver.current = null;
+    if (!el) {
+      setViewportSize({ w: 0, h: 0 });
+      framed.current = false;
+      return;
+    }
+    const measure = () =>
+      setViewportSize((at) => (at.w === el.clientWidth && at.h === el.clientHeight ? at : { w: el.clientWidth, h: el.clientHeight }));
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
-    return () => observer.disconnect();
+    sizeObserver.current = observer;
   }, [viewportRef]);
+  useEffect(() => () => sizeObserver.current?.disconnect(), []);
 
 
   // ── one layer at a time ────────────────────────────────────────────────
@@ -250,14 +271,13 @@ export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph:
     }
   }, [viewportRef, layout.byId, camera.k, desktop, centerOn, maxZoom]);
 
-  // First framing happens once the viewport has a size. The flag is set when
-  // the frame actually runs, so a dependency change that cancels the pending
-  // frame (the desktop/phone switch on first paint) schedules it again.
   /** The sheet is the index's scroll parent, so the windowed list can read it. */
   const sheetScrollRef = useRef<HTMLElement | null>(null);
   const mobileSheetScrollRef = useRef<HTMLDivElement | null>(null);
 
-  const framed = useRef(false);
+  // First framing happens once the viewport has a size. The flag is set when
+  // the frame actually runs, so a dependency change that cancels the pending
+  // frame (the desktop/phone switch on first paint) schedules it again.
   useEffect(() => {
     if (framed.current) return;
     const id = requestAnimationFrame(() => {
@@ -477,7 +497,7 @@ export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph:
 
   const mapViewport = (
     <div
-      ref={viewportRef}
+      ref={attachViewport}
       className="relative h-full w-full select-none overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--ramune)]"
       style={{ touchAction: "none", cursor: dragging ? "grabbing" : "grab" }}
       tabIndex={0}
