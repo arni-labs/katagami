@@ -1,0 +1,397 @@
+{
+ "batch": "ARN-118 exemplar floor, the seventeen public-domain styles",
+ "allowedOperation": "SetExemplars on Draft or UnderReview WritingStyle",
+ "styles": [
+  {
+   "number": 1,
+   "slug": "austen-novels",
+   "name": "Jane Austen — novels (1811–1817)",
+   "id": "en-019f2ed0-7e41-7172-8f33-359d3a63fb36",
+   "baseHash": "d8d54bf62c0cf5b6386cc15e7503db7683ece8d21f3970b8220f23dcfef40b2e",
+   "keys": [
+    "corpus-3.md:para:-:0:1",
+    "corpus-1.md:para:-:3:7"
+   ],
+   "exemplars": [
+    {
+     "text": "The first error and the worst lay at her door. It was foolish, it was wrong, to take so active a part in bringing any two people together. It was adventuring too far, assuming too much, making light of what ought to be serious, a trick of what ought to be simple. She was quite concerned and ashamed, and resolved to do such things no more.\n\n“Here have I,” said she, “actually talked poor Harriet into being very much attached to this man. She might never have thought of him but for me; and certainly never would have thought of him with hope, if I had not assured her of his attachment, for she is as modest and humble as I used to think him. Oh! that I had been satisfied with persuading her not to accept young Martin. There I was quite right. That was well done of me; but there I should have stopped, and left the rest to time and chance. I was introducing her into good company, and giving her the opportunity of pleasing some one worth having; I ought not to have attempted more. But now, poor girl, her peace is cut up for some time. I have been but half a friend to her; and if she were _not_ to feel this disappointment so very much, I am sure I have not an idea of any body else who would be at all desirable for her;—William Coxe—Oh! no, I could not endure William Coxe—a pert young lawyer.”",
+     "annotation": "the narration slides into the character's own words and keeps the judgement she is passing on herself",
+     "kind": "corpus"
+    },
+    {
+     "text": "“I do assure you, sir, that I have no pretensions whatever to that kind of elegance which consists in tormenting a respectable man. I would rather be paid the compliment of being believed sincere. I thank you again and again for the honour you have done me in your proposals, but to accept them is absolutely impossible. My feelings in every respect forbid it. Can I speak plainer? Do not consider me now as an elegant female intending to plague you, but as a rational creature speaking the truth from her heart.”\n\n“You are uniformly charming!” cried he, with an air of awkward gallantry; “and I am persuaded that, when sanctioned by the express authority of both your excellent parents, my proposals will not fail of being acceptable.”\n\nTo such perseverance in wilful self-deception Elizabeth would make no reply, and immediately and in silence withdrew; determined, that if he persisted in considering her repeated refusals as flattering encouragement, to apply to her father, whose negative might be uttered in such a manner as must be decisive, and whose behaviour at least could not be mistaken for the affectation and coquetry of an elegant female.\n\nMr. Collins was not left long to the silent contemplation of his successful love; for Mrs. Bennet, having dawdled about in the vestibule to watch for the end of the conference, no sooner saw Elizabeth open the door and with quick step pass her towards the staircase, than she entered the breakfast-room, and congratulated both him and herself in warm terms on the happy prospect of their nearer connection. Mr. Collins received and returned these felicitations with equal pleasure, and then proceeded to relate the particulars of their interview, with the result of which he trusted he had every reason to be satisfied, since the refusal which his cousin had steadfastly given him would naturally flow from her bashful modesty and the genuine delicacy of her character.\n\nThis information, however, startled Mrs. Bennet: she would have been glad to be equally satisfied that her daughter had meant to encourage him by protesting against his proposals, but she dared not believe it, and could not help saying so.",
+     "annotation": "a refusal delivered inside the forms of politeness, the sting carried by the courtesy",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 2,
+   "slug": "faraday-lectures",
+   "name": "Michael Faraday — lectures (1861)",
+   "id": "en-019f2ed1-06ca-7702-a044-c84561480e36",
+   "baseHash": "6fb4932e54fc3827bb874bf641c7009efa6c1c54925c22b9cbd9758070438066",
+   "keys": [
+    "corpus-1.md:para:-:0:0",
+    "corpus-2.md:para:-:0:1"
+   ],
+   "exemplars": [
+    {
+     "text": "To return now to the action of heat on water. See what a stream of vapour is issuing from this tin vessel! You observe, we must have made it quite full of steam to have it sent out in that great quantity. And now, as we can convert the water into steam by heat, we convert it back into liquid water by the application of cold. And if we take a glass, or any other cold thing, and hold it over this steam, see how soon it gets damp with water; it will condense it until the glass is warm—it condenses the water which is now running down the sides of it. I have here another experiment to shew the condensation of water from a vaporous state back into a liquid state, in the same way as the vapour, one of the products of the candle, was condensed against the bottom of the dish, and obtained in the form of water; and to shew you how truly and thoroughly these changes take place, I will take this tin flask, which is now full of steam, and close the top. We shall see what takes place when we cause this water or steam to return back to the fluid state by pouring some cold water on the outside. [The Lecturer poured the cold water over the vessel, when it immediately collapsed.] You see what has happened. If I had closed the stopper, and still kept the heat applied to it, it would have burst the vessel; yet, when the steam returns to the state of water, the vessel collapses, there being a vacuum produced inside by the condensation of the steam. I shew you these experiments for the purpose of pointing out that in all these occurrences there is nothing that changes the water into any other thing—it still remains water; and so the vessel is obliged to give way, and is crushed inwards, as in the other case, by the further application of heat, it would have been blown outwards.",
+     "annotation": "the demonstration is described as it happens in front of the audience, with the apparatus pointed at",
+     "kind": "corpus"
+    },
+    {
+     "text": "It is a true analysis of the atmosphere, so far as regards the quantity of oxygen and the quantity of nitrogen present. By our analysis, we find that 5 pints of the atmosphere contain only 1 pint of oxygen, and 4 pints, or 4 parts, of nitrogen by bulk. That is our analysis of the atmosphere. It requires all that quantity of nitrogen to reduce the oxygen down, so as to be able to supply the candle properly with fuel, so as to supply us with an atmosphere which our lungs can healthily and safely breathe; for it is just as important to make the oxygen right for us to breathe, as it is to make the atmosphere right for the burning of the fire and the candle.\n\nBut now for this atmosphere. First of all, let me tell you the weight of these gases. A pint of nitrogen weighs 10⁴⁄₁₀ grains, or a cubic foot weighs 1⅙ ounce. That is the weight of the nitrogen. The oxygen is heavier: a pint of it weighs 11⁹⁄₁₀ grains, and a cubic foot weighs 1¾ ounce. A pint of air weighs about 10⁷⁄₁₀ grains, and a cubic foot 1⅕ ounce.",
+     "annotation": "a proportion stated, then the weights that establish it",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 3,
+   "slug": "pepys-diary",
+   "name": "Samuel Pepys — diary (1660s)",
+   "id": "en-019f2ed1-3653-7fd3-8eb4-be2fd817a0b4",
+   "baseHash": "13c9951419735d4de979d29eb24dcddc3d8726c5bce8d701f45b52abff7f5955",
+   "keys": [
+    "corpus-2.md:para:-:3:4",
+    "corpus-3.md:para:-:1:1"
+   ],
+   "exemplars": [
+    {
+     "text": "27th (Lord’s day). To church in the morning, then dined at home, and to my office, and there all the afternoon setting right my business of flaggs, and after all my pains find reason not to be sorry, because I think it will bring me considerable profit. In the evening come Mr. Andrews and Hill, and we sung, with my boy, Ravenscroft’s 4-part psalms, most admirable musique. Then (Andrews not staying) we to supper, and after supper fell into the rarest discourse with Mr. Hill about Rome and Italy; but most pleasant that I ever had in my life. At it very late and then to bed.\n\n28th. Up, and with Sir J. Minnes and W. Batten to White Hall, but no Committee of Lords (which is like to do the King’s business well). So to Westminster, and there to Jervas’s and was a little while with Jane, and so to London by coach and to the Coffee-house, where certain news of our peace made by Captain Allen with Argier, which is good news; and that the Dutch have sent part of their fleete round by Scotland; and resolve to pay off the rest half-pay, promising the rest in the Spring, hereby keeping their men. But how true this, I know not. Home to dinner, then come Dr. Clerke to speak with me about sick and wounded men, wherein he is like to be concerned. After him Mr. Cutler, and much talk with him, and with him to White Hall, to have waited on the Lords by order, but no meeting, neither to-night, which will spoil all. I think I shall get something by my discourse with Cutler. So home, and after being at my office an hour with Mr. Povy talking about his business of Tangier, getting him some money allowed him for freight of ships, wherein I hope to get something too. He gone, home hungry and almost sick for want of eating, and so to supper and to bed.",
+     "annotation": "the day taken in order from rising to bed, business and appetite given the same weight",
+     "kind": "corpus"
+    },
+    {
+     "text": "13th. Up, and when ready, to the office (my wife rising to send away Barker, according to our resolution last night, and she did do it with more clothes than have cost us L10, and 20s. in her purse, which I did for the respect I bear Mr. Falconbridge, otherwise she had not deserved half of it, but I am the more willing to do it to be rid of one that made work and trouble in the house, and had not qualities of any honour or pleasure to me or my family, but what is a strange thing did always declare to her mistress and others that she had rather be put to drudgery and to wash the house than to live as she did like a gentlewoman), and there I and Gibson all the morning making an end of my report against Carcasse, which I think will do our business, but it is a horrid shame such a rogue should give me and all of us this trouble. This morning come Sir H. Cholmly to me for a tally or two; and tells me that he hears that we are by agreement to give the King of France Nova Scotia, which he do not like: but I do not know the importance of it.",
+     "annotation": "the parenthesis carries the household business while the main clause keeps going",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 4,
+   "slug": "chesterfield-letters",
+   "name": "Lord Chesterfield — letters (1774)",
+   "id": "en-019f2ed1-612b-78f2-88ac-fa97cb94e3b3",
+   "baseHash": "5b3c72d8810cbbba11136f3c61fa52d610e7813be7c7ff2b734ba5f77041107e",
+   "keys": [
+    "corpus-2.md:para:-:0:0",
+    "corpus-1.md:para:-:1:2"
+   ],
+   "exemplars": [
+    {
+     "text": "I hope you apply the time you have saved from the riding-house to useful more than to learned purposes; for I can assure you they are very different things. I would have you allow but one hour a-day for Greek; and that more to keep what you have than to increase it: by Greek, I mean useful Greek books, such as Demosthenes, Thucydides, etc., and not the poets, with whom you are already enough acquainted. Your Latin will take care of itself. Whatever more time you may have for reading, pray bestow it upon those books which are immediately relative to your destination; such as modern history, in the modern languages, memoirs, anecdotes, letters, negotiations, etc. Collect also, if you can, authentically, the present state of all the courts and countries in Europe, the characters of the kings and princes, their wives, their ministers, and their w----s; their several views, connections, and interests; the state of their FINANCES, their military force, their trade, manufactures, and commerce. That is the useful, the necessary knowledge for you, and indeed for every gentleman. But with all this, remember, that living books are much better than dead ones; and throw away no time (for it is thrown away) with the latter, which you can employ well with the former; for books must now be your only amusement, but, by no means your business. I had much rather that you were passionately in love with some determined coquette of condition (who would lead you a dance, fashion, supple, and polish you), than that you knew all Plato and Aristotle by heart: an hour at Versailles, Compiegne, or St. Cloud, is now worth more to you than three hours in your closet, with the best books that ever were written.",
+     "annotation": "advice issued as an allowance of hours, with the reason attached to it",
+     "kind": "corpus"
+    },
+    {
+     "text": "I am extremely glad to hear that you like the assemblies at Venice well enough to sacrifice some suppers to them; for I hear that you do not dislike your suppers neither. It is therefore plain, that there is somebody or something at those assemblies, which you like better than your meat. And as I know that there is none but good company at those assemblies, I am very glad to find that you like good company so well. I already imagine that you are a little, smoothed by it; and that you have either reasoned yourself, or that they have laughed you out of your absences and DISTRACTIONS; for I cannot suppose that you go there to insult them. I likewise imagine, that you wish to be welcome where you wish to go; and consequently, that you both present and behave yourself there 'en galant homme, et pas in bourgeois'.\n\nIf you have vowed to anybody there one of those eternal passions which I have sometimes known, by great accident, last three months, I can tell you that without great attention, infinite politeness, and engaging air and manners, the omens will be sinister, and the goddess unpropitious. Pray tell me what are the amusements of those assemblies? Are they little commercial play, are they music, are they 'la belle conversation', or are they all three? 'Y file-t-on le parfait amour? Y debite-t-on les beaux sentimens? Ou est-ce yu'on y parle Epigramme? And pray which is your department? 'Tutis depone in auribus'. Whichever it is, endeavor to shine and excel in it. Aim at least at the perfection of everything that is worth doing at all; and you will come nearer it than you would imagine; but those always crawl infinitely short of it whose aim is only mediocrity. Adieu.",
+     "annotation": "approval, then a correction, then the letter closes on one word",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 5,
+   "slug": "beeton-household-manual",
+   "name": "Isabella Beeton — household manual (1861)",
+   "id": "en-019f2ed1-8e18-7bc1-8b68-f88b86e693f5",
+   "baseHash": "87b58303c356cc978dc66136f3457dc785e476a3accb3be9f201b8b6125ca306",
+   "keys": [
+    "corpus-2.md:para:-:0:1",
+    "corpus-3.md:para:-:0:3"
+   ],
+   "exemplars": [
+    {
+     "text": "_Mode_.--Pare and cut the cucumbers into slices of an equal thickness, and let them remain in a pickle of salt and vinegar for 1/2 hour; then drain them in a cloth, and put them into a stewpan with the butter. Fry them over a brisk fire, but do not brown them, and then dredge over them a little flour; add the broth, skim off all the fat, which will rise to the surface, and boil gently until the gravy is somewhat reduced; but the cucumber should not be broken. Stir in the yolks of the eggs, add the parsley, sugar, and a seasoning of pepper and salt; bring the whole to the point of boiling, and serve.\n\n_Mode_.--Pare the cucumbers and cut them into slices of an equal thickness, commencing to slice from the thick, and not the stalk end of the cucumber. Wipe the slices dry with a cloth, dredge them with flour, and put them into a pan of boiling oil or butter; Keep turning them about until brown; lift them out of the pan, let them drain, and serve, piled lightly in a dish. These will be found a great improvement to rump-steak: they should be placed on a dish with the steak on the top.",
+     "annotation": "the method runs as a single imperative sequence with the timings inside it",
+     "kind": "corpus"
+    },
+    {
+     "text": "1771. INGREDIENTS.--1/2 lb. of flour, 1/2 lb. of ground rice, 1/2 lb. of raisins stoned and cut into small pieces, 1/4 lb. of currants, 1/4 lb. of butter, 2 oz. of sweet almonds, 1/4 lb. of sifted loaf sugar, 1/2 nutmeg grated, 1 pint of milk, 1 teaspoonful of carbonate of soda.\n\n_Mode_.--Stone and cut the raisins into small pieces; wash, pick, and dry the currants; melt the butter to a cream, but without oiling it; blanch and chop the almonds, and grate the nutmeg. When all these ingredients are thus prepared, mix them well together; make the milk warm, stir in the soda, and with this liquid make the whole into a paste. Butter a mould, rather more than half fill it with the dough, and bake the cake in a moderate oven from 1-1/2 to 2 hours, or less time should it be made into 2 cakes.\n\n1772. INGREDIENTS.--1/2 lb. of ground rice, 1/2 lb. of flour, 1/2 lb. of loaf sugar, 9 eggs, 20 drops of essence of lemon, or the rind of 1 lemon, 1/4 lb. of butter.\n\n_Mode_.--Separate the whites from the yolks of the eggs; whisk them both well, and add to the latter the butter beaten to a cream. Stir in the flour, rice, and lemon (if the rind is used, it must be very finely minced), and beat the mixture well; then add the whites of the eggs, beat the cake again for some time, put it into a buttered mould or tin, and bake it for nearly 1-1/2 hour. It may be flavoured with essence of almonds, when this is preferred.",
+     "annotation": "quantities first, then the order of work, then how long it stands",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 6,
+   "slug": "post-etiquette",
+   "name": "Emily Post — etiquette manual (1922)",
+   "id": "en-019f2eec-7ab9-7b80-9e8c-f00e6135186d",
+   "baseHash": "05423b7582b4c85f97326160839513ec2fc9e1fd3d0d42ff8c1429dd3110c6f5",
+   "keys": [
+    "corpus-1.md:para:-:2:4",
+    "corpus-2.md:para:-:0:2"
+   ],
+   "exemplars": [
+    {
+     "text": "A late leader of Newport society who had a world-wide reputation for the brilliancy of her entertainments, had an equally well-known reputation for rapidly served dinners. \"Twenty minutes is quite long enough to sit at table--ever!\" is what she used to say, and what her household had to live up to. She had a footman to about every two guests and any one dining with her had to cling to the edge of his plate or it would be whisked away! One who looked aside or \"let go\" for a second found his plate gone! That was extreme; but, even so, better than a snail-paced dinner!\n\nIn America the dinner hour is not a fixture, since it varies in various sections of the country. The ordinary New York hour when \"giving a dinner\" is eight o'clock, half past eight in Newport. In New York, when dining and going to the opera, one is usually asked for seven-fifteen, and for seven-thirty before going to a play. Otherwise only \"quiet\" people dine before eight. But invitations should, of course, be issued for whatever hour is customary in the place where the dinner is given.\n\nWhen the dinner guests enter the dining-room, it is customary for the butler to hold out the chair of the mistress of the house. This always seems a discourtesy to the guests. And an occasional hostess insists on having the chair of the guest of honor held by the butler instead of her own. If there are footmen enough, the chair of each lady is held for her; otherwise the gentleman who takes her in to dinner helps her to be seated. Ordinarily where there are two servants, the head one holds the chair of the hostess and the second, the chair on the right of the host. The hostess always seats herself as quickly as possible so that the butler may be free to assist a guest to draw her chair up to the table.",
+     "annotation": "a rule established through a named example and a line quoted from her",
+     "kind": "corpus"
+    },
+    {
+     "text": "The face veil is a rather old-fashioned custom, and is appropriate only for a very young bride of a demure type; the tradition being that a maiden is too shy to face a congregation unveiled, and shows her face only when she is a married woman.\n\nSome brides prefer to remove their left glove by merely pulling it inside out at the altar. Usually the under seam of the wedding finger of her glove is ripped for about two inches and she need only pull the tip off to have the ring put on. Or, if the wedding is a small one, she wears no gloves at all.\n\nBrides have been known to choose colors other than white. Cloth of silver is quite conventional and so is very deep cream, but cloth of gold suggests the habiliment of a widow rather than that of a virgin maid--of which the white and orange blossoms, or myrtle leaf, are the emblems.",
+     "annotation": "the custom stated, then the tradition it rests on",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 7,
+   "slug": "strunk-style-manual",
+   "name": "William Strunk Jr. — style manual (1918)",
+   "id": "en-019f2eec-a3bc-7641-8935-e106de4a915b",
+   "baseHash": "79d7ed1788d3287e8754338d9c5242615f4cba6949ad24e858b95f6688f521e3",
+   "keys": [
+    "corpus-1.md:para:-:5:10",
+    "corpus-2.md:para:-:4:7"
+   ],
+   "exemplars": [
+    {
+     "text": "All three examples show the weakness inherent in the word _not_. Consciously or unconsciously, the reader is dissatisfied with being told only what is not; he wishes to be told what is. Hence, as a rule, it is better to express even a negative in positive form.\n\nIf those who have studied the art of writing are in accord on any one point, it is on this, that the surest method of arousing and holding the attention of the reader is by being specific, definite, and concrete. Critics have pointed out how much of the effectiveness of the greatest writers, Homer, Dante, Shakespeare, results from their constant definiteness and concreteness. Browning, to cite a more modern author, affords many striking examples. Take, for instance, the lines from _My Last Duchess_,\n\nSir, 'twas all one! My favour at her breast, The dropping of the daylight in the west, The bough of cherries some officious fool Broke in the orchard for her, the white mule She rode with round the terrace--all and each Would draw from her alike the approving speech, Or blush, at least,\n\nThese words call up pictures. Recall how in _The Bishop Orders his Tomb in St. Praxed's Church_ \"the Renaissance spirit--its worldliness, inconsistency, pride, hypocrisy, ignorance of itself, love of art, of luxury, of good Latin,\" to quote Ruskin's comment on the poem, is made manifest in specific details and in concrete terms.\n\nProse, in particular narrative and descriptive prose, is made vivid by the same means. If the experiences of Jim Hawkins and of David Balfour, of Kim, of Nostromo, have seemed for the moment real to countless readers, if in reading Carlyle we have almost the sense of being physically present at the taking of the Bastille, it is because of the definiteness of the details and the concreteness of the terms used. It is not that every detail is given; that would be impossible, as well as to no purpose; but that all the significant details are given, and not vaguely, but with such definiteness that the reader, in imagination, can project himself into the scene.\n\nIn exposition and in argument, the writer must likewise never lose his hold upon the concrete, and even when he is dealing with general principles, he must give particular instances of their application.",
+     "annotation": "the principle is stated once, then examples are set against it one at a time",
+     "kind": "corpus"
+    },
+    {
+     "text": "In presenting the statements or the thought of some one else, as in summarizing an essay or reporting a speech, the writer should avoid intercalating such expressions as \"he said,\" \"he stated,\" \"the speaker added,\" \"the speaker then went on to say,\" \"the author also thinks,\" or the like. He should indicate clearly at the outset, once for all, that what follows is summary, and then waste no words in repeating the notification.\n\nIn notebooks, in newspapers, in handbooks of literature, summaries of one kind or another may be indispensable, and for children in primary schools it is a useful exercise to retell a story in their own words. But in the criticism or interpretation of literature the writer should be careful to avoid dropping into summary. He may find it necessary to devote one or two sentences to indicating the subject, or the opening situation, of the work he is discussing; he may cite numerous details to illustrate its qualities. But he should aim to write an orderly discussion supported by evidence, not a summary with occasional comment. Similarly, if the scope of his discussion includes a number of works, he will as a rule do better not to take them up singly in chronological order, but to aim from the beginning at establishing general conclusions.\n\nThe word or group of words entitled to this position of prominence is usually the logical predicate, that is, the _new_ element in the sentence, as it is in the second example.\n\nFour centuries ago, Christopher Columbus, one of the Italian mariners whom the decline of their own republics had put at the service of the world and of adventure, seeking for Spain a westward passage to the Indies as a set-off against the achievements of Portuguese discoverers, lighted on America.",
+     "annotation": "an instruction that names the fault it is correcting before it gives the remedy",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 8,
+   "slug": "aurelius-meditations-casaubon",
+   "name": "Marcus Aurelius — Meditations (Casaubon, 1634)",
+   "id": "en-019f2eec-ce55-73f1-a4d7-bc0e5daed02b",
+   "baseHash": "d9e2b62cbcb86d01ec367fc4fe6c13bb0ee96b954d549b4500515d53fec29477",
+   "keys": [
+    "corpus-2.md:para:-:0:1",
+    "corpus-3.md:para:-:2:4"
+   ],
+   "exemplars": [
+    {
+     "text": "XXXI. Receive temporal blessings without ostentation, when they are sent and thou shalt be able to part with them with all readiness and facility when they are taken from thee again.\n\nXXXII. If ever thou sawest either a hand, or a foot, or a head lying by itself, in some place or other, as cut off from the rest of the body, such must thou conceive him to make himself, as much as in him lieth, that either is offended with anything that is happened, (whatsoever it be) and as it were divides himself from it: or that commits anything against the natural law of mutual correspondence, and society among men: or, he that, commits any act of uncharitableness. Whosoever thou art, thou art such, thou art cast forth I know not whither out of the general unity, which is according to nature. Thou went born indeed a part, but now thou hast cut thyself off. However, herein is matter of joy and exultation, that thou mayst be united again. God hath not granted it unto any other part, that once separated and cut off, it might be reunited, and come together again. But, behold, that GOODNESS how great and immense it is! which hath so much esteemed MAN. As at first he was so made, that he needed not, except he would himself, have divided himself from the whole; so once divided and cut off, IT hath so provided and ordered it, that if he would himself, he might return, and grow together again, and be admitted into its former rank and place of a part, as he was before.",
+     "annotation": "numbered addresses to himself, each finished within a sentence or two",
+     "kind": "corpus"
+    },
+    {
+     "text": "XXVII. In matter of writing or reading thou must needs be taught before thou can do either: much more in matter of life. 'For thou art born a mere slave, to thy senses and brutish affections;' destitute without teaching of all true knowledge and sound reason.\n\nXXX. 'As often as a father kisseth his child, he should say secretly with himself' (said Epictetus,) 'tomorrow perchance shall he die.' But these words be ominous. No words ominous (said he) that signify anything that is natural: in very truth and deed not more ominous than this, 'to cut down grapes when they are ripe.' Green grapes, ripe grapes, dried grapes, or raisins: so many changes and mutations of one thing, not into that which was not absolutely, but rather so many several changes and mutations, not into that which hath no being at all, but into that which is not yet in being.\n\nXXXI. 'Of the free will there is no thief or robber:' out of Epictetus; Whose is this also: that we should find a certain art and method of assenting; and that we should always observe with great care and heed the inclinations of our minds, that they may always be with their due restraint and reservation, always charitable, and according to the true worth of every present object. And as for earnest longing, that we should altogether avoid it: and to use averseness in those things only, that wholly depend of our own wills. It is not about ordinary petty matters, believe it, that all our strife and contention is, but whether, with the vulgar, we should be mad, or by the help of philosophy wise and sober, said he. XXXII. Socrates said, 'What will you have? the souls of reasonable, or unreasonable creatures? Of reasonable. But what? Of those whose reason is sound and perfect? or of those whose reason is vitiated and corrupted? Of those whose reason is sound and perfect. Why then labour ye not for such? Because we have them already. What then do ye so strive and contend between you?'",
+     "annotation": "an analogy opens the entry and the whole argument is carried out inside it",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 9,
+   "slug": "grimm-fairy-tales-taylor",
+   "name": "Brothers Grimm — fairy tales (Taylor, 1823)",
+   "id": "en-019f2eec-fba3-7983-a940-4642c2eac81b",
+   "baseHash": "b34ccd0463820ca11086525d9ba9878ffc50a4fecbcb210848ffc0207255ba6e",
+   "keys": [
+    "corpus-1.md:para:-:0:0",
+    "corpus-1.md:para:-:3:6"
+   ],
+   "exemplars": [
+    {
+     "text": "Once upon a time there was a widow who had two daughters; one of them was beautiful and industrious, the other ugly and lazy. The mother, however, loved the ugly and lazy one best, because she was her own daughter, and so the other, who was only her stepdaughter, was made to do all the work of the house, and was quite the Cinderella of the family. Her stepmother sent her out every day to sit by the well in the high road, there to spin until she made her fingers bleed. Now it chanced one day that some blood fell on to the spindle, and as the girl stopped over the well to wash it off, the spindle suddenly sprang out of her hand and fell into the well. She ran home crying to tell of her misfortune, but her stepmother spoke harshly to her, and after giving her a violent scolding, said unkindly, ‘As you have let the spindle fall into the well you may go yourself and fetch it out.’",
+     "annotation": "the opening formula sets the household and its imbalance in three sentences",
+     "kind": "corpus"
+    },
+    {
+     "text": "The next thing she came to was a little house, and there she saw an old woman looking out, with such large teeth, that she was terrified, and turned to run away. But the old woman called after her, ‘What are you afraid of, dear child? Stay with me; if you will do the work of my house properly for me, I will make you very happy. You must be very careful, however, to make my bed in the right way, for I wish you always to shake it thoroughly, so that the feathers fly about; then they say, down there in the world, that it is snowing; for I am Mother Holle.’ The old woman spoke so kindly, that the girl summoned up courage and agreed to enter into her service.\n\nShe took care to do everything according to the old woman’s bidding and every time she made the bed she shook it with all her might, so that the feathers flew about like so many snowflakes. The old woman was as good as her word: she never spoke angrily to her, and gave her roast and boiled meats every day.\n\nSo she stayed on with Mother Holle for some time, and then she began to grow unhappy. She could not at first tell why she felt sad, but she became conscious at last of great longing to go home; then she knew she was homesick, although she was a thousand times better off with Mother Holle than with her mother and sister. After waiting awhile, she went to Mother Holle and said, ‘I am so homesick, that I cannot stay with you any longer, for although I am so happy here, I must return to my own people.’\n\nThen Mother Holle said, ‘I am pleased that you should want to go back to your own people, and as you have served me so well and faithfully, I will take you home myself.’",
+     "annotation": "speech reported in full, with the bargain spoken aloud by both sides",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 10,
+   "slug": "twain-travel-letters",
+   "name": "Mark Twain — travel letters (1869)",
+   "id": "en-019f2eed-2c97-7891-bb08-2e586e7b9e89",
+   "baseHash": "2858a1cf8568a771cf2715d5781271f34b915ae4c8d0a830355ea2ad5393be88",
+   "keys": [
+    "corpus-1.md:para:-:0:3",
+    "corpus-3.md:para:-:3:5"
+   ],
+   "exemplars": [
+    {
+     "text": "How poor, and cheap, and trivial these gew-gaws seemed in presence of the solemnity, the grandeur, the awful majesty of Death! Think of Milton, Shakespeare, Washington, standing before a reverent world tricked out in the glass beads, the brass ear-rings and tin trumpery of the savages of the plains!\n\nDead Bartolomeo preached his pregnant sermon, and its burden was: You that worship the vanities of earth--you that long for worldly honor, worldly wealth, worldly fame--behold their worth!\n\nTo us it seemed that so good a man, so kind a heart, so simple a nature, deserved rest and peace in a grave sacred from the intrusion of prying eyes, and believed that he himself would have preferred to have it so, but peradventure our wisdom was at fault in this regard.\n\nWhat, more? The furniture of the narrow chamber of death we had just visited weighed six millions of francs in ounces and carats alone, without a penny thrown into the account for the costly workmanship bestowed upon them! But we followed into a large room filled with tall wooden presses like wardrobes. He threw them open, and behold, the cargoes of “crude bullion” of the assay offices of Nevada faded out of my memory. There were Virgins and bishops there, above their natural size, made of solid silver, each worth, by weight, from eight hundred thousand to two millions of francs, and bearing gemmed books in their hands worth eighty thousand; there were bas-reliefs that weighed six hundred pounds, carved in solid silver; croziers and crosses, and candlesticks six and eight feet high, all of virgin gold, and brilliant with precious stones; and beside these were all manner of cups and vases, and such things, rich in proportion. It was an Aladdin's palace. The treasures here, by simple weight, without counting workmanship, were valued at fifty millions of francs! If I could get the custody of them for a while, I fear me the market price of silver bishops would advance shortly, on account of their exceeding scarcity in the Cathedral of Milan.",
+     "annotation": "the solemn cadence is built up and then spent on the trivial object",
+     "kind": "corpus"
+    },
+    {
+     "text": "He went through this peaceful land with one hand forever on his revolver, and the other on his pocket-handkerchief. Always, when he was not on the point of crying over a holy place, he was on the point of killing an Arab. More surprising things happened to him in Palestine than ever happened to any traveler here or elsewhere since Munchausen died.\n\nAt Beit Jin, where nobody had interfered with him, he crept out of his tent at dead of night and shot at what he took to be an Arab lying on a rock, some distance away, planning evil. The ball killed a wolf. Just before he fired, he makes a dramatic picture of himself--as usual, to scare the reader:\n\n“Was it imagination, or did I see a moving object on the surface of the rock? If it were a man, why did he not now drop me? He had a beautiful shot as I stood out in my black boornoose against the white tent. I had the sensation of an entering bullet in my throat, breast, brain.”",
+     "annotation": "a portrait assembled from two habits held together in one sentence",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 11,
+   "slug": "darwin-voyage-journal",
+   "name": "Charles Darwin — voyage journal (1839)",
+   "id": "en-019f38ce-c563-79a1-82dd-95a4a923ab48",
+   "baseHash": "94ab9305b703580e04cd28e2cb5f88f89128abb4f1319ded3f4e9dbf1eca197e",
+   "keys": [
+    "corpus-1.md:para:-:1:1",
+    "corpus-3.md:para:-:0:0"
+   ],
+   "exemplars": [
+    {
+     "text": "On several occasions, when the Beagle has been within the mouth of the Plata, the rigging has been coated with the web of the Gossamer Spider. One day (November 1st, 1832) I paid particular attention to this subject. The weather had been fine and clear, and in the morning the air was full of patches of the flocculent web, as on an autumnal day in England. The ship was sixty miles distant from the land, in the direction of a steady though light breeze. Vast numbers of a small spider, about one-tenth of an inch in length, and of a dusky red colour, were attached to the webs. There must have been, I should suppose, some thousands on the ship. The little spider, when first coming in contact with the rigging, was always seated on a single thread, and not on the flocculent mass. This latter seems merely to be produced by the entanglement of the single threads. The spiders were all of one species, but of both sexes, together with young ones. These latter were distinguished by their smaller size and more dusky colour. I will not give the description of this spider, but merely state that it does not appear to me to be included in any of Latreille's genera. The little aeronaut as soon as it arrived on board was very active, running about, sometimes letting itself fall, and then reascending the same thread; sometimes employing itself in making a small and very irregular mesh in the corners between the ropes. It could run with facility on the surface of the water. When disturbed it lifted up its front legs, in the attitude of attention. On its first arrival it appeared very thirsty, and with exserted maxillae drank eagerly of drops of water, this same circumstance has been observed by Strack: may it not be in consequence of the little insect having passed through a dry and rarefied atmosphere? Its stock of web seemed inexhaustible. While watching some that were suspended by a single thread, I several times observed that the slightest breath of air bore them away out of sight, in a horizontal line.",
+     "annotation": "the date is given, then the conditions, then what was counted",
+     "kind": "corpus"
+    },
+    {
+     "text": "They then proceeded to make a fire, and cook our evening meal. A light was procured, by rubbing a blunt pointed stick in a groove made in another, as if with intention of deepening it, until by the friction the dust became ignited. A peculiarly white and very light wood (the Hibiscus tiliareus) is alone used for this purpose: it is the same which serves for poles to carry any burden, and for the floating out-riggers to their canoes. The fire was produced in a few seconds: but to a person who does not understand the art, it requires, as I found, the greatest exertion; but at last, to my great pride, I succeeded in igniting the dust. The Gaucho in the Pampas uses a different method: taking an elastic stick about eighteen inches long, he presses one end on his breast, and the other pointed end into a hole in a piece of wood, and then rapidly turns the curved part, like a carpenter's centre-bit. The Tahitians having made a small fire of sticks, placed a score of stones, of about the size of cricket-balls, on the burning wood. In about ten minutes the sticks were consumed, and the stones hot. They had previously folded up in small parcels of leaves, pieces of beef, fish, ripe and unripe bananas, and the tops of the wild arum. These green parcels were laid in a layer between two layers of the hot stones, and the whole then covered up with earth, so that no smoke or steam could escape. In about a quarter of an hour, the whole was most deliciously cooked. The choice green parcels were now laid on a cloth of banana leaves, and with a cocoa-nut shell we drank the cool water of the running stream; and thus we enjoyed our rustic meal.",
+     "annotation": "a process followed step by step in the order it was watched",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 12,
+   "slug": "white-selborne-letters",
+   "name": "Gilbert White — natural history letters (1789)",
+   "id": "en-019f38ce-fba4-77d1-9df2-1fd05d51ad67",
+   "baseHash": "4e3cc92d993052b0223f52e5c0560abfbeb45cbddcaa3ff9d93a94bc0b4a383a",
+   "keys": [
+    "corpus-2.md:para:-:0:1",
+    "corpus-3.md:para:-:3:4"
+   ],
+   "exemplars": [
+    {
+     "text": "A farther instance I once saw of notable sagacity in a willow-wren, which had built in a bank in my fields. This bird a friend and myself had observed as she sat in her nest; but were particularly careful not to disturb her, though we saw she eyed us with some degree of jealousy. Some days after as we passed that way we were desirous of remarking how this brood went on; but no nest could be found, till I happened to take up a large bundle of long green moss, as it were, carelessly thrown over the nest, in order to dodge the eye of any impertinent intruder.\n\nA still more remarkable mixture of sagacity and instinct occurred to me one day as my people were pulling off the lining of an hotbed, in order to add some fresh dung. From out of the side of this bed leaped an animal with great agility that made a most grotesque figure; nor was it without great difficulty that it could be taken; when it proved to be a large white-bellied field-mouse with three or four young clinging to her teats by their mouths and feet. It was amazing that the desultory and rapid motions of this dam should not oblige her litter to quit their hold, especially when it appeared that they were so young as to be both naked and blind!",
+     "annotation": "an observation reported to a correspondent, with the watcher's own care described",
+     "kind": "corpus"
+    },
+    {
+     "text": "Among the many singularities attending those amusing birds the swifts, I am now confirmed in the opinion that we have every year the same number of pairs invariably; at least the result of my inquiry has been exactly the same for a long time past. The swallows and martins are so numerous, and so widely distributed over the village, that it is hardly possible to recount them; while the swifts, though they do not all build in the church, yet so frequently haunt it, and play and rendezvous round it, that they are easily enumerated. The number that I constantly find are eight pairs; about half of which reside in the church, and the rest build in some of the lowest and meanest thatched cottages. Now as these eight pairs, allowance being made for accidents, breed yearly eight pairs more, what becomes annually of this increase; and what determines every spring which pairs shall visit us, and reoccupy their ancient haunts ?\n\nEver since I have attended to the subject of ornithology, I have always supposed that that sudden reverse of affection, that strange ἀντιστοργὴ, which immediately succeeds in the feathered kind to the most passionate fondness, is the occasion of an equal dispersion of birds over the face of the earth. Without this provision one favourite district would be crowded with inhabitants, while others would be destitute and forsaken. But the parent birds seem to maintain a jealous superiority, and to oblige the young to seek for new abodes: and the rivalry of the males, in many kinds, prevents their crowding the one on the other. Whether the swallows and house-martins return in the same exact number annually is not easy to say, for reasons given above: but it is apparent, as I have remarked before in my Monographies, that the numbers returning bear no manner of proportion to the numbers retiring.",
+     "annotation": "a claim about numbers, then the enquiry standing behind it",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 13,
+   "slug": "dana-sea-narrative",
+   "name": "Richard Henry Dana Jr. — sea narrative (1840)",
+   "id": "en-019f38cf-311b-7c21-985c-5cc0ec5448f2",
+   "baseHash": "48f4b0640aafb37b1f3346a133abed967d8a2400166a1bf1f8dc3836164fcb69",
+   "keys": [
+    "corpus-3.md:sent:1:9:19",
+    "corpus-2.md:sent:2:5:11"
+   ],
+   "exemplars": [
+    {
+     "text": "--\"Doesn't that booby of a second mate ever mean to take in his top-gallant sails?--He'll have the sticks out of her soon,\" says old Bill, who was always growling, and, like most old sailors, did not like to see a ship abused.--By-and-by an order is given--\"Aye, aye, sir!\" from the forecastle;--rigging is heaved down on deck;--the noise of a sail is heard fluttering aloft, and the short, quick cry which sailors make when hauling upon clewlines.--\"Here comes his fore-top-gallant sail in!\"--We are wide awake, and know all that's going on as well as if we were on deck.--A well-known voice is heard from the mast-head singing out the officer of the watch to haul taut the weather brace.--\"Hallo! There's S---- aloft to furl the sail!\"--Next thing, rigging is heaved down directly over our heads, and a long-drawn cry and a rattling of hanks announce that the flying-jib has come in.--The second mate holds on to the main top-gallant sail until a heavy sea is shipped, and washes over the forecastle as though the whole ocean had come aboard; when a noise further aft shows that that sail, too, is taking in.",
+     "annotation": "the crew's speech carries the working of the ship",
+     "kind": "corpus"
+    },
+    {
+     "text": "This was our last port. Here we were to discharge everything from the ship, clean her out, smoke her, take in our hides, wood, water, etc., and set sail for Boston. While all this was doing, we were to lie still in one place, and the port was a safe one, and there was no fear of south-easters. Accordingly, having picked out a good berth, in the stream, with a good smooth beach opposite, for a landing-place and within two cables' length of our hide-house, we moored ship, unbent all the sails, sent down the top-gallant yards and all the studding-sail booms, and housed the top-gallant masts. The boats were then hove out, and all the sails, spare spars, the stores, the rigging not rove, and, in fact, everything which was not in daily use, sent ashore, and stowed away in the house. Then went all our hides and horns, and we left hardly anything in the ship but her ballast, and this we made preparation to heave out, the next day.",
+     "annotation": "the work ahead listed in the order it will be done",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 14,
+   "slug": "slocum-voyage-narrative",
+   "name": "Joshua Slocum — voyage narrative (1900)",
+   "id": "en-019f38cf-6c62-7e00-9a97-d8bb19a6867b",
+   "baseHash": "954c9e9e687a10ad0f76ee4aac2bd02f93930b12ab291ac22e0fcf6704a6a6e4",
+   "keys": [
+    "corpus-1.md:para:-:2:2",
+    "corpus-3.md:para:-:2:4"
+   ],
+   "exemplars": [
+    {
+     "text": "Canoes manned by savages from Fortescue now came in pursuit. The wind falling light, they gained on me rapidly till coming within hail, when they ceased paddling, and a bow-legged savage stood up and called to me, \"Yammerschooner! yammerschooner!\" which is their begging term. I said, \"No!\" Now, I was not for letting on that I was alone, and so I stepped into the cabin, and, passing through the hold, came out at the fore-scuttle, changing my clothes as I went along. That made two men. Then the piece of bowsprit which I had sawed off at Buenos Aires, and which I had still on board, I arranged forward on the lookout, dressed as a seaman, attaching a line by which I could pull it into motion. That made three of us, and we didn't want to \"yammerschooner\"; but for all that the savages came on faster than before. I saw that besides four at the paddles in the canoe nearest to me, there were others in the bottom, and that they were shifting hands often. At eighty yards I fired a shot across the bows of the nearest canoe, at which they all stopped, but only for a moment. Seeing that they persisted in coming nearer, I fired the second shot so close to the chap who wanted to \"yammerschooner\" that he changed his mind quickly enough and bellowed with fear, \"Bueno jo via Isla,\" and sitting down in his canoe, he rubbed his starboard cat-head for some time. I was thinking of the good port captain's advice when I pulled the trigger, and must have aimed pretty straight; however, a miss was as good as a mile for Mr. \"Black Pedro,\" as he it was, and no other, a leader in several bloody massacres. He made for the island now, and the others followed him. I knew by his Spanish lingo and by his full beard that he was the villain I have named, a renegade mongrel, and the worst murderer in Tierra del Fuego. The authorities had been in search of him for two years. The Fuegians are not bearded.",
+     "annotation": "the chase told in the order it happened, the hailed word kept as it was spoken",
+     "kind": "corpus"
+    },
+    {
+     "text": "While at Mauritius the _Spray_ was tendered the use of the military dock free of charge, and was thoroughly refitted by the port authorities. My sincere gratitude is also due other friends for many things needful for the voyage put on board, including bags of sugar from some of the famous old plantations.\n\nThe favorable season now set in, and thus well equipped, on the 26th of October, the _Spray_ put to sea. As I sailed before a light wind the island receded slowly, and on the following day I could still see the Puce Mountain near Moka. The _Spray_ arrived next day off Galets, Reunion, and a pilot came out and spoke her. I handed him a Mauritius paper and continued on my voyage; for rollers were running heavily at the time, and it was not practicable to make a landing. From Reunion I shaped a course direct for Cape St. Mary, Madagascar.\n\nThe sloop was now drawing near the limits of the trade-wind, and the strong breeze that had carried her with free sheets the many thousands of miles from Sandy Cape, Australia, fell lighter each day until October 30, when it was altogether calm, and a motionless sea held her in a hushed world. I furled the sails at evening, sat down on deck, and enjoyed the vast stillness of the night.",
+     "annotation": "the port's kindness itemised, then the evening in one sentence",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 15,
+   "slug": "field-notes",
+   "name": "Field notes",
+   "id": "en-019f38cf-aa6c-7b00-a95c-81be7dbc6eff",
+   "baseHash": "ee467344a82ad6475f7184dadd131d646a6b396b6dbd20ccf2ecd6dc8ccf5217",
+   "keys": [
+    "corpus-2.md:para:-:0:0",
+    "corpus-4.md:para:-:1:3"
+   ],
+   "exemplars": [
+    {
+     "text": "December 1st.--We steered for the island of Lemuy. I was anxious to examine a reported coal-mine which turned out to be lignite of little value, in the sandstone (probably of an ancient tertiary epoch) of which these islands are composed. When we reached Lemuy we had much difficulty in finding any place to pitch our tents, for it was spring-tide, and the land was wooded down to the water's edge. In a short time we were surrounded by a large group of the nearly pure Indian inhabitants. They were much surprised at our arrival, and said one to the other, \"This is the reason we have seen so many parrots lately; the cheucau (an odd red-breasted little bird, which inhabits the thick forest, and utters very peculiar noises) has not cried 'beware' for nothing.\" They were soon anxious for barter. Money was scarcely worth anything, but their eagerness for tobacco was something quite extraordinary. After tobacco, indigo came next in value; then capsicum, old clothes, and gunpowder. The latter article was required for a very innocent purpose: each parish has a public musket, and the gunpowder was wanted for making a noise on their saint or feast days.",
+     "annotation": "the entry opens on its date and the object of the day's work",
+     "kind": "corpus"
+    },
+    {
+     "text": "A still more remarkable mixture of sagacity and instinct occurred to me one day as my people were pulling off the lining of an hotbed, in order to add some fresh dung. From out of the side of this bed leaped an animal with great agility that made a most grotesque figure; nor was it without great difficulty that it could be taken; when it proved to be a large white-bellied field-mouse with three or four young clinging to her teats by their mouths and feet. It was amazing that the desultory and rapid motions of this dam should not oblige her litter to quit their hold, especially when it appeared that they were so young as to be both naked and blind!\n\nTo these instances of tender attachment, many more of which might be daily discovered by those that are studious of nature, may be opposed that rage of affection, that monstrous perversion of the στοργὴ, which induces some females of the brute creation to devour their young because their owners have handled them too freely, or removed them from place to place! Swine, and sometimes the more gentle race of dogs and cats, are guilty of this horrid and preposterous murder. When I hear now and then of an abandoned mother that destroys her offspring, I am not so much amazed; since reason perverted, and the bad passions let loose, are capable of any enormity: but why the parental feelings of brutes, that usually flow in one most uniform tenor, should sometimes be so extravagantly diverted, I leave to abler philosophers than myself to determine.\n\nSome young men went down lately to a pond on the verge of Wolmer-forest to hunt flappers, or young wild-ducks, many of which they caught, and, among the rest, some very minute yet well-fledged wild-fowls alive, which, upon examination, I found to be teals. I did not know till then that teals ever bred in the south of England, and was much pleased with the discovery: this I look upon as a great stroke in natural history.",
+     "annotation": "an accident of digging is followed until it yields an identification",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 16,
+   "slug": "ships-log",
+   "name": "Ship's log",
+   "id": "en-019f38cf-e5e1-7b50-8349-5e091a2c6ec2",
+   "baseHash": "9aabeec021574b8c3c8eb32574b3b1632792232fb9d1c8184a54001c3282279d",
+   "keys": [
+    "corpus-1.md:para:-:1:1",
+    "corpus-3.md:para:-:0:1"
+   ],
+   "exemplars": [
+    {
+     "text": "The next sound we heard was \"All hands ahoy!\" and looking up the scuttle, saw that it was just daylight. Our liberty had now truly taken flight, and with it we laid away our pumps, stockings, blue jackets, neckerchiefs, and other go-ashore paraphernalia, and putting on old duck trowsers, red shirts, and Scotch caps, began taking out and landing our hides. For three days we were hard at work, from the grey of the morning until starlight, with the exception of a short time allowed for meals, in this duty. For landing and taking on board hides, San Diego is decidedly the best place in California. The harbor is small and land-locked; there is no surf; the vessels lie within a cable's length of the beach; and the beach itself is smooth, hard sand, without rocks or stones. For these reasons, it is used by all the vessels in the trade, as a depot; and, indeed, it would be impossible, when loading with the cured hides for the passage home, to take them on board at any of the open ports, without getting them wet in the surf, which would spoil them. We took possession of one of the hide-houses, which belonged to our firm, and had been used by the California. It was built to hold forty thousand hides, and we had the pleasing prospect of filling it before we could leave the coast; and toward this, our thirty-five hundred, which we brought down with us, would do but little. There was not a man on board who did not go a dozen times into the house, and look round, and make some calculation of the time it would require.",
+     "annotation": "the call goes up and the watch's gear is listed as it is put away",
+     "kind": "corpus"
+    },
+    {
+     "text": "The sloop held the wind fair while she ran thirty miles farther on her course, which brought her to Fortescue Bay, and at once among the natives' signal-fires, which blazed up now on all sides. Clouds flew over the mountain from the west all day; at night my good east wind failed, and in its stead a gale from the west soon came on. I gained anchorage at twelve o'clock that night, under the lee of a little island, and then prepared myself a cup of coffee, of which I was sorely in need; for, to tell the truth, hard beating in the heavy squalls and against the current had told on my strength. Finding that the anchor held, I drank my beverage, and named the place Coffee Island. It lies to the south of Charles Island, with only a narrow channel between.\n\nBy daylight the next morning the _Spray_ was again under way, beating hard; but she came to in a cove in Charles Island, two and a half miles along on her course. Here she remained undisturbed two days, with both anchors down in a bed of kelp. Indeed, she might have remained undisturbed indefinitely had not the wind moderated; for during these two days it blew so hard that no boat could venture out on the strait, and the natives being away to other hunting-grounds, the island anchorage was safe. But at the end of the fierce wind-storm fair weather came; then I got my anchors, and again sailed out upon the strait.",
+     "annotation": "distance run, then the weather, then the anchorage",
+     "kind": "corpus"
+    }
+   ]
+  },
+  {
+   "number": 17,
+   "slug": "aphorism",
+   "name": "Aphorism",
+   "id": "en-01a08456-f1b5-7e52-9bf8-4391f8c8cf64",
+   "baseHash": "ad90df72ffcb29c24b0baa6fe3b6db56985266f023bab091ac683df235993e93",
+   "keys": [
+    "corpus-1.md:para:-:1:13",
+    "corpus-3.md:para:-:2:13"
+   ],
+   "exemplars": [
+    {
+     "text": "104.--Men and things have each their proper perspective; to judge\nrightly of some it is necessary to see them near, of others we can never\njudge rightly but at a distance.\n\n105.--A man for whom accident discovers sense, is not a rational being.\nA man only is so who understands, who distinguishes, who tests it.\n\n106.--To understand matters rightly we should understand their details,\nand as that knowledge is almost infinite, our knowledge is always\nsuperficial and imperfect.\n\n107.--One kind of flirtation is to boast we never flirt.\n\n108.--The head cannot long play the part of the heart.\n\n109.--Youth changes its tastes by the warmth of its blood, age retains\nits tastes by habit.\n\n110.--Nothing is given so profusely as advice.\n\n111.--The more we love a woman the more prone we are to hate her.\n\n112.--The blemishes of the mind, like those of the face, increase by\nage.\n\n113.--There may be good but there are no pleasant marriages.\n\n114.--We are inconsolable at being deceived by our enemies and betrayed\nby our friends, yet still we are often content to be thus served by\nourselves.\n\n115.--It is as easy unwittingly to deceive oneself as to deceive others.\n\n116.--Nothing is less sincere than the way of asking and giving advice.\nThe person asking seems to pay deference to the opinion of his friend,\nwhile thinking in reality of making his friend approve his opinion and\nbe responsible for his conduct. The person giving the advice returns the\nconfidence placed in him by eager and disinterested zeal, in doing which\nhe is usually guided only by his own interest or reputation.",
+     "annotation": "each numbered claim is general and stops as soon as it is complete",
+     "kind": "corpus"
+    },
+    {
+     "text": "301.--Many people despise, but few know how to bestow wealth.\n\n302.--Only in things of small value we usually are bold enough not to\ntrust to appearances.\n\n303.--Whatever good quality may be imputed to us, we ourselves find\nnothing new in it.\n\n304.--We may forgive those who bore us, we cannot forgive those whom we\nbore.\n\n305.--Interest which is accused of all our misdeeds often should be\npraised for our good deeds.\n\n306.--We find very few ungrateful people when we are able to confer\nfavours.\n\n307.--It is as proper to be boastful alone as it is ridiculous to be so\nin company.\n\n308.--Moderation is made a virtue to limit the ambition of the great;\nto console ordinary people for their small fortune and equally small\nability.\n\n309.--There are persons fated to be fools, who commit follies not only\nby choice, but who are forced by fortune to do so.\n\n310.--Sometimes there are accidents in our life the skilful extrication\nfrom which demands a little folly.\n\n311.--If there be men whose folly has never appeared, it is because it\nhas never been closely looked for.\n\n312.--Lovers are never tired of each other,--they always speak of\nthemselves.",
+     "annotation": "the run alternates lengths so a short maxim lands against a longer one",
+     "kind": "corpus"
+    }
+   ]
+  }
+ ]
+}
