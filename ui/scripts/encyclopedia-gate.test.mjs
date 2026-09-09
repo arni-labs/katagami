@@ -20,6 +20,21 @@ for (const [route, source] of Object.entries(PAGES)) {
   test(`${route} refuses anyone who is not the owner, before it reads anything`, () => {
     // Read the component body, not the file: an import names every reader at
     // the top, and matching those would only ever prove that imports come first.
+    //
+    // WHAT THIS DOES AND DOES NOT CATCH, because a green check here is easy to
+    // over-trust. It compares the TEXTUAL order of two strings, which is not
+    // execution order. Slicing to the body removes the false positives — a
+    // reader named above the component, an import or a helper, no longer trips
+    // a page that reads only after the gate. It does not remove the false
+    // NEGATIVES: a read inside a helper still passes, because what stands in
+    // the body is the helper's name and not the reader's. `readFiles` in
+    // `/writing/[id]` is exactly that shape — it wraps `getFileText`, it is
+    // called after the gate, and moving that call above the gate would not
+    // fail this test. Closing it needs the page driven against a stubbed
+    // backend with `recordReads()` (see `encyclopedia-reader.test.mjs`),
+    // asserting zero reads for a caller who is not the owner. Until then this
+    // catches the direct case, which is how the mistake is actually made, and
+    // nothing further.
     const body = source.slice(source.indexOf("export default"));
     const gate = body.indexOf("notFound()");
     assert.ok(gate > 0, "the page 404s rather than rendering for a stranger");
