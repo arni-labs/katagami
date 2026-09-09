@@ -580,10 +580,23 @@ What the pass does, in order:
    names. The rule is the same one that governs everything here: what the
    record's own credit says, never what its name suggests.
 3. **Where no cell fits, mint one** — from a source, under the same discipline
-   as any other cell, cited and attested. A record that has no home is usually
+   as any other cell, cited and attested. Mint *from* a source; never go looking
+   for a source that would justify a placement you have already decided on. That
+   is the citation defect in another costume, and it passes every check here,
+   because the resulting cell is cited and the resulting link resolves. The
+   difference is a question you could have answered no to: *is this tradition
+   named in the literature* is research, and *find me something that supports
+   putting the record here* is not. A record that has no home is usually
    telling you the collection is missing a direction rather than that the record
    is wrong. Where the honest answer is that the record does not belong in the
    encyclopedia at all, say so in the pass's report rather than forcing it.
+   And where a record cannot be placed, **write the question onto the cell a
+   reader would look at** rather than only into a report. A cell carrying a
+   `questions` entry that names the unplaced record, what its own credits claim,
+   and what a source would have to say to settle it, is how the gap survives the
+   run that found it. An ancestor is not a manifestation: a record that a cell's
+   own sources call a precursor expresses the thing that came after only if
+   something cited says so.
 4. Where the record's credit names something the collection deliberately
    declined, leave it unplaced and record why. An unplaced record with a stated
    reason is a finding; an unplaced record with no reason is a gap.
