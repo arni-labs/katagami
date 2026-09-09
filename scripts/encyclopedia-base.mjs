@@ -8,10 +8,10 @@
 // document as it read it, and the write is refused when the stored document has
 // moved since. Declaring it is not optional: a payload that would replace the
 // document of a cell that already holds one, and does not say which bytes it
-// was built from, is refused too. Opt-in was not enough. The fix shipped, and
-// within the hour a second pair of writes was lost the same way, because the
-// run that overwrote had not taken it. Replaying the exact bytes already stored
-// is not a conflict, and creating a cell that holds nothing needs no base.
+// was built from, is refused too. Opt-in was not enough: a run that omits the
+// field overwrites exactly as before, so the guard would have depended on every
+// author remembering it. Replaying the exact bytes already stored is not a
+// conflict, and creating a cell that holds nothing needs no base.
 import { createHash } from "node:crypto";
 
 export const documentHash = (document) => createHash("sha256").update(document).digest("hex");
