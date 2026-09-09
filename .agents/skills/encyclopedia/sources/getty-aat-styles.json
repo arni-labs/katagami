@@ -7,5 +7,45 @@
   "total": 6198,
   "totalDerivedFrom": "concepts under the Styles and Periods facet, 2026-09-08; not read end to end, coverage is cells carrying an AAT id",
   "lane": "visual",
-  "terms": []
+  "terms": [
+    {
+      "term": "Decadent movement",
+      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021439",
+      "decision": "live",
+      "batch": "B20",
+      "note": "Read and matched to the existing live cell, which this pass proposes adding it to. Not yet written onto that cell: revising a live cell is its own numbered approval.",
+      "cellId": "decadent-movement"
+    },
+    {
+      "term": "Neo-romanticism",
+      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021476",
+      "decision": "declined",
+      "batch": "B20",
+      "note": "Read and NOT cited. The AAT concept names the British style of the 1930s to 1950s specifically, which is narrower than the movement the cell Neo-romanticism holds."
+    },
+    {
+      "term": "Romanticism",
+      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300172863",
+      "decision": "live",
+      "batch": "B20",
+      "note": "Read and cited on the cell. The AAT scope note covers the European movement across the visual arts, literature and music, which is the same direction the cell holds.",
+      "cellId": "romanticism"
+    },
+    {
+      "term": "Symbolism",
+      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021514",
+      "decision": "live",
+      "batch": "B20",
+      "note": "Read and cited on the cell. The AAT scope note describes the international movement first applied to literature in the late nineteenth century, matching the cell.",
+      "cellId": "symbolism"
+    },
+    {
+      "term": "Unanimism",
+      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300122717",
+      "decision": "live",
+      "batch": "B20",
+      "note": "Read and cited on the cell. The AAT scope note dates the founding to 1908 and names Jules Roman; Wikipedia dates it to 1904 and spells the founder Jules Romains. The cell follows Wikipedia and the discrepancy is recorded here.",
+      "cellId": "unanimism"
+    }
+  ]
 }

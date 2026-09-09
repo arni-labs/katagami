@@ -7,5 +7,714 @@
   "total": 89,
   "totalDerivedFrom": "pages in the category, 2026-09-08",
   "lane": "writing",
-  "terms": []
+  "terms": [
+    {
+      "term": "Abbaye de Créteil",
+      "ref": "https://en.wikipedia.org/wiki/Abbaye_de_Cr%C3%A9teil",
+      "decision": "live",
+      "batch": "B19",
+      "note": "community: the 1906 Créteil phalanstery with its own press, where Unanimism was argued out; proposal B19 #1. Written and attested 2026-09-09.",
+      "cellId": "abbaye-de-creteil"
+    },
+    {
+      "term": "Acmeist poetry",
+      "ref": "https://en.wikipedia.org/wiki/Acmeist_poetry",
+      "decision": "live",
+      "batch": "B19",
+      "note": "school: Russian, c.1912, compact form and clear statement against Symbolism; named from the source as Acmeism, the movement rather than the poetry; proposal B19 #2. Written and attested 2026-09-09.",
+      "cellId": "acmeism"
+    },
+    {
+      "term": "Alternative literature",
+      "ref": "https://en.wikipedia.org/wiki/Alternative_literature",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: alt-lit, internet-culture writing of the late 2000s and 2010s, self-published and autofictional; proposal B19 #3. Written and attested 2026-09-09.",
+      "cellId": "alternative-literature"
+    },
+    {
+      "term": "Asiatic style",
+      "ref": "https://en.wikipedia.org/wiki/Asiatic_style",
+      "decision": "live",
+      "batch": "B19",
+      "note": "manner: the ornate Greek rhetoric of third-century-BC Asia Minor, largely known through its opponents; proposal B19 #4. Written and attested 2026-09-09.",
+      "cellId": "asiatic-style"
+    },
+    {
+      "term": "Atticism",
+      "ref": "https://en.wikipedia.org/wiki/Atticism",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: deliberate archaism holding classical Attic prose as the standard, which permanently split written from spoken Greek; proposal B19 #5. Written and attested 2026-09-09.",
+      "cellId": "atticism"
+    },
+    {
+      "term": "Birmingham Group (authors)",
+      "ref": "https://en.wikipedia.org/wiki/Birmingham_Group_(authors)",
+      "decision": "live",
+      "batch": "B19",
+      "note": "group: Midlands writers of the 1930s to 1950s writing industrial working-class life; the Wikipedia disambiguator is dropped from the name; proposal B19 #6. Written and attested 2026-09-09.",
+      "cellId": "birmingham-group"
+    },
+    {
+      "term": "Bizarro fiction",
+      "ref": "https://en.wikipedia.org/wiki/Bizarro_fiction",
+      "decision": "merge",
+      "batch": "B20",
+      "note": "Already the live cell Bizarro fiction, written from LCGFT in an earlier pass. Add this Wikipedia page to that cell's sources.",
+      "cellId": "bizarro-fiction"
+    },
+    {
+      "term": "British Poetry Revival",
+      "ref": "https://en.wikipedia.org/wiki/British_Poetry_Revival",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: open-form British poetry of the late 1960s and 1970s, run through small presses; proposal B19 #7. Written and attested 2026-09-09.",
+      "cellId": "british-poetry-revival"
+    },
+    {
+      "term": "Cartonera",
+      "ref": "https://en.wikipedia.org/wiki/Cartonera",
+      "decision": "merge",
+      "batch": "B20",
+      "note": "Already the live cell Cartonera books, written from LCGFT in batch B6 under the Library of Congress name. Add this Wikipedia page to that cell's sources.",
+      "cellId": "cartonera-books"
+    },
+    {
+      "term": "Catholic literary revival",
+      "ref": "https://en.wikipedia.org/wiki/Catholic_literary_revival",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: French and English writers, c.1860-1960, the supernatural treated as fact inside an ordinary plot; proposal B19 #8. Written and attested 2026-09-09.",
+      "cellId": "catholic-literary-revival"
+    },
+    {
+      "term": "Chicanafuturism",
+      "ref": "https://en.wikipedia.org/wiki/Chicanafuturism",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: named by Catherine S. Ramírez in 2004, Chicana writers and artists working with technology and the future; proposal B19 #9. Written and attested 2026-09-09.",
+      "cellId": "chicanafuturism"
+    },
+    {
+      "term": "Classical Prose Movement",
+      "ref": "https://en.wikipedia.org/wiki/Classical_Prose_Movement",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: Tang and Song campaign for plain prose against parallel prose, which set literary Chinese for a millennium; proposal B19 #10. Written and attested 2026-09-09.",
+      "cellId": "classical-prose-movement"
+    },
+    {
+      "term": "Committed literature",
+      "ref": "https://en.wikipedia.org/wiki/Committed_literature",
+      "decision": "live",
+      "batch": "B19",
+      "note": "position: littérature engagée, given its programme by Sartre in 1947 and argued against at once; proposal B19 #11. Written and attested 2026-09-09.",
+      "cellId": "committed-literature"
+    },
+    {
+      "term": "Condorism",
+      "ref": "https://en.wikipedia.org/wiki/Condorism",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: the third phase of Brazilian Romanticism, 1860s-1880s, Tobias Barreto and Castro Alves; proposal B19 #12. Written and attested 2026-09-09.",
+      "cellId": "condorism"
+    },
+    {
+      "term": "Coppet group",
+      "ref": "https://en.wikipedia.org/wiki/Coppet_group",
+      "decision": "live",
+      "batch": "B19",
+      "note": "circle: the community around Germaine de Staël at Coppet, 1804-1815, which carried German Romantic thought into French; proposal B19 #13. Written and attested 2026-09-09.",
+      "cellId": "coppet-group"
+    },
+    {
+      "term": "Costumbrismo",
+      "ref": "https://en.wikipedia.org/wiki/Costumbrismo",
+      "decision": "live",
+      "batch": "B19",
+      "note": "tendency: nineteenth-century Hispanic depiction of local custom in prose and paint, mapped to both writing and art; proposal B19 #14. Written and attested 2026-09-09.",
+      "cellId": "costumbrismo"
+    },
+    {
+      "term": "Créolie",
+      "ref": "https://en.wikipedia.org/wiki/Cr%C3%A9olie",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: Réunionese identity placed inside a French one, named 1970 and taken up in 1978; proposal B19 #15. Written and attested 2026-09-09.",
+      "cellId": "creolie"
+    },
+    {
+      "term": "Créolité",
+      "ref": "https://en.wikipedia.org/wiki/Cr%C3%A9olit%C3%A9",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: Chamoiseau, Bernabé and Confiant's 1989 Éloge, written as an answer to Négritude; proposal B19 #16. Written and attested 2026-09-09.",
+      "cellId": "creolite"
+    },
+    {
+      "term": "Decadent movement",
+      "ref": "https://en.wikipedia.org/wiki/Decadent_movement",
+      "decision": "merge",
+      "batch": "B20",
+      "note": "Already the live cell Decadent movement. Add this Wikipedia page and the Getty AAT concept 300021439, which was read and matches, to that cell's sources.",
+      "cellId": "decadent-movement"
+    },
+    {
+      "term": "Deep image",
+      "ref": "https://en.wikipedia.org/wiki/Deep_image",
+      "decision": "live",
+      "batch": "B19",
+      "note": "school: American 1960s poetry of resonant unexplained images from translated surrealism and Jungian archetype; proposal B19 #17. Written and attested 2026-09-09.",
+      "cellId": "deep-image"
+    },
+    {
+      "term": "Déprimisme",
+      "ref": "https://en.wikipedia.org/wiki/D%C3%A9primisme",
+      "decision": "deferred",
+      "batch": "B20",
+      "note": "A present-day French movement said to dwell on the failures of society, but the open reference describes a coinage rather than a dated body of work by identified hands. Revisit if a source shows the work."
+    },
+    {
+      "term": "Dolce Stil Novo",
+      "ref": "https://en.wikipedia.org/wiki/Dolce_Stil_Novo",
+      "decision": "live",
+      "batch": "B19",
+      "note": "school: late thirteenth-century Italian love poetry named by Dante in Purgatorio; proposal B19 #18. Written and attested 2026-09-09.",
+      "cellId": "dolce-stil-novo"
+    },
+    {
+      "term": "Félibrige",
+      "ref": "https://en.wikipedia.org/wiki/F%C3%A9librige",
+      "decision": "live",
+      "batch": "B19",
+      "note": "association: founded 1854 by Mistral to revive Occitan; the literary programme and the language politics are one; proposal B19 #19. Written and attested 2026-09-09.",
+      "cellId": "felibrige"
+    },
+    {
+      "term": "Forum Lingkar Pena",
+      "ref": "https://en.wikipedia.org/wiki/Forum_Lingkar_Pena",
+      "decision": "live",
+      "batch": "B19",
+      "note": "collective: Indonesian writers' network founded 1997, explicitly Islamic, treating writing as dakwah; proposal B19 #20. Written and attested 2026-09-09.",
+      "cellId": "forum-lingkar-pena"
+    },
+    {
+      "term": "Free library movement",
+      "ref": "https://en.wikipedia.org/wiki/Free_library_movement",
+      "decision": "declined",
+      "batch": "B20",
+      "note": "a campaign for free public libraries in Australia from 1935, a movement about access to books rather than a direction in writing"
+    },
+    {
+      "term": "Fyrtiotalism",
+      "ref": "https://en.wikipedia.org/wiki/Fyrtiotalism",
+      "decision": "live",
+      "batch": "B19",
+      "note": "generation: the Swedish 1940s, which brought modernism into Swedish literature under the war; proposal B19 #21. Written and attested 2026-09-09.",
+      "cellId": "fyrtiotalism"
+    },
+    {
+      "term": "Generación del 45",
+      "ref": "https://en.wikipedia.org/wiki/Generaci%C3%B3n_del_45",
+      "decision": "live",
+      "batch": "B19",
+      "note": "generation: Uruguayan writers and critics from c.1945, gathered around the weekly Marcha; proposal B19 #22. Written and attested 2026-09-09.",
+      "cellId": "generacion-del-45"
+    },
+    {
+      "term": "Generation Kindle",
+      "ref": "https://en.wikipedia.org/wiki/Generation_Kindle",
+      "decision": "declined",
+      "batch": "B20",
+      "note": "a publishing-platform label for authors who self-publish through Kindle Direct Publishing; no shared practice, period or body of work"
+    },
+    {
+      "term": "Generation of '38",
+      "ref": "https://en.wikipedia.org/wiki/Generation_of_'38",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: Chilean writers and artists of the 1930s portraying the country's social decline; proposal B19 #23. Written and attested 2026-09-09.",
+      "cellId": "generation-of-38"
+    },
+    {
+      "term": "Grupo Taller de Estocolmo",
+      "ref": "https://en.wikipedia.org/wiki/Grupo_Taller_de_Estocolmo",
+      "decision": "live",
+      "batch": "B19",
+      "note": "group: Chilean writers in Swedish exile, founded 1977, a documented centre of post-1973 diaspora writing; proposal B19 #24. Written and attested 2026-09-09.",
+      "cellId": "grupo-taller-de-estocolmo"
+    },
+    {
+      "term": "Halqa-e Arbab-e Zauq",
+      "ref": "https://en.wikipedia.org/wiki/Halqa-e_Arbab-e_Zauq",
+      "decision": "live",
+      "batch": "B19",
+      "note": "society: Lahore, founded 29 April 1939, craft and independence against the Progressive Writers' Movement; proposal B19 #25. Written and attested 2026-09-09.",
+      "cellId": "halqa-e-arbab-e-zauq"
+    },
+    {
+      "term": "Imaginism",
+      "ref": "https://en.wikipedia.org/wiki/Imaginism",
+      "decision": "live",
+      "batch": "B19",
+      "note": "association: Russian, 1918-1925, the poem as an image and nothing else, Yesenin its best-known member; proposal B19 #26. Written and attested 2026-09-09.",
+      "cellId": "imaginism"
+    },
+    {
+      "term": "Impressionism (literature)",
+      "ref": "https://en.wikipedia.org/wiki/Impressionism_(literature)",
+      "decision": "live",
+      "batch": "B19",
+      "note": "mode: narration held inside a character's impressions; the D36 twin of the live art cell Impressionism, parent left for an insertion batch; proposal B19 #27. Written and attested 2026-09-09.",
+      "cellId": "impressionism-literature"
+    },
+    {
+      "term": "Indianism (arts)",
+      "ref": "https://en.wikipedia.org/wiki/Indianism_(arts)",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: Brazilian Romanticism's Indigenous ideal in Gonçalves Dias and Alencar, read critically since; the Wikipedia disambiguator is dropped from the name; proposal B19 #28. Written and attested 2026-09-09.",
+      "cellId": "indianism"
+    },
+    {
+      "term": "Indigenous futurisms",
+      "ref": "https://en.wikipedia.org/wiki/Indigenous_futurisms",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: named by Grace Dillon, Indigenous perspectives on past, present and future through science fiction; the B17 cell Indigenous futurisms comics should be inserted under it; proposal B19 #29. Written and attested 2026-09-09.",
+      "cellId": "indigenous-futurisms"
+    },
+    {
+      "term": "Irrealism (the arts)",
+      "ref": "https://en.wikipedia.org/wiki/Irrealism_(the_arts)",
+      "decision": "live",
+      "batch": "B19",
+      "note": "term: unreality presented plainly, Kafka the reference point, published under the name since 1998 (flagged: the sources say the term has no settled use); proposal B19 #30. Written and attested 2026-09-09.",
+      "cellId": "irrealism"
+    },
+    {
+      "term": "Jadid",
+      "ref": "https://en.wikipedia.org/wiki/Jadid",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: Turco-Islamic reform in the Russian Empire, whose drama, fiction and journalism carried the programme (flagged: a political and religious movement whose literature is one instrument); proposal B19 #31. Written and attested 2026-09-09.",
+      "cellId": "jadid"
+    },
+    {
+      "term": "Jindyworobak Movement",
+      "ref": "https://en.wikipedia.org/wiki/Jindyworobak_Movement",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: Australian poetry of the 1930s and 1940s working with landscape and Aboriginal material, now read as appropriation as well as homage; proposal B19 #32. Written and attested 2026-09-09.",
+      "cellId": "jindyworobak-movement"
+    },
+    {
+      "term": "Jutland Movement",
+      "ref": "https://en.wikipedia.org/wiki/Jutland_Movement",
+      "decision": "live",
+      "batch": "B19",
+      "note": "group: Danish popular realists writing Jutland peasant life around 1900; proposal B19 #33. Written and attested 2026-09-09.",
+      "cellId": "jutland-movement"
+    },
+    {
+      "term": "Latin American Boom",
+      "ref": "https://en.wikipedia.org/wiki/Latin_American_Boom",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: the 1960s and 1970s international circulation of Cortázar, Fuentes, Vargas Llosa and García Márquez; proposal B19 #34. Written and attested 2026-09-09.",
+      "cellId": "latin-american-boom"
+    },
+    {
+      "term": "Latino Futurism",
+      "ref": "https://en.wikipedia.org/wiki/Latino_Futurism",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: Latino experience through speculative fiction and futurist aesthetics, sibling to Afrofuturism and Chicanafuturism; proposal B19 #35. Written and attested 2026-09-09.",
+      "cellId": "latino-futurism"
+    },
+    {
+      "term": "List of literary movements",
+      "ref": "https://en.wikipedia.org/wiki/List_of_literary_movements",
+      "decision": "declined",
+      "batch": "B20",
+      "note": "a Wikimedia list article, not a movement; it is the index the category is read alongside"
+    },
+    {
+      "term": "Literary costumbrismo",
+      "ref": "https://en.wikipedia.org/wiki/Literary_costumbrismo",
+      "decision": "merge",
+      "batch": "B20",
+      "note": "The literary branch of Costumbrismo, which this batch writes as one cell mapped to both writing and art. One cell per direction across media is the rule, so this page is added to that cell's sources rather than becoming a second cell.",
+      "cellId": "costumbrismo"
+    },
+    {
+      "term": "Mahjar",
+      "ref": "https://en.wikipedia.org/wiki/Mahjar",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: Arabic emigrant writing in the Americas from c.1900, the Pen League founded 1920, read as the late Nahda; proposal B19 #36. Written and attested 2026-09-09.",
+      "cellId": "mahjar"
+    },
+    {
+      "term": "Maximalism",
+      "ref": "https://en.wikipedia.org/wiki/Maximalism",
+      "decision": "live",
+      "batch": "B19",
+      "note": "tendency: excess and abundance against minimalism; in writing the encyclopedic novel (flagged: a critics' label rather than a movement with members); proposal B19 #37. Written and attested 2026-09-09.",
+      "cellId": "maximalism"
+    },
+    {
+      "term": "Mennonite literature",
+      "ref": "https://en.wikipedia.org/wiki/Mennonite_literature",
+      "decision": "live",
+      "batch": "B19",
+      "note": "field: writing by and about Mennonites, treated by its own scholarship as a movement (flagged against the rule that declines community labels); proposal B19 #38. Written and attested 2026-09-09.",
+      "cellId": "mennonite-literature"
+    },
+    {
+      "term": "Mundane science fiction",
+      "ref": "https://en.wikipedia.org/wiki/Mundane_science_fiction",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: the 2004 Mundane Manifesto, a stated restriction to Earth and present science as a discipline; proposal B19 #39. Written and attested 2026-09-09.",
+      "cellId": "mundane-science-fiction"
+    },
+    {
+      "term": "Mystical anarchism",
+      "ref": "https://en.wikipedia.org/wiki/Mystical_anarchism",
+      "decision": "live",
+      "batch": "B19",
+      "note": "tendency: inside Russian Symbolism, 1906-1908, created by Georgy Chulkov and attacked at once; proposal B19 #40. Written and attested 2026-09-09.",
+      "cellId": "mystical-anarchism"
+    },
+    {
+      "term": "Nadaism",
+      "ref": "https://en.wikipedia.org/wiki/Nadaism",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: Colombian counterculture, 1958-1964, founded by Gonzalo Arango, manifesto and provocation as much as poems; proposal B19 #41. Written and attested 2026-09-09.",
+      "cellId": "nadaism"
+    },
+    {
+      "term": "Natural school",
+      "ref": "https://en.wikipedia.org/wiki/Natural_school",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: Russian 1840s-1850s under Gogol, named by Belinsky, now read as the first stage of Russian social realism; proposal B19 #42. Written and attested 2026-09-09.",
+      "cellId": "natural-school"
+    },
+    {
+      "term": "Naturalism (literature)",
+      "ref": "https://en.wikipedia.org/wiki/Naturalism_(literature)",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: determinism, detachment and Zola's experimental novel; one of two D36 form cells, parent left for an insertion batch; proposal B19 #43. Written and attested 2026-09-09.",
+      "cellId": "naturalism-literature"
+    },
+    {
+      "term": "Naturalism (theatre)",
+      "ref": "https://en.wikipedia.org/wiki/Naturalism_(theatre)",
+      "decision": "live",
+      "batch": "B19",
+      "note": "movement: the illusion of real life on stage, Antoine and Stanislavski building the practice; the other D36 form cell; proposal B19 #44. Written and attested 2026-09-09.",
+      "cellId": "naturalism-theatre"
+    },
+    {
+      "term": "Négritude",
+      "ref": "https://en.wikipedia.org/wiki/N%C3%A9gritude",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: Césaire, Senghor and Damas in 1930s Paris, Black consciousness against assimilation; proposal B20 #1. Written and attested 2026-09-09.",
+      "cellId": "negritude"
+    },
+    {
+      "term": "Neo-Decadence",
+      "ref": "https://en.wikipedia.org/wiki/Neo-Decadence",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: contemporary, self-described, taking up Decadent aesthetics against present literary norms; proposal B20 #2. Written and attested 2026-09-09.",
+      "cellId": "neo-decadence"
+    },
+    {
+      "term": "Neo-romanticism",
+      "ref": "https://en.wikipedia.org/wiki/Neo-romanticism",
+      "decision": "live",
+      "batch": "B20",
+      "note": "family: recurring returns to Romantic material across the arts (the Getty AAT concept 300021476 was read and NOT cited, because it names the narrower British 1930s-50s style); proposal B20 #3. Written and attested 2026-09-09.",
+      "cellId": "neo-romanticism"
+    },
+    {
+      "term": "New Wave (science fiction)",
+      "ref": "https://en.wikipedia.org/wiki/New_Wave_(science_fiction)",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: 1960s and 1970s literary experiment in science fiction, centred on Moorcock's New Worlds; proposal B20 #4. Written and attested 2026-09-09.",
+      "cellId": "new-wave-science-fiction"
+    },
+    {
+      "term": "Norwegian new realism",
+      "ref": "https://en.wikipedia.org/wiki/Norwegian_new_realism",
+      "decision": "live",
+      "batch": "B20",
+      "note": "tendency: the dominant Norwegian manner of the early twentieth century, Undset and the later Hamsun; proposal B20 #5. Written and attested 2026-09-09.",
+      "cellId": "norwegian-new-realism"
+    },
+    {
+      "term": "Novísimos",
+      "ref": "https://en.wikipedia.org/wiki/Nov%C3%ADsimos",
+      "decision": "live",
+      "batch": "B20",
+      "note": "group: the poets of Castellet's 1970 anthology, allusive and media-saturated against social poetry; proposal B20 #6. Written and attested 2026-09-09.",
+      "cellId": "novisimos"
+    },
+    {
+      "term": "Offbeat generation",
+      "ref": "https://en.wikipedia.org/wiki/Offbeat_generation",
+      "decision": "live",
+      "batch": "B20",
+      "note": "association: British writers named in 2006, defined by working outside marketing-led publishing; proposal B20 #7. Written and attested 2026-09-09.",
+      "cellId": "offbeat-generation"
+    },
+    {
+      "term": "Onirism",
+      "ref": "https://en.wikipedia.org/wiki/Onirism",
+      "decision": "live",
+      "batch": "B20",
+      "note": "school: Romanian 1960s dream-structured writing using automatic technique, suppressed by the state; proposal B20 #8. Written and attested 2026-09-09.",
+      "cellId": "onirism"
+    },
+    {
+      "term": "Parnassianism",
+      "ref": "https://en.wikipedia.org/wiki/Parnassianism",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: French, 1860s-1890s, exact form and impersonality after Gautier; proposal B20 #10. Written and attested 2026-09-09.",
+      "cellId": "parnassianism"
+    },
+    {
+      "term": "Pink Decade",
+      "ref": "https://en.wikipedia.org/wiki/Pink_Decade",
+      "decision": "live",
+      "batch": "B20",
+      "note": "period: Malayalam poets of the 1970s writing from scientific socialism; proposal B20 #11. Written and attested 2026-09-09.",
+      "cellId": "pink-decade"
+    },
+    {
+      "term": "Pyreneanism",
+      "ref": "https://en.wikipedia.org/wiki/Pyreneanism",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: named by Beraldi in 1898, the Pyreneist who climbs, writes and feels (flagged: a sporting culture with a literature attached); proposal B20 #12. Written and attested 2026-09-09.",
+      "cellId": "pyreneanism"
+    },
+    {
+      "term": "Quantum aesthetics",
+      "ref": "https://en.wikipedia.org/wiki/Quantum_aesthetics",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: launched by Gregorio Morales in 1998, mystery and difference against realist description (flagged: thin, and its use of physics is contested); proposal B20 #13. Written and attested 2026-09-09.",
+      "cellId": "quantum-aesthetics"
+    },
+    {
+      "term": "Recluse literature",
+      "ref": "https://en.wikipedia.org/wiki/Recluse_literature",
+      "decision": "live",
+      "batch": "B20",
+      "note": "tradition: late Heian and Kamakura writing from religious withdrawal, Hōjōki and Tsurezuregusa; proposal B20 #14. Written and attested 2026-09-09.",
+      "cellId": "recluse-literature"
+    },
+    {
+      "term": "Rhyming Chroniclers",
+      "ref": "https://en.wikipedia.org/wiki/Rhyming_Chroniclers",
+      "decision": "live",
+      "batch": "B20",
+      "note": "body: English rhymed history from Layamon's Brut onward, record and legend held together; proposal B20 #15. Written and attested 2026-09-09.",
+      "cellId": "rhyming-chroniclers"
+    },
+    {
+      "term": "Romantic literature",
+      "ref": "https://en.wikipedia.org/wiki/Romantic_literature",
+      "decision": "merge",
+      "batch": "B20",
+      "note": "The literary branch of Romanticism, which this batch writes as one cell mapped to both writing and art. Added to that cell's sources.",
+      "cellId": "romanticism"
+    },
+    {
+      "term": "Romanticism",
+      "ref": "https://en.wikipedia.org/wiki/Romanticism",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: the European turn to subjectivity, imagination and nature from the late eighteenth century, mapped to writing and art, with its Getty AAT concept cited; proposal B20 #16. Written and attested 2026-09-09.",
+      "cellId": "romanticism"
+    },
+    {
+      "term": "Sardinian Literary Spring",
+      "ref": "https://en.wikipedia.org/wiki/Sardinian_Literary_Spring",
+      "decision": "live",
+      "batch": "B20",
+      "note": "generation: Sardinian writing from about the 1980s, in Italian and Sardinian; proposal B20 #17. Written and attested 2026-09-09.",
+      "cellId": "sardinian-literary-spring"
+    },
+    {
+      "term": "Sastra wangi",
+      "ref": "https://en.wikipedia.org/wiki/Sastra_wangi",
+      "decision": "live",
+      "batch": "B20",
+      "note": "body: Indonesian women's writing after 1998, opened by Ayu Utami's Saman; the label was applied from outside and the writers reject it; proposal B20 #18. Written and attested 2026-09-09.",
+      "cellId": "sastra-wangi"
+    },
+    {
+      "term": "Second Sophistic",
+      "ref": "https://en.wikipedia.org/wiki/Second_Sophistic",
+      "decision": "live",
+      "batch": "B20",
+      "note": "culture: Greek declamatory prose from Nero to c.230, catalogued by Philostratus; proposal B20 #19. Written and attested 2026-09-09.",
+      "cellId": "second-sophistic"
+    },
+    {
+      "term": "Sentimentalism (literature)",
+      "ref": "https://en.wikipedia.org/wiki/Sentimentalism_(literature)",
+      "decision": "live",
+      "batch": "B20",
+      "note": "mode: feeling as the ground of action and judgment, the wider mode the cell Sentimental novels holds one form of; proposal B20 #20. Written and attested 2026-09-09.",
+      "cellId": "sentimentalism-literature"
+    },
+    {
+      "term": "Serapion Brothers",
+      "ref": "https://en.wikipedia.org/wiki/Serapion_Brothers",
+      "decision": "live",
+      "batch": "B20",
+      "note": "group: Petrograd 1921, literature owing nothing to a party programme, which made them a target; proposal B20 #21. Written and attested 2026-09-09.",
+      "cellId": "serapion-brothers"
+    },
+    {
+      "term": "Shinkankakuha",
+      "ref": "https://en.wikipedia.org/wiki/Shinkankakuha",
+      "decision": "live",
+      "batch": "B20",
+      "note": "group: prewar Japanese New Perception school under Yokomitsu and Kawabata; proposal B20 #22. Written and attested 2026-09-09.",
+      "cellId": "shinkankakuha"
+    },
+    {
+      "term": "Signalism",
+      "ref": "https://en.wikipedia.org/wiki/Signalism",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: Yugoslav neo-avant-garde from the mid-1960s, the sign as material across media; proposal B20 #23. Written and attested 2026-09-09.",
+      "cellId": "signalism"
+    },
+    {
+      "term": "Stone and Sky (movement)",
+      "ref": "https://en.wikipedia.org/wiki/Stone_and_Sky_(movement)",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: Colombian piedracielistas of the 1930s and 1940s renewing poetry by image; the Wikipedia disambiguator is dropped from the name; proposal B20 #24. Written and attested 2026-09-09.",
+      "cellId": "stone-and-sky"
+    },
+    {
+      "term": "Symbolism (movement)",
+      "ref": "https://en.wikipedia.org/wiki/Symbolism_(movement)",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: French and Belgian, from Moréas's 1886 manifesto, truth reached by suggestion; mapped to writing and art with its Getty AAT concept cited; the Wikipedia disambiguator is dropped from the name; proposal B20 #25. Written and attested 2026-09-09.",
+      "cellId": "symbolism"
+    },
+    {
+      "term": "The Papelipolas",
+      "ref": "https://en.wikipedia.org/wiki/The_Papelipolas",
+      "decision": "live",
+      "batch": "B20",
+      "note": "group: Huila, Colombia, formed 1958, poetry above all but working across several arts; proposal B20 #9. Written and attested 2026-09-09.",
+      "cellId": "the-papelipolas"
+    },
+    {
+      "term": "Thơ mới",
+      "ref": "https://en.wikipedia.org/wiki/Th%C6%A1_m%E1%BB%9Bi",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: 1930s Vietnamese New Poetry, free verse in Quốc ngữ replacing Hán-Nôm forms; proposal B20 #26. Written and attested 2026-09-09.",
+      "cellId": "tho-moi"
+    },
+    {
+      "term": "Tzantzismo",
+      "ref": "https://en.wikipedia.org/wiki/Tzantzismo",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: Ecuadorian, founded Quito 1962, aggressive attack on a gentrified national literature; proposal B20 #27. Written and attested 2026-09-09.",
+      "cellId": "tzantzismo"
+    },
+    {
+      "term": "Ultra-Romanticism",
+      "ref": "https://en.wikipedia.org/wiki/Ultra-Romanticism",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: Portuguese and Brazilian Romantic excess in the later nineteenth century; proposal B20 #28. Written and attested 2026-09-09.",
+      "cellId": "ultra-romanticism"
+    },
+    {
+      "term": "Unanimism",
+      "ref": "https://en.wikipedia.org/wiki/Unanimism",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: Jules Romains from 1904, the collective psychic life of a group as a subject; Getty AAT concept cited, and it dates the founding to 1908 where Wikipedia says 1904; proposal B20 #29. Written and attested 2026-09-09.",
+      "cellId": "unanimism"
+    },
+    {
+      "term": "Verismo (literature)",
+      "ref": "https://en.wikipedia.org/wiki/Verismo_(literature)",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: Italian, c.1875-1900, the Sicilian poor in their own idiom with the narrator withdrawn, rejecting French naturalism's scientific claim; proposal B20 #30. Written and attested 2026-09-09.",
+      "cellId": "verismo-literature"
+    },
+    {
+      "term": "Wellington Group",
+      "ref": "https://en.wikipedia.org/wiki/Wellington_Group",
+      "decision": "live",
+      "batch": "B20",
+      "note": "group: New Zealand poets of the 1950s and 1960s writing urban and personal against nationalist landscape verse; proposal B20 #31. Written and attested 2026-09-09.",
+      "cellId": "wellington-group"
+    },
+    {
+      "term": "Wiener Gruppe",
+      "ref": "https://en.wikipedia.org/wiki/Wiener_Gruppe",
+      "decision": "live",
+      "batch": "B20",
+      "note": "constellation: Vienna from c.1953 around H. C. Artmann, dialect, montage and sound, feeding concrete poetry; proposal B20 #32. Written and attested 2026-09-09.",
+      "cellId": "wiener-gruppe"
+    },
+    {
+      "term": "Xungen movement",
+      "ref": "https://en.wikipedia.org/wiki/Xungen_movement",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: Chinese root-seeking of the mid to late 1980s, answering Scar literature; proposal B20 #33. Written and attested 2026-09-09.",
+      "cellId": "xungen-movement"
+    },
+    {
+      "term": "Yiddishist movement",
+      "ref": "https://en.wikipedia.org/wiki/Yiddishist_movement",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: Yiddish as a national language with its own literature, from the late nineteenth century; proposal B20 #34. Written and attested 2026-09-09.",
+      "cellId": "yiddishist-movement"
+    },
+    {
+      "term": "Young Vienna",
+      "ref": "https://en.wikipedia.org/wiki/Young_Vienna",
+      "decision": "live",
+      "batch": "B20",
+      "note": "circle: the Café Griensteidl writers of 1890s Vienna, a literature of nerves and interiority; proposal B20 #35. Written and attested 2026-09-09.",
+      "cellId": "young-vienna"
+    },
+    {
+      "term": "Zenitism",
+      "ref": "https://en.wikipedia.org/wiki/Zenitism",
+      "decision": "live",
+      "batch": "B20",
+      "note": "movement: Yugoslav avant-garde 1921-1926 under Ljubomir Micić, across writing and the visual arts; proposal B20 #36. Written and attested 2026-09-09.",
+      "cellId": "zenitism"
+    }
+  ]
 }
