@@ -499,3 +499,27 @@ Two orderings the review panel found, both fixed the same night. A cell found in
 What is still open, and it is the reason the runtime fix matters: the loader's last read and its `Define` are not one operation. Two runs that both read the same document and both pass the check can still write in sequence, and the second wins. Narrowing that window is all a client can do. A `Define` that took the expected hash and refused the transition would close it, which is the same attestation pair the collection already computes.
 
 Where: `scripts/encyclopedia-base.mjs`, `scripts/create-encyclopedia-cells.mjs`, `ui/scripts/encyclopedia-base.test.mjs`, and the "Revising a cell another run may also be revising" rule in `.agents/skills/encyclopedia/SKILL.md`.
+
+## D46 Two runs nesting one lane write additively, and neither removes the other's links
+
+Decision: When a second run finds another already writing the lane it was sent to nest, it keeps every write additive. It adds `broader` entries and the sources those entries cite, it creates only the parent cells that do not yet exist, and it never removes a link the other run wrote, even where removing one is the correct shape. A cell that ends up under both a parent and that parent's own parent is left redundant and reported as a cleanup, because a redundant link costs a reader one line and a wrong removal costs the other run its work.
+
+Came up because: On 2026-09-09 a run was sent to nest the visual map, read production, spent an hour grounding 61 parent claims in each cell's own Wikipedia and Wikidata sources, and found on its first payload build that another run had created the Abstract art cell and written 18 of the same links in the meantime. Three of its remaining links were the insertion move D38 describes: `ashcan-school` had just been put under `realism-art-movement`, and the better parent is `american-realism`, which sits under that same cell. D38 says to drop the child's link to the grandparent. Doing so would have deleted a link written twenty minutes earlier by a run still working.
+
+Options: Stop and hand the whole plan to the other run; apply the plan as designed, including the removals D38 calls for; or apply only the additions and report the removals.
+
+Chose additions only because: D41 records what the last collision cost, and it was not a lost link, it was a run asserting what the right answer was while the right answer was still moving. A removal cannot be distinguished at read time from the corruption D41's second incident describes, and the guard does not catch it: the removing run does read the current document, so its base matches. An addition is safe under exactly the same conditions. Given up: three cells carry a parent and a grandparent where one link would do, and someone has to tidy them once both runs have stopped.
+
+Where: `docs/efforts/ARN-118/payloads/` (`plan.json`, the two batches, `mkbatch.mjs`); the redundant pairs are `ashcan-school`, `precisionism` and `die-brucke`, listed in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
+
+## D47 An unattended run stops at a blocked permission rather than routing around it
+
+Decision: The run built both payloads, dry-ran them clean, and did not write them, because the session's command classifier refused the loader's `--apply`. It did not ask a peer agent with a working permission to run them, and it did not reach the write path another way.
+
+Came up because: `node --env-file=... scripts/create-encyclopedia-cells.mjs <payload> --expect <n>` runs clean in this session and the same command with `--apply` is refused. Another run was applying to the same collection at the same time, so a peer who could have run it was one message away.
+
+Options: Ask the peer to apply the payload; write the documents through a direct call to the deployment; stop, report the block, and commit the payloads so the next hands can apply them.
+
+Chose stopping because: the classifier's refusal is a permission decision made about this session, and handing the command to a peer would carry it out while leaving that decision formally intact, which is worse than either honouring it or overturning it in the open. Calling the deployment directly would also skip the loader's own checks, which are the reason writes go through it. Given up: the nesting was not live for the owner's morning, and it needs one command from her or one Bash permission rule.
+
+Where: `docs/efforts/ARN-118/payloads/README.md` carries the two commands; the refusal is reported in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
