@@ -1,0 +1,2113 @@
+{
+ "batch": "ART-2",
+ "approval": "Overnight run authorised by the owner on 2026-09-09 (OVERNIGHT.md, decision D40): nest the visual map on parents read from each cell own Wikipedia and Wikidata sources. Draft only; every mint numbered in the morning report.",
+ "allowedOperation": "Define private Draft EncyclopediaCell documents for batch ART-2 (visual-map nesting), contract version 3: broader links, the sources those links cite, and the new parent cells the links land on; no change of status and no studies.",
+ "cells": [
+  {
+   "number": 1,
+   "name": "Art Informel",
+   "id": "art-informel",
+   "new": false,
+   "version": 3,
+   "baseHash": "76a34c2c88ae6d8c32f5ed85b2664bb2a671ab52e2f3294cb447870d75a69787",
+   "description": "European gestural abstraction of the 1940s and 1950s, named by the critic Michel Tapié in 1950 for painting made without a preconceived form. It runs parallel to American Abstract Expressionism and gathers tachisme, matter painting and lyrical abstraction under one label, with Dubuffet, Fautrier and Wols among its painters. Its argument is that the mark should be found in the making.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-informalism",
+      "wd-q1054254",
+      "aat-300022176"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-informalism",
+     "title": "Informalism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Informalism"
+    },
+    {
+     "id": "wd-q1054254",
+     "title": "Informalism (Q1054254) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q1054254"
+    },
+    {
+     "id": "aat-300022176",
+     "title": "Art Informel — Getty Art & Architecture Thesaurus 300022176",
+     "url": "https://vocab.getty.edu/aat/300022176"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "abstract-art",
+     "explanation": "Michel Tapié's label covers the abstract and gestural tendencies that developed in France and the rest of Europe during the war.",
+     "sourceIds": [
+      "wp-informalism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 2,
+   "name": "Dansaekhwa",
+   "id": "dansaekhwa",
+   "new": false,
+   "version": 3,
+   "baseHash": "08770be0eb3ec15825c595691148cd5921bdc50236929eff42945cef7cbfe6a9",
+   "description": "A retroactive grouping of Korean painting shown from the mid-1970s, usually translated monochrome painting, in which the canvas is worked by soaking, pushing, tearing or repeated marking. Park Seo-bo, Ha Chong-hyun and Yun Hyong-keun are its usual names. The term was applied later and the artists it gathers were not a movement at the time.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-dansaekhwa",
+      "wd-q24988307"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-dansaekhwa",
+     "title": "Dansaekhwa — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Dansaekhwa"
+    },
+    {
+     "id": "wd-q24988307",
+     "title": "Dansaekhwa (Q24988307) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q24988307"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "abstract-art",
+     "explanation": "Korean criticism places the grouping inside its argument over how to write a history of abstract art there.",
+     "sourceIds": [
+      "wp-dansaekhwa"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 3,
+   "name": "Synchromism",
+   "id": "synchromism",
+   "new": false,
+   "version": 3,
+   "baseHash": "913f692f9fb9496fb9efd664f99b7e52506adfc3ddc53df35b7ec3166143ad2c",
+   "description": "An American movement founded in 1912 by Stanton Macdonald-Wright and Morgan Russell, which built abstract paintings from colour scales analogised to music. Their synchromies were among the first abstract paintings by Americans, and the movement was short-lived and small. Its colour theory is worked out explicitly and published as such.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-synchromism",
+      "wd-q2615798"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-synchromism",
+     "title": "Synchromism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Synchromism"
+    },
+    {
+     "id": "wd-q2615798",
+     "title": "Synchromism (Q2615798) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q2615798"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "abstract-art",
+     "explanation": "The synchromies were among the first abstract paintings made by American artists.",
+     "sourceIds": [
+      "wp-synchromism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 4,
+   "name": "Post-Painterly Abstraction",
+   "id": "post-painterly-abstraction",
+   "new": false,
+   "version": 3,
+   "baseHash": "00b78a4166902440424ee268ee48d117bc1d5569845cda3179dece6c40cebb45",
+   "description": "A term Clement Greenberg used for his 1964 Los Angeles exhibition, naming abstraction that dropped Abstract Expressionism's loaded gesture for flat, clear colour and open composition. Colour field painting and hard-edge painting sit inside it, with Louis, Noland and Kelly. The name is a critic's construction and carries his argument with it.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-post-painterly-abstraction",
+      "wd-q1962478"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-post-painterly-abstraction",
+     "title": "Post-painterly abstraction — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Post-painterly_abstraction"
+    },
+    {
+     "id": "wd-q1962478",
+     "title": "Post-painterly Abstraction (Q1962478) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q1962478"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "abstract-art",
+     "explanation": "Greenberg's term names abstract painting that had dropped the loaded gesture for flat colour, so it names a strand inside abstraction.",
+     "sourceIds": [
+      "wp-post-painterly-abstraction"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 5,
+   "name": "Concrete Art",
+   "id": "concrete-art",
+   "new": false,
+   "version": 3,
+   "baseHash": "1dbe50c38324ab77bd0f0315eea9d027d896ab98ab1442b0e71bc172947e16a3",
+   "description": "Abstraction that refers to nothing outside itself, formulated by Theo van Doesburg in 1930 and taken up after his death by Max Bill. Its forms are geometric, planned in advance and conceived before execution, which is what the word concrete claims: the work is a real object in its own right. It carried into Latin America and produced its own movements there.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-concrete-art",
+      "wd-q10822316",
+      "aat-300021436"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-concrete-art",
+     "title": "Concrete art — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Concrete_art"
+    },
+    {
+     "id": "wd-q10822316",
+     "title": "concrete art (Q10822316) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q10822316"
+    },
+    {
+     "id": "aat-300021436",
+     "title": "Concrete Art — Getty Art & Architecture Thesaurus 300021436",
+     "url": "https://vocab.getty.edu/aat/300021436"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "geometric-abstraction",
+     "explanation": "The movement rests on a strong emphasis on geometrical abstraction, in van Doesburg's formulation and in Max Bill's.",
+     "sourceIds": [
+      "wp-concrete-art"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 6,
+   "name": "Suprematism",
+   "id": "suprematism",
+   "new": false,
+   "version": 3,
+   "baseHash": "ef9ddf91585c5cc4b07eef0e9ac6002f6e18d5a3e6eee7326c1aeb377f1fcb9b",
+   "description": "Kazimir Malevich's abstraction, declared in 1915, built from a few geometric shapes in a limited palette and grounded in what he called the supremacy of pure artistic feeling. The Black Square is its founding statement, hung in the corner where an icon would go. It is an argument that painting can be about nothing outside itself and still be about everything.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-suprematism",
+      "wd-q191970",
+      "aat-300021405"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-suprematism",
+     "title": "Suprematism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Suprematism"
+    },
+    {
+     "id": "wd-q191970",
+     "title": "Suprematism (Q191970) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q191970"
+    },
+    {
+     "id": "aat-300021405",
+     "title": "Suprematism — Getty Art & Architecture Thesaurus 300021405",
+     "url": "https://vocab.getty.edu/aat/300021405"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "geometric-abstraction",
+     "explanation": "Malevich built it from circles, squares and rectangles in a limited palette, which is the geometric case of abstraction.",
+     "sourceIds": [
+      "wp-suprematism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 7,
+   "name": "De Stijl",
+   "id": "de-stijl",
+   "new": false,
+   "version": 3,
+   "baseHash": "6451ec3dd3e1727cb80e8567bb4713c9c696ce5f11dba558ffa0c2e86c0d469a",
+   "description": "A Dutch movement founded in 1917 around the magazine of the same name, which reduced painting to horizontals, verticals, the three primaries and black, white and grey. Mondrian and Van Doesburg argued it as a universal language of balance, and the programme ran straight into furniture, typography and architecture. Rietveld's chair and the Schröder House are the argument built.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-de-stijl",
+      "wd-q207445",
+      "aat-300021259"
+     ]
+    },
+    {
+     "map": "design",
+     "explanation": "The movement worked in design as well as in the visual arts. One cell covers both, and this is its second map membership.",
+     "sourceIds": [
+      "wp-de-stijl",
+      "wd-q207445",
+      "aat-300021259"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-de-stijl",
+     "title": "De Stijl — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/De_Stijl"
+    },
+    {
+     "id": "wd-q207445",
+     "title": "De Stijl (Q207445) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q207445"
+    },
+    {
+     "id": "aat-300021259",
+     "title": "De Stijl — Getty Art & Architecture Thesaurus 300021259",
+     "url": "https://vocab.getty.edu/aat/300021259"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "geometric-abstraction",
+     "explanation": "The group used only straight horizontal and vertical lines and rectangular forms, which is the route to abstraction its own account describes.",
+     "sourceIds": [
+      "wp-de-stijl"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 8,
+   "name": "Op Art",
+   "id": "op-art",
+   "new": false,
+   "version": 3,
+   "baseHash": "7c9b6131338b0ee6573c799a1848cff36b4b619f853ec969caf24376019b23fc",
+   "description": "Abstraction built to act on the eye, using precise geometric pattern, high contrast and colour interaction to produce flicker, movement and after-images. Bridget Riley and Victor Vasarely are its central figures, and the term dates from 1964 and the Responsive Eye exhibition that followed. The picture is completed in the viewer's perception, which is the claim the work makes.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-op-art",
+      "wd-q182331",
+      "aat-300022195"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-op-art",
+     "title": "Op art — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Op_art"
+    },
+    {
+     "id": "wd-q182331",
+     "title": "op art (Q182331) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q182331"
+    },
+    {
+     "id": "aat-300022195",
+     "title": "Op Art — Getty Art & Architecture Thesaurus 300022195",
+     "url": "https://vocab.getty.edu/aat/300022195"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "geometric-abstraction",
+     "explanation": "Its own article defines the term as a form of abstract art working through manipulated geometrical patterns.",
+     "sourceIds": [
+      "wp-op-art"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 9,
+   "name": "Neo-Concrete Movement",
+   "id": "neo-concrete-movement",
+   "new": false,
+   "version": 3,
+   "baseHash": "bdb2133dca5795bd35f6fc6bc144ce6e4f5b7258c3ea0c753bb9170f1f2b7643",
+   "description": "A Brazilian movement of 1959 to 1961 that split from Concrete art's rationalism, arguing for the work as something a body encounters. It came out of Rio's Grupo Frente and Ferreira Gullar wrote its manifesto; Lygia Clark and Hélio Oiticica made its key works. The viewer's participation becomes the material.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-neo-concrete-movement",
+      "wd-q10336205"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-neo-concrete-movement",
+     "title": "Neo-Concrete Movement — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Neo-Concrete_Movement"
+    },
+    {
+     "id": "wd-q10336205",
+     "title": "neo-concrete movement (Q10336205) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q10336205"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "concrete-art",
+     "explanation": "The Brazilian group split off from the Concrete art movement, rejecting its rationalism while keeping its vocabulary.",
+     "sourceIds": [
+      "wp-neo-concrete-movement"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 10,
+   "name": "Color field painting",
+   "id": "color-field-painting",
+   "new": false,
+   "version": 3,
+   "baseHash": "2cae5c2cad565042d4683877ed1103ad801a4657c83add8c8aaa8f97ebe52458",
+   "description": "Painting in large uninterrupted areas of colour, with no figure placed on the field. Stain and soak techniques put the colour into the weave so no brushwork shows. Scale is part of the work, because the field is meant to fill the viewer's vision.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A movement in painting with a named body of work.",
+     "sourceIds": [
+      "wp-color-field",
+      "aat-color-field"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-color-field",
+     "title": "Color field — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Color_field"
+    },
+    {
+     "id": "aat-color-field",
+     "title": "Color-field — Getty AAT 300022120",
+     "url": "https://vocab.getty.edu/aat/300022120"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "abstract-expressionism",
+     "explanation": "Closely related to Abstract Expressionism, with many of the first proponents among the pioneering Abstract Expressionists.",
+     "sourceIds": [
+      "wp-color-field"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019eff57-a160-7680-95ce-721556634e59",
+     "explanation": "The record's credits name \"Color Field painting\" (UnderReview).",
+     "sourceIds": [
+      "wp-color-field"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019eff5a-005a-7390-bd77-de8c837ad3d4",
+     "explanation": "The record's credits name \"Color Field painting\" (UnderReview).",
+     "sourceIds": [
+      "wp-color-field"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019eff62-bd5e-70e3-a2f3-6feebe18bef9",
+     "explanation": "The record's credits name \"Color Field painting\" (Archived).",
+     "sourceIds": [
+      "wp-color-field"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a03f5a-8297-7803-b6b6-bf782424c79e",
+     "explanation": "The record's credits name \"Colour-field painting\" (UnderReview).",
+     "sourceIds": [
+      "wp-color-field"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019eff66-00e9-7f33-be2a-34bbd6e64863",
+     "explanation": "The record's credits name \"Color Field painting\" (UnderReview).",
+     "sourceIds": [
+      "wp-color-field"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a03f5a-8427-7920-b500-fbfadccd1d2c",
+     "explanation": "The record's credits name \"Colour-field painting\" (Published).",
+     "sourceIds": [
+      "wp-color-field"
+     ]
+    },
+    {
+     "entitySet": "PaletteSystems",
+     "entityId": "en-019eff5b-a8dd-75f2-9a88-fa2fa1c5b28e",
+     "explanation": "The record's credits name \"Color Field painting\" (UnderReview).",
+     "sourceIds": [
+      "wp-color-field"
+     ]
+    },
+    {
+     "entitySet": "PaletteSystems",
+     "entityId": "en-019efd57-36db-7181-9bc4-f7cc25e181af",
+     "explanation": "The record's credits name \"Color Field Painting\" (UnderReview).",
+     "sourceIds": [
+      "wp-color-field"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 11,
+   "name": "Washington Color School",
+   "id": "washington-color-school",
+   "new": false,
+   "version": 3,
+   "baseHash": "071eb5596fac99a4cbd56e36f99dbebe68965ddfd72cfe1681f408cfd1ab43d1",
+   "description": "A Washington DC movement from the 1950s to the 1970s in which painters stained unprimed canvas with thinned acrylic so that colour and support become one surface. Morris Louis and Kenneth Noland founded it, with Gene Davis and Sam Gilliam among the others. It is the clearest local case of post-painterly abstraction.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-washington-color-school",
+      "wd-q7971736"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-washington-color-school",
+     "title": "Washington Color School — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Washington_Color_School"
+    },
+    {
+     "id": "wd-q7971736",
+     "title": "Washington Color School (Q7971736) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q7971736"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "abstract-expressionism",
+     "explanation": "The movement was built of Abstract Expressionist artists, with Morris Louis and Kenneth Noland at its head.",
+     "sourceIds": [
+      "wp-washington-color-school"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 12,
+   "name": "Bay Area Figurative Movement",
+   "id": "bay-area-figurative-movement",
+   "new": false,
+   "version": 3,
+   "baseHash": "7b76a7c8ebd820f886fe88d3c01b02dd9ebb0974e1bccb4f17def183260998f5",
+   "description": "A San Francisco Bay Area movement of the 1950s and 1960s in which painters trained in Abstract Expressionism turned back to the figure while keeping the loaded brush. David Park's break is its founding moment, and Diebenkorn, Bischoff and Joan Brown followed. The paint handling stays abstract while the subject returns.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-bay-area-figurative-movement",
+      "wd-q3577822"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-bay-area-figurative-movement",
+     "title": "Bay Area Figurative Movement — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Bay_Area_Figurative_Movement"
+    },
+    {
+     "id": "wd-q3577822",
+     "title": "Bay Area Figurative Movement (Q3577822) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q3577822"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "abstract-expressionism",
+     "explanation": "The painters trained in Abstract Expressionism and kept its handling when they returned to the figure, which is why the result is called a hybrid.",
+     "sourceIds": [
+      "wp-bay-area-figurative-movement"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 13,
+   "name": "Neo-Impressionism",
+   "id": "neo-impressionism",
+   "new": false,
+   "version": 3,
+   "baseHash": "c785795c164959c1f7b99d7decb704961c01a5a6f800c2c91a9673c97e934267",
+   "description": "The movement Seurat and Signac began in 1886, which put Impressionist colour on a stated method. Paint goes down as separate touches of unmixed pigment chosen by the law of simultaneous contrast, so the mixing happens in the eye; divisionism names the colour theory and pointillism the dotted handling.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A movement in painting with a named body of work and a stated theory.",
+     "sourceIds": [
+      "wp-neo-impressionism",
+      "aat-neo-impressionism"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-neo-impressionism",
+     "title": "Neo-Impressionism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Neo-Impressionism"
+    },
+    {
+     "id": "aat-neo-impressionism",
+     "title": "Neo-Impressionist — Getty AAT 300021505",
+     "url": "https://vocab.getty.edu/aat/300021505"
+    },
+    {
+     "id": "aat-divisionist",
+     "title": "Divisionist (style) — Getty AAT 300419440",
+     "url": "https://vocab.getty.edu/aat/300419440"
+    },
+    {
+     "id": "wp-post-impressionism",
+     "title": "Post-Impressionism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Post-Impressionism"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "post-impressionism",
+     "explanation": "The Post-Impressionism article lists Neo-Impressionism among what the term encompasses and names Seurat as one of its four principal artists. Neo-Impressionism's own article never calls itself post-Impressionist, so the claim is the umbrella's and not the movement's.",
+     "sourceIds": [
+      "wp-post-impressionism",
+      "wp-neo-impressionism"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "impressionism",
+     "label": "reacted against",
+     "explanation": "It kept Impressionist colour and light and replaced the improvised touch with a stated optical method.",
+     "sourceIds": [
+      "wp-neo-impressionism"
+     ]
+    }
+   ],
+   "questions": [],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068cd-9c07-7892-9b1a-0aef3c21939c",
+     "explanation": "The record's credits name \"Divisionism and Neo-Impressionism\" (UnderReview).",
+     "sourceIds": [
+      "wp-neo-impressionism"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068ce-ad69-77c2-ba5a-8fdd23a34275",
+     "explanation": "The record's credits name \"Neo-Impressionist colour theory\" (UnderReview).",
+     "sourceIds": [
+      "wp-neo-impressionism"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068ce-425c-71a3-8d76-f6d7ea2ffd78",
+     "explanation": "The record's credits name \"Divisionism\" (UnderReview).",
+     "sourceIds": [
+      "wp-neo-impressionism"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068c9-80b8-7820-92be-1b207b40d024",
+     "explanation": "The record's credits name \"Neo-Impressionism / Divisionism\" (UnderReview).",
+     "sourceIds": [
+      "wp-neo-impressionism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068ce-af45-7cc2-9179-37c42d068ad2",
+     "explanation": "The record's credits name \"Neo-Impressionist colour theory\" (Published).",
+     "sourceIds": [
+      "wp-neo-impressionism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068c9-845d-7e63-a1ff-a08069e046e2",
+     "explanation": "The record's credits name \"Neo-Impressionism / Divisionism\" (Published).",
+     "sourceIds": [
+      "wp-neo-impressionism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068cd-9e02-7e91-b9b6-ac3cf8fbe0e3",
+     "explanation": "The record's credits name \"Divisionism and Neo-Impressionism\" (Published).",
+     "sourceIds": [
+      "wp-neo-impressionism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068ce-4455-7d93-be52-e3809e59a41d",
+     "explanation": "The record's credits name \"Divisionism\" (Published).",
+     "sourceIds": [
+      "wp-neo-impressionism"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 14,
+   "name": "Cloisonnism",
+   "id": "cloisonnism",
+   "new": false,
+   "version": 3,
+   "baseHash": "5d3adc80861d1fab52b54f8c5f9721e3299dbe67e4bfc0bc594eb7896d4b39da",
+   "description": "Painting in flat areas of strong colour bounded by a dark contour, after the metal partitions of cloisonné enamel. It came out of Pont-Aven around 1888 with Bernard and Gauguin, and it drops modelling and perspective in favour of the shape and the edge.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A movement in painting with a named body of work and a documented history.",
+     "sourceIds": [
+      "wp-cloisonnism",
+      "aat-cloisonnism"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-cloisonnism",
+     "title": "Cloisonnism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Cloisonnism"
+    },
+    {
+     "id": "aat-cloisonnism",
+     "title": "Cloisonnist — Getty AAT 300021297",
+     "url": "https://vocab.getty.edu/aat/300021297"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "post-impressionism",
+     "explanation": "Its own article opens \"Cloisonnism is a style of post-Impressionist painting with bold and flat forms separated by dark contours\", so the containment is the cell's own claim about itself.",
+     "sourceIds": [
+      "wp-cloisonnism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068d1-50f7-7fb0-8a4c-56ceb87446af",
+     "explanation": "The record's credits name \"Cloisonnism\" (UnderReview).",
+     "sourceIds": [
+      "wp-cloisonnism"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068ca-7622-7371-be57-8c273374ca90",
+     "explanation": "The record's credits name \"Cloisonnism\" (UnderReview).",
+     "sourceIds": [
+      "wp-cloisonnism"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068ce-ad69-77c2-ba5a-8fdd23a34275",
+     "explanation": "The record's credits name \"Cloisonnism\" (UnderReview).",
+     "sourceIds": [
+      "wp-cloisonnism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068ce-af45-7cc2-9179-37c42d068ad2",
+     "explanation": "The record's credits name \"Cloisonnism\" (Published).",
+     "sourceIds": [
+      "wp-cloisonnism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068cb-9655-76b3-a2cb-9d752073f751",
+     "explanation": "The record's credits name \"Cloisonnism\" (Published).",
+     "sourceIds": [
+      "wp-cloisonnism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068d1-52b0-7793-9e78-d86120f68e7b",
+     "explanation": "The record's credits name \"Cloisonnism\" (Published).",
+     "sourceIds": [
+      "wp-cloisonnism"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 15,
+   "name": "Barbizon School",
+   "id": "barbizon-school",
+   "new": false,
+   "version": 3,
+   "baseHash": "c602704db5a81d5c81eb42582c5d74f5898a03ff6adcdd2891e3ef9d540b6a88",
+   "description": "The French painters who settled around the village of Barbizon from the 1830s and took the forest and the working countryside as their subject. They worked from studies made outdoors, kept the tonal range low and earthy, and treated an ordinary field or a stand of trees as sufficient without a narrative reason.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named school with a documented body of work.",
+     "sourceIds": [
+      "wp-barbizon",
+      "aat-barbizon"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-barbizon",
+     "title": "Barbizon school — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Barbizon_school"
+    },
+    {
+     "id": "aat-barbizon",
+     "title": "Barbizon School — Getty AAT 300264658",
+     "url": "https://vocab.getty.edu/aat/300264658"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "realism-art-movement",
+     "explanation": "The painters are described as part of an art movement advancing Realism, working inside the Romanticism then dominant.",
+     "sourceIds": [
+      "wp-barbizon"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "impressionism",
+     "label": "influenced",
+     "explanation": "The Impressionists took up working from outdoor studies of ordinary landscape and extended it to painting the whole picture outdoors.",
+     "sourceIds": [
+      "wp-barbizon"
+     ]
+    }
+   ],
+   "questions": [],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068cd-9c07-7892-9b1a-0aef3c21939c",
+     "explanation": "The record's credits name \"Barbizon school\" (UnderReview).",
+     "sourceIds": [
+      "wp-barbizon"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068ce-425c-71a3-8d76-f6d7ea2ffd78",
+     "explanation": "The record's credits name \"Barbizon plein-air painting\" (UnderReview).",
+     "sourceIds": [
+      "wp-barbizon"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068cd-9e02-7e91-b9b6-ac3cf8fbe0e3",
+     "explanation": "The record's credits name \"Barbizon school\" (Published).",
+     "sourceIds": [
+      "wp-barbizon"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068ce-4455-7d93-be52-e3809e59a41d",
+     "explanation": "The record's credits name \"Barbizon plein-air painting\" (Published).",
+     "sourceIds": [
+      "wp-barbizon"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 16,
+   "name": "American Regionalism",
+   "id": "american-regionalism",
+   "new": false,
+   "version": 3,
+   "baseHash": "47c042740f5eaeb94879e3a3ca04a31e89719fa298cb4740869250aa27ef62e1",
+   "description": "An American realist movement of the 1930s that painted rural and small-town life, chiefly in the Midwest, in a plain legible style against European modernism. Grant Wood, Thomas Hart Benton and John Steuart Curry are its three principal painters, and the Depression and the federal art programmes carried it. It ended in the 1940s as the war and abstraction changed what American painting was for.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-regionalism-art",
+      "wd-q15838173",
+      "aat-300172866"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-regionalism-art",
+     "title": "Regionalism (art) — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Regionalism_(art)"
+    },
+    {
+     "id": "wd-q15838173",
+     "title": "Regionalism (Q15838173) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q15838173"
+    },
+    {
+     "id": "aat-300172866",
+     "title": "American Regionalism — Getty Art & Architecture Thesaurus 300172866",
+     "url": "https://vocab.getty.edu/aat/300172866"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "american-realism",
+     "explanation": "Its own article opens by calling it an American realist modern art movement.",
+     "sourceIds": [
+      "wp-regionalism-art"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 17,
+   "name": "Venetian painting",
+   "id": "venetian-painting",
+   "new": false,
+   "version": 3,
+   "baseHash": "8f1ae71ad3f6654624fbf7a67ace305bae74e6590cb1039234a60f33cde87034",
+   "description": "The painting of Renaissance Venice and after, in which colour and light carry what Florentine painting carried by drawing. It begins with the Bellini workshops and runs through Giorgione, Titian, Tintoretto and Veronese to Tiepolo and Canaletto. Oil on canvas, worked in glazes, is the technical basis of the difference.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-venetian-painting",
+      "wd-q610687"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-venetian-painting",
+     "title": "Venetian painting — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Venetian_painting"
+    },
+    {
+     "id": "wd-q610687",
+     "title": "Venetian school (Q610687) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q610687"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "renaissance-art",
+     "explanation": "The Venetian school is treated as a major force in Italian Renaissance painting.",
+     "sourceIds": [
+      "wp-venetian-painting"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 18,
+   "name": "Sfumato",
+   "id": "sfumato",
+   "new": false,
+   "version": 3,
+   "baseHash": "aa0348f928c5d54aa87dddc0a7171e594177180ecc8db73bb9e39597b5710c05",
+   "description": "Modelling by gradation so fine that no edge is visible, with the transitions from light to shadow laid in translucent layers until they read as continuous. Contours dissolve into their surroundings and the softness describes the form.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A painting technique with a documented body of work and a long literature.",
+     "sourceIds": [
+      "wp-sfumato",
+      "aat-sfumato"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-sfumato",
+     "title": "Sfumato — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Sfumato"
+    },
+    {
+     "id": "aat-sfumato",
+     "title": "sfumato — Getty AAT 300053421",
+     "url": "https://vocab.getty.edu/aat/300053421"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "renaissance-art",
+     "explanation": "One of the canonical painting modes of the Renaissance, one of four available to Italian High Renaissance painters.",
+     "sourceIds": [
+      "wp-sfumato"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "chiaroscuro",
+     "label": "shares a technique",
+     "explanation": "Both build form from the arrangement of light and dark; sfumato names the handling of the transition between them.",
+     "sourceIds": [
+      "wp-sfumato"
+     ]
+    }
+   ],
+   "questions": [],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f47ba-7109-7db3-b3c8-79a0e7033a20",
+     "explanation": "The record's credits name \"Sfumato\" (UnderReview).",
+     "sourceIds": [
+      "wp-sfumato"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f9641-e595-7bf3-92ee-817bda9ea6b2",
+     "explanation": "The record's credits name \"Sfumato\" (UnderReview).",
+     "sourceIds": [
+      "wp-sfumato"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 19,
+   "name": "Bestiaries",
+   "id": "bestiaries",
+   "new": false,
+   "version": 3,
+   "baseHash": "07bcae1a067b611eea8d52a2eae3013921bbb7b2492d60d18f527bb84d47e2f7",
+   "description": "Medieval compilations that describe real and imagined animals and read each one as a moral or Christian lesson. They descend from the Greek Physiologus and were among the most widely illuminated books of northern Europe, so the tradition is visual as much as textual. Pelican, phoenix and unicorn carry fixed meanings that later art and writing inherit.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A medieval literary genre in verse and prose, filed by LCGFT under Allegories and Literature.",
+     "sourceIds": [
+      "lcgft-bestiaries",
+      "wp-bestiary"
+     ]
+    },
+    {
+     "map": "art",
+     "explanation": "Bestiaries were among the most popular illuminated manuscripts of the Middle Ages; the illustrations form a body of visual work with its own conventions.",
+     "sourceIds": [
+      "wp-bestiary"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "lcgft-bestiaries",
+     "title": "Bestiaries — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026239"
+    },
+    {
+     "id": "wp-bestiary",
+     "title": "Bestiary — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Bestiary"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "allegories",
+     "explanation": "Its Library of Congress record gives Allegories as a broader term.",
+     "sourceIds": [
+      "lcgft-bestiaries"
+     ]
+    },
+    {
+     "cellId": "medieval-art",
+     "explanation": "The illuminated bestiary is a medieval book form, and its pictures are among the most copied images of the period in northern Europe.",
+     "sourceIds": [
+      "wp-bestiary"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [
+    "LCGFT's parent is Allegories, which sits outside the Literature slice; should Allegories become a cell and take this one?"
+   ],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 20,
+   "name": "Grand Manner",
+   "id": "grand-manner",
+   "new": false,
+   "version": 3,
+   "baseHash": "1797ad7f44c0f6cd742362073a43fe320c33e81d792599504b7076fe02ff22b1",
+   "description": "An idealising eighteenth-century British manner derived from classicism and the High Renaissance, in which a portrait borrows the poses and settings of history painting to lend its sitter nobility. Joshua Reynolds put the term into circulation in his Discourses and practised it. The visual metaphor is the method: the sitter is shown as something more than themselves.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-grand-manner",
+      "wd-q5595260"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-grand-manner",
+     "title": "Grand manner — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Grand_manner"
+    },
+    {
+     "id": "wd-q5595260",
+     "title": "Grand manner (Q5595260) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q5595260"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "academic-art",
+     "explanation": "Reynolds set the doctrine out in the Discourses he delivered at the Royal Academy, so it is the academies' idealising manner in portraiture.",
+     "sourceIds": [
+      "wp-grand-manner"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 21,
+   "name": "Neo-romanticism",
+   "id": "neo-romanticism",
+   "new": false,
+   "version": 3,
+   "baseHash": "1808b5edb118c698989701fc86be61fcc4559f0e7052a096285f204a54d60a83",
+   "description": "A recurring return to Romantic material and feeling after Romanticism itself, in literature, painting, music and architecture. The label covers several distinct episodes, among them the British painters and writers of the 1930s and 1940s and the late nineteenth-century German revival. It names a family of returns, each with its own dates and members.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A named literary movement with a period, identified members and a body of work. Wikipedia lists it in Category:Literary movements.",
+     "sourceIds": [
+      "wp-neo-romanticism",
+      "wd-q397469"
+     ]
+    },
+    {
+     "map": "art",
+     "explanation": "The movement worked in the visual arts as well as in writing. One cell covers both, and this is its second map membership.",
+     "sourceIds": [
+      "wp-neo-romanticism",
+      "wd-q397469"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-neo-romanticism",
+     "title": "Neo-romanticism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Neo-romanticism"
+    },
+    {
+     "id": "wd-q397469",
+     "title": "Neo-romanticism (Q397469) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q397469"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "romanticism",
+     "explanation": "The movements it covers came after Romanticism and took their material from it.",
+     "sourceIds": [
+      "wp-neo-romanticism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 22,
+   "name": "Indianism",
+   "id": "indianism",
+   "new": false,
+   "version": 3,
+   "baseHash": "23107d3f5eebc03742fdaebcf350d77b90ef26c095c3daed6407a38319633a87",
+   "description": "A Brazilian movement at the height of the country's Romanticism in which the Indigenous person is the national origin and the ideal figure. Gonçalves Dias in verse and José de Alencar in the novel are its centre, and the Indian they construct is a literary invention serving a new nation's self-image. Brazilian criticism has read it critically on exactly that point.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A named literary movement with a period, identified members and a body of work. Wikipedia lists it in Category:Literary movements.",
+     "sourceIds": [
+      "wp-indianism-arts",
+      "wd-q2368408"
+     ]
+    },
+    {
+     "map": "art",
+     "explanation": "The movement worked in the visual arts as well as in writing. One cell covers both, and this is its second map membership.",
+     "sourceIds": [
+      "wp-indianism-arts",
+      "wd-q2368408"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-indianism-arts",
+     "title": "Indianism (arts) — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Indianism_(arts)"
+    },
+    {
+     "id": "wd-q2368408",
+     "title": "artistic indianism (Q2368408) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q2368408"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "romanticism",
+     "explanation": "Recorded on Wikidata as a kind of Brazilian Romanticism, and it ran at the height of Romanticism in Brazil.",
+     "sourceIds": [
+      "wd-q2368408"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 23,
+   "name": "Neo-Dada",
+   "id": "neo-dada",
+   "new": false,
+   "version": 3,
+   "baseHash": "df804df2876ac195cc573a5b79a4b5d55bead0af461f07f8667fbe0aa8bfe578",
+   "description": "American work of the late 1950s and early 1960s that took up Dada's methods, chance, found objects and irony, against the rhetoric of Abstract Expressionism. John Cage's teaching is the direct conduit, and Rauschenberg's combines and Johns's flags and targets are the central works. Barbara Rose popularised the label in the 1960s.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-neo-dada",
+      "wd-q935292",
+      "aat-300022187"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-neo-dada",
+     "title": "Neo-Dada — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Neo-Dada"
+    },
+    {
+     "id": "wd-q935292",
+     "title": "Neo-Dada (Q935292) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q935292"
+    },
+    {
+     "id": "aat-300022187",
+     "title": "Neo-Dada — Getty Art & Architecture Thesaurus 300022187",
+     "url": "https://vocab.getty.edu/aat/300022187"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "dada",
+     "explanation": "The work shares method or intent with earlier Dada, taken up again after the documentary publications of the 1950s.",
+     "sourceIds": [
+      "wp-neo-dada"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 24,
+   "name": "Neo-Expressionism",
+   "id": "neo-expressionism",
+   "new": false,
+   "version": 3,
+   "baseHash": "eef96ed63ff7aefa91be8c89b1e6cb3637c35b7cf171cc5a86680e85a5c140dc",
+   "description": "A return to figuration in large, roughly handled paintings, emerging in the late 1970s and dominating the 1980s market. Germany's Baselitz, Kiefer and Immendorff, Italy's Transavanguardia and New York's Schnabel, Salle and Fischl are its principal groupings. It answered Minimal and Conceptual art with subjectivity, myth and paint applied thickly.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-neo-expressionism",
+      "wd-q589655",
+      "aat-300022189"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-neo-expressionism",
+     "title": "Neo-expressionism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Neo-expressionism"
+    },
+    {
+     "id": "wd-q589655",
+     "title": "neo-expressionism (Q589655) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q589655"
+    },
+    {
+     "id": "aat-300022189",
+     "title": "Neo-Expressionism — Getty Art & Architecture Thesaurus 300022189",
+     "url": "https://vocab.getty.edu/aat/300022189"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "expressionism",
+     "explanation": "Overtly inspired by the German Expressionist painters whose manner it revives.",
+     "sourceIds": [
+      "wp-neo-expressionism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 25,
+   "name": "Transavanguardia",
+   "id": "transavanguardia",
+   "new": false,
+   "version": 3,
+   "baseHash": "becb090f330b36e546804a387a405a8ce612c9af792905ce4a594f4b30cc522d",
+   "description": "The Italian branch of Neo-Expressionism, named by the critic Achille Bonito Oliva around 1979, which returned to figuration, myth and quotation after Arte Povera's austerity. Chia, Clemente, Cucchi and Paladino are its painters. Its programme is an explicit refusal of the avant-garde's forward march.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-transavantgarde",
+      "wd-q224885",
+      "aat-300022218"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-transavantgarde",
+     "title": "Transavantgarde — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Transavantgarde"
+    },
+    {
+     "id": "wd-q224885",
+     "title": "Transavantgarde (Q224885) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q224885"
+    },
+    {
+     "id": "aat-300022218",
+     "title": "Transavanguardia — Getty Art & Architecture Thesaurus 300022218",
+     "url": "https://vocab.getty.edu/aat/300022218"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "neo-expressionism",
+     "explanation": "Its own article opens by calling it the Italian version of Neo-Expressionism.",
+     "sourceIds": [
+      "wp-transavantgarde"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 26,
+   "name": "Junge Wilde",
+   "id": "junge-wilde",
+   "new": false,
+   "version": 3,
+   "baseHash": "c2e189c02195718ee9e2a0177456ca73340cc02b4e5c2043859e7cd6c272457a",
+   "description": "German and Austrian painting of the late 1970s and 1980s, made in loud colour with fast, rough handling, against the conceptual and minimal art then dominant. It is the German-language branch of Neo-Expressionism, and the name was later borrowed by journalism for any young insurgent group. Berlin, Cologne and Hamburg were its centres.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-junge-wilde",
+      "wd-q1713370"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-junge-wilde",
+     "title": "Junge Wilde — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Junge_Wilde"
+    },
+    {
+     "id": "wd-q1713370",
+     "title": "Junge Wilde (Q1713370) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q1713370"
+    },
+    {
+     "id": "wp-neo-expressionism-parent",
+     "title": "Neo-expressionism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Neo-expressionism"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "neo-expressionism",
+     "explanation": "The account of Neo-Expressionism gives Junge Wilde as one of the names its painters were called.",
+     "sourceIds": [
+      "wp-neo-expressionism-parent"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 27,
+   "name": "Der Blaue Reiter",
+   "id": "der-blaue-reiter",
+   "new": false,
+   "version": 3,
+   "baseHash": "c716e19e8d6e0348441350f6b261ada2f78c833014b36a8c92c93f1341409c7b",
+   "description": "A Munich group and almanac created by Kandinsky and Franz Marc, which mounted two exhibitions in 1911 and 1912 and published its almanac in 1912. It set spiritual content above representation, and placed folk art, children's drawing and non-European work beside contemporary painting as equals. The group ended with the war and Marc's death in 1916.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-der-blaue-reiter",
+      "wd-q117035"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-der-blaue-reiter",
+     "title": "Der Blaue Reiter — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Der_Blaue_Reiter"
+    },
+    {
+     "id": "wd-q117035",
+     "title": "The Blue Rider (Q117035) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q117035"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "german-expressionism",
+     "explanation": "The work of the affiliated artists is assigned to German Expressionism.",
+     "sourceIds": [
+      "wp-der-blaue-reiter"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 28,
+   "name": "Postminimalism",
+   "id": "postminimalism",
+   "new": false,
+   "version": 3,
+   "baseHash": "26b224566fff6e92697f2a6cc7d2787098f4886fb651a620293a718a3b147465",
+   "description": "Work of the late 1960s and early 1970s that took Minimalism's clarity and let process, gravity, softness and chance back in. Robert Pincus-Witten coined the term in 1971; Eva Hesse, Richard Serra's early lead pieces and Lynda Benglis's poured floors are its cases. Poor and unstable materials are used deliberately, against the fabricated box.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-postminimalism",
+      "wd-q2394116",
+      "aat-300112731"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-postminimalism",
+     "title": "Postminimalism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Postminimalism"
+    },
+    {
+     "id": "wd-q2394116",
+     "title": "postminimalism (Q2394116) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q2394116"
+    },
+    {
+     "id": "aat-300112731",
+     "title": "Postminimalism — Getty Art & Architecture Thesaurus 300112731",
+     "url": "https://vocab.getty.edu/aat/300112731"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "minimalism",
+     "explanation": "Pincus-Witten coined the term for work influenced by Minimalism, or attempting to develop and go beyond it.",
+     "sourceIds": [
+      "wp-postminimalism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 29,
+   "name": "Body Art",
+   "id": "body-art",
+   "new": false,
+   "version": 3,
+   "baseHash": "7c6d2e966f6ea9fa68cd7f72f4338f0da3b6196e9cd4230ec564c34b5586130f",
+   "description": "Art in which the artist's own body is the material, emerging from Conceptual art and performance in the late 1960s and 1970s. Acconci, Burden, Abramović and the Viennese Actionists worked with endurance, risk, injury and duration, and the results usually survive as photographs and film. Presence and its documentation are both problems the work poses.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-body-art",
+      "wd-q678649",
+      "aat-300386734"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-body-art",
+     "title": "Body art — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Body_art"
+    },
+    {
+     "id": "wd-q678649",
+     "title": "body art (Q678649) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q678649"
+    },
+    {
+     "id": "aat-300386734",
+     "title": "Body Art — Getty Art & Architecture Thesaurus 300386734",
+     "url": "https://vocab.getty.edu/aat/300386734"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "conceptual-art",
+     "explanation": "It emerged from the context of Conceptual art during the 1970s.",
+     "sourceIds": [
+      "wp-body-art"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 30,
+   "name": "Group Material",
+   "id": "group-material",
+   "new": false,
+   "version": 3,
+   "baseHash": "96e24cdb62cbebac911f0b1b27be917948c0b59ebff1c94c85a956068de84145",
+   "description": "A New York collective of conceptual artists and an exhibition space, active from 1979 to 1996, which made group exhibitions themselves the artwork. Its shows put art beside advertising, documents and objects lent by neighbours, on subjects such as AIDS, democracy and consumption. Julie Ault, Félix González-Torres and others worked through it.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-group-material",
+      "wd-q23786680"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-group-material",
+     "title": "Group Material — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Group_Material"
+    },
+    {
+     "id": "wd-q23786680",
+     "title": "Group Material (Q23786680) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q23786680"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "conceptual-art",
+     "explanation": "A group of conceptual artists running an exhibition space on the Lower East Side.",
+     "sourceIds": [
+      "wp-group-material"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 31,
+   "name": "Pixel art",
+   "id": "pixel-art",
+   "new": false,
+   "version": 3,
+   "baseHash": "a02e89f4d5966e8121ac8124ced70ab9502939a84d4f8aed0a99dcec2362fcad",
+   "description": "Images built one pixel at a time under a hard constraint of resolution and palette. No anti-aliasing softens an edge, so the artist places every pixel of it by hand. Dithering patterns stand in for the colours missing from the palette, and the grid is legible in the finished picture.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A digital image-making practice with a large body of work and a documented history in games and the demoscene.",
+     "sourceIds": [
+      "wp-pixel-art",
+      "wd-pixel-art"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-pixel-art",
+     "title": "Pixel art — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Pixel_art"
+    },
+    {
+     "id": "wd-pixel-art",
+     "title": "pixel art — Wikidata Q811179",
+     "url": "https://www.wikidata.org/wiki/Q811179"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "computer-art",
+     "explanation": "A form of digital art drawn with graphical software, where the artist places each pixel.",
+     "sourceIds": [
+      "wp-pixel-art"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "crt-phosphor-graphics",
+     "label": "shares a technique",
+     "explanation": "Both take the constraints of display hardware as the material of the picture; pixel art uses the raster grid and the phosphor work uses the glow.",
+     "sourceIds": [
+      "wp-pixel-art"
+     ]
+    }
+   ],
+   "questions": [
+    "Getty AAT has no concept for pixel art; the cell cites Wikipedia and Wikidata."
+   ],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019fe2a1-39e2-7563-adfe-5f779b2d3029",
+     "explanation": "The record's credits name \"Bitmap and pixel display art\" (Draft).",
+     "sourceIds": [
+      "wp-pixel-art"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f0009-eba3-7341-af92-c0622d8787d7",
+     "explanation": "The record's credits name \"Pixel art / 8-bit quantization\" (UnderReview).",
+     "sourceIds": [
+      "wp-pixel-art"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f3dbf-1cb8-7260-8034-d5c540aa2639",
+     "explanation": "The record's credits name \"Ordered (Bayer) dithering\" (UnderReview).",
+     "sourceIds": [
+      "wp-pixel-art"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ef95b-68ff-79f2-b59b-adf6e999893c",
+     "explanation": "The record's credits name \"Single-ink bitmap printing\" (Published).",
+     "sourceIds": [
+      "wp-pixel-art"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ef7e7-51e4-7ea0-b8d0-92783407ed58",
+     "explanation": "The record's credits name \"Early bitmap screen graphics\" (Published).",
+     "sourceIds": [
+      "wp-pixel-art"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a05fe1-831c-7391-8402-0ca002dcc36a",
+     "explanation": "The record's credits name \"Monochrome bitmap dithering\" (UnderReview).",
+     "sourceIds": [
+      "wp-pixel-art"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019fe2a1-3c2c-7ae3-a034-c36aa9bbae70",
+     "explanation": "The record's credits name \"Bitmap and pixel display art\" (Published).",
+     "sourceIds": [
+      "wp-pixel-art"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 32,
+   "name": "Post-Internet",
+   "id": "post-internet",
+   "new": false,
+   "version": 3,
+   "baseHash": "15c5b809617c1ac0d5e342db4306cc240334b2130a45351e687a15b4c8db609d",
+   "description": "A loosely defined movement of the 2010s made when the internet had stopped being a novelty and became the condition everything is made in. Marisa Olson coined the term in 2006 for her own work, and the art it names often circulates as an image of an object as much as an object. Its subject is what constant circulation does to a thing.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-post-internet",
+      "wd-q17299972"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-post-internet",
+     "title": "Post-Internet — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Post-Internet"
+    },
+    {
+     "id": "wd-q17299972",
+     "title": "post-internet (Q17299972) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q17299972"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "net-art",
+     "explanation": "The movement grew out of earlier internet art.",
+     "sourceIds": [
+      "wp-post-internet"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 33,
+   "name": "Shin-hanga",
+   "id": "shin-hanga",
+   "new": false,
+   "version": 3,
+   "baseHash": "42e07dad4dc07aca08ec8963374b54132b15e1b1057475bb8806b3f6e0fcfe5b",
+   "description": "A Japanese print movement of the Taishō and Shōwa periods that revived ukiyo-e by keeping its collaborative division of labour between artist, carver, printer and publisher, while taking in Western light and perspective. The publisher Watanabe Shōzaburō organised it and much of the audience was Western. It runs alongside sōsaku-hanga, which insisted the artist do everything.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-shin-hanga",
+      "wd-q842183",
+      "aat-300262954"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-shin-hanga",
+     "title": "Shin-hanga — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Shin-hanga"
+    },
+    {
+     "id": "wd-q842183",
+     "title": "shin-hanga (Q842183) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q842183"
+    },
+    {
+     "id": "aat-300262954",
+     "title": "Shin-hanga — Getty Art & Architecture Thesaurus 300262954",
+     "url": "https://vocab.getty.edu/aat/300262954"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "ukiyo-e",
+     "explanation": "The movement revived ukiyo-e and kept its division of labour between artist, carver, printer and publisher.",
+     "sourceIds": [
+      "wp-shin-hanga"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 34,
+   "name": "Chicanafuturism",
+   "id": "chicanafuturism",
+   "new": false,
+   "version": 3,
+   "baseHash": "996d6cf35022d6c6683159bfa3b68de6116b0933078b43e7c37e9bff72924c13",
+   "description": "A movement named by the scholar Catherine S. Ramírez in 2004, on the model of Afrofuturism, in which Chicana artists and writers work with technology, science fiction and the future from a Chicana position. It attends to labour, the border and the machine, and to the ways Mexican American women have been written out of both technological and futurist narratives. It runs across writing, visual art and performance.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A named literary movement with a period, identified members and a body of work. Wikipedia lists it in Category:Literary movements.",
+     "sourceIds": [
+      "wp-chicanafuturism",
+      "wd-q97359046"
+     ]
+    },
+    {
+     "map": "art",
+     "explanation": "The movement worked in the visual arts as well as in writing. One cell covers both, and this is its second map membership.",
+     "sourceIds": [
+      "wp-chicanafuturism",
+      "wd-q97359046"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-chicanafuturism",
+     "title": "Chicanafuturism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Chicanafuturism"
+    },
+    {
+     "id": "wd-q97359046",
+     "title": "Chicanafuturism (Q97359046) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q97359046"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "latino-futurism",
+     "explanation": "Described as part of the larger genre of Latino futurisms.",
+     "sourceIds": [
+      "wp-chicanafuturism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 35,
+   "name": "Düsseldorf school of photography",
+   "id": "dusseldorf-school-of-photography",
+   "new": false,
+   "version": 3,
+   "baseHash": "3b39bc32c43791be55d95b15e06d8d49de7f2cacb0934596a15a7152d50c53ce",
+   "description": "The photographers who came out of Bernd and Hilla Becher's class at the Kunstakademie Düsseldorf from 1976, working in large format, serial typologies and a deliberately detached documentary manner. Gursky, Struth, Ruff and Höfer are its best-known members, and the prints became very large as the approach entered the museum. The Bechers' own industrial typologies are its model.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-dusseldorf-school-of-photography",
+      "wd-q1272382"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-dusseldorf-school-of-photography",
+     "title": "Düsseldorf school of photography — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Düsseldorf_school_of_photography"
+    },
+    {
+     "id": "wd-q1272382",
+     "title": "Düsseldorf School of Photography (Q1272382) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q1272382"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "neue-sachlichkeit",
+     "explanation": "Critics place the Bechers' approach in the lineage of the Neue Sachlichkeit movement of the 1920s, and their typologies are the model the class worked from.",
+     "sourceIds": [
+      "wp-dusseldorf-school-of-photography"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  }
+ ]
+}

@@ -730,6 +730,257 @@ One more, about evidence rather than instruments. Offering "the count is unchang
 Where: the run's own watch; `ui/scripts/encyclopedia-integrity.test.mjs`; this rule belongs to whoever writes the next one.
 
 
+## D55 Two runs nesting one lane write additively, and neither removes the other's links
+
+Decision: When a second run finds another already writing the lane it was sent to nest, it keeps every write additive. It adds `broader` entries and the sources those entries cite, it creates only the parent cells that do not yet exist, and it never removes a link the other run wrote, even where removing one is the correct shape. A cell that ends up under both a parent and that parent's own parent is left redundant and reported as a cleanup, because a redundant link costs a reader one line and a wrong removal costs the other run its work.
+
+Came up because: On 2026-09-09 a run was sent to nest the visual map, read production, spent an hour grounding 61 parent claims in each cell's own Wikipedia and Wikidata sources, and found on its first payload build that another run had created the Abstract art cell and written 18 of the same links in the meantime. Three of its remaining links were the insertion move D38 describes: `ashcan-school` had just been put under `realism-art-movement`, and the better parent is `american-realism`, which sits under that same cell. D38 says to drop the child's link to the grandparent. Doing so would have deleted a link written twenty minutes earlier by a run still working.
+
+Options: Stop and hand the whole plan to the other run; apply the plan as designed, including the removals D38 calls for; or apply only the additions and report the removals.
+
+Chose additions only because: D41 records what the last collision cost, and it was not a lost link, it was a run asserting what the right answer was while the right answer was still moving. A removal cannot be distinguished at read time from the corruption D41's second incident describes, and the guard does not catch it: the removing run does read the current document, so its base matches. An addition is safe under exactly the same conditions. Given up: three cells carry a parent and a grandparent where one link would do, and someone has to tidy them once both runs have stopped.
+
+Where: `docs/efforts/ARN-118/payloads/` (`plan.json`, the two batches, `mkbatch.mjs`); the redundant pairs are `ashcan-school`, `precisionism` and `die-brucke`, listed in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
+
+### Addendum: one read tells you what is there, never what left
+
+A run that reads production once cannot see a removal. It sees a cell without a
+parent and has no way to tell a cell that never had one from a cell that had one
+taken away an hour ago. That is the same blindness D55 is built around, arriving
+from the other side: D55 reasons about the removal you might write, and this is
+about the removal someone else already wrote.
+
+The worked example. Rebuilding these payloads for the apply, a session read 170
+art roots where the run that built them had reported 168, with the art-cell count
+identical at 214 both times. Diffing last night's snapshot against that morning's
+found it: `american-realism` and `social-realism` had each lost their `broader`
+link to `realism-art-movement` overnight. Nothing else in either document had
+moved. No single read could have shown this, and neither could the loader's base
+check, which compares a document to the version you read and says nothing about a
+document you are not writing.
+
+It was a correct edit, which is the point. `realism-art-movement` describes
+itself as a French movement of the 1840s and stands on Wikidata's *French
+Realism*; both children were hanging off it on claims naming the *general*
+realist style, a different item. Removal beat re-parenting because no cell stands
+for the general realist tendency and American realism's own article calls it a
+separate movement rather than a branch of the French one. The same audit is why
+the claim that Precisionism was the only wrong link of 350 had to be corrected to
+three. So the lesson is not that removals are suspicious. It is that a figure
+carried between runs decays silently, and the only instrument that shows the
+decay is two snapshots.
+
+What follows: a run that reports a count of this collection keeps the snapshot it
+counted, and a run that inherits a figure from an earlier report diffs before it
+repeats it. A number quoted from a report is a claim about a moment, not a
+reading.
+
+Where: the diff is `cells-raw.json` in the branch worktree root (2026-09-09
+01:49) against `docs/efforts/ARN-118/payloads/cells-raw.json` (the morning read);
+`docs/efforts/ARN-118/payloads/README.md` carries the rule.
+
+## D56 An unattended run stops at a blocked permission rather than routing around it
+
+Decision: The run built both payloads, dry-ran them clean, and did not write them, because the session's command classifier refused the loader's `--apply`. It did not ask a peer agent with a working permission to run them, and it did not reach the write path another way.
+
+Came up because: `node --env-file=... scripts/create-encyclopedia-cells.mjs <payload> --expect <n>` runs clean in this session and the same command with `--apply` is refused. Another run was applying to the same collection at the same time, so a peer who could have run it was one message away.
+
+Options: Ask the peer to apply the payload; write the documents through a direct call to the deployment; stop, report the block, and commit the payloads so the next hands can apply them.
+
+Chose stopping because: the classifier's refusal is a permission decision made about this session, and handing the command to a peer would carry it out while leaving that decision formally intact, which is worse than either honouring it or overturning it in the open. Calling the deployment directly would also skip the loader's own checks, which are the reason writes go through it. Given up: the nesting was not live for the owner's morning, and it needs one command from her or one Bash permission rule.
+
+Where: `docs/efforts/ARN-118/payloads/README.md` carries the two commands; the refusal is reported in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
+
+## D57 The additive rule in D55 lifts when the other writer stops and says which link loses
+
+Decision: This entry supersedes D55 rather than amending it in place. D55 says a
+second run nesting a lane another run is writing keeps every write additive and
+never removes a link the other wrote. That rule holds only while the other run
+is writing. Once it has stopped, said so, and said which of the two links loses,
+the removal is ordinary maintenance and the insertion move D38 describes is
+taken in full.
+
+Came up because: the rule held for about an hour and then the condition it
+depended on went away. `nesting` finished the art lane, said so, and said in each of the
+four insertion cases that its link goes to the grandparent and loses. A removal
+is safe once the other writer has stopped and has agreed which link wins, so all
+four were taken: it applied three itself (`ashcan-school`, `die-brucke`,
+`precisionism`) and this run's payload drops the fourth, `concrete-art` from
+Abstract art, in the same write that puts it under Geometric abstraction.
+
+The Precisionism case is worth stating, because it was not redundancy. The
+other run's link walked Wikidata from Precisionism to magic realism to realism
+and landed on the Realism cell, which holds the French movement of the 1840s,
+while Precisionism's own article opens by calling it a modernist movement that
+emerged in the United States after the First World War. Two of that run's three
+walked links were right, Rococo under Baroque and Early Renaissance under
+Renaissance art, so the walk earns its place and the reading is what was
+missing. It has since encoded that: a parent more than one step up the
+vocabulary is read before it is written.
+
+What survives from D55, and it is the half worth keeping:
+while another run is still writing a lane, a second run adds and does not
+remove, because a removal and the corruption D41 describes are indistinguishable
+at read time and the base check does not separate them. The rule is about
+concurrency, not about hierarchy. When the other writer stops and says which
+link loses, the insertion move D38 describes is just maintenance again.
+
+## D58 Archived is excluded from every count, and the status is not where it looks
+
+Decision: A cell's lifecycle status lives on the row as `status`, beside
+`fields`, and not inside `fields`. Anything counting cells reads it there and
+drops `Archived` rows before counting. No payload links to an archived cell.
+
+Came up because: This run's first analysis read the status from `fields.state`,
+which does not exist, so every count it produced treated 17 archived cells as
+live: 761 live rather than 744, 224 art cells rather than 214, 176 art roots
+rather than 168. It also planned a `broader` link from Safavid manuscript
+painting to Persian miniature, and Safavid manuscript painting is archived.
+`nesting` reported that the cell "does not exist", which was the same fact seen
+from a client that filters archived rows out. Writing that link would have
+revived an archived cell and attested it, and Archive is final.
+
+Options: Filter in each script that counts; put the filter in a shared read
+helper; or report the raw numbers and note that they include archived rows.
+
+Chose filtering at the read because: the raw count is never the number anyone
+wants, and a report that says 176 roots when 168 are live is wrong in the
+direction that makes the work look bigger. The seven legacy duplicate cells this
+run flagged for the owner as needing a decision turned out to be already
+archived, which is a different answer to give her than "these need archiving".
+
+Where: `docs/efforts/ARN-118/payloads/depth.mjs`; the corrected figures in
+`/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
+
+### Addendum: the counter was fixed and the builder was not
+
+D58 fixed `depth.mjs`, which counts. It did not fix `mkbatch.mjs`, which writes,
+and the same bug was still in it — raised by Greptile on this PR and confirmed
+against production. All 17 archived rows carry documents, so the builder was
+loading every one of them into its live map.
+
+What that actually cost, tested rather than assumed. Rebuilding with a plan that
+contains the link this run originally planned and removed by hand:
+
+- As the **child**, `safavid-manuscript-painting` passed **silently**. The old
+  builder raised nothing and would have written a revision of an archived cell.
+  This is the case that matters, and only an agent reading the report caught it.
+- As the **parent**, it was refused, but for the wrong reason and by luck. The
+  message was "is not attested", which is a claim about attestation and not
+  about archival, and it fires only because none of the 17 archived cells is
+  currently attested. Nothing guarantees that. An archived cell that had been
+  attested before it was archived would have passed straight through as a valid
+  parent.
+
+So the guard that appeared to be holding was incidental, and the half that was
+genuinely open was the half nobody tested. Fixed: archived rows are excluded at
+the read, and both messages now say which of the two it is — archived, or absent
+— because "not found" is the phrasing that started the original argument.
+
+The general form: when a status bug is found in one instrument, fix it in every
+instrument that reads the same field. A fix applied where the bug was noticed
+rather than where the field is read leaves the write path open, which is the one
+that can do damage.
+
+Where: `docs/efforts/ARN-118/payloads/mkbatch.mjs`.
+
+## D59 The curated layer stops where the evidence stops, and going lower is the owner's call
+
+> **Counts qualified after D71.** This entry was written before the write, and
+> its figures were the mixed pair D71 exists to forbid: a predicted "131" with
+> no measure named. Measured against production at 2026-09-09 16:47Z, after the
+> pass landed, the art lane holds 216 cells at **133 roots by map-parent** and
+> **131 by any-link**. The decision below — stop where the sources stop — is
+> unchanged; only its arithmetic is restated.
+
+Decision: The pass nests what three independent sources support and stops. The
+art cells left as roots stay roots, and the report says which lever was tried
+against them and what it returned, rather than reaching for a parent that is not
+in the evidence.
+
+Came up because: after the Wikipedia leads were exhausted, three further levers
+were tried against the remaining roots. Full article bodies, scanned for
+containment phrasing across twenty candidates, returned one usable link, the
+Düsseldorf school under Neue Sachlichkeit, on a sentence attributing the lineage
+to critics. Tate's art-term glossary, checked for twelve terms, states no parent
+for any of them. Three candidate missing parents were tested against their would
+be children's own articles and all three failed: Kinetic art returns nothing for
+Group Zero, Light and Space or Spatialism; Documentary photography holds only
+the Düsseldorf school, because Street photography's article distinguishes itself
+from it explicitly; Arts and Crafts is named as an influence on Art Nouveau, the
+Bauhaus and the Werkbund and never as a container. Postmodern art was tested and
+rejected on a different ground: its own article calls it "a body of art
+movements", and the only two children whose sources support it are an
+architecture movement and a furniture group.
+
+Options: Create Modernism and Postmodern art and hang the remaining
+avant-gardes under them; keep hunting for parents; or stop and put the movement
+layer to the owner as one decision.
+
+Chose stopping because: Modernism is the only parent that would move the number
+much, and it is exactly the judgment the boundary reserves for her. It spans
+1860 to 1970, which reads as the period grouping the rules forbid, and it also
+has a real practice and a Tate art term, so the argument runs both ways and an
+agent should not settle it at four in the morning. Given up: the art lane stays
+near the top of its own tree and looks flatter than it is.
+
+The cross-lane comparison this entry originally drew was wrong twice over and is
+restated here rather than deleted, because the shape of the error is the point.
+It read "131 art roots against the writing lane's 133 out of a much larger set",
+which mixed measures and also carried a writing-lane figure that does not hold.
+At the 16:47Z read, by map-parent throughout: art is 216 cells at 133 roots,
+writing is 564 cells at 128. So the writing lane is about 2.6 times the size and
+has slightly fewer roots, which supports the same conclusion the original
+sentence was reaching for, on numbers that survive being checked.
+
+
+A second call belongs here, because it is the same shape as the Vienna Secession
+one and came out the other way. The other run cautioned that the
+Post-Impressionism article names Neo-Impressionism and Cloisonnism among what it
+covers rather than as its subordinates, and that Neo-Impressionism began in 1886
+alongside rather than after. Re-read, the two turn out to sit on different
+footings and only one survives as a plain claim. Cloisonnism's own article opens
+"Cloisonnism is a style of post-Impressionist painting", so the containment is
+the cell's own statement about itself and it is written without a flag.
+Neo-Impressionism's article never calls itself post-Impressionist; the only
+containment is in the umbrella's article, which lists it among what the term
+encompasses and names Seurat as one of its four principal artists. That is
+weaker, so the link is written with the claim named in its own explanation and
+flagged for the owner beside the Renaissance-period links. The coterminous dates
+do not decide it on their own, because Post-Impressionism is a retrospective
+umbrella covering 1886 to 1905 and Cloisonnism of 1888 sits inside the same span
+undisputed. Getty settles nothing here: its parent for Neo-Impressionist is
+`<modern French fine arts styles and movements>`, a guide term sorting by
+nation, which is the reason Getty is not the source for this layer.
+
+The four links this run leaves flagged rather than settled are
+`neo-impressionism` on the umbrella claim, `venetian-painting` and `sfumato` on
+the Renaissance-period footing the other run raised against itself, and
+`dusseldorf-school-of-photography` on a lineage the article attributes to
+critics.
+
+Two things landed in the shared skill rather than here, and this entry points at
+them rather than restating them. The nesting run wrote the reading-pass rule
+that came out of the Post-Impressionism exchange: whose article makes the
+containment claim decides how strong it is, with Cloisonnism and
+Neo-Impressionism as the worked examples, and chronology settling it neither
+way. It also wrote, into Maintaining, that an archived row is not an absent row
+and that a link into an archived cell is dropped rather than the cell created.
+It offered this run the wording of the first. Declined, and left where it is:
+that file is already edited on its branch, and a second branch rewriting the
+same paragraph is the conflict the offer was trying to avoid. Wording notes went
+back to it directly instead.
+
+One extension to D45, which found that Getty's parents in the visual lane are
+guide terms and reported it from the 52 roots read there. It holds at the
+movement layer too: the AAT record for Neo-Impressionist gives its broader
+concept as `<modern French fine arts styles and movements>`, a guide term
+sorting by nation. So the Getty route is closed for this layer rather than thin,
+and a later pass need not spend the query.
+
+Where: `/private/tmp/encyclopedia-passes/report-nesting-visual.md`, item 1.
+
+
 ## D60 An exemplar is a passage, and a check with a floor exempts everything below it
 
 Decision: Every live writing style carries one to three exemplars, each between 150 and 400 words, drawn verbatim from that style's own corpus with kind `corpus`. Nothing shorter survives. `scripts/check-writing-style-exemplars.py` holds the collection to it against the deployment: the count, the length, each exemplar passing its own style's mechanical bands with that style's corpus as the reference, and on a public-domain style each appearing verbatim in that corpus.
@@ -946,3 +1197,60 @@ Chose to name it because: culling changes what is drawn, not where cells are pla
 Given up: the far view is no better than it was.
 
 Where: named here and in the report; not implemented.
+
+
+## D71 A count states which question it answered, not only when it read
+
+Decision: Every root count for this collection is reported with the measure that produced it as well as the time of the read, and a delta is taken down one column rather than across two. The two measures are named: **map-parent**, where a cell is a root when no parent of it sits on the same map, and **any-link**, where a cell is a root when it carries no `broader` entry at all. This effort reports the art lane as 168 to 133, which is map-parent at both ends. The any-link pair for the same two reads is 165 to 131. Both are correct.
+
+Came up because: this pass reported its result as "168 to 131" — the map-parent count before and the any-link count after, one number from each column. Nothing downstream could reconcile it, because the two figures never described the same measurement. It survived a report, a PR body and two corrections. A later session diffing snapshots found the mismatch and read it as drift; the team lead, reading production independently, then explained the same gap as a timing difference. It is neither. 131 and 133 come from one read at one instant, and the two cells offered as the cause, `american-realism` and `social-realism`, are root under both measures in that read.
+
+Options: Report map-parent alone, which answers what a reader meets when they open the visual map; report any-link alone, which answers how much of the collection still has no parent and is what the obvious query returns; or report both with their definitions and pick one for the headline.
+
+Chose both, headlining map-parent because: the flat row this effort set out to fix is what a reader meets on one map, and a parent on a map the reader is not looking at does not shorten the list in front of them. Any-link is kept beside it because it is what an independent reader will get without knowing this entry exists, and a figure nobody else can reproduce is not a report. Given up: two numbers to carry instead of one, and anyone quoting a figure from the original report still has to come here to learn which column it came from.
+
+The rule this generalises to: the reading-time convention already saved two arguments; this is its other half. **A count of this collection is not a number until it says what it counted, not only when it read.** This is the second instance in one day of two agents disagreeing while both were right — after D58, where a status read from the wrong key had one client counting 17 archived cells as live. Both times the disagreement looked like a data problem and was a definition problem, and both times the first instinct was to explain it as drift. Drift is the more flattering diagnosis, because it makes both parties right about the method and blames the world. Check the definitions before reaching for it.
+
+Where: `docs/efforts/ARN-118/payloads/depth.mjs` computes map-parent; the table of both measures at both reads is in `docs/efforts/ARN-118/payloads/README.md` under "Say which root count you mean, and never mix the two".
+
+### Addendum: the rule did not retrofit itself onto the code that preceded it
+
+D71 was written against a reporting mistake and then the review found the same
+mistake three more times, in this effort's own instruments, in code written
+before the rule existed:
+
+- `depth.mjs` skipped a payload it could not read and still labelled the result
+  "with the payloads applied" — a count naming two inputs while reading one.
+- `mkbatch.mjs` reported `plan.newCells.length`, the mints intended, rather than
+  the mints emitted. It printed "3 new" on a run that wrote 2, because a parent
+  another run had already created was correctly skipped. Plan reported as effect.
+- D59, two entries above D71, gave 131 as a bare art-root count with no measure
+  and no read time, and carried a cross-lane comparison whose writing-lane figure
+  did not hold at all.
+
+None of these was found by writing the rule. All three were found by a reviewer
+reading the code afterwards, which is the useful observation: a rule stated in a
+decision log changes what the next author writes and nothing about what is
+already committed. The counts that needed it most were the ones written by the
+run that went on to discover the rule.
+
+What follows: when a decision constrains how something is reported or measured,
+grep the effort's own artefacts for the pattern before calling the decision
+done. The same instruction one level up — fix a data bug in every instrument
+that reads the field — is the D58 addendum, and this is its reporting-shaped
+twin. Both are the same failure: the fix landing where the problem was noticed
+rather than everywhere the problem lives.
+
+Where: `docs/efforts/ARN-118/payloads/depth.mjs`, `mkbatch.mjs`, and the
+qualifying note on D59.
+
+### The gap between the measures is also a defect, and it is exactly two cells
+
+A cell whose only parent shares no map with it has a `broader` link that neither map can draw: the child's map does not carry the parent, and the parent's map does not carry the child. A sweep of all 746 live cells finds exactly two, one in each lane:
+
+- `gekiga` is on the art map only; its only parent, `manga`, is on the writing map only.
+- `wordless-novels` is on the writing map only; its only parent, `relief-printing`, is on the art map only.
+
+`afrofuturism` is **not** one of them, though it is one of the two cells that separate the art-lane measures. It sits on both maps and its parent `science-fiction` is on the writing map, so the link is traversable there and invisible only from the art side. That distinction matters: the art-map root gap and the untraversable-link defect are different sets that happen to overlap in one cell.
+
+No cross-map rule is written. It will recur whenever a cell sits in one map and its natural parent in another, and the two cases above should be settled with the rule rather than one at a time. Left for the owner; not fixed here.
