@@ -219,7 +219,7 @@ function PlateCard({
   const hasFace = !(reading && face.kind === "name");
   return (
     <div
-      className="group/plate absolute hover:z-[3]"
+      className="group/plate absolute"
       style={{
         left: x - box.w / 2,
         top: y - box.h / 2,
@@ -341,7 +341,7 @@ function HubCard({
   const title = MAP_LABEL[map];
   return (
     <div
-      className="absolute hover:z-[3]"
+      className="absolute"
       style={{ left: x - HUB_W / 2, top: y - HUB_H / 2, width: HUB_W, height: HUB_H, zIndex: 2, opacity: dimmed ? 0.35 : 1, transition: "opacity 200ms" }}
       data-hub={map}
       onPointerDown={(e) => onDragStart(key, e)}
@@ -510,8 +510,10 @@ function SatelliteNodeCard({
         style={{ left, ...anchor, width: w, transform: `scale(${scale})`, transformOrigin: down ? "0 0" : "0 100%", opacity: dimmed ? dimTo : 1 }}
         data-record-card={node.id}
         onPointerDown={(e) => onDragStart(node.id, e)}
+        onClick={() => onOpen(node)}
         role="group"
-        aria-label={`${SET_EYEBROW[node.set]}: ${name}, opened`}
+        aria-label={`${SET_EYEBROW[node.set]}: ${name}, opened. Click to fold.`}
+        title="Click to fold"
       >
         <span aria-hidden className="washi-tape pointer-events-none -top-1.5 left-4 z-[2]" style={{ ["--strip-ink" as string]: ink, transform: "rotate(-4deg)", width: 44 }} />
         <button type="button" onClick={(e) => { e.stopPropagation(); onOpen(node); }} aria-label="Fold this record back to a node" title="Fold" className="absolute right-1 top-1 z-[2] grid h-6 w-6 place-items-center bg-[var(--washi)] font-mono text-[14px] font-bold text-foreground shadow-[var(--shadow-sticker)]">−</button>
@@ -570,13 +572,16 @@ function SatelliteNodeCard({
  *  so a drag now costs one transform and no card work at all. */
 /** The node that opens the next group of a node's narrower cells. It stands
  *  where those cells will go, so opening it fills its own place. */
-function MoreNodeCard({ node, k, onMore }: { node: MoreNode; k: number; onMore: (key: string) => void }) {
+function MoreNodeCard({ node, k, onMore, onDragStart }: { node: MoreNode; k: number; onMore: (key: string) => void; onDragStart: (key: string, event: React.PointerEvent) => void }) {
   const ek = k * node.scale;
   const size = MORE_W;
   return (
     <button
       type="button"
       onClick={() => onMore(node.key)}
+      // Picking the node up moves the branch it belongs to, and the release
+      // is not a click: the map guards that in `onMore`.
+      onPointerDown={(e) => onDragStart(node.key, e)}
       aria-label={`Open the next ${Math.min(10, node.count)} of ${node.count} more cells`}
       title={`${node.count} more`}
       className="absolute grid place-items-center bg-[var(--washi)] font-mono font-bold tabular-nums text-foreground shadow-[var(--shadow-sticker)] hover:z-[3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]"

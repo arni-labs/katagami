@@ -161,7 +161,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   // The floor zoom follows the paper: with enough open the whole open set
   // needs a zoom below the default floor, and a floor above what fit chose
   // made the next zoom-out zoom in.
-  const minZoom = Math.min(ZOOM_MIN, 0.9 * Math.min((viewportSizeRef.current.w || 1280) / Math.max(1, settled.bounds.w), (viewportSizeRef.current.h || 800) / Math.max(1, settled.bounds.h)));
+  const minZoom = Math.min(ZOOM_MIN, 0.9 * Math.min(((viewportSizeRef.current.w || 1280) - 80) / Math.max(1, layout.bounds.w), ((viewportSizeRef.current.h || 800) - 370) / Math.max(1, layout.bounds.h)));
   const { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, glide, centerOn, guardWheel, claimPointer, pinching } = usePanZoom({ x: 0, y: 0, k: 0.2 }, maxZoom, minZoom);
   // The camera, readable from a handler without being one of its
   // dependencies: a card's handlers keep one identity across every pan and
@@ -297,11 +297,11 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     if (!el || !box) return;
     const vw = el.clientWidth; const vh = el.clientHeight;
     const top = desktop ? 96 : 150; const bottom = desktop ? 72 : 220; const side = desktop ? 40 : 12;
-    const k = Math.max(0.04, Math.min(maxK, maxZoom, (vw - side * 2) / box.w, (vh - top - bottom) / box.h));
+    const k = Math.max(minZoom, Math.min(maxK, maxZoom, (vw - side * 2) / box.w, (vh - top - bottom) / box.h));
     const x = vw / 2 - (box.x + box.w / 2) * k;
     const y = top + (vh - top - bottom) / 2 - (box.y + box.h / 2) * k;
     if (smooth) glide({ k, x, y }); else setCamera({ k, x, y });
-  }, [viewportRef, desktop, maxZoom, glide, setCamera]);
+  }, [viewportRef, desktop, maxZoom, minZoom, glide, setCamera]);
 
   const fitAll = useCallback((smooth = true) => {
     const el = viewportRef.current;
@@ -402,6 +402,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     if (opening) setFrameKey({ key, n: Date.now() });
   }, []);
   const openMore = useCallback((key: string) => {
+    if (draggedNode.current) return;
     setExpansion((state) => showMore(state, key));
     setFrameKey({ key, n: Date.now() });
   }, []);
@@ -453,10 +454,58 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
   const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); setOpenedId(null); }, []);
 
+  // A record node that leaves the paper — its cell folded, its ring closed —
+  // takes its open card with it, so Escape never spends a press on nothing.
+  useEffect(() => {
+    setOpenRecords((at) => {
+      if (!at.size) return at;
+      const onPaper = new Set([...layout.satellites.map((s) => s.id), ...(opened?.nodes.map((s) => s.id) ?? [])]);
+      const kept = [...at].filter((id) => onPaper.has(id));
+      return kept.length === at.size ? at : new Set(kept);
+    });
+  }, [layout.satellites, opened]);
+
   /** Open a record node into its card, or fold it back. */
   const openRecord = useCallback((node: SatelliteNode) => {
     if (draggedNode.current) return;
     setOpenRecords((at) => { const next = new Set(at); if (next.has(node.id)) next.delete(node.id); else next.add(node.id); return next; });
+    setBringIn({ id: node.id, n: Date.now() });
+  }, []);
+  /** A record card just opened is brought into the unobstructed part of the
+   *  viewport — panned, never zoomed in — so its fold control is never under
+   *  the search box or the title block. The card grows from the node's spot,
+   *  which can be anywhere the node was. */
+  const [bringIn, setBringIn] = useState<{ id: string; n: number } | null>(null);
+  useEffect(() => {
+    if (!bringIn) return;
+    const el = viewportRef.current;
+    if (!el) return;
+    const node = opened?.nodes.find((s) => s.id === bringIn.id) ?? layout.satellites.find((s) => s.id === bringIn.id);
+    if (!node || !openRecords.has(node.id)) return;
+    const card = document.querySelector<HTMLElement>(`[data-record-card="${CSS.escape(node.id)}"]`);
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    const v = el.getBoundingClientRect();
+    // The room the chrome leaves: the title block and search at the top, the
+    // zoom controls and status line at the bottom.
+    const top = v.top + (desktop ? 96 : 150); const bottom = v.bottom - (desktop ? 72 : 220); const left = v.left + 12; const right = v.right - 12;
+    let dx = 0; let dy = 0;
+    if (r.top < top) dy = top - r.top; else if (r.bottom > bottom) dy = Math.max(top - r.top, bottom - r.bottom);
+    if (r.left < left) dx = left - r.left; else if (r.right > right) dx = Math.max(left - r.left, right - r.right);
+    if (dx || dy) glide({ ...cameraRef.current, x: cameraRef.current.x + dx, y: cameraRef.current.y + dy });
+    // Once per opening, after the card is in the DOM.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bringIn, layout]);
+  // Escape folds whatever is open, from wherever focus is. A node that opens
+  // into a card unmounts the button that had focus, so a key handler on the
+  // viewport alone missed the very next Escape.
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape" || (event.target as HTMLElement | null)?.tagName === "INPUT") return;
+      setOpenRecords((at) => (at.size ? new Set() : at));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
   /** What an opened record's card says beyond the record, and which way it
    *  grows: away from its cell, from the node's own spot. */
@@ -531,17 +580,23 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   // over the cells that happened to be on screen let a pan move a record from
   // one cell to another. An opened ring's nodes take precedence, so a record
   // in the ring is never drawn a second time beside another cell.
-  const recordPlates = useMemo(() => new Set(layout.plates.filter((p) => camera.k * p.scale >= RECORDS_FROM_EK).map((p) => p.id)), [layout.plates, camera.k]);
+  // Which node stands for a shared record is decided over every open cell,
+  // whatever the zoom: an opened ring's node first, then the node of the
+  // largest (shallowest) cell, then layout order. Zoom decides only whether
+  // a node is drawn — a cell's records appear once the cell prints big
+  // enough to be named — and a deeper cell is never larger than a shallower
+  // one, so the one node is drawn whenever any cell naming it is.
   const settledRecords = useMemo(() => {
     const byRecord = new Map<string, SatelliteNode>();
-    const nodes: SatelliteNode[] = [];
     const also = new Map<string, number>();
     const shared: Array<{ plate: PlateNode; node: SatelliteNode }> = [];
     const keyOf = (sat: SatelliteNode) => { const m = manifestationsById.get(sat.cellId)?.[sat.index]; return m ? `${m.entitySet}:${m.entityId}` : sat.id; };
     if (opened) for (const sat of opened.nodes) if (sat.role === "record") byRecord.set(keyOf(sat), sat);
-    for (const sat of layout.satellites) {
-      if (!recordPlates.has(sat.cellId) || (opened && sat.cellId === opened.plate.id)) continue;
-      if (sat.role !== "record") { nodes.push(sat); continue; }
+    const sats = layout.satellites.filter((sat) => !(opened && sat.cellId === opened.plate.id));
+    const records = sats.filter((s) => s.role === "record").sort((a, b) => b.scale - a.scale);
+    const controls = sats.filter((s) => s.role !== "record");
+    const nodes: SatelliteNode[] = [];
+    for (const sat of records) {
       const key = keyOf(sat);
       const first = byRecord.get(key);
       if (!first) { byRecord.set(key, sat); nodes.push(sat); continue; }
@@ -549,19 +604,20 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       const plate = layout.byId.get(sat.cellId);
       if (plate) shared.push({ plate, node: first });
     }
-    return { nodes, also, shared };
-  }, [layout.satellites, layout.byId, opened, recordPlates, manifestationsById]);
-  // Then only what is near the viewport is mounted.
+    return { nodes: nodes.concat(controls), also, shared };
+  }, [layout.satellites, layout.byId, opened, manifestationsById]);
+  // Then only what prints big enough, and is near the viewport, is mounted.
   const records = useMemo(() => {
-    if (!measured) return settledRecords;
-    const near = new Set(satelliteIndex.query(view).map((b) => b.node.id));
-    const inView = (r: Rect) => r.x + r.w >= view.x && r.x <= view.x + view.w && r.y + r.h >= view.y && r.y <= view.y + view.h;
+    const big = (cellId: string) => { const p = layout.byId.get(cellId); return Boolean(p) && camera.k * p!.scale >= RECORDS_FROM_EK; };
+    const near = measured ? new Set(satelliteIndex.query(view).map((b) => b.node.id)) : null;
+    const inView = (r: Rect) => !measured || (r.x + r.w >= view.x && r.x <= view.x + view.w && r.y + r.h >= view.y && r.y <= view.y + view.h);
+    const ringHas = (id: string) => opened !== null && opened.nodes.some((o) => o.id === id);
     return {
-      nodes: settledRecords.nodes.filter((s) => near.has(s.id) || (opened !== null && opened.nodes.some((o) => o.id === s.id))),
+      nodes: settledRecords.nodes.filter((s) => big(s.cellId) && (near === null || near.has(s.id))),
       also: settledRecords.also,
-      shared: settledRecords.shared.filter(({ plate, node }) => near.has(node.id) || inView(plateRect(plate)) || (opened !== null && opened.nodes.some((o) => o.id === node.id))),
+      shared: settledRecords.shared.filter(({ plate, node }) => big(plate.id) && (ringHas(node.id) || big(node.cellId)) && (near === null || near.has(node.id) || inView(plateRect(plate)))),
     };
-  }, [settledRecords, satelliteIndex, view, measured, opened]);
+  }, [settledRecords, layout.byId, satelliteIndex, view, measured, opened, camera.k]);
   const shownRecords = records.nodes.filter((s) => s.role === "record").length + (opened ? opened.nodes.filter((s) => s.role === "record").length : 0);
 
   /** Open a cell's records onto the map, frame them, and unfold the same list
@@ -785,6 +841,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
                   k={camera.k}
                   dimmed={false}
                   labelled={lodFor(camera.k * s.scale) !== "picture" && opened.nodes.length <= 14}
+                  also={records.also.get(s.id)}
                   onToggle={toggleRecords}
                   onOpen={openRecord}
                   onDragStart={startNodeDrag}
@@ -814,7 +871,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
           />
         ))}
         {layout.more.map((m) => (
-          <More key={`more-${m.key}`} node={m} k={camera.k} onMore={openMore} />
+          <More key={`more-${m.key}`} node={m} k={camera.k} onMore={openMore} onDragStart={startNodeDrag} />
         ))}
         {visiblePlates.map((p: PlateNode) => (
           <Plate
@@ -929,7 +986,22 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   );
 
   // ── the sheet ──────────────────────────────────────────────────────────
-  const sheetExpansion = focusCell ? { open: expansion.open.has(focusCell.id), onToggle: toggleOpen } : undefined;
+  // The sheet's control says what the paper shows: a cell whose branch above
+  // was folded is not open on the map whatever the expansion state remembers,
+  // and opening it from the sheet reveals the chain first.
+  const sheetExpansion = focusCell
+    ? {
+        open: visible.shown.has(focusCell.id),
+        onToggle: (id: string) => {
+          const wantOpen = !visible.shown.has(id);
+          setExpansion((state) => {
+            const s = visible.cells.has(id) ? state : revealPath(index, state, id);
+            return s.open.has(id) === wantOpen ? s : toggle(s, id);
+          });
+          if (wantOpen) setFrameKey({ key: id, n: Date.now() });
+        },
+      }
+    : undefined;
   const sheetContent = (scrollRef: React.RefObject<HTMLElement | null>) =>
     focusCell ? (
       <>

@@ -199,7 +199,7 @@ Chose fix-and-rerun because: the instruction to merge does not lift the standing
 
 Confirmed and fixed:
 - Dragging a category node fired its click on release and folded the map (Grok, Codex). Hub and record-ring toggles now consult the same drag guard the cards use.
-- A click that opened a branch then zoomed to the card and left the new cells off screen (Grok, Fable). A click that opens frames the branch; only search, URL and sheet navigation frame the card.
+- A click that opened a branch then zoomed to the card and left the new cells off screen (Grok, Fable). A click that opens a branch frames the branch, up to reading size on the parent; a click that does not open one — a leaf, or a cell already open — frames the card at reading size, as search, URL and sheet navigation do. (Wording corrected in round two on Fable's reading.)
 - The category ring gave every root the same slot whatever it carried, and a pictured cell's records reach a diagonal further than the radius allowed, so an opened branch overlapped its neighbours (Grok, Codex). Ring slots are now each thing's own width with the slack shared, the record reach is the box clearance times √2, and a mixed-size fixture is asserted overlap-free in the layout test.
 - The dual-map mark read the cell's first map, not the cluster it is drawn in (Grok). Plates carry their cluster; the mark is the other maps.
 - Shared records were deduplicated after viewport culling, so panning moved a record between cells and an opened card could collapse (Codex, Greptile, Grok). Deduplication runs over every open cell in layout order first, an opened ring's nodes take precedence, then the viewport is applied.
@@ -216,3 +216,42 @@ Dismissed:
 - Risk flags `core_path` and `fundamental_change` from all three: correct as descriptions — this replaces the map's layout engine — and they route the merge to a human, which is Rita's standing instruction for this PR.
 
 Where: this head; the round-one record and this entry are on PR #295.
+
+## D17 A record card is brought clear of the chrome, and folds three ways
+
+Decision: When a record node opens into its card, the camera pans — never zooms — so the card sits inside the part of the viewport the chrome leaves free. The card folds by its fold mark, by Escape from anywhere on the page, and by a click on the card itself, the way a cell card folds on click.
+
+Came up because: The independent verifier's round two on 256ef393 found the Tornleaf card opening under the floating search field at 1280×800, so its fold mark took no clicks, and Escape did nothing because the node that had focus was unmounted when it became a card.
+
+Options: Move the search box; make the chrome ignore pointer events; pan the card clear and give it more than one way to fold.
+
+Chose the pan and the three ways because: the chrome is where it should be, and a card that grows from wherever its node sat can land under any chrome on any viewport, so the card has to be the thing that moves; and a control that can be occluded must not be the only control.
+
+Where: `bringIn` and the window Escape handler in `encyclopedia-map.tsx`; `onClick` on the opened card in `map-cards.tsx`.
+
+## D18 Review round two: fixed and dismissed
+
+Decision: Of seventeen panel findings on 256ef393, thirteen were confirmed and fixed with the record-card occlusion (D17) in one batch; four were dismissed with reasons. The panel is rerun on the resulting head.
+
+Came up because: Grok, Codex and Fable reviewed the round-one fixes; the independent verifier found the occluded fold control in the same round.
+
+Options: Fix and rerun; merge with open act-ons.
+
+Chose fix-and-rerun because: each confirmed finding is a defect this diff introduced.
+
+Confirmed and fixed:
+- The +N node had no drag guard and stopped no pointer, so a pan begun on it opened the next group on release (Grok). It drags its branch and its click is guarded.
+- The zoom floor followed the undisplaced paper and fit never clamped, so after a drag a zoom-out zoomed in (Grok, Codex). The floor follows the displaced paper with the chrome insets, and fit clamps to it.
+- The sheet's open/fold read the expansion state, not the paper, so after a branch above was folded it said Fold and did nothing (Grok). It reads what the paper shows and reveals the chain before opening.
+- A cell with two open parents reserved a slot on both rings (Grok). The second parent's list omits a cell already shown under the first.
+- An opened ring's node carried no +N mark for a record other cells name (Grok, Codex, Fable). The mark is passed.
+- Shared-record dedupe depended on zoom, so zooming could move the canonical node and collapse an opened card (Codex). The canonical node is chosen over every open cell whatever the zoom — ring first, then the largest cell — and zoom decides only what is drawn.
+- `claimPointer` closed over the camera, so every pan rebuilt the drag handler and re-rendered every memoised card (Grok, Fable). It reads the camera from a ref.
+- Stale open-record ids survived a fold, so Escape spent a press on nothing (Fable). Ids leave with their nodes.
+- The unread hint was dropped from the sheet's manifestation row (Fable). Restored.
+- A stale comment in the sheet, a dead hover class on cards and hubs (Fable). Fixed.
+- D16's wording on when a click frames the card was wrong (Fable). Corrected above.
+
+Dismissed:
+- A category node for maps that have cells only through a second membership — Palettes and Design in production (Codex). No cell has either as its first map, so such a node would open nothing of its own; the intent rejects a category presented as a label with nothing behind it. Those maps' cells are marked on the cards they are drawn on and framed by the filter chips. Whether some cells should list Design first is a data question, recorded under deferred.
+- Risk flags `core_path` and `fundamental_change`: correct descriptions of a layout-engine replacement; they route the merge to Rita, who has instructed it.

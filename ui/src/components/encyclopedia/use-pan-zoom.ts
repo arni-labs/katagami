@@ -66,6 +66,10 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
   // is exactly the re-render the memoised cards exist to avoid.
   const draggingRef = useRef(false);
   const animateTimer = useRef<number | null>(null);
+  // The camera readable from a handler without being its dependency, so the
+  // handlers keep one identity across a pan and the memoised cards stay put.
+  const cameraNow = useRef(camera);
+  useEffect(() => { cameraNow.current = camera; }, [camera]);
 
   const glide = useCallback((next: Camera) => {
     setAnimate(true);
@@ -154,10 +158,11 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     for (const id of pinch.current.keys()) { try { el.setPointerCapture(id); } catch { /* pointer already gone */ } }
     const [a, b] = [...pinch.current.values()];
     const rect = el.getBoundingClientRect();
-    pinchStart.current = { dist: Math.hypot(a.x - b.x, a.y - b.y), k: camera.k, mid: { x: (a.x + b.x) / 2 - rect.left, y: (a.y + b.y) / 2 - rect.top }, cam: camera };
+    const cam = cameraNow.current;
+    pinchStart.current = { dist: Math.hypot(a.x - b.x, a.y - b.y), k: cam.k, mid: { x: (a.x + b.x) / 2 - rect.left, y: (a.y + b.y) / 2 - rect.top }, cam };
     drag.current = null;
     return true;
-  }, [camera]);
+  }, []);
   const pinching = useCallback(() => pinchStart.current !== null, []);
 
   const onPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {

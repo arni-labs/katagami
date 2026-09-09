@@ -14,7 +14,7 @@ import { useWindowedList } from "./windowed-list";
 // stamps, the scope, then three tabs: Material (made things, narrower cells, a
 // source snippet), Connections, Notes.
 //
-// The sheet is set small — 13.5px prose, 14.5px headings — because it sits
+// The sheet is set small — 12px prose, 12.5px headings — because it sits
 // beside an information-dense canvas and Rita asked for compact type here
 // (2026-09-09); the 17px floor the design contract puts on body text is for
 // pages, not for this working panel. The mono lines are metadata — eyebrows,
@@ -114,7 +114,7 @@ function Manifestations({ cell, index, expandKey, onFocus }: { cell: Encyclopedi
                 <Thumb manifestation={m} />
                 <span className="min-w-0 flex-1">
                   <span className="block font-sans text-[12px] font-medium leading-snug text-foreground">{record?.name ?? (m.unread ? "Record could not be read" : "Record not found")}</span>
-                  <span className="mt-0.5 line-clamp-2 text-[10.5px] leading-snug text-muted-foreground">{m.explanation}</span>
+                  <span className="mt-0.5 line-clamp-2 text-[10.5px] leading-snug text-muted-foreground">{record ? m.explanation : m.unread ? `The read for ${m.entityId} failed. Reload to try it again.` : m.entityId}</span>
                   {record ? <span className="mt-0.5 block font-mono text-[8px] uppercase tracking-[0.14em] text-muted-foreground/80">{record.status === "UnderReview" ? "under review" : record.status.toLowerCase()}</span> : null}
                 </span>
               </Row>

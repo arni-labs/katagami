@@ -85,10 +85,12 @@ export function computeVisible(index: GraphIndex, maps: MapName[], state: Expans
     const kids = childrenOf(index, key);
     hidden.set(key, Math.max(0, kids.length - (state.open.has(key) ? shownCount(state, key) : 0)));
     if (!state.open.has(key)) return;
-    const list = kids.slice(0, shownCount(state, key));
+    // A cell with two open parents is shown under the first that reveals it
+    // and left out of the second's list, so the second reserves no ring slot
+    // for a cell that is drawn elsewhere.
+    const list = kids.slice(0, shownCount(state, key)).filter((kid) => !cells.has(kid.id));
     shown.set(key, list);
     for (const kid of list) {
-      if (cells.has(kid.id)) continue;
       cells.add(kid.id);
       queue.push(kid.id);
     }
