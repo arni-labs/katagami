@@ -184,6 +184,59 @@ export interface GraphLayout {
   topCentre: { x: number; y: number };
 }
 
+/** The settled map with the cells left out.
+ *
+ *  The layout is a pure function of the cells and takes seconds over a library
+ *  this size, so it is computed once on the server and handed to the page
+ *  rather than run again in the browser while the user waits. Only the
+ *  geometry travels: each plate keeps its id and its box, and the cell itself
+ *  is put back from the graph the page already has, so the payload does not
+ *  carry every cell twice. */
+export interface LayoutSeed {
+  plates: Array<{ id: string; x: number; y: number; w: number; h: number; level: number; scale: number }>;
+  satellites: SatelliteNode[];
+  regions: Region[];
+  bounds: { x: number; y: number; w: number; h: number };
+  topBounds: { x: number; y: number; w: number; h: number };
+  topCentre: { x: number; y: number };
+}
+
+export function seedFromLayout(layout: GraphLayout): LayoutSeed {
+  return {
+    plates: layout.plates.map((p) => ({ id: p.id, x: p.x, y: p.y, w: p.w, h: p.h, level: p.level, scale: p.scale })),
+    satellites: layout.satellites,
+    regions: layout.regions,
+    bounds: layout.bounds,
+    topBounds: layout.topBounds,
+    topCentre: layout.topCentre,
+  };
+}
+
+/** Put the cells back on the geometry. Linear in the number of cells, so the
+ *  browser does this in a millisecond where laying the field out again took
+ *  seconds. A plate whose cell is no longer in the graph is dropped rather
+ *  than drawn without one. */
+export function layoutFromSeed(seed: LayoutSeed, index: GraphIndex): GraphLayout {
+  const plates: PlateNode[] = [];
+  const byId = new Map<string, PlateNode>();
+  for (const p of seed.plates) {
+    const cell = index.byId.get(p.id);
+    if (!cell) continue;
+    const node: PlateNode = { kind: "plate", id: p.id, cell, x: p.x, y: p.y, w: p.w, h: p.h, level: p.level, scale: p.scale };
+    plates.push(node);
+    byId.set(p.id, node);
+  }
+  return {
+    plates,
+    satellites: seed.satellites.filter((s) => byId.has(s.cellId)),
+    regions: seed.regions,
+    byId,
+    bounds: seed.bounds,
+    topBounds: seed.topBounds,
+    topCentre: seed.topCentre,
+  };
+}
+
 /** A screen is wider than it is tall, so the whole field should be too:
  *  packing the map regions into a square wastes the sides and drives the fit
  *  zoom down. Try every row width the regions can actually make and keep the

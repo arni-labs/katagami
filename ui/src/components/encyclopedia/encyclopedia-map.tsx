@@ -8,10 +8,10 @@ import { GraphIndex, MAP_INK, MAP_LABEL, MAP_NAMES_ORDER, type RelationInk } fro
 import { Marker } from "@/components/page-hero";
 import { RELATION_INK_VAR, SearchBox } from "./chrome";
 import { SET_INK } from "./material";
-import { expandCell, expandedRadius, layoutGraph, levelScale, PLATE_W, plateConnector, type PlateNode, type SatelliteNode } from "./graph-layout";
+import { expandCell, expandedRadius, layoutFromSeed, levelScale, PLATE_W, plateConnector, SAT_W, type LayoutSeed, type PlateNode, type SatelliteNode } from "./graph-layout";
 import { lodFor, Plate, Satellite } from "./map-cards";
 import { CloseButton, IndexSheet, OpenCellButton, SheetBody, SheetTitle, type SheetTab } from "./focus-sheet";
-import { useMounted, usePanZoom, usePrefersReducedMotion } from "./use-pan-zoom";
+import { useMounted, usePanZoom, usePrefersReducedMotion, ZOOM_MAX } from "./use-pan-zoom";
 
 // The encyclopedia: one map of every attested cell. Cells are plates grouped
 // by map; broader and typed relations are dashed lines with the word on them;
@@ -24,6 +24,19 @@ import { useMounted, usePanZoom, usePrefersReducedMotion } from "./use-pan-zoom"
  *  these a plate is a smudge and the field stops being worth looking at. */
 const READABLE_PLATE_PX = 104;
 const READABLE_CARD_PX = 44;
+/** The smallest an opened record node may print at. A ring of sixty records
+ *  fitted to a 390px screen puts each node at about fifteen pixels, too small
+ *  to hit, so below this the ring runs off the screen and is panned instead. */
+const HITTABLE_NODE_PX = 34;
+
+/** How far in the camera goes to hold an opened cell's ring. One place decides
+ *  it, because the opening frame and the fit control have to agree: they drifted
+ *  apart once and fit put the records below the size they can be clicked at. */
+function zoomForRing(radius: number, room: { w: number; h: number }, satPx: number): number {
+  const fit = Math.min(room.w, room.h) / (radius * 2);
+  const floor = HITTABLE_NODE_PX / Math.max(1, satPx);
+  return Math.max(floor, Math.min(1.1, fit));
+}
 
 function useIsDesktop(): boolean {
   const [desktop, setDesktop] = useState(true);
@@ -37,9 +50,13 @@ function useIsDesktop(): boolean {
   return desktop;
 }
 
-export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaGraph; initialCellId?: string | null }) {
+export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph: EncyclopediaGraph; layout: LayoutSeed; initialCellId?: string | null }) {
   const index = useMemo(() => new GraphIndex(graph), [graph]);
-  const layout = useMemo(() => layoutGraph(index), [index]);
+  // Settled on the server; here the cells are put back on the geometry, which
+  // is linear in the number of cells rather than the seconds a full layout
+  // takes. Nothing about the field changes — it is the same pure function's
+  // output, computed once.
+  const layout = useMemo(() => layoutFromSeed(seed, index), [seed, index]);
   const initial = initialCellId && layout.byId.has(initialCellId) ? initialCellId : null;
   const [focusId, setFocusId] = useState<string | null>(initial);
   const [sheetOpen, setSheetOpen] = useState(true);
@@ -55,7 +72,14 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const desktop = useIsDesktop();
   const mounted = useMounted();
   const reduced = usePrefersReducedMotion();
-  const { viewportRef, camera, setCamera, animate, dragging, handlers, zoomStep, glide, centerOn } = usePanZoom({ x: 0, y: 0, k: 0.2 });
+  // Reading a card means seeing it at the size it was designed at, so the
+  // camera must be able to reach 1 / scale for the deepest layer the library
+  // has. With four layers that is a zoom of 8, well past the default ceiling —
+  // and without it the text on a deep cell never becomes legible however far
+  // in you go, which would make the whole premise of the layers false.
+  const deepestLevel = useMemo(() => seed.plates.reduce((d, p) => Math.max(d, p.level), 0), [seed]);
+  const maxZoom = Math.max(ZOOM_MAX, 1 / levelScale(deepestLevel) * 1.25);
+  const { viewportRef, camera, setCamera, animate, dragging, handlers, zoomStep, glide, centerOn } = usePanZoom({ x: 0, y: 0, k: 0.2 }, maxZoom);
   const lod = lodFor(camera.k);
 
   // ── one layer at a time ────────────────────────────────────────────────
@@ -66,9 +90,12 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   // Cells below the drawn layers are still on the map and still reachable — by
   // zooming, by search, or by focusing a cell above them — they are simply not
   // all drawn at once. Five hundred cells at one size is a mesh.
-  const zoomForLevel = useCallback((level: number) => READABLE_CARD_PX / (levelScale(level) * PLATE_W), []);
   const visiblePlates = useMemo(
-    () => layout.plates.filter((p) => camera.k * p.scale * PLATE_W >= READABLE_CARD_PX),
+    // Judge a card by its own width, not by the widest a card can be. A cell
+    // with no material draws narrower than a pictured one, so measuring every
+    // card as if it were 320 wide admitted named cards at about seventy per
+    // cent of the size the threshold is meant to guarantee.
+    () => layout.plates.filter((p) => camera.k * p.w >= READABLE_CARD_PX),
     [layout.plates, camera.k],
   );
   const visibleIds = useMemo(() => new Set(visiblePlates.map((p) => p.id)), [visiblePlates]);
@@ -101,8 +128,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     // camera off the thing the reader just opened, which reads as a bug the
     // first time anyone opens a ring and presses 0.
     if (opened) {
-      const r = opened.radius;
-      const k = Math.max(0.05, Math.min(1.1, Math.min((vw - side * 2) / (r * 2), (vh - top - bottom) / (r * 2))));
+      const k = zoomForRing(opened.radius, { w: vw - side * 2, h: vh - top - bottom }, SAT_W * opened.plate.scale);
       const x = vw / 2 - opened.plate.x * k;
       const y = top + (vh - top - bottom) / 2 - opened.plate.y * k;
       if (smooth) glide({ k, x, y }); else setCamera({ k, x, y });
@@ -146,15 +172,17 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     const el = viewportRef.current;
     const p = layout.byId.get(id);
     if (!el || !p) return;
-    // Come in far enough that the cell's own level is drawn: focusing a deep
-    // cell from search or from the index must actually show it.
-    const k = Math.max(camera.k, 1, zoomForLevel(p.level) * 1.1);
+    // Come in far enough that the card reads, not merely far enough that it is
+    // drawn. A cell on a lower layer draws at a fraction of full size, so its
+    // 22px title only reaches 22px on screen at 1 / scale; stopping at the
+    // threshold that makes it visible left that title at about three pixels.
+    const k = Math.min(maxZoom, Math.max(camera.k, 1 / p.scale));
     if (desktop) centerOn(p.x, p.y, k, { x: el.clientWidth / 2, y: el.clientHeight / 2 + 30 });
     else {
       const fit = Math.min(k, (el.clientWidth - 40) / p.w);
       centerOn(p.x, p.y, fit, { x: el.clientWidth / 2, y: 196 + p.h * 0.5 * fit - 40 });
     }
-  }, [viewportRef, layout.byId, camera.k, desktop, centerOn, zoomForLevel]);
+  }, [viewportRef, layout.byId, camera.k, desktop, centerOn, maxZoom]);
 
   // First framing happens once the viewport has a size. The flag is set when
   // the frame actually runs, so a dependency change that cancels the pending
@@ -264,15 +292,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     const el = viewportRef.current;
     if (!opened || !el) return;
     const room = desktop ? 120 : 200;
-    const fit = (Math.min(el.clientWidth, el.clientHeight) - room) / (opened.radius * 2);
-    // Frame the ring, coming in from the far view or pulling back from a close
-    // one — clamping to the camera's current zoom left sixty records as a
-    // ten-pixel clump when the cell was opened from the whole map. The floor
-    // matters on a phone: a wide ring that fits a 390px screen puts every
-    // record at fifteen pixels, too small to hit. Below the floor the ring
-    // runs off the screen and is panned instead, which keeps every record a
-    // real target.
-    const k = Math.max(0.6, Math.min(1.1, fit));
+    const k = zoomForRing(opened.radius, { w: el.clientWidth - room, h: el.clientHeight - room }, SAT_W * opened.plate.scale);
     centerOn(opened.plate.x, opened.plate.y, k, { x: el.clientWidth / 2, y: el.clientHeight / 2 });
     // Framing belongs to the act of opening a cell, not to every camera move.
     // eslint-disable-next-line react-hooks/exhaustive-deps
