@@ -1367,3 +1367,53 @@ One description flag is also left standing, and it is the only claim in the 81 t
 Where: `scripts/encyclopedia_support.py`, the strict-flag print; the guidance in `.agents/skills/encyclopedia/SKILL.md`.
 
 And the repair was checked by something other than the instrument that produced it. Twenty of the 198 repaired cells were drawn with a fixed seed rather than chosen, re-read one at a time from production rather than from the saved state, and their 48 sources fetched into an empty cache rather than read from the 36MB one every other measurement used. Twenty hold, none flag. Fifteen of those twenty were the mechanical Artsy cut, which the draw makes likely because 123 of the 198 are, so a second draw was taken from the 80 hand-written scope cuts alone, where the judgement lives: 46 sources fetched fresh, twenty hold, none flag.
+
+## D78 Modernism is written as a direction because Tate states its principles
+
+Decision: The Modernism cell's scope is written from the three principles Tate's art-term page states, and never from the movement's dates.
+
+Came up because: The owner approved minting Modernism after an earlier pass reserved the decision for her, and the standing objection is that Modernism spans roughly 1860 to 1970 and reads as the period label the collection's rules forbid. A cell has to name a direction or a body of made work.
+
+Options: Decline and leave the 119 art roots alone; mint it and open the scope on the span; mint it and open the scope on the stance.
+
+Chose the stance because: Tate's page does the work already. It says "there are certain underlying principles that define modernist art: A rejection of history and conservative values (such as realistic depiction of subjects); innovation and experimentation with form (the shapes, colours and lines that make up the work) with a tendency to abstraction; and an emphasis on materials, techniques and processes." Wikipedia adds the reflexivity, "experimentation highlighting how works of art are made as well as the material from which they are created", and the replacement of absolute originality with collage, reprise, rewriting, recapitulation and parody. A stance toward the past, a way of working, and a set of techniques is a direction, and it can be argued with, which a span cannot. The dates appear once in the scope, attributed to Tate as the range critics and historians apply the term to, and they place no child: every one of the nine was placed on a source calling it a modernist movement.
+
+What was given up: the cell cannot be used to sweep in a movement because its dates fit. That is the point of writing it this way, and it is why the placement count is nine.
+
+Where: `docs/efforts/ARN-118/payloads/mkmodernism.mjs`, the `modernism` document; cell `modernism` in production.
+
+## D79 Abstract art stays a root, and it is the decline that costs the most
+
+Decision: Abstract art is not placed under Modernism.
+
+Came up because: It is the largest hub left among the art roots, it already has children of its own, and placing it would have moved the root count further than any other single link available in this pass.
+
+Options: Place it on Tate's modernism page saying the succession culminates in abstract art; place it on Wikipedia's "movements and techniques associated with modernism include abstract art"; leave it a root and write the question onto the cell.
+
+Chose to leave it because: three of abstract art's own records were checked and all three stop short. Its Wikipedia article never states it, Tate's abstract-art page never states it, and Wikidata files it under modern art (Q38166) rather than modernism (Q878985). "Associated with" is not containment, and "culminating in abstract art" reads as easily as modernism ending where abstract art begins as it does abstract art being inside modernism. The pressure to take it came from the count, which is the reason to refuse it. The question is written onto the Modernism cell naming what a source would have to say.
+
+Where: `modernism` cell, first `questions` entry.
+
+## D80 Whose article makes the claim is written into the explanation, and three links say it is the umbrella's
+
+Decision: Six links state the child's own claim about itself; three (Surrealism, Dada, Bauhaus) rest only on the Modernism article and say so in their own text.
+
+Came up because: The collection's rule is to prefer the child's own claim and, where only the umbrella's article makes it, to write the link and name whose claim it is. Applying that test to Modernism produced a sharp split rather than a spectrum.
+
+Options: Place only the six firm ones; place all nine and mark none; place all nine and mark the three.
+
+Chose to mark the three because: a reader should not come away thinking Surrealism called itself modernist. Surrealism's explanation opens "Surrealism's own Tate page does not call Surrealism modernist", and Dada's and Bauhaus's do the same for their own articles. All three then give the Modernism article's sentence: "In painting, during the 1920s and 1930s and the Great Depression, modernism was defined by Surrealism, late Cubism, Bauhaus, De Stijl, Dada, German Expressionism". Cubism is in that sentence too, but its link cites Wikidata's P361 part-of statement instead, which is a claim on Cubism's own record and firmer.
+
+Where: `broader` explanations on `surrealism`, `dada`, `bauhaus`.
+
+## D81 Getty AAT was re-checked at the movement layer rather than assumed closed
+
+Decision: The AAT records for eleven candidate movements were fetched and read before AAT was written off as a source of parents here.
+
+Came up because: An earlier pass reported that AAT gives the visual lane no parent layer, having read it off 52 cell-level records. Carrying that forward as a fact about the movement layer would have been an assumption dressed as a finding.
+
+Options: Cite the earlier finding and skip the queries; re-check a sample; re-check every candidate.
+
+Chose to re-check the eleven that mattered because: the queries are cheap and the earlier finding was about a different layer. Dada, Surrealist, Constructivist, Cubist, Expressionist, Futurist, Fauve, Post-Impressionism, Impressionist, Arte Povera and Fluxus were fetched. Every one gives a guide term in angle brackets as its only broader concept, sorted by nation and period: `<modern European fine arts styles and movements>`, `<modern Italian styles and movements>`, `<post-1945 fine arts styles and movements>`. The earlier finding holds at this layer too, and it is now written onto the Modernism cell so the next pass does not spend the queries a third time.
+
+Where: `modernism` cell, last `questions` entry.
