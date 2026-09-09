@@ -104,42 +104,31 @@ export function useLoadFailure(src: string | undefined): [boolean, () => void] {
 /** The face a cell turns to the map: its picture when it has one, otherwise
  *  the material it does have. Only a cell with no material at all shows the
  *  dashed name box, so the far field reads as material rather than as empty
- *  frames. */
-function Face({ face, lod, k, name, onImageError }: { face: CellFace; lod: Lod; k: number; name: string; onImageError: () => void }) {
-  const box = lod === "reading" ? "mt-3" : "";
-  const ratio = lod === "reading" ? "4 / 3" : "1 / 1";
+ *  frames.
+ *
+ *  `fill` puts the face in the card's flexible middle, where it takes whatever
+ *  height is left rather than setting its own from an aspect ratio. That is
+ *  what keeps the card inside the box the layout reserved for it. */
+function Face({ face, lod, k, name, fill, onImageError }: { face: CellFace; lod: Lod; k: number; name: string; fill?: boolean; onImageError: () => void }) {
+  const shape: CSSProperties = fill ? { height: "100%" } : { aspectRatio: lod === "reading" ? "4 / 3" : "1 / 1" };
   if (face.kind === "image") {
     return (
-      <span className={`relative block overflow-hidden ${box}`} style={{ aspectRatio: ratio }}>
+      <span className="relative block overflow-hidden" style={shape}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={face.url} alt={face.alt} className="block h-full w-full object-cover" loading="lazy" draggable={false} onError={onImageError} />
       </span>
     );
   }
   if (face.kind === "palette") {
-    return <Swatches colors={face.swatches} className={box} style={{ aspectRatio: ratio }} />;
+    return <Swatches colors={face.swatches} style={shape} />;
   }
   if (face.kind === "passage") {
-    return (
-      <PaperStrip
-        text={face.text}
-        className={`${box} flex items-center`}
-        lines={lod === "reading" ? 7 : 9}
-        style={{ aspectRatio: ratio }}
-      />
-    );
+    return <PaperStrip text={face.text} className="flex items-center" lines={lod === "reading" ? 7 : 9} style={shape} />;
   }
-  // Nothing but a name and a scope. Far out the plate IS the name; close in
-  // the name is already in the plate's header, so all that is left to say is
-  // that no material has been made yet.
-  if (lod === "reading") {
-    return (
-      <span className="mt-3 block px-3 py-2.5" style={{ outline: `2px dashed color-mix(in oklch, ${face.ink} 45%, transparent)`, outlineOffset: -2 }}>
-        <Eyebrow ink={face.ink} style={{ fontSize: 10 }}>{face.eyebrow}</Eyebrow>
-        <span className="mt-1 block text-[16px] leading-snug text-muted-foreground">{face.note}</span>
-      </span>
-    );
-  }
+  // Nothing but a name and a scope. Close in, the name and the scope are
+  // already in the card's header and the caption underneath says no material
+  // has been made, so the face has nothing left to add and stands down.
+  if (lod === "reading") return null;
   // Far out the card is nothing but the name on paper. No dashed frame here:
   // ninety of them at once would spend the whole accent budget on emptiness,
   // and a cell with no picture already looks like one.
@@ -156,7 +145,12 @@ function Face({ face, lod, k, name, onImageError }: { face: CellFace; lod: Lod; 
   );
 }
 
-/** A cell on the map. Fixed width; the height grows with the zoom layer. */
+/** A cell on the map. The card is exactly the box the layout reserved for it —
+ *  same width, same height, nothing spilling out. The zoom layer changes what
+ *  is inside the box, never how much room the card takes: the header and the
+ *  caption are set, and the picture takes whatever height is left over. A long
+ *  scope and a study on the same cell used to push a reading-mode card a
+ *  hundred and eighty pixels past its reservation and over its neighbour. */
 export function Plate({
   cell,
   x,
@@ -179,21 +173,27 @@ export function Plate({
   const { face, onImageError } = useCellFace(cell);
   const box = plateBox(cell);
   const material = cellMaterial(cell);
-  const studyText = material.text?.source === "study" ? material.text : null;
-  const studyPalette = material.palette?.source === "study" ? material.palette : null;
+  const reading = lod === "reading";
+  const studyText = reading && material.text?.source === "study" ? material.text : null;
+  const studyPalette = reading && material.palette?.source === "study" ? material.palette : null;
+  const hasFace = !(reading && face.kind === "name");
   // Names counter-scale so they read at every zoom the layer is shown at.
-  const nameSize = lod === "reading" ? 22 : Math.min(110, Math.max(20, 15 / k));
+  const nameSize = reading ? 22 : Math.min(110, Math.max(20, 15 / k));
   return (
     <button
       type="button"
       onClick={onFocus}
       aria-label={`${cell.name}. Focus this cell.`}
       aria-current={focused ? "true" : undefined}
-      className="absolute block text-left transition-[opacity,box-shadow] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]"
+      className="absolute flex flex-col text-left transition-[opacity,box-shadow] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]"
       style={{
         left: x - box.w / 2,
         top: y - box.h / 2,
         width: box.w,
+        height: box.h,
+        // The reservation is the card. Anything the content does inside stays
+        // inside; nothing can reach a neighbouring plate.
+        overflow: "hidden",
         background: PAPER,
         boxShadow: focused ? "var(--shadow-card-hover)" : "var(--shadow-card)",
         outline: focused ? "2px solid color-mix(in oklch, var(--ramune) 70%, transparent)" : undefined,
@@ -205,37 +205,46 @@ export function Plate({
       data-plate={cell.id}
     >
       {focused ? <Tape ink="var(--ramune)" className="-top-2 left-5" rotate={-3} width={58} /> : null}
-      {lod === "reading" ? (
-        <span className="block">
+      {reading ? (
+        <span className="block shrink-0">
           <span className="flex items-center gap-2 font-mono text-[9.5px] font-bold uppercase tracking-[0.16em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>
             {cell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}
             <span className="text-muted-foreground">· {cell.state === "Draft" ? "proposed" : cell.state.toLowerCase()}</span>
           </span>
-          <span className="mt-1.5 block font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: nameSize }}>{cell.name}</span>
-          {cell.description ? <span className="mt-2 line-clamp-3 text-[16px] leading-snug text-muted-foreground">{cell.description}</span> : <span className="mt-2 block text-[16px] leading-snug text-muted-foreground">A name and a scope.</span>}
+          <span className="mt-1.5 line-clamp-2 font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: nameSize }}>{cell.name}</span>
+          <span className="mt-2 line-clamp-2 text-[16px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
         </span>
       ) : null}
-      <Face face={face} lod={lod} k={k} name={cell.name} onImageError={onImageError} />
-      {lod === "reading" ? (
-        <span className="mt-2 block font-mono text-[9.5px] uppercase leading-snug tracking-[0.12em] text-muted-foreground">{face.caption}</span>
+      {/* The flexible middle: the picture and any study the cell carries share
+          whatever height the header and the caption leave, in that order of
+          priority. Every one of them is bounded, so none can grow the card. */}
+      {hasFace || studyText || studyPalette ? (
+        <span className={`flex min-h-0 flex-1 flex-col ${reading ? "mt-3 gap-3" : ""}`}>
+          {hasFace ? <span className="block min-h-0" style={{ flex: studyText ? "3 1 0%" : "1 1 0%" }}><Face face={face} lod={lod} k={k} name={cell.name} fill onImageError={onImageError} /></span> : null}
+          {studyText ? <span className="block min-h-0 overflow-hidden" style={{ flex: "2 1 0%" }}><PaperStrip text={studyText.text} lines={5} className="h-full" /></span> : null}
+          {studyPalette ? <Swatches colors={studyPalette.swatches} className="h-9 shrink-0" /> : null}
+        </span>
       ) : null}
-      {lod === "reading" && studyText ? <PaperStrip text={studyText.text} className="mt-3" lines={5} /> : null}
-      {lod === "reading" && studyPalette ? <Swatches colors={studyPalette.swatches} className="mt-3 h-9" /> : null}
+      {reading ? (
+        <span className="mt-2 block shrink-0 font-mono text-[9.5px] uppercase leading-snug tracking-[0.12em] text-muted-foreground">{face.caption}</span>
+      ) : null}
       {lod === "named" && face.kind !== "name" ? (
-        <span className="mt-2 block truncate font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: Math.min(40, nameSize) }}>{cell.name}</span>
+        <span className="mt-2 block shrink-0 truncate font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: Math.min(40, nameSize) }}>{cell.name}</span>
       ) : null}
     </button>
   );
 }
 
-/** One manifestation, joined to its cell. Opens the record's own page. */
+/** One node on the paper: a manifestation record joined to its cell by a
+ *  dotted line and opening that record's page, or the control that opens the
+ *  cell's remaining records onto the map and folds them away again. */
 export function Satellite({
   node,
   manifestation,
   k,
   dimmed,
   labelled,
-  onMore,
+  onToggle,
 }: {
   node: SatelliteNode;
   manifestation: CellManifestation | null;
@@ -244,7 +253,8 @@ export function Satellite({
   /** Names are drawn only around the cell in focus. Every satellite naming
    *  itself at once buried the map under overlapping labels. */
   labelled: boolean;
-  onMore: () => void;
+  /** Open this cell's remaining records onto the map, or fold them away. */
+  onToggle: () => void;
 }) {
   const record = manifestation?.record ?? null;
   const ink = SET_INK[node.set];
@@ -266,13 +276,23 @@ export function Satellite({
   const style: CSSProperties = { left: node.x - size / 2, top: node.y - size / 2, width: size, opacity: dimmed ? 0.3 : 1, zIndex: 1 };
   const labelSize = Math.min(14, Math.max(9, 9 / k));
 
-  if (node.index === -1) {
-    // The ring holds what fits; the rest are real records the sheet lists in
-    // full, so this node opens that list rather than standing for nothing.
+  if (node.role === "more") {
+    // The ring holds eight; the rest are real records, and this opens them onto
+    // the paper as nodes of their own rather than standing in for them.
+    const label = `Open the other ${node.more} records this cell names on the map`;
     return (
-      <button type="button" onClick={onMore} title={`Open the other ${node.more} records this cell names`} aria-label={`Open the other ${node.more} records this cell names`} className={common} style={style}>
+      <button type="button" onClick={onToggle} title={label} aria-label={label} aria-expanded={false} className={common} style={style}>
         <span className="grid place-items-center bg-[var(--washi)] font-mono font-bold tabular-nums text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, fontSize: Math.min(22, Math.max(12, 11 / k)) }}>+{node.more}</span>
         {labelled ? <span className="mt-1 block text-center font-mono uppercase tracking-[0.12em] text-muted-foreground" style={{ fontSize: labelSize }}>open all</span> : null}
+      </button>
+    );
+  }
+  if (node.role === "fold") {
+    const label = `Fold the ${node.more} records of this cell back into one node`;
+    return (
+      <button type="button" onClick={onToggle} title={label} aria-label={label} aria-expanded className={common} style={{ ...style, zIndex: 4 }}>
+        <span className="grid place-items-center font-mono font-bold text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, background: "color-mix(in srgb, var(--yuzu) 42%, var(--washi))", fontSize: Math.min(26, Math.max(14, 13 / k)) }}>−</span>
+        {labelled ? <span className="mt-1 block text-center font-mono uppercase tracking-[0.12em] text-muted-foreground" style={{ fontSize: labelSize }}>fold</span> : null}
       </button>
     );
   }

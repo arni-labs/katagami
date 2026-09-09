@@ -17,10 +17,21 @@ export const PLATE_H = 380;
  *  view, the named cells sit quietly between them, and the field packs tight
  *  enough to be read whole. */
 export const NAME_W = 232;
-export const NAME_H = 132;
+/** Tall enough for everything the card sets at the reading layer — the
+ *  eyebrow, two lines of name, two lines of scope, the caption — because the
+ *  card is now rendered at exactly this height and nothing may spill out of
+ *  it. Reserving 132 while the card set 265 to 312 is how a named cell came to
+ *  sit on top of its neighbour. */
+export const NAME_H = 180;
 export const SAT_W = 56;
 export const SAT_H = 56;
+/** How many manifestation records ring a cell before the rest are folded
+ *  behind one node. The fold is a starting position, not a ceiling: the node
+ *  opens the remaining records onto the map as their own connected nodes. */
 export const MAX_SATELLITES = 8;
+/** Room between rings, and between neighbours on a ring, once a cell's records
+ *  are opened out. */
+const RING_GAP = 12;
 const GRID_X = 360;
 const GRID_Y = 330;
 const REGION_GAP = 240;
@@ -49,8 +60,14 @@ export interface SatelliteNode {
   id: string;
   cellId: string;
   set: ManifestationSet;
-  /** Index into cell.manifestations, or -1 for the "+N more" node. */
+  /** What the node is. A `record` is one manifestation, joined to its cell by
+   *  a dotted line and opening that record's page. `more` opens the records
+   *  the ring could not hold onto the map as record nodes of their own;
+   *  `fold` puts them away again. */
+  role: "record" | "more" | "fold";
+  /** Index into cell.manifestations for a record node, -1 for the other two. */
   index: number;
+  /** How many records `more` stands for. */
   more: number;
   x: number;
   y: number;
@@ -384,7 +401,7 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
       // The overflow node stands for the records past the ring, so it takes
       // the set of the first of them rather than repeating the last one drawn.
       const m = isMore ? list[shown] : list[j];
-      satellites.push({ kind: "satellite", id: isMore ? `${n.id}~more` : `${n.id}~${j}`, cellId: n.id, set: m.entitySet, index: isMore ? -1 : j, more: isMore ? extra : 0, x, y });
+      satellites.push({ kind: "satellite", id: isMore ? `${n.id}~more` : `${n.id}~${j}`, cellId: n.id, set: m.entitySet, role: isMore ? "more" : "record", index: isMore ? -1 : j, more: isMore ? extra : 0, x, y });
     }
   }
 
@@ -456,6 +473,62 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
   const left = extent(all, (r) => r.x).min; const top = extent(all, (r) => r.y).min;
   const right = extent(all, (r) => r.x + r.w).max; const bottom = extent(all, (r) => r.y + r.h).max;
   return { plates: nodes, satellites, regions, byId: plates, bounds: { x: left, y: top, w: right - left, h: bottom - top } };
+}
+
+/** Every record a cell names, opened out around it as its own node.
+ *
+ *  The ring the map draws by default holds eight; a cell that names sixty has
+ *  the rest behind one node, and clicking that node lands here. The records go
+ *  onto concentric rings around the plate, each ring as full as its
+ *  circumference allows, so every record is a node on its own dotted line and
+ *  every one of them is reachable on the paper. The first slot is given to the
+ *  node that folds them away again, in the same place the "+N" node sat.
+ *
+ *  Nothing else on the map moves. The field keeps the shape it settled into;
+ *  this is an overlay around one plate, drawn above its neighbours, and the
+ *  page dims the rest while it is open. */
+export function expandCell(plate: PlateNode, away: number): SatelliteNode[] {
+  const list = plate.cell.manifestations;
+  if (!list.length) return [];
+  const baseX = plate.w / 2 + SAT_W / 2 + RING_PAD;
+  const baseY = plate.h / 2 + SAT_H / 2 + RING_PAD;
+  const step = SAT_H + RING_GAP;
+  const out: SatelliteNode[] = [];
+  // Slot 0 is the fold control, then one slot per record.
+  let placed = 0;
+  const total = list.length + 1;
+  for (let ring = 0; placed < total && ring < 40; ring++) {
+    const rx = baseX + ring * step;
+    const ry = baseY + ring * step;
+    // Circumference of the ellipse, near enough for spacing purposes, divided
+    // by the room one node needs.
+    const around = 2 * Math.PI * Math.sqrt((rx * rx + ry * ry) / 2);
+    const capacity = Math.max(1, Math.floor(around / (SAT_W + RING_GAP)));
+    const here = Math.min(capacity, total - placed);
+    for (let j = 0; j < here; j++) {
+      // Rings alternate their starting offset so nodes on the outer ring sit
+      // between the ones inside them rather than directly behind them.
+      const angle = away + (2 * Math.PI * j) / here + (ring % 2 ? Math.PI / here : 0);
+      const x = Math.round(plate.x + Math.cos(angle) * rx);
+      const y = Math.round(plate.y + Math.sin(angle) * ry);
+      const at = placed + j;
+      if (at === 0) {
+        out.push({ kind: "satellite", id: `${plate.id}~fold`, cellId: plate.id, set: list[0].entitySet, role: "fold", index: -1, more: list.length, x, y });
+      } else {
+        const m = list[at - 1];
+        out.push({ kind: "satellite", id: `${plate.id}~${at - 1}`, cellId: plate.id, set: m.entitySet, role: "record", index: at - 1, more: 0, x, y });
+      }
+    }
+    placed += here;
+  }
+  return out;
+}
+
+/** How far an opened cell reaches, so the camera can frame the whole of it. */
+export function expandedRadius(plate: PlateNode, nodes: SatelliteNode[]): number {
+  let r = 0;
+  for (const n of nodes) r = Math.max(r, Math.hypot(n.x - plate.x, n.y - plate.y));
+  return r + SAT_W;
 }
 
 /** A dashed connector between two plates: a soft S-curve, and the point where

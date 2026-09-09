@@ -8,7 +8,7 @@ import { GraphIndex, MAP_INK, MAP_LABEL, MAP_NAMES_ORDER } from "@/lib/encyclope
 import { Marker } from "@/components/page-hero";
 import { RELATION_INK_VAR, SearchBox } from "./chrome";
 import { SET_INK } from "./material";
-import { layoutGraph, plateConnector, type PlateNode } from "./graph-layout";
+import { expandCell, expandedRadius, layoutGraph, plateConnector, type PlateNode, type SatelliteNode } from "./graph-layout";
 import { lodFor, Plate, Satellite } from "./map-cards";
 import { CloseButton, IndexSheet, OpenCellButton, SheetBody, SheetTitle, type SheetTab } from "./focus-sheet";
 import { useMounted, usePanZoom, usePrefersReducedMotion } from "./use-pan-zoom";
@@ -39,9 +39,11 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const [sheetOpen, setSheetOpen] = useState(true);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [tab, setTab] = useState<SheetTab>("material");
-  // Bumped by the map's "+N" node: the sheet opens its manifestation list in
-  // full so every record past the ring is reachable from the map.
+  // Bumped when a cell's records are opened onto the map: the sheet unfolds its
+  // manifestation list to match, so the same records are readable as a list.
   const [expandKey, setExpandKey] = useState(0);
+  /** The cell whose records are opened out on the paper, if any. */
+  const [openedId, setOpenedId] = useState<string | null>(null);
   const [map, setMap] = useState<MapName | null>(null);
   const [query, setQuery] = useState("");
   const desktop = useIsDesktop();
@@ -107,6 +109,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
   const focus = useCallback((id: string) => {
     if (!layout.byId.has(id)) return;
+    setOpenedId((open) => (open === id ? open : null));
     setFocusId(id);
     setSheetOpen(true);
     setSheetExpanded(false);
@@ -114,7 +117,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     frameFocus(id);
   }, [layout.byId, frameFocus]);
 
-  const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); }, []);
+  const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); setOpenedId(null); }, []);
 
   const onFilter = (next: MapName | null) => {
     setMap(next);
@@ -136,7 +139,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     if (event.key === "+" || event.key === "=") { zoomStep(1); event.preventDefault(); }
     else if (event.key === "-" || event.key === "_") { zoomStep(-1); event.preventDefault(); }
     else if (event.key === "0") { fitAll(); event.preventDefault(); }
-    else if (event.key === "Escape") { if (sheetExpanded) setSheetExpanded(false); else if (focusId) clearFocus(); }
+    else if (event.key === "Escape") { if (openedId) setOpenedId(null); else if (sheetExpanded) setSheetExpanded(false); else if (focusId) clearFocus(); }
   };
 
   // ── emphasis ────────────────────────────────────────────────────────────
@@ -151,8 +154,64 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     if (map && !cell.maps.some((m) => m.map === map)) return true;
     return false;
   };
-  const faded = (id: string) => Boolean(neighbourIds && lod === "reading" && !neighbourIds.has(id));
+  // With a cell opened out, the paper around it steps back so the ring of
+  // records reads as one thing rather than as nodes scattered over neighbours.
+  const faded = (id: string) => (opened ? id !== opened.plate.id : Boolean(neighbourIds && lod === "reading" && !neighbourIds.has(id)));
   const manifestationsById = useMemo(() => new Map(graph.cells.map((c) => [c.id, c.manifestations])), [graph]);
+
+  // ── opening a cell's records onto the paper ─────────────────────────────
+  // The map's own shape never changes: opening a cell swaps that one cell's
+  // ring for a full set of record nodes around the same plate, and leaves
+  // every other plate and satellite exactly where it settled.
+  const opened = useMemo(() => {
+    const plate = openedId ? layout.byId.get(openedId) : null;
+    if (!plate) return null;
+    // Open from the same side the folded "+N" node sat on, so the fold control
+    // appears where the hand already is.
+    const more = layout.satellites.find((s) => s.cellId === plate.id && s.role === "more");
+    const away = more ? Math.atan2(more.y - plate.y, more.x - plate.x) : -Math.PI / 2;
+    const nodes = expandCell(plate, away);
+    return { plate, nodes, radius: expandedRadius(plate, nodes) };
+  }, [openedId, layout]);
+
+  /** The settled map minus the cell that is currently opened out — its own
+   *  nodes are drawn separately, above the plates. */
+  const baseSatellites: SatelliteNode[] = useMemo(
+    () => (opened ? layout.satellites.filter((s) => s.cellId !== opened.plate.id) : layout.satellites),
+    [layout.satellites, opened],
+  );
+  const shownRecords = (opened ? baseSatellites.concat(opened.nodes) : layout.satellites).filter((s) => s.role === "record").length;
+
+  /** Open a cell's records onto the map, frame them, and unfold the same list
+   *  in the sheet. Clicking the fold node puts them away again. */
+  const toggleOpen = useCallback((cellId: string) => {
+    if (openedId === cellId) { setOpenedId(null); return; }
+    setOpenedId(cellId);
+    setFocusId(cellId);
+    setSheetOpen(true);
+    setTab("material");
+    setExpandKey((n) => n + 1);
+  }, [openedId]);
+
+  // Pull the camera back far enough to hold the whole opened cell, once the
+  // ring for it exists.
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!opened || !el) return;
+    const room = desktop ? 120 : 200;
+    const fit = (Math.min(el.clientWidth, el.clientHeight) - room) / (opened.radius * 2);
+    // Frame the ring, coming in from the far view or pulling back from a close
+    // one — clamping to the camera's current zoom left sixty records as a
+    // ten-pixel clump when the cell was opened from the whole map. The floor
+    // matters on a phone: a wide ring that fits a 390px screen puts every
+    // record at fifteen pixels, too small to hit. Below the floor the ring
+    // runs off the screen and is panned instead, which keeps every record a
+    // real target.
+    const k = Math.max(0.6, Math.min(1.1, fit));
+    centerOn(opened.plate.x, opened.plate.y, k, { x: el.clientWidth / 2, y: el.clientHeight / 2 });
+    // Framing belongs to the act of opening a cell, not to every camera move.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened?.plate.id]);
 
   const strokeW = Math.max(1.2, 1.5 / camera.k);
   const dash = `${5 / camera.k} ${6 / camera.k}`;
@@ -214,7 +273,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
         <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden>
           {/* satellite dotted lines */}
-          {layout.satellites.map((s) => {
+          {baseSatellites.map((s) => {
             const p = layout.byId.get(s.cellId)!;
             const dim = dimmedPlate(s.cellId) || faded(s.cellId);
             // Start the line at the plate's edge, not its centre: a satellite
@@ -257,17 +316,54 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
           })}
         </svg>
 
-        {layout.satellites.map((s) => (
+        {baseSatellites.map((s) => (
           <Satellite
             key={s.id}
             node={s}
-            manifestation={s.index >= 0 ? manifestationsById.get(s.cellId)?.[s.index] ?? null : null}
+            manifestation={s.role === "record" ? manifestationsById.get(s.cellId)?.[s.index] ?? null : null}
             k={camera.k}
             dimmed={dimmedPlate(s.cellId) || faded(s.cellId)}
             labelled={focusId === s.cellId && lod !== "picture"}
-            onMore={() => { focus(s.cellId); setTab("material"); setSheetOpen(true); setSheetExpanded(true); setExpandKey((n) => n + 1); }}
+            onToggle={() => toggleOpen(s.cellId)}
           />
         ))}
+        {/* An opened cell's records, drawn after the plates so its nodes and
+            its dotted lines are never behind a neighbouring card. */}
+        {opened ? (
+          <div className="pointer-events-none absolute left-0 top-0 h-0 w-0" style={{ zIndex: 5 }}>
+            <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden>
+              {opened.nodes.map((s) => {
+                const p = opened.plate;
+                const dx = s.x - p.x; const dy = s.y - p.y;
+                const span = Math.max(Math.abs(dx) / (p.w / 2), Math.abs(dy) / (p.h / 2), 0.0001);
+                return (
+                  <line
+                    key={s.id}
+                    x1={p.x + dx / span} y1={p.y + dy / span} x2={s.x} y2={s.y}
+                    stroke={`color-mix(in oklch, ${SET_INK[s.set]} 60%, var(--foreground))`}
+                    strokeWidth={strokeW} strokeDasharray={dots} strokeLinecap="round"
+                  />
+                );
+              })}
+            </svg>
+            <div className="pointer-events-auto">
+              {opened.nodes.map((s) => (
+                <Satellite
+                  key={s.id}
+                  node={s}
+                  manifestation={s.role === "record" ? manifestationsById.get(s.cellId)?.[s.index] ?? null : null}
+                  k={camera.k}
+                  dimmed={false}
+                  // With a few nodes open the names fit beside them; with fifty
+                  // they would bury the ring, so the labels stand down and the
+                  // sheet carries the list.
+                  labelled={lod !== "picture" && opened.nodes.length <= 14}
+                  onToggle={() => toggleOpen(s.cellId)}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
         {layout.plates.map((p: PlateNode) => (
           <Plate
             key={p.id}
@@ -346,7 +442,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             {focusCell ? (<><span className="text-muted-foreground">/</span><span className="font-semibold" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>{focusCell.name}</span></>) : null}
           </span>
           <span className="ml-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            <span style={{ color: "color-mix(in oklch, var(--sakura) 78%, var(--foreground))" }}>{graph.cells.length} draft cells</span> · {layout.satellites.filter((s) => s.index >= 0).length} manifestations on the map · distances are schematic
+            <span style={{ color: "color-mix(in oklch, var(--sakura) 78%, var(--foreground))" }}>{graph.cells.length} draft cells</span> · {shownRecords} manifestations on the map · distances are schematic
           </span>
         </div>
       ) : null}
