@@ -47,6 +47,14 @@ test("the host rule's cases still separate it from the substring match it replac
   const source = execFileSync("cat", [sweep], { encoding: "utf8" });
   assert.match(source, /no case separates the parsed-host rule from a substring match/,
     "the self-test no longer requires its cases to catch the substring bug");
-  assert.match(source, /return 1 if bad or not caught or len\(cases\) < 15 else 0/,
-    "the self-test no longer fails when its case list stops separating the two rules");
+  // The property, not the line. The first version of this assertion pinned the
+  // exact return statement and went red the moment a third guard was added to it,
+  // which is a test encoding what its author last saw rather than what the rule
+  // says. What has to hold is that both guards still gate the exit code.
+  const exit = /return 1 if ([^\n]*) else 0/.exec(source);
+  assert.ok(exit, "the self-test no longer has a single exit condition to read");
+  assert.match(exit[1], /\bnot caught\b/,
+    "the self-test no longer fails when its cases stop separating the two rules");
+  assert.match(exit[1], /len\(cases\) < \d+/,
+    "the self-test no longer fails when its case list is cut down");
 });

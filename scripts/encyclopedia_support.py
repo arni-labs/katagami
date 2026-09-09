@@ -245,6 +245,24 @@ def strip_html(b):
     return html.unescape(re.sub(r"\s+", " ", re.sub(r"(?s)<[^>]+>", " ", b)))
 
 
+def archived(row):
+    """Is this row archived, asked of every place the status is written.
+
+    A row carries the status in `fields.status`, in `fields.Status`, and at the
+    top level, and they agree on all 763 cells today. They do not agree on shape:
+    two of the 27 WritingStyles rows carry only the capitalised `Status`, and both
+    are Archived, so a filter reading only `fields.status` counts them as live.
+    No cell has that shape yet, and a sweep that reports defects should not be the
+    thing that discovers it: an archived cell read as live is scored, and any
+    finding against it sends someone to repair a row that is already final.
+
+    "Archived rows are not absent rows" is already a rule in the skill; this is the
+    mechanism that would break it. Any reading saying Archived is enough, which
+    excludes rather than includes and so cannot manufacture a finding.
+    """
+    return "Archived" in {row.get("status"), row["fields"].get("status"), row["fields"].get("Status")}
+
+
 def read_record(origin, key, entity_set, entity_id):
     """One Katagami record, as the text a manifestation explanation describes.
 
@@ -281,7 +299,7 @@ def read_cells(origin, key):
         rows.extend(page["value"])
         nxt = page.get("@odata.nextLink")
         url = f"{origin}/tdata/{nxt}" if nxt else None
-    return [r for r in rows if r["fields"].get("status") != "Archived" and r["fields"].get("document")]
+    return [r for r in rows if not archived(r) and r["fields"].get("document")]
 
 
 def fetch_sources(urls, cache, cache_path):
@@ -487,6 +505,26 @@ def self_test():
     Every line below is a way a name can appear in a URL without the URL being
     served by that host. The substring version passed nine of them.
     """
+    rows = [
+        # every shape a row's status arrives in, and what it means
+        ({"status": "Draft", "fields": {"status": "Draft", "Status": "Draft"}}, False),
+        ({"status": "Archived", "fields": {"status": "Archived", "Status": "Archived"}}, True),
+        # the shape two live WritingStyles rows actually have: capitalised only
+        ({"status": "Archived", "fields": {"Status": "Archived"}}, True),
+        ({"fields": {"Status": "Archived"}}, True),
+        ({"fields": {"status": "Archived"}}, True),
+        ({"status": "Archived", "fields": {}}, True),
+        # a status missing everywhere is not a claim that the row is archived
+        ({"fields": {}}, False),
+        ({"status": "UnderReview", "fields": {"status": "UnderReview"}}, False),
+        # disagreement fails closed: archived anywhere is archived
+        ({"status": "Draft", "fields": {"status": "Draft", "Status": "Archived"}}, True),
+    ]
+    wrong = [(r, w) for r, w in rows if archived(r) is not w]
+    for r, w in wrong:
+        print(f"  archived({r}) should be {w}", file=sys.stderr)
+    print(f"archived rule: {len(rows) - len(wrong)} of {len(rows)} cases hold", file=sys.stderr)
+
     cases = [
         # served by the host, so a citation of it
         ("https://www.artsy.net/gene/impressionism", ("artsy.net",), True),
@@ -529,7 +567,7 @@ def self_test():
     if not caught:
         print("  no case separates the parsed-host rule from a substring match, so this"
               " list would pass the bug it exists to catch", file=sys.stderr)
-    return 1 if bad or not caught or len(cases) < 15 else 0
+    return 1 if bad or wrong or not caught or len(cases) < 15 else 0
 
 
 def main():
