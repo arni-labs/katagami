@@ -41,6 +41,11 @@ export function usePrefersReducedMotion(): boolean {
 
 const noop = () => () => {};
 
+/** The map owns every wheel and trackpad gesture over it. */
+function swallowWheel(event: WheelEvent) {
+  event.preventDefault();
+}
+
 /** False during server render and hydration, true once on the client — for
  *  portals to document.body. */
 export function useMounted(): boolean {
@@ -198,14 +203,17 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
   }, []);
 
   // Wheel must be non-passive to preventDefault; React attaches passive wheel
-  // listeners, so register directly.
-  useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    const handler = (e: WheelEvent) => e.preventDefault();
-    el.addEventListener("wheel", handler, { passive: false });
-    return () => el.removeEventListener("wheel", handler);
+  // listeners, so register directly — and register on whatever element the
+  // viewport is right now. An effect run once at mount found nothing on a
+  // phone, where the map is mounted later on request, and the page scrolled
+  // under every wheel and trackpad gesture over the map.
+  const wheelTarget = useRef<HTMLDivElement | null>(null);
+  const guardWheel = useCallback((el: HTMLDivElement | null) => {
+    if (wheelTarget.current) wheelTarget.current.removeEventListener("wheel", swallowWheel);
+    wheelTarget.current = el;
+    el?.addEventListener("wheel", swallowWheel, { passive: false });
   }, []);
+  useEffect(() => () => guardWheel(null), [guardWheel]);
 
   const toWorld = useCallback((sx: number, sy: number) => ({ x: (sx - camera.x) / camera.k, y: (sy - camera.y) / camera.k }), [camera]);
 
@@ -218,5 +226,5 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     onPointerLeave: endPointer,
   }), [onWheel, onPointerDown, onPointerMove, endPointer]);
 
-  return { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld };
+  return { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld, guardWheel };
 }

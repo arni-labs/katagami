@@ -132,11 +132,23 @@ export function cellMaterial(cell: EncyclopediaCell): CellMaterial {
  *  a grid of empty boxes. Only a cell with nothing at all falls back to its
  *  name, and the plate says so. Every face carries the caption that says where
  *  it came from; nothing is presented as the cell's own study unless it is. */
+/** Where a face comes from, said on the face itself. A `study` is material
+ *  made for the cell; a `record` is a Katagami record the cell names, whose
+ *  picture stands beside the cell and is never presented as the cell's own. */
+interface FaceOrigin {
+  source: "study" | "record";
+  /** The study's or record's own name. */
+  title: string;
+  caption: string;
+  eyebrow: string;
+  ink: string;
+}
+
 export type CellFace =
-  | { kind: "image"; url: string; alt: string; caption: string; eyebrow: string; ink: string }
-  | { kind: "palette"; swatches: string[]; caption: string; eyebrow: string; ink: string }
-  | { kind: "passage"; text: string; caption: string; eyebrow: string; ink: string }
-  | { kind: "name"; caption: string; eyebrow: string; note: string; ink: string };
+  | ({ kind: "image"; url: string; alt: string } & FaceOrigin)
+  | ({ kind: "palette"; swatches: string[] } & FaceOrigin)
+  | ({ kind: "passage"; text: string } & FaceOrigin)
+  | { kind: "name"; source: "none"; title: string; caption: string; eyebrow: string; note: string; ink: string };
 
 /** Every face a cell can turn, best first. The list always ends in a face that
  *  cannot fail, so a picture whose asset has gone missing steps down to the
@@ -148,12 +160,12 @@ export function cellFaces(cell: EncyclopediaCell): CellFace[] {
   const from = (piece: { source: "study" | "record"; eyebrow: string; title: string }) =>
     piece.source === "study" ? `${piece.eyebrow} · ${piece.title}` : `from ${piece.title} · ${piece.eyebrow.toLowerCase()}`;
   const faces: CellFace[] = [];
-  if (m.image) faces.push({ kind: "image", url: m.image.url, alt: m.image.alt, caption: from(m.image), eyebrow: m.image.eyebrow, ink: m.image.ink });
-  if (m.palette) faces.push({ kind: "palette", swatches: m.palette.swatches, caption: from(m.palette), eyebrow: m.palette.eyebrow, ink: m.palette.ink });
-  if (m.text) faces.push({ kind: "passage", text: m.text.text, caption: from(m.text), eyebrow: m.text.eyebrow, ink: m.text.ink });
+  if (m.image) faces.push({ kind: "image", url: m.image.url, alt: m.image.alt, source: m.image.source, title: m.image.title, caption: from(m.image), eyebrow: m.image.eyebrow, ink: m.image.ink });
+  if (m.palette) faces.push({ kind: "palette", swatches: m.palette.swatches, source: m.palette.source, title: m.palette.title, caption: from(m.palette), eyebrow: m.palette.eyebrow, ink: m.palette.ink });
+  if (m.text) faces.push({ kind: "passage", text: m.text.text, source: m.text.source, title: m.text.title, caption: from(m.text), eyebrow: m.text.eyebrow, ink: m.text.ink });
   faces.push(faces.length
-    ? { kind: "name", caption: "The picture on this cell would not load", eyebrow: "Picture unavailable", note: "The material is recorded; its asset did not load.", ink: "var(--graphite)" }
-    : { kind: "name", caption: "Named cell · no material yet", eyebrow: "Named cell", note: "Nothing has been made for this cell yet.", ink: "var(--ramune)" });
+    ? { kind: "name", source: "none", title: cell.name, caption: "The picture on this cell would not load", eyebrow: "Picture unavailable", note: "The material is recorded; its asset did not load.", ink: "var(--graphite)" }
+    : { kind: "name", source: "none", title: cell.name, caption: "Named cell · no material yet", eyebrow: "Named cell", note: "Nothing has been made for this cell yet.", ink: "var(--ramune)" });
   return faces;
 }
 

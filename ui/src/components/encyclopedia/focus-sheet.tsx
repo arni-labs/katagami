@@ -71,7 +71,7 @@ function Heading({ children }: { children: ReactNode }) {
   return <h3 className="font-display text-[19px] font-bold tracking-[-0.02em]">{children}</h3>;
 }
 
-function Manifestations({ cell, expandKey }: { cell: EncyclopediaCell; expandKey: number }) {
+function Manifestations({ cell, index, expandKey, onFocus }: { cell: EncyclopediaCell; index: GraphIndex; expandKey: number; onFocus: (id: string) => void }) {
   // A new cell opens folded; the "+N" node on the map bumps `expandKey` and
   // opens the list in full. The records past the ring are on the cell, and
   // this is where they are all reachable — the node must never read as "the
@@ -99,6 +99,11 @@ function Manifestations({ cell, expandKey }: { cell: EncyclopediaCell; expandKey
       <ul className="mt-1">
         {shown.map((m, i) => {
           const record = m.record;
+          // The same record is often named by several cells — Aquatint,
+          // Lithography and Ukiyo-e share one — so the row says which, and
+          // each is one tap away. A reader who saw the same thumbnail on two
+          // cards learns here that it is one record, not two.
+          const also = index.ownersOf(m.entitySet, m.entityId).filter((c) => c.id !== cell.id);
           return (
             <li key={`${m.entitySet}:${m.entityId}`}>
               {i > 0 ? <span aria-hidden className="sticker-perforation block" /> : null}
@@ -109,10 +114,21 @@ function Manifestations({ cell, expandKey }: { cell: EncyclopediaCell; expandKey
                 <Thumb manifestation={m} />
                 <span className="min-w-0 flex-1">
                   <span className="block font-sans text-[17px] font-semibold leading-snug text-foreground">{record?.name ?? (m.unread ? "Record could not be read" : "Record not found")}</span>
-                  <span className="mt-0.5 line-clamp-2 text-[17px] leading-snug text-muted-foreground">{record ? (record.line || m.explanation) : m.unread ? `The read for ${m.entityId} failed. Reload to try it again.` : m.entityId}</span>
+                  <span className="mt-0.5 line-clamp-2 text-[16px] leading-snug text-muted-foreground">{m.explanation}</span>
                   {record ? <span className="mt-0.5 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground/80">{record.status === "UnderReview" ? "under review" : record.status.toLowerCase()}</span> : null}
                 </span>
               </Row>
+              {also.length ? (
+                <p className="-mt-1 mb-2 pl-16 font-sans text-[14px] leading-snug text-muted-foreground">
+                  Also named by{" "}
+                  {also.map((c, j) => (
+                    <span key={c.id}>
+                      {j > 0 ? ", " : ""}
+                      <button type="button" onClick={() => onFocus(c.id)} className="text-foreground underline decoration-[var(--yuzu)] decoration-2 underline-offset-[3px]">{c.name}</button>
+                    </span>
+                  ))}
+                </p>
+              ) : null}
             </li>
           );
         })}
@@ -163,11 +179,18 @@ function NarrowerRow({ kid, onFocus }: { kid: EncyclopediaCell; onFocus: (id: st
   );
 }
 
-function Narrower({ cell, index, onFocus }: { cell: EncyclopediaCell; index: GraphIndex; onFocus: (id: string) => void }) {
-  const kids = index.childrenOf(cell.id);
+function Narrower({ cell, index, onFocus, expansion }: { cell: EncyclopediaCell; index: GraphIndex; onFocus: (id: string) => void; expansion?: SheetExpansion }) {
+  const kids = index.orderedChildren(cell.id);
   return (
     <>
-      <Heading>Narrower cells</Heading>
+      <span className="flex flex-wrap items-center justify-between gap-2">
+        <Heading>Narrower cells <span className="font-mono text-[11px] font-normal tracking-[0.14em] text-muted-foreground tabular-nums">{kids.length}</span></Heading>
+        {kids.length && expansion ? (
+          <button type="button" onClick={() => expansion.onToggle(cell.id)} aria-expanded={expansion.open} className="px-2.5 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.14em]" style={expansion.open ? { background: "var(--yuzu)", color: "var(--sumi)" } : inkChipStyle("var(--ramune)")}>
+            {expansion.open ? "Fold on the map" : "Open on the map"}
+          </button>
+        ) : null}
+      </span>
       {kids.length ? (
         <ul className="mt-1">
           {kids.map((kid) => <NarrowerRow key={kid.id} kid={kid} onFocus={onFocus} />)}
@@ -224,7 +247,15 @@ function CellRow({ cell, word, explanation, ink, onFocus }: { cell: Encyclopedia
   );
 }
 
-export function SheetBody({ cell, index, tab, onTab, onFocus, expandKey = 0 }: { cell: EncyclopediaCell; index: GraphIndex; tab: SheetTab; onTab: (tab: SheetTab) => void; onFocus: (id: string) => void; expandKey?: number }) {
+/** Whether the cell's narrower cells are open on the map, and the way to open
+ *  or fold them from the sheet. Absent in the phone browser, which has no map
+ *  on screen to open them onto. */
+export interface SheetExpansion {
+  open: boolean;
+  onToggle: (id: string) => void;
+}
+
+export function SheetBody({ cell, index, tab, onTab, onFocus, expandKey = 0, expansion }: { cell: EncyclopediaCell; index: GraphIndex; tab: SheetTab; onTab: (tab: SheetTab) => void; onFocus: (id: string) => void; expandKey?: number; expansion?: SheetExpansion }) {
   const far = index.farJump(cell.id);
   const tabs: Array<{ id: SheetTab; label: string }> = [
     { id: "material", label: "Material" },
@@ -252,9 +283,9 @@ export function SheetBody({ cell, index, tab, onTab, onFocus, expandKey = 0 }: {
 
       {tab === "material" ? (
         <div className="pt-5">
-          <Manifestations cell={cell} expandKey={expandKey} />
+          <Manifestations cell={cell} index={index} expandKey={expandKey} onFocus={onFocus} />
           <Divider />
-          <Narrower cell={cell} index={index} onFocus={onFocus} />
+          <Narrower cell={cell} index={index} onFocus={onFocus} expansion={expansion} />
           <Divider />
           <Heading>Source snippet</Heading>
           <div className="mt-3">
