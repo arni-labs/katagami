@@ -46,6 +46,11 @@ export interface CellManifestation {
   explanation: string;
   sourceIds: string[];
   record: ManifestationRecord | null;
+  /** True when the read that would have resolved this pointer failed. The
+   *  record may well exist — we could not find out. A card in this state says
+   *  the read failed; only `record === null` with `unread === false` is a
+   *  claim that the record is not there. */
+  unread: boolean;
 }
 
 export interface EncyclopediaCell {
@@ -202,8 +207,18 @@ function flatFields(row: Record<string, unknown>): Record<string, string | undef
   return out;
 }
 
-async function fetchRecords(set: ManifestationSet, ids: string[]): Promise<Map<string, Record<string, string | undefined>>> {
-  const out = new Map<string, Record<string, string | undefined>>();
+interface RecordBatch {
+  /** Records the backend returned. */
+  found: Map<string, Record<string, string | undefined>>;
+  /** Ids whose batch failed to read. Absent from `found` because the read
+   *  broke, not because the record is missing — the difference is what the
+   *  cards show. */
+  unread: Set<string>;
+}
+
+async function fetchRecords(set: ManifestationSet, ids: string[]): Promise<RecordBatch> {
+  const found = new Map<string, Record<string, string | undefined>>();
+  const unread = new Set<string>();
   for (let i = 0; i < ids.length; i += BATCH) {
     const chunk = ids.slice(i, i + BATCH);
     const filter = chunk.map((id) => `Id eq '${id.replace(/'/g, "''")}'`).join(" or ");
@@ -218,13 +233,16 @@ async function fetchRecords(set: ManifestationSet, ids: string[]): Promise<Map<s
       for (const raw of page.value ?? []) {
         const fields = flatFields(raw);
         const id = fields.Id ?? fields.id;
-        if (id) out.set(id, fields);
+        if (id) found.set(id, fields);
       }
     } catch (err) {
-      console.error(`[encyclopedia] batch read of ${set} failed; ${chunk.length} pointers left unresolved`, err);
+      // A transient 503 must never be rendered as "this record does not
+      // exist". Mark the whole chunk unread so the cards say the read failed.
+      console.error(`[encyclopedia] batch read of ${set} failed; ${chunk.length} pointers left unread`, err);
+      for (const id of chunk) unread.add(id);
     }
   }
-  return out;
+  return { found, unread };
 }
 
 function firstHttps(...values: Array<string | undefined>): string | undefined {
@@ -280,12 +298,22 @@ function toRecord(set: ManifestationSet, id: string, f: Record<string, string | 
   }
 }
 
-/** The whole encyclopedia as the pages read it. Owner-gated by the caller. */
-export async function loadEncyclopedia(): Promise<EncyclopediaGraph> {
+type ParsedCell = NonNullable<ReturnType<typeof parseCell>>;
+
+/** Every attested, parsable cell, with its manifestation pointers still
+ *  unresolved. The two loaders below share this: one resolves the pointers,
+ *  the other only needs to read them. */
+async function readParsedCells(): Promise<{ parsed: ParsedCell[]; total: number }> {
   const rows = await readCellRows();
   const parsed = rows
     .map(parseCell)
-    .filter((cell): cell is NonNullable<typeof cell> => cell !== null);
+    .filter((cell): cell is ParsedCell => cell !== null);
+  return { parsed, total: rows.length };
+}
+
+/** The whole encyclopedia as the pages read it. Owner-gated by the caller. */
+export async function loadEncyclopedia(): Promise<EncyclopediaGraph> {
+  const { parsed, total } = await readParsedCells();
 
   const idsBySet = new Map<ManifestationSet, Set<string>>();
   for (const cell of parsed) {
@@ -296,11 +324,14 @@ export async function loadEncyclopedia(): Promise<EncyclopediaGraph> {
     }
   }
   const recordByKey = new Map<string, ManifestationRecord | null>();
+  const unreadKeys = new Set<string>();
   await Promise.all([...idsBySet.entries()].map(async ([set, ids]) => {
-    const fetched = await fetchRecords(set, [...ids]);
+    const { found, unread } = await fetchRecords(set, [...ids]);
     for (const id of ids) {
-      const fields = fetched.get(id);
-      recordByKey.set(`${set}:${id}`, fields ? toRecord(set, id, fields) : null);
+      const key = `${set}:${id}`;
+      const fields = found.get(id);
+      recordByKey.set(key, fields ? toRecord(set, id, fields) : null);
+      if (!fields && unread.has(id)) unreadKeys.add(key);
     }
   }));
 
@@ -310,11 +341,12 @@ export async function loadEncyclopedia(): Promise<EncyclopediaGraph> {
       manifestations: cell.manifestations.map((m) => ({
         ...m,
         record: recordByKey.get(`${m.entitySet}:${m.entityId}`) ?? null,
+        unread: unreadKeys.has(`${m.entitySet}:${m.entityId}`),
       })),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return { cells, withheld: rows.length - cells.length, total: rows.length };
+  return { cells, withheld: total - cells.length, total };
 }
 
 // ── Writing styles, joined to the cells that claim them ─────────────────────
@@ -326,10 +358,16 @@ export interface WritingStyleCellLink {
 }
 
 /** Every cell that lists a WritingStyles record as a manifestation, keyed by
- *  the record id. Derived from the cells, never from the styles. */
-export function writingStyleCellIndex(graph: EncyclopediaGraph): Map<string, WritingStyleCellLink[]> {
+ *  the record id. Derived from the cells, never from the styles.
+ *
+ *  The link is a cell id, a cell name and the cell's own explanation — all of
+ *  it already in the cell document. Resolving the pointers would mean reading
+ *  every art style, palette and design language the encyclopedia names to
+ *  build a list of writing styles, so this reads the cells and stops there. */
+export async function loadWritingStyleCellIndex(): Promise<Map<string, WritingStyleCellLink[]>> {
+  const { parsed } = await readParsedCells();
   const index = new Map<string, WritingStyleCellLink[]>();
-  for (const cell of graph.cells) {
+  for (const cell of parsed) {
     for (const m of cell.manifestations) {
       if (m.entitySet !== "WritingStyles") continue;
       const list = index.get(m.entityId) ?? [];

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { isOwner } from "@/lib/owner";
 import { labPreviewAllowed } from "@/lib/lab-preview";
-import { loadAllWritingStyles, loadEncyclopedia, writingStyleCellIndex } from "@/lib/encyclopedia";
+import { loadAllWritingStyles, loadWritingStyleCellIndex } from "@/lib/encyclopedia";
 import { toWritingStyleSpecimen } from "@/lib/writing-styles";
 import { LabHeader } from "@/components/encyclopedia/lab-header";
 import { WritingA } from "@/components/writing/writing-a";
@@ -17,8 +17,7 @@ export const metadata = {
 
 export default async function WritingPassagesPage() {
   if (!(await isOwner()) && !labPreviewAllowed()) notFound();
-  const [rows, graph] = await Promise.all([loadAllWritingStyles(), loadEncyclopedia()]);
-  const cellIndex = writingStyleCellIndex(graph);
+  const [rows, cellIndex] = await Promise.all([loadAllWritingStyles(), loadWritingStyleCellIndex()]);
   const specimens = rows
     .map((row) => toWritingStyleSpecimen(row, cellIndex.get(row.entity_id) ?? []))
     .sort((a, b) => a.name.localeCompare(b.name));
