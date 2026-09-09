@@ -475,42 +475,93 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
   return { plates: nodes, satellites, regions, byId: plates, bounds: { x: left, y: top, w: right - left, h: bottom - top } };
 }
 
+/** A point at distance `t` along the plate's own box pushed outward by `pad`:
+ *  straight runs beside each edge, quarter turns at the corners. Walking this
+ *  path is what keeps an opened record clear of the card it belongs to. A ring
+ *  drawn as an ellipse through the same clearances only clears the plate on
+ *  the axes — at forty-five degrees it cuts back inside the box and puts a
+ *  thumbnail over the cell's own picture. */
+function boxRingPoint(plate: PlateNode, pad: number, t: number): { x: number; y: number } {
+  const hw = plate.w / 2;
+  const hh = plate.h / 2;
+  const corner = (Math.PI * pad) / 2;
+  const legs = [plate.w, corner, plate.h, corner, plate.w, corner, plate.h, corner];
+  const perimeter = 2 * plate.w + 2 * plate.h + 2 * Math.PI * pad;
+  let d = ((t % perimeter) + perimeter) % perimeter;
+  let leg = 0;
+  while (d > legs[leg]) { d -= legs[leg]; leg++; }
+  const turn = (from: number, cx: number, cy: number) => ({
+    x: plate.x + cx + Math.cos(from + d / pad) * pad,
+    y: plate.y + cy + Math.sin(from + d / pad) * pad,
+  });
+  switch (leg) {
+    case 0: return { x: plate.x - hw + d, y: plate.y - hh - pad };          // top edge, left to right
+    case 1: return turn(-Math.PI / 2, hw, -hh);                              // top-right corner
+    case 2: return { x: plate.x + hw + pad, y: plate.y - hh + d };           // right edge, down
+    case 3: return turn(0, hw, hh);                                          // bottom-right corner
+    case 4: return { x: plate.x + hw - d, y: plate.y + hh + pad };           // bottom edge, right to left
+    case 5: return turn(Math.PI / 2, -hw, hh);                               // bottom-left corner
+    case 6: return { x: plate.x - hw - pad, y: plate.y + hh - d };           // left edge, up
+    default: return turn(Math.PI, -hw, -hh);                                 // top-left corner
+  }
+}
+
+/** Where along that path the given direction from the plate's centre comes
+ *  out, so an opened ring can start on the side the folded node sat on. */
+function boxRingOffset(plate: PlateNode, pad: number, away: number): number {
+  const perimeter = 2 * plate.w + 2 * plate.h + 2 * Math.PI * pad;
+  const wanted = Math.atan2(Math.sin(away), Math.cos(away));
+  let best = 0;
+  let bestGap = Infinity;
+  for (let i = 0; i < 240; i++) {
+    const t = (perimeter * i) / 240;
+    const p = boxRingPoint(plate, pad, t);
+    const angle = Math.atan2(p.y - plate.y, p.x - plate.x);
+    const gap = Math.abs(Math.atan2(Math.sin(angle - wanted), Math.cos(angle - wanted)));
+    if (gap < bestGap) { bestGap = gap; best = t; }
+  }
+  return best;
+}
+
 /** Every record a cell names, opened out around it as its own node.
  *
  *  The ring the map draws by default holds eight; a cell that names sixty has
  *  the rest behind one node, and clicking that node lands here. The records go
- *  onto concentric rings around the plate, each ring as full as its
- *  circumference allows, so every record is a node on its own dotted line and
- *  every one of them is reachable on the paper. The first slot is given to the
- *  node that folds them away again, in the same place the "+N" node sat.
+ *  onto rings that trace the plate's own box at growing distances, each ring
+ *  as full as its perimeter allows and walked at even spacing, so every record
+ *  is a node on its own dotted line, every one is reachable, and none of them
+ *  covers the card they belong to. The first slot is given to the node that
+ *  folds them away again, on the side the "+N" node sat.
  *
  *  Nothing else on the map moves. The field keeps the shape it settled into;
  *  this is an overlay around one plate, drawn above its neighbours, and the
- *  page dims the rest while it is open. */
+ *  page steps the rest of the paper back while it is open. */
 export function expandCell(plate: PlateNode, away: number): SatelliteNode[] {
   const list = plate.cell.manifestations;
   if (!list.length) return [];
-  const baseX = plate.w / 2 + SAT_W / 2 + RING_PAD;
-  const baseY = plate.h / 2 + SAT_H / 2 + RING_PAD;
-  const step = SAT_H + RING_GAP;
+  const slot = SAT_W + RING_GAP;
   const out: SatelliteNode[] = [];
   // Slot 0 is the fold control, then one slot per record.
   let placed = 0;
   const total = list.length + 1;
   for (let ring = 0; placed < total && ring < 40; ring++) {
-    const rx = baseX + ring * step;
-    const ry = baseY + ring * step;
-    // Circumference of the ellipse, near enough for spacing purposes, divided
-    // by the room one node needs.
-    const around = 2 * Math.PI * Math.sqrt((rx * rx + ry * ry) / 2);
-    const capacity = Math.max(1, Math.floor(around / (SAT_W + RING_GAP)));
+    // Clearance from the plate's edge to a node's centre: half the node, plus
+    // the gap, plus one ring's worth for each ring further out. Every node is
+    // therefore at least RING_PAD clear of the card on every side.
+    const pad = SAT_W / 2 + RING_PAD + ring * (SAT_H + RING_GAP);
+    const perimeter = 2 * plate.w + 2 * plate.h + 2 * Math.PI * pad;
+    const capacity = Math.max(1, Math.floor(perimeter / slot));
     const here = Math.min(capacity, total - placed);
+    const start = boxRingOffset(plate, pad, away);
     for (let j = 0; j < here; j++) {
-      // Rings alternate their starting offset so nodes on the outer ring sit
-      // between the ones inside them rather than directly behind them.
-      const angle = away + (2 * Math.PI * j) / here + (ring % 2 ? Math.PI / here : 0);
-      const x = Math.round(plate.x + Math.cos(angle) * rx);
-      const y = Math.round(plate.y + Math.sin(angle) * ry);
+      // Even spacing by distance travelled, not by angle: stepping the angle
+      // evenly would bunch nodes at the corners and thin them along the sides.
+      // Alternate rings start half a slot round so an outer node sits between
+      // the two inside it rather than directly behind one.
+      const t = start + (perimeter * j) / here + (ring % 2 ? perimeter / (2 * here) : 0);
+      const point = boxRingPoint(plate, pad, t);
+      const x = Math.round(point.x);
+      const y = Math.round(point.y);
       const at = placed + j;
       if (at === 0) {
         out.push({ kind: "satellite", id: `${plate.id}~fold`, cellId: plate.id, set: list[0].entitySet, role: "fold", index: -1, more: list.length, x, y });

@@ -159,6 +159,7 @@ export function Plate({
   k,
   focused,
   dimmed,
+  dimTo = 0.3,
   onFocus,
 }: {
   cell: EncyclopediaCell;
@@ -168,6 +169,9 @@ export function Plate({
   k: number;
   focused: boolean;
   dimmed: boolean;
+  /** How far back a dimmed card steps. A hint at the reading layer, much
+   *  deeper behind an opened cell so its ring reads as one object. */
+  dimTo?: number;
   onFocus: () => void;
 }) {
   const { face, onImageError } = useCellFace(cell);
@@ -198,9 +202,11 @@ export function Plate({
         boxShadow: focused ? "var(--shadow-card-hover)" : "var(--shadow-card)",
         outline: focused ? "2px solid color-mix(in oklch, var(--ramune) 70%, transparent)" : undefined,
         outlineOffset: -2,
-        opacity: dimmed ? 0.3 : 1,
+        opacity: dimmed ? dimTo : 1,
         padding: lod === "picture" ? 6 : lod === "named" ? 8 : 16,
-        zIndex: focused ? 3 : 2,
+        // Above the paper scrim an opened cell lays over its neighbours, so
+        // the card the ring belongs to stays the most readable thing on screen.
+        zIndex: focused ? 4 : 2,
       }}
       data-plate={cell.id}
     >
@@ -243,6 +249,7 @@ export function Satellite({
   manifestation,
   k,
   dimmed,
+  dimTo = 0.3,
   labelled,
   onToggle,
 }: {
@@ -250,6 +257,8 @@ export function Satellite({
   manifestation: CellManifestation | null;
   k: number;
   dimmed: boolean;
+  /** How far back a dimmed node steps. */
+  dimTo?: number;
   /** Names are drawn only around the cell in focus. Every satellite naming
    *  itself at once buried the map under overlapping labels. */
   labelled: boolean;
@@ -273,7 +282,7 @@ export function Satellite({
     <span className="block h-full w-full" style={{ background: `color-mix(in srgb, ${ink} 12%, var(--washi))` }} />
   );
   const common = "absolute block text-left transition-opacity duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]";
-  const style: CSSProperties = { left: node.x - size / 2, top: node.y - size / 2, width: size, opacity: dimmed ? 0.3 : 1, zIndex: 1 };
+  const style: CSSProperties = { left: node.x - size / 2, top: node.y - size / 2, width: size, opacity: dimmed ? dimTo : 1, zIndex: 1 };
   const labelSize = Math.min(14, Math.max(9, 9 / k));
 
   if (node.role === "more") {

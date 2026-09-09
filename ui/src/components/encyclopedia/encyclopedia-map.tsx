@@ -176,6 +176,12 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
   /** The settled map minus the cell that is currently opened out — its own
    *  nodes are drawn separately, above the plates. */
+  // Dimming has two strengths. Fading a non-neighbour at the reading layer is
+  // a hint, so it stays legible; stepping the paper back behind an opened cell
+  // has to stop neighbouring names and scope text reading through the gaps
+  // between its nodes, or the ring looks like noise rather than one object.
+  const dimTo = opened ? 0.08 : 0.3;
+
   const baseSatellites: SatelliteNode[] = useMemo(
     () => (opened ? layout.satellites.filter((s) => s.cellId !== opened.plate.id) : layout.satellites),
     [layout.satellites, opened],
@@ -323,10 +329,32 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             manifestation={s.role === "record" ? manifestationsById.get(s.cellId)?.[s.index] ?? null : null}
             k={camera.k}
             dimmed={dimmedPlate(s.cellId) || faded(s.cellId)}
+            dimTo={dimTo}
             labelled={focusId === s.cellId && lod !== "picture"}
             onToggle={() => toggleOpen(s.cellId)}
           />
         ))}
+        {/* Plain paper laid over the stepped-back field and masked out at its
+            edge, the way the corner washes are masked. It sits under the
+            opened cell's own card and over its neighbours, so their names and
+            scope text stop reading up through the gaps between the nodes and
+            the ring reads as one object. */}
+        {opened ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute"
+            style={{
+              left: opened.plate.x - opened.radius * 1.35,
+              top: opened.plate.y - opened.radius * 1.35,
+              width: opened.radius * 2.7,
+              height: opened.radius * 2.7,
+              background: "var(--washi)",
+              maskImage: "radial-gradient(closest-side, black 62%, transparent 100%)",
+              WebkitMaskImage: "radial-gradient(closest-side, black 62%, transparent 100%)",
+              zIndex: 3,
+            }}
+          />
+        ) : null}
         {/* An opened cell's records, drawn after the plates so its nodes and
             its dotted lines are never behind a neighbouring card. */}
         {opened ? (
@@ -374,6 +402,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             k={camera.k}
             focused={focusId === p.id}
             dimmed={dimmedPlate(p.id) || faded(p.id)}
+            dimTo={dimTo}
             onFocus={() => { if (!dragging) focus(p.id); }}
           />
         ))}
