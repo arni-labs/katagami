@@ -362,6 +362,34 @@ Rules that hold in every pass:
   forms, one cell is right and the forms live in its scope: Literary nonsense
   holds Lear's verse and Carroll's prose together. The test is whether you could
   say something about one form that is not true of the other (D36).
+- **A parent taken from a vocabulary is read, not walked.** Where a source
+  states a cell's broader term directly, write the link and cite the record. Where
+  the nearest term that is a cell is more than one step up, open the pages and
+  check that the intermediate term means what its label suggests before writing.
+  A label can match a cell's name and carry a different sense: Precisionism was
+  linked to Realism through Wikidata's magic realism, where "realism" is the
+  nineteenth-century movement rather than the modernist tendency Precisionism
+  belongs to (D47).
+- **Whose article makes the containment claim decides how strong it is.** A cell
+  whose own page says what it belongs to is stating it about itself, and the link
+  is firm: Cloisonnism opens "a style of post-Impressionist painting". A claim
+  that appears only in the parent's article, which lists the cell among what the
+  term covers, is the umbrella's reading and the explanation says so, because a
+  reader should not be left thinking the movement said it of itself:
+  Neo-Impressionism never calls itself post-Impressionist. Chronology does not
+  settle this either way, since a retrospective umbrella does not require its
+  members to come after it. Found in the visual pass review.
+- **A citation supports a claim only if the source makes it.** `cited` means the
+  page carries the sentence, not that the page was fetched. Before you set
+  `cited`, find the sentence in the fetched text and keep it; if you cannot find
+  it, change the sentence or change the source. This binds every claim you
+  attribute to a source: a scope sentence naming a person, a date or a work, a
+  broader link's explanation, a map membership, a manifestation, and a ledger row
+  recording a merge, whose reference has to reach the cell it names. The loader
+  proves a URL resolves and nothing further; only the writer can prove it
+  supports the claim. Three branches broke this in one night by three different
+  routes, the sharpest being a cell that credited Faraday at the Royal
+  Institution to a page containing none of those words.
 - Manifestations ride along: search `credits` across all record sets at every
   status and list what exists. Most new cells will have none on day one.
 
@@ -425,6 +453,17 @@ Autonomy is a change in when the human looks, never in what may be built.
 
 ## Maintaining
 
+- **A pass that gives a cell children revisits that cell's questions.** `questions`
+  is how a cell tells the owner what it does not know, so an entry the same pass
+  has answered sends her to look at something already done. Re-read every parent
+  you linked children to, in the same batch, and restate any count of children
+  from production rather than from the plan (D49).
+- **Archived rows are not absent rows.** A sweep that filters to live attested
+  Drafts will report an archived cell as missing, and the two call for opposite
+  actions: archive is final, so a link into an archived cell is dropped rather
+  than a cell created. Read the status before reporting a cell as absent. The
+  tell: two runs disagreeing about whether a row exists is usually two runs
+  disagreeing about what exists means.
 - **Integrity sweep**: every cell's attestation pair *and* that its document
   parses under the current contract (an attested cell written under an older
   version is not current); every `cellId` and manifestation pointer resolves;

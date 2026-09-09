@@ -12,6 +12,7 @@ Chose independent cells because: The encyclopedia can expand without restructuri
 
 Where: `docs/efforts/ARN-118/spec.md`, Records. The conflicting organizer is `katagami-curation/agents/curator/skills/organize-taxonomy/SKILL.md`.
 
+
 ## D2 Exempt representative examples from interface styling
 
 Decision: Apply Katagami's interface rules to navigation and explanation, while preserving each example's own visual treatment.
@@ -23,6 +24,7 @@ Options: Restyle examples to the house rules, or isolate example rendering from 
 Chose isolated example rendering because: Readers need faithful examples for comparison and reuse. The checks must include page-wide grain, cropping, and other effects that could alter the example.
 
 Where: `docs/efforts/ARN-118/spec.md`, Examples and source restrictions.
+
 
 ## D3 Validator callbacks
 
@@ -36,6 +38,7 @@ Chose separate states because: Each callback is permitted only during its matchi
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, ValidatingDocument and ValidatingReview.
 
+
 ## D4 Use a nested browser for the main navigation
 
 Decision: Show examples alongside narrower cells and separately labeled related cells, with linked pages for inspection and comparison.
@@ -47,6 +50,7 @@ Options: A nested browser with examples, or an all-connections node-link map wit
 Chose the nested browser because: In browser sketches at desktop and 390 px widths, it kept the examples readable alongside narrower cells and cross-links. The desktop node-link sketch showed shared ancestry more directly but required a separate area for examples. The mobile node-link comparison remains unverified because the browser connection failed during the recheck.
 
 Where: `docs/efforts/ARN-118/spec.md`, Reader experience. The application pages have not been implemented yet.
+
 
 ## D5 Separate manifestations from direct studies
 
@@ -60,6 +64,7 @@ Chose separate references and studies because: A cell can contain several kinds 
 
 Where: `docs/efforts/ARN-118/spec.md`, Records and Development and distance; `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; shared test fixtures.
 
+
 ## D6 Obtain scoped decisions in numbered batches
 
 Decision: Require the user's selection of numbered, revision-specific proposals before agents add cells, enrichment, or manifestations.
@@ -71,6 +76,7 @@ Options: Treat the collection plan as continuing permission, ask separately for 
 Chose numbered batches because: The user can approve several proposals in one response while limiting execution to the displayed operations. This requires fixed numbers, proposal revisions, explicit dependencies, and separate result review after generation.
 
 Where: `docs/efforts/ARN-118/spec.md`, Numbered proposal batches. Batch execution is not implemented or deployed.
+
 
 ## D7 Inventory before commissioning additions
 
@@ -84,6 +90,7 @@ Chose the complete inventory because: Unfinished records may already cover an ap
 
 Where: `docs/efforts/ARN-118/spec.md`, Inventory and expansion, and `docs/efforts/ARN-118/plan.md`, step 2. Per-record draft material remains in private working evidence.
 
+
 ## D8 Create the approved cells in TemperPaw
 
 Decision: Create all 20 cells approved in batch B2 as Draft EncyclopediaCell records in the existing TemperPaw production deployment, tenant default.
@@ -95,6 +102,7 @@ Options: Wait for all map views and enrichment tools, retain proposal files only
 Chose deployed Draft records because: The user can start the encyclopedia before its entries have examples, manifestations, or relationships. The existing Katagami commons app on TemperPaw remains the storage system. Local records are synthetic verification data only. Creating these records does not complete the broader map effort or authorize enrichment or publication.
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, `scripts/verify-encyclopedia.mjs`, and the private approval source `/private/tmp/encyclopedia-inventory.2xasm8/batch-B2-proposal.md`. The execution copy is `/private/tmp/encyclopedia-b2.hWoBq9/approved-b2.json`. Execution must preserve the 20 approved names and scopes, use stable record identifiers, and read each record back from production.
+
 
 ## D9 Permit unenriched cells
 
@@ -108,6 +116,7 @@ Chose empty enrichment fields because: They record the actual development of the
 
 Where: `ui/src/lib/encyclopedia-schema.ts`, `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`, and the shared fixtures and tests.
 
+
 ## D10 Authenticate the isolated local verifier
 
 Decision: Start the isolated local test server with a test-only API key, using the documented authentication middleware.
@@ -119,6 +128,7 @@ Options: Change Cedar policies, inject an identity header, or configure authenti
 Chose configured test authentication because: It exercises the real authenticated path without modifying production credentials or Cedar policies. The restart was submitted for explicit execution approval. The test database is isolated under a private temporary directory.
 
 Where: `scripts/verify-encyclopedia.mjs`; local verification evidence for ARN-118.
+
 
 ## D11 Separate test installation from cell authorization
 
@@ -132,6 +142,7 @@ Chose temporary fixture grants because: The production policy remains unchanged 
 
 Where: `scripts/verify-encyclopedia.mjs`; private test configuration `/private/tmp/encyclopedia-b2.hWoBq9/test-specs/policies/local_test_install.cedar`.
 
+
 ## D12 Archive unwanted Drafts
 
 Decision: Allow Archive from Draft and UnderReview as well as Published, while retaining the generic update and delete forbids.
@@ -143,6 +154,7 @@ Options: Permit destructive generic deletion, retain unremovable Drafts, or allo
 Chose archival because: It preserves the cell's identity and history and keeps edits governed by declared actions. Archived remains final.
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, Archive; `scripts/verify-encyclopedia.mjs`, Draft and UnderReview archival checks.
+
 
 ## D13 Remove the unwired public reader
 
@@ -156,6 +168,7 @@ Chose removal because: The immediate delivery creates private records in TemperP
 
 Where: Removed `ui/src/lib/encyclopedia.ts`, `ui/src/lib/encyclopedia-graph.ts`, `ui/src/lib/encyclopedia-public.ts`, and `listEncyclopediaRows` from `ui/src/lib/odata.ts`. Raw OData records remain private because they contain review evidence. Publication does not grant raw-row access.
 
+
 ## D14 Match the runtime trigger contract
 
 Decision: Place timeout_secs in each trigger's config table and test background and inline validation against the actual runtime.
@@ -167,6 +180,7 @@ Options: Alter callback permissions, rely on the runtime's default timeout, or c
 Chose config correction and live tests because: The independent inline probe completed document and review validation with matching hashes under the unchanged commons policy. Runtime source confirms inline callbacks use internal dispatch. The timeout belongs in config; a regression test now checks that location. Public attempts to supply either callback remain forbidden in both modes.
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`; `scripts/verify-encyclopedia.mjs`; `ui/scripts/encyclopedia.test.mjs`. Independent probe evidence remains outside the repository.
+
 
 ## D15 Validate the current request and resolve stored fields
 
@@ -180,6 +194,7 @@ Chose the current-request check and SDK reader because: They require fresh revie
 
 Where: `katagami-commons/wasm/validate_encyclopedia_cell/src/lib.rs`; `katagami-commons/specs/encyclopedia_cell.ioa.toml`; `ui/src/lib/encyclopedia-schema.ts`; `scripts/verify-encyclopedia.mjs`; `ui/scripts/encyclopedia.test.mjs`.
 
+
 ## D16 Deploy the Draft-only slice and remove the publication lifecycle
 
 Decision: Delete Publish, RecordReview, RequestChanges, Revise, the review states, the review fields, and the review half of the validator from this deployment, leaving Draft, ValidatingDocument, and Archived.
@@ -191,6 +206,7 @@ Options: Repair the publication lifecycle for a fourth round and deploy it unuse
 Chose removal because: A Published state asserts that a curator reviewed the content, and nothing in this delivery performs that review, so shipping the state at all misstates what the records are. Removal also deletes the surface the findings live on rather than defending it. The domain model is unchanged: cells, their documents, manifestations, and studies are defined by the document contract, which is untouched. Reintroducing publication is a specification change, a policy change, and its own review round, which is the correct cost for an unapproved capability. A contract test fails if the surface returns without that approval.
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`; `katagami-commons/specs/model.csdl.xml`; `katagami-commons/policies/encyclopedia_cell.cedar`; `katagami-commons/wasm/validate_encyclopedia_cell/src/lib.rs`; `ui/scripts/encyclopedia.test.mjs`, "the deployed cell carries no review or publication surface".
+
 
 ## D17 Close the cell's authorization instead of narrowing a blanket grant
 
@@ -204,6 +220,7 @@ Chose enumeration because: An unanticipated action then fails closed rather than
 
 Where: `katagami-commons/policies/encyclopedia_cell.cedar`; `ui/scripts/encyclopedia.test.mjs`, "cell authorization is a closed allow-list, not a blanket grant".
 
+
 ## D18 Close the undeclared-parameter merge in the specification, and report the runtime defect
 
 Decision: Make every action an external principal may invoke clear `document_validated`, report the parameter overwrite as a Temper runtime defect, and claim no application fix for the merge itself.
@@ -215,6 +232,7 @@ Options: Rename fields to obscure them, treat the stored hash as tamper evidence
 Chose clearing the gate everywhere because: The stored hash is not evidence. `document_hash` is a string field and travels the same merge path, so a caller that sets document and hash together leaves a self-consistent record whose content never reached the validator; the first version of this decision claimed otherwise and was wrong. Declared booleans and counters, by contrast, are written only by specification effects, and the runtime writes typed state over merged parameters. `Define`, `SubmitForValidation`, and `ValidationFailed` already cleared the gate; `Archive` did not, which made it the one action that could accept an injected document and leave it marked validated. Adding the same effect to `Archive` closes that, and the harness now asserts the property for every externally invocable action rather than for the instances found. What remains is that such a principal can replace stored bytes through an action other than `Define`, which is a defect the kernel must fix: the declared parameter list should bound what an action may write.
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, Archive; `scripts/verify-encyclopedia.mjs`, the undeclared-parameter section, whose assertions record today's runtime behaviour and fail when the runtime is corrected. Reproduction and root cause are kept outside the repository.
+
 
 ## D19 Give an interrupted validation an exit
 
@@ -228,6 +246,7 @@ Chose the explicit transition because: A timeout that never fires, because the p
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, AbandonValidation and Archive; `scripts/verify-encyclopedia.mjs`, `recoverDuringValidation`.
 
+
 ## D20 Prove the non-curator denial with a real credential
 
 Decision: Mint one contributor AgentCredential inside the disposable fixture's setup window and test the denial with that credential.
@@ -239,6 +258,7 @@ Options: Send identity headers, extend the commons policy to grant credential ma
 Chose the fixture credential because: The commons policy denies credential management to everyone in production, and the fixture already has a documented, user-authorized setup window that the harness replaces with the exact commons policy before any test runs. The denial is then evaluated on a principal the resolver actually resolves to `agent_type` "contributor".
 
 Where: `scripts/verify-encyclopedia.mjs`, contributor registration and the non-curator checks; the fixture's `local_test_install.cedar`, which stays outside the repository.
+
 
 ## D21 Permit enumeration explicitly
 
@@ -252,6 +272,7 @@ Chose naming it because: Losing enumeration would remove a capability that worke
 
 Where: `katagami-commons/policies/encyclopedia_cell.cedar`; `scripts/verify-encyclopedia.mjs`, the non-curator section.
 
+
 ## D22 Answer the review findings the harness could not see
 
 Decision: Widen the removed-surface test to every removed identifier, require exactly one permit in the policy file, prove the contributor denial against a 401 baseline and across every action, and align the effort specification with the deployed lifecycle.
@@ -263,6 +284,7 @@ Options: Record the findings as accepted risk, or make each check discriminate.
 Chose making them discriminate because: A test that cannot fail is worse than no test, since it reports coverage it does not have. The 401 baseline is what turns "contributor got 403" into evidence that the credential resolved and Cedar refused the principal it resolved to.
 
 Where: `ui/scripts/encyclopedia.test.mjs`; `scripts/verify-encyclopedia.mjs`, the non-curator section; `docs/efforts/ARN-118/spec.md`, Cell lifecycle.
+
 
 ## D23 Keep validation recovery explicit rather than adding a timer
 
@@ -276,6 +298,7 @@ Chose explicit recovery because: Neither mechanism is durable in this runtime. `
 
 Where: `katagami-commons/specs/encyclopedia_cell.ioa.toml`, AbandonValidation and Archive; `scripts/create-encyclopedia-cells.mjs`, the readback; `.agents/skills/verify-katagami/features/encyclopedia-cells.md`.
 
+
 ## D24 Treat the validated hash and the gate as one attestation
 
 Decision: Define a validated cell as one whose gate is true and whose stored document hashes to `document_hash`, check that pair on every read, and report the unbound callback as a runtime gap.
@@ -287,6 +310,7 @@ Options: Remove AbandonValidation so a run can never be orphaned, bind the callb
 Chose the pair because: Binding a callback to its run is not expressible here. Guards compare a state variable against a literal; there is no comparison between an action parameter and stored state, so nothing in the specification can reject a callback from an earlier run. Removing AbandonValidation would close the window but leave a cell stranded by a server restart with no way back, and Archived is final, so its identifier could never be reused. The pair is sound in a way the gate alone is not: only the runtime may dispatch the callback, and every action an external principal may invoke clears the gate, so a true gate whose hash matches the stored bytes can only come from a run over exactly those bytes. The harness reproduces the race and asserts the pair rejects the cell; the creation readback checks it for every approved record.
 
 Where: `scripts/verify-encyclopedia.mjs`, the stale-callback section and `attested`; `scripts/create-encyclopedia-cells.mjs`, the readback; `.agents/skills/verify-katagami/features/encyclopedia-cells.md`.
+
 
 ## D25 Make the creation script survive its own failure modes
 
@@ -300,6 +324,7 @@ Chose enforcement because: This script writes production records from a file, an
 
 Where: `scripts/create-encyclopedia-cells.mjs`.
 
+
 ## D26 Assert the stale-callback race instead of logging it
 
 Decision: Require the race to reproduce, so the test fails when it no longer does.
@@ -311,6 +336,7 @@ Options: Leave it as a log line, or make it a tripwire.
 Chose the tripwire because: The assertions that matter live inside the reproduction, so a run that does not reproduce proves nothing. Failing loudly is the signal to tighten the test against a corrected runtime, the same shape as the assertion that the injected document is still merged.
 
 Where: `scripts/verify-encyclopedia.mjs`, the stale-callback section.
+
 
 ## D27 A cell must say where it came from
 
@@ -324,6 +350,7 @@ Chose a mandatory field and a version bump because: A reader's trust depends on 
 
 Where: `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; fixtures; `scripts/create-encyclopedia-cells.mjs`; `.agents/skills/encyclopedia/SKILL.md`, Provenance.
 
+
 ## D28 Preflight proves the claim, not only the pointer
 
 Decision: Before writing, the apply script checks that each manifestation's quoted credit is actually declared in that record's `credits`, that each source stays on its host and mentions its subject, and that a child cell is written only after its broader cell; a human may vouch for a page a script cannot reach, and the run records that.
@@ -335,6 +362,7 @@ Options: Accept existence checks as sufficient, attempt to judge citation qualit
 Chose checking the specific claim because: The explanation says which credit the record declares; that is mechanically verifiable and is the whole basis for the link. Judging whether a page is a *good* reference is not mechanical and would become a rabbit hole; whether it stays on its host and mentions its subject is. Museum sites that refuse scripts are cited only when a named human opened them on a named date.
 
 Where: `scripts/create-encyclopedia-cells.mjs`, `sourceAnswers`, `declaredCredit`, write ordering.
+
 
 ## D29 The preflight proves existence and order; relevance is the approval
 
@@ -348,6 +376,7 @@ Chose deletion because: A check that can be passed by the wrong thing is worse t
 
 Where: `scripts/create-encyclopedia-cells.mjs`; `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; `.agents/skills/encyclopedia/SKILL.md`.
 
+
 ## D30 What the apply script does about a partner that failed
 
 Decision: When a cell in a batch fails to write, cells that relate to it are still written, the readback names the failed partner as a problem on each of them, the run exits non-zero, and the rerun repairs the gap. The batch is not made a Temper entity.
@@ -359,6 +388,7 @@ Options: Roll back or rewrite the surviving cell, order relations, make the batc
 Chose report and rerun because: Relations are symmetric, so no write order removes the window. Rolling back means archiving, which is final and would destroy an approved cell over a transient failure; rewriting means altering approved content. What is left is to say exactly what happened, which the readback does, and to make the rerun idempotent, which it is. A batch entity would be a state machine for a curator's one-off script over a few dozen cells — machinery that looks architectural and does the same thing more slowly. Redirects, meanwhile, are now followed hop by hop, and every hop must be public HTTPS on the original host with no private, loopback or link-local address.
 
 Where: `scripts/create-encyclopedia-cells.mjs`, the write loop, readback, `publicHost`; `.agents/skills/encyclopedia/SKILL.md`, which now sends enrichment through the script rather than direct actions.
+
 
 ## D31 The recollection note is a fixed sentence, and free text after it is the human's to read
 
@@ -372,6 +402,7 @@ Chose the full sentence with the boundary stated because: The purpose of the rul
 
 Where: `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; tests on both sides, including one that asserts free text after the sentence is accepted by design.
 
+
 ## D32 The apply script is a loader
 
 Decision: The apply script writes an approved batch and reads it back. It guarantees that every linked record exists, every unverified source answers on its own host, and parents are written before children. It does not judge whether a record expresses a cell or whether a page is a good reference, and it does not undo a partial batch.
@@ -383,6 +414,7 @@ Options: A loader that checks what is mechanically checkable, or a script that a
 Chose the loader because: Truth about a cell is decided when a human approves it by number; a script that pretends otherwise invites trust it cannot earn and grows a new surface with every round. An agent could call the API directly instead, but then every agent re-implements the boring step — did it land, is it attested, do not overwrite the wrong cell — and the script is the one tested way to do it.
 
 Where: `scripts/create-encyclopedia-cells.mjs`; D29, D30, D31; arbiter assessment kept outside the repository.
+
 
 ## D33 A map membership is a cited claim
 
@@ -396,6 +428,7 @@ Chose the link because: Every other connection on a cell must say why and cite; 
 
 Where: `ui/src/lib/encyclopedia-schema.ts`; `katagami-commons/wasm/validate_encyclopedia_cell/src/document.rs`; fixtures; `scripts/verify-encyclopedia.mjs`; `.agents/skills/encyclopedia/SKILL.md`. Migration of the 24 live cells is batch B4, applied with the version-3 validator in one sequence, as B3 was with version 2.
 
+
 ## D34 The collection grows by reading passes, tracked per source
 
 Decision: Sources enter the encyclopedia through reading passes: an agent reads a slice of one source and records one decision per term (cell, merge, declined, deferred) in that source's committed ledger, then brings a numbered proposal. Coverage of a source is terms decided over its total. Writing goes first, alternating with visual passes; a cleanup pass over the 24 existing cells and 19 WritingStyle records runs before new cells land beside them. A cell is named by the source vocabulary, never by an invented label; a record credited to one writer is a manifestation under a cell.
@@ -407,6 +440,8 @@ Options: An import script per source; a Temper entity per source with its own ap
 Chose the ledger because: Declines are most of the work and cells cannot record a decline, so coverage cannot be derived from the cells alone. A file next to the skill is state any agent can read without a client, it is versioned with the decisions it records, and it adds no runtime. An entity can come later if the ledger ever needs approval flows of its own.
 
 Where: `.agents/skills/encyclopedia/SKILL.md` "Sources and reading passes"; `.agents/skills/encyclopedia/sources/*.json`; `scripts/encyclopedia-coverage.mjs`; `ui/scripts/encyclopedia-coverage.test.mjs`. The population plan is kept in Rita's vault, not committed.
+
+
 ## D35 The loader asks for machine representations first
 
 Decision: The loader's source fetch sends `Accept: application/json, text/html;q=0.9, */*;q=0.8`. Citations stay the canonical human-readable URIs; no host gets a rule of its own; no source is marked verified by hand to get past a fetch.
@@ -418,6 +453,7 @@ Options: A host rule for id.loc.gov (rejected: special handling); cite the `.jso
 Chose the header because: It is what a well-behaved script says on every fetch, it changes nothing about the safety checks (same-host redirects, private-address refusal, 2xx only), and on Getty it is strictly stricter, turning a soft-404 HTML page into a real 404. Given up: nothing observed; Wikipedia and ordinary pages answer as before.
 
 Where: `scripts/create-encyclopedia-cells.mjs` (the fetch in the source check); PR #279.
+
 
 ## D36 A direction that appears in prose and in verse gets a cell each, under a shared parent
 
@@ -431,6 +467,7 @@ Chose the judgment because: a rule that always splits would divide Literary nons
 
 Where: this ledger's Gothic poetry row; the parent cells arrive in a later numbered batch. `.agents/skills/encyclopedia/sources/lcgft-literature.json`.
 
+
 ## D37 Cells sit at depths, and a made record manifests a leaf
 
 Decision: A cell may be broad (a genre, form or movement: Fantasy fiction, Diaries) or a leaf (a manner: a form plus a stance plus a period or milieu, narrow enough to write a recognisable paragraph in). A writing style, art style or design language manifests a leaf, never a broad cell. Leaf cells are cited from criticism and scholarship, or recorded as recollected; they are not harvested from a catalogue.
@@ -442,6 +479,7 @@ Options: Attach voices to the broad cells anyway and let scope drift; keep harve
 Chose the leaf layer because: the vocabularies stop where they stop by design, so more slices add breadth and never reach the level a voice occupies. Naming the leaf explicitly also says what the encyclopedia is for: below the catalogue, it stops mirroring a library and starts being ours. Given up: leaves are slower to make than terms are to read, and some will be recollected rather than cited.
 
 Where: `.agents/skills/encyclopedia/SKILL.md`, "What is and is not a cell".
+
 
 ## D38 The graph is expected to deepen in place
 
@@ -468,6 +506,7 @@ Chose the split because: a corpus is evidence. Editing it would make the style's
 
 Where: `katagami-curation/agents/curator/skills/synthesize-writing-style/SKILL.md`, "Prose an agent writes here goes through unspeak"; `.agents/skills/encyclopedia/SKILL.md`, the scope-text rule.
 
+
 ## D40 An unattended run may mint, under a stated boundary
 
 Decision: The owner may authorise a run that creates content without waiting for her numbered approval. When she does: Draft only, nothing published or deleted, every mint numbered in a morning report with its citation and one line of reasoning, consent public-domain or pipeline-original, a question written into the document rather than settled by the agent, and ledger counts that match what the coverage command prints.
@@ -479,6 +518,7 @@ Options: Keep the approval discipline absolute and have the night produce propos
 Chose the boundary because: proposals alone would have left her nothing to browse, which was the point of the night. Draft-only plus a numbered report keeps the cost of a wrong mint at one instruction, and Archive is reversible in the sense that matters: identity and history survive.
 
 Where: `.agents/skills/encyclopedia/SKILL.md`, "Working unattended"; `/private/tmp/encyclopedia-passes/OVERNIGHT.md` carries the same boundary to each agent.
+
 
 ## D41 A payload that revises a cell states the bytes it was built from
 
@@ -499,6 +539,104 @@ Two orderings the review panel found, both fixed the same night. A cell found in
 What is still open, and it is the reason the runtime fix matters: the loader's last read and its `Define` are not one operation. Two runs that both read the same document and both pass the check can still write in sequence, and the second wins. Narrowing that window is all a client can do. A `Define` that took the expected hash and refused the transition would close it, which is the same attestation pair the collection already computes.
 
 Where: `scripts/encyclopedia-base.mjs`, `scripts/create-encyclopedia-cells.mjs`, `ui/scripts/encyclopedia-base.test.mjs`, and the "Revising a cell another run may also be revising" rule in `.agents/skills/encyclopedia/SKILL.md`.
+<<<<<<< /tmp/ours.f
+
+
+## D42 A pass that gives a cell children revisits that cell's questions
+
+Decision: When a pass creates or links children under an existing cell, the parent's `questions` entries are re-read in the same batch and any that the pass has just answered are rewritten or removed. A count of children stated in a `questions` entry is restated from production at the end of the pass rather than from the plan.
+
+Came up because: this pass created Drama and left its question saying it has no children, after making it the parent of 52 live cells. Poetry's question said it parents 43 while the ledger and the report both said 91. Dialect literature's question said its third child had no cell, after the same pass linked that cell as its third child. All three were true when written and false by the time the owner would read them.
+
+Options: Treat a `questions` entry as a record of what was true when the cell was written; regenerate counts at read time, which needs a projection that does not exist; or make revisiting the parents part of the pass that changed them.
+
+Chose the third because: `questions` is how a cell tells the owner what it does not know, so a stale one sends her to look at something already done, which is worse than a wrong number in prose. The other two options either accept that or need machinery. Given up: a nesting pass now has a closing step over every cell it gave children to, and the cost grows with the size of the pass.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "Maintaining"; batch `B26.json`; the corrected cells are drama, poetry and dialect-literature.
+>>>>>>> /tmp/theirs.f
+
+
+## D43 The writing map nests on the Library of Congress broader-term hierarchy, and stops where that hierarchy stops being about made work
+
+Decision: Every cell that cites a Library of Congress Genre/Form Term takes its parent from that term's own `skos:broader` link, walking up until a term is reached that is already a cell or that passes the cell test. Nineteen terms on those paths were declined as cataloguing containers rather than families of made work, and a cell whose only path runs through them stays a root. The declined set is Literature, Informational works, Recreational works, Instructional and educational works, Discursive works, Ephemera, Visual works, Commemorative works, Religious materials, Records (Documents), Reference works, Serial publications, Periodicals, Illustrated works, Musical texts, Sacred music texts, Radio scripts, Humor, and Pornographic comics.
+
+Came up because: Production held 367 root cells out of 553 and the owner's complaint was that the map was one flat row: "That's the point of this nested stuff." The Library of Congress already states a parent for 239 of those roots, so the hierarchy did not have to be invented, only read.
+
+Options: Invent a taxonomy over the whole collection; take every broader term the Library of Congress states, including its top-level form facets; or take the stated terms and decline the ones that name a shelving category rather than a practice.
+
+Chose the third because: the skill says a cataloguing convenience is not a cell and that the top stays open. Literature is the strongest case: the Library of Congress files 235 terms under it, and accepting it would put one root over the whole writing map, which is a bigger decision than a nesting pass should make on its own. It is also the medium the `writing` map membership already records, so a Literature cell would be the map appearing as a node inside itself. Given up: 26 cells stay roots because their only stated parent is one of the declined terms, and each one is listed in the report so the owner can rule on it.
+
+Recorded in the ledger, after the review round asked where these declines live: four of the nineteen sit inside this source's slice and now have a `declined` row, Literature, Musical texts, Sacred music texts and Pornographic comics. The other fifteen are top-level Library of Congress facets outside the Literature slice this ledger covers, so recording them here would claim a decision about terms the ledger does not track. They are declined for the purposes of this pass and named in this entry, which is their record.
+
+Where: batch payloads `B21-create.json` and `B21-links-1..4.json`; `.agents/skills/encyclopedia/sources/lcgft-literature.json`; `docs/efforts/ARN-118/proposal-B21-B23-nesting.md`.
+
+
+## D44 Fiction, Poetry and Drama return as cells, overturning B6
+
+Decision: The three Library of Congress form divisions are cells. Fiction now parents 50 live cells, Poetry 91 and Drama 52.
+
+Came up because: B6 declined all three as "a form category of literature, like a medium; a cell needs a direction inside it". Without them the writing map has no layer between a single form and nothing at all, and 193 cells that state one of the three as their broader term have nowhere to hang.
+
+Options: Keep the B6 ruling and leave those cells as roots; accept a single Literature cell instead; accept the three form divisions.
+
+Chose the three because: verse, prose and the stage are where the traditions actually divide, and a reader argues about that boundary in a way they do not argue about "literature". Each of the three carries a `questions` entry naming the B6 decline it overturns.
+
+Extended after the verifier read pull request 286: the practice applies to every reversal, not to these three. Ten further cells in this run revived a term an earlier batch had declined and carried an empty `questions`, so a reader met the cell with nothing saying it was once refused or why. Batch B23 gives each of the ten the entry, quoting the original decline and saying what changed. The rule now reads: a cell that overturns a recorded decision states in `questions` which decision, in the words that decision used, and how to keep the earlier ruling. Given up: if the owner keeps the B6 ruling, striking these three cells drops the links that depend on them, which the report lists separately from the cross-form links so the two can be judged apart.
+
+Where: `B21-create.json` items 1 to 3; ledger rows Fiction, Poetry and Drama, revised from `declined` to `live`.
+
+
+## D45 The visual map does not nest on Getty, because Getty's parents there are guide terms
+
+Decision: The art cells get no parent layer from the Getty Art & Architecture Thesaurus in this pass. Five links were written where a cell's own Getty record names a broader concept that is already a cell, and one cell, Printmaking, was created from the Wikipedia article that names lithography, screenprinting, woodcut, etching, engraving and risograph as its techniques.
+
+Came up because: 52 visual cells were roots and each cites a Getty concept, so Getty looked like the same lane as the Library of Congress. Reading the records showed the parents are guide terms written in angle brackets, `<modern European fine arts styles and movements>` and the like, which are shelving categories and in several cases sort directions by nation.
+
+Options: Accept the Getty guide terms as cells; invent a movement taxonomy for the visual map; take only the links Getty states between two concepts that are both already cells.
+
+Chose the third because: the skill forbids partitioning by kind-of-thing and forbids forcing directions through a national frame, and every bracketed Getty term does one or the other. The visual lane needs the Artsy Art Genome, which the source table names as the first visual lane and which stands at zero coverage. Given up: 192 visual cells are still roots, and a separate Artsy pass has to do that work.
+
+Where: `B21-art.json`; `B21-create.json` item 16.
+
+
+## D46 The visual map nests on the claims Wikidata actually carries, which is a minority of its movements
+
+Decision: A visual cell takes its parent from its own cited Wikidata item, reading `subclass of`, `part of` and `movement` and walking up until the target is a cell. Where Wikidata carries no such claim, or carries only a class like art, Western art, cultural movement or avant-garde, the cell stays a root. One cell was created for this, Abstract art, because four live cells name it as their parent and nothing above them existed.
+
+Came up because: the Getty finding in D45 left 192 visual roots, and the Artsy pass that was expected to nest them produced cells sourced to Wikipedia, Wikidata and Getty rather than to Artsy gene pages, so no cell carries an Artsy citation to cite a parent from. Wikidata is the vocabulary 147 of those roots do cite, and it states parents in machine-readable form.
+
+Options: Add Artsy gene pages as new sources to 147 cells so their genes could be cited; invent a movement taxonomy over the visual map; read the claims Wikidata already carries on the items the cells cite.
+
+Chose the third because: it repeats the method that worked for the Library of Congress, and it adds no source a cell does not already stand on. The result is honest about the ceiling: Wikidata records a parent for 28 of the 192 roots and records nothing at all for Der Blaue Reiter, CoBrA, Suprematism, Minimalism and most other named groups, so 165 visual cells are still roots and the movement layer above them has to be curated rather than harvested. Given up: the visual map is nested far less than the writing map, and the difference is a property of the sources rather than of the pass.
+
+Where: `B22-create.json`, `B22-links.json`; visual roots fall from 192 to 165.
+
+
+## D47 A parent more than one step up the vocabulary is read before it is written
+
+Decision: A broader link taken from a source vocabulary is written directly when the source states it. Where the nearest term that is a cell sits more than one step above, the intermediate terms are opened and read before the link is written, because a label that matches a cell's name can carry a different sense. Three links in this run were built by walking two steps; two were right and one was wrong.
+
+Came up because: the visual sweep linked Precisionism to Realism by walking Wikidata from Precisionism to magic realism to realism. The Realism cell in this collection is the French movement of the 1840s standing on Q2642826, and Precisionism's own article opens by calling it a modernist art movement that emerged in the United States after the First World War. The nesting-visual agent raised it in review, and reading the article confirmed the link was wrong. The same review found two links that were right but sat one level too high, Ashcan School under Realism where American realism exists, and Die Brücke under Expressionism where German Expressionism exists; both were replaced with the insertion move.
+
+Corrected after the verifier read pull request 286: Precisionism was not the only wrong link of the 350, and the first version of this entry said so. American realism and Social realism reached the same French movement by the same route, their Wikidata items naming Q10857409, the general realist tendency, rather than Q2642826. Both links are removed in batch B23 and those cells are roots again, because no cell stands for the general tendency. The count that holds is three wrong links of 350, all one defect: a walk that crossed a sense boundary at a label match.
+
+Options: Forbid the transitive walk and accept fewer links; keep the walk and accept that some links are wrong; keep it and require the intermediate terms to be read.
+
+Chose the third because: the walk found the two correct Renaissance and Rococo placements that a direct-claim-only rule would have missed, so forbidding it costs real links. Reading three intermediate pages costs minutes. Given up: a pass that walks cannot be fully automatic, and the reading is the slow part.
+
+Corrected a second time, after the review round read the report: a check over all 42 cells this run minted was reported as finding zero remaining, and that zero was wrong. Survival fiction still credited a canon to Robinson Crusoe, which its only cited page never names; the checker missed it because it fell back to matching the first word of a phrase, and "Robinson" appears inside "Robinsonades" in that record. The fallback existed to tolerate a surname written without its initials and it hid a real defect instead. The honest count is 17 of 42 carrying an unsupported claim, one of which survived the first repair.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "Sources and reading passes"; batches `B22-fix.json` and `B26.json`; the corrected cells are ashcan-school, die-brucke, precisionism and survival-fiction.
+
+
+## D48 OPEN, for the owner: the Abstract art cell contradicts an Artsy ledger decline
+
+Question, not a decision. This run created an Abstract art cell because four live cells name it as their parent and nothing above them existed. The Artsy reading pass, on branch `claude/encyclopedia-sources-night`, declined the Artsy gene of that name with the note "a medium crossed with a broad quality, which is a way of filtering a catalogue rather than a direction". The live cell and that ledger row now say opposite things and both will land on master.
+
+The case for the cell: abstract art has a hundred-year body of painting and sculpture, a boundary critics argue about, and four cells whose own Wikidata items name it as their parent. The case for the decline: as an Artsy gene it works as a catalogue filter, and the cell may be doing the job that Geometric abstraction and Abstract Expressionism already do more precisely.
+
+Both readings are defensible and this is the owner's call. If she keeps the cell, the ledger row needs revising to `merge` naming `abstract-art`. If she strikes it, four broader links drop with it and Geometric abstraction becomes the parent of the group, which is the placement the nesting-visual agent proposed independently.
+
 
 ## D49 Made work is connected by what a record credits, never by what it is called
 
@@ -512,6 +650,7 @@ Chose the credit vocabulary because: it is the record's own claim about its line
 
 Where: `.agents/skills/encyclopedia/sources/getty-aat-styles.json`; batches C1 and C2 in production.
 
+
 ## D50 An archived record may be a manifestation, and the entry says so
 
 Decision: A manifestation may name a record in any status including Archived, while a `broader` or `relations` link must point at a live attested Draft. Where an archived record is attached, its status is written into the explanation.
@@ -523,6 +662,7 @@ Options: Skip archived records; attach them silently; attach them and mark them.
 Chose attach and mark because: an archived record is still made work that credits the direction, and the visibility projection is meant to resolve status at read time rather than by forbidding the link. Marking makes the whole set strikeable in one instruction. Given up: cells carry retired work until that projection exists, which is why the integrity watch reports the count rather than leaving it to be discovered.
 
 Where: `scripts/encyclopedia-integrity.mjs`, the breadth tell.
+
 
 ## D51 A cell's children are a tell about its breadth, never a test of it
 
@@ -536,6 +676,7 @@ Chose the narrow rule because: breadth is what a cell claims, and children only 
 
 Where: `scripts/encyclopedia-integrity.mjs`; `ui/scripts/encyclopedia-integrity.test.mjs`; batch C10.
 
+
 ## D52 The integrity sweep reports, and it fails the run rather than reporting green on data it did not read
 
 Decision: The gap watch reads the live collection and reports violations; nothing in CI asserts the collection is free of findings, and the fixture tests cover the function rather than the graph. A read that cannot account for every row the server reports exits non-zero and reports nothing about the collection.
@@ -548,6 +689,7 @@ Chose report-only with a hard failure on an incomplete read because: a watch tha
 
 Where: `scripts/encyclopedia-integrity.mjs`; `ui/scripts/encyclopedia-integrity.test.mjs`; wired into `test:encyclopedia`.
 
+
 ## D53 Two writers on one path is the same failure whether or not the path is instrumented
 
 Decision: Recorded rather than fixed by machinery. Runs sharing a scratch directory use a per-run subdirectory; a shared filename is a convention, not a guard.
@@ -559,6 +701,7 @@ Options: Add a lock; rename by convention; leave it.
 Chose the convention and wrote down why it is weaker: a filesystem has no compare-and-swap, so nothing can refuse the second write the way the loader now does. The general form is the one worth keeping: the same failure appeared in two systems on the same night, refused in the one that had been instrumented and silent in the one that had not.
 
 Where: this ledger; the effort reports.
+
 
 ## D54 A watch alerts on unexplained change and never asserts what the right answer is
 
@@ -587,3 +730,4 @@ The detached HEAD happened three times in one day on one branch, and all three w
 One more, about evidence rather than instruments. Offering "the count is unchanged at 67" as proof that a refactor was count-neutral compared two runs over a collection that was moving underneath them, and the number had gone to 66 for reasons unrelated to the change. The claim was right and its evidence could not support it. **A property of a transformation is demonstrated by computing both ways over one snapshot, never by comparing two runs**, and the integrity script now reports the archived count both set-qualified and by bare id so the neutrality is visible rather than asserted.
 
 Where: the run's own watch; `ui/scripts/encyclopedia-integrity.test.mjs`; this rule belongs to whoever writes the next one.
+=======
