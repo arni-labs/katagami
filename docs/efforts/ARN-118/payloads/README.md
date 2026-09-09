@@ -120,6 +120,10 @@ Applied at 2026-09-09T20:27Z; all ten written and attested. The loader needs
 `ui/node_modules` present, because it imports the shared contract from
 `ui/src/lib/encyclopedia-schema.ts` and that file wants zod 4. In a fresh
 worktree it fails with `z.url is not a function` until `npm ci` has run in `ui`.
+The message reads as a broken loader and it is a missing dependency: a script
+that writes rows to the API needs the site's dependencies installed, because the
+contract it validates against is a file in the site's source tree, and it needs
+them even though it never renders a page.
 
 Read the counts down a column, never across two:
 
