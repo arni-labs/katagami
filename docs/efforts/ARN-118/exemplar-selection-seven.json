@@ -1,0 +1,33 @@
+{
+  "note": "Exemplar selections for the seven replacement corpora. Keys address a verbatim passage in the new corpus built by build_corpora.py; annotations are ours and describe the construction.",
+  "styles": {
+    "the-crisis-editorial-page": [
+      ["corpus-2.md:para:-:0:3", "the standing head, then the claim, then the cheap explanation refused in the next paragraph"],
+      ["corpus-3.md:para:-:0:4", "an objection quoted in full from the person who made it, then answered on its own terms"]
+    ],
+    "congressional-research-service-issue-reports": [
+      ["corpus-3.md:para:-:0:1", "what the thing is, what was decided, and what is still open, in that order"],
+      ["corpus-2.md:para:-:2:3", "a contested claim attributed to the people making it, with the mechanism spelled out"]
+    ],
+    "faa-airplane-flying-handbook": [
+      ["corpus-3.md:sent:2:0:11", "numbered actions in the order a hand performs them, each carrying its reason"],
+      ["corpus-4.md:para:-:0:0", "the hazard and the authority for it stated before any procedure begins"]
+    ],
+    "nhc-forecast-discussions": [
+      ["corpus-2.md:para:-:1:3", "the measurement first, the call it supports second, the forecast third"],
+      ["corpus-1.md:para:-:4:9", "what the guidance agrees on and what it does not, both said plainly"]
+    ],
+    "lamb-elia-essays": [
+      ["corpus-2.md:para:-:0:1", "a person introduced through one quoted sentence of her own and then circled"],
+      ["corpus-4.md:para:-:0:2", "an admission opens the essay and the digression that follows becomes the argument"]
+    ],
+    "anderson-winesburg-ohio": [
+      ["corpus-1.md:para:-:0:1", "the place given in one long sentence, then the man inside it moving"],
+      ["corpus-2.md:para:-:2:2", "feeling stays in what the characters do, and the paragraph closes on a line of speech"]
+    ],
+    "high-fantasy": [
+      ["corpus-1.md:para:-:1:2", "the chronicler addresses the reader, sets the flaw in the fortune, and lets the scene run on"],
+      ["corpus-3.md:para:-:1:1", "the room is inventoried object by object until the inventory turns into weather"]
+    ]
+  }
+}

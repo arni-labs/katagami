@@ -1,0 +1,268 @@
+{
+ "the-crisis-editorial-page": {
+  "schema": "katagami:voice-bands/v1",
+  "sentence_length": {
+   "mean": [
+    8.7,
+    37.2
+   ],
+   "stdev_min": 5.5
+  },
+  "banned_phrases": [
+   "delve",
+   "leverage",
+   "seamless",
+   "game-changer",
+   "robust",
+   "cutting-edge",
+   "in today's fast-paced",
+   "it's worth noting",
+   "at the end of the day"
+  ],
+  "punctuation": {
+   "exclamations_per_1000_words": [
+    0,
+    3
+   ]
+  },
+  "type_token_ratio": {
+   "min": 0.4,
+   "window_words": 500
+  },
+  "function_words": {
+   "max_distance": 0.102
+  },
+  "char_trigrams": {
+   "max_distance": 0.257
+  },
+  "min_words_to_evaluate": 150
+ },
+ "congressional-research-service-issue-reports": {
+  "schema": "katagami:voice-bands/v1",
+  "sentence_length": {
+   "mean": [
+    12.2,
+    32.7
+   ],
+   "stdev_min": 5.4
+  },
+  "banned_phrases": [
+   "delve",
+   "leverage",
+   "seamless",
+   "game-changer",
+   "robust",
+   "cutting-edge",
+   "in today's fast-paced",
+   "it's worth noting",
+   "at the end of the day"
+  ],
+  "punctuation": {
+   "exclamations_per_1000_words": [
+    0,
+    2
+   ]
+  },
+  "type_token_ratio": {
+   "min": 0.38,
+   "window_words": 500
+  },
+  "function_words": {
+   "max_distance": 0.103
+  },
+  "char_trigrams": {
+   "max_distance": 0.307
+  },
+  "min_words_to_evaluate": 150
+ },
+ "faa-airplane-flying-handbook": {
+  "schema": "katagami:voice-bands/v1",
+  "sentence_length": {
+   "mean": [
+    9.7,
+    27.8
+   ],
+   "stdev_min": 4.8
+  },
+  "banned_phrases": [
+   "delve",
+   "leverage",
+   "seamless",
+   "game-changer",
+   "robust",
+   "cutting-edge",
+   "in today's fast-paced",
+   "it's worth noting",
+   "at the end of the day"
+  ],
+  "punctuation": {
+   "exclamations_per_1000_words": [
+    0,
+    2
+   ]
+  },
+  "type_token_ratio": {
+   "min": 0.36,
+   "window_words": 500
+  },
+  "function_words": {
+   "max_distance": 0.137
+  },
+  "char_trigrams": {
+   "max_distance": 0.282
+  },
+  "min_words_to_evaluate": 150
+ },
+ "nhc-forecast-discussions": {
+  "schema": "katagami:voice-bands/v1",
+  "sentence_length": {
+   "mean": [
+    13.4,
+    31.2
+   ],
+   "stdev_min": 5.1
+  },
+  "banned_phrases": [
+   "delve",
+   "leverage",
+   "seamless",
+   "game-changer",
+   "robust",
+   "cutting-edge",
+   "in today's fast-paced",
+   "it's worth noting",
+   "at the end of the day"
+  ],
+  "punctuation": {
+   "exclamations_per_1000_words": [
+    0,
+    2
+   ]
+  },
+  "type_token_ratio": {
+   "min": 0.43,
+   "window_words": 500
+  },
+  "function_words": {
+   "max_distance": 0.051
+  },
+  "char_trigrams": {
+   "max_distance": 0.141
+  },
+  "min_words_to_evaluate": 150
+ },
+ "lamb-elia-essays": {
+  "schema": "katagami:voice-bands/v1",
+  "sentence_length": {
+   "mean": [
+    16.0,
+    43.4
+   ],
+   "stdev_min": 8.4
+  },
+  "banned_phrases": [
+   "delve",
+   "leverage",
+   "seamless",
+   "game-changer",
+   "robust",
+   "cutting-edge",
+   "in today's fast-paced",
+   "it's worth noting",
+   "at the end of the day"
+  ],
+  "punctuation": {
+   "exclamations_per_1000_words": [
+    0,
+    10
+   ]
+  },
+  "type_token_ratio": {
+   "min": 0.43,
+   "window_words": 500
+  },
+  "function_words": {
+   "max_distance": 0.118
+  },
+  "char_trigrams": {
+   "max_distance": 0.233
+  },
+  "min_words_to_evaluate": 150
+ },
+ "anderson-winesburg-ohio": {
+  "schema": "katagami:voice-bands/v1",
+  "sentence_length": {
+   "mean": [
+    12.2,
+    29.8
+   ],
+   "stdev_min": 5.3
+  },
+  "banned_phrases": [
+   "delve",
+   "leverage",
+   "seamless",
+   "game-changer",
+   "robust",
+   "cutting-edge",
+   "in today's fast-paced",
+   "it's worth noting",
+   "at the end of the day"
+  ],
+  "punctuation": {
+   "exclamations_per_1000_words": [
+    0,
+    5
+   ]
+  },
+  "type_token_ratio": {
+   "min": 0.39,
+   "window_words": 500
+  },
+  "function_words": {
+   "max_distance": 0.115
+  },
+  "char_trigrams": {
+   "max_distance": 0.207
+  },
+  "min_words_to_evaluate": 150
+ },
+ "high-fantasy": {
+  "schema": "katagami:voice-bands/v1",
+  "sentence_length": {
+   "mean": [
+    19.3,
+    48.6
+   ],
+   "stdev_min": 9.8
+  },
+  "banned_phrases": [
+   "delve",
+   "leverage",
+   "seamless",
+   "game-changer",
+   "robust",
+   "cutting-edge",
+   "in today's fast-paced",
+   "it's worth noting",
+   "at the end of the day"
+  ],
+  "punctuation": {
+   "exclamations_per_1000_words": [
+    0,
+    15
+   ]
+  },
+  "type_token_ratio": {
+   "min": 0.38,
+   "window_words": 500
+  },
+  "function_words": {
+   "max_distance": 0.125
+  },
+  "char_trigrams": {
+   "max_distance": 0.259
+  },
+  "min_words_to_evaluate": 150
+ }
+}

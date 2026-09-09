@@ -731,3 +731,135 @@ One more, about evidence rather than instruments. Offering "the count is unchang
 
 Where: the run's own watch; `ui/scripts/encyclopedia-integrity.test.mjs`; this rule belongs to whoever writes the next one.
 =======
+
+
+## D60 An exemplar is a passage, and a check with a floor exempts everything below it
+
+Decision: Every live writing style carries one to three exemplars, each between 150 and 400 words, drawn verbatim from that style's own corpus with kind `corpus`. Nothing shorter survives. `scripts/check-writing-style-exemplars.py` holds the collection to it against the deployment: the count, the length, each exemplar passing its own style's mechanical bands with that style's corpus as the reference, and on a public-domain style each appearing verbatim in that corpus.
+
+Came up because: every one of the twenty-four live styles carried three to five exemplars totalling 250 to 960 characters, so one or two sentences apiece and in places a fragment of dialogue. A style cannot be shown by a sentence.
+
+The part worth keeping is why nothing had caught it. Every style sets `min_words_to_evaluate` to 150, and the bands checker skips any text under that value before it evaluates anything except the banned-phrase scan. Every exemplar in the collection was under 150 words. So the checker was reporting a pass on all of them while measuring none of them, and it would have gone on doing that for any number of new short exemplars. The instrument could not exhibit the failure it exists to detect.
+
+That is the third instance of the same shape in one night, alongside a fixture of one row that could not be read short and a guard whose eight tests put no null in the one list it missed. The general rule now written down: a check with a floor silently exempts everything below the floor, and a corpus of short things will always pass it. When a check has a threshold, the set of inputs below it is the set the check does not cover, and that set needs its own rule.
+
+Options: raise the floor and leave the checker alone; lower `min_words_to_evaluate` so short exemplars are measured; write a separate check that enforces the floor itself.
+
+Chose the floor plus a separate check because: lowering `min_words_to_evaluate` would make the statistical bands run over twenty-word texts, where a sentence mean and a burstiness figure measure noise. The floor is what makes the existing bands meaningful, and the new check is what makes the floor enforced rather than declared. Given up: two numbers now have to agree, the 150-word floor here and `min_words_to_evaluate` in every style's bands. The check reads both, so a drift between them is visible.
+
+Where: `scripts/check-writing-style-exemplars.py`, `scripts/set-writing-style-exemplars.py`, `docs/efforts/ARN-118/exemplar-selection.json`. Against production before the change: 143 problems across 24 styles. After the seventeen public-domain styles were written: 42, all of them in the seven that still hold a model-written corpus.
+
+
+## D61 The record that travels is the one that has to be clean
+
+Decision: A style whose corpus is replaced is not done until its VOICE.md and its replication samples are rebuilt on the new corpus. The corpus files, the VOICE.md and the replicas are one artifact for the purpose of this fix, and none of the seven is reported as complete before all three are real.
+
+Came up because: the VOICE.md attached to each of the seven quotes its entire model-written corpus verbatim in a "Gold standard samples" section — around 14 KB of model prose in the Op-ed file, and the same shape in the other six. The replication samples were then produced from that VOICE.md. VOICE.md is the portable projection, the file at `/voice/<id>/VOICE.md` that gets handed to another agent as a prompt, so it is the copy most likely to be read and reused.
+
+Anyone who replaced the corpus files and stopped there would have believed the problem was fixed while the model text went on being handed out, now under a real author's name, which is worse than where it started. Fixing a source without regenerating what quotes it fixes nothing.
+
+Options: replace the corpora and leave VOICE.md for a follow-up; replace both together; hold the whole replacement until both can be written.
+
+Chose holding both together because: a follow-up is how the model text survives, and the interval during which a style is called Sherwood Anderson while its contract file quotes a model is the exact false attribution this effort exists to remove. Given up: the corpus replacement is blocked on the same write route as the VOICE.md, so neither lands early.
+
+The general rule: when a fix has to reach a source and everything derived from it, the derived copies are part of the fix rather than a follow-up, and the copy that travels is the one to check first.
+
+Where: the seven styles' `voice_md_file_id` fields; `docs/efforts/ARN-118/corpus-sources.md`, "What is still open"; the docstring of `scripts/replace-writing-style-corpora.py`; and the VOICE.md rule added to `scripts/check-writing-style-exemplars.py`, which refuses a VOICE.md whose quoted samples do not appear in the style's own corpus.
+
+
+## D62 None of the seven is archived; six are renamed for what their text is
+
+Decision: The seven styles carrying a model-written corpus keep their records and get real text. Six are renamed because the label claimed more than the text can deliver: Op-ed becomes The Crisis — editorial page (1910–1911); Explanatory journalism becomes Congressional Research Service — issue reports (2020s); Minimalism (technical communication) becomes Federal Aviation Administration — Airplane Flying Handbook (2021); Liveblogging becomes National Hurricane Center — forecast discussions (2024); Lyric essay becomes Charles Lamb — Elia essays (1823); Dirty realism becomes Sherwood Anderson — Winesburg, Ohio (1919). High fantasy keeps its name, because the register genuinely is Morris and MacDonald and only the corpus changes.
+
+Came up because: the owner ruled that a model cannot write in a style it was not trained on, so a model-written passage labelled as an example of a register is not evidence of that register. Those seven were also exactly the modern registers she had asked for, and the seventeen styles with real corpora are all pre-1930, because that is where public-domain text stops.
+
+Options: archive all seven and record the registers as ones we do not have; keep the names and attach the nearest real text under them; rename each record to what its text actually is; archive the record and mint a new style beside it.
+
+Chose renaming because: three of the seven found genuinely modern text by working hands — CRS analysts, the FAA, and the named forecasters at the National Hurricane Center — because works of the United States federal government are outside copyright under 17 U.S.C. 105. Archiving those would have thrown away real modern registers. Keeping the old names over the new text would have repeated the original error in a quieter form, since a 1911 editorial page is not an op-ed and a 1919 story collection is not dirty realism.
+
+Archiving and minting beside was argued for Lyric essay in particular, where the new record is closer to a different style occupying the same row than to a narrowing: Lamb wrote the familiar essay and the lyric essay is the fragmentary white-space form named in 1997. The owner took the rename knowing that. What the rename must not do is carry the old persona, so each of the six has a persona describing what its text does rather than what it replaced, and each curator note records what the register we lost was and why we could not keep it.
+
+What it costs, which the owner was told in these terms before she decided: this does not deliver the modern registers she asked for. The argumentative, fragmentary and contemporary-fiction registers come back as pre-1930 voices, because for those three the only modern corpora are in copyright or Creative Commons licensed. Those registers are now recorded as ones the collection does not hold.
+
+Where: `docs/efforts/ARN-118/corpus-sources.md`; `scripts/replace-writing-style-corpora.py`; the `curator_notes` on each of the seven.
+
+
+## D63 Creative Commons has no honest home in the consent basis, so it stays shut
+
+Decision: No Creative Commons text enters the collection, and the `consent.basis` enum is left alone.
+
+Came up because: the modern registers the owner wanted have modern corpora, and some of them carry Creative Commons licences. Two were read rather than assumed. The Conversation is CC BY-ND 4.0 and its republishing guidelines separately forbid systematic republication and permit only lead paragraphs with a link back. Global Voices is CC BY 3.0, attribution only, and genuinely permissive.
+
+The blocker turned out to sit under the licence rather than in it. `AttachCorpus` takes a consent block whose `basis` is one of `opt_in`, `public_domain`, `original`. CC BY text is none of the three, and recording it as `public_domain` would be false about the one field whose job is to be true.
+
+Options: record CC BY text as `public_domain` and describe the licence in the provenance string; add a fourth basis to the spec and use it; leave the enum alone and take only text that fits an existing basis.
+
+Chose leaving it alone because: the first is a lie in the field that exists to prevent exactly that lie, on a branch whose entire subject is provenance. The second is a spec change to a deployed application, and justifying it on one clean example is how machinery gets built for a case nobody has measured. The owner chose to have someone map what CC BY text actually exists for the registers she wants, and the spec change gets justified by that map or it does not happen. Given up: Global Voices is usable text we are not using, and three registers stay pre-1930 as a result.
+
+Where: `katagami-commons/specs/writing_style.ioa.toml`, the `AttachCorpus` and `AttestConsent` hints; `docs/efforts/ARN-118/corpus-sources.md`, "What closed the Creative Commons route".
+
+
+## D64 A probe against a production write route is a production write
+
+Decision: The way to find out whether a write route exists is to read the metadata, not to send it a request and see what comes back. `File` in the OData metadata carries `HasStream="true"` and a `StreamUpdated` action whose hint describes the whole mechanism, and that metadata was already fetched and sitting on disk when the probe was sent.
+
+Came up because: POSTing `{}` to `/tdata/Files` to find out whether the route was routed, expecting a validation error, minted `fl-01a08644-8b10-7060-9f08-7f8080cef32e` — a File in state Created with no Name, no Path and no content. Nothing references it and it touches no writing style.
+
+Options: give the stray row a real path and corpus content so it stops being stranded; leave it and account for it in the report; delete it.
+
+Chose leaving it because: deletion is outside the boundary this run is working under, and repurposing is worse than stranding. A row minted by a probe and then filled with corpus bytes has worse provenance than a row created for that corpus, and this branch exists because provenance is the thing we got wrong. An empty stranded row the report accounts for is honest; a repurposed one is a small lie in exactly the place being cleaned up.
+
+This is the same shape as D60 and as two other findings the same night: an instrument asked a question it could not answer without changing the thing it was measuring. A read that has a side effect is not a read.
+
+Where: `fl-01a08644-8b10-7060-9f08-7f8080cef32e` on production, accounted for in the effort report; the Files mechanism written into `katagami-curation/agents/curator/skills/synthesize-writing-style/SKILL.md` so the next agent reads it instead of rediscovering it the same way.
+
+
+## D65 Bands are derived with the collection's own margins, and only the keys the checker reads are emitted
+
+Decision: Each replacement style's mechanical bands are computed from its own new corpus with the margins the collection already uses, and the band set is limited to the keys `docs/research/harness/voice_check_local.py` evaluates.
+
+Came up because: replacing a corpus invalidates the bands derived from the old one, and bands have to be derived rather than chosen or the finalizer rejects them. Two questions had no written answer: how much margin is honest, and which keys to emit.
+
+The margins were read off two styles the pipeline built earlier rather than invented. Against Jane Austen and Aphorism, the mean band runs from the shortest file's mean at about 0.70 to the longest file's mean at about 1.35, the burstiness floor sits near 0.55 of the least bursty file, the distinct-word floor near 0.80 of the poorest file, and the two divergence ceilings near 2.75 times the file furthest from the corpus centre. Those are the constants used.
+
+The key set is the one Aphorism emits, which is the subset the checker actually evaluates. Jane Austen's bands additionally carry `pos_trigrams`, `contractions_per_1000`, `hedges_per_1000`, `passive_per_1000` and `readability_grade`, and the checker reads none of them.
+
+Options: emit the full Austen key set; emit only what the checker reads; extend the checker to evaluate the missing keys.
+
+Chose the checker's subset because: a band nothing checks is a band nothing proves, and emitting a figure that no code will ever test is a claim with no evidence behind it. Extending the checker is the better long-term answer and is a separate piece of work, since the mirror has to keep agreeing with the deployment's finalizer and the finalizer is the arbiter. Given up: the five unevaluated dimensions go unconstrained on the seven replacements, where Austen nominally constrains them.
+
+One consequence, recorded because it changed a source choice: Lamb's Dream-Children was cut from that corpus in favour of A Chapter on Ears. Dream-Children runs at a mean sentence length of 74 words against 23 to 32 for the other essays, which would have set the style's ceiling near 100 words a sentence. A band that admits everything is not a band, and the derivation is only as honest as the corpus it runs over.
+
+Where: `derive.py` and `docs/efforts/ARN-118/derived-bands-seven.json`; `docs/efforts/ARN-118/corpus-sources.md`, "Bands".
+
+### D61 addendum, 2026-09-09: what rebuilding the contract actually took
+
+D61 said the VOICE.md and the replication samples are part of the fix rather than
+a follow-up. Building them turned up two things worth keeping.
+
+The VOICE.md is now generated by the loader from the corpus it has just attached,
+rather than carried in the approved payload. A contract carried in a payload can
+disagree with the corpus that lands beside it; one generated from those exact
+bytes cannot. The plan and the read-back both check that every passage it quotes
+appears in the stored corpus, and the extractor that finds those passages is one
+function shared by the loader and the standing checker, so the two cannot drift
+into disagreeing about what counts as a quoted passage.
+
+The replicas exposed a bad corpus rather than a bad band. The National Hurricane
+Center corpus was four discussions of one storm, and its derived character-trigram
+ceiling came out at 0.103 — tight enough that a replica written in the same
+register about a different storm failed at 0.209, and still failed at 0.123 after
+being lengthened to corpus length. The band was measuring Helene's place names
+rather than the register. Swapping one Helene discussion for a Milton one moved
+the honest ceiling to 0.141 and the replica passed. Nothing was widened.
+
+That is D65's Dream-Children problem from the other side. There, one unusually
+long essay pushed a ceiling so high the band admitted everything; here, four
+passages about one subject pulled a ceiling so low the band admitted almost
+nothing. Both are the same defect: a band derived from an unrepresentative corpus
+measures the corpus rather than the register, and the fix is the corpus. A band
+is only as honest as the sample it was derived from, and the tell in both
+directions is a threshold that no reasonable text can sit inside.
+
+Where: `scripts/writing_style_voice_md.py`, `scripts/replace-writing-style-corpora.py`,
+`scripts/check-writing-style-exemplars.py`; `docs/efforts/ARN-118/corpus-sources.md`.
