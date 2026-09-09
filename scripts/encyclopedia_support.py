@@ -27,6 +27,15 @@ of its sixteen defects in a `maps` explanation rather than in scope text, and th
 hypomnemata defect that started all of this lived in a manifestation explanation.
 Both are printed so a wider sweep cannot be mistaken for a worse collection.
 
+Each explanation is read against the sources IT cites, not against every source
+on the cell. Until 2026-09-09 the wide score searched the concatenation of all of
+them, so a name counted as supported when it appeared in a source the sentence
+never cited, and the number ran forgiving. `broader`, `relations`, `maps` and
+`manifestations` all carry their own `sourceIds` and the contract requires them;
+using them is the whole point of requiring them. The description and the
+questions carry no citation of their own and are still read against the cell's
+whole pool, which is what those two fields mean.
+
 THE NEXT QUESTIONS OF BYTES ALREADY FETCHED, so the list is inherited rather
 than rediscovered. The structural check reads one predicate,
 `hasBroaderAuthority`. The same records carry three more things the collection
@@ -68,7 +77,21 @@ STOP = {"The", "A", "An", "It", "Its", "They", "This", "That", "There", "Both", 
         "Wikipedia", "Library", "Congress", "Number", "Five", "What", "Where", "One", "Two",
         "Three", "Four", "Journalists", "Reporters", "Writers", "Length", "Modern", "Internet",
         "Web", "Blog", "Blogs", "Most", "Every", "Some", "When", "Since", "After", "Before",
-        "Named", "Names", "Read", "Write", "Written", "Reading", "Writing", "Cell", "Cells"}
+        "Named", "Names", "Read", "Write", "Written", "Reading", "Writing", "Cell", "Cells",
+        # A Katagami record's lifecycle state. A manifestation explanation says which
+        # status the record it points at is in, and that is a fact about the
+        # collection, readable in the collection, and no external source will ever
+        # carry it. Left in, it was 134 of 402 flags and every one a false positive.
+        "Draft", "UnderReview", "Published", "Archived",
+        # The name of a source vocabulary. Whether a cell citing a filing cites that
+        # vocabulary is decided exactly, by the host of the URL, in the check below,
+        # so asking a second time whether the word appears in the fetched bytes only
+        # produces noise: a Wikidata entity's JSON does not contain the string
+        # "Wikidata", and "Its Wikidata item files it as..." is neither wrong nor
+        # uncited. Wikipedia, Library and Congress were already here for this reason.
+        "Artsy", "Getty", "AAT", "Wikidata", "LCGFT", "LCSH"}
+
+QUOTED = re.compile(r'"[^"]*"|“[^”]*”')
 
 
 def fold(s):
@@ -142,12 +165,36 @@ def prose_chars(raw):
 
 
 def prose_fields(d, wide):
-    """The description alone, or every sentence a reader sees."""
-    parts = [d.get("description", "")]
+    """The description alone, or every sentence a reader sees, each paired with the
+    sources that sentence actually cites.
+
+    The pairing is the point. An explanation carries its own `sourceIds`, and
+    scoring it against the concatenation of every source on the cell asks the
+    wrong question: it passes a name that appears in some other source the
+    sentence never cited. Literary nonsense cites Nonsense verse on one parent
+    link and Nonsense fiction on another, so a name carried only by the second
+    would have supported the first. `None` means no citation of its own, and the
+    cell's whole pool is the right comparison: the description is the cell's own
+    prose covered by its sources collectively, and a question cites nothing.
+    """
+    parts = [("description", d.get("description", ""), None, None)]
     if wide:
         for k in ("maps", "broader", "relations", "manifestations"):
-            parts += [e.get("explanation", "") for e in d.get(k, [])]
-        parts += d.get("questions", [])
+            for e in d.get(k, []):
+                text = e.get("explanation", "")
+                # A manifestation explanation quotes the record's own `credits`
+                # label, and that quoted span is the record's text, not a claim
+                # about the world. "The record's credits name Botanical aquatint"
+                # is checkable against the record and will never appear on the
+                # Wikipedia page the link cites. Only the quoted span is dropped:
+                # everything the explanation says in its own voice still has to be
+                # carried by what it cites.
+                if k == "manifestations":
+                    text = QUOTED.sub(" ", text)
+                    parts.append((k, text, e.get("sourceIds"), f"{e['entitySet']}/{e['entityId']}"))
+                    continue
+                parts.append((k, text, e.get("sourceIds"), None))
+        parts += [("questions", q, None, None) for q in d.get("questions", [])]
     return parts
 
 
@@ -176,6 +223,33 @@ def get(url, timeout=60):
 def strip_html(b):
     b = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", b)
     return html.unescape(re.sub(r"\s+", " ", re.sub(r"(?s)<[^>]+>", " ", b)))
+
+
+def read_record(origin, key, entity_set, entity_id):
+    """One Katagami record, as the text a manifestation explanation describes.
+
+    A manifestation explanation is mostly a statement about the record: which
+    tradition its credits name, which edition its corpus is built from, what
+    status it is in. That is checkable, and the record is where it is checkable;
+    the Wikipedia page the link cites has no reason to name a Katagami record's
+    corpus. Reading the record alongside the cited sources is what the skill
+    already says about manifestations, where the record's own page is the natural
+    citation because the record declares its lineage in `credits`.
+
+    This does not exempt the field. The defect that produced this script was a
+    manifestation explanation claiming Marcus Aurelius wrote under the title To
+    Himself, which is a claim about the world; the record does not carry it either,
+    so it still flags.
+    """
+    url = f"{origin}/tdata/{entity_set}('{urllib.parse.quote(entity_id)}')"
+    try:
+        req = urllib.request.Request(url, headers={"X-Tenant-Id": "default",
+                                                   "Authorization": f"Bearer {key}"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return r.read().decode("utf-8", "replace")
+    except Exception as e:  # noqa: BLE001 - a record that cannot be read adds nothing
+        print(f"  record miss {entity_set}/{entity_id}: {e}", file=sys.stderr)
+        return ""
 
 
 def read_cells(origin, key):
@@ -274,23 +348,85 @@ def fetch_sources(urls, cache, cache_path):
 
 
 LOC = re.compile(r"id\.loc\.gov/authorities/genreForms/(gf\d+)")
+WD = re.compile(r"wikidata\.org/wiki/(Q\d+)")
+# The properties a cell explanation actually reports about a Wikidata item. A
+# statement's object is a Q-id, so an entity fetched with props=claims carries
+# "P279 -> Q37068" and never the word Romanticism. Every "its Wikidata item files
+# it as a subclass of X" therefore read as unsupported: six links, all six true.
+# Resolving these targets to their labels is a fetch fix, not a scoring one. The
+# list stays short on purpose, because widening it to every property would pull in
+# countries, dates and collections and hide claims that really are unsupported.
+WD_PARENT = ("P279", "P361", "P135", "P31", "P144")
 
 
-def loc_source(sources, source_ids=None):
-    """The Library of Congress source a link actually cites, not the cell's first.
+def wikidata_targets(raw):
+    """The Q-ids this entity's parentage statements point at."""
+    try:
+        ent = json.loads(raw)
+    except Exception:  # noqa: BLE001 - not an entity record
+        return set()
+    out = set()
+    for prop in WD_PARENT:
+        for claim in ent.get("claims", {}).get(prop, []) or []:
+            value = claim.get("mainsnak", {}).get("datavalue", {}).get("value")
+            if isinstance(value, dict) and isinstance(value.get("id"), str):
+                out.add(value["id"])
+    return out
+
+
+def label_wikidata_targets(cache, cache_dir):
+    """Append the labels of those targets to each entity's cached text.
+
+    Read alongside the entity, so a cell reporting what the item says is scored
+    against what the item says. The labels are cached separately from the source
+    bodies so that re-reading a source never re-fetches them.
+    """
+    path = os.path.join(cache_dir, "wikidata-labels.json")
+    labels = json.load(open(path)) if os.path.exists(path) else {}
+    entities = {u: cache[u] for u in cache if WD.search(u) and cache.get(u)}
+    wanted = sorted({q for raw in entities.values() for q in wikidata_targets(raw)} - set(labels))
+    if wanted:
+        print(f"{len(wanted)} Wikidata statement targets to label", file=sys.stderr)
+    for i in range(0, len(wanted), 50):
+        chunk = wanted[i:i + 50]
+        try:
+            data = json.loads(get("https://www.wikidata.org/w/api.php?action=wbgetentities&format=json"
+                                  "&languages=en&props=labels|aliases&ids=" + "|".join(chunk)))
+        except Exception as e:  # noqa: BLE001
+            print(f"  label batch failed {i}: {e}", file=sys.stderr)
+            continue
+        for qid in chunk:
+            ent = data.get("entities", {}).get(qid, {})
+            names = [ent.get("labels", {}).get("en", {}).get("value", "")]
+            names += [a.get("value", "") for a in ent.get("aliases", {}).get("en", []) or []]
+            labels[qid] = " ".join(n for n in names if n)
+        json.dump(labels, open(path, "w"))
+        time.sleep(1.2)
+    json.dump(labels, open(path, "w"))
+    for url, raw in entities.items():
+        extra = " ".join(labels.get(q, "") for q in sorted(wikidata_targets(raw)))
+        if extra:
+            cache[url] = raw + "\n" + extra
+    return cache
+
+
+def loc_sources(sources, source_ids=None):
+    """Every Library of Congress record in scope, not the first one found.
 
     A cell may carry several LoC records and its parent links may cite different
     ones. Literary nonsense cites Nonsense verse for its Humorous poetry parent
     and Nonsense fiction for its Fiction parent, and taking the first record
     compares the second link against the wrong authority and manufactures a
     defect. Three cells carry more than one LoC source today and it will grow.
+
+    Returning all of them rather than the first closes the same hole on the other
+    end of the edge. The child side is narrowed by the link's own `sourceIds`; the
+    parent side has no link to narrow it, so a parent holding two records has to
+    be read as standing for both, or a link naming its second record reads as a
+    mismatch against its first.
     """
     pool = [s for s in sources if source_ids is None or s["id"] in source_ids]
-    for s in pool:
-        m = LOC.search(s.get("url", ""))
-        if m:
-            return m.group(1), s["url"]
-    return None, None
+    return [(m.group(1), s["url"]) for s in pool if (m := LOC.search(s.get("url", "")))]
 
 
 def broader_authorities(raw, gf):
@@ -340,6 +476,45 @@ def main():
     docs = {r["fields"]["id"]: json.loads(r["fields"]["document"]) for r in live}
     urls = sorted({s["url"] for d in docs.values() for s in d.get("sources", [])})
     cache = fetch_sources(urls, cache, cache_path)
+    cache = label_wikidata_targets(cache, args.cache)
+
+    # ---- an explanation naming a vocabulary, cited to nothing from that vocabulary
+    #
+    # The name check cannot find this on its own. "The Artsy Art Genome lists it in
+    # its Styles and Movements family" was written on 123 art cells and not one of
+    # them cited an artsy.net page; the words Styles and Movements happen to appear
+    # in most Wikipedia articles, so 104 of the 123 scored as supported. The claim
+    # is about where a vocabulary files the term, and whether the cell cites that
+    # vocabulary is a question about the URL, which is exact.
+    vocab_hosts = {"Artsy": ("artsy.net",), "Getty": ("getty.edu",), "AAT": ("getty.edu",),
+                   "Wikidata": ("wikidata.org",), "Wikipedia": ("wikipedia.org",),
+                   "LCGFT": ("id.loc.gov",), "LCSH": ("id.loc.gov",),
+                   "Library of Congress": ("id.loc.gov",), "Aesthetics Wiki": ("aesthetics.fandom.com",)}
+    uncited = []
+    for cid, d in sorted(docs.items()):
+        by_id = {s["id"]: s["url"] for s in d.get("sources", [])}
+        for field in ("maps", "broader", "relations", "manifestations"):
+            for e in d.get(field, []):
+                text = e.get("explanation", "") or ""
+                cited = [by_id.get(i, "") for i in e.get("sourceIds", [])]
+                for name, hosts in vocab_hosts.items():
+                    if not re.search(r"\b%s\b" % re.escape(name), text):
+                        continue
+                    if any(h in u for u in cited for h in hosts):
+                        continue
+                    uncited.append((cid, field, name, text))
+    print(f"\nAN EXPLANATION NAMES A VOCABULARY AND CITES NOTHING FROM IT: {len(uncited)}")
+    print("  Not every one is a defect: a sentence may say a vocabulary has NO heading")
+    print("  for the term, which is an absence and cites the source that named it instead.")
+    print("  The sentence is printed rather than classified, because that is a reading.")
+    for cid, field, name, text in uncited:
+        print(f"  {cid} [{field}] names {name}: {text[:150]}")
+
+    # The records the manifestation links point at, read once each.
+    pointed = sorted({(m["entitySet"], m["entityId"]) for d in docs.values()
+                      for m in d.get("manifestations", [])})
+    print(f"{len(pointed)} manifestation records to read", file=sys.stderr)
+    records = {f"{s}/{i}": fold(read_record(origin, key, s, i)) for s, i in pointed}
 
     # ---- does a cited source carry the names the prose asserts
     def score(wide):
@@ -362,9 +537,17 @@ def main():
             backed = "prose-backed" if max(prose_chars(t) for t in texts) >= 2000 else "prose-thin "
             by_lane[lane] += 1
             by_count[(n_src, backed)] += 1
-            blob = fold(" ".join(texts))
+            allblob = fold(" ".join(texts))
+            bysid = {s["id"]: fold(cache.get(s["url"], "")) for s in srcs}
             bad = []
-            for field in prose_fields(d, wide):
+            for kind, field, sids, record in prose_fields(d, wide):
+                # A sentence is read against what it cites, and against the whole
+                # cell only when it cites nothing. An id that does not resolve
+                # contributes no text, which is what an unresolvable citation is
+                # worth; the format validator is what refuses it.
+                blob = allblob if sids is None else " ".join(bysid.get(i, "") for i in sids)
+                if record is not None:
+                    blob += " " + records.get(record, "")
                 for n in sorted(names_in(field)):
                     forms = variants(n)
                     if any(all(fold(t) in blob for t in f.split() if t not in STOP) for f in forms):
@@ -372,7 +555,8 @@ def main():
                     toks = [t for t in n.split() if t not in STOP]
                     if not toks or not all(fold(t) not in blob for t in toks):
                         continue
-                    bad.append((n, "strict" if all(fold(t)[:5] not in blob for t in toks) else "loose"))
+                    bad.append((n, "strict" if all(fold(t)[:5] not in blob for t in toks) else "loose",
+                                kind, field))
             bad = sorted(set(bad))
             if bad:
                 flagged.append((cid, bad, lane, n_src, backed))
@@ -385,7 +569,7 @@ def main():
     for label, (flagged, partial, scored, by_lane, by_lane_flag, by_count, by_count_flag) in (
             ("DESCRIPTION ONLY, the measured and hand-verified number", narrow),
             ("EVERY SENTENCE A READER SEES, including explanations and questions", wide)):
-        strict = [f for f in flagged if any(k == "strict" for _, k in f[1])]
+        strict = [f for f in flagged if any(k == "strict" for _, k, _, _ in f[1])]
         print(f"\n{label}")
         print(f"  scored {scored}, not scored {len(partial)}")
         print(f"  asserting a name no cited source carries: {len(strict)} strict, {len(flagged)} loose"
@@ -438,8 +622,21 @@ def main():
             print("  sample covers description hits only. Explanations are shorter and more")
             print("  formulaic than scope text, so the rate almost certainly differs, and")
             print("  quoting this figure beside the verified one would borrow its error bar.")
+            # Which field a flag came from decides what it means, so it is printed.
+            # A `questions` entry carries no sourceIds and the contract asks it for
+            # none: it is the cell saying what it does not know, and it often names
+            # another cell or a decision the pass made, which no external page will
+            # ever carry. A `manifestations` explanation is mostly a statement about
+            # the Katagami record, readable in the collection. Neither is exempt,
+            # because the defect that produced this script lived in a manifestation
+            # explanation, but neither can be read as a scope-text hit either.
+            by_field = collections.Counter(kind for _, bad, *_ in strict
+                                           for n, k, kind, _ in bad if k == "strict")
+            print("  by field: " + ", ".join(f"{k} {v}" for k, v in sorted(by_field.items())))
             for cid, bad, lane, n_src, backed in strict:
-                print(f"    {cid:44} {lane:12} {n_src}src {backed} {[n for n, k in bad if k == 'strict']}")
+                for n, k, kind, text in bad:
+                    if k == "strict":
+                        print(f"    {cid} [{kind}] {n}\n        {text[:190]}")
 
     flagged, partial, scored = narrow[0], narrow[1], narrow[2]
 
@@ -461,21 +658,24 @@ def main():
     ok, mismatch, unknown, unparsed = 0, [], [], []
     for cid, d in sorted(docs.items()):
         for link in d.get("broader", []):
-            child, child_url = loc_source(d.get("sources", []), set(link.get("sourceIds", [])))
-            if not child:
+            children = loc_sources(d.get("sources", []), set(link.get("sourceIds", [])))
+            if not children:
                 continue
             parent_doc = docs.get(link["cellId"])
-            parent, _ = loc_source(parent_doc.get("sources", [])) if parent_doc else (None, None)
-            if not parent:
+            parents = loc_sources(parent_doc.get("sources", [])) if parent_doc else []
+            if not parents:
                 unknown.append((cid, link["cellId"]))
                 continue
-            authorities = broader_authorities(cache.get(child_url, ""), child)
-            if authorities is None:
+            parent_ids = {gf for gf, _ in parents}
+            found = [(gf, broader_authorities(cache.get(url, ""), gf)) for gf, url in children]
+            if all(a is None for _, a in found):
                 unparsed.append((cid, link["cellId"]))
-            elif parent in authorities:
+            elif any(parent_ids & (a or set()) for _, a in found):
                 ok += 1
             else:
-                mismatch.append((cid, link["cellId"], child, parent, sorted(authorities)))
+                mismatch.append((cid, link["cellId"], ",".join(gf for gf, _ in children),
+                                 ",".join(sorted(parent_ids)),
+                                 sorted({x for _, a in found for x in (a or set())})))
     print(f"\nPARENT LINKS CITED TO A LIBRARY OF CONGRESS RECORD: {ok} match the record,"
           f" {len(mismatch)} do not, {len(unknown)} not checkable, {len(unparsed)} unparsed")
     print("  Not checkable is a different state from a disagreement: the parent cell")

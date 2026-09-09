@@ -390,6 +390,16 @@ Rules that hold in every pass:
   supports the claim. Three branches broke this in one night by three different
   routes, the sharpest being a cell that credited Faraday at the Royal
   Institution to a page containing none of those words.
+- **An explanation that names a vocabulary cites a source from that vocabulary.**
+  "The Artsy Art Genome lists it in its Styles and Movements family" is a claim
+  about Artsy, and citing a Wikipedia article for it cites nothing. This was
+  written on 123 art cells and not one of them carried an artsy.net source; the
+  words Styles and Movements appear in most Wikipedia articles, so the name check
+  scored 104 of the 123 as supported and the boilerplate spread unseen. The rule
+  is exact, because the vocabulary is the host of the URL, and the sweep now
+  checks it. An absence is the one legitimate exception and says so: Regulated
+  verse states that LCGFT has no heading for it and cites the page the name came
+  from instead.
 - Manifestations ride along: search `credits` across all record sets at every
   status and list what exists. Most new cells will have none on day one.
 
@@ -487,10 +497,23 @@ Autonomy is a change in when the human looks, never in what may be built.
   ```
 
   Reporting only, never a build gate. It prints its own false-positive rate and
-  what it does not check, which includes every explanation field: it reads the
-  description alone, so it would have missed the manifestation defect that
-  produced it. It also checks each parent link cited to a Library of Congress
-  record against that record's own broader authority, which is the crisper half.
+  what it does not check. It scores the description alone and then every sentence
+  a reader sees, each explanation against the sources that explanation itself
+  cites. It checks each parent link cited to a Library of Congress record against
+  that record's own broader authority, and each explanation naming a vocabulary
+  against the host of what it cites, which are the two exact halves.
+
+  Read the field a flag came from before repairing it. A `questions` entry carries
+  no citation and usually names another cell or a decision a pass made, which no
+  external page will ever carry; a `manifestations` explanation is mostly a
+  statement about the Katagami record, so the record is read alongside the cited
+  sources. Neither is exempt, because the defect that produced this script lived
+  in a manifestation explanation, but neither reads like a scope-text hit either.
+
+  Repair by cutting the claim. Looking for a source that fits prose already
+  written produces the same defect with better paperwork, and it passes every
+  check here. Where the cell would then say too little, leave a `questions` entry
+  naming what a better source would let it say.
 
 - **Gap watch**: maps with no cells, cells with no manifestations, recollected
   cells that could now be cited, clusters of made work with no cell over them,
