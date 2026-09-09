@@ -499,3 +499,91 @@ Two orderings the review panel found, both fixed the same night. A cell found in
 What is still open, and it is the reason the runtime fix matters: the loader's last read and its `Define` are not one operation. Two runs that both read the same document and both pass the check can still write in sequence, and the second wins. Narrowing that window is all a client can do. A `Define` that took the expected hash and refused the transition would close it, which is the same attestation pair the collection already computes.
 
 Where: `scripts/encyclopedia-base.mjs`, `scripts/create-encyclopedia-cells.mjs`, `ui/scripts/encyclopedia-base.test.mjs`, and the "Revising a cell another run may also be revising" rule in `.agents/skills/encyclopedia/SKILL.md`.
+
+## D49 Made work is connected by what a record credits, never by what it is called
+
+Decision: A Katagami record manifests a cell when one of the record's own `credits` entries names that direction. Names are not evidence: a record called Sumiko Ink is placed by its credit "Sumi-e tradition", not by its name, and a record whose name rhymes with a cell is not placed at all. Every manifestation explanation quotes the credit verbatim and states the record's status, so a reader can check the placement against the record without leaving the cell.
+
+Came up because: 13 of 105 live cells carried a manifestation, all art, and the DesignLanguages, PaletteSystems and WritingStyles sets were unconnected entirely. The skill already said to search `credits` rather than names; nothing had done it at scale.
+
+Options: Match record names against cell names; read each record and judge; take the credit vocabulary as the unit of decision.
+
+Chose the credit vocabulary because: it is the record's own claim about its lineage, it is what the skill asks for, and it makes the decision reviewable one credit name at a time rather than one record at a time. Reading the whole vocabulary of 2,291 records, 697 carrying credits, produced 1,276 distinct credit names once artists and writers are set aside, and 401 records connected through 668 entries. Given up: a record whose credits are empty or a placeholder cannot be placed at all, and seven such records name only "x".
+
+Where: `.agents/skills/encyclopedia/sources/getty-aat-styles.json`; batches C1 and C2 in production.
+
+## D50 An archived record may be a manifestation, and the entry says so
+
+Decision: A manifestation may name a record in any status including Archived, while a `broader` or `relations` link must point at a live attested Draft. Where an archived record is attached, its status is written into the explanation.
+
+Came up because: 67 entries point at Archived records. The skill names Draft, UnderReview and Published as the statuses that count and is silent on Archived.
+
+Options: Skip archived records; attach them silently; attach them and mark them.
+
+Chose attach and mark because: an archived record is still made work that credits the direction, and the visibility projection is meant to resolve status at read time rather than by forbidding the link. Marking makes the whole set strikeable in one instruction. Given up: cells carry retired work until that projection exists, which is why the integrity watch reports the count rather than leaving it to be discovered.
+
+Where: `scripts/encyclopedia-integrity.mjs`, the breadth tell.
+
+## D51 A cell's children are a tell about its breadth, never a test of it
+
+Decision: A record is misplaced when its own credit names a cell that sits below the one it is attached to. A record attached to a cell that merely has children is not misplaced, and the child count is reported as context rather than enforced.
+
+Came up because: settling where one record belonged produced a tidy structural rule, that a cell with children is a parent and a record on it is at the wrong depth. It was proposed, endorsed, and passed to a second run as settled, all before anyone ran it. Two runs ran it when they sat down to build it and it fails: 103 records sit on a cell with children and none credits a child. 99 of the 103 are in five art cells populated deliberately, and a record about watercolour generally belongs on Watercolour painting even though one narrower cell hangs beneath it.
+
+Options: Ship the child count as an invariant; drop the idea; ship the narrow rule and report the count.
+
+Chose the narrow rule because: breadth is what a cell claims, and children only correlate with it. Had the child count shipped as something CI enforces, the obvious way to make the build green would have been to detach 103 correct manifestations, so the pressure would have pointed at the data instead of at the rule. Given up: a simpler rule that was wrong. The narrow rule is what the parent-drop in batch C1 already applied to 14 entries, and it found one more in production within the hour, after another run inserted a Pointillism leaf beneath Neo-Impressionism.
+
+Where: `scripts/encyclopedia-integrity.mjs`; `ui/scripts/encyclopedia-integrity.test.mjs`; batch C10.
+
+## D52 The integrity sweep reports, and it fails the run rather than reporting green on data it did not read
+
+Decision: The gap watch reads the live collection and reports violations; nothing in CI asserts the collection is free of findings, and the fixture tests cover the function rather than the graph. A read that cannot account for every row the server reports exits non-zero and reports nothing about the collection.
+
+Came up because: the skill asks for an integrity sweep and nobody could run one. A verifier then stopped the paging early and the first version reported zero while a broken cell sat unread on page two, and a wrong-typed field threw out of the checker so one malformed cell aborted the whole sweep.
+
+Options: Fail CI on findings; report only; report and treat an incomplete read as a clean result.
+
+Chose report-only with a hard failure on an incomplete read because: a watch that goes green without seeing the data is worse than no watch, which is the same argument as an invariant that flags correct records. Every read reconciles against `@odata.count`; a wrong-typed field is a finding on that cell and the sweep carries on. Given up: nothing blocks a merge on collection state, which is deliberate, since the collection is data rather than code.
+
+Where: `scripts/encyclopedia-integrity.mjs`; `ui/scripts/encyclopedia-integrity.test.mjs`; wired into `test:encyclopedia`.
+
+## D53 Two writers on one path is the same failure whether or not the path is instrumented
+
+Decision: Recorded rather than fixed by machinery. Runs sharing a scratch directory use a per-run subdirectory; a shared filename is a convention, not a guard.
+
+Came up because: the night's lesson was two writers on one document with no compare-and-swap, fixed in the loader within the hour by D41. Two runs then wrote a pull request body to the same scratch path, and one published the other's text as its own pull request description. No cell or record was involved.
+
+Options: Add a lock; rename by convention; leave it.
+
+Chose the convention and wrote down why it is weaker: a filesystem has no compare-and-swap, so nothing can refuse the second write the way the loader now does. The general form is the one worth keeping: the same failure appeared in two systems on the same night, refused in the one that had been instrumented and silent in the one that had not.
+
+Where: this ledger; the effort reports.
+
+## D54 A watch alerts on unexplained change and never asserts what the right answer is
+
+Decision: A watch over live state takes its baseline from what the system holds when it starts, reports only that something changed, and never restores. It does not hold an expectation of the correct state from its own writes.
+
+Came up because: the same failure happened three times in one night. A watch built from the counts one run had applied read another run's deliberate removal as data loss, and the run restored five records that had been correctly moved, leaving them attached to two cells for half an hour. Rewritten to alert on change, it stayed quiet through about 120 revisions of a corpus-wide sweep and fired twice, both times to say a cell was mid-write. Rebuilt a third time only after it fired eight times on a move its own author had just made deliberately, because its baseline was still that author's payloads rather than production.
+
+Options: Hold the expected state and alarm on any difference; diff against production and alert on loss; snapshot production at start, alert on change, and adopt the new state as the baseline.
+
+Chose the snapshot because: the right answer moved four times in one night, so anything asserting it is wrong within the hour. A deliberate move now alerts once and becomes the baseline, rather than alarming forever. Given up: a watch like this cannot tell a correct removal from a corruption, which is the point. It says what changed and tells the reader to ask whoever wrote before restoring anything.
+
+The same shape appeared three more times in this effort's tests, and it is worth naming alongside the watch. A null inside `broader` crashed the sweep and none of the eight tests put one there, so the suite agreed with the bug. A test asserted that a duplicate decision number produces exactly one problem, and it produces two, because a repeat is both a duplicate and a break in ascending order. Then a stub gave DesignLanguages one row, so slicing it to one produced no mismatch, and two tests written to detect a short read could not produce one.
+
+The third is the cleanest statement of the rule: **a fixture has to be able to exhibit the failure before it can testify to its absence.** A one-row set cannot be read short. A list with no null cannot crash on a null. In each case the test passed, or failed for an unrelated reason, while saying nothing about the thing it was written for. All of them encode what the author expected rather than what the rule says, and an assertion like that holds for exactly as long as the author is right. A watch that holds its own expectation of the correct state and a test that holds its own expectation of the correct output fail the same way, and the fix is the same: build the failure first and watch the instrument react to it.
+
+The sharpest instance came from the exemplar work on another branch, and it is the one to quote. Every writing style's exemplars were passing the mechanical bands checker, and all of them were passing because each fell under the checker's 150-word evaluation floor, so it skipped them and reported a pass. **A check with a floor silently exempts everything beneath it, so a corpus of short things always passes.** Nothing was wrong with the checker or with the exemplars; the green came from the two never meeting. That is the same failure as a fixture that cannot exhibit what it tests for, seen from the other side: there, the input could not reach the check, and here the check could not reach the input. Both produce a pass that means nothing, and neither shows up as a failure anywhere.
+
+A check that skips is worth more than a check that passes, if it says so. Any threshold, floor, sampling rate or minimum in a check should report what it declined to evaluate, and a run where the skipped count equals the input count is a finding rather than a success.
+
+The same shape reaches operations, where it has no test to catch it. Twice in this effort a git operation reported the state anyone would have checked while the thing that mattered did not happen. A push answered "Everything up-to-date" while two commits sat on a detached HEAD, so the branch ref had never moved and the head being reported existed only on one disk. Then a push moved the ref correctly, and GitHub, the pull request and a fresh checkout all agreed on the new head, while Actions never received the event, so no continuous integration ran for those bytes at all and the documented manual fallback produced no run either. In both cases the obvious check passed: the first would have been caught by reading the push output, the second by nothing anyone would think to look at, because a correct ref is exactly what you would verify. **Confirming that a command reported success, or that state looks right, is not confirming the effect happened.** For a push, the check is that the remote ref moved AND that the event it should have triggered exists.
+
+The worked example, because it is the case where only the second half would ever have told you. **GitHub does not schedule `pull_request` workflows when it cannot construct the merge commit those workflows check out, and a conflicting pull request is exactly that case.** So a conflicting branch does not report a failing gate; it reports no gate at all. Every push moves the ref, the pull request shows the new head, a fresh checkout agrees, and nothing anywhere says that no continuous integration ran. The documented manual fallback re-fires the same event that cannot be built, so it produces nothing either. It reads as a broken CI and it is a conflicting branch. The tell is that `mergeable` is false, `mergeStateStatus` is `DIRTY`, `merge_commit_sha` is null, and `refs/pull/<n>/merge` is stale or absent; the fix is to resolve the conflict, not to push again.
+
+The detached HEAD happened three times in one day on one branch, and all three were caught the same way: by reading the push output instead of trusting it. `Everything up-to-date` while commits sit unreferenced is the same sentence as a successful push, and the only difference is whether the remote ref actually moved. Nothing was lost because the check was cheap and habitual, which is the argument for making it habitual rather than for remembering to do it when it matters.
+
+One more, about evidence rather than instruments. Offering "the count is unchanged at 67" as proof that a refactor was count-neutral compared two runs over a collection that was moving underneath them, and the number had gone to 66 for reasons unrelated to the change. The claim was right and its evidence could not support it. **A property of a transformation is demonstrated by computing both ways over one snapshot, never by comparing two runs**, and the integrity script now reports the archived count both set-qualified and by bare id so the neutrality is visible rather than asserted.
+
+Where: the run's own watch; `ui/scripts/encyclopedia-integrity.test.mjs`; this rule belongs to whoever writes the next one.
