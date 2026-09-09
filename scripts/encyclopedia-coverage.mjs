@@ -101,6 +101,32 @@ export function summarize(source) {
   return { decided, counts, coverage };
 }
 
+// A `cellId` is a pointer into the collection and the format validator can only
+// see that it is a non-blank string, so a row can name a cell that has never
+// existed and stay green forever. Four did, found by a verifier on 2026-09-09
+// rather than by anything in this repository. Checking existence needs the live
+// ids, which this file cannot fetch, so the rule lives here as a pure function
+// and the caller supplies them:
+//
+//   node scripts/encyclopedia-cellids.mjs        # reads production, prints findings
+//
+// Every row that names a cell must name one that exists. There is no legitimate
+// case for a dangling pointer, unlike the depth signals, so this is an
+// invariant rather than a watch.
+export function danglingCellIds(sources, liveIds) {
+  const live = liveIds instanceof Set ? liveIds : new Set(liveIds);
+  const findings = [];
+  for (const source of sources) {
+    for (const term of source.terms ?? []) {
+      if (!nonBlank(term.cellId)) continue;
+      if (!live.has(term.cellId)) {
+        findings.push(`${source.source}: "${term.term}" names cell '${term.cellId}', which does not exist`);
+      }
+    }
+  }
+  return findings.sort();
+}
+
 function renderTable(sources) {
   const columns = ["source", "lane", "use", "total", "decided", "coverage", "decisions"];
   const rows = sources.map((source) => {

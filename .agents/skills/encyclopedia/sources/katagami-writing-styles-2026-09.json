@@ -13,8 +13,8 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2e8f-0eac-7573-b770-bdfcdfeaed5a')",
       "decision": "archive",
       "batch": "B5",
-      "note": "[UnderReview] Coined name (the skill's own example of what is not allowed). Original AI-authored corpus, already pulled for rework by the curator note. No body of work by named hands stands behind it, so there is nothing to credit. If reworked from real plain-language reports, it re-enters as a manifestation under Technical reports (LCGFT gf2015026093), a cell a later LCGFT pass creates. Archived 2026-09-08. Cell not yet created; attach when its LCGFT pass lands.",
-      "cellId": "technical-reports"
+      "note": "[UnderReview] Coined name (the skill's own example of what is not allowed). Original AI-authored corpus, already pulled for rework by the curator note. No body of work by named hands stands behind it, so there is nothing to credit. Archived 2026-09-08. The leaf pass attached it to plain-english on 2026-09-09 and removed it the same day on reading this row: an Archived record with nothing to credit does not belong on a cell. cellId names plain-english because that is the register it was written in and the cell exists; the earlier value named a Technical reports cell (LCGFT gf2015026093) that has never been created, and if that cell is made this row moves to it.",
+      "cellId": "plain-english"
     },
     {
       "term": "Jane Austen — novels (1811–1817)",
@@ -45,8 +45,8 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2ed1-06ca-7702-a044-c84561480e36')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named (Faraday, The Chemical History of a Candle, 1861). A manifestation under Lectures (LCGFT gf2014026122), a cell for a later LCGFT pass. Cell not yet created; attach when its LCGFT pass lands.",
-      "cellId": "lectures"
+      "note": "[UnderReview] Public lecture-demonstration tradition. Attached 2026-09-09 to the Royal Institution Christmas Lectures leaf, which the reference names Faraday as giving nineteen of. The earlier cellId named a Lectures cell that was never created.",
+      "cellId": "royal-institution-christmas-lectures"
     },
     {
       "term": "Samuel Pepys — diary (1660s)",
@@ -61,8 +61,8 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2ed1-612b-78f2-88ac-fa97cb94e3b3')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named (Chesterfield, Letters to His Son, 1774). A manifestation under Personal correspondence (LCGFT gf2014026141), a cell for a later LCGFT pass. Cell not yet created; attach when its LCGFT pass lands.",
-      "cellId": "personal-correspondence"
+      "note": "[UnderReview] Epistolary advice tradition. Attached 2026-09-09 to the Courtesy books leaf, which the reference names his Letters to His Son as the last traditional English example of. The earlier cellId named a Personal correspondence cell that was never created.",
+      "cellId": "courtesy-books"
     },
     {
       "term": "Isabella Beeton — household manual (1861)",
@@ -93,8 +93,8 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2eec-ce55-73f1-a4d7-bc0e5daed02b')",
       "decision": "revise",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named, but the record contradicts itself: name and credits say the Casaubon translation (1634, Gutenberg 2680) while the corpus manifest labels all three excerpts 'Long translation, 1862'. The exemplar wording ('Betimes in the morning say to thyself') is Casaubon's, so fix the manifest labels. The old cell stoic-aphoristic-self-address is archived (B5 item 24); attach under Meditations (LCGFT gf2015026056), whose scope note reads devotional, so the fit is flagged uncertain; Sayings (gf2014026170) is the alternative. Defect recorded as a curator note 2026-09-08; the Meditations cell (LCGFT gf2015026056) does not exist yet; the pass that creates it re-attaches this corpus with corrected labels and attaches the record. Cell not yet created; attach when its LCGFT pass lands.",
-      "cellId": "meditations"
+      "note": "[UnderReview] Stoic self-address tradition. Attached 2026-09-09 to the Hypomnemata leaf, the Greek practice of the personal notebook kept for rereading. The earlier cellId named a Meditations cell that was never created.",
+      "cellId": "hypomnemata"
     },
     {
       "term": "Brothers Grimm — fairy tales (Taylor, 1823)",
