@@ -261,6 +261,18 @@ Enforced by the contract, so plan for it:
   `maps` each require `sourceIds` resolving into this cell's `sources`. Sources are
   citations — title plus HTTPS URL — not reproduced material. The apply script
   fetches every source URL and resolves every link target before writing.
+- **An explanation that reports a filing must match the record; one that reasons
+  from a definition only has to say so.** "The Library of Congress files it here"
+  is checkable against the record's `hasBroaderAuthority`, and a link whose
+  explanation says that and does not match is wrong. "The record defines it this
+  way, so we place it here" is a curatorial refinement, which the collection
+  allows one level below the authority, and it is honest exactly when it admits
+  being one. Blank verse links to Iambic poetry on the definition and says so;
+  Memorates claimed a folk-literature filing the genre/form record does not make,
+  and had to be rewritten. Name the vocabulary too: the genre/form authority and
+  the LCSH subject heading are different vocabularies and do not settle each
+  other.
+
 - **A map membership is a cited claim.** `maps` entries are `{map, explanation,
   sourceIds}`, not bare words: a cell sits on the writing map because of
   something a reader can check, so a cell cannot be dragged across media by its

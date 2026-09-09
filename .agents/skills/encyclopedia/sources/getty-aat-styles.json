@@ -10,7 +10,7 @@
   "terms": [
     {
       "term": "Abstract Expressionism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022099",
+      "ref": "https://vocab.getty.edu/aat/300022099",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "abstract-expressionism",
@@ -18,7 +18,7 @@
     },
     {
       "term": "Academic art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300056465",
+      "ref": "https://vocab.getty.edu/aat/300056465",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "academic-art",
@@ -26,7 +26,7 @@
     },
     {
       "term": "Action Painting",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300112061",
+      "ref": "https://vocab.getty.edu/aat/300112061",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "action-painting",
@@ -34,7 +34,7 @@
     },
     {
       "term": "Aestheticism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300018124",
+      "ref": "https://vocab.getty.edu/aat/300018124",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "aestheticism",
@@ -42,7 +42,7 @@
     },
     {
       "term": "American Regionalism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300172866",
+      "ref": "https://vocab.getty.edu/aat/300172866",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "american-regionalism",
@@ -50,7 +50,7 @@
     },
     {
       "term": "Art Deco",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021426",
+      "ref": "https://vocab.getty.edu/aat/300021426",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "art-deco",
@@ -58,7 +58,7 @@
     },
     {
       "term": "Art Informel",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022176",
+      "ref": "https://vocab.getty.edu/aat/300022176",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "art-informel",
@@ -66,7 +66,7 @@
     },
     {
       "term": "Arte Povera",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300047851",
+      "ref": "https://vocab.getty.edu/aat/300047851",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "arte-povera",
@@ -74,7 +74,7 @@
     },
     {
       "term": "Ashcan School",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300120324",
+      "ref": "https://vocab.getty.edu/aat/300120324",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "ashcan-school",
@@ -82,7 +82,7 @@
     },
     {
       "term": "Bad Painting",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300263413",
+      "ref": "https://vocab.getty.edu/aat/300263413",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "bad-painting",
@@ -90,7 +90,7 @@
     },
     {
       "term": "Baroque",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021147",
+      "ref": "https://vocab.getty.edu/aat/300021147",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "baroque",
@@ -98,7 +98,7 @@
     },
     {
       "term": "Body Art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300386734",
+      "ref": "https://vocab.getty.edu/aat/300386734",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "body-art",
@@ -106,7 +106,7 @@
     },
     {
       "term": "Chicago Imagists",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300116666",
+      "ref": "https://vocab.getty.edu/aat/300116666",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "chicago-imagists",
@@ -114,7 +114,7 @@
     },
     {
       "term": "Computer art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300069478",
+      "ref": "https://vocab.getty.edu/aat/300069478",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "computer-art",
@@ -122,7 +122,7 @@
     },
     {
       "term": "Conceptual Art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300264827",
+      "ref": "https://vocab.getty.edu/aat/300264827",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "conceptual-art",
@@ -130,7 +130,7 @@
     },
     {
       "term": "Concrete Art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021436",
+      "ref": "https://vocab.getty.edu/aat/300021436",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "concrete-art",
@@ -138,7 +138,7 @@
     },
     {
       "term": "Dada",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021500",
+      "ref": "https://vocab.getty.edu/aat/300021500",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "dada",
@@ -146,7 +146,7 @@
     },
     {
       "term": "Danube school",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300263782",
+      "ref": "https://vocab.getty.edu/aat/300263782",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "danube-school",
@@ -154,7 +154,7 @@
     },
     {
       "term": "De Stijl",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021259",
+      "ref": "https://vocab.getty.edu/aat/300021259",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "de-stijl",
@@ -162,15 +162,15 @@
     },
     {
       "term": "Decadent movement",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021439",
+      "ref": "https://vocab.getty.edu/aat/300021439",
       "decision": "live",
       "batch": "B20",
-      "note": "Read and matched to the existing live cell, which this pass proposes adding it to. Not yet written onto that cell: revising a live cell is its own numbered approval.",
+      "note": "Read and matched to the existing live cell, which carries the concept as a source. An earlier version of this row said the citation had not been written, which contradicted its own live decision; the cell has carried AAT 300021439 since it was created by another run.",
       "cellId": "decadent-movement"
     },
     {
       "term": "Deconstructivism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300112407",
+      "ref": "https://vocab.getty.edu/aat/300112407",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "deconstructivism",
@@ -178,7 +178,7 @@
     },
     {
       "term": "Expressionism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021502",
+      "ref": "https://vocab.getty.edu/aat/300021502",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "expressionism",
@@ -186,7 +186,7 @@
     },
     {
       "term": "Fluxus",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022168",
+      "ref": "https://vocab.getty.edu/aat/300022168",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "fluxus",
@@ -194,7 +194,7 @@
     },
     {
       "term": "Folk Art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300056487",
+      "ref": "https://vocab.getty.edu/aat/300056487",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "folk-art",
@@ -202,7 +202,7 @@
     },
     {
       "term": "Funk Art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300047891",
+      "ref": "https://vocab.getty.edu/aat/300047891",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "funk-art",
@@ -210,7 +210,7 @@
     },
     {
       "term": "Futurism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021374",
+      "ref": "https://vocab.getty.edu/aat/300021374",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "futurism",
@@ -218,7 +218,7 @@
     },
     {
       "term": "Geometric Abstraction",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300056509",
+      "ref": "https://vocab.getty.edu/aat/300056509",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "geometric-abstraction",
@@ -226,7 +226,7 @@
     },
     {
       "term": "Gothic art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300020775",
+      "ref": "https://vocab.getty.edu/aat/300020775",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "gothic-art",
@@ -234,7 +234,7 @@
     },
     {
       "term": "Harlem Renaissance",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300121558",
+      "ref": "https://vocab.getty.edu/aat/300121558",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "harlem-renaissance",
@@ -242,7 +242,7 @@
     },
     {
       "term": "High Renaissance",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021142",
+      "ref": "https://vocab.getty.edu/aat/300021142",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "high-renaissance",
@@ -250,7 +250,7 @@
     },
     {
       "term": "Hudson River School",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300379047",
+      "ref": "https://vocab.getty.edu/aat/300379047",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "hudson-river-school",
@@ -258,7 +258,7 @@
     },
     {
       "term": "Japonisme",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300055785",
+      "ref": "https://vocab.getty.edu/aat/300055785",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "japonisme",
@@ -266,7 +266,7 @@
     },
     {
       "term": "Kanō school",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300018653",
+      "ref": "https://vocab.getty.edu/aat/300018653",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "kano-school",
@@ -274,7 +274,7 @@
     },
     {
       "term": "Land Art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300047857",
+      "ref": "https://vocab.getty.edu/aat/300047857",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "land-art",
@@ -282,7 +282,7 @@
     },
     {
       "term": "Light and Space",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300375712",
+      "ref": "https://vocab.getty.edu/aat/300375712",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "light-and-space",
@@ -290,7 +290,7 @@
     },
     {
       "term": "Luminism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300108215",
+      "ref": "https://vocab.getty.edu/aat/300108215",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "luminism",
@@ -298,7 +298,7 @@
     },
     {
       "term": "Mannerism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021144",
+      "ref": "https://vocab.getty.edu/aat/300021144",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "mannerism",
@@ -306,7 +306,7 @@
     },
     {
       "term": "Mexican Muralism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300107850",
+      "ref": "https://vocab.getty.edu/aat/300107850",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "mexican-muralism",
@@ -314,7 +314,7 @@
     },
     {
       "term": "Minimalism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300065758",
+      "ref": "https://vocab.getty.edu/aat/300065758",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "minimalism",
@@ -322,7 +322,7 @@
     },
     {
       "term": "Neo-Dada",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022187",
+      "ref": "https://vocab.getty.edu/aat/300022187",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "neo-dada",
@@ -330,7 +330,7 @@
     },
     {
       "term": "Neo-Expressionism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022189",
+      "ref": "https://vocab.getty.edu/aat/300022189",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "neo-expressionism",
@@ -338,14 +338,14 @@
     },
     {
       "term": "Neo-romanticism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021476",
+      "ref": "https://vocab.getty.edu/aat/300021476",
       "decision": "declined",
       "batch": "B20",
       "note": "Read and NOT cited. The AAT concept names the British style of the 1930s to 1950s specifically, which is narrower than the movement the cell Neo-romanticism holds."
     },
     {
       "term": "Neoclassicism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021477",
+      "ref": "https://vocab.getty.edu/aat/300021477",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "neoclassicism",
@@ -353,7 +353,7 @@
     },
     {
       "term": "Net art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300419940",
+      "ref": "https://vocab.getty.edu/aat/300419940",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "net-art",
@@ -361,7 +361,7 @@
     },
     {
       "term": "Neue Sachlichkeit",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300056541",
+      "ref": "https://vocab.getty.edu/aat/300056541",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "neue-sachlichkeit",
@@ -369,7 +369,7 @@
     },
     {
       "term": "Northern Renaissance",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300252246",
+      "ref": "https://vocab.getty.edu/aat/300252246",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "northern-renaissance",
@@ -377,7 +377,7 @@
     },
     {
       "term": "Nouveau Réalisme",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300112105",
+      "ref": "https://vocab.getty.edu/aat/300112105",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "nouveau-realisme",
@@ -385,7 +385,7 @@
     },
     {
       "term": "Op Art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022195",
+      "ref": "https://vocab.getty.edu/aat/300022195",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "op-art",
@@ -393,7 +393,7 @@
     },
     {
       "term": "Orientalism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300055784",
+      "ref": "https://vocab.getty.edu/aat/300055784",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "orientalism",
@@ -401,7 +401,7 @@
     },
     {
       "term": "Orphism (art)",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300134101",
+      "ref": "https://vocab.getty.edu/aat/300134101",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "orphism-art",
@@ -409,7 +409,7 @@
     },
     {
       "term": "Outsider Art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300056472",
+      "ref": "https://vocab.getty.edu/aat/300056472",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "outsider-art",
@@ -417,7 +417,7 @@
     },
     {
       "term": "Pittura Metafisica",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021376",
+      "ref": "https://vocab.getty.edu/aat/300021376",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "pittura-metafisica",
@@ -425,7 +425,7 @@
     },
     {
       "term": "Pointillism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300067450",
+      "ref": "https://vocab.getty.edu/aat/300067450",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "pointillism",
@@ -433,7 +433,7 @@
     },
     {
       "term": "Post-Impressionism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021508",
+      "ref": "https://vocab.getty.edu/aat/300021508",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "post-impressionism",
@@ -441,7 +441,7 @@
     },
     {
       "term": "Postminimalism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300112731",
+      "ref": "https://vocab.getty.edu/aat/300112731",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "postminimalism",
@@ -449,7 +449,7 @@
     },
     {
       "term": "Pre-Raphaelite Brotherhood",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021225",
+      "ref": "https://vocab.getty.edu/aat/300021225",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "pre-raphaelite-brotherhood",
@@ -457,7 +457,7 @@
     },
     {
       "term": "Process Art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022209",
+      "ref": "https://vocab.getty.edu/aat/300022209",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "process-art",
@@ -465,7 +465,7 @@
     },
     {
       "term": "Purism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300122664",
+      "ref": "https://vocab.getty.edu/aat/300122664",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "purism",
@@ -473,7 +473,7 @@
     },
     {
       "term": "Realism (art movement)",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300172861",
+      "ref": "https://vocab.getty.edu/aat/300172861",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "realism-art-movement",
@@ -481,7 +481,7 @@
     },
     {
       "term": "Relational aesthetics",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300391190",
+      "ref": "https://vocab.getty.edu/aat/300391190",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "relational-aesthetics",
@@ -489,7 +489,7 @@
     },
     {
       "term": "Rinpa school",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300106734",
+      "ref": "https://vocab.getty.edu/aat/300106734",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "rinpa-school",
@@ -497,7 +497,7 @@
     },
     {
       "term": "Rococo",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021155",
+      "ref": "https://vocab.getty.edu/aat/300021155",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "rococo",
@@ -505,7 +505,7 @@
     },
     {
       "term": "Romanticism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300172863",
+      "ref": "https://vocab.getty.edu/aat/300172863",
       "decision": "live",
       "batch": "B20",
       "note": "Read and cited on the cell. The AAT scope note covers the European movement across the visual arts, literature and music, which is the same direction the cell holds.",
@@ -513,7 +513,7 @@
     },
     {
       "term": "Shin-hanga",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300262954",
+      "ref": "https://vocab.getty.edu/aat/300262954",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "shin-hanga",
@@ -521,7 +521,7 @@
     },
     {
       "term": "Shunga",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300041555",
+      "ref": "https://vocab.getty.edu/aat/300041555",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "shunga",
@@ -529,7 +529,7 @@
     },
     {
       "term": "Social Realism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300061066",
+      "ref": "https://vocab.getty.edu/aat/300061066",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "social-realism",
@@ -537,7 +537,7 @@
     },
     {
       "term": "Socialist Realism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021404",
+      "ref": "https://vocab.getty.edu/aat/300021404",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "socialist-realism",
@@ -545,7 +545,7 @@
     },
     {
       "term": "Street art",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300056477",
+      "ref": "https://vocab.getty.edu/aat/300056477",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "street-art",
@@ -553,7 +553,7 @@
     },
     {
       "term": "Suprematism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021405",
+      "ref": "https://vocab.getty.edu/aat/300021405",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "suprematism",
@@ -561,7 +561,7 @@
     },
     {
       "term": "Symbolism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021514",
+      "ref": "https://vocab.getty.edu/aat/300021514",
       "decision": "live",
       "batch": "B20",
       "note": "Read and cited on the cell. The AAT scope note describes the international movement first applied to literature in the late nineteenth century, matching the cell.",
@@ -569,7 +569,7 @@
     },
     {
       "term": "Tonalism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300132908",
+      "ref": "https://vocab.getty.edu/aat/300132908",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "tonalism",
@@ -577,7 +577,7 @@
     },
     {
       "term": "Transavanguardia",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022218",
+      "ref": "https://vocab.getty.edu/aat/300022218",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "transavanguardia",
@@ -585,7 +585,7 @@
     },
     {
       "term": "Unanimism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300122717",
+      "ref": "https://vocab.getty.edu/aat/300122717",
       "decision": "live",
       "batch": "B20",
       "note": "Read and cited on the cell. The AAT scope note dates the founding to 1908 and names Jules Roman; Wikipedia dates it to 1904 and spells the founder Jules Romains. The cell follows Wikipedia and the discrepancy is recorded here.",
@@ -593,7 +593,7 @@
     },
     {
       "term": "Viennese Actionism",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300047933",
+      "ref": "https://vocab.getty.edu/aat/300047933",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "viennese-actionism",
@@ -601,7 +601,7 @@
     },
     {
       "term": "Young British Artists",
-      "ref": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300263412",
+      "ref": "https://vocab.getty.edu/aat/300263412",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "young-british-artists",

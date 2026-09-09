@@ -505,7 +505,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026249",
       "decision": "live",
       "batch": "B8",
-      "note": "form: unrhymed regular metre, usually iambic pentameter; nests under Iambic poetry; proposal B8 #2. Written and attested 2026-09-09.",
+      "note": "form: unrhymed regular metre, usually iambic pentameter. Its Library of Congress record files it under Poetry, and the cell carries that link. The second link, to Iambic poetry, is a refinement one level below the authority, taken from what the record's own definition says rather than from where it files the term, and the link says so. Proposal B8 #2. Written and attested 2026-09-09.",
       "cellId": "blank-verse"
     },
     {
@@ -2774,7 +2774,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026433",
       "decision": "live",
       "batch": "B6",
-      "note": "form: first-person testimony of the uncanny, a named folklore genre since von Sydow (borderline: a folklorists' classification); proposal B6 #3. Written and attested 2026-09-08.",
+      "note": "form: first-person testimony of the uncanny, a named folklore genre since von Sydow (borderline: a folklorists' classification). Its genre/form record files it under Literature, not Folk literature; the cell links to Folk literature as our own refinement and now says so, after an earlier explanation attributed that filing to the Library of Congress. Proposal B6 #3. Written and attested 2026-09-08.",
       "cellId": "memorates"
     },
     {
