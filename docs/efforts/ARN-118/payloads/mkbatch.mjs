@@ -6,9 +6,18 @@ import { createHash } from 'node:crypto';
 const plan = JSON.parse(readFileSync('./plan.json', 'utf8'));
 const rows = JSON.parse(readFileSync('./cells-raw.json', 'utf8'));
 
+// A cell's lifecycle status lives on the row as `status`, beside `fields` and
+// not inside it (D58). Archived rows carry a document like any other, so a
+// builder that reads only `fields` counts them as live: it would revise an
+// archived cell, or write a link into one and pass the attestation check on the
+// way, which is exactly how the Safavid link nearly landed. Archive is final,
+// so archived rows are not a place a link may point.
 const live = new Map();
+const archivedIds = new Set();
+let archived = 0;
 for (const r of rows) {
   const f = r.fields || {};
+  if (r.status === 'Archived') { archived += 1; if (f.id) archivedIds.add(f.id); continue; }
   if (typeof f.document !== 'string' || !f.document.trim()) continue;
   live.set(f.id, {
     hash: createHash('sha256').update(f.document).digest('hex'),
@@ -17,7 +26,7 @@ for (const r of rows) {
     parsed: JSON.parse(f.document),
   });
 }
-console.error(`snapshot holds ${live.size} cells`);
+console.error(`snapshot holds ${live.size} live cells, ${archived} archived and excluded`);
 
 const problems = [];
 const built = [];
@@ -43,7 +52,10 @@ for (const e of plan.edges) {
 
 for (const [childId, edges] of byChild) {
   const row = live.get(childId);
-  if (!row) { problems.push(`child ${childId} not found`); continue; }
+  // Say which of the two it is. "not found" is what sent two agents into an
+  // argument about whether a row existed, when they disagreed about whether
+  // archived counts as existing (D58).
+  if (!row) { problems.push(`child ${childId} ${archivedIds.has(childId) ? 'is archived, and archive is final' : 'is not in the snapshot'}`); continue; }
   const doc = JSON.parse(JSON.stringify(row.parsed));
   // Only add a source when a link this run is actually writing cites it, so a
   // link another run already wrote does not cause a pointless rewrite.
@@ -61,7 +73,7 @@ for (const [childId, edges] of byChild) {
       if (!have.has(sid)) problems.push(`${childId}: link to ${e.parent} cites '${sid}', absent from its sources (${[...have].join(' ')})`);
     }
     const parent = live.get(e.parent);
-    if (!parent && !newIds.has(e.parent)) { problems.push(`${childId}: parent ${e.parent} missing`); continue; }
+    if (!parent && !newIds.has(e.parent)) { problems.push(`${childId}: parent ${e.parent} ${archivedIds.has(e.parent) ? 'is archived, so no link may point at it' : 'is not in the snapshot'}`); continue; }
     if (parent && !newIds.has(e.parent) && !(parent.validated && parent.hash === parent.storedHash)) {
       problems.push(`${childId}: parent ${e.parent} is not attested`);
     }

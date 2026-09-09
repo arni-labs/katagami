@@ -24,7 +24,12 @@ function report(label, d) {
   const depth = new Map();
   const of = (id, seen = new Set()) => {
     if (depth.has(id)) return depth.get(id);
-    if (seen.has(id)) return 1;
+    // A cycle is not a root. Returning 1 here would fold a malformed `broader`
+    // loop into the histogram as an ordinary top-level cell, so this script —
+    // the instrument the effort's headline number comes from — would print a
+    // plausible count over a broken graph. D71: a count is only worth as much
+    // as its willingness to fail.
+    if (seen.has(id)) throw new Error(`broader cycle through ${id}: ${[...seen, id].join(' -> ')}`);
     seen.add(id);
     const ps = parents.get(id) || [];
     const v = ps.length === 0 ? 1 : 1 + Math.min(...ps.map((p) => of(p, new Set(seen))));

@@ -852,6 +852,38 @@ archived, which is a different answer to give her than "these need archiving".
 Where: `docs/efforts/ARN-118/payloads/depth.mjs`; the corrected figures in
 `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
 
+### Addendum: the counter was fixed and the builder was not
+
+D58 fixed `depth.mjs`, which counts. It did not fix `mkbatch.mjs`, which writes,
+and the same bug was still in it — raised by Greptile on this PR and confirmed
+against production. All 17 archived rows carry documents, so the builder was
+loading every one of them into its live map.
+
+What that actually cost, tested rather than assumed. Rebuilding with a plan that
+contains the link this run originally planned and removed by hand:
+
+- As the **child**, `safavid-manuscript-painting` passed **silently**. The old
+  builder raised nothing and would have written a revision of an archived cell.
+  This is the case that matters, and only an agent reading the report caught it.
+- As the **parent**, it was refused, but for the wrong reason and by luck. The
+  message was "is not attested", which is a claim about attestation and not
+  about archival, and it fires only because none of the 17 archived cells is
+  currently attested. Nothing guarantees that. An archived cell that had been
+  attested before it was archived would have passed straight through as a valid
+  parent.
+
+So the guard that appeared to be holding was incidental, and the half that was
+genuinely open was the half nobody tested. Fixed: archived rows are excluded at
+the read, and both messages now say which of the two it is — archived, or absent
+— because "not found" is the phrasing that started the original argument.
+
+The general form: when a status bug is found in one instrument, fix it in every
+instrument that reads the same field. A fix applied where the bug was noticed
+rather than where the field is read leaves the write path open, which is the one
+that can do damage.
+
+Where: `docs/efforts/ARN-118/payloads/mkbatch.mjs`.
+
 ## D59 The curated layer stops at 131 roots, and going lower is the owner's call
 
 Decision: The pass nests what three independent sources support and stops. The
