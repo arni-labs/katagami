@@ -1,6 +1,6 @@
 # ARN-462 decisions
 
-## 1. Accept three names for the identifier instead of renaming the parameter
+## D1 — Accept three names for the identifier instead of renaming the parameter
 
 **Decision** — every `get_*` tool takes the identifier under `id_or_slug`, `id`,
 or `slug`, all optional, resolved in that order.
@@ -23,7 +23,7 @@ appear in `tools/list` where one used to.
 
 **Where** — `ui/src/app/mcp/route.ts`, `ID_ALIASES` / `idOf` / `missingId`.
 
-## 2. Return the missing-identifier error as a tool result, not a protocol error
+## D2 — Return the missing-identifier error as a tool result, not a protocol error
 
 **Decision** — a call with no identifier gets `isError: true` carrying
 `{"error":"missing_id", "message": …}` naming all three keys.
@@ -40,7 +40,7 @@ what it was stuck on.
 
 **Where** — `ui/src/app/mcp/route.ts`, `missingId()`.
 
-## 3. `arg_keys` records key names against a closed allow-list
+## D3 — `arg_keys` records key names against a closed allow-list
 
 **Decision** — `mcp_tool_call` gains `arg_keys`: the call's argument key names,
 sorted, comma-joined, each mapped through a fixed set, anything outside it
@@ -65,7 +65,7 @@ extended. That is the trade the safety is worth.
 `ui/src/lib/server-telemetry.ts:169`; allow-list in
 `ui/src/lib/server-telemetry-core.mjs`.
 
-## 4. Production telemetry now requires a real Vercel invocation
+## D4 — Production telemetry now requires a real Vercel invocation
 
 **Decision** — `telemetryEnv` returns `production` or `preview` only when
 `VERCEL_REGION` is set; otherwise `local-verify`.
@@ -95,7 +95,7 @@ silent, so a contract assertion pins both directions.
 **Where** — `ui/src/lib/server-telemetry-core.mjs` `telemetryEnv`; assertion in
 `ui/scripts/check-telemetry-contract.mjs`.
 
-## 5. Monitor definitions are committed, not left in the Datadog UI alone
+## D5 — Monitor definitions are committed, not left in the Datadog UI alone
 
 **Decision** — the six monitors' JSON lives in `infra/datadog/monitors/` with a
 README naming each id and its trigger.
@@ -113,7 +113,7 @@ takes.
 
 **Where** — `infra/datadog/monitors/`.
 
-## 6. Panel round 1 — four confirmed findings, one that did not reproduce
+## D6 — Panel round 1 — four confirmed findings, one that did not reproduce
 
 **Decision** — fixed all four confirmed findings; recorded the fifth as not
 reproducing rather than changing code to satisfy it.
@@ -149,11 +149,20 @@ property is refused by the SDK before `missingId()` runs. Driven live against
 the build, `{"name":"get_design_language"}` with no arguments returns our
 `missing_id` message. Not changed.
 
+**Options** — take each finding on the reviewer's word and fix it; validate each
+one against the running build first; batch them and re-review before fixing.
+
+**Chose validating each against the build first** because one of the five did
+not reproduce, and fixing it would have meant changing working code to satisfy a
+plausible reading of it. Reviewer agreement is evidence, not proof. The cost is
+that each finding needed its own live probe before and after the fix, which is
+where the before/after observations quoted above come from.
+
 **Where** — `ui/src/app/mcp/route.ts`, `ui/src/lib/analytics.ts`,
 `ui/src/app/api/auth/google/callback/route.ts`,
 `infra/datadog/monitors/m1,m5,m6`.
 
-## 7. The argument names are captured before the schema strips them
+## D7 — The argument names are captured before the schema strips them
 
 **Decision** — layer 2 stashes the clamped key list on `extra` while the raw
 request is in hand; layer 1 prefers it over the parsed arguments.
@@ -176,7 +185,7 @@ in-process only and never serialized.
 **Where** — `ui/src/app/mcp/route.ts` `RAW_ARG_KEYS` / `stashRawArgKeys` /
 `rawArgKeys`.
 
-## 8. Panel round 2 (Fable) — RUM env by hostname, and a monitor for the silence
+## D8 — Panel round 2 (Fable) — RUM env by hostname, and a monitor for the silence
 
 **Decision** — three more fixes; the seat's two act-on findings were already
 closed by decision 6/7 before its report arrived.
@@ -224,7 +233,7 @@ preview data as production stops seeing it — which is the point.
 `infra/datadog/monitors/m7-telemetry-dark.json`;
 `ui/scripts/check-telemetry-contract.mjs`.
 
-## 9. The Linear issue id is unverified
+## D9 — The Linear issue id is unverified
 
 **Decision** — used `ARN-462` consistently and flagged it for confirmation
 rather than leaving two different invented ids in the tree.
@@ -249,7 +258,7 @@ to confirm the number.
 **Where** — `docs/efforts/ARN-462/`, `ui/src/app/mcp/route.ts`,
 `ui/scripts/check-telemetry-contract.mjs`.
 
-## 10. Panel round 2, second seat — an unauthenticated GET could page a human
+## D10 — Panel round 2, second seat — an unauthenticated GET could page a human
 
 **Decision** — a `provider` sign-in failure is only recorded when our own
 httpOnly state cookie is present. `state` deliberately stays ungated, and both
