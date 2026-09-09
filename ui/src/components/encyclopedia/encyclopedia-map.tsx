@@ -217,8 +217,9 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     if(!el||!p)return;
     const top=desktop ? 120 : 160, bottom=desktop ? 105 : 220;
     const k=Math.min(1.2,(el.clientWidth-80)/p.w,Math.max(140,el.clientHeight-top-bottom)/p.h);
-    centerOn(p.x,p.y,k,{x:el.clientWidth/2,y:top+Math.max(140,el.clientHeight-top-bottom)/2});
-  },[viewportRef,layout.byId,desktop,centerOn]);
+    const screenX=desktop && expanded.has(id) ? Math.max(p.w*k/2+24,el.clientWidth*0.3) : el.clientWidth/2;
+    centerOn(p.x,p.y,k,{x:screenX,y:top+Math.max(140,el.clientHeight-top-bottom)/2});
+  },[viewportRef,layout.byId,desktop,expanded,centerOn]);
 
   /** The sheet is the index's scroll parent, so the windowed list can read it. */
   const sheetScrollRef = useRef<HTMLElement | null>(null);
