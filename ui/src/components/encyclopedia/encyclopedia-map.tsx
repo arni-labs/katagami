@@ -8,7 +8,7 @@ import { GraphIndex, MAP_INK, MAP_LABEL, MAP_NAMES_ORDER } from "@/lib/encyclope
 import { Marker } from "@/components/page-hero";
 import { RELATION_INK_VAR, SearchBox } from "./chrome";
 import { SET_INK } from "./material";
-import { expandCell, expandedRadius, layoutGraph, plateConnector, type PlateNode, type SatelliteNode } from "./graph-layout";
+import { expandCell, expandedRadius, layoutGraph, levelScale, PLATE_W, plateConnector, type PlateNode, type SatelliteNode } from "./graph-layout";
 import { lodFor, Plate, Satellite } from "./map-cards";
 import { CloseButton, IndexSheet, OpenCellButton, SheetBody, SheetTitle, type SheetTab } from "./focus-sheet";
 import { useMounted, usePanZoom, usePrefersReducedMotion } from "./use-pan-zoom";
@@ -18,6 +18,12 @@ import { useMounted, usePanZoom, usePrefersReducedMotion } from "./use-pan-zoom"
 // each cell's manifestations are small satellites on dotted lines. Zoomed out
 // the field is pictures; zooming in adds the words. Clicking a cell focuses
 // it: the camera moves to it and the sheet opens. The map never changes shape.
+
+/** The smallest a top-layer card may print at when the map first opens, and
+ *  the smallest any card may print at before it is left off the paper. Below
+ *  these a plate is a smudge and the field stops being worth looking at. */
+const READABLE_PLATE_PX = 104;
+const READABLE_CARD_PX = 44;
 
 function useIsDesktop(): boolean {
   const [desktop, setDesktop] = useState(true);
@@ -51,6 +57,25 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const reduced = usePrefersReducedMotion();
   const { viewportRef, camera, setCamera, animate, dragging, handlers, zoomStep, glide, centerOn } = usePanZoom({ x: 0, y: 0, k: 0.2 });
   const lod = lodFor(camera.k);
+
+  // ── one layer at a time ────────────────────────────────────────────────
+  // A cell is drawn once its card would actually print big enough to read.
+  // Because each layer draws at half the size of the one above it, that single
+  // rule reveals the map a layer at a time: the top of the field from far out,
+  // the next layer when the camera has come in by a factor of two, and so on.
+  // Cells below the drawn layers are still on the map and still reachable — by
+  // zooming, by search, or by focusing a cell above them — they are simply not
+  // all drawn at once. Five hundred cells at one size is a mesh.
+  const zoomForLevel = useCallback((level: number) => READABLE_CARD_PX / (levelScale(level) * PLATE_W), []);
+  const visiblePlates = useMemo(
+    () => layout.plates.filter((p) => camera.k * p.scale * PLATE_W >= READABLE_CARD_PX),
+    [layout.plates, camera.k],
+  );
+  const visibleIds = useMemo(() => new Set(visiblePlates.map((p) => p.id)), [visiblePlates]);
+  /** The deepest layer currently drawn, and how many the library has. */
+  const deepestShown = useMemo(() => visiblePlates.reduce((d, p) => Math.max(d, p.level), 0), [visiblePlates]);
+  const levels = useMemo(() => layout.plates.reduce((d, p) => Math.max(d, p.level), 0), [layout.plates]);
+
   const focusCell = focusId ? index.byId.get(focusId) ?? null : null;
 
   // ── framing ─────────────────────────────────────────────────────────────
@@ -59,12 +84,27 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     if (!el) return;
     const vw = el.clientWidth; const vh = el.clientHeight;
     const top = desktop ? 118 : 176; const bottom = desktop ? 104 : 230; const side = desktop ? 32 : 12;
-    const b = layout.bounds;
-    const k = Math.max(0.05, Math.min(1, (vw - side * 2) / b.w, (vh - top - bottom) / b.h));
-    const x = (vw - b.w * k) / 2 - b.x * k;
-    const y = top + ((vh - top - bottom) - b.h * k) / 2 - b.y * k;
+    // Fit frames the top of the hierarchy, not every cell in the library:
+    // that is the level the far view is for, and the rest arrive as you come in.
+    const b = layout.topBounds;
+    const whole = Math.min(1, (vw - side * 2) / b.w, (vh - top - bottom) / b.h);
+    // A far view you cannot read is not a far view. If holding the whole top
+    // layer at once would print its cards smaller than this, the map opens at
+    // the size they are legible at and the rest is a pan away — the minimap
+    // says where you are. The field is then readable at every zoom, which is
+    // the point of the layers.
+    const k = Math.max(0.05, whole, READABLE_PLATE_PX / PLATE_W);
+    // When the whole top layer fits, frame it. When it does not — because the
+    // library has outgrown the screen and the cards would be too small to read
+    // — open on where those cells actually are rather than on the middle of a
+    // bounding box that is mostly the gaps between regions.
+    const centred = k > whole + 1e-6;
+    const cx = centred ? layout.topCentre.x : b.x + b.w / 2;
+    const cy = centred ? layout.topCentre.y : b.y + b.h / 2;
+    const x = vw / 2 - cx * k;
+    const y = top + (vh - top - bottom) / 2 - cy * k;
     if (smooth) glide({ k, x, y }); else setCamera({ k, x, y });
-  }, [viewportRef, layout.bounds, desktop, glide, setCamera]);
+  }, [viewportRef, layout.topBounds, layout.topCentre, desktop, glide, setCamera]);
 
   const fitRegion = useCallback((name: MapName) => {
     const el = viewportRef.current;
@@ -81,13 +121,15 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     const el = viewportRef.current;
     const p = layout.byId.get(id);
     if (!el || !p) return;
-    const k = Math.max(camera.k, 1);
+    // Come in far enough that the cell's own level is drawn: focusing a deep
+    // cell from search or from the index must actually show it.
+    const k = Math.max(camera.k, 1, zoomForLevel(p.level) * 1.1);
     if (desktop) centerOn(p.x, p.y, k, { x: el.clientWidth / 2, y: el.clientHeight / 2 + 30 });
     else {
       const fit = Math.min(k, (el.clientWidth - 40) / p.w);
       centerOn(p.x, p.y, fit, { x: el.clientWidth / 2, y: 196 + p.h * 0.5 * fit - 40 });
     }
-  }, [viewportRef, layout.byId, camera.k, desktop, centerOn]);
+  }, [viewportRef, layout.byId, camera.k, desktop, centerOn, zoomForLevel]);
 
   // First framing happens once the viewport has a size. The flag is set when
   // the frame actually runs, so a dependency change that cancels the pending
@@ -183,8 +225,11 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const dimTo = opened ? 0.08 : 0.3;
 
   const baseSatellites: SatelliteNode[] = useMemo(
-    () => (opened ? layout.satellites.filter((s) => s.cellId !== opened.plate.id) : layout.satellites),
-    [layout.satellites, opened],
+    () => {
+      const drawn = layout.satellites.filter((s) => visibleIds.has(s.cellId));
+      return opened ? drawn.filter((s) => s.cellId !== opened.plate.id) : drawn;
+    },
+    [layout.satellites, opened, visibleIds],
   );
   const shownRecords = (opened ? baseSatellites.concat(opened.nodes) : layout.satellites).filter((s) => s.role === "record").length;
 
@@ -248,8 +293,8 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     return { W, H, s, ox, oy, view: { x: vx, y: vy, w: vw, h: vh } };
   })();
 
-  const relationLines = useMemo(() => index.relationLines.filter((l) => layout.byId.has(l.a) && layout.byId.has(l.b)), [index, layout.byId]);
-  const broaderEdges = useMemo(() => index.edges.filter((e) => e.kind === "broader" && layout.byId.has(e.from) && layout.byId.has(e.to)), [index, layout.byId]);
+  const relationLines = useMemo(() => index.relationLines.filter((l) => visibleIds.has(l.a) && visibleIds.has(l.b)), [index, visibleIds]);
+  const broaderEdges = useMemo(() => index.edges.filter((e) => e.kind === "broader" && visibleIds.has(e.from) && visibleIds.has(e.to)), [index, visibleIds]);
 
   const mapViewport = (
     <div
@@ -392,12 +437,14 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             </div>
           </div>
         ) : null}
-        {layout.plates.map((p: PlateNode) => (
+        {visiblePlates.map((p: PlateNode) => (
           <Plate
             key={p.id}
             cell={p.cell}
             x={p.x}
             y={p.y}
+            level={p.level}
+            scale={p.scale}
             lod={lod}
             k={camera.k}
             focused={focusId === p.id}
@@ -471,7 +518,12 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             {focusCell ? (<><span className="text-muted-foreground">/</span><span className="font-semibold" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>{focusCell.name}</span></>) : null}
           </span>
           <span className="ml-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            <span style={{ color: "color-mix(in oklch, var(--sakura) 78%, var(--foreground))" }}>{graph.cells.length} draft cells</span> · {shownRecords} manifestations on the map · distances are schematic
+            <span style={{ color: "color-mix(in oklch, var(--sakura) 78%, var(--foreground))" }}>{graph.cells.length} draft cells</span>
+            {" · "}
+            {levels > 0
+              ? <>showing {visiblePlates.length} · {deepestShown + 1} of {levels + 1} layers{deepestShown < levels ? " · zoom in for the next" : ""}</>
+              : <>{visiblePlates.length} on the map</>}
+            {" · "}{shownRecords} manifestations · distances are schematic
           </span>
         </div>
       ) : null}

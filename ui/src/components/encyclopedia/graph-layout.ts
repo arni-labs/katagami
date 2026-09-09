@@ -1,6 +1,6 @@
 import type { EncyclopediaCell, MapName, ManifestationSet } from "@/lib/encyclopedia";
-import { GraphIndex, MAP_NAMES_ORDER } from "@/lib/encyclopedia-graph";
-import { cellFace } from "./material";
+import { GraphIndex, MAP_NAMES_ORDER } from "../../lib/encyclopedia-graph.ts";
+import { cellFace } from "./material.ts";
 
 // One layout for the whole encyclopedia. Every attested cell is a plate on the
 // paper; its manifestations are small satellites on a ring around it, joined by
@@ -39,8 +39,75 @@ const REGION_GAP = 240;
  *  footprint stays close to the plate itself. */
 const RING_PAD = 18;
 
-export function plateBox(cell: EncyclopediaCell): { w: number; h: number } {
-  return cellFace(cell).kind === "name" ? { w: NAME_W, h: NAME_H } : { w: PLATE_W, h: PLATE_H };
+/** Each layer of the map draws at this fraction of the one above it, and a
+ *  layer is revealed when the camera has come in by the same factor. The map
+ *  is then the same object at every scale: you see the top of the field from
+ *  far out and the detail arrives as you come in, the way a road map works.
+ *  Five hundred cells at one size is a mesh; five hundred over four layers is
+ *  a field that reads at any zoom. */
+export const LEVEL_SHRINK = 0.5;
+/** How many cells the first layer holds, and how much bigger each layer after
+ *  it is. Geometric, so the layer count grows with the logarithm of the
+ *  library: five hundred cells is four layers, five thousand is six. */
+const FIRST_LAYER = 26;
+const LAYER_GROWTH = 3;
+
+/** How much of full size a cell on this layer draws at. */
+export function levelScale(level: number): number {
+  return LEVEL_SHRINK ** level;
+}
+
+/** Which layer each cell belongs to.
+ *
+ *  Two things decide it. A cell is never shown before the cell it sits under,
+ *  so the containment hierarchy always reads top-down. Beyond that a layer
+ *  holds the cells that have earned the room — the ones with the most
+ *  narrower cells, the most made work and the most connections — so the field
+ *  is legible even where the hierarchy is still flat and everything is a root.
+ *  As cells are given parents, depth takes over from prominence on its own. */
+export function displayLevels(index: GraphIndex): Map<string, number> {
+  const prominence = (cell: EncyclopediaCell) =>
+    index.childrenOf(cell.id).length * 1000 + cell.manifestations.length * 10 + cell.relations.length;
+  const ordered = [...index.graph.cells].sort(
+    (a, b) =>
+      index.depthOf(a.id) - index.depthOf(b.id) ||
+      prominence(b) - prominence(a) ||
+      a.name.localeCompare(b.name),
+  );
+  const level = new Map<string, number>();
+  let layer = 0;
+  let budget = FIRST_LAYER;
+  let used = 0;
+  for (const cell of ordered) {
+    if (used >= budget) { layer++; used = 0; budget *= LAYER_GROWTH; }
+    // Never before the cell above it. Parents sort earlier, so their layer is
+    // already decided by the time a child is reached.
+    let at = layer;
+    for (const parent of index.parentsOf(cell.id)) at = Math.max(at, level.get(parent.id) ?? 0);
+    level.set(cell.id, at);
+    used++;
+  }
+  return level;
+}
+
+/** The room a cell actually claims on the paper: its card plus the ring of
+ *  records around it. The packer and the separation pass must agree on this or
+ *  the field settles a great deal bigger than it was packed, which is what
+ *  drives the far view's zoom down. */
+export function footprintBox(cell: EncyclopediaCell, level = 0): { w: number; h: number } {
+  const box = plateBox(cell, level);
+  const scale = levelScale(level);
+  if (!cell.manifestations.length) return { w: box.w + 56 * scale, h: box.h + 56 * scale };
+  return {
+    w: box.w + (SAT_W + 2 * RING_PAD) * scale + SAT_W * scale,
+    h: box.h + (SAT_H + 2 * RING_PAD) * scale + SAT_H * scale,
+  };
+}
+
+export function plateBox(cell: EncyclopediaCell, level = 0): { w: number; h: number } {
+  const scale = levelScale(level);
+  const base = cellFace(cell).kind === "name" ? { w: NAME_W, h: NAME_H } : { w: PLATE_W, h: PLATE_H };
+  return { w: Math.round(base.w * scale), h: Math.round(base.h * scale) };
 }
 
 export interface PlateNode {
@@ -50,9 +117,14 @@ export interface PlateNode {
   x: number; // centre
   y: number;
   /** The plate's own box on the paper — a named cell is smaller than a
-   *  pictured one, and connectors and the camera both read it from here. */
+   *  pictured one, a deeper level smaller again, and connectors and the camera
+   *  both read it from here. */
   w: number;
   h: number;
+  /** Which layer of the map the cell belongs to: 0 is the far view. */
+  level: number;
+  /** What fraction of full size the card draws at, from its layer. */
+  scale: number;
 }
 
 export interface SatelliteNode {
@@ -71,6 +143,9 @@ export interface SatelliteNode {
   more: number;
   x: number;
   y: number;
+  /** The scale of the cell this node belongs to, so a deep cell's records are
+   *  as small as the cell is. */
+  scale: number;
 }
 
 export interface Region {
@@ -87,7 +162,15 @@ export interface GraphLayout {
   satellites: SatelliteNode[];
   regions: Region[];
   byId: Map<string, PlateNode>;
+  /** Everything on the paper, at every level. */
   bounds: { x: number; y: number; w: number; h: number };
+  /** Just the top layer — what "fit" frames, because that is the layer the far
+   *  view shows. */
+  topBounds: { x: number; y: number; w: number; h: number };
+  /** Where the top layer's cells actually are. The regions leave wide gaps
+   *  between them, so the middle of the bounding box can be empty paper; the
+   *  camera opens on this instead. */
+  topCentre: { x: number; y: number };
 }
 
 /** A screen is wider than it is tall, so the whole field should be too:
@@ -133,8 +216,13 @@ class PointGrid {
   private readonly buckets = new Map<number, number[]>();
   private xs: Float64Array = new Float64Array(0);
   private ys: Float64Array = new Float64Array(0);
+  private readonly size: number;
+  private readonly count: number;
 
-  constructor(private readonly size: number, private readonly count: number) {}
+  constructor(size: number, count: number) {
+    this.size = size;
+    this.count = count;
+  }
 
   /** Bucket index for a point. A coordinate far outside the paper clamps into
    *  an edge bucket: that only ever puts more candidates in front of the exact
@@ -208,15 +296,25 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
   // A map with no cells gets no ground on the paper: an empty placeholder
   // would stretch the field sideways and drive the fit zoom down for every
   // real cell. The filter chips already say which maps are still empty.
+  const levels = displayLevels(index);
   const regions: Region[] = [];
   const filled = MAP_NAMES_ORDER.filter((map) => cells.some((c) => index.primaryMap(c) === map));
   // Size each region first, then pack the regions into rows about as wide as
   // they are tall, so the whole field is closer to a screen than to a ribbon.
   const shapes = filled.map((map) => {
     const members = cells.filter((c) => index.primaryMap(c) === map);
-    const cols = Math.max(2, Math.ceil(Math.sqrt(members.length * 1.4)));
-    const rows = Math.max(1, Math.ceil(members.length / cols));
-    return { map, members, cols, rows, w: cols * GRID_X, h: rows * GRID_Y };
+    // Size a region by the room its cells actually take, not by how many there
+    // are: a deep cell draws small and should claim a small share of the
+    // paper, which is what keeps the whole field from growing with the count.
+    let area = 0;
+    for (const cell of members) {
+      const level = levels.get(cell.id) ?? 0;
+      const foot = footprintBox(cell, level);
+      const gap = 30 * levelScale(level);
+      area += (foot.w + gap) * (foot.h + gap);
+    }
+    const side = Math.sqrt(area * 1.5);
+    return { map, members, w: Math.max(GRID_X * 2, side), h: Math.max(GRID_Y, side) };
   });
   const targetRowWidth = bestRowWidth(shapes.map((s) => ({ w: s.w, h: s.h })));
   let rowX = 0;
@@ -224,20 +322,48 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
   let rowH = 0;
   for (const shape of shapes) {
     if (rowX > 0 && rowX + shape.w > targetRowWidth) { rowX = 0; rowY += rowH + REGION_GAP; rowH = 0; }
-    const originX = rowX;
-    const originY = rowY;
+    // The region winds out from this point, so the origin is its middle.
+    const originX = rowX + shape.w / 2;
+    const originY = rowY + shape.h / 2;
     // Roots first, ordered by how much hangs under them, then the rest.
     const roots = index.roots.filter((c) => index.primaryMap(c) === shape.map).sort((a, b) => index.descendants(b.id).length - index.descendants(a.id).length || a.name.localeCompare(b.name));
     const placed = new Set<string>();
-    let i = 0;
+    // Wind outward from the middle of the region, top layer first. The far
+    // view is then the middle of each region rather than its whole sprawl:
+    // the cells the map shows first sit together and read large, and the
+    // layers that arrive as you come in are already where you would go
+    // looking for them. Packing by each cell's own size, not into a lattice
+    // of one fixed slot per cell, is what stops the field growing with the
+    // count — a cell on a lower layer draws small and claims little paper.
+    let radius = 0;
+    let angle = 0;
+    let ringH = 0;
+    let reach = 0;
     const put = (cell: EncyclopediaCell) => {
       if (placed.has(cell.id)) return;
-      const col = i % shape.cols;
-      const row = Math.floor(i / shape.cols);
-      const box = plateBox(cell);
-      plates.set(cell.id, { kind: "plate", id: cell.id, cell, x: originX + col * GRID_X + (row % 2 ? GRID_X / 2 : 0), y: originY + row * GRID_Y, w: box.w, h: box.h });
+      const level = levels.get(cell.id) ?? 0;
+      const box = plateBox(cell, level);
+      const foot = footprintBox(cell, level);
+      const gap = 30 * levelScale(level);
+      const slotW = foot.w + gap;
+      const slotH = foot.h + gap;
+      if (radius === 0) radius = slotW / 2;
+      // A full turn at this radius, then step out by the tallest slot on it.
+      // Step by the angle whose CHORD is one slot wide, not whose arc is: on a
+      // small ring the chord is a good deal shorter than the arc, and cards
+      // packed by arc length end up overlapping their neighbours.
+      const step = 2 * Math.asin(Math.min(1, slotW / (2 * radius)));
+      if (angle > 0 && angle + step > Math.PI * 2) { radius += ringH; angle = 0; ringH = 0; }
+      plates.set(cell.id, {
+        kind: "plate", id: cell.id, cell,
+        x: originX + Math.cos(angle) * radius,
+        y: originY + Math.sin(angle) * radius,
+        w: box.w, h: box.h, level, scale: levelScale(level),
+      });
+      angle += 2 * Math.asin(Math.min(1, slotW / (2 * radius)));
+      ringH = Math.max(ringH, slotH);
+      reach = Math.max(reach, radius + Math.max(slotW, slotH) / 2);
       placed.add(cell.id);
-      i++;
     };
     // Depth-first so children land next to their parent in the grid. `broader`
     // is data, not a proven tree: a cell may name a descendant as its parent,
@@ -249,27 +375,39 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
       put(cell);
       for (const kid of index.childrenOf(cell.id)) if (index.primaryMap(kid) === shape.map) visit(kid);
     };
-    roots.forEach(visit);
-    shape.members.forEach(put);
-    regions.push({ map: shape.map, x: originX - GRID_X / 2, y: originY - GRID_Y / 2, w: shape.w, h: shape.h, count: shape.members.length });
-    rowX += shape.w + REGION_GAP;
-    rowH = Math.max(rowH, shape.h);
+    // Top layer first, then the rest, so the far view's cells are placed
+    // together rather than scattered through the ones that arrive later.
+    const byLayer = [...shape.members].sort((a, b) => (levels.get(a.id) ?? 0) - (levels.get(b.id) ?? 0));
+    roots.filter((c) => (levels.get(c.id) ?? 0) === 0).forEach(visit);
+    byLayer.forEach(put);
+    const packedW = Math.max(GRID_X, reach * 2);
+    const packedH = Math.max(GRID_Y, reach * 2);
+    regions.push({ map: shape.map, x: originX - packedW / 2, y: originY - packedH / 2, w: packedW, h: packedH, count: shape.members.length });
+    rowX += packedW + REGION_GAP;
+    rowH = Math.max(rowH, packedH);
   }
 
   // ── force pass ────────────────────────────────────────────────────────
   const nodes = [...plates.values()];
   // A cell with manifestations needs room for its ring; one without needs
   // only its plate and a margin.
-  const ringX = (n: PlateNode) => n.w / 2 + SAT_W / 2 + RING_PAD;
-  const ringY = (n: PlateNode) => n.h / 2 + SAT_H / 2 + RING_PAD;
-  const footW = (n: PlateNode) => (n.cell.manifestations.length ? 2 * ringX(n) + SAT_W : n.w + 56);
-  const footH = (n: PlateNode) => (n.cell.manifestations.length ? 2 * ringY(n) + SAT_H : n.h + 56);
+  const satW = (n: PlateNode) => SAT_W * n.scale;
+  const satH = (n: PlateNode) => SAT_H * n.scale;
+  const ringX = (n: PlateNode) => n.w / 2 + satW(n) / 2 + RING_PAD * n.scale;
+  const ringY = (n: PlateNode) => n.h / 2 + satH(n) / 2 + RING_PAD * n.scale;
+  const footW = (n: PlateNode) => (n.cell.manifestations.length ? 2 * ringX(n) + satW(n) : n.w + 56 * n.scale);
+  const footH = (n: PlateNode) => (n.cell.manifestations.length ? 2 * ringY(n) + satH(n) : n.h + 56 * n.scale);
   const centres = new Map(regions.map((r) => [r.map, { x: r.x + r.w / 2, y: r.y + r.h / 2 }]));
   const edges: Array<[PlateNode, PlateNode]> = [];
   for (const cell of cells) {
     for (const link of cell.broader) { const other = plates.get(link.cellId); if (other) edges.push([plates.get(cell.id)!, other]); }
     for (const rel of cell.relations) { const other = plates.get(rel.cellId); if (other) edges.push([plates.get(cell.id)!, other]); }
   }
+  // A narrower cell settles as close to the cell above it as the smaller of
+  // the two is wide. Deep cells therefore cluster tightly under their parent
+  // instead of spreading across the region, which is what lets a level be
+  // hidden without leaving a hole in the field.
+  const restFor = (a: PlateNode, b: PlateNode) => 560 * Math.min(a.scale, b.scale);
   // Both plate passes below only act on pairs closer than the larger of
   // (footW(A) + footW(B)) / 2 + 80 and the same in y — never more than one
   // widest footprint plus 80. Bucket the paper at exactly that reach and the
@@ -283,12 +421,25 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
   const fh = new Float64Array(count);
   const gx = new Float64Array(count);
   const gy = new Float64Array(count);
+  const sc = new Float64Array(count);
+  // A card's mass is its area, so a small cell on a lower layer gets out of a
+  // big one's way rather than shoving it across the region. Without this the
+  // top layer is scattered by the hundreds of small cells around it and the
+  // far view is a spread of tiny plates again.
+  const mass = new Float64Array(count);
+  // The top layer is where it was packed and it stays there. That packing is
+  // compact and deterministic by construction, and it is what the far view
+  // frames; letting the force pass push it around is what spread twenty-six
+  // cards across the whole field and drove the fit zoom into single figures.
+  const pinned = new Uint8Array(count);
   const rank = new Map<PlateNode, number>();
   let widestFoot = 0;
   nodes.forEach((n, i) => {
     rank.set(n, i);
     px[i] = n.x; py[i] = n.y;
-    fw[i] = footW(n); fh[i] = footH(n);
+    fw[i] = footW(n); fh[i] = footH(n); sc[i] = n.scale;
+    pinned[i] = n.level === 0 ? 1 : 0;
+    mass[i] = n.level === 0 ? 1e6 : n.scale * n.scale;
     const c = centres.get(index.primaryMap(n.cell))!;
     gx[i] = c.x; gy[i] = c.y;
     widestFoot = Math.max(widestFoot, fw[i], fh[i]);
@@ -298,11 +449,11 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
   const near = new Int32Array(count);
   const edgeA = new Int32Array(edges.length);
   const edgeB = new Int32Array(edges.length);
-  edges.forEach(([a, b], i) => { edgeA[i] = rank.get(a)!; edgeB[i] = rank.get(b)!; });
+  const rest = new Float64Array(edges.length);
+  edges.forEach(([a, b], i) => { edgeA[i] = rank.get(a)!; edgeB[i] = rank.get(b)!; rest[i] = restFor(a, b); });
 
   const fx = new Float64Array(count);
   const fy = new Float64Array(count);
-  const REST = 560;
   for (let iter = 0; iter < 260; iter++) {
     const t = 1 - iter / 260;
     const step = 0.12 * t + 0.02;
@@ -317,12 +468,17 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
         if (b <= a) continue;
         let dx = px[b] - px[a]; let dy = py[b] - py[a];
         const d = Math.hypot(dx, dy) || 1;
-        const reach = (fw[a] + fw[b]) / 2 + 80;
+        const reach = (fw[a] + fw[b]) / 2 + 80 * Math.min(sc[a], sc[b]);
         if (d > reach) continue;
         dx /= d; dy /= d;
+        // The lighter card yields: a small cell on a lower layer moves out of
+        // a big one's way instead of shoving it across the region.
         const f = (reach - d) * 0.9;
-        fx[a] -= dx * f; fy[a] -= dy * f;
-        fx[b] += dx * f; fy[b] += dy * f;
+        const total = mass[a] + mass[b];
+        const yieldA = (2 * mass[b]) / total;
+        const yieldB = (2 * mass[a]) / total;
+        fx[a] -= dx * f * yieldA; fy[a] -= dy * f * yieldA;
+        fx[b] += dx * f * yieldB; fy[b] += dy * f * yieldB;
       }
     }
     // Springs along edges.
@@ -331,7 +487,7 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
       let dx = px[b] - px[a]; let dy = py[b] - py[a];
       const d = Math.hypot(dx, dy) || 1;
       dx /= d; dy /= d;
-      const f = (d - REST) * 0.35;
+      const f = (d - rest[e]) * 0.35;
       fx[a] += dx * f; fy[a] += dy * f;
       fx[b] -= dx * f; fy[b] -= dy * f;
     }
@@ -340,7 +496,7 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
       fx[i] += (gx[i] - px[i]) * 0.05;
       fy[i] += (gy[i] - py[i]) * 0.05;
     }
-    for (let i = 0; i < count; i++) { px[i] += fx[i] * step; py[i] += fy[i] * step; }
+    for (let i = 0; i < count; i++) { if (!pinned[i]) { px[i] += fx[i] * step; py[i] += fy[i] * step; } }
   }
 
   // ── separate footprints (plate + its ring of satellites) ─────────────
@@ -349,7 +505,7 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
   // The cap is a guard against a configuration that cannot settle, not the
   // expected exit: at a hundred cells this clears in a handful of passes, and
   // a synthetic thousand clears well inside it.
-  for (let iter = 0; iter < 4000; iter++) {
+  for (let iter = 0; iter < 900; iter++) {
     let moved = false;
     grid.rebuild(px, py);
     for (let a = 0; a < count; a++) {
@@ -358,12 +514,20 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
         const b = near[q];
         if (b <= a) continue;
         const dx = px[b] - px[a]; const dy = py[b] - py[a];
-        const ox = (fw[a] + fw[b]) / 2 + 24 - Math.abs(dx);
-        const oy = (fh[a] + fh[b]) / 2 + 24 - Math.abs(dy);
+        const room = 24 * Math.min(sc[a], sc[b]);
+        const ox = (fw[a] + fw[b]) / 2 + room - Math.abs(dx);
+        const oy = (fh[a] + fh[b]) / 2 + room - Math.abs(dy);
         if (ox <= 0 || oy <= 0) continue;
         moved = true;
-        if (ox < oy) { const sh = (ox / 2 + 1) * (dx >= 0 ? 1 : -1); px[a] -= sh; px[b] += sh; }
-        else { const sh = (oy / 2 + 1) * (dy >= 0 ? 1 : -1); py[a] -= sh; py[b] += sh; }
+        // Share the push by mass: the lighter card yields.
+        const total = mass[a] + mass[b];
+        // Two pinned cards would otherwise never come apart and the sweep
+        // would spend every iteration on them, so they share the push.
+        const bothPinned = pinned[a] && pinned[b];
+        const shareA = bothPinned ? 0.5 : pinned[a] ? 0 : mass[b] / total;
+        const shareB = bothPinned ? 0.5 : pinned[b] ? 0 : mass[a] / total;
+        if (ox < oy) { const sh = ox + 1; const dir = dx >= 0 ? 1 : -1; px[a] -= sh * shareA * dir; px[b] += sh * shareB * dir; }
+        else { const sh = oy + 1; const dir = dy >= 0 ? 1 : -1; py[a] -= sh * shareA * dir; py[b] += sh * shareB * dir; }
       }
     }
     if (!moved) break;
@@ -401,7 +565,7 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
       // The overflow node stands for the records past the ring, so it takes
       // the set of the first of them rather than repeating the last one drawn.
       const m = isMore ? list[shown] : list[j];
-      satellites.push({ kind: "satellite", id: isMore ? `${n.id}~more` : `${n.id}~${j}`, cellId: n.id, set: m.entitySet, role: isMore ? "more" : "record", index: isMore ? -1 : j, more: isMore ? extra : 0, x, y });
+      satellites.push({ kind: "satellite", id: isMore ? `${n.id}~more` : `${n.id}~${j}`, cellId: n.id, set: m.entitySet, role: isMore ? "more" : "record", index: isMore ? -1 : j, more: isMore ? extra : 0, x, y, scale: n.scale });
     }
   }
 
@@ -413,7 +577,8 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
   const satCount = satellites.length;
   const sx = new Float64Array(satCount);
   const sy = new Float64Array(satCount);
-  satellites.forEach((s, i) => { sx[i] = s.x; sy[i] = s.y; });
+  const ss = new Float64Array(satCount);
+  satellites.forEach((s, i) => { sx[i] = s.x; sy[i] = s.y; ss[i] = s.scale; });
   let halfBox = 0;
   for (const p of nodes) halfBox = Math.max(halfBox, p.w / 2, p.h / 2);
   const plateGrid = new PointGrid(Math.max(60, halfBox + SAT_W / 2 + 16), count);
@@ -426,8 +591,9 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
       const found = plateGrid.near(sx[a], sy[a], nearSats);
       for (let q = 0; q < found; q++) {
         const p = nodes[nearSats[q]];
-        const ox = (p.w / 2 + SAT_W / 2 + 16) - Math.abs(sx[a] - p.x);
-        const oy = (p.h / 2 + SAT_H / 2 + 16) - Math.abs(sy[a] - p.y);
+        const near = Math.min(ss[a], p.scale);
+        const ox = (p.w / 2 + (SAT_W / 2) * ss[a] + 16 * near) - Math.abs(sx[a] - p.x);
+        const oy = (p.h / 2 + (SAT_H / 2) * ss[a] + 16 * near) - Math.abs(sy[a] - p.y);
         if (ox <= 0 || oy <= 0) continue;
         moved = true;
         if (ox < oy) sx[a] += (ox + 1) * (sx[a] >= p.x ? 1 : -1); else sy[a] += (oy + 1) * (sy[a] >= p.y ? 1 : -1);
@@ -440,7 +606,8 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
         const b = nearSats[q];
         if (b <= a) continue;
         const dx = sx[b] - sx[a]; const dy = sy[b] - sy[a];
-        const ox = SAT_W + 10 - Math.abs(dx); const oy = SAT_H + 10 - Math.abs(dy);
+        const room = (ss[a] + ss[b]) / 2;
+        const ox = (SAT_W + 10) * room - Math.abs(dx); const oy = (SAT_H + 10) * room - Math.abs(dy);
         if (ox <= 0 || oy <= 0) continue;
         moved = true;
         if (ox < oy) { const sh = (ox / 2 + 1) * (dx >= 0 ? 1 : -1); sx[a] -= sh; sx[b] += sh; }
@@ -468,11 +635,27 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
     const bottom = extent(members, (m) => m.y + footH(m) / 2).max;
     r.x = x.min - 40; r.y = y.min - 120; r.w = right - x.min + 80; r.h = bottom - y.min + 160;
   }
-  const all = [...nodes.map(plateRect), ...satellites.map((s) => ({ x: s.x - SAT_W / 2, y: s.y - SAT_H / 2, w: SAT_W, h: SAT_H })), ...regions];
-  if (!all.length) return { plates: nodes, satellites, regions, byId: plates, bounds: { x: 0, y: 0, w: 1, h: 1 } };
+  const all = [...nodes.map(plateRect), ...satellites.map((s) => ({ x: s.x - (SAT_W * s.scale) / 2, y: s.y - (SAT_H * s.scale) / 2, w: SAT_W * s.scale, h: SAT_H * s.scale })), ...regions];
+  const empty = { x: 0, y: 0, w: 1, h: 1 };
+  if (!all.length) return { plates: nodes, satellites, regions, byId: plates, bounds: empty, topBounds: empty, topCentre: { x: 0, y: 0 } };
   const left = extent(all, (r) => r.x).min; const top = extent(all, (r) => r.y).min;
   const right = extent(all, (r) => r.x + r.w).max; const bottom = extent(all, (r) => r.y + r.h).max;
-  return { plates: nodes, satellites, regions, byId: plates, bounds: { x: left, y: top, w: right - left, h: bottom - top } };
+  const bounds = { x: left, y: top, w: right - left, h: bottom - top };
+  // The top level plus the map regions it sits in: what the far view holds.
+  const topPlates = nodes.filter((n) => n.level === 0).map(plateRect);
+  const top0 = topPlates;
+  const topBounds = top0.length
+    ? (() => {
+        const l = extent(top0, (r) => r.x).min; const t = extent(top0, (r) => r.y).min;
+        const rr = extent(top0, (r) => r.x + r.w).max; const bb = extent(top0, (r) => r.y + r.h).max;
+        return { x: l, y: t, w: rr - l, h: bb - t };
+      })()
+    : bounds;
+  const topNodes = nodes.filter((n) => n.level === 0);
+  const topCentre = topNodes.length
+    ? { x: topNodes.reduce((a, n) => a + n.x, 0) / topNodes.length, y: topNodes.reduce((a, n) => a + n.y, 0) / topNodes.length }
+    : { x: bounds.x + bounds.w / 2, y: bounds.y + bounds.h / 2 };
+  return { plates: nodes, satellites, regions, byId: plates, bounds, topBounds, topCentre };
 }
 
 /** A point at distance `t` along the plate's own box pushed outward by `pad`:
@@ -539,7 +722,7 @@ function boxRingOffset(plate: PlateNode, pad: number, away: number): number {
 export function expandCell(plate: PlateNode, away: number): SatelliteNode[] {
   const list = plate.cell.manifestations;
   if (!list.length) return [];
-  const slot = SAT_W + RING_GAP;
+  const slot = (SAT_W + RING_GAP) * plate.scale;
   const out: SatelliteNode[] = [];
   // Slot 0 is the fold control, then one slot per record.
   let placed = 0;
@@ -548,7 +731,7 @@ export function expandCell(plate: PlateNode, away: number): SatelliteNode[] {
     // Clearance from the plate's edge to a node's centre: half the node, plus
     // the gap, plus one ring's worth for each ring further out. Every node is
     // therefore at least RING_PAD clear of the card on every side.
-    const pad = SAT_W / 2 + RING_PAD + ring * (SAT_H + RING_GAP);
+    const pad = (SAT_W / 2 + RING_PAD + ring * (SAT_H + RING_GAP)) * plate.scale;
     const perimeter = 2 * plate.w + 2 * plate.h + 2 * Math.PI * pad;
     const capacity = Math.max(1, Math.floor(perimeter / slot));
     const here = Math.min(capacity, total - placed);
@@ -564,10 +747,10 @@ export function expandCell(plate: PlateNode, away: number): SatelliteNode[] {
       const y = Math.round(point.y);
       const at = placed + j;
       if (at === 0) {
-        out.push({ kind: "satellite", id: `${plate.id}~fold`, cellId: plate.id, set: list[0].entitySet, role: "fold", index: -1, more: list.length, x, y });
+        out.push({ kind: "satellite", id: `${plate.id}~fold`, cellId: plate.id, set: list[0].entitySet, role: "fold", index: -1, more: list.length, x, y, scale: plate.scale });
       } else {
         const m = list[at - 1];
-        out.push({ kind: "satellite", id: `${plate.id}~${at - 1}`, cellId: plate.id, set: m.entitySet, role: "record", index: at - 1, more: 0, x, y });
+        out.push({ kind: "satellite", id: `${plate.id}~${at - 1}`, cellId: plate.id, set: m.entitySet, role: "record", index: at - 1, more: 0, x, y, scale: plate.scale });
       }
     }
     placed += here;

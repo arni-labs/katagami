@@ -45,8 +45,12 @@ export class GraphIndex {
   readonly roots: EncyclopediaCell[];
   readonly relationLines: RelationLine[];
   private readonly adjacency: Map<string, Set<string>>;
+  private readonly depths: Map<string, number>;
 
-  constructor(readonly graph: EncyclopediaGraph) {
+  readonly graph: EncyclopediaGraph;
+
+  constructor(graph: EncyclopediaGraph) {
+    this.graph = graph;
     this.byId = new Map(graph.cells.map((cell) => [cell.id, cell]));
     this.children = new Map();
     this.adjacency = new Map(graph.cells.map((cell) => [cell.id, new Set<string>()]));
@@ -85,10 +89,43 @@ export class GraphIndex {
     // A root is a cell none of whose broader cells is in the library. A broader
     // pointer to a cell that is not here is shown on the sheet, not hidden.
     this.roots = graph.cells.filter((cell) => !cell.broader.some((link) => this.byId.has(link.cellId)));
+    // Levels, breadth-first from the roots. Anything the walk never reaches —
+    // a cell whose only parents are in a cycle among themselves — keeps level
+    // 0, so every cell has a level and none of them is lost off the map.
+    this.depths = new Map(graph.cells.map((cell) => [cell.id, 0]));
+    const queue: Array<{ id: string; depth: number }> = this.roots.map((cell) => ({ id: cell.id, depth: 0 }));
+    const settled = new Set<string>(this.roots.map((cell) => cell.id));
+    while (queue.length) {
+      const { id, depth } = queue.shift()!;
+      this.depths.set(id, depth);
+      for (const kid of this.childrenOf(id)) {
+        if (settled.has(kid.id)) continue;
+        settled.add(kid.id);
+        queue.push({ id: kid.id, depth: depth + 1 });
+      }
+    }
   }
 
   childrenOf(id: string): EncyclopediaCell[] {
     return this.children.get(id) ?? [];
+  }
+
+  /** How far down the containment hierarchy a cell sits: a root is 0, its
+   *  narrower cells are 1, and so on. Breadth-first from every root, so a cell
+   *  with two parents takes the shallower one and a cycle cannot make the walk
+   *  run away. A cell in a cycle that no root reaches has no level above it, so
+   *  it is a top-level cell too.
+   *
+   *  This is what lets the map show one layer at a time. */
+  depthOf(id: string): number {
+    return this.depths.get(id) ?? 0;
+  }
+
+  /** The deepest level the library actually has. */
+  get maxDepth(): number {
+    let deepest = 0;
+    for (const d of this.depths.values()) deepest = Math.max(deepest, d);
+    return deepest;
   }
 
   parentsOf(id: string): EncyclopediaCell[] {
