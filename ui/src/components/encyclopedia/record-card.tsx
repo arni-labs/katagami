@@ -40,6 +40,9 @@ export function RecordCard({
   index: GraphIndex;
   /** Where the node is on screen, and how big. */
   at: { x: number; y: number; size: number };
+  /** Where the node's cell is on screen, so the card opens on the side away
+   *  from it and never covers the card the record hangs from. */
+  cellAt: { x: number; y: number };
   /** The viewport, so the card stays inside it. */
   room: { w: number; h: number };
   onClose: () => void;
@@ -48,9 +51,15 @@ export function RecordCard({
   const record = manifestation.record;
   const ink = SET_INK[manifestation.entitySet];
   const also = index.ownersOf(manifestation.entitySet, manifestation.entityId).filter((c) => c.id !== cell.id);
-  // Beside the node, on whichever side has room; never off the viewport.
+  // Beside the node, on the side away from its cell when that side has room,
+  // otherwise the other side; never off the viewport.
   const gap = 10;
-  const left = at.x + at.size / 2 + gap + CARD_W <= room.w - 8 ? at.x + at.size / 2 + gap : Math.max(8, at.x - at.size / 2 - gap - CARD_W);
+  const rightOf = at.x + at.size / 2 + gap;
+  const leftOf = at.x - at.size / 2 - gap - CARD_W;
+  const fitsRight = rightOf + CARD_W <= room.w - 8;
+  const fitsLeft = leftOf >= 8;
+  const preferRight = at.x >= cellAt.x;
+  const left = preferRight ? (fitsRight ? rightOf : fitsLeft ? leftOf : Math.max(8, room.w - 8 - CARD_W)) : (fitsLeft ? leftOf : fitsRight ? rightOf : 8);
   const top = Math.max(8, Math.min(room.h - 8 - 360, at.y - 40));
   return (
     <div

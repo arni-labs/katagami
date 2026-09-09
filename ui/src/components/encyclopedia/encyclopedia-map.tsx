@@ -801,6 +801,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
           cell={index.byId.get(recordNodeNow.cellId)!}
           index={index}
           at={{ x: recordNodeNow.x * camera.k + camera.x, y: recordNodeNow.y * camera.k + camera.y, size: SAT_W * recordNodeNow.scale * camera.k }}
+          cellAt={(() => { const p = layout.byId.get(recordNodeNow.cellId); return p ? { x: p.x * camera.k + camera.x, y: p.y * camera.k + camera.y } : { x: 0, y: 0 }; })()}
           room={viewportSize}
           onClose={() => setRecordOpen(null)}
           onFocusCell={(id) => { setRecordOpen(null); focus(id); }}

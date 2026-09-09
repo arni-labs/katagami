@@ -130,3 +130,15 @@ Where: `alsoOn` in `encyclopedia-map.tsx` and the mark in `PlateCard`; `fitRegio
 Decision: Sheet prose is 13.5px, headings 14.5px, titles 24px; the phone browser and the cards come down with it. The 17px body floor in the design contract is for pages; this is a working panel beside a dense canvas, and Rita asked for it (2026-09-09).
 
 Where: `focus-sheet.tsx`, `browse.tsx`, `map-cards.tsx`.
+
+## D13 A record opens as a card on the canvas, and the page is one step further
+
+Decision: Clicking a record node opens a card beside the node — picture, set and status, the record's own line, why the cell names it, which other cells name it — with a button that opens the record's page in a new tab. The node itself no longer navigates. Records stand 52px off their cell, are spread over more of its perimeter, and can be dragged one at a time.
+
+Came up because: Rita: the records sit too close, should be draggable, and a click should show information in the encyclopedia rather than leave it.
+
+Options: Show the record in the sheet; a card beside the node; keep navigation and add a hover preview.
+
+Chose the card beside the node because: it keeps the reader's eye where they clicked, and the sheet stays the cell's. The card opens on the side away from the record's cell so it never covers the card the record hangs from.
+
+Where: `ui/src/components/encyclopedia/record-card.tsx`; `openRecord` and the offsets on satellites in `encyclopedia-map.tsx`; `RING_PAD` in `graph-layout.ts`.
