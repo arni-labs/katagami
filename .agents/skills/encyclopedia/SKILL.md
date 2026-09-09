@@ -436,6 +436,23 @@ Autonomy is a change in when the human looks, never in what may be built.
   ```bash
   node scripts/encyclopedia-cellids.mjs   # needs TEMPER_API_KEY; exits 1 on a dangling row
   ```
+- **Claim support**: `cited` has to mean the page carries the sentence, not that
+  the page was reachable. Before setting it, find the claim in the fetched text
+  and keep it; if you cannot find it, change the sentence or change the source.
+  Reading a lead section and writing the rest from memory produces prose that
+  passes every other check. Measured on 2026-09-09, one live cell in nine
+  asserted a name no cited source carried.
+
+  ```bash
+  TEMPER_API_KEY=... python3 scripts/encyclopedia_support.py
+  ```
+
+  Reporting only, never a build gate. It prints its own false-positive rate and
+  what it does not check, which includes every explanation field: it reads the
+  description alone, so it would have missed the manifestation defect that
+  produced it. It also checks each parent link cited to a Library of Congress
+  record against that record's own broader authority, which is the crisper half.
+
 - **Gap watch**: maps with no cells, cells with no manifestations, recollected
   cells that could now be cited, clusters of made work with no cell over them,
   broad cells whose only children are broad (the leaf layer is missing under
