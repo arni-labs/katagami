@@ -55,23 +55,26 @@
     {
       "term": "Linklog",
       "ref": "https://en.wikipedia.org/wiki/Linklog",
-      "decision": "deferred",
-      "batch": "B14",
-      "note": "a genuinely named blog form, posts whose titles link out with a note attached, and the filter-style weblog this collection could not name in B10; not minted because Blogs already has a leaf and was not one of the two gaps"
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: the blog whose post titles link out with the writer's note attached, the filter-style weblog B10 could not name; deferred in B14 for sitting outside that pass's two gaps, minted on instruction. Proposal B15 #3. Written and attested 2026-09-09.",
+      "cellId": "linklog"
     },
     {
       "term": "Listicle",
       "ref": "https://en.wikipedia.org/wiki/Listicle",
-      "decision": "deferred",
-      "batch": "B14",
-      "note": "a named form with a described structure and an enormous body of work; it belongs under Blogs rather than under either gap"
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: the article built as a numbered list, count in the title and a subheading per entry, placed under both Journalism and Blogs because the reference names them together. Proposal B15 #4. Written and attested 2026-09-09.",
+      "cellId": "listicle"
     },
     {
       "term": "Service journalism",
       "ref": "https://en.wikipedia.org/wiki/Service_journalism",
-      "decision": "deferred",
-      "batch": "B14",
-      "note": "a real newsroom register, news you can use, and the one most newsletters are written in; it sits across journalism rather than under Newsletters, so it needs a parent this pass did not have"
+      "decision": "live",
+      "batch": "B15",
+      "note": "register: news you can use, reporting written to be acted on; parented under the new Journalism cell and linked from Newsletters, which it is the nearest thing to a manner for. Proposal B15 #2. Written and attested 2026-09-09.",
+      "cellId": "service-journalism"
     },
     {
       "term": "Digest form",
@@ -79,6 +82,21 @@
       "decision": "declined",
       "batch": "B14",
       "note": "the mailing-list article defines digest as a delivery mode, all of a day's messages combined into one email, which is a schedule and not a manner"
+    },
+    {
+      "term": "Journalism",
+      "ref": "https://en.wikipedia.org/wiki/Journalism",
+      "decision": "live",
+      "batch": "B15",
+      "cellId": "journalism",
+      "note": "practice: reporting under verification and a deadline, with its own conventions; minted as the parent Service journalism needed, reversing B14's decline because the reference's opening definition covers the methods and the organising literary styles as well as the occupation. Proposal B15 #1. Written and attested 2026-09-09."
+    },
+    {
+      "term": "News style",
+      "ref": "https://en.wikipedia.org/wiki/News_style",
+      "decision": "deferred",
+      "batch": "B15",
+      "note": "the inverted pyramid and the five questions, which the Journalism cell describes inside its own scope; a separate cell for the house register is arguable and was not read in this pass"
     }
   ]
 }
