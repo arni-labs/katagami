@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
 import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowUpRight, ChevronUp, Maximize2, Minus, Plus } from "lucide-react";
 import type { EncyclopediaGraph, MapName } from "@/lib/encyclopedia";
-import { GraphIndex, MAP_INK, MAP_LABEL, MAP_NAMES_ORDER } from "@/lib/encyclopedia-graph";
+import { GraphIndex, MAP_INK, MAP_LABEL, MAP_NAMES_ORDER, type RelationInk } from "@/lib/encyclopedia-graph";
 import { Marker } from "@/components/page-hero";
 import { RELATION_INK_VAR, SearchBox } from "./chrome";
 import { SET_INK } from "./material";
@@ -268,6 +268,15 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const dash = `${5 / camera.k} ${6 / camera.k}`;
   const dots = `${1.5 / camera.k} ${5 / camera.k}`;
   const showWords = lod === "reading";
+  // A line carries its word only when it touches the cell in focus, or when
+  // the pointer is on it. With hundreds of cells on the paper, labelling every
+  // edge printed "narrower cell" dozens of times at the same weight as the
+  // cell names, and the eye read the connective tissue instead of the cells.
+  // The ink already says what kind of relation a line is; the legend in the
+  // bottom bar says what the inks mean.
+  const [hoverEdge, setHoverEdge] = useState<string | null>(null);
+  const wordFor = (key: string, a: string, b: string) =>
+    showWords && (hoverEdge === key || (focusId !== null && (a === focusId || b === focusId)));
 
   // ── minimap ─────────────────────────────────────────────────────────────
   // The viewport size lives in state (a ResizeObserver keeps it current) so
@@ -292,6 +301,15 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     const ox = (W - (maxX - minX) * s) / 2 - minX * s; const oy = (H - (maxY - minY) * s) / 2 - minY * s;
     return { W, H, s, ox, oy, view: { x: vx, y: vy, w: vw, h: vh } };
   })();
+
+  /** What the inks on the paper mean. With the words off every line but the
+   *  focused one, this is where a reader learns to read them. Only the
+   *  families the library actually uses are listed. */
+  const RELATION_FAMILY: Record<RelationInk, string> = { ramune: "influence", sakura: "opposition", yuzu: "kinship" };
+  const inkFamilies = useMemo(() => {
+    const present = new Set(index.relationLines.map((l) => l.ink));
+    return (["ramune", "sakura", "yuzu"] as RelationInk[]).filter((ink) => present.has(ink));
+  }, [index]);
 
   const relationLines = useMemo(() => index.relationLines.filter((l) => visibleIds.has(l.a) && visibleIds.has(l.b)), [index, visibleIds]);
   const broaderEdges = useMemo(() => index.edges.filter((e) => e.kind === "broader" && visibleIds.has(e.from) && visibleIds.has(e.to)), [index, visibleIds]);
@@ -344,10 +362,14 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             const a = layout.byId.get(e.from)!; const b = layout.byId.get(e.to)!;
             const { d, label } = plateConnector(a, b);
             const dim = (dimmedPlate(a.id) && dimmedPlate(b.id)) || (faded(a.id) && faded(b.id));
+            const key = `${e.from}-${e.to}`;
             return (
-              <g key={`${e.from}-${e.to}`} opacity={dim ? 0.2 : 1}>
+              <g key={key} opacity={dim ? 0.2 : 1}>
                 <path d={d} fill="none" stroke="color-mix(in oklch, var(--foreground) 55%, transparent)" strokeWidth={strokeW * 1.1} strokeDasharray={dash} strokeLinecap="round" />
-                {showWords && (!focusId || e.from === focusId || e.to === focusId) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: 13, fill: "var(--muted-foreground)", paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: 6, strokeLinejoin: "round" }}>narrower cell</text> : null}
+                {/* A wide invisible stroke so the thin dashed line is still
+                    easy to put the pointer on. */}
+                <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 12} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(key)} onMouseLeave={() => setHoverEdge((at) => (at === key ? null : at))} />
+                {wordFor(key, e.from, e.to) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: 13, fill: "var(--muted-foreground)", paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: 6, strokeLinejoin: "round" }}>narrower cell</text> : null}
               </g>
             );
           })}
@@ -361,7 +383,8 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             return (
               <g key={line.key} opacity={dim ? 0.2 : 1}>
                 <path d={d} fill="none" stroke={ink} strokeWidth={strokeW * 1.3} strokeDasharray={dash} strokeLinecap="round" style={{ mixBlendMode: "var(--ink-blend)" as never }} />
-                {showWords && (!focusId || line.a === focusId || line.b === focusId) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: 13, fill: `color-mix(in oklch, ${ink} 70%, var(--foreground))`, paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: 6, strokeLinejoin: "round" }}>{word}</text> : null}
+                <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 12} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(line.key)} onMouseLeave={() => setHoverEdge((at) => (at === line.key ? null : at))} />
+                {wordFor(line.key, line.a, line.b) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: 13, fill: `color-mix(in oklch, ${ink} 70%, var(--foreground))`, paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: 6, strokeLinejoin: "round" }}>{word}</text> : null}
               </g>
             );
           })}
@@ -524,6 +547,19 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
               ? <>showing {visiblePlates.length} · {deepestShown + 1} of {levels + 1} layers{deepestShown < levels ? " · zoom in for the next" : ""}</>
               : <>{visiblePlates.length} on the map</>}
             {" · "}{shownRecords} manifestations · distances are schematic
+          </span>
+          <span className="ml-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span aria-hidden className="inline-block h-[2px] w-5" style={{ backgroundImage: "repeating-linear-gradient(90deg, color-mix(in oklch, var(--foreground) 55%, transparent) 0 4px, transparent 4px 7px)" }} />
+              narrower
+            </span>
+            {inkFamilies.map((ink) => (
+              <span key={ink} className="flex items-center gap-1.5">
+                <span aria-hidden className="inline-block h-[2px] w-5" style={{ backgroundImage: `repeating-linear-gradient(90deg, ${RELATION_INK_VAR[ink]} 0 4px, transparent 4px 7px)` }} />
+                {RELATION_FAMILY[ink]}
+              </span>
+            ))}
+            <span className="normal-case tracking-normal opacity-70">hover a line for its word</span>
           </span>
         </div>
       ) : null}
