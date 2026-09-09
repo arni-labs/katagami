@@ -27,7 +27,7 @@ import { useWindowedList } from "./windowed-list";
 
 /** One row's height. Fixed, so the window is arithmetic — and so a list of any
  *  length scrolls at the same cost. */
-const ROW_H = 88;
+const ROW_H = 68;
 
 interface Step {
   /** The cell this level is under, or null for the top of the library. */
@@ -69,11 +69,11 @@ function BrowseRow({
       className="flex w-full items-center gap-4 px-5 text-left"
       style={{ height: ROW_H }}
     >
-      <CellThumb face={face} onImageError={onImageError} size={56} />
+      <CellThumb face={face} onImageError={onImageError} size={44} />
       <span className="min-w-0 flex-1">
         <Eyebrow ink={face.ink}>{eyebrow ?? on}</Eyebrow>
-        <span className="mt-0.5 block truncate font-sans text-[17px] font-semibold leading-snug text-foreground">{cell.name}</span>
-        <span className="mt-0.5 block truncate font-sans text-[17px] leading-snug text-muted-foreground">
+        <span className="mt-0.5 block truncate font-sans text-[14px] font-semibold leading-snug text-foreground">{cell.name}</span>
+        <span className="mt-0.5 block truncate font-sans text-[14px] leading-snug text-muted-foreground">
           {under ? `${under} narrower` : null}
           {under && made ? " · " : null}
           {made ? `${made} made` : null}
@@ -220,14 +220,14 @@ export function EncyclopediaBrowse({
       {/* ── the bar ──────────────────────────────────────────────────────── */}
       <div className="shrink-0 px-5 pb-3 pt-6">
         {cell || parent ? (
-          <button type="button" onClick={back} className="mb-3 -ml-1 inline-flex h-11 max-w-full items-center gap-2 pr-3 font-sans text-[17px] text-foreground">
+          <button type="button" onClick={back} className="mb-3 -ml-1 inline-flex h-11 max-w-full items-center gap-2 pr-3 font-sans text-[14px] text-foreground">
             <ArrowLeft size={20} className="shrink-0" aria-hidden />
             <span className="truncate">{backLabel}</span>
           </button>
         ) : (
           <>
             <div className="font-mono text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>Encyclopedia</div>
-            <h1 className="mt-2 font-display text-[34px] font-bold leading-[1.05] tracking-[-0.03em]">
+            <h1 className="mt-2 font-display text-[24px] font-bold leading-[1.05] tracking-[-0.03em]">
               The <Marker color="sakura">encyclopedia</Marker>
             </h1>
           </>
@@ -242,7 +242,7 @@ export function EncyclopediaBrowse({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Find a cell"
             aria-label="Find a cell"
-            className="h-12 w-full bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] pl-12 pr-11 font-sans text-[17px] text-foreground outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--ramune)]"
+            className="h-12 w-full bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] pl-12 pr-11 font-sans text-[14px] text-foreground outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--ramune)]"
           />
           {searching ? (
             <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center text-muted-foreground">
@@ -279,7 +279,7 @@ export function EncyclopediaBrowse({
               </nav>
             ) : null}
             <div className="mt-5"><SheetTitle cell={cell} /></div>
-            <p className="mt-4 text-[17px] leading-relaxed text-foreground">{cell.description || "A name and a scope. No description has been written for this cell yet."}</p>
+            <p className="mt-4 text-[14px] leading-relaxed text-foreground">{cell.description || "A name and a scope. No description has been written for this cell yet."}</p>
             <SheetBody cell={cell} index={index} tab={tab} onTab={setTab} onFocus={onFocus} />
             <OpenCellButton cell={cell} />
           </div>
@@ -293,16 +293,16 @@ export function EncyclopediaBrowse({
               index={index}
               onOpen={open}
               scrollRef={scrollRef}
-              empty={<p className="text-[17px] leading-relaxed text-muted-foreground">No cell matches that. Try a shorter word, or clear the map filter.</p>}
+              empty={<p className="text-[14px] leading-relaxed text-muted-foreground">No cell matches that. Try a shorter word, or clear the map filter.</p>}
             />
           </>
         ) : (
           <>
             {parent ? (
               <div className="px-5 pb-2 pt-1">
-                <h2 className="font-display text-[24px] font-bold leading-tight tracking-[-0.02em]">{parent.name}</h2>
-                <p className="mt-1.5 text-[17px] leading-relaxed text-muted-foreground">{parent.description || "A name and a scope."}</p>
-                <button type="button" onClick={() => onFocus(parent.id)} className="mt-3 inline-flex h-12 items-center gap-2 bg-foreground px-5 font-mono text-[12px] font-bold uppercase tracking-[0.2em] text-background">
+                <h2 className="font-display text-[19px] font-bold leading-tight tracking-[-0.02em]">{parent.name}</h2>
+                <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">{parent.description || "A name and a scope."}</p>
+                <button type="button" onClick={() => onFocus(parent.id)} className="mt-3 inline-flex h-10 items-center gap-2 bg-foreground px-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.2em] text-background">
                   Read this cell <ArrowUpRight size={17} aria-hidden />
                 </button>
                 <p className="mt-5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">{level.length} narrower</p>
@@ -317,7 +317,7 @@ export function EncyclopediaBrowse({
               index={index}
               onOpen={open}
               scrollRef={scrollRef}
-              empty={<p className="text-[17px] leading-relaxed text-muted-foreground">No cells on this map yet.</p>}
+              empty={<p className="text-[14px] leading-relaxed text-muted-foreground">No cells on this map yet.</p>}
             />
             {!parent && withheld ? (
               <p className="px-5 pb-10 pt-6 font-mono text-[10.5px] uppercase leading-relaxed tracking-[0.14em] text-muted-foreground">

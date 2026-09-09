@@ -107,7 +107,38 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const visible = useMemo(() => computeVisible(index, maps, expansion), [index, maps, expansion]);
   // The paper: what is open, laid out. Linear in the open cells, so it is
   // recomputed on every change of expansion in a few milliseconds.
-  const layout = useMemo(() => layoutVisible(index, visible, maps), [index, visible, maps]);
+  const settled = useMemo(() => layoutVisible(index, visible, maps), [index, visible, maps]);
+  // Where the reader has dragged things. An offset on a node moves the node
+  // and everything open under it — a branch is one thing to pick up — so the
+  // layout stays a pure function of the data and the reader's moves sit on
+  // top of it, keyed by id, and survive a branch folding and opening again.
+  const [offsets, setOffsets] = useState<Map<string, { x: number; y: number }>>(new Map());
+  const offsetsRef = useRef(offsets);
+  offsetsRef.current = offsets;
+  const layout = useMemo(() => {
+    if (!offsets.size) return settled;
+    const parentOf = new Map<string, string>();
+    for (const [key, kids] of visible.shown) for (const kid of kids) if (!parentOf.has(kid.id)) parentOf.set(kid.id, key);
+    const eff = new Map<string, { x: number; y: number }>();
+    const effective = (key: string): { x: number; y: number } => {
+      const known = eff.get(key);
+      if (known) return known;
+      const own = offsets.get(key) ?? { x: 0, y: 0 };
+      const up = parentOf.get(key);
+      const above = up ? effective(up) : { x: 0, y: 0 };
+      const at = { x: own.x + above.x, y: own.y + above.y };
+      eff.set(key, at);
+      return at;
+    };
+    const plates = settled.plates.map((p) => { const d = effective(p.id); return d.x || d.y ? { ...p, x: p.x + d.x, y: p.y + d.y } : p; });
+    const byId = new Map(plates.map((p) => [p.id, p]));
+    const satellites = settled.satellites.map((s) => { const d = effective(s.cellId); return d.x || d.y ? { ...s, x: s.x + d.x, y: s.y + d.y } : s; });
+    const hubs = settled.hubs.map((h) => { const d = effective(h.key); return d.x || d.y ? { ...h, x: h.x + d.x, y: h.y + d.y } : h; });
+    let left = Infinity; let top = Infinity; let right = -Infinity; let bottom = -Infinity;
+    for (const b of [...plates, ...hubs]) { left = Math.min(left, b.x - b.w / 2); top = Math.min(top, b.y - b.h / 2); right = Math.max(right, b.x + b.w / 2); bottom = Math.max(bottom, b.y + b.h / 2); }
+    const bounds = Number.isFinite(left) ? { x: left - 200, y: top - 200, w: right - left + 400, h: bottom - top + 400 } : settled.bounds;
+    return { plates, satellites, hubs, byId, bounds };
+  }, [settled, offsets, visible]);
   const hubs = layout.hubs;
 
   // Reading a card means seeing it at the size it was designed at, so the
@@ -120,6 +151,39 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   // zoom, which is what lets the memoised cards skip the work.
   const cameraRef = useRef(camera);
   cameraRef.current = camera;
+
+  // Picking a node up. The pointer's first four pixels decide whether this is
+  // a click or a drag, the same threshold the camera uses; past it the node
+  // follows the pointer in paper units and the click that ends the drag is
+  // ignored. The event does not reach the viewport, so the camera stays put.
+  const nodeDrag = useRef<{ id: string; sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
+  const draggedNode = useRef(false);
+  const startNodeDrag = useCallback((id: string, event: React.PointerEvent) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    event.stopPropagation();
+    const at = offsetsRef.current.get(id) ?? { x: 0, y: 0 };
+    nodeDrag.current = { id, sx: event.clientX, sy: event.clientY, ox: at.x, oy: at.y, moved: false };
+    const move = (ev: PointerEvent) => {
+      const d = nodeDrag.current;
+      if (!d) return;
+      const dx = ev.clientX - d.sx; const dy = ev.clientY - d.sy;
+      if (!d.moved && Math.hypot(dx, dy) < 4) return;
+      d.moved = true;
+      draggedNode.current = true;
+      const k = cameraRef.current.k;
+      setOffsets((prev) => new Map(prev).set(d.id, { x: d.ox + dx / k, y: d.oy + dy / k }));
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      nodeDrag.current = null;
+      window.setTimeout(() => { draggedNode.current = false; }, 0);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }, []);
 
   // The viewport's size in state, kept current by a ResizeObserver, measured
   // from a callback ref because the map is not always on the page when this
@@ -237,8 +301,10 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const fitRegion = useCallback((name: MapName) => {
     const hub = hubs.find((h) => h.map === name);
     if (!hub) return;
-    frameRects([hubRect(hub), ...openPlates.filter((p) => index.primaryMap(p.cell) === name).map(plateRect)], true);
-  }, [hubs, openPlates, index, frameRects]);
+    // Every open cell on the map, whichever cluster it sits in: a cell on
+    // both maps is pulled into the frame, not left dimmed in the other one.
+    frameRects([hubRect(hub), ...openPlates.filter((p) => p.cell.maps.some((m) => m.map === name)).map(plateRect)], true);
+  }, [hubs, openPlates, frameRects]);
 
 
   /** Bring a plate to the reading layer, centred in the room the sheet leaves. */
@@ -336,7 +402,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
   /** One handler for every card on the paper, reading whether the pointer was
    *  dragged from a ref so its identity never changes. */
-  const focusUnlessDragging = useCallback((id: string) => { if (!draggingRef.current) focus(id); }, [focus, draggingRef]);
+  const focusUnlessDragging = useCallback((id: string) => { if (!draggingRef.current && !draggedNode.current) focus(id); }, [focus, draggingRef]);
 
   const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); setOpenedId(null); }, []);
 
@@ -371,6 +437,10 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   // which is the reader's own request to step a map back, and a cell's
   // opened ring, whose sixty nodes need the paper under them quiet.
   const dimmedPlate = (id: string) => Boolean(map && !index.byId.get(id)!.maps.some((m) => m.map === map));
+  /** The maps a cell belongs to besides the one it is drawn in: the cell is
+   *  marked with them, so a cell in the writing cluster that is also art says
+   *  so on its face. */
+  const alsoOn = (p: PlateNode): MapName[] => p.cell.maps.map((m) => m.map).filter((m) => m !== index.primaryMap(p.cell));
   const ringDim = (id: string) => Boolean(opened && id !== opened.plate.id);
   const dimTo = 0.35;
   const manifestationsById = useMemo(() => new Map(graph.cells.map((c) => [c.id, c.manifestations])), [graph]);
@@ -426,16 +496,14 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
   // Everything below is drawn INSIDE the layer the camera scales, so a value
   // written in world units is multiplied by the zoom on the way to the screen.
-  const strokeW = 1.4 / camera.k;
-  const labelPx = 11.5 / camera.k;
-  const labelHalo = 5 / camera.k;
-  const dash = `${5 / camera.k} ${6 / camera.k}`;
-  const dots = `${1.5 / camera.k} ${5 / camera.k}`;
-  const showWords = lodFor(camera.k) === "reading";
-  // A hierarchy line's word is only "narrower", which the arrow already
-  // says; it appears on hover and on the cell in focus. A typed relation is
-  // the interesting kind of line and there are few of them on the paper, so
-  // its word is printed whenever the camera is close enough to read it.
+  const strokeW = 0.9 / camera.k;
+  const dash = `${4 / camera.k} ${5 / camera.k}`;
+  const dots = `${1.2 / camera.k} ${4.5 / camera.k}`;
+  // No words on the lines. The arrow says which end is narrower, the ink says
+  // what family a relation is, the legend says what the inks mean, and the
+  // sheet carries the relation's own word and explanation. A line touching
+  // the cell in focus, or under the pointer, draws heavier; hovering it shows
+  // its word as a tooltip.
   const [hoverEdge, setHoverEdge] = useState<string | null>(null);
   const touches = (key: string, a: string, b: string) => hoverEdge === key || (focusId !== null && (a === focusId || b === focusId));
 
@@ -523,15 +591,15 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
           <defs>
             {/* The arrow says which end is the narrower cell. Scaled with the
                 stroke, so it is the same few pixels at every zoom. */}
-            <marker id="enc-narrower" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="strokeWidth">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="color-mix(in oklch, var(--foreground) 55%, transparent)" />
+            <marker id="enc-narrower" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse" markerUnits="strokeWidth">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="color-mix(in oklch, var(--foreground) 45%, transparent)" />
             </marker>
           </defs>
           {/* category → top-level cell */}
           {hubLines.map(({ hub, plate }) => {
             const { d } = plateConnector(hub, plate);
             const dim = dimmedPlate(plate.id) || ringDim(plate.id);
-            return <path key={`${hub.key}-${plate.id}`} d={d} fill="none" stroke={`color-mix(in oklch, ${MAP_INK[hub.map]} 70%, var(--foreground))`} strokeWidth={strokeW} strokeDasharray={dash} strokeLinecap="round" opacity={dim ? 0.2 : 0.7} />;
+            return <path key={`${hub.key}-${plate.id}`} d={d} fill="none" stroke={`color-mix(in oklch, ${MAP_INK[hub.map]} 70%, var(--foreground))`} strokeWidth={strokeW} strokeDasharray={dash} strokeLinecap="round" opacity={dim ? 0.2 : 0.55} />;
           })}
           {/* satellite dotted lines */}
           {records.nodes.map((s) => {
@@ -555,31 +623,32 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
           {/* broader → narrower */}
           {broaderEdges.map((e) => {
             const a = layout.byId.get(e.from)!; const b = layout.byId.get(e.to)!;
-            const { d, label } = plateConnector(a, b);
+            const { d } = plateConnector(a, b);
             const dim = (dimmedPlate(a.id) && dimmedPlate(b.id)) || (ringDim(a.id) && ringDim(b.id));
             const key = `${e.from}-${e.to}`;
             const lit = touches(key, e.from, e.to);
             return (
               <g key={key} opacity={dim ? 0.2 : 1}>
-                <path d={d} fill="none" stroke={lit ? "var(--foreground)" : "color-mix(in oklch, var(--foreground) 55%, transparent)"} strokeWidth={strokeW * (lit ? 1.5 : 1.1)} strokeDasharray={dash} strokeLinecap="round" markerEnd="url(#enc-narrower)" />
-                <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 12} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(key)} onMouseLeave={() => setHoverEdge((at) => (at === key ? null : at))} />
-                {showWords && lit ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: labelPx, fill: "var(--muted-foreground)", paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: labelHalo, strokeLinejoin: "round" }}>narrower</text> : null}
+                <path d={d} fill="none" stroke={lit ? "var(--foreground)" : "color-mix(in oklch, var(--foreground) 45%, transparent)"} strokeWidth={strokeW * (lit ? 1.6 : 1)} strokeDasharray={dash} strokeLinecap="round" markerEnd="url(#enc-narrower)" />
+                <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 14} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(key)} onMouseLeave={() => setHoverEdge((at) => (at === key ? null : at))}>
+                  <title>{`${a.cell.name} → ${b.cell.name}: narrower cell${e.explanation ? `. ${e.explanation}` : ""}`}</title>
+                </path>
               </g>
             );
           })}
           {/* typed relations */}
           {relationLines.map((line) => {
             const a = layout.byId.get(line.a)!; const b = layout.byId.get(line.b)!;
-            const { d, label } = plateConnector(a, b);
+            const { d } = plateConnector(a, b);
             const dim = (dimmedPlate(a.id) && dimmedPlate(b.id)) || (ringDim(a.id) && ringDim(b.id));
             const ink = RELATION_INK_VAR[line.ink];
-            const word = line.entries.length === 1 ? line.entries[0].label : line.entries.map((e) => e.label).join(" / ");
             const lit = touches(line.key, line.a, line.b);
             return (
               <g key={line.key} opacity={dim ? 0.2 : 1}>
-                <path d={d} fill="none" stroke={ink} strokeWidth={strokeW * (lit ? 1.8 : 1.3)} strokeDasharray={dash} strokeLinecap="round" style={{ mixBlendMode: "var(--ink-blend)" as never }} />
-                <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 12} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(line.key)} onMouseLeave={() => setHoverEdge((at) => (at === line.key ? null : at))} />
-                {showWords || lit ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: labelPx, fill: `color-mix(in oklch, ${ink} 70%, var(--foreground))`, paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: labelHalo, strokeLinejoin: "round" }}>{word}</text> : null}
+                <path d={d} fill="none" stroke={ink} strokeWidth={strokeW * (lit ? 1.8 : 1.15)} strokeDasharray={dash} strokeLinecap="round" style={{ mixBlendMode: "var(--ink-blend)" as never }} />
+                <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 14} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(line.key)} onMouseLeave={() => setHoverEdge((at) => (at === line.key ? null : at))}>
+                  <title>{line.entries.map((e) => `${index.byId.get(e.from)?.name} ${e.label} ${index.byId.get(e.to)?.name}${e.explanation ? `. ${e.explanation}` : ""}`).join("\n")}</title>
+                </path>
               </g>
             );
           })}
@@ -642,6 +711,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             onToggle={toggleOpen}
             onMore={openMore}
             onFit={fitRegion}
+            onDragStart={startNodeDrag}
           />
         ))}
         {visiblePlates.map((p: PlateNode) => (
@@ -662,6 +732,9 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             onFocus={focusUnlessDragging}
             onToggleOpen={toggleOpen}
             onMore={openMore}
+            onDragStart={startNodeDrag}
+            alsoOn={alsoOn(p)}
+            filtered={map}
           />
         ))}
       </div>
@@ -751,7 +824,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
                 {RELATION_FAMILY[ink]}
               </span>
             ))}
-            <span className="normal-case tracking-normal opacity-70">hover a line for its word</span>
+
           </span>
         </div>
       ) : null}
@@ -764,7 +837,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     focusCell ? (
       <>
         <div className="mt-4"><SheetTitle cell={focusCell} /></div>
-        <p className="mt-3 text-[17px] leading-relaxed text-foreground">{focusCell.description || "A name and a scope. No description has been written for this cell yet."}</p>
+        <p className="mt-2.5 text-[13.5px] leading-relaxed text-foreground">{focusCell.description || "A name and a scope. No description has been written for this cell yet."}</p>
         <SheetBody cell={focusCell} index={index} tab={tab} onTab={setTab} onFocus={focus} expandKey={expandKey} expansion={sheetExpansion} />
         <OpenCellButton cell={focusCell} />
       </>
@@ -773,7 +846,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     );
 
   const desktopSheet = (
-    <aside ref={sheetScrollRef} className="relative flex h-full flex-col overflow-y-auto overscroll-contain px-7 pb-10 pt-4" aria-label="Cell">
+    <aside ref={sheetScrollRef} className="relative flex h-full flex-col overflow-y-auto overscroll-contain px-5 pb-8 pt-3" aria-label="Cell">
       <span aria-hidden className="sticker-perforation-y pointer-events-none absolute inset-y-0 left-0" />
       <span aria-hidden className="washi-tape pointer-events-none left-6 top-2" style={{ ["--strip-ink" as string]: "var(--ramune)", transform: "rotate(-4deg)", width: 58 }} />
       <div className="flex justify-end">{focusCell ? <CloseButton onClick={clearFocus} /> : <CloseButton onClick={() => setSheetOpen(false)} />}</div>
@@ -792,7 +865,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       {sheetExpanded ? (
         <>
           <div className="flex items-center justify-between px-5 pt-3">
-            <button type="button" onClick={() => setSheetExpanded(false)} className="inline-flex items-center gap-2 font-sans text-[17px] text-foreground"><ArrowLeft size={18} aria-hidden /> Back to map</button>
+            <button type="button" onClick={() => setSheetExpanded(false)} className="inline-flex items-center gap-2 font-sans text-[14px] text-foreground"><ArrowLeft size={18} aria-hidden /> Back to map</button>
             {focusCell ? <CloseButton onClick={clearFocus} /> : null}
           </div>
           <div ref={mobileSheetScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-8 pt-4">{sheetContent(mobileSheetScrollRef)}</div>
@@ -803,7 +876,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             <div className="min-w-0"><SheetTitle cell={focusCell} size="md" /></div>
             <button type="button" onClick={() => setSheetExpanded(true)} aria-label="Expand" className="grid h-9 w-9 shrink-0 place-items-center"><ChevronUp size={22} /></button>
           </div>
-          <p className="mt-2 truncate font-sans text-[15px] text-muted-foreground">{focusCell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}{focusCell.manifestations.length ? ` · ${focusCell.manifestations.length} made` : ""}{index.childrenOf(focusCell.id).length ? ` · ${index.childrenOf(focusCell.id).length} narrower` : ""}</p>
+          <p className="mt-1.5 truncate font-sans text-[13px] text-muted-foreground">{focusCell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}{focusCell.manifestations.length ? ` · ${focusCell.manifestations.length} made` : ""}{index.childrenOf(focusCell.id).length ? ` · ${index.childrenOf(focusCell.id).length} narrower` : ""}</p>
           <button type="button" onClick={() => setSheetExpanded(true)} className="mt-3 flex h-11 w-full items-center justify-between bg-foreground px-5 font-mono text-[12px] font-bold uppercase tracking-[0.2em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)]">
             View cell <ArrowUpRight size={18} aria-hidden />
           </button>
@@ -811,8 +884,8 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       ) : (
         <button type="button" onClick={() => setSheetExpanded(true)} className="flex flex-1 items-center justify-between px-5 pb-4 pt-3 text-left">
           <span>
-            <span className="block font-display text-[19px] font-bold tracking-[-0.02em]">{visible.cells.size} of {graph.cells.length} cells open</span>
-            <span className="mt-0.5 block font-sans text-[15px] text-muted-foreground">Tap a cell on the map, or open the index.</span>
+            <span className="block font-display text-[17px] font-bold tracking-[-0.02em]">{visible.cells.size} of {graph.cells.length} cells open</span>
+            <span className="mt-0.5 block font-sans text-[13px] text-muted-foreground">Tap a cell on the map, or open the index.</span>
           </span>
           <ChevronUp size={22} aria-hidden />
         </button>
@@ -848,7 +921,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
         />
       ) : null}
       {showMap ? (
-        <div className={`grid h-full ${desktop && sheetOpen ? "grid-cols-[minmax(0,1fr)_420px]" : "grid-cols-1"}`}>
+        <div className={`grid h-full ${desktop && sheetOpen ? "grid-cols-[minmax(0,1fr)_380px]" : "grid-cols-1"}`}>
           <div className="relative min-w-0">
             {mapViewport}
             {desktop && !sheetOpen ? (

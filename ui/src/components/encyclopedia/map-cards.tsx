@@ -2,7 +2,7 @@
 
 import { memo, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import type { CellManifestation, EncyclopediaCell, MapName } from "@/lib/encyclopedia";
-import { MAP_LABEL } from "@/lib/encyclopedia-graph";
+import { MAP_INK, MAP_LABEL } from "@/lib/encyclopedia-graph";
 import { inkChipStyle, Tape } from "./chrome";
 import { cellFaces, cellMaterial, SET_EYEBROW, SET_INK, type CellFace } from "./material";
 import { HUB_H, HUB_W, NAME_W, plateBox, SAT_W, type SatelliteNode } from "./graph-layout";
@@ -230,6 +230,9 @@ function PlateCard({
   onFocus,
   onToggleOpen,
   onMore,
+  onDragStart,
+  alsoOn,
+  filtered,
 }: {
   cell: EncyclopediaCell;
   x: number;
@@ -255,6 +258,15 @@ function PlateCard({
   onFocus: (id: string) => void;
   onToggleOpen: (id: string) => void;
   onMore: (id: string) => void;
+  /** Pick the card up and move it, with everything open under it. */
+  onDragStart: (id: string, event: React.PointerEvent) => void;
+  /** The maps this cell belongs to besides the one it is drawn in. A cell in
+   *  the writing cluster that is also art carries an art mark, so the two
+   *  maps are visibly joined wherever a cell belongs to both. */
+  alsoOn: MapName[];
+  /** The map the reader has filtered to, if any: the mark for that map is
+   *  raised so the filtered cells stand out in the other cluster. */
+  filtered: MapName | null;
 }) {
   const { face, onImageError } = useCellFace(cell);
   const full = plateBox(cell);
@@ -287,8 +299,25 @@ function PlateCard({
       data-plate={cell.id}
       data-level={level}
       data-lod={lod}
+      onPointerDown={(e) => onDragStart(cell.id, e)}
     >
       {focused ? <Tape ink="var(--ramune)" className="-top-2 left-5 z-[5]" rotate={-3} width={58} /> : null}
+      {/* The mark for the other maps this cell sits on: a corner of the other
+          map's ink, named at readable sizes. Raised when that map is the one
+          filtered to, so the reader finds the art cells that live among the
+          writing ones. */}
+      {alsoOn.map((m, i) => (
+        <span
+          key={m}
+          aria-label={`Also on the ${MAP_LABEL[m]} map`}
+          title={`Also on the ${MAP_LABEL[m]} map`}
+          className="pointer-events-none absolute z-[5] flex items-center gap-1 font-mono font-bold uppercase leading-none tracking-[0.12em]"
+          style={{ right: -4, top: 8 + i * screenPx(14, ek, 14, 30), fontSize: screenPx(8, ek, 8, 18), padding: `${screenPx(2, ek, 2, 5)}px ${screenPx(5, ek, 5, 10)}px`, background: filtered === m ? MAP_INK[m] : `color-mix(in srgb, ${MAP_INK[m]} 22%, var(--washi))`, color: filtered === m ? "var(--washi)" : `color-mix(in oklch, ${MAP_INK[m]} 72%, var(--foreground))`, boxShadow: "var(--shadow-sticker)", transform: "rotate(1.5deg)" }}
+        >
+          {lod === "picture" ? "" : MAP_LABEL[m]}
+          {lod === "picture" ? <span className="block" style={{ width: screenPx(6, ek, 6, 14), height: screenPx(6, ek, 6, 14) }} /> : null}
+        </span>
+      ))}
       <button
         type="button"
         onClick={() => onFocus(cell.id)}
@@ -312,8 +341,8 @@ function PlateCard({
               {cell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}
               <span className="text-muted-foreground">· {cell.state === "Draft" ? "proposed" : cell.state.toLowerCase()}</span>
             </span>
-            <span className="mt-1 line-clamp-2 font-display text-[18px] font-bold leading-[1.05] tracking-[-0.02em] text-foreground">{cell.name}</span>
-            <span className="mt-1 line-clamp-2 text-[12.5px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
+            <span className="mt-1 line-clamp-2 font-display text-[16px] font-bold leading-[1.05] tracking-[-0.02em] text-foreground">{cell.name}</span>
+            <span className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
           </span>
         ) : null}
         {/* The flexible middle: the picture and any study the cell carries
@@ -326,12 +355,12 @@ function PlateCard({
           </span>
         ) : null}
         {reading ? (
-          <span className="mt-1.5 block shrink-0 truncate font-mono text-[8.5px] uppercase leading-snug tracking-[0.1em] text-muted-foreground">{face.caption}</span>
+          <span className="mt-1.5 block shrink-0 truncate font-mono text-[8px] uppercase leading-snug tracking-[0.1em] text-muted-foreground">{face.caption}</span>
         ) : null}
         {lod !== "reading" && face.kind !== "name" ? (
           // The name under the picture, counter-scaled so it reads at every
           // zoom the card is drawn at. Far out this is what the field says.
-          <span className="mt-1 block shrink-0 truncate font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: nameFitSize(cell.name, ek, lod === "picture" ? 44 : 26) }}>{cell.name}</span>
+          <span className="mt-1 block shrink-0 truncate font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: nameFitSize(cell.name, ek, lod === "picture" ? 40 : 22) }}>{cell.name}</span>
         ) : null}
         {reading && narrower ? <span className="block h-7 shrink-0" /> : null}
       </button>
@@ -366,6 +395,7 @@ function HubCard({
   onToggle,
   onMore,
   onFit,
+  onDragStart,
 }: {
   map: MapName;
   x: number;
@@ -384,6 +414,8 @@ function HubCard({
   onMore: (key: string) => void;
   /** Frame this map's open cells. */
   onFit: (map: MapName) => void;
+  /** Pick the node up and move it, with the whole cluster. */
+  onDragStart: (key: string, event: React.PointerEvent) => void;
 }) {
   const key = `map:${map}`;
   const title = MAP_LABEL[map];
@@ -392,6 +424,7 @@ function HubCard({
       className="absolute hover:z-[3]"
       style={{ left: x - HUB_W / 2, top: y - HUB_H / 2, width: HUB_W, height: HUB_H, zIndex: 2, opacity: dimmed ? 0.35 : 1, transition: "opacity 200ms" }}
       data-hub={map}
+      onPointerDown={(e) => onDragStart(key, e)}
     >
       <Tape ink={ink} className="-top-2 left-6 z-[5]" rotate={-4} width={64} />
       <div className="flex h-full w-full flex-col overflow-hidden p-3" style={{ background: PAPER, boxShadow: "var(--shadow-card)" }}>

@@ -14,11 +14,11 @@ import { useWindowedList } from "./windowed-list";
 // stamps, the scope, then three tabs: Material (made things, narrower cells, a
 // source snippet), Connections, Notes.
 //
-// Cell prose is set at 17px, the floor the design contract puts on body text.
-// It was 16 throughout, which was survivable in a 440px sheet beside the map
-// and was not once the same component became the whole of a cell page on a
-// phone. The small mono lines are metadata — eyebrows, stamps, counts — and
-// stay where they are.
+// The sheet is set small — 13.5px prose, 14.5px headings — because it sits
+// beside an information-dense canvas and Rita asked for compact type here
+// (2026-09-09); the 17px floor the design contract puts on body text is for
+// pages, not for this working panel. The mono lines are metadata — eyebrows,
+// stamps, counts — and stay smaller still.
 
 export type SheetTab = "material" | "connections" | "notes";
 
@@ -30,19 +30,19 @@ const STATE_LABEL: Record<string, string> = {
 };
 
 function Row({ children, onClick, href }: { children: ReactNode; onClick?: () => void; href?: string }) {
-  const className = "group flex w-full items-center gap-4 py-3.5 text-left";
+  const className = "group flex w-full items-center gap-3 py-2.5 text-left";
   if (href) {
     return (
       <a href={href} target="_blank" rel="noreferrer" className={className}>
         {children}
-        <ArrowUpRight size={18} className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+        <ArrowUpRight size={15} className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
       </a>
     );
   }
   return (
     <button type="button" onClick={onClick} className={className}>
       {children}
-      <ArrowRight size={18} className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+      <ArrowRight size={15} className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
     </button>
   );
 }
@@ -52,7 +52,7 @@ function Thumb({ manifestation }: { manifestation: CellManifestation }) {
   // A thumbnail that 404s falls through to the record's next face instead of
   // leaving a broken-image box in the list.
   const [imageFailed, markImageFailed] = useLoadFailure(record?.image);
-  const frame = "block h-[76px] w-[76px] shrink-0 overflow-hidden";
+  const frame = "block h-[56px] w-[56px] shrink-0 overflow-hidden";
   if (!record) return <span className={frame} style={{ background: "color-mix(in srgb, var(--graphite) 10%, var(--washi))", boxShadow: "var(--shadow-sticker)" }} />;
   if (record.image && !imageFailed) {
     // eslint-disable-next-line @next/next/no-img-element
@@ -64,11 +64,11 @@ function Thumb({ manifestation }: { manifestation: CellManifestation }) {
 }
 
 function Divider() {
-  return <span aria-hidden className="sticker-perforation my-4 block" />;
+  return <span aria-hidden className="sticker-perforation my-3 block" />;
 }
 
 function Heading({ children }: { children: ReactNode }) {
-  return <h3 className="font-display text-[19px] font-bold tracking-[-0.02em]">{children}</h3>;
+  return <h3 className="font-display text-[14.5px] font-bold tracking-[-0.02em]">{children}</h3>;
 }
 
 function Manifestations({ cell, index, expandKey, onFocus }: { cell: EncyclopediaCell; index: GraphIndex; expandKey: number; onFocus: (id: string) => void }) {
@@ -89,7 +89,7 @@ function Manifestations({ cell, index, expandKey, onFocus }: { cell: Encyclopedi
     return (
       <>
         <Heading>Manifestations</Heading>
-        <p className="mt-2 text-[17px] leading-relaxed text-muted-foreground">No Katagami record expresses this cell yet. An empty seat is a real finding: a region with no made work.</p>
+        <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">No Katagami record expresses this cell yet. An empty seat is a real finding: a region with no made work.</p>
       </>
     );
   }
@@ -108,18 +108,18 @@ function Manifestations({ cell, index, expandKey, onFocus }: { cell: Encyclopedi
             <li key={`${m.entitySet}:${m.entityId}`}>
               {i > 0 ? <span aria-hidden className="sticker-perforation block" /> : null}
               <Row href={record?.href}>
-                <span className="w-16 shrink-0 self-start pt-1">
+                <span className="w-14 shrink-0 self-start pt-1">
                   <Eyebrow ink={SET_INK[m.entitySet]}>{SET_SHORT[m.entitySet]}</Eyebrow>
                 </span>
                 <Thumb manifestation={m} />
                 <span className="min-w-0 flex-1">
-                  <span className="block font-sans text-[17px] font-semibold leading-snug text-foreground">{record?.name ?? (m.unread ? "Record could not be read" : "Record not found")}</span>
-                  <span className="mt-0.5 line-clamp-2 text-[16px] leading-snug text-muted-foreground">{m.explanation}</span>
+                  <span className="block font-sans text-[13.5px] font-semibold leading-snug text-foreground">{record?.name ?? (m.unread ? "Record could not be read" : "Record not found")}</span>
+                  <span className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug text-muted-foreground">{m.explanation}</span>
                   {record ? <span className="mt-0.5 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground/80">{record.status === "UnderReview" ? "under review" : record.status.toLowerCase()}</span> : null}
                 </span>
               </Row>
               {also.length ? (
-                <p className="-mt-1 mb-2 pl-16 font-sans text-[14px] leading-snug text-muted-foreground">
+                <p className="-mt-1 mb-2 pl-14 font-sans text-[12px] leading-snug text-muted-foreground">
                   Also named by{" "}
                   {also.map((c, j) => (
                     <span key={c.id}>
@@ -168,11 +168,11 @@ function NarrowerRow({ kid, onFocus }: { kid: EncyclopediaCell; onFocus: (id: st
   return (
     <li>
       <Row onClick={() => onFocus(kid.id)}>
-        <CellThumb face={face} onImageError={onImageError} size={64} />
+        <CellThumb face={face} onImageError={onImageError} size={48} />
         <span className="min-w-0 flex-1">
           <Eyebrow ink={face.ink}>{face.eyebrow}</Eyebrow>
-          <span className="mt-0.5 block font-sans text-[17px] font-semibold leading-snug text-foreground">{kid.name}</span>
-          <span className="mt-0.5 line-clamp-2 text-[17px] leading-snug text-muted-foreground">{kid.description || "A name and a scope."}</span>
+          <span className="mt-0.5 block font-sans text-[13.5px] font-semibold leading-snug text-foreground">{kid.name}</span>
+          <span className="mt-0.5 line-clamp-2 text-[13.5px] leading-snug text-muted-foreground">{kid.description || "A name and a scope."}</span>
         </span>
       </Row>
     </li>
@@ -196,7 +196,7 @@ function Narrower({ cell, index, onFocus, expansion }: { cell: EncyclopediaCell;
           {kids.map((kid) => <NarrowerRow key={kid.id} kid={kid} onFocus={onFocus} />)}
         </ul>
       ) : (
-        <p className="mt-2 text-[17px] leading-relaxed text-muted-foreground">Nothing narrower under this cell yet.</p>
+        <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">Nothing narrower under this cell yet.</p>
       )}
     </>
   );
@@ -207,9 +207,9 @@ function SourceRow({ source }: { source: EncyclopediaCell["sources"][number] }) 
   try { host = new URL(source.url).hostname.replace(/^www\./, ""); } catch { host = source.url; }
   return (
     <div className="flex gap-3">
-      <BookOpen size={20} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden />
+      <BookOpen size={16} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="text-[17px] leading-relaxed text-foreground"><em>{source.title}</em>. <span className="text-muted-foreground">{host}</span></p>
+        <p className="text-[13.5px] leading-relaxed text-foreground"><em>{source.title}</em>. <span className="text-muted-foreground">{host}</span></p>
         <div className="mt-2 flex flex-wrap items-center gap-2.5">
           {source.verifiedBy ? (
             <span className="font-mono text-[10px] uppercase tracking-[0.14em]" style={{ color: "color-mix(in oklch, var(--ramune) 72%, var(--foreground))" }}>Verified by {source.verifiedBy} · {source.verifiedOn}</span>
@@ -218,13 +218,13 @@ function SourceRow({ source }: { source: EncyclopediaCell["sources"][number] }) 
               <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Unverified</span>
               <span className="group/verify relative">
                 <button type="button" disabled aria-disabled="true" aria-describedby={`verify-${source.id}`} className="cursor-not-allowed px-2.5 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.14em] opacity-60" style={inkChipStyle("var(--ramune)")}>Verify</button>
-                <span id={`verify-${source.id}`} role="tooltip" className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-64 bg-[var(--foreground)] px-3 py-2.5 text-[17px] leading-snug text-[var(--background)] opacity-0 shadow-[var(--shadow-card)] transition-opacity group-hover/verify:opacity-100 group-focus-within/verify:opacity-100">
+                <span id={`verify-${source.id}`} role="tooltip" className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-64 bg-[var(--foreground)] px-3 py-2.5 text-[13.5px] leading-snug text-[var(--background)] opacity-0 shadow-[var(--shadow-card)] transition-opacity group-hover/verify:opacity-100 group-focus-within/verify:opacity-100">
                   Verification is coming. Opening the source and recording who checked it will land here.
                 </span>
               </span>
             </>
           )}
-          <a href={source.url} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 font-sans text-[17px] font-semibold" style={{ color: "color-mix(in oklch, var(--ramune) 80%, var(--foreground))" }}>
+          <a href={source.url} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 font-sans text-[13.5px] font-semibold" style={{ color: "color-mix(in oklch, var(--ramune) 80%, var(--foreground))" }}>
             View source <ArrowUpRight size={14} aria-hidden />
           </a>
         </div>
@@ -239,8 +239,8 @@ function CellRow({ cell, word, explanation, ink, onFocus }: { cell: Encyclopedia
       <Row onClick={() => onFocus(cell.id)}>
         <span className="min-w-0 flex-1">
           <Eyebrow ink={ink}>{word}</Eyebrow>
-          <span className="mt-0.5 block font-sans text-[17px] font-semibold leading-snug text-foreground">{cell.name}</span>
-          {explanation ? <span className="mt-0.5 block text-[17px] leading-snug text-muted-foreground">{explanation}</span> : null}
+          <span className="mt-0.5 block font-sans text-[13.5px] font-semibold leading-snug text-foreground">{cell.name}</span>
+          {explanation ? <span className="mt-0.5 block text-[13.5px] leading-snug text-muted-foreground">{explanation}</span> : null}
         </span>
       </Row>
     </li>
@@ -264,7 +264,7 @@ export function SheetBody({ cell, index, tab, onTab, onFocus, expandKey = 0, exp
   ];
   return (
     <>
-      <div role="tablist" aria-label="Cell sheet" className="mt-6 flex items-end gap-7">
+      <div role="tablist" aria-label="Cell sheet" className="mt-4 flex items-end gap-5">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -272,7 +272,7 @@ export function SheetBody({ cell, index, tab, onTab, onFocus, expandKey = 0, exp
             type="button"
             aria-selected={tab === t.id}
             onClick={() => onTab(t.id)}
-            className={`relative pb-2.5 font-sans text-[17px] ${tab === t.id ? "font-bold text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            className={`relative pb-2 font-sans text-[13px] ${tab === t.id ? "font-bold text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             {t.label}
             {tab === t.id ? <span aria-hidden className="absolute inset-x-0 bottom-0 block h-[3px]" style={{ background: "var(--yuzu)" }} /> : null}
@@ -282,74 +282,74 @@ export function SheetBody({ cell, index, tab, onTab, onFocus, expandKey = 0, exp
       <span aria-hidden className="sticker-perforation block" />
 
       {tab === "material" ? (
-        <div className="pt-5">
+        <div className="pt-4">
           <Manifestations cell={cell} index={index} expandKey={expandKey} onFocus={onFocus} />
           <Divider />
           <Narrower cell={cell} index={index} onFocus={onFocus} expansion={expansion} />
           <Divider />
           <Heading>Source snippet</Heading>
           <div className="mt-3">
-            {cell.sources[0] ? <SourceRow source={cell.sources[0]} /> : <p className="text-[17px] leading-relaxed text-muted-foreground">No source. {cell.provenance.note ?? "Written from model training data."}</p>}
+            {cell.sources[0] ? <SourceRow source={cell.sources[0]} /> : <p className="text-[13.5px] leading-relaxed text-muted-foreground">No source. {cell.provenance.note ?? "Written from model training data."}</p>}
           </div>
         </div>
       ) : null}
 
       {tab === "connections" ? (
-        <div className="pt-5">
+        <div className="pt-4">
           <Heading>Broader</Heading>
           {cell.broader.length ? (
             <ul className="mt-1">
               {cell.broader.map((link) => {
                 const target = index.byId.get(link.cellId);
-                return target ? <CellRow key={link.cellId} cell={target} word="broader" explanation={link.explanation} ink="var(--graphite)" onFocus={onFocus} /> : <li key={link.cellId} className="py-3 text-[17px] text-muted-foreground"><span className="font-mono text-[12px]">{link.cellId}</span> is not in the library yet.</li>;
+                return target ? <CellRow key={link.cellId} cell={target} word="broader" explanation={link.explanation} ink="var(--graphite)" onFocus={onFocus} /> : <li key={link.cellId} className="py-3 text-[13.5px] text-muted-foreground"><span className="font-mono text-[12px]">{link.cellId}</span> is not in the library yet.</li>;
               })}
             </ul>
-          ) : <p className="mt-2 text-[17px] leading-relaxed text-muted-foreground">A top-level cell: nothing broader above it.</p>}
+          ) : <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">A top-level cell: nothing broader above it.</p>}
           <Divider />
           <Heading>Narrower</Heading>
           {index.childrenOf(cell.id).length ? (
             <ul className="mt-1">
               {index.childrenOf(cell.id).map((kid) => <CellRow key={kid.id} cell={kid} word="narrower cell" explanation={kid.broader.find((b) => b.cellId === cell.id)?.explanation ?? ""} ink="var(--graphite)" onFocus={onFocus} />)}
             </ul>
-          ) : <p className="mt-2 text-[17px] leading-relaxed text-muted-foreground">Nothing narrower yet.</p>}
+          ) : <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">Nothing narrower yet.</p>}
           <Divider />
           <Heading>Relations</Heading>
           {index.neighbours(cell.id).filter((n) => n.via !== "broader" && n.via !== "narrower").length ? (
             <ul className="mt-1">
               {index.neighbours(cell.id).filter((n) => n.via !== "broader" && n.via !== "narrower").map((n) => <CellRow key={n.cell.id} cell={n.cell} word={n.via} explanation={n.explanation} ink={RELATION_INK_VAR[relationInk(n.via)]} onFocus={onFocus} />)}
             </ul>
-          ) : <p className="mt-2 text-[17px] leading-relaxed text-muted-foreground">No typed relations recorded.</p>}
+          ) : <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">No typed relations recorded.</p>}
           <Divider />
           <Heading>Jump far</Heading>
           {far ? (
             <button type="button" onClick={() => onFocus(far.cell.id)} className="mt-3 block w-full text-left" style={{ background: "color-mix(in srgb, var(--sakura) 7%, var(--washi))", boxShadow: "var(--shadow-card)" }}>
-              <span className="block p-4">
+              <span className="block p-3">
                 <span className="flex items-center justify-between gap-3">
-                  <span className="font-display text-[19px] font-bold tracking-[-0.02em]">{far.cell.name}</span>
+                  <span className="font-display text-[14.5px] font-bold tracking-[-0.02em]">{far.cell.name}</span>
                   <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground tabular-nums">{far.hops} hops</span>
                 </span>
-                <span className="mt-1 block text-[17px] leading-relaxed text-muted-foreground">{far.path.map((id) => index.byId.get(id)?.name ?? id).join(" → ")}</span>
+                <span className="mt-1 block text-[13.5px] leading-relaxed text-muted-foreground">{far.path.map((id) => index.byId.get(id)?.name ?? id).join(" → ")}</span>
               </span>
             </button>
-          ) : <p className="mt-2 text-[17px] leading-relaxed text-muted-foreground">Everything reachable is within one hop.</p>}
+          ) : <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">Everything reachable is within one hop.</p>}
         </div>
       ) : null}
 
       {tab === "notes" ? (
-        <div className="pt-5">
+        <div className="pt-4">
           <Heading>Provenance</Heading>
           <div className="mt-2 flex flex-wrap items-center gap-2"><ProvenanceStamp basis={cell.provenance.basis} /><InkStamp ink="var(--graphite)" tilt={1}>{cell.state || "Draft"}</InkStamp></div>
-          {cell.provenance.note ? <p className="mt-3 text-[17px] leading-relaxed text-muted-foreground">{cell.provenance.note}</p> : null}
+          {cell.provenance.note ? <p className="mt-3 text-[13.5px] leading-relaxed text-muted-foreground">{cell.provenance.note}</p> : null}
           <Divider />
           <Heading>Sources <span className="font-mono text-[11px] font-normal tracking-[0.14em] text-muted-foreground tabular-nums">{cell.sources.filter((s) => s.verifiedBy).length}/{cell.sources.length} verified</span></Heading>
-          {cell.sources.length ? <div className="mt-3 grid gap-5">{cell.sources.map((s) => <SourceRow key={s.id} source={s} />)}</div> : <p className="mt-2 text-[17px] leading-relaxed text-muted-foreground">No sources yet.</p>}
+          {cell.sources.length ? <div className="mt-3 grid gap-5">{cell.sources.map((s) => <SourceRow key={s.id} source={s} />)}</div> : <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">No sources yet.</p>}
           <Divider />
           <Heading>Maps</Heading>
           <ul className="mt-2 grid gap-2.5">
             {cell.maps.map((m) => (
               <li key={m.map}>
-                <span className="font-sans text-[17px] font-semibold">{MAP_LABEL[m.map]}</span>
-                <p className="mt-0.5 text-[17px] leading-relaxed text-muted-foreground">{m.explanation}</p>
+                <span className="font-sans text-[13.5px] font-semibold">{MAP_LABEL[m.map]}</span>
+                <p className="mt-0.5 text-[13.5px] leading-relaxed text-muted-foreground">{m.explanation}</p>
               </li>
             ))}
           </ul>
@@ -357,7 +357,7 @@ export function SheetBody({ cell, index, tab, onTab, onFocus, expandKey = 0, exp
             <>
               <Divider />
               <Heading>Open questions</Heading>
-              <ul className="mt-2 grid gap-1.5">{cell.questions.map((q) => <li key={q} className="text-[17px] leading-relaxed text-foreground/85">{q}</li>)}</ul>
+              <ul className="mt-2 grid gap-1.5">{cell.questions.map((q) => <li key={q} className="text-[13.5px] leading-relaxed text-foreground/85">{q}</li>)}</ul>
             </>
           ) : null}
           <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70 break-all">cell · {cell.id}</p>
@@ -370,14 +370,14 @@ export function SheetBody({ cell, index, tab, onTab, onFocus, expandKey = 0, exp
 export function SheetTitle({ cell, size = "lg" }: { cell: EncyclopediaCell; size?: "lg" | "md" }) {
   return (
     <>
-      <h2 className={`font-display font-bold leading-[1.02] tracking-[-0.03em] ${size === "lg" ? "text-[30px] sm:text-[34px]" : "text-[26px]"}`}>
+      <h2 className={`font-display font-bold leading-[1.02] tracking-[-0.03em] ${size === "lg" ? "text-[24px]" : "text-[20px]"}`}>
         <span className="relative inline-block">
           {cell.name}
           <span aria-hidden className="absolute -bottom-1 left-0 h-[6px] w-full" style={{ background: "var(--yuzu)", opacity: 0.85, mixBlendMode: "var(--ink-blend)" as never, transform: "rotate(-0.4deg)" }} />
         </span>
       </h2>
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>{STATE_LABEL[cell.state] ?? cell.state}</span>
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <span className="font-mono text-[9.5px] font-bold uppercase tracking-[0.18em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>{STATE_LABEL[cell.state] ?? cell.state}</span>
         <ProvenanceStamp basis={cell.provenance.basis} tilt={-1} />
       </div>
     </>
@@ -390,9 +390,9 @@ export function OpenCellButton({ cell }: { cell: EncyclopediaCell }) {
       href={`/encyclopedia?cell=${encodeURIComponent(cell.id)}`}
       target="_blank"
       rel="noreferrer"
-      className="mt-6 flex h-12 items-center justify-between bg-foreground px-5 font-mono text-[12px] font-bold uppercase tracking-[0.2em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-transform hover:-translate-y-[2px] hover:rotate-[-0.5deg] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0"
+      className="mt-5 flex h-10 items-center justify-between bg-foreground px-4 font-mono text-[10.5px] font-bold uppercase tracking-[0.2em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-transform hover:-translate-y-[2px] hover:rotate-[-0.5deg] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0"
     >
-      Open cell <ArrowUpRight size={18} aria-hidden />
+      Open cell <ArrowUpRight size={15} aria-hidden />
     </a>
   );
 }
@@ -409,12 +409,12 @@ function IndexRow({ cell, onFocus, height }: { cell: EncyclopediaCell; onFocus: 
   const { face, onImageError } = useCellFace(cell);
   return (
     <button type="button" onClick={() => onFocus(cell.id)} className="group flex w-full items-center gap-4 text-left" style={{ height }}>
-      <CellThumb face={face} onImageError={onImageError} size={52} />
+      <CellThumb face={face} onImageError={onImageError} size={40} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-sans text-[17px] font-semibold leading-snug text-foreground">{cell.name}</span>
-        <span className="mt-0.5 block truncate text-[17px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
+        <span className="block truncate font-sans text-[13.5px] font-semibold leading-snug text-foreground">{cell.name}</span>
+        <span className="mt-0.5 block truncate text-[13.5px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
       </span>
-      <ArrowRight size={18} className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+      <ArrowRight size={15} className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
     </button>
   );
 }
@@ -423,7 +423,7 @@ function IndexRow({ cell, onFocus, height }: { cell: EncyclopediaCell; onFocus: 
  *  index is as long as the library, and drawing a row and a thumbnail for
  *  every cell is what made opening the sheet cost more the bigger the
  *  encyclopedia got. */
-const INDEX_ROW_H = 84;
+const INDEX_ROW_H = 60;
 
 /** The sheet with nothing in focus: an index of every cell, by map, each with
  *  its picture. Picking one focuses it on the map.
@@ -451,8 +451,8 @@ export function IndexSheet({ index, onFocus, scrollRef }: { index: GraphIndex; o
           <span aria-hidden className="absolute -bottom-1 left-0 h-[6px] w-full" style={{ background: "var(--yuzu)", opacity: 0.85, mixBlendMode: "var(--ink-blend)" as never, transform: "rotate(-0.4deg)" }} />
         </span>
       </h2>
-      <p className="mt-4 text-[17px] leading-relaxed text-muted-foreground">Every attested cell is on the map. Pictures far out, words as you come closer. Pick a cell here or on the paper to read it.</p>
-      <div className="mt-6" style={{ height: rows.length * INDEX_ROW_H }}>
+      <p className="mt-3 text-[13.5px] leading-relaxed text-muted-foreground">Every attested cell is on the map. Pictures far out, words as you come closer. Pick a cell here or on the paper to read it.</p>
+      <div className="mt-4" style={{ height: rows.length * INDEX_ROW_H }}>
         <div style={{ transform: `translateY(${win.offsetTop}px)` }}>
           {rows.slice(win.from, win.to).map((row) =>
             row.kind === "heading" ? (
