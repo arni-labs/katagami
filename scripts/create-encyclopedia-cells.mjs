@@ -279,15 +279,19 @@ for (const cell of ordered) {
     // because a cell that held a document when the payload was built and holds
     // none now has moved too, and the plan must say so rather than reporting a
     // write it would refuse.
-    const conflict = baseConflict({ id: cell.id, baseHash: cell.baseHash, stored: existing?.fields.document, writing: cell.document });
-    assert.ok(!conflict, conflict);
     if (settled(existing, cell)) { console.log(`${label}: already stored and attested`); continue; }
     // A cell already holding exactly this document is an interrupted earlier
     // run being resumed; only a different document is a conflict for the verb.
+    // The verb is checked before the base, because a Create batch pointed at an
+    // occupied cell is wrong about what it is doing, and telling it to declare a
+    // base hash would send it to a refusal that says a new cell has nothing to
+    // be based on.
     const holdsOther = Boolean(existing && existing.fields.document !== "" && existing.fields.document !== cell.document);
     if (creating) assert.ok(!holdsOther, `a Create batch may not rewrite '${cell.id}', which already holds a different document`);
     else if (cell.new) assert.ok(!holdsOther, `'${cell.id}' is marked new but already holds a different document`);
     else assert.ok(existing, `'${cell.id}' does not exist and the payload does not mark it new`);
+    const conflict = baseConflict({ id: cell.id, baseHash: cell.baseHash, stored: existing?.fields.document, writing: cell.document });
+    assert.ok(!conflict, conflict);
     if (!apply) { console.log(`${label}: would ${existing ? "update" : "create"}`); continue; }
 
     assert.ok([200, 201].includes((await request("/tdata/EncyclopediaCells", "POST", { id: cell.id })).status), "create refused");

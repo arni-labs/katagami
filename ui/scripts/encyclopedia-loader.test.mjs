@@ -32,10 +32,10 @@ const cellDocument = (scope) => ({
   broader: [], relations: [], manifestations: [], studies: [],
 });
 
-const payload = (cell) => ({
+const payload = (cell, operation = "Define") => ({
   batch: "TEST",
   approval: "A fixture. It is never applied and never reaches a deployment.",
-  allowedOperation: "Define private Draft EncyclopediaCell documents for the 1 cell listed.",
+  allowedOperation: `${operation} private Draft EncyclopediaCell documents for the 1 cell listed.`,
   cells: [{ number: 1, ...cell }],
 });
 
@@ -62,13 +62,13 @@ const rowHolding = (document) => ({
   booleans: { document_validated: Boolean(document) },
 });
 
-async function runLoader({ row, cell }) {
+async function runLoader({ row, cell, operation }) {
   const server = stubDeployment(row);
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const origin = `http://127.0.0.1:${server.address().port}`;
   const directory = await mkdtemp(path.join(tmpdir(), "loader-test-"));
   const file = path.join(directory, "payload.json");
-  await writeFile(file, JSON.stringify(payload(cell)));
+  await writeFile(file, JSON.stringify(payload(cell, operation)));
   try {
     return await new Promise((resolve) => {
       execFile(process.execPath, [loader, file, "--expect", "1"], {
@@ -108,6 +108,13 @@ test("a cell that held a document and now holds none is refused in the plan, not
   const result = await runLoader({ row: rowHolding(""), cell: { ...mine, baseHash: documentHash(stored) } });
   assert.equal(result.failed, true);
   assert.match(result.out, /holds none now/);
+});
+
+test("a Create batch pointed at an occupied cell is told that, not told to declare a base", async () => {
+  const result = await runLoader({ row: rowHolding(stored), cell: { ...mine, new: true } });
+  assert.equal(result.failed, true);
+  assert.match(result.out, /already holds a different document/);
+  assert.doesNotMatch(result.out, /does not say which bytes/);
 });
 
 test("creating a cell that does not exist needs no base", async () => {
