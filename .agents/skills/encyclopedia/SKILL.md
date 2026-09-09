@@ -370,6 +370,17 @@ Rules that hold in every pass:
   linked to Realism through Wikidata's magic realism, where "realism" is the
   nineteenth-century movement rather than the modernist tendency Precisionism
   belongs to (D47).
+- **Getty AAT gives parents for techniques and not for movements, and the
+  difference is the facet.** The medium-axis pass found the AAT usable for
+  materials and techniques after an earlier pass had closed the whole vocabulary
+  on styles-facet evidence. Eleven movement records were then read, Dada,
+  Surrealist, Constructivist, Cubist, Expressionist, Futurist, Fauve,
+  Post-Impressionism, Impressionist, Arte Povera and Fluxus, and every one gives
+  a guide term in angle brackets as its only broader concept, sorted by nation
+  and period. Both halves are measured now: the styles-and-periods facet has no
+  parent layer to offer, and the materials-and-techniques facet does. Do not
+  spend the queries on a movement again, and do not apply the closure to
+  techniques (D84).
 - **Whose article makes the containment claim decides how strong it is.** A cell
   whose own page says what it belongs to is stating it about itself, and the link
   is firm: Cloisonnism opens "a style of post-Impressionist painting". A claim
@@ -379,6 +390,21 @@ Rules that hold in every pass:
   Neo-Impressionism never calls itself post-Impressionist. Chronology does not
   settle this either way, since a retrospective umbrella does not require its
   members to come after it. Found in the visual pass review.
+- **A list you can show to be wrong in part is not evidence in whole.** Where a
+  source's only support for a placement is membership in a list, check the other
+  members against their own pages. The Modernism article lists process art among
+  "late 20th-century modernist movements", and the same sentence lists minimalism
+  and pop art, whose own articles call them reactions against modernism. One
+  contradicted member is enough, because it shows the sentence is a survey of a
+  period and not a statement about what contains what, and once you know that
+  about a sentence you cannot use any of it. The check is cheap and it goes
+  before writing any link whose only support is a list (D82).
+- **A source that says the opposite is a different failure from a source that
+  says too little.** Minimalism, Pop art, Conceptual art and Land art each define
+  themselves against modernism on their own pages, so a `broader` link to
+  modernism would have inverted the claim instead of weakening it. A thin source
+  gives a weak link and the explanation can say so; a contrary source gives a
+  false one, and naming the doubt does not repair it (D83).
 - **A citation supports a claim only if the source makes it.** `cited` means the
   page carries the sentence, not that the page was fetched. Before you set
   `cited`, find the sentence in the fetched text and keep it; if you cannot find
