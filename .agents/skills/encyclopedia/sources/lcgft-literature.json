@@ -3084,6 +3084,14 @@
       "cellId": "rhyme-royal"
     },
     {
+      "term": "Rímur",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026511",
+      "decision": "live",
+      "batch": "B16",
+      "note": "tradition: Icelandic chanted narrative verse, 14th to 19th century, with a catalogue of named stanza forms; proposal B16 #15. Written and attested 2026-09-09.",
+      "cellId": "rimur"
+    },
+    {
       "term": "Ritterdrama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026512",
       "decision": "deferred",
@@ -3145,6 +3153,29 @@
       "cellId": "rondeaux"
     },
     {
+      "term": "Rondels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026521",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: 14th-century French lyric on two rhymes with a two-line refrain; proposal B16 #9. Written and attested 2026-09-09.",
+      "cellId": "rondels"
+    },
+    {
+      "term": "Rosh ha-Shanah poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026059",
+      "decision": "declined",
+      "batch": "B16",
+      "note": "occasion-defined (Rosh ha-Shanah), as pass 1 declined Christmas fiction"
+    },
+    {
+      "term": "Roundels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026074",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: Swinburne's eleven-line English answer to the rondeau, published in 1883; proposal B16 #10. Written and attested 2026-09-09.",
+      "cellId": "roundels"
+    },
+    {
       "term": "Sagas",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026522",
       "decision": "live",
@@ -3173,6 +3204,21 @@
       "decision": "deferred",
       "batch": "B13",
       "note": "Sannata is Kannada folk theatre, but LCGFT gives no scope note and the only Wikipedia article of that name is a Pakistani television series. Revisit when a source covers the Kannada form."
+    },
+    {
+      "term": "Sapphics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026523",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: the Aeolic four-line stanza of Sappho, imitated from Catullus and Horace onward; proposal B16 #13. Written and attested 2026-09-09.",
+      "cellId": "sapphics"
+    },
+    {
+      "term": "Sasŏl sijo",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026524",
+      "decision": "deferred",
+      "batch": "B16",
+      "note": "Sasŏl sijo, the expanded colloquial sijo, is a real Korean form, but no independent reference answered for it on its own; the parent Sijo is now a cell. Revisit when a source treats the variant."
     },
     {
       "term": "Satirical drama",
@@ -3215,11 +3261,25 @@
       "cellId": "scar-literature"
     },
     {
+      "term": "Schnaderhüpfel",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026528",
+      "decision": "deferred",
+      "batch": "B16",
+      "note": "Schnaderhüpfel, four-line Alpine improvised verse, is a real tradition, but no independent reference answered under that name. Revisit when a source is found."
+    },
+    {
       "term": "School fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2020026014",
       "decision": "declined",
       "batch": "B10",
       "note": "setting-defined (the school), as pass 1 declined Campus fiction"
+    },
+    {
+      "term": "Schüttelreims",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026091",
+      "decision": "deferred",
+      "batch": "B16",
+      "note": "Schüttelreim, the German spoonerised rhyme, has no LCGFT scope note and no independent reference answered. Revisit when a source is found."
     },
     {
       "term": "Science fiction",
@@ -3238,6 +3298,14 @@
       "cellId": "science-fiction-plays"
     },
     {
+      "term": "Science fiction poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026532",
+      "decision": "live",
+      "batch": "B16",
+      "note": "premise: speculative poetry, with its own association, award and magazines; the D36 twin of Science fiction (B10); proposal B16 #25. Written and attested 2026-09-09.",
+      "cellId": "science-fiction-poetry"
+    },
+    {
       "term": "Screenplays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026533",
       "decision": "live",
@@ -3252,6 +3320,21 @@
       "batch": "B10",
       "note": "genre: nautical fiction, with a dated formation, a canon and a technical register (borderline against the setting-defined rule that declined Campus fiction); proposal B10 #43. Written and attested 2026-09-09.",
       "cellId": "sea-fiction"
+    },
+    {
+      "term": "Sea poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026092",
+      "decision": "declined",
+      "batch": "B16",
+      "note": "subject-defined (the sea); the genre with its own manner, Sea fiction, was kept in B10 on the strength of its critical name"
+    },
+    {
+      "term": "Senryu",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026534",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: the haiku shape turned on human behaviour, named after the 18th-century judge Karai Senryū; proposal B16 #3. Written and attested 2026-09-09.",
+      "cellId": "senryu"
     },
     {
       "term": "Sensation fiction",
@@ -3278,12 +3361,35 @@
       "cellId": "sentimental-novels"
     },
     {
+      "term": "Serial poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026003",
+      "decision": "deferred",
+      "batch": "B16",
+      "note": "The serial poem, as Jack Spicer and Robin Blaser practised it, is a real named practice, but no independent reference answered: Wikipedia has no article for it. Revisit when a source is found."
+    },
+    {
       "term": "Serialized fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026537",
       "decision": "live",
       "batch": "B10",
       "note": "practice: publication in installments, which shapes the writing (same standing as the live Cartonera books); proposal B10 #8. Written and attested 2026-09-09.",
       "cellId": "serialized-fiction"
+    },
+    {
+      "term": "Sestets",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026538",
+      "decision": "live",
+      "batch": "B16",
+      "note": "unit: the six-line stanza, kept as a nesting parent alongside Quatrains (borderline: a stanza shape); proposal B16 #12. Written and attested 2026-09-09.",
+      "cellId": "sestets"
+    },
+    {
+      "term": "Sestinas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026539",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: six end words permuted through six stanzas and an envoi, invented by Arnaut Daniel; proposal B16 #6. Written and attested 2026-09-09.",
+      "cellId": "sestinas"
     },
     {
       "term": "Sewamono",
@@ -3308,6 +3414,38 @@
       "batch": "B10",
       "note": "form: prose fiction read at one sitting, with a stated technique of compression and its own criticism; proposal B10 #3. Written and attested 2026-09-09.",
       "cellId": "short-stories"
+    },
+    {
+      "term": "Sijo",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026544",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: Korean three-line lyric with a required turn in the third line, continuous since Goryeo; proposal B16 #4. Written and attested 2026-09-09.",
+      "cellId": "sijo"
+    },
+    {
+      "term": "Sirventes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026545",
+      "decision": "live",
+      "batch": "B16",
+      "note": "genre: troubadour satire and invective, conventionally borrowing an existing canso's metre and tune; proposal B16 #18. Written and attested 2026-09-09.",
+      "cellId": "sirventes"
+    },
+    {
+      "term": "Skaldic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026527",
+      "decision": "live",
+      "batch": "B16",
+      "note": "body: Old Norse court poetry by named poets in dróttkvætt, dense with kennings; proposal B16 #16. Written and attested 2026-09-09.",
+      "cellId": "skaldic-poetry"
+    },
+    {
+      "term": "Skeltonic verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026546",
+      "decision": "live",
+      "batch": "B16",
+      "note": "manner: short irregular lines on one long-held rhyme, named after John Skelton (the reference is the article on Skelton himself, flagged); proposal B16 #17. Written and attested 2026-09-09.",
+      "cellId": "skeltonic-verse"
     },
     {
       "term": "Sketch comedy television programs",
@@ -3340,6 +3478,14 @@
       "note": "Social tragedies has no LCGFT scope note and appears to overlap Domestic drama, which is now a cell; no source states the difference. Revisit when one does."
     },
     {
+      "term": "Society verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026547",
+      "decision": "live",
+      "batch": "B16",
+      "note": "genre: vers de société, light polished verse under a tonal contract that excludes strong feeling; proposal B16 #23. Written and attested 2026-09-09.",
+      "cellId": "society-verse"
+    },
+    {
       "term": "Soliloquies",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026548",
       "decision": "live",
@@ -3348,12 +3494,36 @@
       "cellId": "soliloquies"
     },
     {
+      "term": "Sonnets",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026549",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: fourteen lines to a turn, invented in 13th-century Sicily, with Italian and English variants; proposal B16 #1. Written and attested 2026-09-09.",
+      "cellId": "sonnets"
+    },
+    {
+      "term": "Sound poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026550",
+      "decision": "live",
+      "batch": "B16",
+      "note": "movement: performance poetry where speech sound carries the work, from Ball and Schwitters onward; proposal B16 #21. Written and attested 2026-09-09.",
+      "cellId": "sound-poetry"
+    },
+    {
       "term": "Space operas (Fiction)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026551",
       "decision": "live",
       "batch": "B11",
       "note": "subgenre: name coined 1941, interstellar scale as shared machinery; proposal B11 #2. Written and attested 2026-09-09.",
       "cellId": "space-operas-fiction"
+    },
+    {
+      "term": "Spoken word poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026552",
+      "decision": "live",
+      "batch": "B16",
+      "note": "tradition: poetry written to be performed, from the Beats and the Black Arts Movement to the slam; proposal B16 #22. Written and attested 2026-09-09.",
+      "cellId": "spoken-word-poetry"
     },
     {
       "term": "Sports fiction",
@@ -3367,6 +3537,13 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026097",
       "decision": "declined",
       "batch": "B13",
+      "note": "subject-defined (sport), as B11 declined Sports fiction"
+    },
+    {
+      "term": "Sports poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026018",
+      "decision": "declined",
+      "batch": "B16",
       "note": "subject-defined (sport), as B11 declined Sports fiction"
     },
     {
@@ -3398,6 +3575,14 @@
       "decision": "declined",
       "batch": "B11",
       "note": "a cataloguing form for short rhymed works, mostly children's picture books; the verse forms inside it have headings of their own"
+    },
+    {
+      "term": "Strambotti",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026560",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: six or eight hendecasyllables in late medieval Italian sung verse, ancestor of ottava rima; proposal B16 #14. Written and attested 2026-09-09.",
+      "cellId": "strambotti"
     },
     {
       "term": "Stream of consciousness fiction",
@@ -3462,6 +3647,14 @@
       "cellId": "tan-ci"
     },
     {
+      "term": "Tanka",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026566",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: the 5-7-5-7-7 centre of classical Japanese poetry, parent of renga and haiku; proposal B16 #2. Written and attested 2026-09-09.",
+      "cellId": "tanka"
+    },
+    {
       "term": "Television plays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026568",
       "decision": "live",
@@ -3475,6 +3668,14 @@
       "decision": "deferred",
       "batch": "B13",
       "note": "The ten-minute play is a real competition and festival form, but no independent reference answered: Wikipedia has no article for it. Revisit when a source is found."
+    },
+    {
+      "term": "Terza rima",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026570",
+      "decision": "live",
+      "batch": "B16",
+      "note": "structure: interlocking tercets, invented by Dante for the Commedia; proposal B16 #11. Written and attested 2026-09-09.",
+      "cellId": "terza-rima"
     },
     {
       "term": "Theatrical adaptations",
@@ -3515,6 +3716,13 @@
       "cellId": "time-travel-fiction"
     },
     {
+      "term": "Toasts (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026574",
+      "decision": "deferred",
+      "batch": "B16",
+      "note": "Toasts, the African American oral narrative verse tradition behind Stagolee and the Signifying Monkey, is a documented body of work, but no independent reference answered under a title that could be confirmed. It should return as a cell once a source is found; the LCGFT description is detailed enough to write from."
+    },
+    {
       "term": "Togatae",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2024026076",
       "decision": "live",
@@ -3529,6 +3737,14 @@
       "batch": "B13",
       "note": "tradition: Indonesian masked dance drama where the mask sets the movement vocabulary; proposal B13 #11. Written and attested 2026-09-09.",
       "cellId": "topeng-plays"
+    },
+    {
+      "term": "Topographical poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026132",
+      "decision": "live",
+      "batch": "B16",
+      "note": "genre: the prospect poem moving from a named place to reflection, established by Denham in 1642; proposal B16 #24. Written and attested 2026-09-09.",
+      "cellId": "topographical-poetry"
     },
     {
       "term": "Tragedies (Drama)",
@@ -3559,6 +3775,21 @@
       "decision": "declined",
       "batch": "B11",
       "note": "subject-defined (transgender characters and themes), with the other Queer fiction children declined in B10"
+    },
+    {
+      "term": "Transgender poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026007",
+      "decision": "declined",
+      "batch": "B16",
+      "note": "subject-defined (transgender characters and themes), with the other identity terms declined in B10, B11, B14 and B15"
+    },
+    {
+      "term": "Triolets",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026578",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: eight lines where five are repetition; medieval French, revived in English; proposal B16 #8. Written and attested 2026-09-09.",
+      "cellId": "triolets"
     },
     {
       "term": "Urban fiction",
@@ -3593,6 +3824,14 @@
       "cellId": "utopian-plays"
     },
     {
+      "term": "Utopian poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026063",
+      "decision": "live",
+      "batch": "B16",
+      "note": "premise: the good society described in verse; the D36 twin of Utopian fiction (B11); proposal B16 #26. Written and attested 2026-09-09.",
+      "cellId": "utopian-poetry"
+    },
+    {
       "term": "Vampire drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026058",
       "decision": "deferred",
@@ -3624,6 +3863,45 @@
       "cellId": "verse-drama"
     },
     {
+      "term": "Verse hagiographies",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026035",
+      "decision": "live",
+      "batch": "B16",
+      "note": "genre: saints' lives in verse with fixed conventions and a liturgical use (borderline against the subject-defined rule that declined Biographical poetry); proposal B16 #27. Written and attested 2026-09-09.",
+      "cellId": "verse-hagiographies"
+    },
+    {
+      "term": "Verse satire",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026077",
+      "decision": "deferred",
+      "batch": "B16",
+      "note": "Verse satire is a real named genre from Roman satire onward, and LCGFT makes it the parent of Mock-heroic poetry, but no independent reference answered for it on its own. It returns as an insertion under D38 once a source is found; the direction is meanwhile held by the live cell Satirical literature."
+    },
+    {
+      "term": "Villancicos (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026586",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: Iberian refrain poems written to be sung, secular then cathedral, 15th to 18th century; proposal B16 #19. Written and attested 2026-09-09.",
+      "cellId": "villancicos-poetry"
+    },
+    {
+      "term": "Villanelle",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026587",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: nineteen lines, two refrains, codified in 19th-century France; proposal B16 #7. Written and attested 2026-09-09.",
+      "cellId": "villanelle"
+    },
+    {
+      "term": "Visual poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026588",
+      "decision": "live",
+      "batch": "B16",
+      "note": "category: poetry whose effect depends on arrangement to be seen; LCGFT's parent for Concrete poetry, Pattern poetry, Acrostics and Lanternes, which were written before it and need an insertion under D38; proposal B16 #20. Written and attested 2026-09-09.",
+      "cellId": "visual-poetry"
+    },
+    {
       "term": "War drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026591",
       "decision": "declined",
@@ -3636,6 +3914,13 @@
       "decision": "declined",
       "batch": "B11",
       "note": "subject-defined (military conflict), as pass 1 declined Military fiction; the war novel as a critical category is a subject grouping in the same way"
+    },
+    {
+      "term": "War poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026592",
+      "decision": "declined",
+      "batch": "B16",
+      "note": "subject-defined (military conflict), as B11 declined War fiction. Flagged in the report: the English war poets are a strongly named canon and this is the decline most likely to be worth reversing"
     },
     {
       "term": "Werewolf drama",
@@ -3695,6 +3980,21 @@
       "decision": "declined",
       "batch": "B11",
       "note": "occasion-defined"
+    },
+    {
+      "term": "Yom Kippur poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026058",
+      "decision": "declined",
+      "batch": "B16",
+      "note": "occasion-defined (Yom Kippur), as B11 declined Yom Kippur fiction"
+    },
+    {
+      "term": "Yue fu",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026597",
+      "decision": "live",
+      "batch": "B16",
+      "note": "form: Chinese folk-song verse named after the imperial Music Bureau, written to inherited titles; proposal B16 #5. Written and attested 2026-09-09.",
+      "cellId": "yue-fu"
     },
     {
       "term": "Zombie drama",
