@@ -49,6 +49,8 @@ export function useMounted(): boolean {
 
 export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: number = ZOOM_MAX) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const [viewportElement,setViewportElement]=useState<HTMLDivElement|null>(null);
+  const bindViewport=useCallback((el:HTMLDivElement|null)=>{viewportRef.current=el;setViewportElement(el);},[]);
   const [camera, setCamera] = useState<Camera>(initial);
   const [animate, setAnimate] = useState(false);
   const drag = useRef<{ id: number; x: number; y: number; cx: number; cy: number; moved: boolean } | null>(null);
@@ -123,7 +125,10 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     animateTimer.current = window.setTimeout(() => setAnimate(false), 520);
   }, [clampK]);
 
-  const onWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
+  const onWheel = useCallback((event: WheelEvent) => {
+    if(event.target instanceof Element && event.target.closest("[data-map-control]"))return;
+    event.preventDefault();
+    setAnimate(false);
     const el = viewportRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -139,6 +144,8 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
   const onPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     const el = viewportRef.current;
     if (!el) return;
+    if(event.target instanceof Element && event.target.closest("[data-map-control]"))return;
+    setAnimate(false);
     if (event.pointerType === "mouse" && event.button !== 0) return;
     // Capture only once a drag or pinch is real: capturing on pointerdown
     // would redirect the pointerup, and the click a node needs would land on
@@ -197,26 +204,24 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     }
   }, []);
 
-  // Wheel must be non-passive to preventDefault; React attaches passive wheel
-  // listeners, so register directly.
-  useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    const handler = (e: WheelEvent) => e.preventDefault();
-    el.addEventListener("wheel", handler, { passive: false });
-    return () => el.removeEventListener("wheel", handler);
-  }, []);
+  // The phone may mount the canvas after the browse view, so bind to the
+  // actual element instead of running once against an empty ref.
+  useEffect(()=>{
+    if(!viewportElement)return;
+    viewportElement.addEventListener("wheel",onWheel,{passive:false});
+    return ()=>viewportElement.removeEventListener("wheel",onWheel);
+  },[viewportElement,onWheel]);
+  useEffect(()=>()=>{if(animateTimer.current)window.clearTimeout(animateTimer.current);},[]);
 
   const toWorld = useCallback((sx: number, sy: number) => ({ x: (sx - camera.x) / camera.k, y: (sy - camera.y) / camera.k }), [camera]);
 
   const handlers = useMemo(() => ({
-    onWheel,
     onPointerDown,
     onPointerMove,
     onPointerUp: endPointer,
     onPointerCancel: endPointer,
     onPointerLeave: endPointer,
-  }), [onWheel, onPointerDown, onPointerMove, endPointer]);
+  }), [onPointerDown, onPointerMove, endPointer]);
 
-  return { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld };
+  return { viewportRef, bindViewport, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld };
 }

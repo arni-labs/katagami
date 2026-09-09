@@ -66,12 +66,12 @@ export function Swatches({ colors, className = "", style }: { colors: string[]; 
  *  ceiling shared by every card, so names are set at one size rather than
  *  each at its own, and a per-name guard so a long word is never broken
  *  across lines. */
-const NAME_MAX = 34;
+const NAME_MAX = 24;
 
 function nameFitSize(name: string, k: number): number {
   const longest = Math.max(4, ...name.split(/\s+/).map((word) => word.length));
   const wordFits = (NAME_W - 26) / (longest * 0.56);
-  return Math.max(18, Math.min(NAME_MAX, wordFits, 14 / k));
+  return Math.max(14, Math.min(NAME_MAX, wordFits, 14 / k));
 }
 
 /** The face a cell is showing, and a way to step past one that will not load.
@@ -174,6 +174,7 @@ function PlateCard({
   dimmed,
   dimTo = 0.3,
   onFocus,
+  size,
 }: {
   cell: EncyclopediaCell;
   x: number;
@@ -194,11 +195,12 @@ function PlateCard({
   /** Takes the cell id, so one handler serves every card on the paper and a
    *  card is not re-rendered merely because its parent made a new closure. */
   onFocus: (id: string) => void;
+  size?: {w:number;h:number};
 }) {
   const { face, onImageError } = useCellFace(cell);
   // The card is laid out at full size; `scale` puts it on the paper at the
   // size its level draws at. The layout reserved exactly this box.
-  const full = plateBox(cell);
+  const full = size ?? plateBox(cell);
   const box = { w: full.w * scale, h: full.h * scale };
   const material = cellMaterial(cell);
   const reading = lod === "reading";
@@ -206,7 +208,7 @@ function PlateCard({
   const studyPalette = reading && material.palette?.source === "study" ? material.palette : null;
   const hasFace = !(reading && face.kind === "name");
   // Names counter-scale so they read at every zoom the layer is shown at.
-  const nameSize = reading ? 22 : Math.min(110, Math.max(20, 15 / k));
+  const nameSize = reading ? 18 : Math.min(24, Math.max(14, 14 / k));
   return (
     <button
       type="button"
@@ -246,7 +248,7 @@ function PlateCard({
             <span className="text-muted-foreground">· {cell.state === "Draft" ? "proposed" : cell.state.toLowerCase()}</span>
           </span>
           <span className="mt-1.5 line-clamp-2 font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: nameSize }}>{cell.name}</span>
-          <span className="mt-2 line-clamp-2 text-[16px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
+          <span className="mt-2 line-clamp-2 text-[13px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
         </span>
       ) : null}
       {/* The flexible middle: the picture and any study the cell carries share

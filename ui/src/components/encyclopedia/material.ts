@@ -148,12 +148,12 @@ export function cellFaces(cell: EncyclopediaCell): CellFace[] {
   const from = (piece: { source: "study" | "record"; eyebrow: string; title: string }) =>
     piece.source === "study" ? `${piece.eyebrow} · ${piece.title}` : `from ${piece.title} · ${piece.eyebrow.toLowerCase()}`;
   const faces: CellFace[] = [];
-  if (m.image) faces.push({ kind: "image", url: m.image.url, alt: m.image.alt, caption: from(m.image), eyebrow: m.image.eyebrow, ink: m.image.ink });
-  if (m.palette) faces.push({ kind: "palette", swatches: m.palette.swatches, caption: from(m.palette), eyebrow: m.palette.eyebrow, ink: m.palette.ink });
-  if (m.text) faces.push({ kind: "passage", text: m.text.text, caption: from(m.text), eyebrow: m.text.eyebrow, ink: m.text.ink });
+  if (m.image?.source === "study") faces.push({ kind: "image", url: m.image.url, alt: m.image.alt, caption: from(m.image), eyebrow: m.image.eyebrow, ink: m.image.ink });
+  if (m.palette?.source === "study") faces.push({ kind: "palette", swatches: m.palette.swatches, caption: from(m.palette), eyebrow: m.palette.eyebrow, ink: m.palette.ink });
+  if (m.text?.source === "study") faces.push({ kind: "passage", text: m.text.text, caption: from(m.text), eyebrow: m.text.eyebrow, ink: m.text.ink });
   faces.push(faces.length
     ? { kind: "name", caption: "The picture on this cell would not load", eyebrow: "Picture unavailable", note: "The material is recorded; its asset did not load.", ink: "var(--graphite)" }
-    : { kind: "name", caption: "Named cell · no material yet", eyebrow: "Named cell", note: "Nothing has been made for this cell yet.", ink: "var(--ramune)" });
+    : { kind: "name", caption: cell.manifestations.length ? `No topic study · ${new Set(cell.manifestations.map(m=>m.entitySet+":"+m.entityId)).size} related records` : "No topic study yet", eyebrow: "Topic", note: "Related records are examples connected to this topic, not its defining image.", ink: "var(--ramune)" });
   return faces;
 }
 
