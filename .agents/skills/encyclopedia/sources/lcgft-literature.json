@@ -9,11 +9,25 @@
   "lane": "writing",
   "terms": [
     {
+      "term": "Acting editions",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026215",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "a publishing format (the production text with full stage directions), as pass 1 declined Gift books"
+    },
+    {
       "term": "Action and adventure fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026217",
       "decision": "declined",
       "batch": "B6",
       "note": "a plot-mode umbrella from readers' advisory"
+    },
+    {
+      "term": "Action and adventure plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026009",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "a plot-mode umbrella, as pass 1 declined Action and adventure fiction"
     },
     {
       "term": "Africanfuturist fiction",
@@ -37,6 +51,14 @@
       "batch": "B8",
       "note": "form: the Alcaic stanza of Alcaeus and Horace, imitated by Hölderlin and Tennyson; proposal B8 #5. Written and attested 2026-09-09.",
       "cellId": "alcaics"
+    },
+    {
+      "term": "Alternative histories (Drama)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026155",
+      "decision": "live",
+      "batch": "B11",
+      "note": "premise: the counterfactual on stage; the D36 twin of the live Alternative histories (Fiction), parent left for an insertion batch; proposal B11 #33. Written and attested 2026-09-09.",
+      "cellId": "alternative-histories-drama"
     },
     {
       "term": "Alternative histories (Fiction)",
@@ -69,12 +91,28 @@
       "note": "subject-defined (animals)"
     },
     {
+      "term": "Antimasques",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026222",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: Jonson's 1609 device, disorder staged so the masque can dispel it; proposal B11 #23. Written and attested 2026-09-09.",
+      "cellId": "antimasques"
+    },
+    {
       "term": "Antinovels",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026223",
       "decision": "live",
       "batch": "B10",
       "note": "practice: fiction that refuses the settled conventions of the novel, named by Sartre in 1948, with the nouveau roman as its cluster; proposal B10 #16. Written and attested 2026-09-09.",
       "cellId": "antinovels"
+    },
+    {
+      "term": "Apocalyptic drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026225",
+      "decision": "live",
+      "batch": "B11",
+      "note": "premise: collapse on stage; the D36 twin of Apocalyptic fiction (B10), parent left for an insertion batch; proposal B11 #34. Written and attested 2026-09-09.",
+      "cellId": "apocalyptic-drama"
     },
     {
       "term": "Apocalyptic fiction",
@@ -106,6 +144,21 @@
       "note": "subject-defined (asexual characters and themes)"
     },
     {
+      "term": "Atellanae",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026228",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: masked Roman improvised farce with named stock characters, ancestor of the Italian companies; proposal B11 #24. Written and attested 2026-09-09.",
+      "cellId": "atellanae"
+    },
+    {
+      "term": "Autobiographical drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026230",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "The technique that Autobiographical fiction carries in prose should have a drama twin under D36, but no independent reference answered: Wikipedia has no Autobiographical drama article. Revisit when a source names the stage practice."
+    },
+    {
       "term": "Autobiographical fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026231",
       "decision": "live",
@@ -114,12 +167,28 @@
       "cellId": "autobiographical-fiction"
     },
     {
+      "term": "Autos sacramentales",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026233",
+      "decision": "live",
+      "batch": "B11",
+      "note": "tradition: Corpus Christi allegorical one-act plays on carts, Calderón central, banned 1765; proposal B11 #27. Written and attested 2026-09-09.",
+      "cellId": "autos-sacramentales"
+    },
+    {
       "term": "Ballades (Poetry)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026235",
       "decision": "live",
       "batch": "B8",
       "note": "form: the Old French ballade, three stanzas and an envoy; proposal B8 #7. Written and attested 2026-09-09.",
       "cellId": "ballades-poetry"
+    },
+    {
+      "term": "Barong plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026060",
+      "decision": "live",
+      "batch": "B11",
+      "note": "tradition: Balinese dance drama of Barong against Rangda, fixed characters, gamelan, ritual context; proposal B11 #38. Written and attested 2026-09-09.",
+      "cellId": "barong-plays"
     },
     {
       "term": "Bathetic poetry",
@@ -134,6 +203,13 @@
       "decision": "declined",
       "batch": "B10",
       "note": "a tone and subject label (lewd comedy), as pass 2 declined Bawdy poetry"
+    },
+    {
+      "term": "Bawdy plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026237",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "a tone and subject label, as pass 1 declined Bawdy fiction and pass 2 declined Bawdy poetry"
     },
     {
       "term": "Bawdy poetry",
@@ -158,11 +234,25 @@
       "note": "subject-defined (Biblical characters and settings)"
     },
     {
+      "term": "Bible plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026241",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "subject-defined (Biblical characters and events), as pass 1 declined Bible fiction; the medieval cycle traditions have headings of their own"
+    },
+    {
       "term": "Biker poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026001",
       "decision": "declined",
       "batch": "B8",
       "note": "subject- and audience-defined (motorcycling life)"
+    },
+    {
+      "term": "Biographical drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026245",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "subject-defined (a real person's life), as pass 1 declined Biographical fiction"
     },
     {
       "term": "Biographical fiction",
@@ -177,6 +267,13 @@
       "decision": "declined",
       "batch": "B8",
       "note": "subject-defined (a real person's life); Autobiographical poetry and Verse hagiographies sit under it and are decided on their own"
+    },
+    {
+      "term": "Bisexual drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026106",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "subject-defined (bisexual characters and themes)"
     },
     {
       "term": "Bisexual fiction",
@@ -200,6 +297,13 @@
       "batch": "B6",
       "note": "mode: comedy from death and the absurd, named by Breton in 1935 and anthologised; proposal B6 #10. Written and attested 2026-09-08.",
       "cellId": "black-humor"
+    },
+    {
+      "term": "Blackout sketches",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026100",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "The nearest open reference, Wikipedia's Blackout gag, describes the joke device rather than the sketch form LCGFT names. Revisit when a source treats the sketch type."
     },
     {
       "term": "Blank verse",
@@ -226,6 +330,13 @@
       "cellId": "body-horror-fiction"
     },
     {
+      "term": "Book of Mormon plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026251",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "subject-defined (characters and events from the Book of Mormon)"
+    },
+    {
       "term": "Bop (Poetry)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026253",
       "decision": "live",
@@ -239,6 +350,22 @@
       "decision": "deferred",
       "batch": "B6",
       "note": "A Japanese publishing genre with a real history (tanbi, shonen-ai, yaoi, BL) and conventions, but defined by its romantic pairing; needs a source that treats it as a manner rather than a subject before it becomes a cell."
+    },
+    {
+      "term": "Burrakatha plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026019",
+      "decision": "live",
+      "batch": "B11",
+      "note": "tradition: Telugu storytelling by a fixed troupe of three, alternating narration, song and dance; proposal B11 #40. Written and attested 2026-09-09.",
+      "cellId": "burrakatha-plays"
+    },
+    {
+      "term": "Calonarang plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026020",
+      "decision": "live",
+      "batch": "B11",
+      "note": "tradition: Balinese dance drama on the twelfth-century Calon Arang narrative, performed with masks and trance; proposal B11 #39. Written and attested 2026-09-09.",
+      "cellId": "calonarang-plays"
     },
     {
       "term": "Campus fiction",
@@ -301,6 +428,21 @@
       "note": "occasion-defined"
     },
     {
+      "term": "Christmas pantomimes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026113",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: British panto, conventions the audience knows and enforces, out of the harlequinade; proposal B11 #28. Written and attested 2026-09-09.",
+      "cellId": "christmas-pantomimes"
+    },
+    {
+      "term": "Christmas plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026061",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "occasion-defined; the named form inside it, Christmas pantomimes, is a cell"
+    },
+    {
       "term": "Christmas poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026014",
       "decision": "declined",
@@ -332,12 +474,84 @@
       "cellId": "climate-fiction"
     },
     {
+      "term": "Closet drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026010",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: plays written to be read, freeing scale and interiority from the stage; proposal B11 #29. Written and attested 2026-09-09.",
+      "cellId": "closet-drama"
+    },
+    {
+      "term": "Comedies of humours",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026262",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: Jonson's programme, character ruled by one dominant trait; proposal B11 #20. Written and attested 2026-09-09.",
+      "cellId": "comedies-of-humours"
+    },
+    {
+      "term": "Comedies of manners",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026263",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: satire of a society's code carried almost entirely by dialogue; proposal B11 #21. Written and attested 2026-09-09.",
+      "cellId": "comedies-of-manners"
+    },
+    {
+      "term": "Comédies-ballets",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026083",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: Molière and Lully's alternation of spoken comedy with sung and danced interludes, from 1661; proposal B11 #26. Written and attested 2026-09-09.",
+      "cellId": "comedies-ballets"
+    },
+    {
+      "term": "Comedy plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026264",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: a root of drama with its own poetics since the Greeks; LCGFT's parent for fourteen terms; proposal B11 #17. Written and attested 2026-09-09.",
+      "cellId": "comedy-plays"
+    },
+    {
+      "term": "Comedy sketches",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026265",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: the short self-contained comic scene, from music hall and revue into broadcast; proposal B11 #22. Written and attested 2026-09-09.",
+      "cellId": "comedy-sketches"
+    },
+    {
+      "term": "Coming-of-age drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026062",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: the passage into adulthood on stage; the D36 twin of the live Coming-of-age fiction, parent left for an insertion batch; proposal B11 #32. Written and attested 2026-09-09.",
+      "cellId": "coming-of-age-drama"
+    },
+    {
       "term": "Coming-of-age fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026243",
       "decision": "live",
       "batch": "B6",
       "note": "form: the Bildungsroman, a novel structure with a documented history; proposal B6 #23. Written and attested 2026-09-08.",
       "cellId": "coming-of-age-fiction"
+    },
+    {
+      "term": "Commedia dell'arte",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026267",
+      "decision": "live",
+      "batch": "B11",
+      "note": "tradition: touring professional companies improvising from scenarios with masked stock characters; proposal B11 #18. Written and attested 2026-09-09.",
+      "cellId": "commedia-dellarte"
+    },
+    {
+      "term": "Commedia erudita",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026060",
+      "decision": "live",
+      "batch": "B11",
+      "note": "tradition: sixteenth-century learned Italian comedy after Plautus and Terence; proposal B11 #19. Written and attested 2026-09-09.",
+      "cellId": "commedia-erudita"
     },
     {
       "term": "Computer-generated literature",
@@ -402,6 +616,13 @@
       "cellId": "cyberpunk-fiction"
     },
     {
+      "term": "Dance drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026018",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "LCGFT's parent for Barong plays, Calonarang plays and others, but no independent reference answered: Wikipedia has no Dance-drama article and the traditions it covers are described separately. It returns as an insertion under D38 once a source is found."
+    },
+    {
       "term": "Debate poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026276",
       "decision": "live",
@@ -432,6 +653,22 @@
       "batch": "B6",
       "note": "form: fiction structured around an investigation, continuous since the 1840s (a plot form, kept; the other broad genre roots are declined below); proposal B6 #24. Written and attested 2026-09-08.",
       "cellId": "detective-and-mystery-fiction"
+    },
+    {
+      "term": "Detective and mystery plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026281",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: the investigation plot on stage; the D36 twin of the live Detective and mystery fiction, parent left for an insertion batch; proposal B11 #31. Written and attested 2026-09-09.",
+      "cellId": "detective-and-mystery-plays"
+    },
+    {
+      "term": "Dialect drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026282",
+      "decision": "live",
+      "batch": "B11",
+      "note": "technique: regional and social speech written into the script; the D36 twin of the live Dialect fiction and Dialect poetry, parent left for an insertion batch; proposal B11 #30. Written and attested 2026-09-09.",
+      "cellId": "dialect-drama"
     },
     {
       "term": "Dialect fiction",
@@ -466,6 +703,13 @@
       "cellId": "diary-fiction"
     },
     {
+      "term": "Didactic drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026287",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "a purpose label (meant to instruct), as pass 1 declined Didactic fiction"
+    },
+    {
       "term": "Didactic fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026288",
       "decision": "declined",
@@ -478,6 +722,13 @@
       "decision": "declined",
       "batch": "B8",
       "note": "a purpose label (meant to instruct); its LCGFT child Georgics will stand on its own when its slice is read"
+    },
+    {
+      "term": "Discussion plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026290",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "Shaw's discussion play is a real critical term, but its LCGFT parent Problem plays has not been read yet and the two should be decided together; the open reference covers both under Problem play."
     },
     {
       "term": "Documentary poetry",
@@ -493,6 +744,14 @@
       "decision": "declined",
       "batch": "B8",
       "note": "a quality judgement (badly made or deliberately rough verse); the deliberate rough forms inside it, Skeltonic verse for one, have LCGFT headings of their own"
+    },
+    {
+      "term": "Domestic drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026294",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: domestic tragedy and the drame bourgeois, an argument about who may be a tragic subject (borderline against the subject-defined rule that declined Domestic fiction); proposal B11 #37. Written and attested 2026-09-09.",
+      "cellId": "domestic-drama"
     },
     {
       "term": "Domestic fiction",
@@ -524,6 +783,36 @@
       "note": "a form category of literature, like a medium"
     },
     {
+      "term": "Drames à clef",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026299",
+      "decision": "live",
+      "batch": "B11",
+      "note": "technique: real people under invented names on stage; the D36 twin of Romans à clef (B10), parent left for an insertion batch; proposal B11 #36. Written and attested 2026-09-09.",
+      "cellId": "drames-a-clef"
+    },
+    {
+      "term": "Drawing-room drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026088",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "setting-defined (the drawing room); the genre argument it belongs to is held by Domestic drama"
+    },
+    {
+      "term": "Drolls",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026300",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: comic scenes cut from plays and performed during the closure of the English theatres; proposal B11 #25. Written and attested 2026-09-09.",
+      "cellId": "drolls"
+    },
+    {
+      "term": "Duologues",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026125",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "a cataloguing form counting speakers (a play for two)"
+    },
+    {
       "term": "Dystopian fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026302",
       "decision": "live",
@@ -532,10 +821,25 @@
       "cellId": "dystopian-fiction"
     },
     {
+      "term": "Dystopian plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026303",
+      "decision": "live",
+      "batch": "B11",
+      "note": "premise: the badly-ordered society on stage; the D36 twin of Dystopian fiction (B10), parent left for an insertion batch; proposal B11 #35. Written and attested 2026-09-09.",
+      "cellId": "dystopian-plays"
+    },
+    {
       "term": "Easter fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026013",
       "decision": "declined",
       "batch": "B6",
+      "note": "occasion-defined"
+    },
+    {
+      "term": "Easter plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026062",
+      "decision": "declined",
+      "batch": "B11",
       "note": "occasion-defined"
     },
     {
@@ -578,11 +882,25 @@
       "cellId": "englyns"
     },
     {
+      "term": "Environmental drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026150",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "LCGFT gives no scope note and the name is ambiguous between ecological drama and Schechner's environmental theatre, which Wikipedia now covers under site-specific theatre. Revisit when the intended sense is settled."
+    },
+    {
       "term": "Epic fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026309",
       "decision": "declined",
       "batch": "B6",
       "note": "a scale label (broad, grandiose)"
+    },
+    {
+      "term": "Episodic plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026313",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "Episodic construction is a real technique, but no independent reference treats the episodic play as a form; Wikipedia has no article for it. Revisit when a source names it."
     },
     {
       "term": "Epistolary fiction",
@@ -599,6 +917,13 @@
       "batch": "B8",
       "note": "form: the verse epistle of Horace, Ovid and Pope; stands apart from Epistolary fiction, question raised; proposal B8 #17. Written and attested 2026-09-09.",
       "cellId": "epistolary-poetry"
+    },
+    {
+      "term": "Erotic drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026319",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "subject-defined (sexual love), as pass 1 declined Erotic fiction"
     },
     {
       "term": "Erotic fiction",
@@ -947,6 +1272,20 @@
       "batch": "B8",
       "note": "technique: screen-composed poetry (digital poetry at large); stands apart from Hypertext fiction, question raised; proposal B8 #50. Written and attested 2026-09-09.",
       "cellId": "hypertext-poetry"
+    },
+    {
+      "term": "ʻĪd al-Aḍḥā fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026139",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "occasion-defined"
+    },
+    {
+      "term": "ʻĪd al-Fiṭr fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026138",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "occasion-defined"
     },
     {
       "term": "Iambic poetry",
@@ -1647,11 +1986,203 @@
       "cellId": "short-stories"
     },
     {
+      "term": "Social problem fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026040",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: the Victorian condition-of-England novel and its descendants, known in criticism as the social novel; proposal B11 #1. Written and attested 2026-09-09.",
+      "cellId": "social-problem-fiction"
+    },
+    {
+      "term": "Space operas (Fiction)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026551",
+      "decision": "live",
+      "batch": "B11",
+      "note": "subgenre: name coined 1941, interstellar scale as shared machinery; proposal B11 #2. Written and attested 2026-09-09.",
+      "cellId": "space-operas-fiction"
+    },
+    {
+      "term": "Sports fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026110",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "subject-defined (sport), as pass 1 declined Fishing fiction and Hunting fiction"
+    },
+    {
+      "term": "Spy fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026555",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: espionage, formed before 1914, split after 1945 into adventure and bureaucratic lines, built on withheld information; proposal B11 #3. Written and attested 2026-09-09.",
+      "cellId": "spy-fiction"
+    },
+    {
+      "term": "Steampunk fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026558",
+      "decision": "live",
+      "batch": "B11",
+      "note": "movement: name coined 1987, counterfactual nineteenth-century engineering with a shared visual vocabulary; proposal B11 #4. Written and attested 2026-09-09.",
+      "cellId": "steampunk-fiction"
+    },
+    {
+      "term": "Stories in rhyme",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026559",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "a cataloguing form for short rhymed works, mostly children's picture books; the verse forms inside it have headings of their own"
+    },
+    {
+      "term": "Stream of consciousness fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026561",
+      "decision": "live",
+      "batch": "B11",
+      "note": "technique: perception, thought and memory rendered in the order a mind produces them; the cell was written in an earlier batch and this row backfills the missing decision.",
+      "cellId": "stream-of-consciousness-fiction"
+    },
+    {
+      "term": "Subterranean fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026147",
+      "decision": "live",
+      "batch": "B11",
+      "note": "tradition: the hollow earth and the descent, from Holberg and Verne, with a scientific pretext of its day; proposal B11 #5. Written and attested 2026-09-09.",
+      "cellId": "subterranean-fiction"
+    },
+    {
+      "term": "Superhero fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026073",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: conventions fixed by American comics from 1938 and assumed by later prose; proposal B11 #6. Written and attested 2026-09-09.",
+      "cellId": "superhero-fiction"
+    },
+    {
       "term": "Survival fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2023026013",
       "decision": "deferred",
       "batch": "B10",
       "note": "The LCGFT parent of Robinsonades and one parent of Apocalyptic fiction, but no independent reference answered: Wikipedia has no Survival fiction article. Deferred rather than declined, because two cells in this batch want it as their parent; it returns as an insertion under D38 once a source is found."
+    },
+    {
+      "term": "Tall tales",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026565",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: impossible feats told deadpan, with a collected frontier canon (its LCGFT parent Humorous fiction was declined as a tone umbrella); proposal B11 #7. Written and attested 2026-09-09.",
+      "cellId": "tall-tales"
+    },
+    {
+      "term": "Theatrical fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026080",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "subject-defined (people who work in the theatre)"
+    },
+    {
+      "term": "Thrillers (Fiction)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026571",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: defined by narrative construction, pace and engineered suspense, rather than by material; proposal B11 #8. Written and attested 2026-09-09.",
+      "cellId": "thrillers-fiction"
+    },
+    {
+      "term": "Time-travel fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026573",
+      "decision": "live",
+      "batch": "B11",
+      "note": "device: the mechanism fixed by Wells in 1895, with worked-out internal rule sets about paradox; proposal B11 #9. Written and attested 2026-09-09.",
+      "cellId": "time-travel-fiction"
+    },
+    {
+      "term": "Transgender fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026027",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "subject-defined (transgender characters and themes), with the other Queer fiction children declined in B10"
+    },
+    {
+      "term": "Urban fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026581",
+      "decision": "live",
+      "batch": "B11",
+      "note": "movement: street lit, a documented publishing and distribution history with a recognisable register; proposal B11 #10. Written and attested 2026-09-09.",
+      "cellId": "urban-fiction"
+    },
+    {
+      "term": "Urban legends",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026582",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: oral narrative whose defining feature is the truth claim at one remove, indexed by folklorists; proposal B11 #11. Written and attested 2026-09-09.",
+      "cellId": "urban-legends"
+    },
+    {
+      "term": "Utopian fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026583",
+      "decision": "live",
+      "batch": "B11",
+      "note": "tradition: More's 1516 text gave the form its word; description carrying a political argument; proposal B11 #12. Written and attested 2026-09-09.",
+      "cellId": "utopian-fiction"
+    },
+    {
+      "term": "Vampire fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026143",
+      "decision": "live",
+      "batch": "B11",
+      "note": "tradition: an accumulated internal rule set each later writer negotiates with, known in criticism as vampire literature; proposal B11 #13. Written and attested 2026-09-09.",
+      "cellId": "vampire-fiction"
+    },
+    {
+      "term": "War fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026590",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "subject-defined (military conflict), as pass 1 declined Military fiction; the war novel as a critical category is a subject grouping in the same way"
+    },
+    {
+      "term": "Werewolf fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026020",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "Plausible as a tradition beside Vampire fiction, but no independent reference treats werewolf writing as a body of work with its own conventions the way Wikipedia's Vampire literature does. Revisit when one exists."
+    },
+    {
+      "term": "Western fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026594",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: conventions firm enough for revisionist Westerns to argue with (borderline against the setting-defined rule); proposal B11 #14. Written and attested 2026-09-09.",
+      "cellId": "western-fiction"
+    },
+    {
+      "term": "Witch fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026094",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "subject-defined (witches and witchcraft)"
+    },
+    {
+      "term": "Wordless novels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026013",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: captionless picture sequences by Masereel and Ward, a stated constraint bound to relief printing; proposal B11 #15. Written and attested 2026-09-09.",
+      "cellId": "wordless-novels"
+    },
+    {
+      "term": "Yom Kippur fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026110",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "occasion-defined"
+    },
+    {
+      "term": "Zombie fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026019",
+      "decision": "live",
+      "batch": "B11",
+      "note": "tradition: folk belief remade as contagion, with shared conventions and a large body of work; proposal B11 #16. Written and attested 2026-09-09.",
+      "cellId": "zombie-fiction"
     }
   ]
 }
