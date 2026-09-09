@@ -1,6 +1,6 @@
 import type { EncyclopediaCell, EncyclopediaGraph, MapName } from "@/lib/encyclopedia";
 
-// Pure graph helpers shared by both encyclopedia variations (client-safe).
+// Pure graph helpers for the encyclopedia map (client-safe).
 // The hierarchy is `broader` (parent → child). Lateral distance is `relations`.
 
 export type RelationInk = "ramune" | "sakura" | "yuzu";
@@ -100,15 +100,6 @@ export class GraphIndex {
   /** The cell's first map, used to place it on the top layer. */
   primaryMap(cell: EncyclopediaCell): MapName {
     return cell.maps[0]?.map ?? "art";
-  }
-
-  /** Subtree depth counting the cell itself as 1. */
-  depth(id: string, seen = new Set<string>()): number {
-    if (seen.has(id)) return 0;
-    seen.add(id);
-    const kids = this.childrenOf(id);
-    if (!kids.length) return 1;
-    return 1 + Math.max(...kids.map((kid) => this.depth(kid.id, seen)));
   }
 
   /** Every descendant, without repeats (a cell may have several parents). */
@@ -221,27 +212,6 @@ export function relationInk(label: string): RelationInk {
   return "yuzu";
 }
 
-export const RELATION_FAMILY: Record<RelationInk, string> = {
-  ramune: "influence",
-  sakura: "opposition",
-  yuzu: "kinship",
-};
-
-/** The legend: one entry per ink family present, listing the labels it holds. */
-export function relationLegend(index: GraphIndex): Array<{ ink: RelationInk; family: string; labels: string[] }> {
-  const byInk = new Map<RelationInk, Set<string>>();
-  for (const edge of index.edges) {
-    if (edge.kind !== "relation") continue;
-    const ink = relationInk(edge.label);
-    const set = byInk.get(ink) ?? new Set<string>();
-    set.add(edge.label);
-    byInk.set(ink, set);
-  }
-  return (["ramune", "sakura", "yuzu"] as RelationInk[])
-    .filter((ink) => byInk.has(ink))
-    .map((ink) => ({ ink, family: RELATION_FAMILY[ink], labels: [...byInk.get(ink)!].sort() }));
-}
-
 export const MAP_NAMES_ORDER: MapName[] = ["art", "writing", "palettes", "design"];
 
 export const MAP_LABEL: Record<MapName, string> = {
@@ -251,13 +221,14 @@ export const MAP_LABEL: Record<MapName, string> = {
   design: "Design",
 };
 
-/** Each map has its own ink family so a cluster reads at a glance. Only the
- *  trio plus one quiet support tint, and the tint is data (a category dot). */
+/** Each map's ink. The signature trio carries the chrome — the region title,
+ *  the corner wash — and the fourth map prints in plain ink rather than
+ *  spending a fourth accent on a heading. */
 export const MAP_INK: Record<MapName, string> = {
   art: "var(--sakura)",
   writing: "var(--ramune)",
   palettes: "var(--yuzu)",
-  design: "var(--teal)",
+  design: "var(--sumi)",
 };
 
 export const STATUS_LABEL: Record<string, string> = {
@@ -267,14 +238,3 @@ export const STATUS_LABEL: Record<string, string> = {
   Archived: "Archived",
   ValidatingDocument: "Validating",
 };
-
-/** Studies that can be shown as a picture: only those with an image
- *  representation. Generated ones are labelled as such by the caller. */
-export function studyImage(cell: EncyclopediaCell): { url: string; alt: string; kind: string; title: string; generatedBy?: string } | null {
-  for (const study of cell.studies) {
-    for (const rep of study.representations) {
-      if (rep.kind === "image") return { url: rep.url, alt: rep.alt, kind: study.kind, title: study.title, generatedBy: study.generatedBy };
-    }
-  }
-  return null;
-}
