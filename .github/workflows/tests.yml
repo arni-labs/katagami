@@ -2,13 +2,24 @@ name: tests
 
 # The suites nothing was running. A contract test asserting a marker in a skill
 # file broke in PR #277 and stayed broken through three later pull requests,
-# because no workflow ran it. Everything listed here is green on master and
-# blocking; the wider katagami-curation contract suite is not here because it
-# carries failures that predate this workflow.
+# because no workflow ran it. Every job here is blocking. The UI jobs are green
+# on master; the writing-style contract job is red on master today and turns
+# green when the pull request that adds this file merges, which is the point.
+#
+# The wider katagami-curation contract suite is not here. On master it carries
+# 27 pre-existing problems (24 failures and 4 errors over 486 tests with the dev
+# dependency installed; the count moves with the environment, since the modules
+# that evaluate Cedar policies error rather than skip without the bindings).
+# Those belong to their own effort. Adding them here would gate every pull
+# request on breakage none of them caused.
 on:
   pull_request:
   push:
     branches: [master]
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ui:
