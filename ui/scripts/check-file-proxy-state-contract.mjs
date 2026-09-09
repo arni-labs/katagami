@@ -166,6 +166,36 @@ for (const p of ["/iterate/iter-pushpin-1.jsonl", "/feedback/ab-verdicts.jsonl"]
   assert.equal(isPubliclyServableFile(meta), false, `${p} must never be public`);
 }
 
+// The writing lane is owner-only: its corpora, VOICE.md files, replica samples
+// and thumbnails are unpublished work, and this proxy was serving them to
+// anyone holding an id. Real paths and real ids, taken from production.
+for (const p of [
+  "/katagami/writing-styles/drawing-room-irony/corpus-1.md",
+  "/katagami/writing-styles/drawing-room-irony/VOICE.md",
+  "/katagami/writing-styles/ships-log/replica-1.md",
+  "/katagami/writing-styles/faraday-lectures/thumbnail.png",
+]) {
+  const meta = { fields: { Status: "Ready", Path: p } };
+  assert.equal(classifyFileVisibility(meta), "owner", `${p} must be owner-only`);
+  assert.equal(isPubliclyServableFile(meta), false, `${p} must never be public`);
+}
+
+// And it reaches ONLY that lane. `/contrib` mixes an under-review submission's
+// artifacts with reference images the public art-styles page renders, which is
+// why that tree is not on the owner-only list; a prefix that crept into it
+// would 404 live public imagery. Measured against production before adding it:
+// zero of the 4,990 file ids referenced by DesignLanguages, ArtStyles and
+// PaletteSystems resolve under the writing prefix.
+for (const p of [
+  "/contrib/plainclothes/ref-kitchen.png",
+  "/katagami/languages/some-language/DESIGN.md",
+  "/katagami/writing-stylesheet.css",
+  "/katagami/art-styles/x/ref.png",
+]) {
+  const meta = { fields: { Status: "Ready", Path: p } };
+  assert.equal(classifyFileVisibility(meta), "public", `${p} must stay public`);
+}
+
 // Unclassifiable input fails closed rather than being served.
 for (const meta of [
   null,
@@ -431,6 +461,54 @@ function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
   );
   assert.ok(out, "the owner can still open one by id");
   assert.equal(out.visibility, "owner", "owner-only bytes must be labelled");
+}
+
+{
+  // The writing lane, driven end to end. The browser half of this can only be
+  // checked signed out — the owner's identity is a Google sign-in that does not
+  // exist in a local checkout — so the half that depends on the cookie is
+  // executed here instead of being asserted by reading the code.
+  const meta = {
+    fields: {
+      Status: "Ready",
+      Path: "/katagami/writing-styles/drawing-room-irony/corpus-1.md",
+    },
+  };
+
+  const anon = stubFetch(meta);
+  assert.equal(
+    await fetchServableFileBytes(anon.impl, "http://api", {}, "fl-corpus", ANON),
+    null,
+    "an unpublished corpus file must be refused to an anonymous caller",
+  );
+  assert.ok(
+    !anon.calls.some((u) => u.endsWith("/$value")),
+    "and its bytes must never leave the backend for one",
+  );
+
+  const owner = stubFetch(meta);
+  const out = await fetchServableFileBytes(
+    owner.impl,
+    "http://api",
+    {},
+    "fl-corpus",
+    OWNER,
+  );
+  assert.ok(out, "the owner still opens her own corpus — the pages that link it are hers");
+  assert.equal(out.visibility, "owner");
+  assert.equal(new TextDecoder().decode(out.bytes), "BYTES");
+
+  // Owner bytes must never carry a shared cache directive: a CDN does not know
+  // who asked, and these pages are the owner's alone.
+  const headers = fileResponseHeaders({
+    visibility: out.visibility,
+    contentType: "text/markdown",
+    isImage: false,
+    byteLength: out.bytes.byteLength,
+  });
+  assert.equal(headers["Cache-Control"], "private, no-store");
+  assert.equal(headers["CDN-Cache-Control"], "private, no-store");
+  assert.equal(headers["Vary"], "Cookie");
 }
 
 {
