@@ -7,5 +7,1913 @@
   "total": 521,
   "totalDerivedFrom": "genes.csv rows in styles/movements 251, media/techniques 175, design movements 26, cultural styles 69, counted 2026-09-08",
   "lane": "visual",
-  "terms": []
+  "terms": [
+    {
+      "term": "'85 New Wave",
+      "ref": "https://www.artsy.net/gene/85-new-wave",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "A named wave in Chinese art of the mid-1980s, but no independent reference answered under any title tried, and the Artsy gene page refuses scripts. Revisit when a source can be opened."
+    },
+    {
+      "term": "\"Bad Painting\"",
+      "ref": "https://www.artsy.net/gene/bad-painting",
+      "decision": "live",
+      "batch": "B21",
+      "note": "trend: named by Marcia Tucker's 1978 New Museum exhibition, deliberate awkwardness as a position; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "bad-painting"
+    },
+    {
+      "term": "19th Century American Art",
+      "ref": "https://www.artsy.net/gene/19th-century-american-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "19th Century American Paintings and Works on Paper",
+      "ref": "https://www.artsy.net/gene/19th-century-american-paintings-and-works-on-paper",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "19th Century French Academy",
+      "ref": "https://www.artsy.net/gene/19th-century-french-academy",
+      "decision": "live",
+      "batch": "B23",
+      "note": "system: art made under the academies, with its hierarchy of subject and taught sequence; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "academic-art"
+    },
+    {
+      "term": "19th Century German Realism",
+      "ref": "https://www.artsy.net/gene/19th-century-german-realism",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a period label for photography rather than a manner"
+    },
+    {
+      "term": "20th Century Art",
+      "ref": "https://www.artsy.net/gene/20th-century-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Abstract Art",
+      "ref": "https://www.artsy.net/gene/abstract-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a medium crossed with a broad quality, which is a way of filtering a catalogue rather than a direction"
+    },
+    {
+      "term": "Abstract Expressionism",
+      "ref": "https://www.artsy.net/gene/abstract-expressionism",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: American after 1945, gestural attack and large simple fields; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "abstract-expressionism"
+    },
+    {
+      "term": "Abstract Painting",
+      "ref": "https://www.artsy.net/gene/abstract-painting",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a medium crossed with a broad quality, which is a way of filtering a catalogue rather than a direction"
+    },
+    {
+      "term": "Abstract Photography",
+      "ref": "https://www.artsy.net/gene/abstract-photography",
+      "decision": "live",
+      "batch": "B22",
+      "note": "practice: photography that does not read as a picture of a recognisable object; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "abstract-photography"
+    },
+    {
+      "term": "Abstract Sculpture",
+      "ref": "https://www.artsy.net/gene/abstract-sculpture",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a medium crossed with a broad quality, which is a way of filtering a catalogue rather than a direction"
+    },
+    {
+      "term": "Abstract versus Figurative Art",
+      "ref": "https://www.artsy.net/gene/abstract-versus-figurative-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a medium crossed with a broad quality, which is a way of filtering a catalogue rather than a direction"
+    },
+    {
+      "term": "Abstraction-Création",
+      "ref": "https://www.artsy.net/gene/abstraction-creation",
+      "decision": "live",
+      "batch": "B23",
+      "note": "association: Paris 1931, abstraction held together against Surrealism's pull; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "abstraction-creation"
+    },
+    {
+      "term": "Action Painting",
+      "ref": "https://www.artsy.net/gene/action-painting",
+      "decision": "live",
+      "batch": "B23",
+      "note": "manner: the physical act left legible in the paint; named by Rosenberg in 1952; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "action-painting"
+    },
+    {
+      "term": "Afrofuturism",
+      "ref": "https://www.artsy.net/gene/afrofuturism",
+      "decision": "live",
+      "batch": "B23",
+      "note": "aesthetic: named by Mark Dery in 1993; the parent of the Afrofuturist fiction, poetry and comics cells; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "afrofuturism"
+    },
+    {
+      "term": "American Impressionism",
+      "ref": "https://www.artsy.net/gene/american-impressionism",
+      "decision": "live",
+      "batch": "B22",
+      "note": "style: Impressionist handling on American subjects, more decorative than the French movement; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "american-impressionism"
+    },
+    {
+      "term": "American Modernism",
+      "ref": "https://www.artsy.net/gene/american-modernism",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: the American turn to modernist form from about 1900; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "american-modernism"
+    },
+    {
+      "term": "American Prints 1880–1950",
+      "ref": "https://www.artsy.net/gene/american-prints-1880-1950",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "American Realism",
+      "ref": "https://www.artsy.net/gene/american-realism",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: contemporary social life as subject, across art, writing and music; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "american-realism"
+    },
+    {
+      "term": "American Regionalism",
+      "ref": "https://www.artsy.net/gene/american-regionalism",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: 1930s Midwest realism against European modernism; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "american-regionalism"
+    },
+    {
+      "term": "American Sculpture 1830–1950",
+      "ref": "https://www.artsy.net/gene/american-sculpture-1830-1950",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "American Tonalism",
+      "ref": "https://www.artsy.net/gene/american-tonalism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "manner: American landscape from the 1880s held together by a single overall tone; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "tonalism"
+    },
+    {
+      "term": "American Works on Paper 1880–1950",
+      "ref": "https://www.artsy.net/gene/american-works-on-paper-1880-1950",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Art Brut",
+      "ref": "https://www.artsy.net/gene/art-brut",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Dubuffet's term for the same direction the cell Outsider Art holds; the English name is a translation of it. The open reference under this name is an indie rock band, which is the clearest sign the two should be one cell.",
+      "cellId": "outsider-art"
+    },
+    {
+      "term": "Art Deco",
+      "ref": "https://www.artsy.net/gene/art-deco",
+      "decision": "live",
+      "batch": "B21",
+      "note": "style: Paris from the 1910s, streamlined geometry across architecture, objects and dress; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "art-deco"
+    },
+    {
+      "term": "Art Informel",
+      "ref": "https://www.artsy.net/gene/art-informel",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: European gestural abstraction named by Michel Tapié in 1950, the mark found in the making; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "art-informel"
+    },
+    {
+      "term": "Art Nouveau",
+      "ref": "https://www.artsy.net/gene/art-nouveau",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "art-nouveau"
+    },
+    {
+      "term": "Arte Povera",
+      "ref": "https://www.artsy.net/gene/arte-povera",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: named by Celant in 1967, poor materials against consumer culture; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "arte-povera"
+    },
+    {
+      "term": "Ashcan School",
+      "ref": "https://www.artsy.net/gene/ashcan-school",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: early twentieth-century American urban realism, learned from newspaper illustration; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "ashcan-school"
+    },
+    {
+      "term": "Barbizon School",
+      "ref": "https://www.artsy.net/gene/barbizon-school",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "barbizon-school"
+    },
+    {
+      "term": "Baroque",
+      "ref": "https://www.artsy.net/gene/baroque",
+      "decision": "live",
+      "batch": "B22",
+      "note": "style: European early 1600s to 1750s, movement, contrast and theatrical light; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "baroque"
+    },
+    {
+      "term": "Bauhaus",
+      "ref": "https://www.artsy.net/gene/bauhaus",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "bauhaus"
+    },
+    {
+      "term": "Bay Area Figurative Art",
+      "ref": "https://www.artsy.net/gene/bay-area-figurative-art",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: 1950s-60s return to the figure with the Abstract Expressionist brush; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "bay-area-figurative-movement"
+    },
+    {
+      "term": "Beijing East Village",
+      "ref": "https://www.artsy.net/gene/beijing-east-village",
+      "decision": "live",
+      "batch": "B23",
+      "note": "community: Beijing 1993-1994, extreme performance work known largely through photographs; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "beijing-east-village"
+    },
+    {
+      "term": "Bengal School of Art",
+      "ref": "https://www.artsy.net/gene/bengal-school-of-art",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: early twentieth-century India, miniature and wash against British academic training; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "bengal-school-of-art"
+    },
+    {
+      "term": "Black Arts Movement",
+      "ref": "https://www.artsy.net/gene/black-arts-movement",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: African American 1960s-70s, its own presses, theatres and journals; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "black-arts-movement"
+    },
+    {
+      "term": "Black Mountain College",
+      "ref": "https://www.artsy.net/gene/black-mountain-college",
+      "decision": "live",
+      "batch": "B23",
+      "note": "formation: North Carolina 1933-1957, the arts at the centre of the curriculum (borderline: an institution); proposal B23. Written and attested 2026-09-09.",
+      "cellId": "black-mountain-college"
+    },
+    {
+      "term": "Body Art",
+      "ref": "https://www.artsy.net/gene/body-art",
+      "decision": "live",
+      "batch": "B21",
+      "note": "practice: the artist's body as material, from the late 1960s, surviving as photograph and film; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "body-art"
+    },
+    {
+      "term": "CalArts",
+      "ref": "https://www.artsy.net/gene/calarts",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "defined by who made it or where they trained, not by what was made"
+    },
+    {
+      "term": "Capitalist Realism",
+      "ref": "https://www.artsy.net/gene/capitalist-realism",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "The Richter, Polke and Lueg coinage of 1963, but no independent reference answered under a title that could be confirmed as the art movement rather than Mark Fisher's book."
+    },
+    {
+      "term": "Chicago Imagists",
+      "ref": "https://www.artsy.net/gene/chicago-imagists",
+      "decision": "live",
+      "batch": "B22",
+      "note": "group: Chicago late 1960s, hard-edged comic grotesque figuration outside New York; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "chicago-imagists"
+    },
+    {
+      "term": "Chicano Art",
+      "ref": "https://www.artsy.net/gene/chicano-art",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: Mexican American artists from the 1960s, murals and posters alongside organising; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "chicano-art-movement"
+    },
+    {
+      "term": "Cluj School",
+      "ref": "https://www.artsy.net/gene/cluj-school",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "The Cluj painters around Adrian Ghenie and Victor Man are a documented formation, but the only article of that name is the Romanian city."
+    },
+    {
+      "term": "CoBrA",
+      "ref": "https://www.artsy.net/gene/cobra",
+      "decision": "live",
+      "batch": "B22",
+      "note": "group: 1948-1951, fast bright deliberately childlike painting from Copenhagen, Brussels and Amsterdam; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "cobra"
+    },
+    {
+      "term": "Colab",
+      "ref": "https://www.artsy.net/gene/colab",
+      "decision": "live",
+      "batch": "B23",
+      "note": "group: New York from the late 1970s, self-organised exhibitions in disused buildings; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "colab"
+    },
+    {
+      "term": "Collaborations and Collectives",
+      "ref": "https://www.artsy.net/gene/collaborations-and-collectives",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "defined by who made it or where they trained, not by what was made"
+    },
+    {
+      "term": "Color Field Painting",
+      "ref": "https://www.artsy.net/gene/color-field-painting",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "color-field-painting"
+    },
+    {
+      "term": "Conceptual Art",
+      "ref": "https://www.artsy.net/gene/conceptual-art",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: the idea carrying at least as much as the object; LeWitt's 1967 Paragraphs; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "conceptual-art"
+    },
+    {
+      "term": "Conceptual Art and Contemporary Conceptualism",
+      "ref": "https://www.artsy.net/gene/conceptual-art-and-contemporary-conceptualism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "A combined search facet; the direction is the cell Conceptual Art.",
+      "cellId": "conceptual-art"
+    },
+    {
+      "term": "Concrete Art",
+      "ref": "https://www.artsy.net/gene/concrete-art",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: abstraction referring to nothing outside itself; Van Doesburg 1930, Max Bill after; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "concrete-art"
+    },
+    {
+      "term": "Constructivism",
+      "ref": "https://www.artsy.net/gene/constructivism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "constructivism"
+    },
+    {
+      "term": "Contemporary Academic Realism",
+      "ref": "https://www.artsy.net/gene/contemporary-academic-realism",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary African Art",
+      "ref": "https://www.artsy.net/gene/contemporary-african-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Contemporary Archaeological",
+      "ref": "https://www.artsy.net/gene/contemporary-archaeological",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Art",
+      "ref": "https://www.artsy.net/gene/contemporary-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Contemporary Asian Art",
+      "ref": "https://www.artsy.net/gene/contemporary-asian-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Contemporary British Art",
+      "ref": "https://www.artsy.net/gene/contemporary-british-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Contemporary Canadian Art",
+      "ref": "https://www.artsy.net/gene/contemporary-canadian-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Contemporary Ceramics",
+      "ref": "https://www.artsy.net/gene/contemporary-ceramics",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Chinese Art",
+      "ref": "https://www.artsy.net/gene/contemporary-chinese-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Contemporary Color Fields",
+      "ref": "https://www.artsy.net/gene/contemporary-color-fields",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Conceptualism",
+      "ref": "https://www.artsy.net/gene/contemporary-conceptualism",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary DIY",
+      "ref": "https://www.artsy.net/gene/contemporary-diy",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Fact versus Fiction",
+      "ref": "https://www.artsy.net/gene/contemporary-fact-versus-fiction",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Fauvist",
+      "ref": "https://www.artsy.net/gene/contemporary-fauvist",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Faux Naïf",
+      "ref": "https://www.artsy.net/gene/contemporary-faux-naif",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Feminist",
+      "ref": "https://www.artsy.net/gene/contemporary-feminist",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Figurative Drawing",
+      "ref": "https://www.artsy.net/gene/contemporary-figurative-drawing",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Figurative Painting",
+      "ref": "https://www.artsy.net/gene/contemporary-figurative-painting",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Gestural Abstraction",
+      "ref": "https://www.artsy.net/gene/contemporary-gestural-abstraction",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Glass",
+      "ref": "https://www.artsy.net/gene/contemporary-glass",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Gothic",
+      "ref": "https://www.artsy.net/gene/contemporary-gothic",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Graphic Realism",
+      "ref": "https://www.artsy.net/gene/contemporary-graphic-realism",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Grotesque",
+      "ref": "https://www.artsy.net/gene/contemporary-grotesque",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Impressionist",
+      "ref": "https://www.artsy.net/gene/contemporary-impressionist",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Indian Art",
+      "ref": "https://www.artsy.net/gene/contemporary-indian-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Contemporary Latin American Art",
+      "ref": "https://www.artsy.net/gene/contemporary-latin-american-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Contemporary Middle Eastern and North African Art",
+      "ref": "https://www.artsy.net/gene/contemporary-middle-eastern-and-north-african-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Contemporary Minimalist",
+      "ref": "https://www.artsy.net/gene/contemporary-minimalist",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Modernist-Type Photography",
+      "ref": "https://www.artsy.net/gene/contemporary-modernist-type-photography-1",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Op Art",
+      "ref": "https://www.artsy.net/gene/contemporary-op-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Participation",
+      "ref": "https://www.artsy.net/gene/contemporary-participation",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Photography",
+      "ref": "https://www.artsy.net/gene/contemporary-photography",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Pop",
+      "ref": "https://www.artsy.net/gene/contemporary-pop",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Portrait Painting",
+      "ref": "https://www.artsy.net/gene/contemporary-portrait-painting",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Portrait Photography",
+      "ref": "https://www.artsy.net/gene/contemporary-portrait-photography",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Re-creations",
+      "ref": "https://www.artsy.net/gene/contemporary-re-creations-1",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Realist Portrait Photography",
+      "ref": "https://www.artsy.net/gene/contemporary-realist-portrait-photography",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Scandinavian Art",
+      "ref": "https://www.artsy.net/gene/contemporary-scandinavian-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Contemporary Surrealistic",
+      "ref": "https://www.artsy.net/gene/contemporary-surrealistic",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Traces of Memory",
+      "ref": "https://www.artsy.net/gene/contemporary-traces-of-memory-1",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Turkish Art",
+      "ref": "https://www.artsy.net/gene/contemporary-turkish-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Contemporary Use of Textiles",
+      "ref": "https://www.artsy.net/gene/contemporary-use-of-textiles-1",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Contemporary Vintage Photography",
+      "ref": "https://www.artsy.net/gene/contemporary-vintage-photography",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet: the word contemporary applied to a direction that already has its own cell or its own gene"
+    },
+    {
+      "term": "Cubism",
+      "ref": "https://www.artsy.net/gene/cubism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "cubism"
+    },
+    {
+      "term": "Cynical Realism",
+      "ref": "https://www.artsy.net/gene/cynical-realism",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: Chinese painting of the 1990s, named by Li Xianting in 1992; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "cynical-realism"
+    },
+    {
+      "term": "Dada",
+      "ref": "https://www.artsy.net/gene/dada",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: Zurich 1916, an anti-art of chance, collage and provocation, spread across Europe and New York; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "dada"
+    },
+    {
+      "term": "Dansaekhwa",
+      "ref": "https://www.artsy.net/gene/dansaekhwa",
+      "decision": "live",
+      "batch": "B23",
+      "note": "grouping: Korean painting from the mid-1970s, the surface worked rather than composed; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "dansaekhwa"
+    },
+    {
+      "term": "Danube School",
+      "ref": "https://www.artsy.net/gene/danube-school",
+      "decision": "live",
+      "batch": "B23",
+      "note": "circle: Bavaria and Austria, early sixteenth century, among the first to paint pure landscape; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "danube-school"
+    },
+    {
+      "term": "Dau Al Set",
+      "ref": "https://www.artsy.net/gene/dau-al-set",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: Barcelona 1948, the first Spanish post-war movement, under Franco's censorship; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "dau-al-set"
+    },
+    {
+      "term": "De Stijl",
+      "ref": "https://www.artsy.net/gene/de-stijl",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: Dutch from 1917, horizontals, verticals and primaries as a universal language; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "de-stijl"
+    },
+    {
+      "term": "Deconstructivism",
+      "ref": "https://www.artsy.net/gene/deconstructivism",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: 1980s architecture of withheld harmony; assembled by a 1988 MoMA exhibition; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "deconstructivism"
+    },
+    {
+      "term": "Deutscher Werkbund",
+      "ref": "https://www.artsy.net/gene/deutscher-werkbund",
+      "decision": "live",
+      "batch": "B23",
+      "note": "association: Germany 1907, quality in industrially made goods; ancestor of the Bauhaus; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "deutscher-werkbund"
+    },
+    {
+      "term": "Die Brücke",
+      "ref": "https://www.artsy.net/gene/die-brucke",
+      "decision": "live",
+      "batch": "B22",
+      "note": "group: Dresden 1905-1913, harsh colour, angular drawing, the woodcut revived; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "die-brucke"
+    },
+    {
+      "term": "Documentary Film",
+      "ref": "https://www.artsy.net/gene/documentary-film",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "A real form with its own history, but it belongs to a moving-image map this collection does not yet have. Revisit when the maps are extended."
+    },
+    {
+      "term": "Documentary Travel Photography",
+      "ref": "https://www.artsy.net/gene/documentary-travel-photography",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "subject-defined"
+    },
+    {
+      "term": "Dusseldorf School of Photography",
+      "ref": "https://www.artsy.net/gene/dusseldorf-school-of-photography",
+      "decision": "live",
+      "batch": "B22",
+      "note": "school: the Bechers' class from 1976, large-format serial typologies; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "dusseldorf-school-of-photography"
+    },
+    {
+      "term": "Dutch and Flemish",
+      "ref": "https://www.artsy.net/gene/dutch-and-flemish",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Early Computer Art",
+      "ref": "https://www.artsy.net/gene/early-computer-art",
+      "decision": "live",
+      "batch": "B23",
+      "note": "practice: the machine doing part of the making; the instruction is as much the work as the print; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "computer-art"
+    },
+    {
+      "term": "Early Renaissance",
+      "ref": "https://www.artsy.net/gene/early-renaissance",
+      "decision": "live",
+      "batch": "B22",
+      "note": "period: fifteenth-century Italian painting where perspective and anatomy were worked out; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "early-renaissance"
+    },
+    {
+      "term": "East Village Art",
+      "ref": "https://www.artsy.net/gene/east-village-art",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "The 1980s New York East Village gallery scene is documented, but the only article of that name is the neighbourhood."
+    },
+    {
+      "term": "Emerging Art",
+      "ref": "https://www.artsy.net/gene/emerging-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Expressionism",
+      "ref": "https://www.artsy.net/gene/expressionism",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: northern Europe from about 1900, the world shown from a subjective position; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "expressionism"
+    },
+    {
+      "term": "Fashion Photography",
+      "ref": "https://www.artsy.net/gene/fashion-photography",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a commercial genre defined by what it is for; the manners inside it belong to the photographic movements that produced them"
+    },
+    {
+      "term": "Fauvism",
+      "ref": "https://www.artsy.net/gene/fauvism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "fauvism"
+    },
+    {
+      "term": "Faux Naïf",
+      "ref": "https://www.artsy.net/gene/faux-naif",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "Deliberate naivety is a real manner, but no reference treats it as a body of work distinct from naive art itself."
+    },
+    {
+      "term": "Feminist Art",
+      "ref": "https://www.artsy.net/gene/feminist-art",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: from the late 1960s, women's experience as material and the institution as target; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "feminist-art"
+    },
+    {
+      "term": "Feminist Art and Contemporary Feminist",
+      "ref": "https://www.artsy.net/gene/feminist-art-and-contemporary-feminist",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "A combined search facet; the direction is the cell Feminist Art.",
+      "cellId": "feminist-art"
+    },
+    {
+      "term": "Figurative Art",
+      "ref": "https://www.artsy.net/gene/figurative-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a medium crossed with a broad quality, which is a way of filtering a catalogue rather than a direction"
+    },
+    {
+      "term": "Figurative Painting",
+      "ref": "https://www.artsy.net/gene/figurative-painting",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a medium crossed with a broad quality, which is a way of filtering a catalogue rather than a direction"
+    },
+    {
+      "term": "Figurative Sculpture",
+      "ref": "https://www.artsy.net/gene/figurative-sculpture",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a medium crossed with a broad quality, which is a way of filtering a catalogue rather than a direction"
+    },
+    {
+      "term": "Fluxus",
+      "ref": "https://www.artsy.net/gene/fluxus",
+      "decision": "live",
+      "batch": "B21",
+      "note": "network: 1960s-70s event scores and multiples, chance and process over the object; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "fluxus"
+    },
+    {
+      "term": "Folk Art",
+      "ref": "https://www.artsy.net/gene/folk-art",
+      "decision": "live",
+      "batch": "B21",
+      "note": "category: made within a popular tradition rather than a fine art training, contested at both edges; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "folk-art"
+    },
+    {
+      "term": "Funk Art",
+      "ref": "https://www.artsy.net/gene/funk-art",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: Bay Area 1960s, figuration, humour and ceramics against Abstract Expressionism; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "funk-art"
+    },
+    {
+      "term": "Futurism",
+      "ref": "https://www.artsy.net/gene/futurism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: Marinetti's 1909 manifesto, speed and machinery, across painting, poetry, typography and dress; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "futurism"
+    },
+    {
+      "term": "Geometric Abstraction",
+      "ref": "https://www.artsy.net/gene/geometric-abstraction",
+      "decision": "live",
+      "batch": "B23",
+      "note": "form: abstraction built from geometric elements decided before the painting begins; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "geometric-abstraction"
+    },
+    {
+      "term": "German Expressionism",
+      "ref": "https://www.artsy.net/gene/german-expressionism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "german-expressionism"
+    },
+    {
+      "term": "Gestural Abstraction",
+      "ref": "https://www.artsy.net/gene/gestural-abstraction",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "The same direction as Action Painting, which the cited reference names as its alternative title. One cell, not two.",
+      "cellId": "action-painting"
+    },
+    {
+      "term": "Gothic Art",
+      "ref": "https://www.artsy.net/gene/gothic-art",
+      "decision": "live",
+      "batch": "B22",
+      "note": "style: from twelfth-century northern France, led by architecture, named later and pejoratively; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "gothic-art"
+    },
+    {
+      "term": "Graffiti and Street Art",
+      "ref": "https://www.artsy.net/gene/graffiti-and-street-art",
+      "decision": "live",
+      "batch": "B23",
+      "note": "practice: work made in public places for a public that did not ask for it; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "street-art"
+    },
+    {
+      "term": "Grand Manner",
+      "ref": "https://www.artsy.net/gene/grand-manner",
+      "decision": "live",
+      "batch": "B22",
+      "note": "manner: eighteenth-century British idealisation borrowing history painting's poses for portraits; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "grand-manner"
+    },
+    {
+      "term": "Group f/64",
+      "ref": "https://www.artsy.net/gene/group-f-slash-64",
+      "decision": "live",
+      "batch": "B21",
+      "note": "association: San Francisco 1932, sharp focus and no borrowed qualities, against Pictorialism; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "group-f-64"
+    },
+    {
+      "term": "Group Material",
+      "ref": "https://www.artsy.net/gene/group-material",
+      "decision": "live",
+      "batch": "B22",
+      "note": "collective: New York 1979-1996, the group exhibition itself made the artwork; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "group-material"
+    },
+    {
+      "term": "Group Zero",
+      "ref": "https://www.artsy.net/gene/group-zero",
+      "decision": "live",
+      "batch": "B21",
+      "note": "group: Düsseldorf from the late 1950s, starting again from nothing with light and movement; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "group-zero"
+    },
+    {
+      "term": "Gutai",
+      "ref": "https://www.artsy.net/gene/gutai",
+      "decision": "live",
+      "batch": "B21",
+      "note": "collective: Ashiya 1954-1972, the encounter between a body and a material made visible; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "gutai"
+    },
+    {
+      "term": "Happenings",
+      "ref": "https://www.artsy.net/gene/happenings",
+      "decision": "live",
+      "batch": "B22",
+      "note": "form: loosely scored events, named by Allan Kaprow in 1959, made not to be collected; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "happenings"
+    },
+    {
+      "term": "Harlem Renaissance",
+      "ref": "https://www.artsy.net/gene/harlem-renaissance",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: African American culture centred on Harlem in the 1920s and 1930s; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "harlem-renaissance"
+    },
+    {
+      "term": "High Renaissance",
+      "ref": "https://www.artsy.net/gene/high-renaissance",
+      "decision": "live",
+      "batch": "B22",
+      "note": "period: c.1490-1520, Leonardo, Michelangelo and Raphael, treated afterwards as a standard; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "high-renaissance"
+    },
+    {
+      "term": "Hudson River School",
+      "ref": "https://www.artsy.net/gene/hudson-river-school",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: the first American landscape school, c.1825-1870, the land as moral argument; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "hudson-river-school"
+    },
+    {
+      "term": "Hyperrealism and Photorealism",
+      "ref": "https://www.artsy.net/gene/hyperrealism-and-photorealism",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "Two real directions combined into one Artsy facet. Each deserves a cell under its own name; deferred until they are read from a vocabulary that keeps them apart."
+    },
+    {
+      "term": "Iconic Works of Art History",
+      "ref": "https://www.artsy.net/gene/iconic-works-of-art-history",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Identity Politics",
+      "ref": "https://www.artsy.net/gene/identity-politics-1",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "subject-defined"
+    },
+    {
+      "term": "Impressionism",
+      "ref": "https://www.artsy.net/gene/impressionism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "impressionism"
+    },
+    {
+      "term": "Impressionism and Contemporary Impressionist",
+      "ref": "https://www.artsy.net/gene/impressionism-and-contemporary-impressionist",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "A combined search facet; the direction is the live cell Impressionism.",
+      "cellId": "impressionism"
+    },
+    {
+      "term": "Japanese Erotic Prints",
+      "ref": "https://www.artsy.net/gene/japanese-erotic-prints",
+      "decision": "live",
+      "batch": "B23",
+      "note": "genre: Japanese erotic woodblock art, made by nearly every major print artist and periodically banned; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "shunga"
+    },
+    {
+      "term": "Japanese Photography",
+      "ref": "https://www.artsy.net/gene/japanese-photography",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Japonisme",
+      "ref": "https://www.artsy.net/gene/japonisme",
+      "decision": "live",
+      "batch": "B21",
+      "note": "transmission: Japanese art absorbed by Western Europe after 1858; named by Burty in 1872; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "japonisme"
+    },
+    {
+      "term": "Kanō School",
+      "ref": "https://www.artsy.net/gene/kano-school",
+      "decision": "live",
+      "batch": "B23",
+      "note": "school: hereditary Japanese painting workshop dominant from the late fifteenth century to Meiji; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "kano-school"
+    },
+    {
+      "term": "Land Art",
+      "ref": "https://www.artsy.net/gene/land-art",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: 1960s-70s work made in and from the landscape, mostly met as photographs; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "land-art"
+    },
+    {
+      "term": "Landscape Photography",
+      "ref": "https://www.artsy.net/gene/landscape-photography",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "subject-defined"
+    },
+    {
+      "term": "Light and Space Movement",
+      "ref": "https://www.artsy.net/gene/light-and-space-movement",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Read and proposed in batch B22, but another agent's batch wrote the same cell while this one was being applied and the loader refused the duplicate. The row records the existing cell.",
+      "cellId": "light-and-space"
+    },
+    {
+      "term": "Luminism",
+      "ref": "https://www.artsy.net/gene/luminism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "manner: American landscape 1850s-70s, light as subject with brushwork hidden; named a century later; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "luminism"
+    },
+    {
+      "term": "Mannerism",
+      "ref": "https://www.artsy.net/gene/mannerism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "style: Italian c.1520-1590, elongation and instability after the High Renaissance; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "mannerism"
+    },
+    {
+      "term": "Medieval Art",
+      "ref": "https://www.artsy.net/gene/medieval-art",
+      "decision": "live",
+      "batch": "B22",
+      "note": "span: a thousand years of Western art, mostly anonymous and organised by workshop; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "medieval-art"
+    },
+    {
+      "term": "Mexican Muralism",
+      "ref": "https://www.artsy.net/gene/mexican-muralism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: state-funded public painting after the Revolution, didactic by design; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "mexican-muralism"
+    },
+    {
+      "term": "Minimalism",
+      "ref": "https://www.artsy.net/gene/minimalism",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: art reduced to essentials, industrial fabrication and repeated units; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "minimalism"
+    },
+    {
+      "term": "Minimalism and Contemporary Minimalist",
+      "ref": "https://www.artsy.net/gene/minimalism-and-contemporary-minimalist",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "A combined search facet; the direction is the cell Minimalism.",
+      "cellId": "minimalism"
+    },
+    {
+      "term": "Modern and Impressionist Art",
+      "ref": "https://www.artsy.net/gene/modern-and-impressionist-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Modern and Impressionist Prints",
+      "ref": "https://www.artsy.net/gene/modern-and-impressionist-prints",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Modern Jewelry",
+      "ref": "https://www.artsy.net/gene/modern-jewelry",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "an object category from the design and decorative arts trade"
+    },
+    {
+      "term": "Modern Photography",
+      "ref": "https://www.artsy.net/gene/modern-photography",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "Artsy's name for straight photography and its modernist period; deferred until read under a name a source uses."
+    },
+    {
+      "term": "Mono-ha",
+      "ref": "https://www.artsy.net/gene/mono-ha",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: Japanese and Korean from the late 1960s, materials placed in relation and left alone; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "mono-ha"
+    },
+    {
+      "term": "Nabis",
+      "ref": "https://www.artsy.net/gene/nabis",
+      "decision": "live",
+      "batch": "B21",
+      "note": "group: Paris 1888-1900, flattened space and heightened colour after Gauguin; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "nabis"
+    },
+    {
+      "term": "Neo-Conceptualism",
+      "ref": "https://www.artsy.net/gene/neo-conceptualism",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a search facet joining Conceptual art to a later period; the direction is the cell Conceptual Art and the term adds no separate practice"
+    },
+    {
+      "term": "Neo-Concrete Art",
+      "ref": "https://www.artsy.net/gene/neo-concrete-art",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: Brazil 1959-1961, the work as something a body encounters; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "neo-concrete-movement"
+    },
+    {
+      "term": "Neo-Dada",
+      "ref": "https://www.artsy.net/gene/neo-dada",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: American late 1950s, chance and found objects against Abstract Expressionist rhetoric; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "neo-dada"
+    },
+    {
+      "term": "Neo-Expressionism",
+      "ref": "https://www.artsy.net/gene/neo-expressionism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: large rough figurative painting of the late 1970s and 1980s; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "neo-expressionism"
+    },
+    {
+      "term": "Neo-Geo",
+      "ref": "https://www.artsy.net/gene/neo-geo",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "A real late-1980s New York tendency, but the only Wikipedia article of that name is a video game console. Revisit when a source for the art movement is found."
+    },
+    {
+      "term": "Neo-Impressionism",
+      "ref": "https://www.artsy.net/gene/neo-impressionism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "neo-impressionism"
+    },
+    {
+      "term": "Neo-Plasticism",
+      "ref": "https://www.artsy.net/gene/neo-plasticism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Mondrian's doctrine inside De Stijl rather than a separate movement; the cell De Stijl holds it.",
+      "cellId": "de-stijl"
+    },
+    {
+      "term": "Neoclassicism",
+      "ref": "https://www.artsy.net/gene/neoclassicism",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: born in Rome mid-eighteenth century, antiquity as correctness and moral seriousness; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "neoclassicism"
+    },
+    {
+      "term": "Net Art",
+      "ref": "https://www.artsy.net/gene/net-art",
+      "decision": "live",
+      "batch": "B22",
+      "note": "practice: art made for and distributed through the internet, with preservation as a live problem; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "net-art"
+    },
+    {
+      "term": "Neue Sachlichkeit",
+      "ref": "https://www.artsy.net/gene/neue-sachlichkeit",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: named 1925, cold exact realism against Expressionism in Weimar Germany; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "neue-sachlichkeit"
+    },
+    {
+      "term": "New American Color Photography",
+      "ref": "https://www.artsy.net/gene/new-american-color-photography",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a period label for photography rather than a manner"
+    },
+    {
+      "term": "New American Documentary Photography",
+      "ref": "https://www.artsy.net/gene/new-american-documentary-photography",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a period label for photography rather than a manner"
+    },
+    {
+      "term": "New British Sculpture",
+      "ref": "https://www.artsy.net/gene/new-british-sculpture",
+      "decision": "live",
+      "batch": "B22",
+      "note": "group: London early 1980s, discarded consumer objects and industrial material; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "new-british-sculpture"
+    },
+    {
+      "term": "New Leipzig School",
+      "ref": "https://www.artsy.net/gene/new-leipzig-school",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: Leipzig after reunification, East German figurative training turned to ambiguity; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "new-leipzig-school"
+    },
+    {
+      "term": "New Topographics",
+      "ref": "https://www.artsy.net/gene/new-topographics",
+      "decision": "live",
+      "batch": "B22",
+      "note": "manner: the man-altered landscape photographed flatly; named by a 1975 exhibition; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "new-topographics"
+    },
+    {
+      "term": "New York School",
+      "ref": "https://www.artsy.net/gene/new-york-school",
+      "decision": "live",
+      "batch": "B21",
+      "note": "association: the 1940s-50s New York vanguard; the cited article covers painters and poets together; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "new-york-school"
+    },
+    {
+      "term": "Nineteenth Century French Realism",
+      "ref": "https://www.artsy.net/gene/nineteenth-century-french-realism",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: France from the 1840s, ordinary people at history painting's scale; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "realism-art-movement"
+    },
+    {
+      "term": "Northern Renaissance",
+      "ref": "https://www.artsy.net/gene/northern-renaissance",
+      "decision": "live",
+      "batch": "B22",
+      "note": "period: the Renaissance north of the Alps, oil technique and observed detail; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "northern-renaissance"
+    },
+    {
+      "term": "Nouveau Réalisme",
+      "ref": "https://www.artsy.net/gene/nouveau-realisme",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: declared in Milan in 1960 by Restany with Klein, the material of the city taken directly; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "nouveau-realisme"
+    },
+    {
+      "term": "Nul Group",
+      "ref": "https://www.artsy.net/gene/nul-group",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "The Dutch counterpart of Group Zero, but no independent reference answered under any title tried."
+    },
+    {
+      "term": "Old Master Drawings and Prints",
+      "ref": "https://www.artsy.net/gene/old-master-drawings-and-prints",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Old Master Influenced Fantasy",
+      "ref": "https://www.artsy.net/gene/old-master-influenced-fantasy",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Old Masters",
+      "ref": "https://www.artsy.net/gene/old-masters",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Op Art",
+      "ref": "https://www.artsy.net/gene/op-art",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: 1960s abstraction built to act on the eye; the work completed in perception; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "op-art"
+    },
+    {
+      "term": "Orientalism",
+      "ref": "https://www.artsy.net/gene/orientalism",
+      "decision": "live",
+      "batch": "B23",
+      "note": "practice and critique: Western depiction of Eastern subjects, and Said's argument about it; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "orientalism"
+    },
+    {
+      "term": "Orphism",
+      "ref": "https://www.artsy.net/gene/orphism",
+      "decision": "live",
+      "batch": "B23",
+      "note": "offshoot: Cubism turned to pure colour abstraction; named by Apollinaire in 1912; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "orphism-art"
+    },
+    {
+      "term": "Outsider Art",
+      "ref": "https://www.artsy.net/gene/outsider-art",
+      "decision": "live",
+      "batch": "B21",
+      "note": "category: self-taught makers outside art training, named in English by Roger Cardinal in 1972; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "outsider-art"
+    },
+    {
+      "term": "Pattern and Decoration Movement",
+      "ref": "https://www.artsy.net/gene/pattern-and-decoration-movement",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: American mid-1970s to early 1980s, ornament and textile made serious; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "pattern-and-decoration"
+    },
+    {
+      "term": "Pictorialism",
+      "ref": "https://www.artsy.net/gene/pictorialism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "pictorialism"
+    },
+    {
+      "term": "Pittura Metafisica",
+      "ref": "https://www.artsy.net/gene/pittura-metafisica",
+      "decision": "live",
+      "batch": "B21",
+      "note": "style: de Chirico from 1910, empty arcades and mannequins in hard still light; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "pittura-metafisica"
+    },
+    {
+      "term": "Pointillism",
+      "ref": "https://www.artsy.net/gene/pointillism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "technique: dots of unmixed colour combined by the eye, from 1880s colour science; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "pointillism"
+    },
+    {
+      "term": "Political Minimalism",
+      "ref": "https://www.artsy.net/gene/political-minimalism",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "subject-defined"
+    },
+    {
+      "term": "Political Pop",
+      "ref": "https://www.artsy.net/gene/political-pop",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "A named Chinese movement of the 1990s beside Cynical Realism, but no independent reference answered. Revisit when a source can be opened."
+    },
+    {
+      "term": "Pop and Contemporary Pop",
+      "ref": "https://www.artsy.net/gene/pop-and-contemporary-pop",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "A combined search facet; the direction is the live cell Pop Art.",
+      "cellId": "pop-art"
+    },
+    {
+      "term": "Pop Art",
+      "ref": "https://www.artsy.net/gene/pop-art",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "pop-art"
+    },
+    {
+      "term": "Post-'70s Ego Generation",
+      "ref": "https://www.artsy.net/gene/post-70s-ego-generation",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "An Artsy coinage with no independent reference; deferred rather than declined because the Chinese generation it points at is real."
+    },
+    {
+      "term": "Post-Impressionism",
+      "ref": "https://www.artsy.net/gene/post-impressionism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: French, c.1886-1905, structure and symbol after Impressionism; named by Roger Fry in 1910; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "post-impressionism"
+    },
+    {
+      "term": "Post-Internet Art",
+      "ref": "https://www.artsy.net/gene/post-internet-art",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: 2010s work made when the internet had stopped being a novelty; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "post-internet"
+    },
+    {
+      "term": "Post-Painterly Abstraction",
+      "ref": "https://www.artsy.net/gene/post-painterly-abstraction",
+      "decision": "live",
+      "batch": "B22",
+      "note": "term: Greenberg's 1964 exhibition title for abstraction that dropped the loaded gesture; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "post-painterly-abstraction"
+    },
+    {
+      "term": "Post-War American Art",
+      "ref": "https://www.artsy.net/gene/post-war-american-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Post-War European Art",
+      "ref": "https://www.artsy.net/gene/post-war-european-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a sales and cataloguing category from the auction and gallery trade, not a direction"
+    },
+    {
+      "term": "Post-World War I European Classicism",
+      "ref": "https://www.artsy.net/gene/post-world-war-i-european-classicism",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "Artsy's name for what criticism calls the return to order. Deferred until the direction can be read under a name a source uses."
+    },
+    {
+      "term": "Post-World War II School of Paris",
+      "ref": "https://www.artsy.net/gene/post-world-war-ii-school-of-paris",
+      "decision": "live",
+      "batch": "B23",
+      "note": "place and period: Paris as the centre of Western art in the first half of the twentieth century; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "school-of-paris"
+    },
+    {
+      "term": "Postminimalism",
+      "ref": "https://www.artsy.net/gene/postminimalism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "tendency: named by Pincus-Witten in 1971, process and soft material after Minimalism; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "postminimalism"
+    },
+    {
+      "term": "Pre-Raphaelites",
+      "ref": "https://www.artsy.net/gene/pre-raphaelites",
+      "decision": "live",
+      "batch": "B22",
+      "note": "brotherhood: London 1848, clear colour on wet white ground, against the tradition after Raphael; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "pre-raphaelite-brotherhood"
+    },
+    {
+      "term": "Pre-World War II School of Paris",
+      "ref": "https://www.artsy.net/gene/pre-world-war-ii-school-of-paris",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "The School of Paris is written as one cell whose scope covers both halves of Artsy's split.",
+      "cellId": "school-of-paris"
+    },
+    {
+      "term": "Precisionism",
+      "ref": "https://www.artsy.net/gene/precisionism",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: American after 1918, industry painted as clean geometry in flat planes of light; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "precisionism"
+    },
+    {
+      "term": "Process Art",
+      "ref": "https://www.artsy.net/gene/process-art",
+      "decision": "live",
+      "batch": "B22",
+      "note": "tendency: the making as the subject, the object a residue of the action; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "process-art"
+    },
+    {
+      "term": "Progressive Artists' Movement",
+      "ref": "https://www.artsy.net/gene/progressive-artists-movement",
+      "decision": "live",
+      "batch": "B23",
+      "note": "group: Bombay 1947, an Indian modernism owing nothing to Bengal School revivalism; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "progressive-artists-group"
+    },
+    {
+      "term": "Purism",
+      "ref": "https://www.artsy.net/gene/purism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: Ozenfant and Le Corbusier, 1918-1925, Cubism purified to elementary forms; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "purism"
+    },
+    {
+      "term": "Relational Aesthetics",
+      "ref": "https://www.artsy.net/gene/relational-aesthetics",
+      "decision": "live",
+      "batch": "B22",
+      "note": "tendency: 1990s work made of human relations; Bourriaud's 1998 definition; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "relational-aesthetics"
+    },
+    {
+      "term": "Renaissance",
+      "ref": "https://www.artsy.net/gene/renaissance",
+      "decision": "live",
+      "batch": "B21",
+      "note": "period: European art c.1400-1600 taking classical antiquity as its standard; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "renaissance-art"
+    },
+    {
+      "term": "Rinpa School",
+      "ref": "https://www.artsy.net/gene/rinpa-school",
+      "decision": "live",
+      "batch": "B23",
+      "note": "manner: Kyoto from the seventeenth century, picked up across generations rather than taught in a workshop; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "rinpa-school"
+    },
+    {
+      "term": "Rococo Art and Design",
+      "ref": "https://www.artsy.net/gene/rococo-art-and-design",
+      "decision": "live",
+      "batch": "B22",
+      "note": "style: France from the 1730s, asymmetry, curve and intimate scale against the Louis XIV manner; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "rococo"
+    },
+    {
+      "term": "Romanticism",
+      "ref": "https://www.artsy.net/gene/romanticism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell, written in B20 from the Wikipedia movements pass. Add this gene page to its sources.",
+      "cellId": "romanticism"
+    },
+    {
+      "term": "School of London",
+      "ref": "https://www.artsy.net/gene/school-of-london",
+      "decision": "live",
+      "batch": "B22",
+      "note": "group: London painters who kept working from the figure through abstraction's dominance; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "school-of-london"
+    },
+    {
+      "term": "Shin Hanga",
+      "ref": "https://www.artsy.net/gene/shin-hanga",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: early twentieth-century Japan, ukiyo-e's collaborative system revived with Western light; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "shin-hanga"
+    },
+    {
+      "term": "Social Action",
+      "ref": "https://www.artsy.net/gene/social-action",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "subject-defined"
+    },
+    {
+      "term": "Social Realism",
+      "ref": "https://www.artsy.net/gene/social-realism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "tendency: conditions of working life shown in order to criticise them; not a state doctrine; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "social-realism"
+    },
+    {
+      "term": "Socialist Realism",
+      "ref": "https://www.artsy.net/gene/socialist-realism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "doctrine: official Soviet culture 1932 onward, its enforcement inseparable from the work; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "socialist-realism"
+    },
+    {
+      "term": "Soviet Nonconformist Art",
+      "ref": "https://www.artsy.net/gene/soviet-nonconformist-art",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: Soviet art made outside state control and outside Socialist Realism; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "soviet-nonconformist-art"
+    },
+    {
+      "term": "Spatialism",
+      "ref": "https://www.artsy.net/gene/spatialism",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: Fontana, Milan 1947, the cut canvas opening the picture into real space; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "spatialism"
+    },
+    {
+      "term": "Spiral Group",
+      "ref": "https://www.artsy.net/gene/spiral-group",
+      "decision": "live",
+      "batch": "B23",
+      "note": "collective: New York 1963, one exhibition, in black and white only; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "spiral-arts-alliance"
+    },
+    {
+      "term": "Street Photography",
+      "ref": "https://www.artsy.net/gene/street-photography",
+      "decision": "live",
+      "batch": "B22",
+      "note": "practice: chance encounters in public places, framed and timed; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "street-photography"
+    },
+    {
+      "term": "Studio Museum in Harlem Artist-in-Residence (AIR) Program",
+      "ref": "https://www.artsy.net/gene/studio-museum-in-harlem-artist-in-residence-air-program",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "defined by who made it or where they trained, not by what was made"
+    },
+    {
+      "term": "Suprematism",
+      "ref": "https://www.artsy.net/gene/suprematism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: Malevich from 1915, geometry and the supremacy of pure artistic feeling; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "suprematism"
+    },
+    {
+      "term": "Surrealism",
+      "ref": "https://www.artsy.net/gene/surrealism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "surrealism"
+    },
+    {
+      "term": "Symbolism",
+      "ref": "https://www.artsy.net/gene/symbolism",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell, written in B20 from the Wikipedia movements pass, mapped to art and writing. Add this gene page to its sources.",
+      "cellId": "symbolism"
+    },
+    {
+      "term": "Synchromism",
+      "ref": "https://www.artsy.net/gene/synchromism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: founded 1912, colour analogised to music; among the first American abstract paintings; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "synchromism"
+    },
+    {
+      "term": "The Aesthetic Movement",
+      "ref": "https://www.artsy.net/gene/the-aesthetic-movement",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: art for its own beauty rather than to instruct, across art, writing and design; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "aestheticism"
+    },
+    {
+      "term": "The Anthropocene",
+      "ref": "https://www.artsy.net/gene/the-anthropocene",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "subject-defined"
+    },
+    {
+      "term": "The Blue Rider",
+      "ref": "https://www.artsy.net/gene/the-blue-rider",
+      "decision": "live",
+      "batch": "B22",
+      "note": "group: Munich 1911-1912, spiritual content above representation, almanac and two exhibitions; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "der-blaue-reiter"
+    },
+    {
+      "term": "The New Fauves",
+      "ref": "https://www.artsy.net/gene/the-new-fauves",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: German-language Neo-Expressionism of the late 1970s and 1980s; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "junge-wilde"
+    },
+    {
+      "term": "The Pictures Generation",
+      "ref": "https://www.artsy.net/gene/the-pictures-generation",
+      "decision": "live",
+      "batch": "B21",
+      "note": "group: appropriation from film, television and advertising, named by Crimp's 1977 show; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "the-pictures-generation"
+    },
+    {
+      "term": "The Stars Art Group (Xing Xing)",
+      "ref": "https://www.artsy.net/gene/the-stars-art-group-xing-xing",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "The 1979 Beijing group is well documented, but no independent reference answered under any title tried."
+    },
+    {
+      "term": "Traditional Arts of Africa, Oceania, and the Americas",
+      "ref": "https://www.artsy.net/gene/traditional-arts-of-africa-oceania-and-the-americas",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "a region plus a period, with no shared practice inside it"
+    },
+    {
+      "term": "Transavanguardia",
+      "ref": "https://www.artsy.net/gene/transavanguardia",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: the Italian branch of Neo-Expressionism, named by Bonito Oliva around 1979; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "transavanguardia"
+    },
+    {
+      "term": "Ukiyo-e",
+      "ref": "https://www.artsy.net/gene/ukiyo-e",
+      "decision": "merge",
+      "batch": "B21-B23",
+      "note": "Already a live cell. Add this gene page to its sources.",
+      "cellId": "ukiyo-e"
+    },
+    {
+      "term": "Venetian School",
+      "ref": "https://www.artsy.net/gene/venetian-school",
+      "decision": "live",
+      "batch": "B23",
+      "note": "school: colour and light carrying what Florentine painting carried by drawing; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "venetian-painting"
+    },
+    {
+      "term": "Vienna Secession",
+      "ref": "https://www.artsy.net/gene/vienna-secession",
+      "decision": "live",
+      "batch": "B22",
+      "note": "movement: Vienna 1897, painting, architecture and craft as one programme; proposal B22. Written and attested 2026-09-09.",
+      "cellId": "vienna-secession"
+    },
+    {
+      "term": "Viennese Actionism",
+      "ref": "https://www.artsy.net/gene/viennese-actionism",
+      "decision": "live",
+      "batch": "B21",
+      "note": "movement: Austrian 1960s-70s ritual actions with blood and the body; several prosecuted; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "viennese-actionism"
+    },
+    {
+      "term": "Washington Color School",
+      "ref": "https://www.artsy.net/gene/washington-color-school",
+      "decision": "live",
+      "batch": "B23",
+      "note": "movement: Washington DC, thinned acrylic stained into unprimed canvas; proposal B23. Written and attested 2026-09-09.",
+      "cellId": "washington-color-school"
+    },
+    {
+      "term": "Women Artists",
+      "ref": "https://www.artsy.net/gene/women-artists",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "defined by who made it or where they trained, not by what was made"
+    },
+    {
+      "term": "Works Progress Administration (WPA)",
+      "ref": "https://www.artsy.net/gene/works-progress-administration-wpa",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "A federal employment programme rather than a direction; the art it funded is held by American Regionalism and Social Realism. Deferred rather than declined because the Federal Art Project's own body of work may deserve a cell."
+    },
+    {
+      "term": "Yale University School of Art",
+      "ref": "https://www.artsy.net/gene/yale-university-school-of-art",
+      "decision": "declined",
+      "batch": "B21-B23",
+      "note": "defined by who made it or where they trained, not by what was made"
+    },
+    {
+      "term": "Young British Artists (YBAs)",
+      "ref": "https://www.artsy.net/gene/young-british-artists-ybas",
+      "decision": "live",
+      "batch": "B21",
+      "note": "group: London from 1988, self-organised shows and public provocation; proposal B21. Written and attested 2026-09-09.",
+      "cellId": "young-british-artists"
+    },
+    {
+      "term": "Zaire School of Popular Painting",
+      "ref": "https://www.artsy.net/gene/zaire-school-of-popular-painting",
+      "decision": "deferred",
+      "batch": "B21-B23",
+      "note": "A documented Congolese urban painting tradition, but no independent reference answered under any title tried."
+    }
+  ]
 }
