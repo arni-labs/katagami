@@ -13,6 +13,7 @@ const PAGES = {
   // Every owner-only route belongs here. A listing behind a door and a detail
   // page in front of one is the way this kind of gate is usually lost, so a new
   // route earns these assertions by being added to this map and nothing else.
+  "/writing/[id]": read("../src/app/(site)/writing/[id]/page.tsx"),
 };
 
 for (const [route, source] of Object.entries(PAGES)) {
@@ -181,4 +182,17 @@ test("no section here is offered in the public navigation", () => {
     assert.ok(ownerLinks.includes(`"${route}"`), `${route} is an owner link`);
     assert.ok(!publicLinks.includes(`"${route}"`), `${route} must not be in the public navigation`);
   }
+});
+
+test("/voice/<id> sends its reader to the one detail page rather than keeping a second", () => {
+  // Two views of one record drifted apart the moment either gained something:
+  // the corpus and the handoff went to /writing/<id>, and a /voice link would
+  // have led to the poorer one. The old address keeps working.
+  const source = read("../src/app/(site)/voice/[id]/page.tsx");
+  assert.match(source, /permanentRedirect\(`\/writing\/\$\{encodeURIComponent\(id\)\}`\)/);
+  assert.doesNotMatch(source, /getFileText|getWritingStyle/, "the redirect must not read the record on its way");
+
+  // The portable artifact keeps its own address and its own gate.
+  const voiceMd = read("../src/app/(site)/voice/[id]/VOICE.md/route.ts");
+  assert.match(voiceMd, /if \(!\(await isOwner\(\)\)\) return plain\("writing style not found", 404\);/);
 });
