@@ -206,6 +206,27 @@ test("a null or non-object entry inside a list is a finding, not a crash", () =>
   assert.ok(violations.length >= 2);
 });
 
+// The verifier found the null guard reached every list but the cycle walk, and
+// that a malformed source was dropped in silence rather than reported. Neither
+// occurs in production today, which is why they would have survived until they did.
+test("a null inside broader is a finding, and the cycle walk does not throw on it", () => {
+  const rows = [
+    cell("a", doc("A", { broader: [null, { cellId: "b", explanation: "x", sourceIds: ["s1"] }] })),
+    cell("b", doc("B", { broader: [{ cellId: "a", explanation: "x", sourceIds: ["s1"] }] })),
+  ];
+  const { violations } = checkCollection(rows);
+  assert.ok(violations.some((violation) => violation.rule === "unparseable" && violation.cell === "a"));
+  assert.equal(violations.filter((violation) => violation.rule === "broader-cycle").length, 2, "the cycle is still found around the null");
+});
+
+test("a malformed source is reported rather than quietly dropped", () => {
+  const rows = [cell("a", doc("A", { sources: [null, { id: 7 }, { id: "s1", title: "t", url: "https://example.org/" }] }))];
+  const { violations } = checkCollection(rows);
+  const unparseable = violations.filter((violation) => violation.rule === "unparseable");
+  assert.equal(unparseable.length, 2, "one for the null, one for the non-string id");
+  assert.ok(violations.every((violation) => violation.rule !== "unresolved-source"), "the good source still resolves");
+});
+
 test("a manifestation of an Archived record is counted as a tell, never a violation", () => {
   const rows = [cell("a", doc("A", { manifestations: [manifestation("en-old", 'credits name "A"')] }))];
   const records = new Map([["en-old", "Archived"], ["en-live", "Published"]]);

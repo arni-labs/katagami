@@ -3,8 +3,15 @@
 // Reads the live collection and reports every violation of the invariants this
 // collection actually has. It reports; it never writes. Run it any time.
 //
-//   node scripts/encyclopedia-integrity.mjs            # against production
-//   node scripts/encyclopedia-integrity.mjs --json     # machine-readable
+//   node scripts/encyclopedia-integrity.mjs                          # against production
+//   node scripts/encyclopedia-integrity.mjs --allow-count-mismatch   # what works today
+//   node scripts/encyclopedia-integrity.mjs --json                   # machine-readable
+//
+// The plain invocation exits 2 against production today, and that is the guard
+// working rather than a bug here: DesignLanguages pages 1278 rows while the
+// server counts 1279, a disagreement filed against Temper on 2026-09-09. Until
+// that is fixed, a clean run needs --allow-count-mismatch, which reports over
+// what was read and prints the mismatch at the top and in the summary line.
 //
 // The checking is a pure function over rows so the invariants are covered by
 // fixtures in ui/scripts/encyclopedia-integrity.test.mjs rather than only by a
@@ -106,7 +113,12 @@ export function checkCollection(rows, records = null) {
   }
 
   for (const [id, doc] of parsed) {
-    const sources = new Set(doc.sources.filter((source) => source && typeof source === "object").map((source) => source.id));
+    const sources = new Set();
+    for (const source of doc.sources) {
+      if (!source || typeof source !== "object") { add("unparseable", id, `sources holds ${describe(source)} where a source belongs`); continue; }
+      if (typeof source.id !== "string") { add("unparseable", id, `a source has an id of ${describe(source.id)}`); continue; }
+      sources.add(source.id);
+    }
     for (const field of ["maps", "broader", "relations", "manifestations"]) {
       for (const entry of doc[field]) {
         if (!entry || typeof entry !== "object") { add("unparseable", id, `${field} holds ${describe(entry)} where an entry belongs`); continue; }
@@ -153,6 +165,7 @@ export function checkCollection(rows, records = null) {
       const next = [];
       for (const current of frontier) {
         for (const link of parsed.get(current)?.broader ?? []) {
+          if (!link || typeof link !== "object") continue;
           if (link.cellId === id) { add("broader-cycle", id, `reaches itself through ${current}`); frontier = []; next.length = 0; break; }
           if (!seen.has(link.cellId)) { seen.add(link.cellId); next.push(link.cellId); }
         }
@@ -285,7 +298,7 @@ async function main() {
   if (process.argv.includes("--json")) { console.log(JSON.stringify({ violations, context }, null, 2)); return; }
   const byRule = new Map();
   for (const violation of violations) byRule.set(violation.rule, (byRule.get(violation.rule) ?? 0) + 1);
-  console.log(`${context.cells} live attested cells, ${context.manifestations} manifestations, ${records.size} records; every page checked against $count`);
+  console.log(`${context.cells} live attested cells, ${context.manifestations} manifestations, ${records.size} records; ${shortReads.length === 0 ? "every page reconciled against @odata.count" : `THE READ DID NOT RECONCILE (see above), so these counts are over what was read`}`);
   console.log(`${violations.length} violation(s)${violations.length === 0 ? "" : `: ${[...byRule].map(([rule, count]) => `${rule} ${count}`).join(", ")}`}`);
   for (const violation of violations) {
     console.log(`  ${violation.rule}  ${violation.cell}${violation.record ? `  ${violation.record}` : ""}  ${violation.detail}`);
