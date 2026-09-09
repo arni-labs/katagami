@@ -29,6 +29,7 @@ import { createHash } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { cellDocumentSchema } from "../ui/src/lib/encyclopedia-schema.ts";
+import { identifierFor } from "./encyclopedia-id.mjs";
 
 const flags = process.argv.slice(2);
 const expectAt = flags.indexOf("--expect");
@@ -71,11 +72,6 @@ async function request(path, method = "GET", body) {
   return { status: response.status, data };
 }
 
-export function identifierFor(name) {
-  const id = name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  assert.match(id, /^[a-z0-9][a-z0-9-]{0,159}$/, `cannot derive an identifier from ${name}`);
-  return id;
-}
 
 // Build and validate every document before touching the deployment, so a
 // rejected document is found here rather than half way through the batch.
@@ -102,7 +98,9 @@ const planned = payload.cells.map((cell) => {
   // reference and cannot be read back byte-for-byte, so it is refused here
   // rather than failing after it was written.
   assert.ok(Buffer.byteLength(serialized, "utf8") < 128 * 1024, `cell ${cell.number} (${cell.name}) is over 128 KiB; split its studies out or link them`);
-  return { id: identifierFor(cell.name), number: cell.number, name: cell.name, new: Boolean(cell.new), document: serialized, parsed: document, hash: createHash("sha256").update(serialized).digest("hex") };
+  const id = identifierFor(cell.name);
+  if (cell.id !== undefined) assert.equal(cell.id, id, `cell ${cell.number} states id '${cell.id}' but its name derives '${id}'`);
+  return { id, number: cell.number, name: cell.name, new: Boolean(cell.new), document: serialized, parsed: document, hash: createHash("sha256").update(serialized).digest("hex") };
 });
 assert.equal(new Set(planned.map((cell) => cell.id)).size, planned.length, "two approved names produce one identifier");
 console.log(`Prepared ${planned.length} documents, all valid against the shared contract`);
