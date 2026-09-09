@@ -407,7 +407,15 @@ export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened?.plate.id]);
 
-  const strokeW = Math.max(1.2, 1.5 / camera.k);
+  // Everything below is drawn INSIDE the layer the camera scales, so a value
+  // written in world units is multiplied by the zoom on the way to the screen.
+  // Each one therefore divides by it to come out the size it says. The floors
+  // here were set when the camera stopped at 3.2; the ceiling is now derived
+  // from the library's depth and reaches 8, where a 1.2 floor draws a line at
+  // ten screen pixels and a 13px word at a hundred and four.
+  const strokeW = 1.5 / camera.k;
+  const labelPx = 13 / camera.k;
+  const labelHalo = 6 / camera.k;
   const dash = `${5 / camera.k} ${6 / camera.k}`;
   const dots = `${1.5 / camera.k} ${5 / camera.k}`;
   const showWords = lod === "reading";
@@ -518,7 +526,7 @@ export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph:
         {layout.regions.map((r) => (
           <div key={r.map} className="pointer-events-none absolute" style={{ left: r.x, top: r.y, width: r.w, height: r.h, opacity: map && map !== r.map ? 0.25 : 1 }}>
             <span aria-hidden className="halftone-wash absolute -right-10 -top-10 h-[420px] w-[620px]" style={{ ["--wash-ink" as string]: MAP_INK[r.map], opacity: 0.35 }} />
-            <div className="absolute left-10 top-8" style={{ transform: `scale(${Math.max(1, Math.min(3.2, 0.6 / camera.k))})`, transformOrigin: "0 0" }}>
+            <div className="absolute left-10 top-8" style={{ transform: `scale(${Math.min(3.2, 0.6 / camera.k)})`, transformOrigin: "0 0" }}>
               <div className="font-mono text-[28px] font-bold uppercase tracking-[0.3em]" style={{ color: `color-mix(in oklch, ${MAP_INK[r.map]} 72%, var(--foreground))` }}>{MAP_LABEL[r.map]}</div>
               <div className="mt-1 font-mono text-[12px] uppercase tracking-[0.2em] text-muted-foreground">{r.count ? `${r.count} cells` : "no cells here yet"}</div>
             </div>
@@ -554,7 +562,7 @@ export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph:
                 {/* A wide invisible stroke so the thin dashed line is still
                     easy to put the pointer on. */}
                 <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 12} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(key)} onMouseLeave={() => setHoverEdge((at) => (at === key ? null : at))} />
-                {wordFor(key, e.from, e.to) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: 13, fill: "var(--muted-foreground)", paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: 6, strokeLinejoin: "round" }}>narrower cell</text> : null}
+                {wordFor(key, e.from, e.to) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: labelPx, fill: "var(--muted-foreground)", paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: labelHalo, strokeLinejoin: "round" }}>narrower cell</text> : null}
               </g>
             );
           })}
@@ -569,7 +577,7 @@ export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph:
               <g key={line.key} opacity={dim ? 0.2 : 1}>
                 <path d={d} fill="none" stroke={ink} strokeWidth={strokeW * 1.3} strokeDasharray={dash} strokeLinecap="round" style={{ mixBlendMode: "var(--ink-blend)" as never }} />
                 <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 12} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(line.key)} onMouseLeave={() => setHoverEdge((at) => (at === line.key ? null : at))} />
-                {wordFor(line.key, line.a, line.b) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: 13, fill: `color-mix(in oklch, ${ink} 70%, var(--foreground))`, paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: 6, strokeLinejoin: "round" }}>{word}</text> : null}
+                {wordFor(line.key, line.a, line.b) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: labelPx, fill: `color-mix(in oklch, ${ink} 70%, var(--foreground))`, paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: labelHalo, strokeLinejoin: "round" }}>{word}</text> : null}
               </g>
             );
           })}
