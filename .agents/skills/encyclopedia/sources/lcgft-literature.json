@@ -9,6 +9,22 @@
   "lane": "writing",
   "terms": [
     {
+      "term": "Abecedariuses",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026211",
+      "decision": "live",
+      "batch": "B14",
+      "note": "constraint: the alphabet as both length and order; proposal B14 #3. Written and attested 2026-09-09.",
+      "cellId": "abecedariuses"
+    },
+    {
+      "term": "Acrostics (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026214",
+      "decision": "live",
+      "batch": "B14",
+      "note": "device: a message read down the initial letters, in use since scripture; proposal B14 #2. Written and attested 2026-09-09.",
+      "cellId": "acrostics-poetry"
+    },
+    {
       "term": "Acting editions",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026215",
       "decision": "declined",
@@ -45,12 +61,35 @@
       "cellId": "afrofuturist-fiction"
     },
     {
+      "term": "Afrofuturist poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026071",
+      "decision": "live",
+      "batch": "B14",
+      "note": "the D36 twin of Afrofuturist fiction (B10) in verse, with the sonic and performance traditions as its own resource; proposal B14 #15. Written and attested 2026-09-09.",
+      "cellId": "afrofuturist-poetry"
+    },
+    {
       "term": "Alcaics",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2020026065",
       "decision": "live",
       "batch": "B8",
       "note": "form: the Alcaic stanza of Alcaeus and Horace, imitated by Hölderlin and Tennyson; proposal B8 #5. Written and attested 2026-09-09.",
       "cellId": "alcaics"
+    },
+    {
+      "term": "Alexandrines",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026094",
+      "decision": "live",
+      "batch": "B14",
+      "note": "metre: the twelve-syllable line that organised French verse for three centuries; proposal B14 #4. Written and attested 2026-09-09.",
+      "cellId": "alexandrines"
+    },
+    {
+      "term": "Alphabet rhymes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026219",
+      "decision": "declined",
+      "batch": "B14",
+      "note": "a teaching function applied to nursery rhymes (rhymes that run through the alphabet); the form itself is the cell Abecedariuses"
     },
     {
       "term": "Alternative histories (Drama)",
@@ -144,12 +183,27 @@
       "note": "subject-defined (asexual characters and themes)"
     },
     {
+      "term": "Asexual poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026003",
+      "decision": "declined",
+      "batch": "B14",
+      "note": "subject-defined (asexual characters and themes), as pass 2 declined Aromantic poetry"
+    },
+    {
       "term": "Atellanae",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026228",
       "decision": "live",
       "batch": "B11",
       "note": "form: masked Roman improvised farce with named stock characters, ancestor of the Italian companies; proposal B11 #24. Written and attested 2026-09-09.",
       "cellId": "atellanae"
+    },
+    {
+      "term": "Aubades",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026004",
+      "decision": "live",
+      "batch": "B14",
+      "note": "genre: the dawn parting, a fixed dramatic situation from the troubadour alba onward; proposal B14 #9. Written and attested 2026-09-09.",
+      "cellId": "aubades"
     },
     {
       "term": "Autobiographical drama",
@@ -167,12 +221,34 @@
       "cellId": "autobiographical-fiction"
     },
     {
+      "term": "Autobiographical poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026232",
+      "decision": "deferred",
+      "batch": "B14",
+      "note": "Autobiographical poetry would be the D36 twin of Autobiographical fiction, and LCGFT makes it the parent of Confessional poetry, but no independent reference answered for it. It returns as an insertion under D38 once a source is found."
+    },
+    {
+      "term": "Autograph verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026017",
+      "decision": "declined",
+      "batch": "B14",
+      "note": "defined by the object it was written in (an autograph album), a keepsake practice rather than a manner of writing"
+    },
+    {
       "term": "Autos sacramentales",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026233",
       "decision": "live",
       "batch": "B11",
       "note": "tradition: Corpus Christi allegorical one-act plays on carts, Calderón central, banned 1765; proposal B11 #27. Written and attested 2026-09-09.",
       "cellId": "autos-sacramentales"
+    },
+    {
+      "term": "Azharot",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026234",
+      "decision": "live",
+      "batch": "B14",
+      "note": "genre: Hebrew liturgical verse on the 613 commandments, recited at Shavuot; proposal B14 #20. Written and attested 2026-09-09.",
+      "cellId": "azharot"
     },
     {
       "term": "Ballades (Poetry)",
@@ -217,6 +293,14 @@
       "decision": "declined",
       "batch": "B8",
       "note": "a tone and subject label (lewd verse)"
+    },
+    {
+      "term": "Beast epics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026038",
+      "decision": "live",
+      "batch": "B14",
+      "note": "tradition: the multilingual Reynard cycle and Ysengrimus, animal court as human satire; proposal B14 #6. Written and attested 2026-09-09.",
+      "cellId": "beast-epics"
     },
     {
       "term": "Bestiaries",
@@ -280,6 +364,13 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026053",
       "decision": "declined",
       "batch": "B10",
+      "note": "subject-defined (bisexual characters and themes)"
+    },
+    {
+      "term": "Bisexual poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026054",
+      "decision": "declined",
+      "batch": "B14",
       "note": "subject-defined (bisexual characters and themes)"
     },
     {
@@ -360,6 +451,13 @@
       "cellId": "burrakatha-plays"
     },
     {
+      "term": "Calaveras",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026255",
+      "decision": "deferred",
+      "batch": "B14",
+      "note": "The calavera literaria, satirical Day of the Dead verse epitaph, is a real Mexican tradition, but Wikipedia's Calavera is chiefly about sugar skulls and does not treat the verse form on its own. Revisit when a source does."
+    },
+    {
       "term": "Calonarang plays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026020",
       "decision": "live",
@@ -397,6 +495,14 @@
       "batch": "B8",
       "note": "technique: poems assembled from other poets' lines; nests under Pastiches (Literature); proposal B8 #21. Written and attested 2026-09-09.",
       "cellId": "centos"
+    },
+    {
+      "term": "Chansons de geste",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026258",
+      "decision": "live",
+      "batch": "B14",
+      "note": "tradition: Old French heroic poems in assonanced laisses, organised into cycles; proposal B14 #5. Written and attested 2026-09-09.",
+      "cellId": "chansons-de-geste"
     },
     {
       "term": "Choose-your-own stories",
@@ -464,6 +570,14 @@
       "batch": "B10",
       "note": "tradition: the nineteenth-century urban descent novel after Les Mystères de Paris, with a wave of imitations; proposal B10 #21. Written and attested 2026-09-09.",
       "cellId": "city-mysteries"
+    },
+    {
+      "term": "Clerihews",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026261",
+      "decision": "live",
+      "batch": "B14",
+      "note": "form: four lines, two lopsided couplets, the subject's name as a rhyme; invented by E. C. Bentley in 1890; proposal B14 #19. Written and attested 2026-09-09.",
+      "cellId": "clerihews"
     },
     {
       "term": "Climate fiction",
@@ -554,6 +668,28 @@
       "cellId": "commedia-erudita"
     },
     {
+      "term": "Commendatory poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026268",
+      "decision": "declined",
+      "batch": "B14",
+      "note": "defined by its position and purpose (praise printed in a book's preliminaries), as pass 2 declined Laudatory poetry"
+    },
+    {
+      "term": "Complaints (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026020",
+      "decision": "deferred",
+      "batch": "B14",
+      "note": "The complaint is a named medieval and Renaissance lyric genre, but no independent reference answered: Wikipedia has no article for the poetic form. Revisit when a source is found."
+    },
+    {
+      "term": "Computer poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026269",
+      "decision": "merge",
+      "batch": "B14",
+      "note": "Same direction as the live cell Computer-generated literature, which already covers algorithmic composition in prose and verse; pass 2 anticipated this placement when it declined Experimental poetry. Add this LCGFT page to that cell's sources.",
+      "cellId": "computer-generated-literature"
+    },
+    {
       "term": "Computer-generated literature",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2024026018",
       "decision": "live",
@@ -562,11 +698,43 @@
       "cellId": "computer-generated-literature"
     },
     {
+      "term": "Concrete poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026270",
+      "decision": "live",
+      "batch": "B14",
+      "note": "movement: typography as meaning, with manifestos and dated international groups in the 1950s; proposal B14 #12. Written and attested 2026-09-09.",
+      "cellId": "concrete-poetry"
+    },
+    {
       "term": "Confessional fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026271",
       "decision": "deferred",
       "batch": "B6",
       "note": "LC's own dictionary source calls the term flexible and misleading; overlaps Fictional autobiographies and Diary fiction, and no page states the difference. Revisit when a source draws the line."
+    },
+    {
+      "term": "Confessional poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026272",
+      "decision": "live",
+      "batch": "B14",
+      "note": "Read in this pass and proposed as a cell; while the batch was being prepared another agent's batch wrote the same cell from the same LCGFT page, so the loader refused the duplicate and this row records the existing cell.",
+      "cellId": "confessional-poetry"
+    },
+    {
+      "term": "Counting-out rhymes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026273",
+      "decision": "live",
+      "batch": "B14",
+      "note": "form: children's selection rhymes whose mechanism is one stress per player; proposal B14 #17. Written and attested 2026-09-09.",
+      "cellId": "counting-out-rhymes"
+    },
+    {
+      "term": "Cowboy poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026028",
+      "decision": "live",
+      "batch": "B14",
+      "note": "tradition: occupational verse by working cattle hands, with the Elko gathering as a living institution; proposal B14 #16. Written and attested 2026-09-09.",
+      "cellId": "cowboy-poetry"
     },
     {
       "term": "Cozy mysteries",
@@ -590,6 +758,14 @@
       "decision": "declined",
       "batch": "B6",
       "note": "subject-defined (codes and ciphers)"
+    },
+    {
+      "term": "Cumulative rhymes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026212",
+      "decision": "live",
+      "batch": "B14",
+      "note": "technique: verse built by progressive addition; the D36 twin of Cumulative tales (B10); proposal B14 #18. Written and attested 2026-09-09.",
+      "cellId": "cumulative-rhymes"
     },
     {
       "term": "Cumulative tales",
@@ -661,6 +837,13 @@
       "batch": "B11",
       "note": "form: the investigation plot on stage; the D36 twin of the live Detective and mystery fiction, parent left for an insertion batch; proposal B11 #31. Written and attested 2026-09-09.",
       "cellId": "detective-and-mystery-plays"
+    },
+    {
+      "term": "Devotional poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026089",
+      "decision": "declined",
+      "batch": "B14",
+      "note": "a purpose label (devotion); the named liturgical and devotional forms inside it have headings of their own"
     },
     {
       "term": "Dialect drama",
@@ -783,6 +966,14 @@
       "note": "a form category of literature, like a medium"
     },
     {
+      "term": "Dramatic monologues (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026298",
+      "decision": "live",
+      "batch": "B14",
+      "note": "form: a speaker who is not the poet, a silent listener, and self-betrayal; proposal B14 #11. Written and attested 2026-09-09.",
+      "cellId": "dramatic-monologues-poetry"
+    },
+    {
       "term": "Drames à clef",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026299",
       "decision": "live",
@@ -866,12 +1057,28 @@
       "cellId": "ecofiction"
     },
     {
+      "term": "Ecopoetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026049",
+      "decision": "live",
+      "batch": "B14",
+      "note": "category: poetry with an ecological argument, distinct from nature poetry by the claim it makes; the D36 twin of Ecofiction (B10); proposal B14 #14. Written and attested 2026-09-09.",
+      "cellId": "ecopoetry"
+    },
+    {
       "term": "Ekphrastic poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026306",
       "decision": "live",
       "batch": "B8",
       "note": "technique: poems on works of visual art, from Homer's shield to Keats's urn; proposal B8 #24. Written and attested 2026-09-09.",
       "cellId": "ekphrastic-poetry"
+    },
+    {
+      "term": "Elegies (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026307",
+      "decision": "live",
+      "batch": "B14",
+      "note": "genre: the formal lyric of grief moving through consolation to settlement; proposal B14 #8. Written and attested 2026-09-09.",
+      "cellId": "elegies-poetry"
     },
     {
       "term": "Englyns",
@@ -896,6 +1103,21 @@
       "note": "a scale label (broad, grandiose)"
     },
     {
+      "term": "Epic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026310",
+      "decision": "live",
+      "batch": "B14",
+      "note": "form: the long heroic narrative poem, with a canon in most traditions and a described oral technique; proposal B14 #1. Written and attested 2026-09-09.",
+      "cellId": "epic-poetry"
+    },
+    {
+      "term": "Epicedia",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026311",
+      "decision": "deferred",
+      "batch": "B14",
+      "note": "Epicedia, classical funeral poems, are distinct from Elegies and from Laments in the sources' own accounts, but no independent reference answered for the term. Revisit when one exists."
+    },
+    {
       "term": "Episodic plays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026313",
       "decision": "deferred",
@@ -917,6 +1139,22 @@
       "batch": "B8",
       "note": "form: the verse epistle of Horace, Ovid and Pope; stands apart from Epistolary fiction, question raised; proposal B8 #17. Written and attested 2026-09-09.",
       "cellId": "epistolary-poetry"
+    },
+    {
+      "term": "Epithalamia",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026317",
+      "decision": "live",
+      "batch": "B14",
+      "note": "genre: the wedding poem with its own stated conventions, from Sappho and Catullus to Spenser; proposal B14 #10. Written and attested 2026-09-09.",
+      "cellId": "epithalamia"
+    },
+    {
+      "term": "Erasure poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026017",
+      "decision": "live",
+      "batch": "B14",
+      "note": "technique: removal from an existing text, the source always named; proposal B14 #13. Written and attested 2026-09-09.",
+      "cellId": "erasure-poetry"
     },
     {
       "term": "Erotic drama",
@@ -991,6 +1229,14 @@
       "cellId": "fables"
     },
     {
+      "term": "Fabliaux",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026328",
+      "decision": "live",
+      "batch": "B14",
+      "note": "form: short obscene comic verse tales in octosyllabic couplets, France c.1150-1400; proposal B14 #7. Written and attested 2026-09-09.",
+      "cellId": "fabliaux"
+    },
+    {
       "term": "Fairy tale plays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026081",
       "decision": "declined",
@@ -1051,6 +1297,13 @@
       "batch": "B12",
       "note": "form: German Shrove Tuesday carnival plays of the 15th and 16th centuries, Nuremberg best recorded; proposal B12 #3. Written and attested 2026-09-09.",
       "cellId": "fastnachtsspiele"
+    },
+    {
+      "term": "Fatras",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026337",
+      "decision": "deferred",
+      "batch": "B14",
+      "note": "Fatras, medieval French eleven-line nonsense verse, is a real fixed form, but no independent reference answered. Revisit when a source is found; the direction is otherwise held by the live cell Literary nonsense."
     },
     {
       "term": "Fiction",
@@ -1175,11 +1428,25 @@
       "note": "subject-defined (gay characters and themes)"
     },
     {
+      "term": "Gay poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026002",
+      "decision": "declined",
+      "batch": "B14",
+      "note": "subject-defined (gay characters and themes)"
+    },
+    {
       "term": "Genderqueer fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026073",
       "decision": "declined",
       "batch": "B10",
       "note": "subject-defined (genderqueer characters and themes)"
+    },
+    {
+      "term": "Georgics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026070",
+      "decision": "deferred",
+      "batch": "B14",
+      "note": "Georgics as a genre, the didactic poem of husbandry after Virgil, is real, but the only Wikipedia article of that name is Virgil's poem rather than the genre. Pass 2 expected this term to stand on its own; it returns when a source treats the genre."
     },
     {
       "term": "Ghazals (Poetry)",
@@ -1196,6 +1463,13 @@
       "batch": "B12",
       "note": "premise: the returning dead on stage; the D36 twin of Ghost stories (B10), parent left for an insertion batch; proposal B12 #39. Written and attested 2026-09-09.",
       "cellId": "ghost-plays"
+    },
+    {
+      "term": "Ghost poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026064",
+      "decision": "deferred",
+      "batch": "B14",
+      "note": "Ghost poetry would be the D36 twin of Ghost stories, but LCGFT gives no scope note and no reference treats verse about the returning dead as a body of work with its own conventions."
     },
     {
       "term": "Ghost stories",
@@ -1250,6 +1524,21 @@
       "batch": "B8",
       "note": "tradition: the eighteenth-century Graveyard school, precursor of the Gothic; proposal B8 #48. Written and attested 2026-09-09.",
       "cellId": "graveyard-poetry"
+    },
+    {
+      "term": "Hahiwang",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026062",
+      "decision": "deferred",
+      "batch": "B14",
+      "note": "Hahiwang has no LCGFT scope note and no independent reference answered under that spelling. Revisit when the Korean form is identified."
+    },
+    {
+      "term": "Haibun",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026071",
+      "decision": "live",
+      "batch": "B14",
+      "note": "form: Japanese prosimetric alternation of terse prose and haiku, the verse turning rather than concluding; proposal B14 #21. Written and attested 2026-09-09.",
+      "cellId": "haibun"
     },
     {
       "term": "Haiku",
@@ -1431,6 +1720,13 @@
       "note": "subject-defined (intersex characters and themes)"
     },
     {
+      "term": "Intersex poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026002",
+      "decision": "declined",
+      "batch": "B14",
+      "note": "subject-defined (intersex characters and themes)"
+    },
+    {
       "term": "Invectives (Literature)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2021026028",
       "decision": "deferred",
@@ -1460,6 +1756,13 @@
       "batch": "B8",
       "note": "tradition: jazz-rhythmed verse from the Harlem Renaissance through the Beats and Black Arts; proposal B8 #46. Written and attested 2026-09-09.",
       "cellId": "jazz-poetry"
+    },
+    {
+      "term": "Jitanjáforas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026391",
+      "decision": "deferred",
+      "batch": "B14",
+      "note": "Jitanjáforas, invented-sound verse named after Mariano Brull's coinage, is a real Latin American practice, but no independent reference answered. Revisit when a source is found."
     },
     {
       "term": "Jue ju",
