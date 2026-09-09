@@ -47,3 +47,39 @@
 **Chose the existing map because:** It addresses the accepted immediate problems and gives the user a concrete version to assess before committing to a larger spatial change.
 
 **Where:** docs/efforts/ARN-475/feedback.md; PR #292.
+
+## Keep focus inside the camera viewport
+
+**Decision:** Use a clipped canvas viewport so native focus cannot scroll transformed world coordinates.
+
+**Came up because:** Live phone and desktop verification showed that focusing cards could scroll an overflow-hidden container and move its toolbar despite the page staying still.
+
+**Options:** Reset scroll positions after focus; prevent the canvas from being an HTML scroll container.
+
+**Chose clipping because:** Camera state remains the sole navigation mechanism without corrective scroll handlers. Search results and readers retain independent scrolling.
+
+**Where:** ui/src/components/encyclopedia/map.css; PR #292.
+
+## Keep record inspection readable
+
+**Decision:** While related records are explicitly opened, suppress topic connectors and use a larger minimum record target; restore connectors when records close.
+
+**Came up because:** Live phone verification showed topic relation labels crossing the opened record ring.
+
+**Options:** Fade the graph; preserve every overlapping connector; temporarily show the connectors relevant to the open records.
+
+**Chose relevant connectors because:** It removes competing labels without fogging cards or changing saved branch expansion. Larger records require panning instead of fitting the entire ring onto a phone.
+
+**Where:** ui/src/components/encyclopedia/encyclopedia-map.tsx; PR #292.
+
+## Stop computing unused full-graph geometry
+
+**Decision:** Remove the server layout calculation and serialized seed from this route after switching its renderer to explicit disclosure.
+
+**Came up because:** The old seed was no longer consumed, yet the route still calculated it on cold graph loads.
+
+**Options:** Keep calculating unused geometry; remove the unused call and prop.
+
+**Chose removal because:** It avoids unnecessary computation and payload without changing the cached production content read.
+
+**Where:** ui/src/app/(site)/encyclopedia/page.tsx; PR #292.

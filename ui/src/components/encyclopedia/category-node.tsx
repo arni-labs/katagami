@@ -4,7 +4,7 @@ import { Shapes, PenLine, Palette, LayoutGrid } from "lucide-react";
 import type { MapName } from "@/lib/encyclopedia";
 import { MAP_LABEL, MAP_INK } from "@/lib/encyclopedia-graph";
 import { type CategoryNode, BRANCH_PAGE } from "./disclosure";
-import { useCellFace } from "./map-cards";
+import { useCellFace, brokenOnArrival } from "./map-cards";
 
 function Study({ cell }: { cell: NonNullable<CategoryNode["preview"]> }) {
   const { face, onImageError } = useCellFace(cell);
@@ -13,6 +13,7 @@ function Study({ cell }: { cell: NonNullable<CategoryNode["preview"]> }) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
+        ref={(img) => brokenOnArrival(img, onImageError)}
         src={face.url}
         alt={face.alt}
         onError={onImageError}
@@ -71,9 +72,12 @@ export function CategoryCard({
         <div className="category-visual" style={{ color: MAP_INK[node.map] }}>
           {node.preview ? (
             <Study cell={node.preview} />
+          ) : node.map === "writing" && example?.excerpt ? (
+            <p className="category-passage">{example.excerpt}</p>
           ) : example?.image && !imageFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
+              ref={(img) => brokenOnArrival(img, () => setImageFailed(true))}
               src={example.image}
               alt={`Related record: ${example.name}`}
               loading="lazy"

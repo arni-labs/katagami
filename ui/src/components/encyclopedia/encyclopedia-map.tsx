@@ -8,7 +8,7 @@ import { GraphIndex, MAP_LABEL, MAP_NAMES_ORDER } from "@/lib/encyclopedia-graph
 import { Marker } from "@/components/page-hero";
 import { RELATION_INK_VAR, SearchBox } from "./chrome";
 import { SET_INK } from "./material";
-import { expandCell, expandedRadius, plateConnector, SAT_W, type LayoutSeed, type PlateNode } from "./graph-layout";
+import { expandCell, expandedRadius, plateConnector, SAT_W, type PlateNode } from "./graph-layout";
 import { lodFor, Plate, Satellite } from "./map-cards";
 import { CloseButton, IndexSheet, OpenCellButton, SheetBody, SheetTitle, type SheetTab } from "./focus-sheet";
 import { EncyclopediaBrowse } from "./browse";
@@ -28,7 +28,7 @@ const OVERVIEW_MIN_ZOOM = 0.65;
 /** The smallest an opened record node may print at. A ring of sixty records
  *  fitted to a 390px screen puts each node at about fifteen pixels, too small
  *  to hit, so below this the ring runs off the screen and is panned instead. */
-const HITTABLE_NODE_PX = 34;
+const HITTABLE_NODE_PX = 64;
 /** How far outside the viewport a card is still mounted, in screen pixels. A
  *  margin means a card is on the paper slightly before it is panned into view
  *  and is not thrown away the moment it leaves, so a slow drag never shows a
@@ -65,7 +65,7 @@ function useIsDesktop(): boolean {
   );
 }
 
-export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaGraph; layout: LayoutSeed; initialCellId?: string | null }) {
+export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaGraph; initialCellId?: string | null }) {
   const index = useMemo(() => new GraphIndex(graph), [graph]);
   const [openCategories, setOpenCategories] = useState<Map<MapName,number>>(()=>new Map());
   const [expanded, setExpanded] = useState<Map<string,number>>(()=>new Map());
@@ -309,7 +309,6 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   };
 
   const manifestationsById=useMemo(()=>new Map(graph.cells.map(c=>[c.id,c.manifestations])),[graph]);
-  const shownRecords=opened ? opened.nodes.filter(s=>s.role==="record").length : 0;
 
   /** Open a cell's records onto the map, frame them, and unfold the same list
    *  in the sheet. Clicking the fold node puts them away again. */
@@ -442,12 +441,12 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       >
         {layout.categories.map(node=><CategoryCard key={node.map} node={node} onToggle={toggleCategory} onMore={moreCategory}/>)}
         <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden>
-          {layout.categories.flatMap(h=>h.rootIds.map(id=>{
+          {!opened && layout.categories.flatMap(h=>h.rootIds.map(id=>{
             const p=layout.byId.get(id);if(!p)return null;
             return <path key={h.map+id} d={`M ${h.x+h.w/2} ${h.y} C ${h.x+240} ${h.y}, ${p.x-220} ${p.y}, ${p.x-p.w/2} ${p.y}`} fill="none" stroke="var(--ramune)" strokeWidth={strokeW} strokeDasharray={dash}/>;
           }))}
           {/* broader → narrower */}
-          {broaderEdges.map((e) => {
+          {!opened && broaderEdges.map((e) => {
             const a = layout.byId.get(e.from)!; const b = layout.byId.get(e.to)!;
             const { d, label } = plateConnector(a, b);
             const key = `${e.from}-${e.to}`;
@@ -462,7 +461,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             );
           })}
           {/* typed relations */}
-          {relationLines.map((line) => {
+          {!opened && relationLines.map((line) => {
             const a = layout.byId.get(line.a)!; const b = layout.byId.get(line.b)!;
             const { d, label } = plateConnector(a, b);
             const ink = RELATION_INK_VAR[line.ink];
@@ -602,7 +601,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
         ) : null}
       </div>
 
-      <div className="encyclopedia-legend">{visiblePlates.length} topics visible · {shownRecords} related records · expand a branch to reveal connections · scroll to zoom</div>
+      <div className="encyclopedia-legend">{opened ? `Related records of ${opened.plate.cell.name} · hide records to return to topic connections` : `${visiblePlates.length} topics visible · expand a branch to reveal connections · scroll to zoom`}{graph.withheld ? ` · ${graph.withheld} withheld` : ""}</div>
     </div>
   );
 
