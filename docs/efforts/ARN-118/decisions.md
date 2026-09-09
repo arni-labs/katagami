@@ -539,7 +539,6 @@ Two orderings the review panel found, both fixed the same night. A cell found in
 What is still open, and it is the reason the runtime fix matters: the loader's last read and its `Define` are not one operation. Two runs that both read the same document and both pass the check can still write in sequence, and the second wins. Narrowing that window is all a client can do. A `Define` that took the expected hash and refused the transition would close it, which is the same attestation pair the collection already computes.
 
 Where: `scripts/encyclopedia-base.mjs`, `scripts/create-encyclopedia-cells.mjs`, `ui/scripts/encyclopedia-base.test.mjs`, and the "Revising a cell another run may also be revising" rule in `.agents/skills/encyclopedia/SKILL.md`.
-<<<<<<< /tmp/ours.f
 
 
 ## D42 A pass that gives a cell children revisits that cell's questions
@@ -553,7 +552,6 @@ Options: Treat a `questions` entry as a record of what was true when the cell wa
 Chose the third because: `questions` is how a cell tells the owner what it does not know, so a stale one sends her to look at something already done, which is worse than a wrong number in prose. The other two options either accept that or need machinery. Given up: a nesting pass now has a closing step over every cell it gave children to, and the cost grows with the size of the pass.
 
 Where: `.agents/skills/encyclopedia/SKILL.md`, "Maintaining"; batch `B26.json`; the corrected cells are drama, poetry and dialect-literature.
->>>>>>> /tmp/theirs.f
 
 
 ## D43 The writing map nests on the Library of Congress broader-term hierarchy, and stops where that hierarchy stops being about made work
@@ -862,7 +860,6 @@ directions is a threshold that no reasonable text can sit inside.
 
 Where: `scripts/writing_style_voice_md.py`, `scripts/replace-writing-style-corpora.py`,
 `scripts/check-writing-style-exemplars.py`; `docs/efforts/ARN-118/corpus-sources.md`.
-=======
 
 <!-- D66–D70 assigned by the team lead for the mobile and performance work on the
      encyclopedia (PR #291). Numbers in this log are assigned rather than chosen:
