@@ -1239,7 +1239,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026125",
       "decision": "declined",
       "batch": "B11",
-      "note": "a cataloguing form counting speakers (a play for two)"
+      "note": "a term that counts speakers, and declined for the thinness of the term rather than for the counting, because counting speakers would decline Monologues too. The monologue and its named varieties, the soliloquy, the aside and the dramatic monologue, have their own critical literature and are collected and performed as works; nothing comparable attaches to the duologue."
     },
     {
       "term": "Dystopian comics",
@@ -1676,7 +1676,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026103",
       "decision": "declined",
       "batch": "B10",
-      "note": "subject-defined (forensic science), as pass 1 declined Medical fiction"
+      "note": "subject-defined (forensic science), as pass 1 declined Medical fiction. Recorded against Spy fiction, which is kept from the same shape: if the owner reverses Spy fiction on the strength of its narrative technique, this row is re-read under the same test rather than left declined by default."
     },
     {
       "term": "Fotonovelas",
@@ -2495,7 +2495,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026909",
       "decision": "live",
       "batch": "B12",
-      "note": "form: dramatic writing made to be sung, with its own constraints and canon (borderline: a component of a musical work); proposal B12 #35. Written and attested 2026-09-09.",
+      "note": "form: dramatic writing made to be sung, with its own constraints and canon. Two pairs recorded. Pass 1 declined Prologues and epilogues as a part of a work, and a libretto is a component of a musical work in the same way; it is kept because the libretto has a canon read as literature, in Da Ponte, Boito and Hofmannsthal, and a described craft of its own. Pass 1 also declined Musical texts as song words separated from their music, and a libretto is writing made to be sung, which is the same shape; that pair is not resolved here. On the owner's list: either the libretto is the exception the song-lyric group deserves as well, or this cell goes with them. Proposal B12 #35. Written and attested 2026-09-09.",
       "cellId": "librettos"
     },
     {
@@ -2849,7 +2849,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026440",
       "decision": "live",
       "batch": "B12",
-      "note": "form: extended single-speaker speech, with named varieties (borderline: a component of a play, kept because monologues are published as works); proposal B12 #29. Written and attested 2026-09-09.",
+      "note": "form: extended single-speaker speech, with named varieties. Pair recorded: pass 1 declined Prologues and epilogues as a part of a work and a cataloguing form, and a monologue is a component of a play in the same way. The difference claimed here is that monologues are collected, published and performed standalone and prologues are not. A real judgement call, on the owner's list. Proposal B12 #29. Written and attested 2026-09-09.",
       "cellId": "monologues-drama"
     },
     {
@@ -3082,7 +3082,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026019",
       "decision": "live",
       "batch": "B10",
-      "note": "form: the middle length, with a German critical tradition and its own canon (flagged: defined by length); proposal B10 #4. Written and attested 2026-09-09.",
+      "note": "form: the middle length, with a German critical tradition and its own canon. Pair recorded: pass 1 declined Epic fiction as a scale label, and this cell is defined by length. The difference claimed is that the novella has a named body of theory, the German Novelle, and a canon discussed in terms of that length, where LCGFT's Epic fiction names breadth with no corresponding body. A real judgement call, on the owner's list. Proposal B10 #4. Written and attested 2026-09-09.",
       "cellId": "novellas"
     },
     {
@@ -4315,7 +4315,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026555",
       "decision": "live",
       "batch": "B11",
-      "note": "genre: espionage, formed before 1914, split after 1945 into adventure and bureaucratic lines, built on withheld information; proposal B11 #3. Written and attested 2026-09-09.",
+      "note": "genre: espionage, formed before 1914, split after 1945 into adventure and bureaucratic lines, built on withheld information. Pair recorded: pass 1 declined Gangster, Legal, Medical and Military fiction as subject-defined and B10 declined Forensic fiction with them, and espionage is a subject in the same way. The difference claimed is a stated narrative technique, the reader kept at the agent's disadvantage, and two described lines with their own canons, where the declined terms are readers' advisory shelf labels with no technique attached. This is the weakest of the kept-genre calls and goes on the owner's list beside War fiction. Proposal B11 #3. Written and attested 2026-09-09.",
       "cellId": "spy-fiction"
     },
     {
