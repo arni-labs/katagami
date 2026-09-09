@@ -1421,7 +1421,6 @@ Options: Cite the earlier finding and skip the queries; re-check a sample; re-ch
 Chose to re-check the eleven that mattered because: the queries are cheap and the earlier finding was about a different layer. Dada, Surrealist, Constructivist, Cubist, Expressionist, Futurist, Fauve, Post-Impressionism, Impressionist, Arte Povera and Fluxus were fetched. Every one gives a guide term in angle brackets as its only broader concept, sorted by nation and period: `<modern European fine arts styles and movements>`, `<modern Italian styles and movements>`, `<post-1945 fine arts styles and movements>`. The earlier finding holds at this layer too, and it is now written onto the Modernism cell so the next pass does not spend the queries a third time.
 
 Where: `modernism` cell, last `questions` entry.
-<<<<<<< HEAD
 
 
 ## D82 A list you can show to be wrong in part is not evidence in whole
@@ -1465,5 +1464,3 @@ Chose to measure because: carrying either finding across the boundary would have
 The result is a property of the facet. Styles and Periods has no parent layer to offer this collection; the materials and techniques side does. A future pass should not spend these queries on a movement, and should not apply the closure to a technique.
 
 Where: `.agents/skills/encyclopedia/SKILL.md`, "Rules that hold in every pass"; `modernism` cell, last `questions` entry.
-=======
->>>>>>> origin/master
