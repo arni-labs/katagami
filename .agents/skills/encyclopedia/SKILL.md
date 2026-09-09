@@ -423,6 +423,19 @@ Autonomy is a change in when the human looks, never in what may be built.
   broad cells whose only children are broad (the leaf layer is missing under
   them), and `broader` links that span a distance a reader would not accept in
   one step. These become the next proposal, not a quiet fix.
+- **Revising a cell another run may also be revising.** `Define` replaces the
+  whole document, so two runs changing different parts of one cell have no safe
+  ordering: the second write wins and the first is lost, with no error on either
+  side. A payload built from a document you read states `baseHash`, the sha256
+  of the document as you read it, on each such cell. Declaring it is not
+  optional: a payload that would replace the document of a cell that already
+  holds one, and does not say which bytes it was built from, is refused. The
+  loader refuses the write if the stored document has moved, both in the preflight and again
+  immediately before writing, and tells you to re-read and rebuild. Rebuild
+  from the document as production holds it now and re-apply only your own
+  change; do not replay a payload built against the older bytes, or you undo
+  the other run in the opposite direction.
+
 - **Inserting a cell between a parent and a child.** The collection is expected
   to deepen: a pass discovers that something belongs between two cells that are
   already linked. Create the middle cell with `broader` naming the old parent,

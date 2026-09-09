@@ -30,6 +30,7 @@ import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { cellDocumentSchema } from "../ui/src/lib/encyclopedia-schema.ts";
 import { identifierFor } from "./encyclopedia-id.mjs";
+import { baseConflict } from "./encyclopedia-base.mjs";
 
 const flags = process.argv.slice(2);
 const expectAt = flags.indexOf("--expect");
@@ -100,7 +101,11 @@ const planned = payload.cells.map((cell) => {
   assert.ok(Buffer.byteLength(serialized, "utf8") < 128 * 1024, `cell ${cell.number} (${cell.name}) is over 128 KiB; split its studies out or link them`);
   const id = identifierFor(cell.name);
   if (cell.id !== undefined) assert.equal(cell.id, id, `cell ${cell.number} states id '${cell.id}' but its name derives '${id}'`);
-  return { id, number: cell.number, name: cell.name, new: Boolean(cell.new), document: serialized, parsed: document, hash: createHash("sha256").update(serialized).digest("hex") };
+  if (cell.baseHash !== undefined) {
+    assert.match(String(cell.baseHash), /^[0-9a-f]{64}$/, `cell ${cell.number} (${cell.name}) states a baseHash that is not a sha256`);
+    assert.ok(!cell.new, `cell ${cell.number} (${cell.name}) is marked new and also states a baseHash; a new cell has nothing to be based on`);
+  }
+  return { id, number: cell.number, name: cell.name, new: Boolean(cell.new), baseHash: cell.baseHash, document: serialized, parsed: document, hash: createHash("sha256").update(serialized).digest("hex") };
 });
 assert.equal(new Set(planned.map((cell) => cell.id)).size, planned.length, "two approved names produce one identifier");
 console.log(`Prepared ${planned.length} documents, all valid against the shared contract`);
@@ -264,27 +269,52 @@ for (const cell of ordered) {
         assert.equal(stored.name, cell.name, `'${cell.id}' already holds a different cell, "${stored.name}"`);
       }
     }
+    // Define replaces the whole document, so two runs revising different parts
+    // of one cell have no safe ordering: the second write wins and the first is
+    // lost with no error on either side. It happened on the night of
+    // 2026-09-09, when one run added manifestations to five cells and another
+    // rewrote their prose from a copy taken before those writes. A payload built
+    // from a document it read states the hash it read, and the write is refused
+    // if the stored document has moved since. This sits outside the guard above
+    // because a cell that held a document when the payload was built and holds
+    // none now has moved too, and the plan must say so rather than reporting a
+    // write it would refuse.
     if (settled(existing, cell)) { console.log(`${label}: already stored and attested`); continue; }
     // A cell already holding exactly this document is an interrupted earlier
     // run being resumed; only a different document is a conflict for the verb.
+    // The verb is checked before the base, because a Create batch pointed at an
+    // occupied cell is wrong about what it is doing, and telling it to declare a
+    // base hash would send it to a refusal that says a new cell has nothing to
+    // be based on.
     const holdsOther = Boolean(existing && existing.fields.document !== "" && existing.fields.document !== cell.document);
     if (creating) assert.ok(!holdsOther, `a Create batch may not rewrite '${cell.id}', which already holds a different document`);
     else if (cell.new) assert.ok(!holdsOther, `'${cell.id}' is marked new but already holds a different document`);
     else assert.ok(existing, `'${cell.id}' does not exist and the payload does not mark it new`);
+    const conflict = baseConflict({ id: cell.id, baseHash: cell.baseHash, stored: existing?.fields.document, writing: cell.document });
+    assert.ok(!conflict, conflict);
     if (!apply) { console.log(`${label}: would ${existing ? "update" : "create"}`); continue; }
 
     assert.ok([200, 201].includes((await request("/tdata/EncyclopediaCells", "POST", { id: cell.id })).status), "create refused");
     // Define is valid only from Draft, so recover a cell left mid-validation by
-    // an interrupted run before rewriting it.
+    // an interrupted run before rewriting it. Check the base FIRST: a cell that
+    // is validating may be another run's write in flight, and abandoning that
+    // validation would disrupt a run this one is about to refuse anyway.
     existing = await read(cell);
+    const beforeRecovery = baseConflict({ id: cell.id, baseHash: cell.baseHash, stored: existing?.fields.document, writing: cell.document });
+    assert.ok(!beforeRecovery, beforeRecovery && `${beforeRecovery} Nothing was written to it and no validation was abandoned.`);
     if (existing?.status === "ValidatingDocument") {
       const abandoned = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.AbandonValidation`, "POST", {});
       assert.ok([200, 409].includes(abandoned.status), `AbandonValidation: ${JSON.stringify(abandoned.data)}`);
       console.log(`${label}: recovered from an interrupted validation`);
     }
     // Define counts a document revision, so a rerun over bytes already stored
-    // only needs its validation, not another revision.
+    // only needs its validation, not another revision. The base is checked
+    // again here, against the read taken immediately before the write, so a
+    // cell that moved between the preflight and now is refused rather than
+    // overwritten.
     existing = await read(cell);
+    const raced = baseConflict({ id: cell.id, baseHash: cell.baseHash, stored: existing?.fields.document, writing: cell.document });
+    assert.ok(!raced, raced && `${raced} It changed while this run was working; nothing was written to it.`);
     if (existing?.fields.document !== cell.document) {
       const defined = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.Define`, "POST", { document: cell.document });
       assert.equal(defined.status, 200, `Define: ${JSON.stringify(defined.data)}`);
