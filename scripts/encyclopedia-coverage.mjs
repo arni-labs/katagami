@@ -48,6 +48,10 @@ export function validateSource(source, file) {
       fail(`${where}.cellId is required when the decision is ${term.decision}`);
     }
     if (term.cellId !== undefined && !nonBlank(term.cellId)) fail(`${where}.cellId must be a non-blank string when present`);
+    if (term.namedFrom !== undefined) {
+      if (!nonBlank(term.namedFrom)) fail(`${where}.namedFrom must be the URL the name came from`);
+      if (!["cell", "live"].includes(term.decision)) fail(`${where}.namedFrom belongs on a cell this pass minted, not on a ${term.decision} row`);
+    }
     if (nonBlank(term.term)) {
       const key = term.term.trim().toLowerCase().replace(/\s+/g, " ");
       if (seen.has(key)) fail(`${where}.term "${term.term}" is decided twice`);
@@ -59,7 +63,8 @@ export function validateSource(source, file) {
       seenRefs.add(ref);
     }
   }
-  if (source.total !== null && terms.length > source.total) fail("more terms decided than the source holds");
+  const sourceTerms = terms.filter((term) => term !== null && typeof term === "object" && term.namedFrom === undefined);
+  if (source.total !== null && sourceTerms.length > source.total) fail("more terms decided than the source holds");
   return errors;
 }
 
@@ -84,8 +89,14 @@ export function loadSources(dir = SOURCES_DIR) {
 
 export function summarize(source) {
   const counts = {};
-  for (const term of source.terms) counts[term.decision] = (counts[term.decision] ?? 0) + 1;
-  const decided = source.terms.length;
+  // A row carrying namedFrom records a cell the pass minted under a name from
+  // another vocabulary. It is tracked so nothing is invisible, and it is not one
+  // of this source's terms, so it does not count toward coverage.
+  const terms = source.terms.filter((term) => term.namedFrom === undefined);
+  const minted = source.terms.length - terms.length;
+  for (const term of terms) counts[term.decision] = (counts[term.decision] ?? 0) + 1;
+  if (minted > 0) counts.minted = minted;
+  const decided = terms.length;
   const coverage = source.total && source.use !== "backbone" ? decided / source.total : null;
   return { decided, counts, coverage };
 }

@@ -785,9 +785,9 @@
     {
       "term": "Fantasy poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026334",
-      "decision": "declined",
+      "decision": "deferred",
       "batch": "B8",
-      "note": "subject-defined (magic and extraordinary characters); the fantasy tradition is held by the live cell Fantasy fiction"
+      "note": "Deferred, not declined: D36 gives a tradition that lives in prose and in verse a cell per form under a shared parent, so this returns once the parent over the fiction cell exists."
     },
     {
       "term": "Folk poetry",
@@ -878,9 +878,9 @@
     {
       "term": "Horror poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026375",
-      "decision": "declined",
+      "decision": "deferred",
       "batch": "B8",
-      "note": "a tone label (meant to frighten); the horror tradition is held by the live cell Horror fiction"
+      "note": "Deferred, not declined: D36 gives a tradition that lives in prose and in verse a cell per form under a shared parent, so this returns once the parent over the fiction cell exists."
     },
     {
       "term": "Humorous poetry",
@@ -1100,6 +1100,15 @@
       "decision": "declined",
       "batch": "B8",
       "note": "subject-defined (myth retold)"
+    },
+    {
+      "term": "Regulated verse",
+      "ref": "https://en.wikipedia.org/wiki/Regulated_verse",
+      "decision": "live",
+      "cellId": "regulated-verse",
+      "batch": "B8",
+      "note": "Minted in this pass as the parent Jue ju and Lu shi both need; LCGFT has no heading for it, so the name is Wikipedia's. Written and attested 2026-09-09.",
+      "namedFrom": "https://en.wikipedia.org/wiki/Regulated_verse"
     }
   ]
 }

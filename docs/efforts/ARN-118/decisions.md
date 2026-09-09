@@ -430,3 +430,27 @@ Options: One cell per direction across forms, with the forms described inside it
 Chose the cell per form because: each verse tradition has its own history, canon and conventions, and the nesting is what makes the collection explorable. Given up: a reader looking for the Gothic finds three entries rather than one, which the parent is there to answer.
 
 Where: this ledger's Gothic poetry row; the parent cells arrive in a later numbered batch. `.agents/skills/encyclopedia/sources/lcgft-literature.json`.
+
+## D37 Cells sit at depths, and a made record manifests a leaf
+
+Decision: A cell may be broad (a genre, form or movement: Fantasy fiction, Diaries) or a leaf (a manner: a form plus a stance plus a period or milieu, narrow enough to write a recognisable paragraph in). A writing style, art style or design language manifests a leaf, never a broad cell. Leaf cells are cited from criticism and scholarship, or recorded as recollected; they are not harvested from a catalogue.
+
+Came up because: The owner stopped the writing-style work: "the writing styles that we have right now can't be directly attached to existing cells because existing cells are broad... we can't create a new writing style called fantasy novel." Ninety writing cells were live and not one of them could host a voice, because every source read so far (Library of Congress, Wikidata, Wikipedia) catalogues works and therefore stops at genre and form.
+
+Options: Attach voices to the broad cells anyway and let scope drift; keep harvesting vocabularies and hope depth appears; name the leaf layer as its own kind of curation with its own sources.
+
+Chose the leaf layer because: the vocabularies stop where they stop by design, so more slices add breadth and never reach the level a voice occupies. Naming the leaf explicitly also says what the encyclopedia is for: below the catalogue, it stops mirroring a library and starts being ours. Given up: leaves are slower to make than terms are to read, and some will be recollected rather than cited.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "What is and is not a cell".
+
+## D38 The graph is expected to deepen in place
+
+Decision: Inserting a cell between an existing parent and child is a normal maintenance move, not a rewrite. Create the middle cell under the old parent, then Define the child under the middle cell, dropping the child's link to the grandparent unless it remains a separate parent for a separate reason. Both operations ride in one numbered batch, and the new links carry their own explanations and citations.
+
+Came up because: The owner described the collection as living: "imagine neurons forming connections... later on some agent discovers that something could go in between there... you insert between, created a missing node in the middle if that is where that node most organically would sit."
+
+Options: Treat the hierarchy as settled once approved and only add at the edges; allow insertion as an ordinary move with stated evidence.
+
+Chose insertion because: the depth of the graph is discovered, not designed, and the collection would otherwise ossify at whatever shape the first pass happened to give it. No new machinery is needed: Create plus Define is what the loader already does. Given up: a child's parent can change between reads, so anything caching the hierarchy must tolerate that.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "Maintaining"; the gap watch now also looks for broad cells with no leaves and for links that span too far.
