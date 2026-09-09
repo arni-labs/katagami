@@ -142,3 +142,19 @@ Options: Show the record in the sheet; a panel beside the node; the node expands
 Chose in-place expansion because: it is the same move as opening a cell's narrower cells — the reader opens a thing where it is and folds it there. Chose not to re-lay out because: making room for the card moved the whole cluster and threw the reader's view away from the thing they had just opened. The card sits above its neighbours and can be dragged clear.
 
 Where: the opened branch of `SatelliteNodeCard` in `map-cards.tsx`; `openRecords` and `recordDetail` in `encyclopedia-map.tsx`; `RING_PAD` and `RECORD_CARD_W` in `graph-layout.ts`.
+
+## D14 The card is the control: no chips, no tags
+
+Decision: The open/fold and "+N more" chips are gone from cards and category nodes. Clicking a card focuses the cell and opens its narrower cells; clicking the cell in focus folds them. A category node opens and folds on click. The next group of a node's cells is one small "+N" node at the end of its ring, standing where those cells will go. The tags that said where a cell's picture came from — the chip on the picture, the caption under it, the ink bar — are gone too: the picture is a visual reference, and the sheet still says which record it is. This reverses D5 on Rita's instruction (2026-09-09).
+
+Came up because: Rita: the chips duplicate information and make the canvas busy; the provenance tags likewise; show the children by clicking the card instead.
+
+Given up: a reader cannot focus a cell without also opening its first group. That is what a click means now.
+
+## D15 A record node says what it is
+
+Decision: A record node always carries its set's word under it in the set's ink — art style, writing style, design language, palette — and a hairline of that ink along its bottom edge. Its name joins once the node prints at reading size, or when its cell is in focus.
+
+Came up because: Rita: an unopened record node was a square with nothing to say what it was.
+
+Where: `SatelliteNodeCard` in `map-cards.tsx`.

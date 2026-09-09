@@ -121,6 +121,20 @@ export interface SatelliteNode {
   scale: number;
 }
 
+/** The node that opens the next group of a node's narrower cells: one small
+ *  square at the end of the ring, in the place of the cells it stands for. */
+export interface MoreNode {
+  /** The node it belongs to: a cell id or a category key. */
+  key: string;
+  x: number;
+  y: number;
+  /** How many cells it stands for. */
+  count: number;
+  scale: number;
+}
+/** The more node's box at full scale. */
+export const MORE_W = 64;
+
 export interface HubNode {
   map: MapName;
   key: string;
@@ -144,6 +158,7 @@ export interface GraphLayout {
   plates: PlateNode[];
   satellites: SatelliteNode[];
   hubs: HubNode[];
+  more: MoreNode[];
   byId: Map<string, PlateNode>;
   /** Everything on the paper. */
   bounds: Rect;
@@ -250,6 +265,15 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
   const byId = new Map<string, PlateNode>();
   const satellites: SatelliteNode[] = [];
   const hubs: HubNode[] = [];
+  const more: MoreNode[] = [];
+  /** The things on a node's ring: its shown children, then the "+N" node
+   *  when there are more. Radii for the ring walk, one per thing. */
+  const ringRadii = (key: string, scale: number): number[] => {
+    const kids = visible.shown.get(key) ?? [];
+    const out = kids.map((k) => radiusOf(k.id));
+    if ((visible.hidden.get(key) ?? 0) > 0 && kids.length) out.push((MORE_W * Math.SQRT2 * scale) / 2);
+    return out;
+  };
 
   // ── how much room each open branch takes ────────────────────────────────
   // A cell's radius is its card, its records, and every ring of cells it has
@@ -273,7 +297,7 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
     measuring.add(id);
     const kids = visible.shown.get(id) ?? [];
     if (!kids.length) { radius.set(id, own); return own; }
-    const rings = ringsFor({ x: 0, y: 0, ...box }, inner, kids.map((k) => radiusOf(k.id)));
+    const rings = ringsFor({ x: 0, y: 0, ...box }, inner, ringRadii(id, scale));
     ringsOf.set(id, rings);
     const r = Math.hypot(box.w, box.h) / 2 + rings.reach;
     radius.set(id, r);
@@ -313,9 +337,12 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
     const kids = visible.shown.get(id) ?? [];
     const rings = ringsOf.get(id);
     if (!kids.length || !rings) return;
-    const radii = kids.map((k) => radiusOf(k.id));
+    const radii = ringRadii(id, scale);
     for (const ring of rings.rings) {
-      walkRing(node, ring, radii, outward, false, (i, kx, ky) => place(kids[i].id, kx, ky, Math.atan2(ky - y, kx - x)));
+      walkRing(node, ring, radii, outward, false, (i, kx, ky) => {
+        if (i < kids.length) place(kids[i].id, kx, ky, Math.atan2(ky - y, kx - x));
+        else more.push({ key: id, x: kx, y: ky, count: visible.hidden.get(id) ?? 0, scale });
+      });
     }
   };
 
@@ -324,7 +351,7 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
   for (const map of maps) {
     const key = hubKey(map);
     const roots = visible.shown.get(key) ?? [];
-    const radii = roots.map((r) => radiusOf(r.id));
+    const radii = ringRadii(key, 1);
     const hubBox = { x: 0, y: 0, w: HUB_W, h: HUB_H };
     const rings = ringsFor(hubBox, 0, radii);
     const reach = Math.hypot(HUB_W, HUB_H) / 2 + rings.reach;
@@ -337,7 +364,10 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
     hubs.push(hub);
     cursor += reach * 2 + MAP_GAP;
     for (const ring of rings.rings) {
-      walkRing(hub, ring, radii, -Math.PI / 2, true, (i, x, y) => place(roots[i].id, x, y, Math.atan2(y - hub.y, x - hub.x)));
+      walkRing(hub, ring, radii, -Math.PI / 2, true, (i, x, y) => {
+        if (i < roots.length) place(roots[i].id, x, y, Math.atan2(y - hub.y, x - hub.x));
+        else more.push({ key, x, y, count: visible.hidden.get(key) ?? 0, scale: 1 });
+      });
     }
   }
 
@@ -373,9 +403,10 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
   const take = (r: Rect) => { left = Math.min(left, r.x); top = Math.min(top, r.y); right = Math.max(right, r.x + r.w); bottom = Math.max(bottom, r.y + r.h); };
   for (const h of hubs) take({ x: h.x - h.w / 2, y: h.y - h.h / 2, w: h.w, h: h.h });
   for (const p of plates) take({ x: p.x - p.w / 2, y: p.y - p.h / 2, w: p.w, h: p.h });
+  for (const m of more) take({ x: m.x - (MORE_W * m.scale) / 2, y: m.y - (MORE_W * m.scale) / 2, w: MORE_W * m.scale, h: MORE_W * m.scale });
   for (const s of satellites) take({ x: s.x - (SAT_W * s.scale) / 2, y: s.y - (SAT_H * s.scale) / 2, w: SAT_W * s.scale, h: SAT_H * s.scale });
   const bounds: Rect = Number.isFinite(left) ? { x: left - 200, y: top - 200, w: right - left + 400, h: bottom - top + 400 } : { x: 0, y: 0, w: 1, h: 1 };
-  return { plates, satellites, hubs, byId, bounds };
+  return { plates, satellites, hubs, more, byId, bounds };
 }
 
 /** Every record a cell names, opened out around it as its own node.

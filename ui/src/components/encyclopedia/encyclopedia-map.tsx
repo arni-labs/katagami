@@ -9,7 +9,7 @@ import { Marker } from "@/components/page-hero";
 import { RELATION_INK_VAR, SearchBox } from "./chrome";
 import { cellFace, SET_INK } from "./material";
 import { expandCell, expandedRadius, HUB_H, HUB_W, layoutVisible, levelScale, MAX_LEVEL, plateConnector, SAT_H, SAT_W, type PlateNode, type SatelliteNode } from "./graph-layout";
-import { Hub, lodFor, Plate, Satellite } from "./map-cards";
+import { Hub, lodFor, More, Plate, Satellite } from "./map-cards";
 import { CloseButton, IndexSheet, OpenCellButton, SheetBody, SheetTitle, type SheetTab } from "./focus-sheet";
 import { EncyclopediaBrowse } from "./browse";
 import { useMounted, usePanZoom, usePrefersReducedMotion, ZOOM_MAX } from "./use-pan-zoom";
@@ -139,10 +139,11 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     // A record node moves with its cell, and can be moved on its own.
     const satellites = settled.satellites.map((s) => { const d = effective(s.cellId); const own = offsets.get(s.id) ?? { x: 0, y: 0 }; const dx = d.x + own.x; const dy = d.y + own.y; return dx || dy ? { ...s, x: s.x + dx, y: s.y + dy } : s; });
     const hubs = settled.hubs.map((h) => { const d = effective(h.key); return d.x || d.y ? { ...h, x: h.x + d.x, y: h.y + d.y } : h; });
+    const more = settled.more.map((m) => { const d = effective(m.key); return d.x || d.y ? { ...m, x: m.x + d.x, y: m.y + d.y } : m; });
     let left = Infinity; let top = Infinity; let right = -Infinity; let bottom = -Infinity;
     for (const b of [...plates, ...hubs]) { left = Math.min(left, b.x - b.w / 2); top = Math.min(top, b.y - b.h / 2); right = Math.max(right, b.x + b.w / 2); bottom = Math.max(bottom, b.y + b.h / 2); }
     const bounds = Number.isFinite(left) ? { x: left - 200, y: top - 200, w: right - left + 400, h: bottom - top + 400 } : settled.bounds;
-    return { plates, satellites, hubs, byId, bounds };
+    return { plates, satellites, hubs, more, byId, bounds };
   }, [settled, offsets, visible]);
   const hubs = layout.hubs;
 
@@ -406,8 +407,19 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   }, [index, visible]);
 
   /** One handler for every card on the paper, reading whether the pointer was
-   *  dragged from a ref so its identity never changes. */
-  const focusUnlessDragging = useCallback((id: string) => { if (!draggingRef.current && !draggedNode.current) focus(id); }, [focus, draggingRef]);
+   *  dragged from a ref so its identity never changes. A click focuses the
+   *  cell and opens its narrower cells; a click on the cell already in focus
+   *  folds them, or opens them again. There are no controls for this on the
+   *  card: the card is the control. */
+  const focusIdRef = useRef(focusId);
+  focusIdRef.current = focusId;
+  const focusUnlessDragging = useCallback((id: string) => {
+    if (draggingRef.current || draggedNode.current) return;
+    const kids = index.childrenOf(id).length;
+    if (focusIdRef.current === id) { if (kids) toggleOpen(id); return; }
+    focus(id);
+    if (kids && !expansionRef.current.open.has(id)) toggleOpen(id);
+  }, [focus, draggingRef, index, toggleOpen]);
 
   const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); setOpenedId(null); }, []);
 
@@ -743,10 +755,11 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             ink={MAP_INK[h.map]}
             dimmed={Boolean(map && map !== h.map) || Boolean(opened)}
             onToggle={toggleOpen}
-            onMore={openMore}
-            onFit={fitRegion}
             onDragStart={startNodeDrag}
           />
+        ))}
+        {layout.more.map((m) => (
+          <More key={`more-${m.key}`} node={m} k={camera.k} onMore={openMore} />
         ))}
         {visiblePlates.map((p: PlateNode) => (
           <Plate
@@ -760,12 +773,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             focused={focusId === p.id}
             dimmed={dimmedPlate(p.id) || ringDim(p.id)}
             dimTo={dimTo}
-            narrower={index.childrenOf(p.id).length}
-            open={expansion.open.has(p.id)}
-            hidden={visible.hidden.get(p.id) ?? 0}
             onFocus={focusUnlessDragging}
-            onToggleOpen={toggleOpen}
-            onMore={openMore}
             onDragStart={startNodeDrag}
             alsoOn={alsoOn(p)}
             filtered={map}

@@ -5,7 +5,7 @@ import type { CellManifestation, EncyclopediaCell, MapName } from "@/lib/encyclo
 import { MAP_INK, MAP_LABEL } from "@/lib/encyclopedia-graph";
 import { inkChipStyle, Tape } from "./chrome";
 import { cellFaces, cellMaterial, SET_EYEBROW, SET_INK, type CellFace } from "./material";
-import { HUB_H, HUB_W, NAME_W, plateBox, RECORD_CARD_W, SAT_W, type SatelliteNode } from "./graph-layout";
+import { HUB_H, HUB_W, MORE_W, NAME_W, plateBox, RECORD_CARD_W, SAT_W, type MoreNode, type SatelliteNode } from "./graph-layout";
 import { ArrowUpRight } from "lucide-react";
 
 // The nodes on the map. A plate is a cell. How much of it is drawn depends on
@@ -120,25 +120,6 @@ export function useLoadFailure(src: string | undefined): [boolean, () => void] {
   return [latch.src === src && latch.failed, () => setLatch({ src, failed: true })];
 }
 
-/** What a face is and where it comes from, printed on the face. A picture on
- *  a cell is never the cell's own unless a study says so; most pictures on
- *  the map belong to a record the cell names, and this is where the map says
- *  which. Sized to read at the zoom the card is drawn at. */
-function FaceOrigin({ face, ek }: { face: CellFace; ek: number }) {
-  if (face.kind === "name") return null;
-  const record = face.source === "record";
-  return (
-    <span
-      className="absolute left-0 top-0 z-[1] block max-w-full truncate px-1.5 py-[3px] font-mono font-bold uppercase leading-none tracking-[0.12em]"
-      style={{ ...inkChipStyle(face.ink, record ? 26 : 18), fontSize: screenPx(7.5, ek, 7.5, 16) }}
-      title={face.caption}
-    >
-      {face.eyebrow}
-      {record ? <span className="font-normal normal-case tracking-normal"> · {face.title}</span> : null}
-    </span>
-  );
-}
-
 /** The face a cell turns to the map: its picture when it has one, otherwise
  *  the material it does have. Only a cell with no material at all shows its
  *  name alone, so the far field reads as material rather than as empty
@@ -146,26 +127,21 @@ function FaceOrigin({ face, ek }: { face: CellFace; ek: number }) {
  *  whatever height is left rather than setting its own from an aspect ratio. */
 function Face({ face, lod, ek, name, fill, onImageError }: { face: CellFace; lod: Lod; ek: number; name: string; fill?: boolean; onImageError: () => void }) {
   const shape: CSSProperties = fill ? { height: "100%" } : { aspectRatio: "4 / 3" };
-  // Far out a record's picture carries a thin bar in its set's ink along the
-  // top, so even a thumbnail-sized card is not mistaken for a study.
-  const bar = face.kind !== "name" && face.source === "record" && lod === "picture"
-    ? <span aria-hidden className="absolute inset-x-0 top-0 z-[1] block" style={{ height: screenPx(3, ek, 3, 12), background: face.ink }} />
-    : null;
-  const origin = lod === "picture" ? null : <FaceOrigin face={face} ek={ek} />;
+  // The picture is a visual reference for the cell and nothing on it says
+  // where it came from: the sheet carries that. Rita, 2026-09-09.
   if (face.kind === "image") {
     return (
       <span className="relative block overflow-hidden" style={shape}>
-        {bar}{origin}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img ref={(el) => brokenOnArrival(el, onImageError)} src={face.url} alt={face.alt} className="block h-full w-full object-cover" loading="lazy" draggable={false} onError={onImageError} />
       </span>
     );
   }
   if (face.kind === "palette") {
-    return <span className="relative block" style={shape}>{bar}{origin}<Swatches colors={face.swatches} className="h-full" /></span>;
+    return <span className="relative block" style={shape}><Swatches colors={face.swatches} className="h-full" /></span>;
   }
   if (face.kind === "passage") {
-    return <span className="relative block" style={shape}>{bar}{origin}<PaperStrip text={face.text} className="flex h-full items-center" lines={lod === "reading" ? 7 : 9} /></span>;
+    return <span className="relative block" style={shape}><PaperStrip text={face.text} className="flex h-full items-center" lines={lod === "reading" ? 7 : 9} /></span>;
   }
   // Nothing but a name and a scope. Close in, the name and the scope are
   // already in the card's header and the caption underneath says no material
@@ -177,37 +153,6 @@ function Face({ face, lod, ek, name, fill, onImageError }: { face: CellFace; lod
       <span className={`${lod === "named" ? "mt-1" : ""} line-clamp-3 font-display font-semibold leading-[1.06] tracking-[-0.01em] text-foreground`} style={{ fontSize: nameFitSize(name, ek) }}>
         {name}
       </span>
-    </span>
-  );
-}
-
-const CHIP = "pointer-events-auto inline-flex items-center gap-1 whitespace-nowrap px-2 py-1 font-mono font-bold uppercase leading-none tracking-[0.12em] shadow-[var(--shadow-sticker)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]";
-
-/** The control that opens a node's narrower cells onto the paper and folds
- *  them away, and the one that asks for the next group. The same pair sits on
- *  a cell and on a category node: expansion is one idea wherever it appears. */
-function ExpandChips({ id, total, open, hidden, ek, ink, onToggle, onMore, word }: { id: string; total: number; open: boolean; hidden: number; ek: number; ink: string; onToggle: (id: string) => void; onMore: (id: string) => void; word: string }) {
-  if (!total) return null;
-  const size = screenPx(8, ek, 8, 16);
-  const stop = (e: React.MouseEvent) => e.stopPropagation();
-  return (
-    <span className="flex flex-wrap items-center gap-1" onClick={stop}>
-      <button
-        type="button"
-        onClick={() => onToggle(id)}
-        aria-expanded={open}
-        className={CHIP}
-        style={open ? { background: "var(--yuzu)", color: "var(--sumi)", fontSize: size } : { ...inkChipStyle(ink, 16), fontSize: size }}
-        title={open ? `Fold the ${word} of this cell away` : `Open the ${total} ${word} on the map`}
-      >
-        <span aria-hidden>{open ? "▾" : "▸"}</span>
-        {open ? `${total - hidden} of ${total} ${word}` : `${total} ${word}`}
-      </button>
-      {open && hidden > 0 ? (
-        <button type="button" onClick={() => onMore(id)} className={CHIP} style={{ ...inkChipStyle(ink, 16), fontSize: size }} title={`Open the next ${Math.min(10, hidden)} of ${hidden} more`}>
-          +{Math.min(10, hidden)} more
-        </button>
-      ) : null}
     </span>
   );
 }
@@ -225,12 +170,7 @@ function PlateCard({
   focused,
   dimmed,
   dimTo = 0.35,
-  narrower,
-  open,
-  hidden,
   onFocus,
-  onToggleOpen,
-  onMore,
   onDragStart,
   alsoOn,
   filtered,
@@ -249,16 +189,11 @@ function PlateCard({
   dimmed: boolean;
   /** How far back a dimmed card steps. Never so far that it cannot be read. */
   dimTo?: number;
-  /** How many narrower cells this cell has, whether they are open on the
-   *  paper, and how many of them are not shown yet. */
-  narrower: number;
-  open: boolean;
-  hidden: number;
   /** Take the cell id, so one handler serves every card on the paper and a
-   *  card is not re-rendered merely because its parent made a new closure. */
+   *  card is not re-rendered merely because its parent made a new closure.
+   *  A click focuses the cell and opens its narrower cells; a second click
+   *  on the cell in focus folds them. */
   onFocus: (id: string) => void;
-  onToggleOpen: (id: string) => void;
-  onMore: (id: string) => void;
   /** Pick the card up and move it, with everything open under it. */
   onDragStart: (id: string, event: React.PointerEvent) => void;
   /** The maps this cell belongs to besides the one it is drawn in. A cell in
@@ -281,7 +216,6 @@ function PlateCard({
   const studyText = reading && material.text?.source === "study" ? material.text : null;
   const studyPalette = reading && material.palette?.source === "study" ? material.palette : null;
   const hasFace = !(reading && face.kind === "name");
-  const ink = face.ink;
   return (
     <div
       className="group/plate absolute hover:z-[3]"
@@ -355,24 +289,12 @@ function PlateCard({
             {studyPalette ? <Swatches colors={studyPalette.swatches} className="h-7 shrink-0" /> : null}
           </span>
         ) : null}
-        {reading ? (
-          <span className="mt-1.5 block shrink-0 truncate font-mono text-[7px] uppercase leading-snug tracking-[0.1em] text-muted-foreground">{face.caption}</span>
-        ) : null}
         {lod !== "reading" && face.kind !== "name" ? (
           // The name under the picture, counter-scaled so it reads at every
           // zoom the card is drawn at. Far out this is what the field says.
           <span className="mt-1 block shrink-0 truncate font-display font-semibold leading-[1.05] tracking-[-0.01em] text-foreground" style={{ fontSize: nameFitSize(cell.name, ek, lod === "picture" ? 34 : 18) }}>{cell.name}</span>
         ) : null}
-        {reading && narrower ? <span className="block h-7 shrink-0" /> : null}
       </button>
-      {/* The expansion controls sit on the card, not beside it: a cell says
-          on its face how much sits under it and opens it from there. Too small
-          to hit at picture size, where the sheet carries the same controls. */}
-      {narrower && lod !== "picture" ? (
-        <span className="pointer-events-none absolute bottom-1.5 left-1.5 right-1.5 flex justify-end">
-          <ExpandChips id={cell.id} total={narrower} open={open} hidden={hidden} ek={ek} ink={ink} onToggle={onToggleOpen} onMore={onMore} word="narrower" />
-        </span>
-      ) : null}
     </div>
   );
 }
@@ -394,8 +316,6 @@ function HubCard({
   ink,
   dimmed,
   onToggle,
-  onMore,
-  onFit,
   onDragStart,
 }: {
   map: MapName;
@@ -411,10 +331,8 @@ function HubCard({
   k: number;
   ink: string;
   dimmed: boolean;
+  /** Open the map's top-level cells onto the paper, or fold them away. */
   onToggle: (key: string) => void;
-  onMore: (key: string) => void;
-  /** Frame this map's open cells. */
-  onFit: (map: MapName) => void;
   /** Pick the node up and move it, with the whole cluster. */
   onDragStart: (key: string, event: React.PointerEvent) => void;
 }) {
@@ -428,11 +346,18 @@ function HubCard({
       onPointerDown={(e) => onDragStart(key, e)}
     >
       <Tape ink={ink} className="-top-2 left-6 z-[5]" rotate={-4} width={64} />
-      <div className="flex h-full w-full flex-col overflow-hidden p-3" style={{ background: PAPER, boxShadow: "var(--shadow-card)" }}>
-        <button type="button" onClick={() => onFit(map)} className="block shrink-0 text-left" title={`Frame the ${title.toLowerCase()} map`}>
+      <button
+        type="button"
+        onClick={() => onToggle(key)}
+        aria-expanded={open}
+        aria-label={`${title}: ${count} cells, ${roots} at the top. ${open ? "Fold" : "Open"} the map.`}
+        className="flex h-full w-full flex-col overflow-hidden p-3 text-left"
+        style={{ background: PAPER, boxShadow: open ? "var(--shadow-card-hover)" : "var(--shadow-card)" }}
+      >
+        <span className="block shrink-0">
           <span className="block font-mono text-[8px] font-bold uppercase tracking-[0.16em]" style={{ color: `color-mix(in oklch, ${ink} 78%, var(--foreground))` }}>Map · {count} cells</span>
           <span className="mt-0.5 block font-display font-semibold leading-[1] tracking-[-0.02em] text-foreground" style={{ fontSize: screenPx(17, k, 28, 100) }}>{title}</span>
-        </button>
+        </span>
         <span className="mt-2 grid min-h-0 flex-1 grid-cols-2 gap-1.5">
           {faces.map((f) => (
             <span key={f.id} className="relative block min-h-0 overflow-hidden" title={f.name}>
@@ -441,11 +366,8 @@ function HubCard({
           ))}
           {faces.length === 0 ? <span className="col-span-2 flex items-center justify-center font-sans text-[13px] text-muted-foreground">No cells on this map yet.</span> : null}
         </span>
-        <span className="mt-2 flex shrink-0 flex-wrap items-center justify-between gap-1">
-          <span className="font-mono text-[8px] uppercase tracking-[0.12em] text-muted-foreground">{roots} at the top</span>
-          <ExpandChips id={key} total={roots} open={open} hidden={hidden} ek={k} ink={ink} onToggle={onToggle} onMore={onMore} word="open" />
-        </span>
-      </div>
+        <span className="mt-2 block shrink-0 font-mono text-[8px] uppercase tracking-[0.12em] text-muted-foreground">{roots - hidden} of {roots} open</span>
+      </button>
     </div>
   );
 }
@@ -540,6 +462,12 @@ function SatelliteNodeCard({
   const effectiveK = k * scale;
   const labelSize = screenPx(8, effectiveK, 8, 12);
 
+  // What the node is, under it, always: a square alone says nothing, and a
+  // reader has to know an art style from a writing style before opening it.
+  // The name joins it once the node prints big enough, or when its cell is in
+  // focus.
+  const setWord = <span className="mt-0.5 block whitespace-nowrap text-center font-mono font-bold uppercase leading-none tracking-[0.12em]" style={{ fontSize: screenPx(7, effectiveK, 7, 11), color: `color-mix(in oklch, ${ink} 78%, var(--foreground))` }}>{SET_EYEBROW[node.set]}</span>;
+  const named = labelled || effectiveK >= 0.72;
   if (node.role === "more") {
     // The ring holds eight; the rest are real records, and this opens them onto
     // the paper as nodes of their own rather than standing in for them.
@@ -622,19 +550,14 @@ function SatelliteNodeCard({
       onPointerDown={(e) => onDragStart(node.id, e)}
       onClick={() => onOpen(node)}
     >
-      <span className="relative block overflow-hidden bg-[var(--washi)] p-[3px] shadow-[var(--shadow-sticker)]" style={{ width: size, height: size }}>
+      <span className="relative block overflow-hidden bg-[var(--washi)] p-[3px] shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, boxShadow: `var(--shadow-sticker), inset 0 -3px 0 ${ink}` }}>
         {thumb}
         {also ? <span className="absolute bottom-0 right-0 bg-[var(--washi)] px-1 font-mono text-[9px] font-bold tabular-nums leading-[14px] text-foreground" aria-hidden>+{also}</span> : null}
       </span>
-      {labelled ? (
-        // The set names the connection, so it sits at the satellite end of the
-        // dotted line where there is room for it; the line itself is only a
-        // few dozen pixels long once the satellite hugs its cell.
-        <span className="mt-1 block w-[132px] -translate-x-[38px] text-center">
-          <Eyebrow ink={ink} style={{ fontSize: screenPx(7.5, effectiveK, 8, 11) }}>{SET_EYEBROW[node.set]}</Eyebrow>
-          <span className="block truncate font-sans font-medium leading-tight text-foreground" style={{ fontSize: labelSize }}>{name}</span>
-        </span>
-      ) : null}
+      <span className="block w-[132px] -translate-x-[38px] text-center">
+        {setWord}
+        {named ? <span className="block truncate font-sans font-medium leading-tight text-foreground" style={{ fontSize: labelSize }}>{name}</span> : null}
+      </span>
     </button>
   );
 }
@@ -644,6 +567,27 @@ function SatelliteNodeCard({
  *  held a phone at nineteen frames a second over seven hundred cells and at
  *  two over five thousand. Panning changes neither `k` nor any card's props,
  *  so a drag now costs one transform and no card work at all. */
+/** The node that opens the next group of a node's narrower cells. It stands
+ *  where those cells will go, so opening it fills its own place. */
+function MoreNodeCard({ node, k, onMore }: { node: MoreNode; k: number; onMore: (key: string) => void }) {
+  const ek = k * node.scale;
+  const size = MORE_W;
+  return (
+    <button
+      type="button"
+      onClick={() => onMore(node.key)}
+      aria-label={`Open the next ${Math.min(10, node.count)} of ${node.count} more cells`}
+      title={`${node.count} more`}
+      className="absolute grid place-items-center bg-[var(--washi)] font-mono font-bold tabular-nums text-foreground shadow-[var(--shadow-sticker)] hover:z-[3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]"
+      style={{ left: node.x - (size * node.scale) / 2, top: node.y - (size * node.scale) / 2, width: size, height: size, transform: node.scale === 1 ? undefined : `scale(${node.scale})`, transformOrigin: "0 0", fontSize: screenPx(11, ek, 12, 26), zIndex: 1 }}
+      data-more={node.key}
+    >
+      +{node.count}
+    </button>
+  );
+}
+
 export const Plate = memo(PlateCard);
+export const More = memo(MoreNodeCard);
 export const Satellite = memo(SatelliteNodeCard);
 export const Hub = memo(HubCard);
