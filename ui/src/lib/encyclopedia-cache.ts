@@ -13,6 +13,23 @@ import { heldRead } from "@/lib/held-read";
 // So it is held for a minute and shared, and callers arriving during a read
 // wait on that read rather than starting their own.
 
+// How to check that a drop actually drops, in about two minutes. Anything that
+// changes this file should be checked this way before it is called done:
+//
+//   1. `npm run build && npm start` — a dev server rebuilds modules on its own
+//      and will hide a cache that never dropped.
+//   2. Add one line to `loadEncyclopedia` that prints when the backend is read.
+//   3. Load a page that renders cells, POST the revalidate endpoint, load again.
+//   4. The line prints a second time, or the drop did not reach the render.
+//
+// Do this on more than one path. A drop scoped to the render that read it works
+// on `/encyclopedia` and nowhere else, while reporting success everywhere.
+//
+// Timing cannot answer this question. After a failed drop the page returned in
+// 0.08s — a cheap rebuild over warm OData caches underneath, which is
+// indistinguishable from a cache hit from outside. A stopwatch tells you a
+// response was fast; only the counter tells you the library was re-read.
+
 /** How long a loaded library is served before it is read again. */
 const TTL_MS = 60_000;
 
