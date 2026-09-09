@@ -407,3 +407,14 @@ Options: An import script per source; a Temper entity per source with its own ap
 Chose the ledger because: Declines are most of the work and cells cannot record a decline, so coverage cannot be derived from the cells alone. A file next to the skill is state any agent can read without a client, it is versioned with the decisions it records, and it adds no runtime. An entity can come later if the ledger ever needs approval flows of its own.
 
 Where: `.agents/skills/encyclopedia/SKILL.md` "Sources and reading passes"; `.agents/skills/encyclopedia/sources/*.json`; `scripts/encyclopedia-coverage.mjs`; `ui/scripts/encyclopedia-coverage.test.mjs`. The population plan is kept in Rita's vault, not committed.
+## D35 The loader asks for machine representations first
+
+Decision: The loader's source fetch sends `Accept: application/json, text/html;q=0.9, */*;q=0.8`. Citations stay the canonical human-readable URIs; no host gets a rule of its own; no source is marked verified by hand to get past a fetch.
+
+Came up because: Batch B5 and B6 cite the Library of Congress (id.loc.gov). Its canonical URI negotiates: browsers go to an HTML page behind a bot challenge (403 to scripts), scripts asking for JSON get the record (200). The loader sent no Accept header, so every LCGFT citation was refused. Rita ruled out a host-specific handler ("we're not going to give it a special handle") and marking sources verified without a human opening them would be false.
+
+Options: A host rule for id.loc.gov (rejected: special handling); cite the `.json` URL (rejected: a reader wants the page); mark LCGFT sources verified in the payload (rejected: false); state what the script accepts, generically.
+
+Chose the header because: It is what a well-behaved script says on every fetch, it changes nothing about the safety checks (same-host redirects, private-address refusal, 2xx only), and on Getty it is strictly stricter, turning a soft-404 HTML page into a real 404. Given up: nothing observed; Wikipedia and ordinary pages answer as before.
+
+Where: `scripts/create-encyclopedia-cells.mjs` (the fetch in the source check); PR #279.

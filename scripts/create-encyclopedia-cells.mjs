@@ -132,9 +132,12 @@ async function exists(path) {
 // A source is reachable when it answers on its own host. A source a named
 // human has opened carries verifiedBy and verifiedOn on the record and is not
 // fetched; the run says so.
-// A citation must point at the public web. Loopback, private, and link-local
-// addresses are refused for the URL and for every redirect hop, so a source
-// cannot steer the runner into something on its own network.
+// A citation must point at the public web. The fetch says what it accepts,
+// machine representations first, so a linked-data host answers with the record
+// it serves to scripts and a web page host answers as usual; same-host
+// redirects are followed. Loopback, private, and link-local addresses are
+// refused for the URL and for every redirect hop, so a source cannot steer the
+// runner into something on its own network.
 function privateAddress(address) {
   if (isIP(address) === 6) {
     // An IPv4-mapped address arrives either dotted (::ffff:10.0.0.1) or, after
@@ -172,7 +175,7 @@ async function reachable(source) {
     for (let hop = 0; hop < 5; hop++) {
       const refused = await publicHost(url);
       if (refused) { verdict = refused; break; }
-      const response = await fetch(url, { method: "GET", redirect: "manual", signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "Mozilla/5.0 (compatible; katagami-encyclopedia-verifier)" } });
+      const response = await fetch(url, { method: "GET", redirect: "manual", signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "Mozilla/5.0 (compatible; katagami-encyclopedia-verifier)", Accept: "application/json, text/html;q=0.9, */*;q=0.8" } });
       if (response.status >= 300 && response.status < 400 && response.headers.get("location")) {
         const next = new URL(response.headers.get("location"), url);
         if (next.host !== new URL(source.url).host) { verdict = `redirected off-site to ${next.host}`; break; }
