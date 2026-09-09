@@ -2,13 +2,14 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { getWritingStyle, getFileText, getFileUrl } from "@/lib/odata";
-import { loadWritingStyleCellIndex } from "@/lib/encyclopedia";
+import { loadWritingStyleCellIndex, type WritingStyleCellLink } from "@/lib/encyclopedia";
 import { isOwner } from "@/lib/owner";
 import { labPreviewAllowed } from "@/lib/lab-preview";
 import {
   agentHandoff,
   bandSentences,
   corpusManifestOf,
+  parentIdsOf,
   replicationManifestOf,
   toWritingStyleDetail,
   BASIS_LABEL,
@@ -69,17 +70,15 @@ export default async function WritingStyleDetailPage({ params }: { params: Promi
 
   const corpusIds = corpusManifestOf(row).map((item) => item.fileId);
   const replicationIds = replicationManifestOf(row).map((item) => item.fileId);
-  const parentIds = (() => {
-    const raw = row.fields.parent_ids;
-    const list = typeof raw === "string" ? (JSON.parse(raw || "[]") as unknown) : raw;
-    return Array.isArray(list) ? list.map(String).filter(Boolean) : [];
-  })();
+  const parentIds = parentIdsOf(row);
 
   const [corpus, replications, voiceMd, cellIndex, parents] = await Promise.all([
     readFiles(corpusIds),
     readFiles(replicationIds),
     row.fields.voice_md_file_id ? getFileText(row.fields.voice_md_file_id).then((t) => t.trim()) : Promise.resolve(""),
-    loadWritingStyleCellIndex(),
+    // A cross-reference, not a dependency: which encyclopedia cells cite this
+    // style is worth showing and is no reason for the style itself to fail.
+    loadWritingStyleCellIndex().catch(() => new Map<string, WritingStyleCellLink[]>()),
     Promise.all(
       parentIds.slice(0, 4).map(async (pid) => {
         try {
@@ -102,6 +101,7 @@ export default async function WritingStyleDetailPage({ params }: { params: Promi
   const credit = creditLine(style);
   const basis = BASIS_LABEL[style.consentBasis] ?? style.consentBasis;
   const loadedCorpus = style.corpus.filter((item) => item.text);
+  const describedCorpus = style.corpus.filter((item) => item.described);
   const sources = [...new Set(style.corpus.map((item) => item.source).filter(Boolean))];
   const lines = bandSentences(style.bandsJson);
 
@@ -122,7 +122,7 @@ export default async function WritingStyleDetailPage({ params }: { params: Promi
         <span aria-hidden className="halftone-wash -right-8 -top-2 hidden h-44 w-64 sm:block" style={{ ["--wash-ink" as string]: "var(--sakura)" }} />
         <div className="mb-3 flex flex-wrap items-center gap-2.5">
           <StatusStamp status={style.status} />
-          {basis ? <InkStamp ink="var(--matcha)" tilt={1}>{basis}</InkStamp> : null}
+          {basis ? <InkStamp ink="var(--ramune)" tilt={1}>{basis}</InkStamp> : null}
         </div>
         <h1 className="font-display text-[34px] font-bold leading-[1.04] tracking-[-0.03em] sm:text-[44px]">{style.name}</h1>
         {style.persona ? <p className="mt-4 max-w-2xl text-[19px] leading-[1.55] text-foreground">{style.persona}</p> : null}
@@ -196,7 +196,9 @@ export default async function WritingStyleDetailPage({ params }: { params: Promi
             {style.corpusWords ? (
               <div>
                 <div className="font-display text-[34px] font-bold leading-none tracking-[-0.04em] tabular-nums">{style.corpusWords.toLocaleString()}</div>
-                <div className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">words</div>
+                <div className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  {describedCorpus.length < style.corpus.length ? `words · across ${describedCorpus.length} of ${style.corpus.length}` : "words"}
+                </div>
               </div>
             ) : null}
             {sources.length ? (
@@ -219,9 +221,9 @@ export default async function WritingStyleDetailPage({ params }: { params: Promi
                   <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
                     <h3 className="text-[19px] font-semibold leading-snug text-foreground">{item.source || `Corpus file ${i + 1}`}</h3>
                     <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground tabular-nums">
-                      {item.words ? `${item.words.toLocaleString()} words` : ""}
-                      {item.words && item.kind ? " · " : ""}
-                      {item.kind.replace(/[_-]+/g, " ")}
+                      {item.described
+                        ? [item.words ? `${item.words.toLocaleString()} words` : "", item.kind.replace(/[_-]+/g, " ")].filter(Boolean).join(" · ")
+                        : "not in the manifest"}
                     </span>
                   </div>
                   {item.text ? (
@@ -312,13 +314,13 @@ export default async function WritingStyleDetailPage({ params }: { params: Promi
 
         {/* ── The checkable contract ────────────────────────────────────── */}
         {Object.keys(style.bandsJson).length ? (
-          <Section eyebrow="the contract" ink="var(--matcha)">
+          <Section eyebrow="the contract" ink="var(--ramune)">
             <p className="mb-5 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
               Computed from the corpus above, then enforced. Every replica this voice produces is measured against these
               numbers, and a contract its own corpus fails does not ship.
             </p>
             {lines.length ? (
-              <div className="sticker-card p-5 sm:p-6" style={{ ["--card-ink" as string]: "var(--matcha)" }}>
+              <div className="sticker-card p-5 sm:p-6" style={{ ["--card-ink" as string]: "var(--ramune)" }}>
                 <BulletList items={lines} empty="" />
               </div>
             ) : null}
@@ -346,7 +348,7 @@ export default async function WritingStyleDetailPage({ params }: { params: Promi
                 <article key={replica.fileId} className="sticker-card p-5 sm:p-6">
                   <div className="mb-4 flex flex-wrap items-center gap-3">
                     <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{replica.provenance || replica.model || "replica"}</span>
-                    <InkStamp ink="var(--matcha)" tilt={1}>passed the bands</InkStamp>
+                    <InkStamp ink="var(--ramune)" tilt={1}>passed the bands</InkStamp>
                   </div>
                   <Folded openLabel="Fold this replica" closedLabel="Read the whole replica" height={260}>
                     <div className="max-w-3xl space-y-4 text-[17px] leading-[1.62] text-foreground">
@@ -386,7 +388,7 @@ export default async function WritingStyleDetailPage({ params }: { params: Promi
             </div>
           </div>
           {style.verification ? (
-            <div className="sticker-card mt-5 p-5 sm:p-6" style={{ ["--card-ink" as string]: "var(--matcha)" }}>
+            <div className="sticker-card mt-5 p-5 sm:p-6" style={{ ["--card-ink" as string]: "var(--ramune)" }}>
               <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Verification record</div>
               <p className="mb-4 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
                 Written by the finalizer at verification time{style.verification.engine ? ` — ${style.verification.engine}` : ""}.

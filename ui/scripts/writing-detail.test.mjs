@@ -8,6 +8,7 @@ import {
   agentHandoff,
   bandSentences,
   corpusManifestOf,
+  parentIdsOf,
   replicationManifestOf,
   toWritingStyleDetail,
   toWritingStyleSpecimen,
@@ -84,6 +85,56 @@ test("a record with file ids and no manifest still has a corpus", () => {
   const row = { ...ROW, fields: { ...ROW.fields, corpus_manifest: undefined } };
   assert.deepEqual(corpusManifestOf(row).map((item) => item.fileId), ["fl-a", "fl-b"]);
   assert.equal(corpusManifestOf(row)[0].words, 0);
+  assert.equal(corpusManifestOf(row)[0].described, false);
+});
+
+test("a manifest describing only some of the files hides none of them", () => {
+  // The defect this page exists to fix, arriving inside the fix. The manifest
+  // DESCRIBES the corpus and can cover fewer files than the record holds;
+  // preferring it whenever it had any entries at all showed one of three and
+  // dropped the rest, on the page built to answer whether the corpus is there.
+  const row = {
+    ...ROW,
+    fields: {
+      ...ROW.fields,
+      corpus_file_ids: JSON.stringify(["fl-a", "fl-b", "fl-c"]),
+      corpus_manifest: JSON.stringify({ items: [{ file_id: "fl-a", source: "Candle (1861)", words: 812 }] }),
+    },
+  };
+  const corpus = corpusManifestOf(row);
+  assert.deepEqual(corpus.map((item) => item.fileId), ["fl-a", "fl-b", "fl-c"], "every id on the record is corpus");
+  assert.deepEqual(corpus.map((item) => item.described), [true, false, false]);
+  assert.equal(corpus[1].source, "", "a file the manifest omits gets no invented source");
+  assert.equal(corpus[1].words, 0);
+});
+
+test("a manifest naming a file the id list omits keeps that file too", () => {
+  // The same mismatch from the other side, and dropping it would be the same
+  // mistake — so it is appended after the authoritative list.
+  const row = {
+    ...ROW,
+    fields: {
+      ...ROW.fields,
+      corpus_file_ids: JSON.stringify(["fl-a"]),
+      corpus_manifest: JSON.stringify({ items: [{ file_id: "fl-z", source: "Elsewhere", words: 10 }] }),
+    },
+  };
+  assert.deepEqual(corpusManifestOf(row).map((item) => item.fileId), ["fl-a", "fl-z"]);
+});
+
+test("a malformed lineage string does not take the page down", () => {
+  // `parent_ids` arrives as a JSON string on some records and a native array on
+  // others. A raw JSON.parse on the string form turns one bad record into a 500
+  // on the whole detail page — for the most decorative thing on it.
+  for (const parent_ids of ['["en-a"', "not json at all", "", "{}", "null"]) {
+    const row = { ...ROW, fields: { ...ROW.fields, parent_ids } };
+    assert.doesNotThrow(() => parentIdsOf(row), `parent_ids = ${parent_ids}`);
+    assert.deepEqual(parentIdsOf(row), [], `parent_ids = ${parent_ids}`);
+  }
+  // Both shapes the backend actually sends, and junk inside a good array.
+  assert.deepEqual(parentIdsOf({ ...ROW, fields: { ...ROW.fields, parent_ids: '["en-a","en-b"]' } }), ["en-a", "en-b"]);
+  assert.deepEqual(parentIdsOf({ ...ROW, fields: { ...ROW.fields, parent_ids: ["en-a", "en-b"] } }), ["en-a", "en-b"]);
+  assert.deepEqual(parentIdsOf({ ...ROW, fields: { ...ROW.fields, parent_ids: ["en-a", null, "", { x: 1 }] } }), ["en-a"]);
 });
 
 test("the listing card can say how much prose stands behind the contract", () => {

@@ -117,6 +117,9 @@ export interface CorpusItem {
   source: string;
   kind: string;
   words: number;
+  /** Whether the manifest describes this file. A file the manifest omits is
+   *  still corpus — it is shown, with no source and no word count. */
+  described: boolean;
   /** Read from the file at request time by the page; "" when it could not be read. */
   text: string;
 }
@@ -165,20 +168,64 @@ export interface WritingStyleDetail extends WritingStyleSpecimen {
   modelProvenanceRaw: string;
 }
 
-/** The manifest entries, in record order, before any file is read. */
+/**
+ * Every file of the corpus, whether or not the manifest describes it.
+ *
+ * `corpus_file_ids` is the corpus. `corpus_manifest` is a DESCRIPTION of it —
+ * source, kind, word count — written by the finalizer, and it can cover fewer
+ * files than the record holds. Returning the manifest whenever it had any
+ * entries at all meant a manifest of three against six ids showed three files
+ * and silently dropped the rest: a page built to answer "is the corpus really
+ * there" quietly under-reporting the corpus. `described` says which is which,
+ * so the page can show a file it has no description for rather than hide it.
+ *
+ * Ordered by the authoritative id list. A manifest entry naming a file the id
+ * list omits is kept too and appended — that is the same mismatch from the
+ * other side, and dropping it would be the same mistake.
+ *
+ * `replicationManifestOf` below already had this shape: ids authoritative,
+ * manifest consulted for decoration. This is that, applied to the corpus.
+ */
 export function corpusManifestOf(row: LaneEntity): Array<Omit<CorpusItem, "text">> {
   const manifest = parseJson<{ items?: Array<{ file_id?: unknown; source?: unknown; kind?: unknown; words?: unknown }> }>(row.fields.corpus_manifest) ?? {};
-  const items = (manifest.items ?? [])
-    .map((item) => ({
-      fileId: asText(item?.file_id).trim(),
+  const described = new Map<string, Omit<CorpusItem, "text">>();
+  for (const item of manifest.items ?? []) {
+    const fileId = asText(item?.file_id).trim();
+    if (!fileId || described.has(fileId)) continue;
+    described.set(fileId, {
+      fileId,
       source: asText(item?.source).trim(),
       kind: asText(item?.kind).trim(),
       words: Number(item?.words) || 0,
-    }))
-    .filter((item) => item.fileId);
-  if (items.length) return items;
-  // A record can carry the ids without a manifest; the files are still the corpus.
-  return asStringList(row.fields.corpus_file_ids).map((fileId) => ({ fileId, source: "", kind: "", words: 0 }));
+      described: true,
+    });
+  }
+  const ids = asStringList(row.fields.corpus_file_ids);
+  const bare = (fileId: string) => ({ fileId, source: "", kind: "", words: 0, described: false });
+  if (!ids.length) return [...described.values()];
+  const seen = new Set(ids);
+  return [
+    ...ids.map((fileId) => described.get(fileId) ?? bare(fileId)),
+    ...[...described.values()].filter((item) => !seen.has(item.fileId)),
+  ];
+}
+
+/**
+ * The lineage ids on a record.
+ *
+ * Lives here rather than in the page so it can be exercised: `parent_ids`
+ * arrives as a JSON string on some records and a native array on others, and a
+ * raw `JSON.parse` on the string form turns one malformed record into a 500 on
+ * the whole detail page — for the most decorative thing on it. `parseJson`
+ * try/catches and passes non-strings through.
+ */
+export function parentIdsOf(row: LaneEntity): string[] {
+  const parsed = parseJson<unknown>(row.fields.parent_ids);
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .filter((id): id is string | number => typeof id === "string" || typeof id === "number")
+    .map(String)
+    .filter(Boolean);
 }
 
 /** The replication entries, in record order, before any file is read. */
