@@ -308,3 +308,32 @@ message.
 **Where** — `ui/src/app/api/auth/google/callback/route.ts` (`ours`);
 `infra/datadog/monitors/m2`, `m6`; assertion in
 `ui/scripts/check-telemetry-contract.mjs`.
+
+## D11 — The independent verifier found the same trap one field over
+
+**Decision** — named the accepted `kind` values in the schema description; left
+the enum itself alone.
+
+**Came up because** the independent verifier, re-driving the surface from
+scratch, guessed `kind: "design_language"` on its first `get_tokens` call and
+got a bare SDK rejection. That is this effort's own failure mode in a different
+field: a caller reaching for a name that looks right and getting an unreadable
+refusal.
+
+**Options** — accept `design_language` and friends as aliases the way the
+identifier now works; describe the values in the schema; leave it.
+
+**Chose describing them** because the identifier case was a genuine mismatch —
+our search results hand back `id` and the schema demanded `id_or_slug`, so the
+caller was following our own output. `kind` has no such mismatch: every response
+carries exactly `language`, `palette` or `art_style`, so a wrong value is a
+guess rather than something we taught. Accepting aliases would add a second
+vocabulary to keep in sync for no observed failure. Naming the values costs one
+line and removes the reason to guess.
+
+**Given up**: an invalid `kind` still returns the SDK's own message rather than
+one of ours. It lands as `invalid_arguments` carrying `arg_keys`, so unlike the
+original incident it is visible, and m1 will show it.
+
+**Where** — `ui/src/app/mcp/route.ts` `kindArg`; assertion in
+`ui/scripts/check-telemetry-contract.mjs`.

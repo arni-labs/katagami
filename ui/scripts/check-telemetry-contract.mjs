@@ -555,6 +555,13 @@ const required = [
   // Panel findings on the fix itself. A client that materializes every declared
   // property sends the unused aliases as JSON null; `.optional()` rejects that
   // and refuses a call carrying a perfectly good identifier (grok).
+  // The other field an agent has to guess. An invalid kind is still an SDK
+  // rejection, but the schema now names the accepted values (verifier finding).
+  [
+    "the kind values are named in the schema, not left to be guessed",
+    mcp,
+    /the same values search results and get_\* responses carry/,
+  ],
   [
     "identifier aliases accept JSON null, not only absence",
     mcp,

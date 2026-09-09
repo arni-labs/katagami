@@ -267,6 +267,17 @@ function argKeysOf(args: unknown): string | undefined {
 // (ARN-462). Accept the three names an agent will actually try. All optional
 // at the schema layer so a missing id reaches OUR error message instead of a
 // bare SDK validation failure the caller cannot act on.
+// The one other field an agent has to guess. Its values are the ones our own
+// responses carry (`"kind": "art_style"`), but nothing said so in the schema, so
+// a caller reaching for the entity-set name — `design_language` — got a bare
+// SDK rejection. Naming the values in the description is the same fix as the
+// identifier aliases, one field over.
+const kindArg = z
+  .enum(["language", "palette", "art_style"])
+  .describe(
+    'Which kind of entry: "language", "palette" or "art_style" — the same values search results and get_* responses carry in their own `kind` field.',
+  );
+
 // `.nullish()`, not `.optional()`: clients that materialize every declared
 // property send the unused aliases as JSON null. Rejecting those would refuse
 // get_art_style({id_or_slug: "…", id: null, slug: null}) — a call carrying a
@@ -387,7 +398,7 @@ const baseHandler = createMcpHandler(
         description:
           "Just the design tokens for a language (or palette/art_style), optionally emitted as a ready-to-paste Tailwind config or CSS variables.",
         inputSchema: {
-          kind: z.enum(["language", "palette", "art_style"]).optional(),
+          kind: kindArg.optional(),
           ...ID_ALIASES,
           format: z.enum(["json", "tailwind", "css"]).optional(),
         },
@@ -477,7 +488,7 @@ const baseHandler = createMcpHandler(
         title: "Get the rendered reference page",
         description:
           "The URL of the rendered reference page for a language/palette/art_style — open it to see the style across real UI elements before using it.",
-        inputSchema: { kind: z.enum(["language", "palette", "art_style"]), ...ID_ALIASES },
+        inputSchema: { kind: kindArg, ...ID_ALIASES },
       },
       async (a, extra) => {
         const tier = tierOf(extra);
