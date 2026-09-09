@@ -774,3 +774,9 @@ body:has(.atlas) {
     top: 56px;
   }
 }
+
+/* A transformed route wrapper creates a containing block for fixed children. */
+.route-enter:has(.atlas) {
+  animation: none;
+  transform: none;
+}

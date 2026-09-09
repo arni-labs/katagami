@@ -47,3 +47,27 @@ Where: ARN-475; production read attempt in this Codex session.
 **Chose a fixed viewport because:** Navigation and search stay available while canvas gestures remain local; the encyclopedia does not need the site footer during exploration.
 
 **Where:** ui/src/components/encyclopedia/map.css.
+
+## Use the frontend production read path for the preview
+
+**Decision:** Configure the local Next.js server with the deployed frontend environment, keeping the backend credential server-only.
+
+**Came up because:** The implementing agent confused a denied MCP collection read with frontend access. Rita clarified that the frontend uses its own backend connection. The configured frontend credential returned HTTP 200 and the page loaded 744 attested topics.
+
+**Options:** Gate preview data on MCP collection access, or verify the existing frontend data loader with its production configuration.
+
+**Chose the frontend path because:** It is the actual system under test. An unrelated MCP denial does not establish a frontend failure. Future preview verification must name the frontend backend host and report the page result separately from MCP status.
+
+**Where:** Local ignored ui/.env.local and ui/src/lib/encyclopedia.ts.
+
+## Exclude the fixed explorer from route translation
+
+**Decision:** Disable the enclosing page-entry transform only when it contains the fixed encyclopedia explorer.
+
+**Came up because:** The browser measured the fixed explorer at height zero: route-enter retained an identity transform, making the short route wrapper its containing block.
+
+**Options:** Keep the route transform and portal the whole explorer, or remove the unrelated transform for this route.
+
+**Chose removing the route transform because:** It restores viewport positioning without adding a portal or changing other pages.
+
+**Where:** ui/src/components/encyclopedia/map.css.
