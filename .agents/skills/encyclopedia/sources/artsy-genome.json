@@ -48,9 +48,9 @@
     {
       "term": "19th Century German Realism",
       "ref": "https://www.artsy.net/gene/19th-century-german-realism",
-      "decision": "declined",
+      "decision": "deferred",
       "batch": "B21-B23",
-      "note": "a period label for photography rather than a manner"
+      "note": "Re-read after the decline reason was found wrong: it was grouped with the photography period labels and is nothing of the kind. The gene describes German painters of roughly 1850 to 1900 who broke with Romanticism for a dispassionate realism, Menzel and Liebermann among them. Deferred rather than kept, because the gene itself says German Realism was not a coherent movement but a broad array of individual styles, and no independent reference treats it as a school: Wikipedia has no article for it and names Menzel a German Realist only in his own biography. It returns as a cell if a source treats the school."
     },
     {
       "term": "20th Century Art",
@@ -193,7 +193,7 @@
       "ref": "https://www.artsy.net/gene/art-brut",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Dubuffet's term for the same direction the cell Outsider Art holds; the English name is a translation of it. The open reference under this name is an indie rock band, which is the clearest sign the two should be one cell.",
+      "note": "Dubuffet's term for the same direction the cell Outsider Art holds; the English name is a translation of it. The open reference under this name is an indie rock band, which is the clearest sign the two should be one cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "outsider-art"
     },
     {
@@ -217,7 +217,7 @@
       "ref": "https://www.artsy.net/gene/art-nouveau",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "art-nouveau"
     },
     {
@@ -241,7 +241,7 @@
       "ref": "https://www.artsy.net/gene/barbizon-school",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "barbizon-school"
     },
     {
@@ -257,7 +257,7 @@
       "ref": "https://www.artsy.net/gene/bauhaus",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "bauhaus"
     },
     {
@@ -373,7 +373,7 @@
       "ref": "https://www.artsy.net/gene/color-field-painting",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "color-field-painting"
     },
     {
@@ -389,7 +389,7 @@
       "ref": "https://www.artsy.net/gene/conceptual-art-and-contemporary-conceptualism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "A combined search facet; the direction is the cell Conceptual Art.",
+      "note": "A combined search facet; the direction is the cell Conceptual Art. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "conceptual-art"
     },
     {
@@ -405,7 +405,7 @@
       "ref": "https://www.artsy.net/gene/constructivism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "constructivism"
     },
     {
@@ -714,7 +714,7 @@
       "ref": "https://www.artsy.net/gene/cubism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "cubism"
     },
     {
@@ -868,7 +868,7 @@
       "ref": "https://www.artsy.net/gene/fauvism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "fauvism"
     },
     {
@@ -891,7 +891,7 @@
       "ref": "https://www.artsy.net/gene/feminist-art-and-contemporary-feminist",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "A combined search facet; the direction is the cell Feminist Art.",
+      "note": "A combined search facet; the direction is the cell Feminist Art. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "feminist-art"
     },
     {
@@ -960,7 +960,7 @@
       "ref": "https://www.artsy.net/gene/german-expressionism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "german-expressionism"
     },
     {
@@ -968,7 +968,7 @@
       "ref": "https://www.artsy.net/gene/gestural-abstraction",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "The same direction as Action Painting, which the cited reference names as its alternative title. One cell, not two.",
+      "note": "The same direction as Action Painting, which the cited reference names as its alternative title. One cell, not two. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "action-painting"
     },
     {
@@ -1085,7 +1085,7 @@
       "ref": "https://www.artsy.net/gene/impressionism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "impressionism"
     },
     {
@@ -1093,7 +1093,7 @@
       "ref": "https://www.artsy.net/gene/impressionism-and-contemporary-impressionist",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "A combined search facet; the direction is the live cell Impressionism.",
+      "note": "A combined search facet; the direction is the live cell Impressionism. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "impressionism"
     },
     {
@@ -1147,7 +1147,7 @@
       "ref": "https://www.artsy.net/gene/light-and-space-movement",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Read and proposed in batch B22, but another agent's batch wrote the same cell while this one was being applied and the loader refused the duplicate. The row records the existing cell.",
+      "note": "Read and proposed in batch B22, but another agent's batch wrote the same cell while this one was being applied and the loader refused the duplicate. The row records the existing cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "light-and-space"
     },
     {
@@ -1195,7 +1195,7 @@
       "ref": "https://www.artsy.net/gene/minimalism-and-contemporary-minimalist",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "A combined search facet; the direction is the cell Minimalism.",
+      "note": "A combined search facet; the direction is the cell Minimalism. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "minimalism"
     },
     {
@@ -1285,7 +1285,7 @@
       "ref": "https://www.artsy.net/gene/neo-impressionism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "neo-impressionism"
     },
     {
@@ -1293,7 +1293,7 @@
       "ref": "https://www.artsy.net/gene/neo-plasticism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Mondrian's doctrine inside De Stijl rather than a separate movement; the cell De Stijl holds it.",
+      "note": "Mondrian's doctrine inside De Stijl rather than a separate movement; the cell De Stijl holds it. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "de-stijl"
     },
     {
@@ -1463,7 +1463,7 @@
       "ref": "https://www.artsy.net/gene/pictorialism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "pictorialism"
     },
     {
@@ -1501,7 +1501,7 @@
       "ref": "https://www.artsy.net/gene/pop-and-contemporary-pop",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "A combined search facet; the direction is the live cell Pop Art.",
+      "note": "A combined search facet; the direction is the live cell Pop Art. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "pop-art"
     },
     {
@@ -1509,7 +1509,7 @@
       "ref": "https://www.artsy.net/gene/pop-art",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "pop-art"
     },
     {
@@ -1593,7 +1593,7 @@
       "ref": "https://www.artsy.net/gene/pre-world-war-ii-school-of-paris",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "The School of Paris is written as one cell whose scope covers both halves of Artsy's split.",
+      "note": "The School of Paris is written as one cell whose scope covers both halves of Artsy's split. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "school-of-paris"
     },
     {
@@ -1665,7 +1665,7 @@
       "ref": "https://www.artsy.net/gene/romanticism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell, written in B20 from the Wikipedia movements pass. Add this gene page to its sources.",
+      "note": "Already a live cell, written in B20 from the Wikipedia movements pass. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "romanticism"
     },
     {
@@ -1759,7 +1759,7 @@
       "ref": "https://www.artsy.net/gene/surrealism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "surrealism"
     },
     {
@@ -1767,7 +1767,7 @@
       "ref": "https://www.artsy.net/gene/symbolism",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell, written in B20 from the Wikipedia movements pass, mapped to art and writing. Add this gene page to its sources.",
+      "note": "Already a live cell, written in B20 from the Wikipedia movements pass, mapped to art and writing. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "symbolism"
     },
     {
@@ -1844,7 +1844,7 @@
       "ref": "https://www.artsy.net/gene/ukiyo-e",
       "decision": "merge",
       "batch": "B21-B23",
-      "note": "Already a live cell. Add this gene page to its sources.",
+      "note": "Already a live cell. The gene page is this row's ref and is not on the cell: artsy.net answers 403 to scripts, so the loader cannot fetch it and D35 forbids marking a source verified by hand. A human who opens the page can add it and mark it verified.",
       "cellId": "ukiyo-e"
     },
     {

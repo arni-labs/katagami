@@ -537,7 +537,7 @@
       "ref": "https://en.wikipedia.org/wiki/Romantic_literature",
       "decision": "merge",
       "batch": "B20",
-      "note": "The literary branch of Romanticism, which this batch writes as one cell mapped to both writing and art. Added to that cell's sources.",
+      "note": "The literary branch of Romanticism, which this batch writes as one cell mapped to both writing and art. The page is now on that cell.",
       "cellId": "romanticism"
     },
     {

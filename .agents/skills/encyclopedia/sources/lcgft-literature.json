@@ -1199,9 +1199,10 @@
     {
       "term": "Drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026297",
-      "decision": "declined",
+      "decision": "live",
       "batch": "B6",
-      "note": "a form category of literature, like a medium"
+      "note": "form: kept as a broad cell. The earlier decline called it a form category like a medium; the encyclopedia skill's own paragraph on what a cell is, added after that decline, reads \"A broad cell names a genre, form or movement: Fantasy fiction, Diaries, Poetry\", so the governing text names its sibling a broad cell and the decline predates it. Written by the nesting run and recorded here.",
+      "cellId": "drama"
     },
     {
       "term": "Dramatic monologues (Poetry)",
@@ -1605,9 +1606,10 @@
     {
       "term": "Fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026339",
-      "decision": "declined",
+      "decision": "live",
       "batch": "B6",
-      "note": "a form category of literature, like a medium; a cell needs a direction inside it"
+      "note": "form: kept as a broad cell. The earlier decline called it a form category like a medium; the encyclopedia skill's own paragraph on what a cell is, added after that decline, reads \"A broad cell names a genre, form or movement: Fantasy fiction, Diaries, Poetry\", so the governing text names its sibling a broad cell and the decline predates it. Written by the nesting run and recorded here.",
+      "cellId": "fiction"
     },
     {
       "term": "Fictional autobiographies",
@@ -3371,9 +3373,10 @@
     {
       "term": "Poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026481",
-      "decision": "declined",
+      "decision": "live",
       "batch": "B6",
-      "note": "a form category of literature, like a medium"
+      "note": "form: kept as a broad cell. The earlier decline called it a form category like a medium; the encyclopedia skill's own paragraph on what a cell is, added after that decline, reads \"A broad cell names a genre, form or movement: Fantasy fiction, Diaries, Poetry\", so the governing text names this term a broad cell and the decline predates it. Written by the nesting run and recorded here.",
+      "cellId": "poetry"
     },
     {
       "term": "Political comics",
