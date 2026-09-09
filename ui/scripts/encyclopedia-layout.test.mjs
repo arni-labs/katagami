@@ -91,6 +91,13 @@ test("the layout is deterministic", () => {
   assert.deepEqual(a.satellites.map((s) => `${s.id}:${s.x},${s.y}`), b.satellites.map((s) => `${s.id}:${s.x},${s.y}`));
 });
 
+// What this is evidence about: settling converges ON THIS FIXTURE. It is not
+// evidence that settling converges. At 160 synthetic cells it reaches zero
+// overlaps; at the 744 real ones it does not, and the sweep's own comment
+// claimed a termination it never reached for months because this test agreed
+// with it. A green test that is true of its fixture and false of the library
+// is the same failure as a comment that describes code it stopped matching —
+// so read this as a floor on the algorithm, never as a report on production.
 test("no two cards overlap once the field has settled", () => {
   const cells = Array.from({ length: 160 }, (_, i) =>
     cell(`c${i}`, `Cell ${i}`, { broader: i > 0 ? [`c${Math.floor(i / 4)}`] : [], manifestations: i % 4 }),
