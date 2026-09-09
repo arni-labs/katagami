@@ -515,6 +515,13 @@ Autonomy is a change in when the human looks, never in what may be built.
   check here. Where the cell would then say too little, leave a `questions` entry
   naming what a better source would let it say.
 
+- **Placement**: which records no cell holds. `encyclopedia-integrity.mjs` reports
+  it per set, and per set is how to read it: the lanes are at different stages, so
+  a combined total describes none of them. On 2026-09-09 WritingStyles had 1
+  unplaced of 24 in scope and DesignLanguages had 784 of 881. Placed means a live
+  cell names the record; in scope excludes Archived, so retiring a record never
+  grows the number. `--unplaced` names every one.
+
 - **Gap watch**: maps with no cells, cells with no manifestations, recollected
   cells that could now be cited, clusters of made work with no cell over them,
   broad cells whose only children are broad (the leaf layer is missing under
