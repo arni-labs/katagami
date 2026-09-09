@@ -133,23 +133,41 @@ export function checkCollection(rows, recordIds = null) {
     }
   }
 
-  const attachedTo = new Map();
+  return { violations, context: breadthTell(parsed, childrenById) };
+}
+
+// The tell, never a finding. Counting a cell's children looked like it could be
+// an invariant and it is not: breadth is about what a cell claims, and children
+// only correlate with it. The numbers are printed so they stay visible and nobody
+// rediscovers the rule and ships it. Written by the leaf-cells run of 2026-09-09,
+// which reached this independently, and folded in here so the collection has one
+// gap watch rather than two.
+export function breadthTell(parsed, childrenById) {
+  const homes = new Map();
+  const onAParent = [];
   for (const [id, doc] of parsed) {
+    const kids = (childrenById.get(id) ?? []).length;
     for (const entry of doc.manifestations) {
-      if (!attachedTo.has(entry.entityId)) attachedTo.set(entry.entityId, []);
-      attachedTo.get(entry.entityId).push(id);
+      if (!homes.has(entry.entityId)) homes.set(entry.entityId, []);
+      homes.get(entry.entityId).push({ cell: id, kids });
+      if (kids > 0) onAParent.push({ cell: id, record: entry.entityId, kids });
     }
   }
-  const context = {
+  // The case that actually went wrong: one record on several cells of differing
+  // breadth. Worth a look, and plenty of these are fine too.
+  const atTwoDepths = [...homes.entries()]
+    .filter(([, held]) => held.length > 1 && held.some((home) => home.kids > 0))
+    .map(([record, held]) => ({ record, cells: held.map((home) => `${home.cell}:${home.kids}`) }));
+  const byCell = new Map();
+  for (const row of onAParent) byCell.set(row.cell, (byCell.get(row.cell) ?? 0) + 1);
+  return {
     cells: parsed.size,
     manifestations: [...parsed.values()].reduce((total, doc) => total + doc.manifestations.length, 0),
-    recordsOnSeveralCells: [...attachedTo.values()].filter((cells) => cells.length > 1).length,
-    // The broad rule that turned out to be wrong, kept as context so the number stays visible.
-    recordsOnACellWithChildren: [...parsed.entries()]
-      .filter(([id]) => (childrenById.get(id) ?? []).length > 0)
-      .reduce((total, [, doc]) => total + doc.manifestations.length, 0),
+    recordsOnSeveralCells: [...homes.values()].filter((held) => held.length > 1).length,
+    onAParent: onAParent.length,
+    onAParentByCell: [...byCell].sort((a, b) => b[1] - a[1]),
+    atTwoDepths: atTwoDepths.length,
   };
-  return { violations, context };
 }
 
 async function main() {
@@ -188,9 +206,15 @@ async function main() {
   for (const violation of violations) {
     console.log(`  ${violation.rule}  ${violation.cell}${violation.record ? `  ${violation.record}` : ""}  ${violation.detail}`);
   }
-  console.log(`\ncontext, not violations:`);
-  console.log(`  records attached to more than one cell: ${context.recordsOnSeveralCells}`);
-  console.log(`  records attached to a cell that has children: ${context.recordsOnACellWithChildren} (correct where the credit names the parent direction; see the note at the top of this file)`);
+  console.log(`\nThe breadth tell. THESE ARE NOT DEFECTS and this is not a to-do list.`);
+  console.log(`Counting a cell's children looked like an invariant and is not: breadth is what a`);
+  console.log(`cell claims, and children only correlate with it. A record naming watercolour`);
+  console.log(`generally belongs on watercolour-painting even though one narrower cell hangs`);
+  console.log(`beneath it. Read these case by case and expect most to be right.`);
+  console.log(`  records on a cell that has children: ${context.onAParent}`);
+  for (const [cell, count] of context.onAParentByCell) console.log(`      ${count.toString().padStart(3)}  ${cell}`);
+  console.log(`  records on several cells of differing breadth: ${context.atTwoDepths}`);
+  console.log(`  records on more than one cell at all: ${context.recordsOnSeveralCells}`);
   process.exitCode = violations.length === 0 ? 0 : 1;
 }
 

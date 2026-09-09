@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
-import { checkCollection, creditOf, descendantsOf, RULES } from "../../scripts/encyclopedia-integrity.mjs";
+import { breadthTell, checkCollection, creditOf, descendantsOf, RULES } from "../../scripts/encyclopedia-integrity.mjs";
 
 const sha256 = (text) => createHash("sha256").update(text).digest("hex");
 
@@ -153,7 +153,43 @@ test("a record on a parent whose credit names the parent itself is NOT misplaced
   ];
   const { violations, context } = checkCollection(rows);
   assert.deepEqual(violations, []);
-  assert.equal(context.recordsOnACellWithChildren, 1, "the broad count is still reported as context");
+  assert.equal(context.onAParent, 1, "the tell still counts it, as context rather than a defect");
+});
+
+// The breadth tell, reported and never enforced. These assert what it counts,
+// not that the live collection is free of them.
+test("the tell counts a record on a parent, and says which cells carry the most", () => {
+  const rows = [
+    cell("parent", doc("Parent", { manifestations: [manifestation("en-1", "x"), manifestation("en-2", "y")] })),
+    cell("leaf", doc("Leaf", { broader: [{ cellId: "parent", explanation: "x", sourceIds: ["s1"] }] })),
+  ];
+  const { context } = checkCollection(rows);
+  assert.equal(context.onAParent, 2);
+  assert.deepEqual(context.onAParentByCell, [["parent", 2]]);
+});
+
+test("the tell counts a record held at differing breadth, and not one held at one depth", () => {
+  const differing = [
+    cell("parent", doc("Parent", { manifestations: [manifestation("en-1", "x")] })),
+    cell("leaf", doc("Leaf", { broader: [{ cellId: "parent", explanation: "x", sourceIds: ["s1"] }], manifestations: [manifestation("en-1", "x")] })),
+  ];
+  assert.equal(checkCollection(differing).context.atTwoDepths, 1);
+  const sameDepth = [
+    cell("a", doc("A", { manifestations: [manifestation("en-1", "x")] })),
+    cell("b", doc("B", { manifestations: [manifestation("en-1", "x")] })),
+  ];
+  const { context } = checkCollection(sameDepth);
+  assert.equal(context.atTwoDepths, 0, "two childless homes are two claims at one depth");
+  assert.equal(context.recordsOnSeveralCells, 1);
+});
+
+test("the tell is a pure function of the parsed cells and their children", () => {
+  const parsed = new Map([["p", { name: "P", manifestations: [{ entityId: "en-1" }] }]]);
+  const children = new Map([["p", ["c"]]]);
+  const tell = breadthTell(parsed, children);
+  assert.equal(tell.onAParent, 1);
+  assert.equal(tell.cells, 1);
+  assert.equal(tell.manifestations, 1);
 });
 
 test("a record on two childless cells is two claims, not a violation", () => {
