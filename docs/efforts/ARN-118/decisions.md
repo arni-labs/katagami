@@ -479,3 +479,15 @@ Options: Keep the approval discipline absolute and have the night produce propos
 Chose the boundary because: proposals alone would have left her nothing to browse, which was the point of the night. Draft-only plus a numbered report keeps the cost of a wrong mint at one instruction, and Archive is reversible in the sense that matters: identity and history survive.
 
 Where: `.agents/skills/encyclopedia/SKILL.md`, "Working unattended"; `/private/tmp/encyclopedia-passes/OVERNIGHT.md` carries the same boundary to each agent.
+
+## D41 A payload that revises a cell states the bytes it was built from
+
+Decision: A payload built from a document it read carries `baseHash`, the sha256 of that document. The loader refuses the write when the stored document has moved since, in the preflight and again immediately before writing, and says what to do: re-read, rebuild on the document production holds now, re-apply only your own change. A payload that states no base behaves as it always did, and replaying bytes already stored is not a conflict.
+
+Came up because: On the night of 2026-09-09 two runs edited the same five cells. One added manifestations; the other rewrote their prose from a copy taken before those writes, and the manifestations were gone. Neither run saw an error. `Define` replaces the whole document and the loader refused only when an identifier held a differently named cell, so two runs changing different parts of one cell had no safe ordering and the second write won silently. It was found by a watch one of the runs had started on its own writes, not by the loader.
+
+Options: Tell agents to re-read immediately before writing and rely on that; have the runtime take an expected hash and refuse the transition itself; have the loader compare a declared base against what is stored.
+
+Chose the loader check because: re-reading is what both runs already did and it does not close the window, since the document can move between the read and the write. A runtime compare-and-swap is the stronger fix and is where this belongs eventually, but it is a spec change to a deployed application, and the loader is the one path every write already goes through. Given up: the window between the loader's last read and its Define is still open, so this narrows the race rather than closing it; a runtime that took the expected hash would close it.
+
+Where: `scripts/encyclopedia-base.mjs`, `scripts/create-encyclopedia-cells.mjs`, `ui/scripts/encyclopedia-base.test.mjs`, and the "Revising a cell another run may also be revising" rule in `.agents/skills/encyclopedia/SKILL.md`.
