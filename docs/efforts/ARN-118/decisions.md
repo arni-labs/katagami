@@ -524,10 +524,17 @@ Chose stopping because: the classifier's refusal is a permission decision made a
 
 Where: `docs/efforts/ARN-118/payloads/README.md` carries the two commands; the refusal is reported in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
 
-## D55 amended: the other run stopped, so the redundant links were removed after all
+## D57 The additive rule in D55 lifts when the other writer stops and says which link loses
 
-The rule in D55 held for about an hour and then the condition it depended on
-went away. `nesting` finished the art lane, said so, and said in each of the
+Decision: This entry supersedes D55 rather than amending it in place. D55 says a
+second run nesting a lane another run is writing keeps every write additive and
+never removes a link the other wrote. That rule holds only while the other run
+is writing. Once it has stopped, said so, and said which of the two links loses,
+the removal is ordinary maintenance and the insertion move D38 describes is
+taken in full.
+
+Came up because: the rule held for about an hour and then the condition it
+depended on went away. `nesting` finished the art lane, said so, and said in each of the
 four insertion cases that its link goes to the grandparent and loses. A removal
 is safe once the other writer has stopped and has agreed which link wins, so all
 four were taken: it applied three itself (`ashcan-school`, `die-brucke`,
@@ -544,14 +551,14 @@ Renaissance art, so the walk earns its place and the reading is what was
 missing. It has since encoded that: a parent more than one step up the
 vocabulary is read before it is written.
 
-What survives from D55 is the narrower rule, and it is the one worth keeping:
+What survives from D55, and it is the half worth keeping:
 while another run is still writing a lane, a second run adds and does not
 remove, because a removal and the corruption D41 describes are indistinguishable
 at read time and the base check does not separate them. The rule is about
 concurrency, not about hierarchy. When the other writer stops and says which
 link loses, the insertion move D38 describes is just maintenance again.
 
-## D57 Archived is excluded from every count, and the status is not where it looks
+## D58 Archived is excluded from every count, and the status is not where it looks
 
 Decision: A cell's lifecycle status lives on the row as `status`, beside
 `fields`, and not inside `fields`. Anything counting cells reads it there and
@@ -578,7 +585,7 @@ archived, which is a different answer to give her than "these need archiving".
 Where: `docs/efforts/ARN-118/payloads/depth.mjs`; the corrected figures in
 `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
 
-## D58 The curated layer stops at 131 roots, and going lower is the owner's call
+## D59 The curated layer stops at 131 roots, and going lower is the owner's call
 
 Decision: The pass nests what three independent sources support and stops. The
 131 art cells left as roots stay roots, and the report says which lever was
