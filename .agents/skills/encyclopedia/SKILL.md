@@ -427,8 +427,10 @@ Autonomy is a change in when the human looks, never in what may be built.
   whole document, so two runs changing different parts of one cell have no safe
   ordering: the second write wins and the first is lost, with no error on either
   side. A payload built from a document you read states `baseHash`, the sha256
-  of the document as you read it, on each such cell. The loader refuses the
-  write if the stored document has moved, both in the preflight and again
+  of the document as you read it, on each such cell. Declaring it is not
+  optional: a payload that would replace the document of a cell that already
+  holds one, and does not say which bytes it was built from, is refused. The
+  loader refuses the write if the stored document has moved, both in the preflight and again
   immediately before writing, and tells you to re-read and rebuild. Rebuild
   from the document as production holds it now and re-apply only your own
   change; do not replay a payload built against the older bytes, or you undo

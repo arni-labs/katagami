@@ -21,8 +21,14 @@ test("replaying the exact bytes already stored is not a conflict", () => {
   assert.equal(baseConflict({ id: "diaries", baseHash: documentHash("something else"), stored: read, writing: read }), null);
 });
 
-test("a payload that states no base behaves as it always did", () => {
-  assert.equal(baseConflict({ id: "diaries", baseHash: undefined, stored: read, writing: '{"name":"Diaries","x":1}' }), null);
+test("a payload that would replace an existing document and states no base is refused", () => {
+  const conflict = baseConflict({ id: "diaries", baseHash: undefined, stored: read, writing: '{"name":"Diaries","x":1}' });
+  assert.match(conflict, /does not say which bytes it was built from/);
+  assert.match(conflict, /Read the cell/);
+});
+
+test("a payload with no base that replays the stored bytes is still not a conflict", () => {
+  assert.equal(baseConflict({ id: "diaries", baseHash: undefined, stored: read, writing: read }), null);
 });
 
 test("a cell that does not exist yet, or holds nothing, is not a conflict", () => {

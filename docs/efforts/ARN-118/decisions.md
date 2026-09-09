@@ -490,4 +490,6 @@ Options: Tell agents to re-read immediately before writing and rely on that; hav
 
 Chose the loader check because: re-reading is what both runs already did and it does not close the window, since the document can move between the read and the write. A runtime compare-and-swap is the stronger fix and is where this belongs eventually, but it is a spec change to a deployed application, and the loader is the one path every write already goes through. Given up: the window between the loader's last read and its Define is still open, so this narrows the race rather than closing it; a runtime that took the expected hash would close it.
 
+Amended the same night, an hour later: declaring the base is not optional. A payload that would replace the document of a cell that already holds one, and states no base, is refused. Opt-in was not enough, because the run that overwrote a second pair of writes was one that had not taken the fix. A run cannot lose another's work by omission now; it can only lose it by declaring a base it did not read.
+
 Where: `scripts/encyclopedia-base.mjs`, `scripts/create-encyclopedia-cells.mjs`, `ui/scripts/encyclopedia-base.test.mjs`, and the "Revising a cell another run may also be revising" rule in `.agents/skills/encyclopedia/SKILL.md`.
