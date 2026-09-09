@@ -31,6 +31,7 @@ const STUBS = {
 };
 
 function resolveModule(specifier, fromFile) {
+  if (specifier.endsWith(".css")) return { stub: {} };
   if (specifier in STUBS) return { stub: STUBS[specifier] };
 
   let base;

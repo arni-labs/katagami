@@ -95,8 +95,8 @@ export class GraphIndex {
     this.depths = new Map(graph.cells.map((cell) => [cell.id, 0]));
     const queue: Array<{ id: string; depth: number }> = this.roots.map((cell) => ({ id: cell.id, depth: 0 }));
     const settled = new Set<string>(this.roots.map((cell) => cell.id));
-    while (queue.length) {
-      const { id, depth } = queue.shift()!;
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const { id, depth } = queue[cursor];
       this.depths.set(id, depth);
       for (const kid of this.childrenOf(id)) {
         if (settled.has(kid.id)) continue;
@@ -104,6 +104,10 @@ export class GraphIndex {
         queue.push({ id: kid.id, depth: depth + 1 });
       }
     }
+  }
+
+  areNeighbours(a: string, b: string): boolean {
+    return this.adjacency.get(a)?.has(b) ?? false;
   }
 
   childrenOf(id: string): EncyclopediaCell[] {
@@ -144,8 +148,8 @@ export class GraphIndex {
     const out: EncyclopediaCell[] = [];
     const seen = new Set<string>([id]);
     const queue = [...this.childrenOf(id)];
-    while (queue.length) {
-      const next = queue.shift()!;
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const next = queue[cursor];
       if (seen.has(next.id)) continue;
       seen.add(next.id);
       out.push(next);
@@ -188,8 +192,8 @@ export class GraphIndex {
     if (!this.byId.has(id)) return dist;
     dist.set(id, { hops: 0, prev: null });
     const queue = [id];
-    while (queue.length) {
-      const current = queue.shift()!;
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const current = queue[cursor];
       const d = dist.get(current)!.hops;
       for (const next of this.adjacency.get(current) ?? []) {
         if (dist.has(next)) continue;
