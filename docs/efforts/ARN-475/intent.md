@@ -32,3 +32,8 @@ sense of place, richer nodes, and possibly 3D — stays in view. This round is
 navigation and clarity first.
 
 Linear: ARN-475. Predecessor effort: ARN-118 (the encyclopedia itself).
+
+Later the same day, after five rounds of feedback on the local build, Rita
+instructed: "merge and deploy what we currently have." From that point the
+effort's end state is the merged head deployed on Vercel and verified live
+(plan.md step 7, D16).

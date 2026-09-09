@@ -290,3 +290,23 @@ Fixed:
 - The index sheet's copy and two comments described the old map (Grok).
 
 Where: `expansion.ts`, `use-pan-zoom.ts`, `encyclopedia-map.tsx`, `focus-sheet.tsx`, `material.ts`; the round-three record on PR #295.
+
+## D21 Review round four: six fixed, none dismissed
+
+Decision: Round four's six findings (Codex 3, Fable 3, Grok none) are fixed in one batch; the panel is rerun on the resulting head.
+
+Came up because: Round four ran on 295d0d1a alongside the arbiter's brief; its findings were three real edges and three small ones.
+
+Options: Fix and rerun; post the record with open act-ons.
+
+Chose fix-and-rerun because: the count fell from fifteen to six with Grok finding nothing, and each fix is a few lines with a scripted check.
+
+Fixed:
+- A category key could collide with a cell id, since ids may contain colons (Codex). The key now begins with `#`, which no cell id can.
+- A shared record's other owners came from the nodes on the paper, so a cell that names the record past its first eight was neither joined nor counted (Codex). Owners come from the graph; every open owner is joined and counted.
+- A shared node whose card is open could leave a hole beside a larger owner at a zoom where only the larger owner's records are drawn (Fable). A shared node is drawn whenever any owner prints big enough.
+- An opened ring whose cell left the paper kept its id, so Escape spent a press on it (Codex). The ring closes with its cell.
+- The +N node's accessible name hardcoded the group size (Fable). It reads BATCH.
+- intent.md still said "not a deploy" while plan.md ended at the deploy (Fable). intent.md now records Rita's later merge instruction.
+
+Where: `expansion.ts`, `encyclopedia-map.tsx`, `map-cards.tsx`, `docs/efforts/ARN-475/intent.md`.

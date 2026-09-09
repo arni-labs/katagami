@@ -14,10 +14,18 @@ import type { GraphIndex } from "@/lib/encyclopedia-graph";
 /** How many cells one act of opening reveals. */
 export const BATCH = 10;
 
-/** The key a category node goes by in the expansion state. A category is not a
- *  cell, so it cannot collide with one: no cell id contains a colon. */
+/** The key a category node goes by in the expansion state. A category is not
+ *  a cell, so the key must be one no cell can have: a cell id begins with a
+ *  letter or a digit (the schema's id pattern), and this begins with `#`. */
+const HUB_PREFIX = "#map:";
 export function hubKey(map: MapName): string {
-  return `map:${map}`;
+  return `${HUB_PREFIX}${map}`;
+}
+export function isHubKey(key: string): boolean {
+  return key.startsWith(HUB_PREFIX);
+}
+export function hubMap(key: string): MapName {
+  return key.slice(HUB_PREFIX.length) as MapName;
 }
 
 export interface Expansion {
@@ -58,7 +66,7 @@ export function showMore(state: Expansion, key: string): Expansion {
 
 /** The children a node has and the order it opens them in. */
 export function childrenOf(index: GraphIndex, key: string): EncyclopediaCell[] {
-  if (key.startsWith("map:")) return index.rootsOn(key.slice(4) as MapName);
+  if (isHubKey(key)) return index.rootsOn(hubMap(key));
   return index.orderedChildren(key);
 }
 

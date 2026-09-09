@@ -606,26 +606,46 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     const nodes: SatelliteNode[] = [];
     for (const sat of records) {
       const key = keyOf(sat);
-      const first = byRecord.get(key);
-      if (!first) { byRecord.set(key, sat); nodes.push(sat); continue; }
-      also.set(first.id, (also.get(first.id) ?? 0) + 1);
-      const plate = layout.byId.get(sat.cellId);
-      if (plate) shared.push({ plate, node: first });
+      if (!byRecord.has(key)) { byRecord.set(key, sat); nodes.push(sat); }
+    }
+    // The other cells a record is joined to come from the graph, not from
+    // the nodes on the paper: a cell that names the record past its first
+    // eight has no node of its own for it, and still names it.
+    for (const [key, node] of byRecord) {
+      const m = manifestationsById.get(node.cellId)?.[node.index];
+      if (!m) continue;
+      const owners = index.ownersOf(m.entitySet, m.entityId).filter((c) => c.id !== node.cellId && layout.byId.has(c.id));
+      if (!owners.length) continue;
+      also.set(node.id, owners.length);
+      for (const c of owners) shared.push({ plate: layout.byId.get(c.id)!, node });
+      void key;
     }
     return { nodes: nodes.concat(controls), also, shared, byRecord, keyOf };
-  }, [layout.satellites, layout.byId, opened, manifestationsById, openRecords]);
+  }, [layout.satellites, layout.byId, opened, manifestationsById, openRecords, index]);
   // Then only what prints big enough, and is near the viewport, is mounted.
   const records = useMemo(() => {
     const big = (cellId: string) => { const p = layout.byId.get(cellId); return Boolean(p) && camera.k * p!.scale >= RECORDS_FROM_EK; };
     const near = measured ? new Set(satelliteIndex.query(view).map((b) => b.node.id)) : null;
     const inView = (r: Rect) => !measured || (r.x + r.w >= view.x && r.x <= view.x + view.w && r.y + r.h >= view.y && r.y <= view.y + view.h);
     const ringHas = (id: string) => opened !== null && opened.nodes.some((o) => o.id === id);
+    // A shared record's node is drawn whenever any cell that names it prints
+    // big enough — its own cell or another — so a card open on a smaller
+    // cell's node never leaves a hole beside a larger one at a zoom between.
+    const ownersBig = new Map<string, boolean>();
+    for (const { plate, node } of settledRecords.shared) if (big(plate.id)) ownersBig.set(node.id, true);
+    const drawn = (s: SatelliteNode) => big(s.cellId) || ownersBig.get(s.id) === true;
     return {
-      nodes: settledRecords.nodes.filter((s) => big(s.cellId) && (near === null || near.has(s.id))),
+      nodes: settledRecords.nodes.filter((s) => drawn(s) && (near === null || near.has(s.id))),
       also: settledRecords.also,
-      shared: settledRecords.shared.filter(({ plate, node }) => big(plate.id) && (ringHas(node.id) || big(node.cellId)) && (near === null || near.has(node.id) || inView(plateRect(plate)))),
+      shared: settledRecords.shared.filter(({ plate, node }) => big(plate.id) && (ringHas(node.id) || drawn(node)) && (near === null || near.has(node.id) || inView(plateRect(plate)))),
     };
   }, [settledRecords, layout.byId, satelliteIndex, view, measured, opened, camera.k]);
+  // A cell's opened ring closes when the cell leaves the paper — its branch
+  // folded above it — so Escape never spends a press on a ring nobody sees.
+  useEffect(() => {
+    if (openedId && !layout.byId.has(openedId)) setOpenedId(null);
+  }, [openedId, layout.byId]);
+
   // An open card follows its record. When the node that stands for the
   // record changes — the cell's ring opened, so the ring's node stands for it
   // now — the open id moves to the node that is drawn; when the record leaves

@@ -6,7 +6,7 @@ import { MAP_INK, MAP_LABEL } from "@/lib/encyclopedia-graph";
 import { inkChipStyle, Tape } from "./chrome";
 import { cellFaces, cellMaterial, SET_EYEBROW, SET_INK, type CellFace } from "./material";
 import { HUB_H, HUB_W, MORE_W, NAME_W, plateBox, RECORD_CARD_W, SAT_W, type MoreNode, type SatelliteNode } from "./graph-layout";
-import { hubKey } from "./expansion";
+import { BATCH, hubKey } from "./expansion";
 import { ArrowUpRight } from "lucide-react";
 
 // The nodes on the map. A plate is a cell. How much of it is drawn depends on
@@ -582,7 +582,7 @@ function MoreNodeCard({ node, k, onMore, onDragStart }: { node: MoreNode; k: num
       // Picking the node up moves the branch it belongs to, and the release
       // is not a click: the map guards that in `onMore`.
       onPointerDown={(e) => onDragStart(node.key, e)}
-      aria-label={`Open the next ${Math.min(10, node.count)} of ${node.count} more cells`}
+      aria-label={`Open the next ${Math.min(BATCH, node.count)} of ${node.count} more cells`}
       title={`${node.count} more`}
       className="absolute grid place-items-center bg-[var(--washi)] font-mono font-bold tabular-nums text-foreground shadow-[var(--shadow-sticker)] hover:z-[3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]"
       style={{ left: node.x - (size * node.scale) / 2, top: node.y - (size * node.scale) / 2, width: size, height: size, transform: node.scale === 1 ? undefined : `scale(${node.scale})`, transformOrigin: "0 0", fontSize: screenPx(11, ek, 12, 26), zIndex: 1 }}
