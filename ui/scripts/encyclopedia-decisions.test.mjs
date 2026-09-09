@@ -25,7 +25,7 @@ export function checkNumbering(numbers) {
   const problems = [];
   const seen = new Set();
   for (const number of numbers) {
-    if (seen.has(number)) problems.push(`D${number} appears more than once`);
+    if (seen.has(number)) problems.push(`D${number} appears more than once. Blocks are assigned in the overnight brief; ask rather than reading other branches, because a branch can claim more numbers while you are choosing.`);
     seen.add(number);
   }
   for (let index = 1; index < numbers.length; index++) {

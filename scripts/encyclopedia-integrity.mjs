@@ -3,9 +3,19 @@
 // Reads the live collection and reports every violation of the invariants this
 // collection actually has. It reports; it never writes. Run it any time.
 //
-//   node scripts/encyclopedia-integrity.mjs                          # against production
-//   node scripts/encyclopedia-integrity.mjs --allow-count-mismatch   # what works today
-//   node scripts/encyclopedia-integrity.mjs --json                   # machine-readable
+//   node scripts/encyclopedia-integrity.mjs                                        # against production
+//   node scripts/encyclopedia-integrity.mjs --allow-count-mismatch=DesignLanguages  # what works today
+//   node scripts/encyclopedia-integrity.mjs --json                                  # machine-readable
+//
+// Exit codes: 0 clean, 1 violations found, 2 the read did not account for every
+// row, 3 the run was degraded by an allowed mismatch. A degraded run gets its
+// own code so nothing gating on exit status reads it as success.
+//
+// The allowance names the sets it covers. It was a single boolean once, tested
+// against the combined list, so it waved through a short read of any set
+// including the cells under test, which is the exact failure the count check
+// exists to catch. Naming the set means a short read of EncyclopediaCells still
+// stops the world while the DesignLanguages disagreement is waved through.
 //
 // The plain invocation exits 2 against production today, and that is the guard
 // working rather than a bug here: DesignLanguages pages 1278 rows while the
@@ -246,6 +256,24 @@ export function breadthTell(parsed, childrenById, records = null) {
   };
 }
 
+// `--allow-count-mismatch=A,B` names the sets whose mismatch may be waved
+// through. The bare flag names nothing and is refused, because the whole point
+// is that it cannot cover the set under test by accident.
+export function allowedSets(argv) {
+  const sets = new Set();
+  for (const argument of argv) {
+    if (argument === "--allow-count-mismatch") {
+      throw new Error("--allow-count-mismatch needs the sets it covers, for example --allow-count-mismatch=DesignLanguages");
+    }
+    if (argument.startsWith("--allow-count-mismatch=")) {
+      for (const name of argument.slice("--allow-count-mismatch=".length).split(",")) {
+        if (name.trim()) sets.add(name.trim());
+      }
+    }
+  }
+  return sets;
+}
+
 async function main() {
   const origin = process.env.TEMPER_API_URL ?? "https://openpaw-production.up.railway.app";
   const key = process.env.TEMPER_API_KEY;
@@ -287,20 +315,27 @@ async function main() {
   // read that does not account for every row fails the run rather than reporting
   // a clean result. Found by the verifier on 2026-09-09: with paging stopped
   // early the sweep reported zero while a broken cell sat unread on page two.
-  // `--allow-count-mismatch` runs anyway, for the known server-side disagreement
-  // on DesignLanguages (1278 paged, 1279 counted), and the mismatch still prints.
-  if (shortReads.length > 0) {
-    const allow = process.argv.includes("--allow-count-mismatch");
-    const where = allow ? console.warn : console.error;
-    where(`The read did not account for every row${allow ? ", and --allow-count-mismatch was passed, so the findings below are over what was read" : ", so this run reports nothing about the collection"}:`);
-    for (const line of shortReads) where(`  ${line.set}: ${line.detail}`);
-    if (!allow) { process.exitCode = 2; return; }
+  const allowed = allowedSets(process.argv);
+  const waved = shortReads.filter((line) => allowed.has(line.set));
+  const fatal = shortReads.filter((line) => !allowed.has(line.set));
+  // Everything a reader needs goes to stdout, so a pipeline that keeps only
+  // stdout still carries the warning next to the numbers it qualifies.
+  if (fatal.length > 0) {
+    console.log("The read did not account for every row, so this run reports nothing about the collection:");
+    for (const line of fatal) console.log(`  ${line.set}: ${line.detail}`);
+    if (allowed.size > 0) console.log(`  (--allow-count-mismatch covers ${[...allowed].join(", ")}, which does not cover the above)`);
+    process.exitCode = 2;
+    return;
+  }
+  if (waved.length > 0) {
+    console.log(`DEGRADED RUN. A mismatch was allowed for ${[...allowed].join(", ")}, so every number below is over what was read rather than over the collection:`);
+    for (const line of waved) console.log(`  ${line.set}: ${line.detail}`);
   }
   const { violations, context } = checkCollection(cells, records);
   if (process.argv.includes("--json")) { console.log(JSON.stringify({ violations, context }, null, 2)); return; }
   const byRule = new Map();
   for (const violation of violations) byRule.set(violation.rule, (byRule.get(violation.rule) ?? 0) + 1);
-  console.log(`${context.cells} live attested cells, ${context.manifestations} manifestations, ${records.size} records; ${shortReads.length === 0 ? "every page reconciled against @odata.count" : `THE READ DID NOT RECONCILE (see above), so these counts are over what was read`}`);
+  console.log(`${context.cells} live attested cells, ${context.manifestations} manifestations, ${records.size} records; ${waved.length === 0 ? "every page reconciled against @odata.count" : "THE READ DID NOT RECONCILE (see above), so these counts are over what was read"}`);
   console.log(`${violations.length} violation(s)${violations.length === 0 ? "" : `: ${[...byRule].map(([rule, count]) => `${rule} ${count}`).join(", ")}`}`);
   for (const violation of violations) {
     console.log(`  ${violation.rule}  ${violation.cell}${violation.record ? `  ${violation.record}` : ""}  ${violation.detail}`);
@@ -320,7 +355,9 @@ async function main() {
   console.log(`a cell has something below it. The zero above is honest and narrower than it reads.`);
   console.log(`  cells the rule is structurally active on: ${context.depthRuleActiveOn} of ${context.cells}`);
   console.log(`  credits that literally contain even their own cell's name: ${context.creditsNamingTheirOwnCell} of ${context.creditsTotal}`);
-  process.exitCode = violations.length === 0 ? 0 : 1;
+  // A degraded run gets its own code rather than borrowing 0 or 1, so a caller
+  // gating on exit status cannot read "waved through" as "clean".
+  process.exitCode = waved.length > 0 ? 3 : violations.length === 0 ? 0 : 1;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) await main();

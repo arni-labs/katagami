@@ -500,7 +500,7 @@ What is still open, and it is the reason the runtime fix matters: the loader's l
 
 Where: `scripts/encyclopedia-base.mjs`, `scripts/create-encyclopedia-cells.mjs`, `ui/scripts/encyclopedia-base.test.mjs`, and the "Revising a cell another run may also be revising" rule in `.agents/skills/encyclopedia/SKILL.md`.
 
-## D47 Made work is connected by what a record credits, never by what it is called
+## D49 Made work is connected by what a record credits, never by what it is called
 
 Decision: A Katagami record manifests a cell when one of the record's own `credits` entries names that direction. Names are not evidence: a record called Sumiko Ink is placed by its credit "Sumi-e tradition", not by its name, and a record whose name rhymes with a cell is not placed at all. Every manifestation explanation quotes the credit verbatim and states the record's status, so a reader can check the placement against the record without leaving the cell.
 
@@ -512,7 +512,7 @@ Chose the credit vocabulary because: it is the record's own claim about its line
 
 Where: `.agents/skills/encyclopedia/sources/getty-aat-styles.json`; batches C1 and C2 in production.
 
-## D48 An archived record may be a manifestation, and the entry says so
+## D50 An archived record may be a manifestation, and the entry says so
 
 Decision: A manifestation may name a record in any status including Archived, while a `broader` or `relations` link must point at a live attested Draft. Where an archived record is attached, its status is written into the explanation.
 
@@ -524,7 +524,7 @@ Chose attach and mark because: an archived record is still made work that credit
 
 Where: `scripts/encyclopedia-integrity.mjs`, the breadth tell.
 
-## D49 A cell's children are a tell about its breadth, never a test of it
+## D51 A cell's children are a tell about its breadth, never a test of it
 
 Decision: A record is misplaced when its own credit names a cell that sits below the one it is attached to. A record attached to a cell that merely has children is not misplaced, and the child count is reported as context rather than enforced.
 
@@ -536,7 +536,7 @@ Chose the narrow rule because: breadth is what a cell claims, and children only 
 
 Where: `scripts/encyclopedia-integrity.mjs`; `ui/scripts/encyclopedia-integrity.test.mjs`; batch C10.
 
-## D50 The integrity sweep reports, and it fails the run rather than reporting green on data it did not read
+## D52 The integrity sweep reports, and it fails the run rather than reporting green on data it did not read
 
 Decision: The gap watch reads the live collection and reports violations; nothing in CI asserts the collection is free of findings, and the fixture tests cover the function rather than the graph. A read that cannot account for every row the server reports exits non-zero and reports nothing about the collection.
 
@@ -548,7 +548,7 @@ Chose report-only with a hard failure on an incomplete read because: a watch tha
 
 Where: `scripts/encyclopedia-integrity.mjs`; `ui/scripts/encyclopedia-integrity.test.mjs`; wired into `test:encyclopedia`.
 
-## D51 Two writers on one path is the same failure whether or not the path is instrumented
+## D53 Two writers on one path is the same failure whether or not the path is instrumented
 
 Decision: Recorded rather than fixed by machinery. Runs sharing a scratch directory use a per-run subdirectory; a shared filename is a convention, not a guard.
 
@@ -560,7 +560,7 @@ Chose the convention and wrote down why it is weaker: a filesystem has no compar
 
 Where: this ledger; the effort reports.
 
-## D52 A watch alerts on unexplained change and never asserts what the right answer is
+## D54 A watch alerts on unexplained change and never asserts what the right answer is
 
 Decision: A watch over live state takes its baseline from what the system holds when it starts, reports only that something changed, and never restores. It does not hold an expectation of the correct state from its own writes.
 
@@ -570,4 +570,6 @@ Options: Hold the expected state and alarm on any difference; diff against produ
 
 Chose the snapshot because: the right answer moved four times in one night, so anything asserting it is wrong within the hour. A deliberate move now alerts once and becomes the baseline, rather than alarming forever. Given up: a watch like this cannot tell a correct removal from a corruption, which is the point. It says what changed and tells the reader to ask whoever wrote before restoring anything.
 
-Where: the run's own watch; this rule belongs to whoever writes the next one.
+The same shape appeared twice more in this effort's tests, and it is worth naming alongside the watch. A null inside `broader` crashed the sweep and none of the eight tests put one there, so the suite agreed with the bug. Then a test asserted that a duplicate decision number produces exactly one problem, and it produces two, because a repeat is both a duplicate and a break in ascending order. Both times the assertion encoded what the author expected rather than what the rule says, and an assertion like that passes for exactly as long as the author is right. A watch that holds its own expectation of the correct state, and a test that holds its own expectation of the correct output, fail the same way.
+
+Where: the run's own watch; `ui/scripts/encyclopedia-integrity.test.mjs`; this rule belongs to whoever writes the next one.
