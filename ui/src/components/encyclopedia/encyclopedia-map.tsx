@@ -12,6 +12,7 @@ import { expandCell, expandedRadius, HUB_H, HUB_W, layoutVisible, levelScale, MA
 import { Hub, lodFor, Plate, Satellite } from "./map-cards";
 import { CloseButton, IndexSheet, OpenCellButton, SheetBody, SheetTitle, type SheetTab } from "./focus-sheet";
 import { EncyclopediaBrowse } from "./browse";
+import { RecordCard } from "./record-card";
 import { useMounted, usePanZoom, usePrefersReducedMotion, ZOOM_MAX } from "./use-pan-zoom";
 import { cameraRect, SpatialIndex, type Rect } from "./spatial-index";
 import { childrenOf, computeVisible, hubKey, initialExpansion, revealPath, showMore, toggle, type Expansion } from "./expansion";
@@ -132,7 +133,8 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     };
     const plates = settled.plates.map((p) => { const d = effective(p.id); return d.x || d.y ? { ...p, x: p.x + d.x, y: p.y + d.y } : p; });
     const byId = new Map(plates.map((p) => [p.id, p]));
-    const satellites = settled.satellites.map((s) => { const d = effective(s.cellId); return d.x || d.y ? { ...s, x: s.x + d.x, y: s.y + d.y } : s; });
+    // A record node moves with its cell, and can be moved on its own.
+    const satellites = settled.satellites.map((s) => { const d = effective(s.cellId); const own = offsets.get(s.id) ?? { x: 0, y: 0 }; const dx = d.x + own.x; const dy = d.y + own.y; return dx || dy ? { ...s, x: s.x + dx, y: s.y + dy } : s; });
     const hubs = settled.hubs.map((h) => { const d = effective(h.key); return d.x || d.y ? { ...h, x: h.x + d.x, y: h.y + d.y } : h; });
     let left = Infinity; let top = Infinity; let right = -Infinity; let bottom = -Infinity;
     for (const b of [...plates, ...hubs]) { left = Math.min(left, b.x - b.w / 2); top = Math.min(top, b.y - b.h / 2); right = Math.max(right, b.x + b.w / 2); bottom = Math.max(bottom, b.y + b.h / 2); }
@@ -253,9 +255,9 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     if (!plate) return null;
     const more = layout.satellites.find((s) => s.cellId === plate.id && s.role === "more");
     const away = more ? Math.atan2(more.y - plate.y, more.x - plate.x) : -Math.PI / 2;
-    const nodes = expandCell(plate, away);
+    const nodes = expandCell(plate, away).map((s) => { const own = offsets.get(s.id); return own ? { ...s, x: s.x + own.x, y: s.y + own.y } : s; });
     return { plate, nodes, radius: expandedRadius(plate, nodes) };
-  }, [openedId, layout]);
+  }, [openedId, layout, offsets]);
 
   /** What each category node shows of its map: the faces of its most
    *  prominent cells, pictured ones first. */
@@ -404,7 +406,17 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
    *  dragged from a ref so its identity never changes. */
   const focusUnlessDragging = useCallback((id: string) => { if (!draggingRef.current && !draggedNode.current) focus(id); }, [focus, draggingRef]);
 
-  const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); setOpenedId(null); }, []);
+  const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); setOpenedId(null); setRecordOpen(null); }, []);
+
+  /** The record node whose card is open on the canvas, if any. */
+  const [recordOpen, setRecordOpen] = useState<SatelliteNode | null>(null);
+  const openRecord = useCallback((node: SatelliteNode) => {
+    if (draggedNode.current) return;
+    setRecordOpen((at) => (at?.id === node.id ? null : node));
+  }, []);
+  // The card belongs to a node on the paper; when the node goes, so does it.
+  const recordNodeNow = recordOpen ? (opened?.nodes.find((s) => s.id === recordOpen.id) ?? layout.satellites.find((s) => s.id === recordOpen.id) ?? null) : null;
+  const recordManifestation = recordNodeNow ? index.byId.get(recordNodeNow.cellId)?.manifestations[recordNodeNow.index] ?? null : null;
 
   const onFilter = (next: MapName | null) => {
     setMap(next);
@@ -426,7 +438,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     if (event.key === "+" || event.key === "=") { zoomStep(1); event.preventDefault(); }
     else if (event.key === "-" || event.key === "_") { zoomStep(-1); event.preventDefault(); }
     else if (event.key === "0") { fitAll(); event.preventDefault(); }
-    else if (event.key === "Escape") { if (openedId) setOpenedId(null); else if (sheetExpanded) setSheetExpanded(false); else if (focusId) clearFocus(); }
+    else if (event.key === "Escape") { if (recordOpen) setRecordOpen(null); else if (openedId) setOpenedId(null); else if (sheetExpanded) setSheetExpanded(false); else if (focusId) clearFocus(); }
   };
 
   // ── emphasis ────────────────────────────────────────────────────────────
@@ -665,6 +677,8 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             labelled={focusId === s.cellId && lodFor(camera.k * s.scale) !== "picture"}
             also={records.also.get(s.id)}
             onToggle={toggleRecords}
+            onOpen={openRecord}
+            onDragStart={startNodeDrag}
           />
         ))}
         {/* An opened cell's records, drawn after the plates so its nodes and
@@ -689,6 +703,8 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
                   dimmed={false}
                   labelled={lodFor(camera.k * s.scale) !== "picture" && opened.nodes.length <= 14}
                   onToggle={toggleRecords}
+                  onOpen={openRecord}
+                  onDragStart={startNodeDrag}
                 />
               ))}
             </div>
@@ -777,6 +793,19 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
           </ul>
         ) : null}
       </div>
+
+      {/* a record, read where it is */}
+      {recordNodeNow && recordManifestation ? (
+        <RecordCard
+          manifestation={recordManifestation}
+          cell={index.byId.get(recordNodeNow.cellId)!}
+          index={index}
+          at={{ x: recordNodeNow.x * camera.k + camera.x, y: recordNodeNow.y * camera.k + camera.y, size: SAT_W * recordNodeNow.scale * camera.k }}
+          room={viewportSize}
+          onClose={() => setRecordOpen(null)}
+          onFocusCell={(id) => { setRecordOpen(null); focus(id); }}
+        />
+      ) : null}
 
       {/* zoom + minimap */}
       <div className={`absolute z-20 ${desktop ? "bottom-10 left-4 flex items-end gap-2" : "bottom-3 right-3"}`}>

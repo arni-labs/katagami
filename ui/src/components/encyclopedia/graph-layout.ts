@@ -35,8 +35,9 @@ const RING_GAP = 12;
  *  of them only overlap when their centres are within SAT_W on BOTH axes,
  *  which cannot happen once they are SAT_W × √2 apart however the ring turns. */
 export const NODE_PITCH = SAT_W * Math.SQRT2 + RING_GAP;
-/** Satellites hug the plate: the ring sits just outside its edge. */
-const RING_PAD = 18;
+/** Clear paper between a card's edge and the ring of records around it. The
+ *  records used to hug the card; Rita asked for them to stand off it. */
+const RING_PAD = 52;
 
 /** Each layer of the map draws at this fraction of the one above it. A cell's
  *  layer is its depth in the hierarchy, so a narrower cell is always smaller
@@ -348,7 +349,7 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
     const pad = (SAT_W / 2 + RING_PAD) * n.scale;
     const perimeter = ringPerimeter(n, pad);
     const start = boxRingOffset(n, pad, n.outward);
-    const arc = perimeter * (ring <= 3 ? 0.4 : 0.8);
+    const arc = perimeter * (ring <= 3 ? 0.5 : 0.9);
     for (let j = 0; j < ring; j++) {
       const t = ring === 1 ? start : start - arc / 2 + (arc * j) / (ring - 1);
       const point = boxRingPoint(n, pad, t);

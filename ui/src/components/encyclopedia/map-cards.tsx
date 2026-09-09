@@ -476,6 +476,8 @@ function SatelliteNodeCard({
   labelled,
   also,
   onToggle,
+  onOpen,
+  onDragStart,
 }: {
   node: SatelliteNode;
   manifestation: CellManifestation | null;
@@ -492,6 +494,11 @@ function SatelliteNodeCard({
   /** Open this cell's remaining records onto the map, or fold them away.
    *  Takes the cell id for the same reason `Plate.onFocus` does. */
   onToggle: (cellId: string) => void;
+  /** Open the record's card beside the node. The record's own page is a
+   *  button on that card, not the node itself. */
+  onOpen: (node: SatelliteNode) => void;
+  /** Pick the node up and move it on its own. */
+  onDragStart: (id: string, event: React.PointerEvent) => void;
 }) {
   const record = manifestation?.record ?? null;
   const ink = SET_INK[node.set];
@@ -531,7 +538,7 @@ function SatelliteNodeCard({
     // the paper as nodes of their own rather than standing in for them.
     const label = `Open the other ${node.more} records this cell names on the map`;
     return (
-      <button type="button" onClick={() => onToggle(node.cellId)} title={label} aria-label={label} aria-expanded={false} className={common} style={style}>
+      <button type="button" onClick={() => onToggle(node.cellId)} onPointerDown={(e) => onDragStart(node.id, e)} title={label} aria-label={label} aria-expanded={false} className={common} style={style}>
         <span className="grid place-items-center bg-[var(--washi)] font-mono font-bold tabular-nums text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, fontSize: screenPx(11, effectiveK, 12, 22) }}>+{node.more}</span>
         {labelled ? <span className="mt-1 block text-center font-mono uppercase tracking-[0.12em] text-muted-foreground" style={{ fontSize: labelSize }}>open all</span> : null}
       </button>
@@ -540,7 +547,7 @@ function SatelliteNodeCard({
   if (node.role === "fold") {
     const label = `Fold the ${node.more} records of this cell back into one node`;
     return (
-      <button type="button" onClick={() => onToggle(node.cellId)} title={label} aria-label={label} aria-expanded className={common} style={{ ...style, zIndex: 4 }}>
+      <button type="button" onClick={() => onToggle(node.cellId)} onPointerDown={(e) => onDragStart(node.id, e)} title={label} aria-label={label} aria-expanded className={common} style={{ ...style, zIndex: 4 }}>
         <span className="grid place-items-center font-mono font-bold text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, background: "color-mix(in srgb, var(--yuzu) 42%, var(--washi))", fontSize: screenPx(13, effectiveK, 14, 26) }}>−</span>
         {labelled ? <span className="mt-1 block text-center font-mono uppercase tracking-[0.12em] text-muted-foreground" style={{ fontSize: labelSize }}>fold</span> : null}
       </button>
@@ -550,15 +557,14 @@ function SatelliteNodeCard({
   const name = record?.name ?? (manifestation?.unread ? "Record could not be read" : "Record not found");
   const title = also ? `${SET_EYEBROW[node.set]}: ${name}. Also named by ${also} other ${also === 1 ? "cell" : "cells"} on the map.` : `${SET_EYEBROW[node.set]}: ${name}.`;
   return (
-    <a
-      href={record?.href}
-      target={record ? "_blank" : undefined}
-      rel="noreferrer"
-      aria-label={`${title} Open the record.`}
+    <button
+      type="button"
+      aria-label={`${title} Read the record.`}
       title={title}
       className={common}
       style={style}
-      onClick={(e) => { if (!record) e.preventDefault(); }}
+      onPointerDown={(e) => onDragStart(node.id, e)}
+      onClick={() => onOpen(node)}
     >
       <span className="relative block overflow-hidden bg-[var(--washi)] p-[3px] shadow-[var(--shadow-sticker)]" style={{ width: size, height: size }}>
         {thumb}
@@ -573,7 +579,7 @@ function SatelliteNodeCard({
           <span className="block truncate font-sans font-medium leading-tight text-foreground" style={{ fontSize: labelSize }}>{name}</span>
         </span>
       ) : null}
-    </a>
+    </button>
   );
 }
 
