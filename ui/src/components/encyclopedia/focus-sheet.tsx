@@ -390,7 +390,7 @@ export function IndexSheet({ index, onFocus }: { index: GraphIndex; onFocus: (id
           <span aria-hidden className="absolute -bottom-1 left-0 h-[6px] w-full" style={{ background: "var(--yuzu)", opacity: 0.85, mixBlendMode: "var(--ink-blend)" as never, transform: "rotate(-0.4deg)" }} />
         </span>
       </h2>
-      <p className="mt-4 text-[16px] leading-relaxed text-muted-foreground">Every attested cell is on the map. Pictures far out, words as you come closer. Pick a cell here or on the paper to read it.</p>
+      <p className="mt-4 text-[17px] leading-relaxed text-muted-foreground">Every attested cell is on the map. Pictures far out, words as you come closer. Pick a cell here or on the paper to read it.</p>
       {MAP_NAMES_ORDER.map((map) => {
         const members = cells.filter((c) => index.primaryMap(c) === map);
         if (!members.length) return null;

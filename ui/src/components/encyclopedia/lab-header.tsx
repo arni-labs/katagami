@@ -36,7 +36,7 @@ export function LabHeader({
           <h1 className="font-display text-[32px] font-bold leading-[1.02] tracking-[-0.03em] sm:text-[40px] lg:text-[44px]">
             {title} <Marker color={markerColor}>{marker}</Marker>
           </h1>
-          <p className="mt-3 max-w-xl text-[16px] leading-relaxed text-muted-foreground">{description}</p>
+          <p className="mt-3 max-w-xl text-[17px] leading-relaxed text-muted-foreground">{description}</p>
         </div>
         <div className="riso-reveal flex flex-wrap items-end gap-6 lg:flex-col lg:items-end" style={{ ["--reveal-i" as string]: 2 }}>
           <div className="flex items-end gap-6">
