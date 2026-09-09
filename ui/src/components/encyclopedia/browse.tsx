@@ -73,7 +73,7 @@ function BrowseRow({
       <span className="min-w-0 flex-1">
         <Eyebrow ink={face.ink}>{eyebrow ?? on}</Eyebrow>
         <span className="mt-0.5 block truncate font-sans text-[17px] font-semibold leading-snug text-foreground">{cell.name}</span>
-        <span className="mt-0.5 block truncate font-sans text-[16px] leading-snug text-muted-foreground">
+        <span className="mt-0.5 block truncate font-sans text-[17px] leading-snug text-muted-foreground">
           {under ? `${under} narrower` : null}
           {under && made ? " · " : null}
           {made ? `${made} made` : null}
@@ -130,7 +130,9 @@ export function EncyclopediaBrowse({
   focusId: string | null;
   onFocus: (id: string) => void;
   onClearFocus: () => void;
-  onShowMap: () => void;
+  /** Hand off to the map, naming the cell the reader is on so the map opens
+   *  on it rather than somewhere else. Null when they are at the top. */
+  onShowMap: (cellId: string | null) => void;
   map: MapName | null;
   onMap: (map: MapName | null) => void;
   counts: Record<MapName, number>;
@@ -155,10 +157,13 @@ export function EncyclopediaBrowse({
   /** The cells at the level the reader is on: the top of the library, or what
    *  sits under the cell they came through. */
   const level = useMemo(() => {
-    if (here.parentId) return index.childrenOf(here.parentId);
+    // The filter applies at every level, not only the top. A filter that
+    // silently stops as the reader goes deeper is worse than no filter,
+    // because the field looks narrowed and is not.
+    const onMap = (cells: EncyclopediaCell[]) => (map ? cells.filter((c) => c.maps.some((m) => m.map === map)) : cells);
+    if (here.parentId) return onMap(index.childrenOf(here.parentId));
     const roots = index.graph.cells.filter((c) => index.depthOf(c.id) === 0);
-    const shown = map ? roots.filter((c) => c.maps.some((m) => m.map === map)) : roots;
-    return [...shown].sort((a, b) => a.name.localeCompare(b.name));
+    return [...onMap(roots)].sort((a, b) => a.name.localeCompare(b.name));
   }, [index, here.parentId, map]);
 
   const open = useCallback(
@@ -253,7 +258,7 @@ export function EncyclopediaBrowse({
               {MAP_LABEL[name]}
             </button>
           ))}
-          <button type="button" onClick={onShowMap} className="ml-auto inline-flex h-11 shrink-0 items-center gap-2 px-4 font-mono text-[11px] font-bold uppercase tracking-[0.16em] shadow-[var(--shadow-sticker)]" style={{ background: "var(--washi)", color: "var(--foreground)" }}>
+          <button type="button" onClick={() => onShowMap(cell?.id ?? here.parentId ?? null)} className="ml-auto inline-flex h-11 shrink-0 items-center gap-2 px-4 font-mono text-[11px] font-bold uppercase tracking-[0.16em] shadow-[var(--shadow-sticker)]" style={{ background: "var(--washi)", color: "var(--foreground)" }}>
             <MapIcon size={16} aria-hidden /> Map
           </button>
         </div>

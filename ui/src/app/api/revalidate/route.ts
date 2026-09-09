@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { forgetEncyclopedia } from "@/lib/encyclopedia-cache";
 import { isOwner } from "@/lib/owner";
 
 export const dynamic = "force-dynamic";
@@ -64,6 +65,12 @@ export async function POST(request: Request) {
   for (const path of revalidated) {
     revalidatePath(path);
   }
+  // The encyclopedia is held in the server process, outside Next's cache, so
+  // revalidating a path does not touch it: a published change would sit behind
+  // a stale library until the hold expired on its own. Publishing is rare and
+  // the read is cheap to repeat, so every revalidation drops it rather than
+  // trying to work out whether this particular path implicates the library.
+  forgetEncyclopedia();
 
   return NextResponse.json({ revalidated, count: revalidated.length });
 }

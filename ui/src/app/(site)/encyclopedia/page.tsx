@@ -31,7 +31,8 @@ export default async function EncyclopediaPage({ searchParams }: { searchParams:
       {/* The withheld count is said inside the page rather than under it: on a
           phone this paragraph sat below the fixed navigation bar and could not
           be read at all. The map's status line carries it on a desktop and the
-          browser carries it on a phone. */}
+          browser carries it on a phone — this comment claimed that before
+          either of them did, which is how it went missing from the desktop. */}
       <EncyclopediaMap graph={graph} layout={layout} initialCellId={initialCellId} />
     </>
   );

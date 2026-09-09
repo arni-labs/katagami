@@ -288,10 +288,14 @@ export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph:
       const el = viewportRef.current;
       if (!el || !el.clientWidth || !el.clientHeight) return;
       framed.current = true;
-      if (initial) frameFocus(initial); else fitAll(false);
+      // The cell in focus, when there is one, is where the reader already is —
+      // handed over by the phone browser, or named in the URL. Only an
+      // unfocused map opens on the whole field.
+      const target = focusId ?? initial;
+      if (target) frameFocus(target); else fitAll(false);
     });
     return () => cancelAnimationFrame(id);
-  }, [initial, frameFocus, fitAll, viewportRef, viewportSize]);
+  }, [initial, focusId, frameFocus, fitAll, viewportRef, viewportSize]);
   useEffect(() => {
     const onResize = () => { if (!focusId) fitAll(false); };
     window.addEventListener("resize", onResize);
@@ -745,7 +749,9 @@ export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph:
             {levels > 0
               ? <>showing {visiblePlates.length} · {deepestShown + 1} of {levels + 1} layers{deepestShown < levels ? " · zoom in for the next" : ""}</>
               : <>{visiblePlates.length} on the map</>}
-            {" · "}{shownRecords} manifestations · distances are schematic
+            {" · "}{shownRecords} manifestations
+            {graph.withheld ? <> · <span title="Not attested under the current contract, so not shown.">{graph.withheld} withheld</span></> : null}
+            {" · distances are schematic"}
           </span>
           <span className="ml-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             <span className="flex items-center gap-1.5">
@@ -842,7 +848,13 @@ export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph:
           focusId={focusId}
           onFocus={focus}
           onClearFocus={clearFocus}
-          onShowMap={() => setPhoneView("map")}
+          onShowMap={(cellId) => {
+            // Carry the cell the reader is on across the seam. Tapping MAP and
+            // landing somewhere else breaks the one thing the two views owe
+            // each other: reading a cell without losing your place.
+            if (cellId) { setFocusId(cellId); setSheetOpen(true); }
+            setPhoneView("map");
+          }}
           map={map}
           onMap={setMap}
           counts={counts}
