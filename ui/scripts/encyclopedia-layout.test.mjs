@@ -177,8 +177,10 @@ test("a folded ring holds the cap and one node that opens the rest", () => {
   assert.equal(ring.find((s) => s.role === "more").more, 60 - MAX_SATELLITES);
 });
 
-test("opening a cell gives every record a node of its own, and none of them covers the card", () => {
-  for (const total of [9, 23, 57, 120]) {
+test("opening a cell gives every record a node of its own, none touching another or the card", () => {
+  // Sizes on both sides of a full ring, because the bug this covers only
+  // appeared once a ring had to turn a corner with nodes on it.
+  for (const total of [9, 23, 40, 57, 68, 90, 120, 200]) {
     const layout = layoutGraph(index([cell("big", "Big", { manifestations: total })]));
     const plate = layout.byId.get("big");
     const opened = expandCell(plate, -Math.PI / 2);
@@ -188,10 +190,21 @@ test("opening a cell gives every record a node of its own, and none of them cove
     assert.equal(new Set(records.map((s) => s.index)).size, total, "and each exactly once");
     assert.equal(opened.filter((s) => s.role === "fold").length, 1, "with one way to fold them away");
 
+    // Box against box, not centre against centre. The nodes are squares, so two
+    // of them 65px apart on a diagonal are 46px apart on each axis and their
+    // 56px boxes overlap — which a distance check waves through. Separation on
+    // either axis is what makes them clear.
+    const clearance = (a, b) =>
+      Math.max(
+        Math.abs(a.x - b.x) - SAT_W * plate.scale,
+        Math.abs(a.y - b.y) - SAT_H * plate.scale,
+      );
     for (let i = 0; i < opened.length; i++) {
       for (let j = i + 1; j < opened.length; j++) {
-        const gap = Math.hypot(opened[i].x - opened[j].x, opened[i].y - opened[j].y);
-        assert.ok(gap >= SAT_W * plate.scale * 0.98, `${total}: two opened nodes sit on each other`);
+        assert.ok(
+          clearance(opened[i], opened[j]) >= 0,
+          `${total}: two opened nodes overlap by ${(-clearance(opened[i], opened[j])).toFixed(1)}px`,
+        );
       }
     }
     // Box against box: the card the ring belongs to stays the clearest thing

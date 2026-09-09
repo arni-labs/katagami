@@ -32,6 +32,17 @@ export const MAX_SATELLITES = 8;
 /** Room between rings, and between neighbours on a ring, once a cell's records
  *  are opened out. */
 const RING_GAP = 12;
+/** Centre-to-centre room for one opened record, along a ring and between
+ *  rings alike.
+ *
+ *  The nodes are squares, so what matters is that their boxes cannot meet, not
+ *  that their centres are far apart. Two squares only overlap when their
+ *  centres are within SAT_W of each other on BOTH axes, which cannot happen
+ *  once they are at least SAT_W × √2 apart however the ring is travelling.
+ *  Spacing them by SAT_W alone is enough along a straight edge and is not
+ *  enough around a corner: a diagonal step of 65px puts two 56px boxes 46px
+ *  apart on each axis, and they overlap by ten. */
+export const NODE_PITCH = SAT_W * Math.SQRT2 + RING_GAP;
 const GRID_X = 360;
 const GRID_Y = 330;
 const REGION_GAP = 240;
@@ -722,7 +733,7 @@ function boxRingOffset(plate: PlateNode, pad: number, away: number): number {
 export function expandCell(plate: PlateNode, away: number): SatelliteNode[] {
   const list = plate.cell.manifestations;
   if (!list.length) return [];
-  const slot = (SAT_W + RING_GAP) * plate.scale;
+  const slot = NODE_PITCH * plate.scale;
   const out: SatelliteNode[] = [];
   // Slot 0 is the fold control, then one slot per record.
   let placed = 0;
@@ -731,7 +742,10 @@ export function expandCell(plate: PlateNode, away: number): SatelliteNode[] {
     // Clearance from the plate's edge to a node's centre: half the node, plus
     // the gap, plus one ring's worth for each ring further out. Every node is
     // therefore at least RING_PAD clear of the card on every side.
-    const pad = (SAT_W / 2 + RING_PAD + ring * (SAT_H + RING_GAP)) * plate.scale;
+    // Rings are one pitch apart for the same reason their neighbours are: the
+    // offset curves run parallel, so a pitch of separation between them is a
+    // pitch between every node on one and every node on the next.
+    const pad = (SAT_W / 2 + RING_PAD + ring * NODE_PITCH) * plate.scale;
     const perimeter = 2 * plate.w + 2 * plate.h + 2 * Math.PI * pad;
     const capacity = Math.max(1, Math.floor(perimeter / slot));
     const here = Math.min(capacity, total - placed);
