@@ -30,7 +30,7 @@ function cellRow(id, extra = {}) {
 }
 
 // `short` names the sets that stop paging early while still reporting the true count.
-function stub({ short = [], cells = 2 } = {}) {
+function stub({ short = [], repeat = [], cells = 2 } = {}) {
   const rows = {
     EncyclopediaCells: Array.from({ length: cells }, (unused, index) => cellRow(`cell-${index}`)),
     // Two rows, so slicing to one is a real mismatch the reconciliation can see.
@@ -41,7 +41,11 @@ function stub({ short = [], cells = 2 } = {}) {
     const set = decodeURIComponent(request.url.split("?")[0].split("/").pop());
     const all = rows[set] ?? [];
     // A short read returns one row and no nextLink, while counting them all.
-    const value = short.includes(set) ? all.slice(0, 1) : all;
+    // A repeated read returns the right NUMBER of rows with one duplicated, so
+    // a reconciliation counting row objects would pass while a row went unread.
+    const value = short.includes(set) ? all.slice(0, 1)
+      : repeat.includes(set) && all.length > 1 ? [all[0], ...all.slice(0, all.length - 1)]
+      : all;
     response.writeHead(200, { "content-type": "application/json" });
     response.end(JSON.stringify({ value, "@odata.count": all.length }));
   });
@@ -98,6 +102,45 @@ test("the warning is on stdout, so a pipeline keeping only stdout still carries 
   assert.match(stdout, /DEGRADED RUN/);
   assert.match(stdout, /over what was read/);
   assert.doesNotMatch(stderr, /DEGRADED RUN/);
+});
+
+// --json returned before the exit codes were assigned, so a caller gating on
+// exit status saw success through violations and through a waved mismatch
+// alike; and the degraded warning printed as prose in front of the object made
+// the stream unparseable. The machine path was the one place the guard missed.
+test("--json takes the same exit codes as the human path", async () => {
+  const clean = await withStub({}, (origin) => run(origin, ["--json"]));
+  assert.equal(clean.code, 0);
+  const degraded = await withStub({ short: ["DesignLanguages"] },
+    (origin) => run(origin, ["--json", "--allow-count-mismatch=DesignLanguages"]));
+  assert.equal(degraded.code, 3, "a degraded JSON run must not exit 0");
+  const shortCells = await withStub({ short: ["EncyclopediaCells"], cells: 4 }, (origin) => run(origin, ["--json"]));
+  assert.equal(shortCells.code, 2);
+});
+
+test("--json emits parseable JSON even when the run is degraded", async () => {
+  const { stdout } = await withStub({ short: ["DesignLanguages"] },
+    (origin) => run(origin, ["--json", "--allow-count-mismatch=DesignLanguages"]));
+  const parsed = JSON.parse(stdout);
+  assert.equal(parsed.exitCode, 3);
+  assert.equal(parsed.read.reconciled, false);
+  assert.deepEqual(parsed.read.allowedSets, ["DesignLanguages"]);
+  assert.equal(parsed.read.mismatches[0].waved, true);
+  assert.match(parsed.read.mismatches[0].set, /DesignLanguages/);
+});
+
+test("--json reports nothing about the collection when the read was short", async () => {
+  const { stdout } = await withStub({ short: ["EncyclopediaCells"], cells: 4 }, (origin) => run(origin, ["--json"]));
+  const parsed = JSON.parse(stdout);
+  assert.equal(parsed.violations, null, "a short read must not present findings as if complete");
+  assert.equal(parsed.context, null);
+  assert.match(parsed.note, /did not account for every row/);
+});
+
+test("a repeated row cannot reconcile a short read", async () => {
+  const { code, stdout } = await withStub({ repeat: ["EncyclopediaCells"], cells: 4 }, (origin) => run(origin));
+  assert.notEqual(code, 0, "padding the count with a duplicate must not look complete");
+  assert.match(stdout, /repeated/);
 });
 
 test("the bare flag is refused, because it could cover the set under test by accident", async () => {

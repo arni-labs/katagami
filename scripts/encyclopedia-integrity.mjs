@@ -9,7 +9,9 @@
 //
 // Exit codes: 0 clean, 1 violations found, 2 the read did not account for every
 // row, 3 the run was degraded by an allowed mismatch. A degraded run gets its
-// own code so nothing gating on exit status reads it as success.
+// own code so nothing gating on exit status reads it as success. --json takes
+// the same codes and carries the same qualification inside the object, because
+// the machine-readable path was once the one place the guard did not apply.
 //
 // The allowance names the sets it covers. It was a single boolean once, tested
 // against the combined list, so it waved through a short read of any set
@@ -88,8 +90,17 @@ export function reconcileRead(set, rowCount, counted) {
 export function checkCollection(rows, records = null) {
   const violations = [];
   const add = (rule, cell, detail, record = null) => violations.push({ rule, cell, record, detail });
-  const recordIds = records === null ? null : (records instanceof Map ? new Set(records.keys()) : records);
-  const statusOf = (id) => (records instanceof Map ? records.get(id) : null);
+  // A manifestation names an entity SET and an id. Checking the id alone lets a
+  // record that exists in a different set read as present, so both are keyed.
+  const key = (entitySet, entityId) => `${entitySet}:${entityId}`;
+  const known = records === null ? null
+    : records instanceof Map ? new Set([...records.keys()])
+    : new Set([...records]);
+  const statusOf = (entitySet, entityId) => (records instanceof Map ? records.get(key(entitySet, entityId)) ?? records.get(entityId) : null);
+  // A bare id is still accepted so a caller with only ids keeps working, but a
+  // keyed entry is required to match when the caller supplies keys.
+  const exists = (entitySet, entityId) => known === null || known.has(key(entitySet, entityId))
+    || (![...known].some((entry) => entry.includes(":")) && known.has(entityId));
 
   const parsed = new Map();
   for (const row of rows) {
@@ -103,6 +114,9 @@ export function checkCollection(rows, records = null) {
     if (!attested) { add("unattested", id, `document_validated=${Boolean(row.booleans?.document_validated)}, hash ${sha256(String(document)) === row.fields?.document_hash ? "matches" : "does not match"}`); continue; }
     let doc;
     try { doc = JSON.parse(document); } catch (error) { add("unparseable", id, `not JSON: ${error.message}`); continue; }
+    // Valid JSON that is not an object at all: `null`, a number, an array. This
+    // has to come before any field is touched, or the sweep dies on `doc.name`.
+    if (!doc || typeof doc !== "object" || Array.isArray(doc)) { add("unparseable", id, `the document is ${describe(doc)}, not an object`); continue; }
     // A field of the wrong type is a finding on this cell, not a crash that
     // takes the rest of the sweep with it. Testing only for undefined let a
     // null `sources` or an object `manifestations` throw out of the checker.
@@ -150,7 +164,7 @@ export function checkCollection(rows, records = null) {
       if (!entry || typeof entry !== "object") continue;
       if (seen.has(entry.entityId)) add("duplicate-manifestation", id, "listed twice in this cell", entry.entityId);
       seen.add(entry.entityId);
-      if (recordIds && !recordIds.has(entry.entityId)) add("dangling-manifestation", id, `${entry.entitySet} record does not exist`, entry.entityId);
+      if (!exists(entry.entitySet, entry.entityId)) add("dangling-manifestation", id, `no ${entry.entitySet} record with this id exists`, entry.entityId);
     }
     // Depth: does the credit that placed this record name a cell below this one?
     const below = descendantsOf(id, childrenById);
@@ -196,6 +210,9 @@ export function checkCollection(rows, records = null) {
 // which reached this independently, and folded in here so the collection has one
 // gap watch rather than two.
 export function breadthTell(parsed, childrenById, records = null) {
+  const statusOfRecord = (entitySet, entityId) => (records instanceof Map
+    ? records.get(`${entitySet}:${entityId}`) ?? records.get(entityId)
+    : null);
   const homes = new Map();
   const onAParent = [];
   for (const [id, doc] of parsed) {
@@ -222,7 +239,7 @@ export function breadthTell(parsed, childrenById, records = null) {
   if (records instanceof Map) {
     for (const [, doc] of parsed) {
       for (const entry of doc.manifestations) {
-        if (entry && typeof entry === "object" && records.get(entry.entityId) === "Archived") archived += 1;
+        if (entry && typeof entry === "object" && statusOfRecord(entry.entitySet, entry.entityId) === "Archived") archived += 1;
       }
     }
   }
@@ -302,37 +319,63 @@ async function main() {
       seen.add(next);
       path = new URL(next, url).href.slice(origin.length);
     }
-    const mismatch = reconcileRead(set, rows.length, counted);
+    // Count distinct entities, not row objects: a page that repeats a row would
+    // otherwise reconcile while a row elsewhere was never read.
+    const distinct = new Set(rows.map((row) => row.entity_id)).size;
+    if (distinct !== rows.length) shortReads.push({ set, detail: `returned ${rows.length} rows for ${distinct} distinct entities, so ${rows.length - distinct} row(s) were repeated` });
+    const mismatch = reconcileRead(set, distinct, counted);
     if (mismatch) shortReads.push(mismatch);
     return rows;
   };
   const cells = await readAll("EncyclopediaCells");
   const records = new Map();
   for (const set of ["DesignLanguages", "ArtStyles", "PaletteSystems", "WritingStyles"]) {
-    for (const row of await readAll(set)) records.set(row.entity_id, row.status);
+    for (const row of await readAll(set)) records.set(`${set}:${row.entity_id}`, row.status);
   }
   // A watch that goes green without seeing the data is worse than no watch, so a
   // read that does not account for every row fails the run rather than reporting
   // a clean result. Found by the verifier on 2026-09-09: with paging stopped
   // early the sweep reported zero while a broken cell sat unread on page two.
+  const { violations, context } = checkCollection(cells, records);
   const allowed = allowedSets(process.argv);
   const waved = shortReads.filter((line) => allowed.has(line.set));
   const fatal = shortReads.filter((line) => !allowed.has(line.set));
-  // Everything a reader needs goes to stdout, so a pipeline that keeps only
-  // stdout still carries the warning next to the numbers it qualifies.
+  const asJson = process.argv.includes("--json");
+
+  // One place decides the code, so the machine-readable path cannot drift from
+  // the human one. It did: --json returned before any of this ran, so a caller
+  // gating on exit status saw success through violations and through a waved
+  // mismatch alike, and the degraded warning was printed as prose in front of
+  // the object, which made the stream unparseable as JSON.
+  const status = fatal.length > 0 ? 2 : waved.length > 0 ? 3 : violations.length > 0 ? 1 : 0;
+  const read = {
+    reconciled: shortReads.length === 0,
+    allowedSets: [...allowed],
+    mismatches: shortReads.map((line) => ({ set: line.set, detail: line.detail, waved: allowed.has(line.set) })),
+  };
+
+  if (asJson) {
+    // Nothing but the object goes to stdout, so the stream always parses. The
+    // qualification travels inside it rather than as a line above it.
+    console.log(JSON.stringify(fatal.length > 0
+      ? { exitCode: status, read, violations: null, context: null,
+          note: "the read did not account for every row, so nothing is reported about the collection" }
+      : { exitCode: status, read, violations, context }, null, 2));
+    process.exitCode = status;
+    return;
+  }
+
   if (fatal.length > 0) {
     console.log("The read did not account for every row, so this run reports nothing about the collection:");
     for (const line of fatal) console.log(`  ${line.set}: ${line.detail}`);
     if (allowed.size > 0) console.log(`  (--allow-count-mismatch covers ${[...allowed].join(", ")}, which does not cover the above)`);
-    process.exitCode = 2;
+    process.exitCode = status;
     return;
   }
   if (waved.length > 0) {
     console.log(`DEGRADED RUN. A mismatch was allowed for ${[...allowed].join(", ")}, so every number below is over what was read rather than over the collection:`);
     for (const line of waved) console.log(`  ${line.set}: ${line.detail}`);
   }
-  const { violations, context } = checkCollection(cells, records);
-  if (process.argv.includes("--json")) { console.log(JSON.stringify({ violations, context }, null, 2)); return; }
   const byRule = new Map();
   for (const violation of violations) byRule.set(violation.rule, (byRule.get(violation.rule) ?? 0) + 1);
   console.log(`${context.cells} live attested cells, ${context.manifestations} manifestations, ${records.size} records; ${waved.length === 0 ? "every page reconciled against @odata.count" : "THE READ DID NOT RECONCILE (see above), so these counts are over what was read"}`);
@@ -355,9 +398,7 @@ async function main() {
   console.log(`a cell has something below it. The zero above is honest and narrower than it reads.`);
   console.log(`  cells the rule is structurally active on: ${context.depthRuleActiveOn} of ${context.cells}`);
   console.log(`  credits that literally contain even their own cell's name: ${context.creditsNamingTheirOwnCell} of ${context.creditsTotal}`);
-  // A degraded run gets its own code rather than borrowing 0 or 1, so a caller
-  // gating on exit status cannot read "waved through" as "clean".
-  process.exitCode = waved.length > 0 ? 3 : violations.length === 0 ? 0 : 1;
+  process.exitCode = status;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) await main();

@@ -227,9 +227,43 @@ test("a malformed source is reported rather than quietly dropped", () => {
   assert.ok(violations.every((violation) => violation.rule !== "unresolved-source"), "the good source still resolves");
 });
 
+// Valid JSON that is not an object crashed the sweep before any field could be
+// inspected, because the type checks all reached through `doc`.
+test("a document that is valid JSON but not an object is a finding, not a crash", () => {
+  for (const literal of ["null", "42", '"a string"', "[]", "true"]) {
+    const rows = [cell("broken", literal), cell("fine", doc("Fine"))];
+    const { violations, context } = checkCollection(rows);
+    assert.equal(violations.length, 1, literal);
+    assert.equal(violations[0].rule, "unparseable", literal);
+    assert.match(violations[0].detail, /not an object/, literal);
+    assert.equal(context.cells, 1, `${literal}: the healthy cell is still checked`);
+  }
+});
+
+// A manifestation names an entity set and an id. Checking the id alone let a
+// record that exists in a different set read as present.
+test("a record id that exists in another set does not satisfy the reference", () => {
+  const rows = [cell("a", doc("A", { manifestations: [manifestation("en-1", 'credits name "A"')] }))];
+  const elsewhere = new Map([["WritingStyles:en-1", "Draft"]]);
+  const { violations } = checkCollection(rows, elsewhere);
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].rule, "dangling-manifestation");
+  assert.match(violations[0].detail, /no ArtStyles record/);
+  const here = new Map([["ArtStyles:en-1", "Draft"]]);
+  assert.deepEqual(checkCollection(rows, here).violations, []);
+});
+
+test("the archived tell keys on the set too, so it counts the right record", () => {
+  const rows = [cell("a", doc("A", { manifestations: [manifestation("en-1", 'credits name "A"')] }))];
+  const records = new Map([["ArtStyles:en-1", "Archived"], ["WritingStyles:en-1", "Published"]]);
+  const { violations, context } = checkCollection(rows, records);
+  assert.deepEqual(violations, []);
+  assert.equal(context.archivedManifestations, 1);
+});
+
 test("a manifestation of an Archived record is counted as a tell, never a violation", () => {
   const rows = [cell("a", doc("A", { manifestations: [manifestation("en-old", 'credits name "A"')] }))];
-  const records = new Map([["en-old", "Archived"], ["en-live", "Published"]]);
+  const records = new Map([["ArtStyles:en-old", "Archived"], ["ArtStyles:en-live", "Published"]]);
   const { violations, context } = checkCollection(rows, records);
   assert.deepEqual(violations, [], "an archived record is a legal manifestation target");
   assert.equal(context.archivedManifestations, 1);
@@ -256,6 +290,12 @@ test("a Set of ids still works where a Map of statuses is not available", () => 
 // The verifier stopped the paging early and the sweep still reported zero, with
 // a broken cell unread on page two. A read that cannot account for every row
 // must fail the run rather than report a clean result.
+test("distinct entities, not row objects, are what reconcile a read", () => {
+  // Four rows where one is a repeat is three entities, and the set counts four.
+  assert.equal(reconcileRead("EncyclopediaCells", 3, 4).detail.includes("1 row(s) were never seen"), true);
+  assert.equal(reconcileRead("EncyclopediaCells", 4, 4), null);
+});
+
 test("a read that saw every row reconciles, and one that did not is reported", () => {
   assert.equal(reconcileRead("EncyclopediaCells", 738, 738), null);
   const short = reconcileRead("EncyclopediaCells", 500, 738);
