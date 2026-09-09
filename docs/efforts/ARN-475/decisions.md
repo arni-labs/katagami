@@ -95,3 +95,10 @@ Where: ARN-475; production read attempt in this Codex session.
 **Chose a depth projection because:** It retains the existing 2D camera gestures and readable HTML cards while rotation reveals spatial layering. Depth can be turned off in the same view for direct comparison.
 
 **Where:** map-space.ts and the Depth controls on /encyclopedia.
+
+### Fit focused material below the existing controls
+**Decision:** Fit the expanded cell inside the available map area and restart its reader at the top when changing cells.
+**Came up because:** Live production-data preview showed the large material card underneath the existing heading, while opening a cell from the long index retained the index's scroll position.
+**Options:** Keep width-only framing and retained scroll, or reserve space for the existing controls and key the reader by cell.
+**Chose A over B because:** Fitting both dimensions keeps the established interface usable; the user can still zoom closer to inspect material.
+**Where:** ui/src/components/encyclopedia/encyclopedia-map.tsx.

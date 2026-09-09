@@ -93,21 +93,60 @@ function click(el, selector) {
   drain();
 }
 
-
-test("the original map, filters, reader tabs and rich focus remain on one page",()=>{
- const v=mount([cell("Parent"),cell("Child","art",["Parent"])]);
- assert.ok(v.el.querySelector('[role="application"]'));
- assert.ok(v.el.querySelector('[aria-label="Filter by map"]'));
- assert.ok(v.el.querySelector('[data-plate="Parent"]'));
- click(v.el,'[data-plate="Parent"]');
- assert.ok(v.el.querySelector('[data-plate="Parent"][aria-current="true"]'));
- assert.ok(v.el.querySelector(".encyclopedia-focus-material"));
- for(const word of ["Material","Connections","Notes"])assert.ok(v.el.textContent.includes(word),word);
- const depth=[...v.el.querySelectorAll("button")].find(b=>b.textContent.includes("Depth on"));assert.ok(depth);
- flush(()=>depth.click());drain();assert.ok(v.el.textContent.includes("Depth off"));
- v.close();
+test("the original map, filters, reader tabs and rich focus remain on one page", () => {
+  const v = mount([cell("Parent"), cell("Child", "art", ["Parent"])]);
+  assert.ok(v.el.querySelector('[role="application"]'));
+  assert.ok(v.el.querySelector('[aria-label="Filter by map"]'));
+  assert.ok(v.el.querySelector('[data-plate="Parent"]'));
+  click(v.el, '[data-plate="Parent"]');
+  assert.ok(v.el.querySelector('[data-plate="Parent"][aria-current="true"]'));
+  assert.ok(v.el.querySelector(".encyclopedia-focus-material"));
+  for (const word of ["Material", "Connections", "Notes"])
+    assert.ok(v.el.textContent.includes(word), word);
+  const depth = [...v.el.querySelectorAll("button")].find((b) =>
+    b.textContent.includes("Depth on"),
+  );
+  assert.ok(depth);
+  flush(() => depth.click());
+  drain();
+  assert.ok(v.el.textContent.includes("Depth off"));
+  v.close();
 });
-test("a disconnected cycle remains represented in the existing map",()=>{
- const v=mount([cell("Cycle A","art",["Cycle B"]),cell("Cycle B","art",["Cycle A"])]);
- assert.ok(v.el.querySelector('[data-plate="Cycle A"]'));assert.ok(v.el.querySelector('[data-plate="Cycle B"]'));v.close();
+test("a disconnected cycle remains represented in the existing map", () => {
+  const v = mount([
+    cell("Cycle A", "art", ["Cycle B"]),
+    cell("Cycle B", "art", ["Cycle A"]),
+  ]);
+  assert.ok(v.el.querySelector('[data-plate="Cycle A"]'));
+  assert.ok(v.el.querySelector('[data-plate="Cycle B"]'));
+  v.close();
+});
+
+test("camera still publishes after StrictMode replays effect cleanup", () => {
+  const { useMapCamera } = loadUiModule(
+    "src/components/encyclopedia/use-map-camera.ts",
+  );
+  let camera;
+  function Probe() {
+    camera = useMapCamera();
+    React.useEffect(() => camera.setCamera({ x: 80, y: 90, k: 1 }), []);
+    return React.createElement(
+      "div",
+      { ref: camera.viewportRef },
+      String(camera.camera.x),
+    );
+  }
+  const el = document.createElement("div");
+  document.body.append(el);
+  const root = createRoot(el);
+  flush(() =>
+    root.render(
+      React.createElement(React.StrictMode, null, React.createElement(Probe)),
+    ),
+  );
+  drain();
+  assert.equal(el.textContent, "80");
+  flush(() => root.unmount());
+  el.remove();
+  frames.clear();
 });

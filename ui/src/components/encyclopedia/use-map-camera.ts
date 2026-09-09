@@ -174,6 +174,7 @@ export function useMapCamera() {
       el.removeEventListener("wheel", wheel);
       stop();
       if (frame.current !== null) cancelAnimationFrame(frame.current);
+      frame.current = null;
     };
   }, [setCamera, stop]);
   return {

@@ -307,24 +307,19 @@ export function EncyclopediaMap({
       if (!el || !p) return;
       // Come in far enough that the cell's own level is drawn: focusing a deep
       // cell from search or from the index must actually show it.
-      const k = Math.min(
-        1.1,
-        (el.clientWidth - (desktop ? 100 : 36)) / focusBox(p.cell).w,
-      );
-      if (desktop)
-        centerOn(p.x, p.y, k, {
-          x: el.clientWidth / 2,
-          y: el.clientHeight / 2 + 30,
-        });
-      else {
-        const fit = k;
-        centerOn(p.x, p.y, fit, {
-          x: el.clientWidth / 2,
-          y: 192 + focusBox(p.cell).h * 0.5 * fit,
-        });
-      }
+      const top = desktop ? 170 : 198;
+      const bottom = desktop ? 108 : 230;
+      const box = focusBox(p.cell);
+      const width = p.id === focusId ? p.w : box.w;
+      const height = p.id === focusId ? p.h : box.h;
+      const room = Math.max(140, el.clientHeight - top - bottom);
+      const k = Math.min(1.1, (el.clientWidth - 48) / width, room / height);
+      centerOn(p.x, p.y, k, {
+        x: el.clientWidth / 2,
+        y: top + room / 2,
+      });
     },
-    [viewportRef, layout.byId, desktop, centerOn],
+    [viewportRef, layout.byId, desktop, centerOn, focusId],
   );
 
   // First framing happens once the viewport has a size. The flag is set when
@@ -356,10 +351,13 @@ export function EncyclopediaMap({
       setSheetOpen(true);
       setSheetExpanded(false);
       setTab("material");
-      frameFocus(id);
     },
-    [layout.byId, frameFocus],
+    [layout.byId],
   );
+
+  useEffect(() => {
+    if (focusId) frameFocus(focusId);
+  }, [focusId, frameFocus]);
 
   const clearFocus = useCallback(() => {
     setFocusId(null);
@@ -1260,6 +1258,7 @@ export function EncyclopediaMap({
 
   const desktopSheet = (
     <aside
+      key={focusId ?? "index"}
       className="relative flex h-full flex-col overflow-y-auto px-8 pb-10 pt-6"
       aria-label="Cell"
     >
