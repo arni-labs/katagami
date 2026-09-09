@@ -421,11 +421,11 @@ Where: `scripts/create-encyclopedia-cells.mjs` (the fetch in the source check); 
 
 ## D36 A direction that appears in prose and in verse gets a cell each, under a shared parent
 
-Decision: Where a technique or tradition exists in more than one literary form, each form's practice is its own cell and a parent cell over them carries the direction. Epistolary fiction and Epistolary poetry stand apart under an epistolary parent; the same for dialect, hypertext, and the Gothic.
+Decision: Where a technique or tradition exists in more than one literary form, the direction is carried by a parent cell, and a form gets its own cell under it when that form's practice has its own canon and hands. Epistolary fiction and Epistolary poetry stand apart under an epistolary parent; the same for dialect, hypertext, and the Gothic. Where the practice reads as one across forms, one cell is right and the forms are described in its scope: Literary nonsense is the standing example, holding Lear's verse and Carroll's prose together because the sources treat them as one tradition and the Library of Congress splits them only by cataloguing form. The test is whether a reader could say something about one form that is not true of the other; where they could not, splitting invents a distinction.
 
 Came up because: Pass 2 proposed merging Gothic poetry into the live Gothic fiction cell and asked whether epistolary, dialect and hypertext poetry should merge into their fiction twins. The owner answered: "They can be separate cells with a parent. That's the point of this nested stuff."
 
-Options: One cell per direction across forms, with the forms described inside its scope; or a cell per form with a parent above them.
+Options: One cell per direction across forms, with the forms described inside its scope; a cell per form with a parent above them; or the judgment above, which allows both and says how to choose.
 
 Chose the cell per form because: each verse tradition has its own history, canon and conventions, and the nesting is what makes the collection explorable. Given up: a reader looking for the Gothic finds three entries rather than one, which the parent is there to answer.
 

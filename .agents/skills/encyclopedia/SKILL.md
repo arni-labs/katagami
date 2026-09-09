@@ -341,9 +341,12 @@ Rules that hold in every pass:
   writing gains a second `maps` membership, explained and cited, rather than a
   second cell. But where a direction has a distinct practice in more than one
   literary form — Gothic fiction and Gothic poetry, epistolary fiction and
-  epistolary poetry — each form's practice is its own cell under a shared parent
-  that carries the direction. Each verse tradition has its own canon and hands;
-  the parent is what a reader looking for "the Gothic" finds (D36).
+  epistolary poetry — the direction is carried by a parent and each form gets a
+  cell under it, because each has its own canon and hands. The parent is what a
+  reader looking for "the Gothic" finds. Where the practice reads as one across
+  forms, one cell is right and the forms live in its scope: Literary nonsense
+  holds Lear's verse and Carroll's prose together. The test is whether you could
+  say something about one form that is not true of the other (D36).
 - Manifestations ride along: search `credits` across all record sets at every
   status and list what exists. Most new cells will have none on day one.
 

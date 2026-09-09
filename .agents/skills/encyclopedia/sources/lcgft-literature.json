@@ -544,7 +544,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026002",
       "decision": "merge",
       "batch": "B6",
-      "note": "Same direction as the live cell victorian-literary-nonsense, which pass 0 is revising to Literary nonsense (new id literary-nonsense): one cell for verse and prose together, citing LCGFT Nonsense fiction, LCGFT Nonsense verse and https://en.wikipedia.org/wiki/Literary_nonsense. LCGFT splits the direction by form and has no umbrella heading, so the Wikipedia name is the nearest source name.",
+      "note": "Same direction as the live cell victorian-literary-nonsense, which pass 0 is revising to Literary nonsense (new id literary-nonsense): one cell for verse and prose together, citing LCGFT Nonsense fiction, LCGFT Nonsense verse and https://en.wikipedia.org/wiki/Literary_nonsense. LCGFT splits the direction by form and has no umbrella heading, so the Wikipedia name is the nearest source name. Kept as one cell under D36's test: the sources treat Lear's verse and Carroll's prose as one tradition, so there is nothing true of one form and not the other.",
       "cellId": "literary-nonsense"
     },
     {
