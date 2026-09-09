@@ -429,7 +429,13 @@ Autonomy is a change in when the human looks, never in what may be built.
   parses under the current contract (an attested cell written under an older
   version is not current); every `cellId` and manifestation pointer resolves;
   sources still answer. Dangling links are the
-  failure this collection accumulates.
+  failure this collection accumulates. The ledgers point the other way and are
+  checked separately, because a `cellId` naming a cell that has never existed
+  passes the format validator and stays green forever. Four did:
+
+  ```bash
+  node scripts/encyclopedia-cellids.mjs   # needs TEMPER_API_KEY; exits 1 on a dangling row
+  ```
 - **Gap watch**: maps with no cells, cells with no manifestations, recollected
   cells that could now be cited, clusters of made work with no cell over them,
   broad cells whose only children are broad (the leaf layer is missing under
