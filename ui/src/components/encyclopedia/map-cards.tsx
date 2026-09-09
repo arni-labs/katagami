@@ -6,6 +6,7 @@ import { MAP_INK, MAP_LABEL } from "@/lib/encyclopedia-graph";
 import { inkChipStyle, Tape } from "./chrome";
 import { cellFaces, cellMaterial, SET_EYEBROW, SET_INK, type CellFace } from "./material";
 import { HUB_H, HUB_W, MORE_W, NAME_W, plateBox, RECORD_CARD_W, SAT_W, type MoreNode, type SatelliteNode } from "./graph-layout";
+import { hubKey } from "./expansion";
 import { ArrowUpRight } from "lucide-react";
 
 // The nodes on the map. A plate is a cell. How much of it is drawn depends on
@@ -336,7 +337,7 @@ function HubCard({
   /** Pick the node up and move it, with the whole cluster. */
   onDragStart: (key: string, event: React.PointerEvent) => void;
 }) {
-  const key = `map:${map}`;
+  const key = hubKey(map);
   const title = MAP_LABEL[map];
   return (
     <div

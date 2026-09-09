@@ -287,7 +287,13 @@ export class GraphIndex {
     });
   }
 
-  /** The chain of parents from a root down to the cell (first parent each step). */
+  /** The chain of parents from the top down to the cell. Each step takes the
+   *  shallowest parent, which is the one the breadth-first levels came
+   *  through, so the chain always ends at a root or an orphan the category
+   *  node opens — never inside a cycle that a root also reaches. Taking the
+   *  first listed parent did that: a cell whose first parent was a cycle
+   *  member got a chain no category could open, and a search for it revealed
+   *  nothing. */
   ancestry(id: string): EncyclopediaCell[] {
     const chain: EncyclopediaCell[] = [];
     const seen = new Set<string>();
@@ -295,7 +301,9 @@ export class GraphIndex {
     while (cursor && !seen.has(cursor.id)) {
       seen.add(cursor.id);
       chain.unshift(cursor);
-      cursor = this.parentsOf(cursor.id)[0];
+      const depth = this.depthOf(cursor.id);
+      const parents = this.parentsOf(cursor.id).filter((p) => this.depthOf(p.id) < depth);
+      cursor = parents.sort((a, b) => this.depthOf(a.id) - this.depthOf(b.id))[0];
     }
     return chain;
   }

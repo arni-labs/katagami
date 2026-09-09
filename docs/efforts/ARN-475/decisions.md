@@ -186,3 +186,33 @@ Options: A coloured frame only; the set's word always; the word only on hover.
 Chose the word always, with the hairline, because: a colour alone needs the legend and a hover is not a glance. Given up: eight words around a card at reading zoom; they are 7px mono and in the set's ink, so they read as labels, not text.
 
 Where: `SatelliteNodeCard` in `map-cards.tsx`.
+
+## D16 Review round one: what was fixed and what was dismissed
+
+Decision: Of the twenty panel findings and four Greptile findings on the merged head cfb13880, twelve were confirmed and fixed in one batch; the rest were dismissed with reasons. The panel is rerun on the resulting head.
+
+Came up because: Grok, Codex and Fable each reviewed the diff with the intent and this log; Greptile reviewed the PR.
+
+Options: Fix the confirmed defects and rerun the panel; merge on the round-one record with open act-ons; drop the panel on Rita's merge instruction.
+
+Chose fix-and-rerun because: the instruction to merge does not lift the standing rule that act-on findings introduced by the diff are fixed and confirmed, and every confirmed finding here was introduced by this diff.
+
+Confirmed and fixed:
+- Dragging a category node fired its click on release and folded the map (Grok, Codex). Hub and record-ring toggles now consult the same drag guard the cards use.
+- A click that opened a branch then zoomed to the card and left the new cells off screen (Grok, Fable). A click that opens frames the branch; only search, URL and sheet navigation frame the card.
+- The category ring gave every root the same slot whatever it carried, and a pictured cell's records reach a diagonal further than the radius allowed, so an opened branch overlapped its neighbours (Grok, Codex). Ring slots are now each thing's own width with the slack shared, the record reach is the box clearance times √2, and a mixed-size fixture is asserted overlap-free in the layout test.
+- The dual-map mark read the cell's first map, not the cluster it is drawn in (Grok). Plates carry their cluster; the mark is the other maps.
+- Shared records were deduplicated after viewport culling, so panning moved a record between cells and an opened card could collapse (Codex, Greptile, Grok). Deduplication runs over every open cell in layout order first, an opened ring's nodes take precedence, then the viewport is applied.
+- A touch that began on a card never counted toward a pinch, so two-finger zoom failed whenever a finger landed on a node (Fable). A node drag claims its pointer with the camera, which still counts it toward a pinch and hands over when a pinch begins.
+- A search for a cell whose first listed parent sits in a cycle revealed nothing (Greptile, Fable). Ancestry follows the shallowest parent, which always reaches a root or an orphan; tested.
+- Fit could set the zoom below the floor, so the next zoom-out zoomed in (Grok). The floor follows the paper.
+- The dual-map mark array was rebuilt per render and defeated the card memo (Fable). Memoised per plate with a shared empty list.
+- The category node understated its count against the filter chip (Greptile). Both count any membership.
+- The file header described the old map (Grok, Greptile). Rewritten.
+- Dead code: `isOpen`, the face provenance fields, the connector label, and the hub key template (Grok, Codex, Fable). Removed; the hub uses `hubKey`.
+
+Dismissed:
+- Fable's note that D12's sizes are deliberate: not a finding, an acknowledgement of a recorded decision.
+- Risk flags `core_path` and `fundamental_change` from all three: correct as descriptions — this replaces the map's layout engine — and they route the merge to a human, which is Rita's standing instruction for this PR.
+
+Where: this head; the round-one record and this entry are on PR #295.

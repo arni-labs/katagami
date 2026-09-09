@@ -20,7 +20,7 @@ import {
   SAT_W,
 } from "../src/components/encyclopedia/graph-layout.ts";
 
-function cell(id, name, { broader = [], relations = [], maps = ["art"], manifestations = 0 } = {}) {
+function cell(id, name, { broader = [], relations = [], maps = ["art"], manifestations = 0, pictured = false } = {}) {
   return {
     id,
     name,
@@ -39,7 +39,7 @@ function cell(id, name, { broader = [], relations = [], maps = ["art"], manifest
       explanation: "fixture",
       sourceIds: [],
       unread: false,
-      record: { set: "ArtStyles", id: `${id}-m${i}`, name: `Record ${i}`, status: "Draft", href: "#" },
+      record: { set: "ArtStyles", id: `${id}-m${i}`, name: `Record ${i}`, status: "Draft", href: "#", ...(pictured && i === 0 ? { image: "https://example.test/picture.png" } : {}) },
     })),
   };
 }
@@ -144,6 +144,35 @@ test("no two open cards overlap, whatever is open, and none sits on a category n
     }
     // The category nodes stand apart from one another.
     for (let i = 0; i < layout.hubs.length; i++) for (let j = i + 1; j < layout.hubs.length; j++) assert.ok(!overlapping(layout.hubs[i], layout.hubs[j]));
+  }
+});
+
+test("a mixed ring — one heavy root with records and open children among light ones — still has no overlaps", () => {
+  // Grok and Codex both reproduced overlap here: the category ring gave every
+  // root the same slot whatever it carried, and a pictured cell's records
+  // reached a diagonal further than the radius allowed for.
+  const cells = [
+    cell("heavy", "Heavy", { manifestations: 8, pictured: true }),
+    ...Array.from({ length: 10 }, (_, i) => cell(`hk${i}`, `Heavy kid ${i}`, { broader: ["heavy"], manifestations: i % 3, pictured: i % 2 === 0 })),
+    ...Array.from({ length: 4 }, (_, i) => cell(`hg${i}`, `Heavy grandkid ${i}`, { broader: ["hk0"], pictured: true, manifestations: 2 })),
+    ...Array.from({ length: 9 }, (_, i) => cell(`light${i}`, `Light ${i}`)),
+    ...Array.from({ length: 6 }, (_, i) => cell(`w${i}`, `Writing ${i}`, { maps: ["writing"], manifestations: 4, pictured: true })),
+    ...Array.from({ length: 5 }, (_, i) => cell(`wk${i}`, `Writing kid ${i}`, { broader: ["w0"], pictured: true })),
+  ];
+  const graph = index(cells);
+  const maps = ["art", "writing"];
+  for (const state of [toggle(initialExpansion(maps), "heavy"), toggle(toggle(initialExpansion(maps), "heavy"), "hk0"), openAll(graph)]) {
+    const visible = computeVisible(graph, maps, state);
+    const layout = layoutVisible(graph, visible, maps);
+    for (let i = 0; i < layout.plates.length; i++) for (let j = i + 1; j < layout.plates.length; j++) {
+      assert.ok(!overlapping(layout.plates[i], layout.plates[j]), `${layout.plates[i].id} overlaps ${layout.plates[j].id}`);
+    }
+    for (const s of layout.satellites) {
+      const box = { x: s.x, y: s.y, w: SAT_W * s.scale, h: SAT_H * s.scale };
+      for (const p of layout.plates) assert.ok(!overlapping(box, p, 1), `a record of ${s.cellId} sits on ${p.id}`);
+      for (const hub of layout.hubs) assert.ok(!overlapping(box, hub), `a record of ${s.cellId} sits on the ${hub.map} node`);
+    }
+    for (const m of layout.more) for (const p of layout.plates) assert.ok(!overlapping({ x: m.x, y: m.y, w: 64 * m.scale, h: 64 * m.scale }, p, 1), `a +N node sits on ${p.id}`);
   }
 });
 

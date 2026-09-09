@@ -78,9 +78,11 @@ export function plateBox(cell: EncyclopediaCell, level = 0): { w: number; h: num
   return { w: Math.round(base.w * scale), h: Math.round(base.h * scale) };
 }
 
-/** How far past a card's edge its ring of records reaches. */
+/** How far past a card's corner its ring of records reaches. The records walk
+ *  the card's box at a clearance, so at a corner the farthest one sits a
+ *  diagonal out, not a straight one: the reach is that clearance times √2. */
 function recordReach(cell: EncyclopediaCell, scale: number): number {
-  return cell.manifestations.length ? (SAT_W + RING_PAD) * scale : 0;
+  return cell.manifestations.length ? (SAT_W + RING_PAD) * Math.SQRT2 * scale : 0;
 }
 
 export interface PlateNode {
@@ -99,6 +101,10 @@ export interface PlateNode {
   /** The direction the cell hangs away from what it sits under, in radians.
    *  Its records and its own narrower cells open on this side. */
   outward: number;
+  /** The map whose cluster the cell is drawn in: its parent's cluster, or
+   *  its own first map at the top. A cell on two maps is marked with the one
+   *  it is not drawn in. */
+  cluster: MapName;
 }
 
 export interface SatelliteNode {
@@ -309,14 +315,21 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
   /** Put the things on a ring: bunched on the side the ring opens toward
    *  when they take less than most of it, spread evenly round when they
    *  would fill it anyway. */
+  /** Put the things on a ring. Each thing takes its own width along the ring
+   *  — its radius twice, plus the gap — so a branch that has opened records
+   *  and narrower cells is never given the same slot as an empty card beside
+   *  it. When the ring is asked to spread, or is nearly full, the slack is
+   *  shared out evenly between the things; otherwise they bunch on the side
+   *  the ring opens toward. */
   const walkRing = (box: Centred, ring: Ring, radii: number[], toward: number, spread: boolean, put: (i: number, x: number, y: number) => void) => {
     const perimeter = ringPerimeter(box, ring.pad);
     const used = ring.members.reduce((sum, i) => sum + 2 * radii[i] + CHILD_GAP, 0);
     const even = spread || used > perimeter * 0.8;
-    const slot = even ? perimeter / ring.members.length : 0;
-    let t = even ? boxRingOffset(box, ring.pad, toward) - slot * (ring.members.length - 1) / 2 : boxRingOffset(box, ring.pad, toward) - used / 2;
+    const slack = even ? Math.max(0, perimeter - used) / ring.members.length : 0;
+    const span = used + slack * ring.members.length;
+    let t = boxRingOffset(box, ring.pad, toward) - span / 2;
     for (const i of ring.members) {
-      const step = even ? slot : 2 * radii[i] + CHILD_GAP;
+      const step = 2 * radii[i] + CHILD_GAP + slack;
       const at = t + step / 2;
       const p = boxRingPoint(box, ring.pad, at);
       put(i, Math.round(p.x), Math.round(p.y));
@@ -324,14 +337,14 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
     }
   };
 
-  const place = (id: string, x: number, y: number, outward: number) => {
+  const place = (id: string, x: number, y: number, outward: number, cluster: MapName) => {
     if (placed.has(id)) return;
     placed.add(id);
     const cell = index.byId.get(id)!;
     const level = levelOf(index, id);
     const scale = levelScale(level);
     const box = plateBox(cell, level);
-    const node: PlateNode = { kind: "plate", id, cell, x, y, w: box.w, h: box.h, level, scale, outward };
+    const node: PlateNode = { kind: "plate", id, cell, x, y, w: box.w, h: box.h, level, scale, outward, cluster };
     plates.push(node);
     byId.set(id, node);
     const kids = visible.shown.get(id) ?? [];
@@ -340,7 +353,7 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
     const radii = ringRadii(id, scale);
     for (const ring of rings.rings) {
       walkRing(node, ring, radii, outward, false, (i, kx, ky) => {
-        if (i < kids.length) place(kids[i].id, kx, ky, Math.atan2(ky - y, kx - x));
+        if (i < kids.length) place(kids[i].id, kx, ky, Math.atan2(ky - y, kx - x), cluster);
         else more.push({ key: id, x: kx, y: ky, count: visible.hidden.get(id) ?? 0, scale });
       });
     }
@@ -358,14 +371,16 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
     const hub: HubNode = {
       map, key,
       x: Math.round(cursor + reach), y: 0, w: HUB_W, h: HUB_H,
-      count: index.graph.cells.filter((c) => index.primaryMap(c) === map).length,
+      // Every cell on the map, by any membership — the same count the filter
+      // chips give, so the node and the chip never disagree.
+      count: index.graph.cells.filter((c) => c.maps.some((m) => m.map === map)).length,
       roots: index.rootsOn(map).length,
     };
     hubs.push(hub);
     cursor += reach * 2 + MAP_GAP;
     for (const ring of rings.rings) {
       walkRing(hub, ring, radii, -Math.PI / 2, true, (i, x, y) => {
-        if (i < roots.length) place(roots[i].id, x, y, Math.atan2(y - hub.y, x - hub.x));
+        if (i < roots.length) place(roots[i].id, x, y, Math.atan2(y - hub.y, x - hub.x), map);
         else more.push({ key, x, y, count: visible.hidden.get(key) ?? 0, scale: 1 });
       });
     }
@@ -456,20 +471,18 @@ export function expandedRadius(plate: PlateNode, nodes: SatelliteNode[]): number
   return r + SAT_W;
 }
 
-/** A dashed connector between two boxes: a soft S-curve, and the point where
- *  its word sits. */
-export function plateConnector(a: Centred, b: Centred): { d: string; label: { x: number; y: number } } {
+/** A dashed connector between two boxes: a soft S-curve from edge to edge. */
+export function plateConnector(a: Centred, b: Centred): { d: string } {
   const dx = b.x - a.x; const dy = b.y - a.y;
   const horizontal = Math.abs(dx) > Math.abs(dy);
-  let x1: number, y1: number, x2: number, y2: number;
   if (horizontal) {
-    x1 = a.x + (dx > 0 ? a.w / 2 : -a.w / 2); y1 = a.y;
-    x2 = b.x + (dx > 0 ? -b.w / 2 : b.w / 2); y2 = b.y;
+    const x1 = a.x + (dx > 0 ? a.w / 2 : -a.w / 2); const y1 = a.y;
+    const x2 = b.x + (dx > 0 ? -b.w / 2 : b.w / 2); const y2 = b.y;
     const mx = (x1 + x2) / 2;
-    return { d: `M ${x1} ${y1} C ${mx} ${y1} ${mx} ${y2} ${x2} ${y2}`, label: { x: mx, y: (y1 + y2) / 2 - 12 } };
+    return { d: `M ${x1} ${y1} C ${mx} ${y1} ${mx} ${y2} ${x2} ${y2}` };
   }
-  x1 = a.x; y1 = a.y + (dy > 0 ? a.h / 2 : -a.h / 2);
-  x2 = b.x; y2 = b.y + (dy > 0 ? -b.h / 2 : b.h / 2);
+  const x1 = a.x; const y1 = a.y + (dy > 0 ? a.h / 2 : -a.h / 2);
+  const x2 = b.x; const y2 = b.y + (dy > 0 ? -b.h / 2 : b.h / 2);
   const my = (y1 + y2) / 2;
-  return { d: `M ${x1} ${y1} C ${x1} ${my} ${x2} ${my} ${x2} ${y2}`, label: { x: (x1 + x2) / 2 + 14, y: my } };
+  return { d: `M ${x1} ${y1} C ${x1} ${my} ${x2} ${my} ${x2} ${y2}` };
 }

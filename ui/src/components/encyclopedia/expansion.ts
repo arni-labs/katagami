@@ -35,10 +35,6 @@ export function shownCount(state: Expansion, key: string): number {
   return state.shown.get(key) ?? BATCH;
 }
 
-export function isOpen(state: Expansion, key: string): boolean {
-  return state.open.has(key);
-}
-
 export function toggle(state: Expansion, key: string): Expansion {
   const open = new Set(state.open);
   if (open.has(key)) {

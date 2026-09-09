@@ -107,6 +107,17 @@ test("a containment cycle no root reaches still opens from its category", () => 
   assert.ok(visible.cells.has("r"));
 });
 
+test("a cell whose first listed parent sits in a cycle is still revealed from its category", () => {
+  // R → A, and A ⇄ B. A lists B before R, so a first-parent walk would start
+  // the chain at B, which no category opens. The shallowest parent is R.
+  const cells = [cell("r", "Root"), cell("a", "A", { broader: ["b", "r"] }), cell("b", "B", { broader: ["a"] }), cell("c", "C", { broader: ["a"] })];
+  const graph = index(cells);
+  assert.deepEqual(graph.ancestry("c").map((x) => x.id), ["r", "a", "c"]);
+  const visible = computeVisible(graph, ["art"], revealPath(graph, initialExpansion(["art"]), "c"));
+  assert.ok(visible.cells.has("c"), "the searched cell is on the paper");
+  assert.ok(visible.cells.has("a") && visible.cells.has("r"));
+});
+
 test("a record named by several cells is one record", () => {
   const shared = { entitySet: "ArtStyles", entityId: "shared", explanation: "fixture", sourceIds: [], unread: false, record: null };
   const cells = [cell("a", "A"), cell("b", "B"), cell("c", "C")];

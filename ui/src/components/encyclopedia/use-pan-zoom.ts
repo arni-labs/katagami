@@ -52,7 +52,7 @@ export function useMounted(): boolean {
   return useSyncExternalStore(noop, () => true, () => false);
 }
 
-export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: number = ZOOM_MAX) {
+export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: number = ZOOM_MAX, minZoom: number = ZOOM_MIN) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [camera, setCamera] = useState<Camera>(initial);
   const [animate, setAnimate] = useState(false);
@@ -74,7 +74,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     animateTimer.current = window.setTimeout(() => setAnimate(false), 520);
   }, []);
 
-  const clampK = useCallback((k: number) => Math.min(maxZoom, Math.max(ZOOM_MIN, k)), [maxZoom]);
+  const clampK = useCallback((k: number) => Math.min(maxZoom, Math.max(minZoom, k)), [maxZoom, minZoom]);
 
   const zoomAbout = useCallback((factor: number, sx: number, sy: number, smooth = false) => {
     setCamera((cam) => {
@@ -140,6 +140,25 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     const factor = Math.min(1.4, Math.max(0.7, Math.exp(-event.deltaY * scale)));
     zoomAbout(factor, sx, sy);
   }, [zoomAbout]);
+
+  /** A node has taken this pointer for its own drag. The camera does not pan
+   *  with it, but the pointer still counts toward a pinch: a second finger
+   *  landing anywhere then zooms, as it would if the first had landed on
+   *  bare paper. Returns true when that pinch has begun, so the node drag
+   *  can stand down. */
+  const claimPointer = useCallback((event: React.PointerEvent): boolean => {
+    const el = viewportRef.current;
+    if (!el) return false;
+    pinch.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pinch.current.size !== 2) return false;
+    for (const id of pinch.current.keys()) { try { el.setPointerCapture(id); } catch { /* pointer already gone */ } }
+    const [a, b] = [...pinch.current.values()];
+    const rect = el.getBoundingClientRect();
+    pinchStart.current = { dist: Math.hypot(a.x - b.x, a.y - b.y), k: camera.k, mid: { x: (a.x + b.x) / 2 - rect.left, y: (a.y + b.y) / 2 - rect.top }, cam: camera };
+    drag.current = null;
+    return true;
+  }, [camera]);
+  const pinching = useCallback(() => pinchStart.current !== null, []);
 
   const onPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     const el = viewportRef.current;
@@ -226,5 +245,5 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     onPointerLeave: endPointer,
   }), [onWheel, onPointerDown, onPointerMove, endPointer]);
 
-  return { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld, guardWheel };
+  return { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld, guardWheel, claimPointer, pinching };
 }
