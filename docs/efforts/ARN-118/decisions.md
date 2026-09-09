@@ -1296,6 +1296,8 @@ Options: Cut the six explanations; add the parent's Q-id to a structural check l
 
 Chose the labels because: the structural check only works where the parent cell happens to carry a Wikidata source, and two of the six did not, while the child's own record carried the statement in both cases. This is a fetch defect and the fix belongs in the fetch layer. Given up: 156 extra label requests, cached separately so re-reading a source never re-fetches them. The property list stays short deliberately, because widening it to every property would pull in countries, dates and collections, and hide claims that really are unsupported.
 
+**Corrected in the second review round.** The first version appended the labels to the entity's JSON as trailing plain text. That made `json.loads` fail in `prose_chars`, which falls back to counting the whole blob as running text, so **197 Wikidata records** — a 0-character machine record in most cases — were counted as 2,000 to 24,000 characters of prose and classified prose-backed. Two cells changed bucket, the ones whose only prose-capable source was a Wikidata record; the rest also cite an article, so the per-cell maximum hid it. The labels are now returned beside the cache rather than merged into it, and the scorer reads `searchable(url)` while `prose_chars` still reads the record's own bytes. The strict counts do not move, because the labels were always meant to be searchable and only the prose classification was wrong.
+
 Where: `scripts/encyclopedia_support.py`, `wikidata_targets` and `label_wikidata_targets`.
 
 
@@ -1309,6 +1311,10 @@ Options: Rely on the name check; add the vocabulary words to the flag list; chec
 
 Chose the host because: the claim is about where a vocabulary files a term, and which vocabulary a link cites is decided exactly by the URL rather than by whether a word appears in fetched bytes. The vocabulary names then move into the stop list, because asking the same question twice by keyword only produces noise: a Wikidata entity's JSON does not contain the string "Wikidata". Given up: a sentence stating that a vocabulary has *no* heading for a term reads as a mismatch. There is one, Regulated verse, and the check prints the sentence rather than classifying it, which is the same treatment the parent-link mismatches already get.
 
+**Corrected in the second review round, and worth saying plainly: the check that found the largest defect of the effort had a matching bug of exactly the kind it was built to catch.** It asked whether the host string appeared anywhere in the URL, so `https://example.com/?ref=artsy.net` would have counted as citing Artsy. A substring standing in for a claim is the same shape as the name check scoring 104 of 123 bad cells as supported because the words Styles and Movements appear in most Wikipedia articles. It now parses the URL and compares the hostname, with a suffix rule so `www.artsy.net` and `vocab.getty.edu` match while `notartsy.net` and `artsy.net.example.com` do not.
+
+The number does not move, because no cited URL in the collection carries a vocabulary host outside its hostname: the hole was real and nothing was in it. The rule's cases live beside it in `--self-test`, enumerated from what the rule says rather than from the URLs that happened to be present, and the self-test additionally requires that the substring version still fails on that list, so a later edit cannot reduce the cases to ones both rules pass. It separates them 9 ways out of 19. Reinstating the substring rule turns `ui/scripts/encyclopedia-host-rule.test.mjs` red, which is how it was checked rather than assumed.
+
 Where: `scripts/encyclopedia_support.py`, `main`; the rule in `.agents/skills/encyclopedia/SKILL.md`.
 
 
@@ -1321,6 +1327,8 @@ Came up because: 116 of 402 flags were manifestation explanations, of the form "
 Options: Exempt the field; strip only quoted spans; read the record.
 
 Chose to read the record because: exempting the field would have hidden the defect that produced this script, which was a world-claim inside a manifestation explanation, and stripping quotes alone still left eleven flags naming Austen titles and Pepys editions that the record does carry. The skill already says a manifestation's natural citation is the record's own page, so reading it is the check catching up with the rule. Given up: 499 record reads on every run, and a run now needs the production credential for two things rather than one. The record statuses moved into the stop list at the same time, since no external source will ever carry one.
+
+**Corrected in the second review round.** The first version also deleted quoted spans from these explanations before scoring, on the theory that a quoted span is the record's own credits label. That meant a claim inside quotation marks was never checked, and its cell came back clean because nothing had looked at it, which is the failure this whole script exists to find. **873 quoted spans carrying 884 names were being skipped.** The strip is gone, and reading the record makes it unnecessary as well as wrong: a credits label the explanation quotes is in the record, so it now matches on the evidence rather than on being skipped. All 884 are carried, before the repair and after, so no count moves; the check was blind to them and is not any more.
 
 Where: `scripts/encyclopedia_support.py`, `read_record` and `prose_fields`.
 

@@ -91,7 +91,22 @@ STOP = {"The", "A", "An", "It", "Its", "They", "This", "That", "There", "Both", 
         # uncited. Wikipedia, Library and Congress were already here for this reason.
         "Artsy", "Getty", "AAT", "Wikidata", "LCGFT", "LCSH"}
 
-QUOTED = re.compile(r'"[^"]*"|“[^”]*”')
+
+def from_host(url, hosts):
+    """Is this URL served by one of these hosts, decided on the parsed hostname.
+
+    The first version asked whether the host string appeared anywhere in the URL,
+    which is a substring standing in for a claim: `https://example.com/?ref=artsy.net`
+    would have counted as citing Artsy, and so would any path or query containing
+    the name. That is the same mistake the check was built to catch, one level
+    down, and it is worth saying plainly because this check is what found 123 cells
+    asserting an Artsy filing they never cited. A substring is not evidence.
+
+    The suffix rule keeps `www.artsy.net` and `vocab.getty.edu` matching while
+    `notartsy.net` and `artsy.net.example.com` do not.
+    """
+    host = (urllib.parse.urlsplit(url).hostname or "").lower().rstrip(".")
+    return any(host == h or host.endswith("." + h) for h in hosts)
 
 
 def fold(s):
@@ -182,15 +197,20 @@ def prose_fields(d, wide):
         for k in ("maps", "broader", "relations", "manifestations"):
             for e in d.get(k, []):
                 text = e.get("explanation", "")
-                # A manifestation explanation quotes the record's own `credits`
-                # label, and that quoted span is the record's text, not a claim
-                # about the world. "The record's credits name Botanical aquatint"
-                # is checkable against the record and will never appear on the
-                # Wikipedia page the link cites. Only the quoted span is dropped:
-                # everything the explanation says in its own voice still has to be
-                # carried by what it cites.
+                # A manifestation explanation is read against the record it names
+                # as well as the sources it cites, because "the record's credits
+                # name Botanical aquatint" is checkable in the record and will
+                # never appear on the Wikipedia page the link cites.
+                #
+                # An earlier version deleted quoted spans from these explanations
+                # before scoring, on the theory that a quoted span is the record's
+                # own credits label. That let a claim inside quotation marks
+                # through unread, so its cell came back clean because nothing had
+                # looked at it, which is the failure this whole script exists to
+                # find. Reading the record makes the strip unnecessary as well as
+                # wrong: a credits label the explanation quotes is in the record,
+                # so it matches on the evidence rather than on being skipped.
                 if k == "manifestations":
-                    text = QUOTED.sub(" ", text)
                     parts.append((k, text, e.get("sourceIds"), f"{e['entitySet']}/{e['entityId']}"))
                     continue
                 parts.append((k, text, e.get("sourceIds"), None))
@@ -403,11 +423,14 @@ def label_wikidata_targets(cache, cache_dir):
         json.dump(labels, open(path, "w"))
         time.sleep(1.2)
     json.dump(labels, open(path, "w"))
-    for url, raw in entities.items():
-        extra = " ".join(labels.get(q, "") for q in sorted(wikidata_targets(raw)))
-        if extra:
-            cache[url] = raw + "\n" + extra
-    return cache
+
+    # Returned beside the cache, never merged into it. Appending the labels to the
+    # entity's JSON made `json.loads` fail in `prose_chars`, which then fell back to
+    # counting the whole blob as running text and classified a machine record as
+    # prose-backed. A record is a record; these labels are searchable text about it,
+    # and the two are kept apart so that neither question borrows the other's answer.
+    return {url: " ".join(labels.get(q, "") for q in sorted(wikidata_targets(raw)))
+            for url, raw in entities.items()}
 
 
 def loc_sources(sources, source_ids=None):
@@ -457,10 +480,66 @@ def broader_authorities(raw, gf):
     return out
 
 
+def self_test():
+    """The host rule, enumerated from what the rule says rather than from the
+    cases that happened to be in the collection.
+
+    Every line below is a way a name can appear in a URL without the URL being
+    served by that host. The substring version passed nine of them.
+    """
+    cases = [
+        # served by the host, so a citation of it
+        ("https://www.artsy.net/gene/impressionism", ("artsy.net",), True),
+        ("https://artsy.net/gene/x", ("artsy.net",), True),
+        ("https://ARTSY.NET/gene/x", ("artsy.net",), True),
+        ("https://artsy.net./gene/x", ("artsy.net",), True),
+        ("https://artsy.net:443/gene/x", ("artsy.net",), True),
+        ("https://vocab.getty.edu/aat/300021426", ("getty.edu",), True),
+        ("https://en.wikipedia.org/wiki/Dada", ("wikipedia.org",), True),
+        ("https://de.wikipedia.org/wiki/Echogedicht", ("wikipedia.org",), True),
+        # not served by the host, whatever the string contains
+        ("https://example.com/?ref=artsy.net", ("artsy.net",), False),
+        ("https://example.com/artsy.net/gene", ("artsy.net",), False),
+        ("https://example.com/#artsy.net", ("artsy.net",), False),
+        ("https://artsy.net@example.com/", ("artsy.net",), False),
+        ("https://user:artsy.net@example.com/", ("artsy.net",), False),
+        ("https://notartsy.net/gene/x", ("artsy.net",), False),
+        ("https://artsy.net.example.com/", ("artsy.net",), False),
+        ("https://artsy.network/gene/x", ("artsy.net",), False),
+        ("https://en.wikipedia.org/wiki/Getty_Images", ("getty.edu",), False),
+        ("", ("artsy.net",), False),
+        ("not a url", ("artsy.net",), False),
+    ]
+    bad = [(u, h, w) for u, h, w in cases if from_host(u, h) is not w]
+    for u, h, w in bad:
+        print(f"  from_host({u!r}, {h}) should be {w}", file=sys.stderr)
+
+    # A case list both rules pass proves nothing, and a later edit could quietly
+    # reduce this to one. So the list is also required to separate the two: the
+    # substring version it replaced must still fail on it. An assertion is worth
+    # what it fails on; until it has failed on something it is a comment.
+    def substring(url, hosts):
+        return any(h in url for h in hosts)
+
+    caught = [u for u, h, w in cases if substring(u, h) is not w]
+    print(f"host rule: {len(cases) - len(bad)} of {len(cases)} cases hold; "
+          f"the substring version it replaced fails {len(caught)} of them", file=sys.stderr)
+    if len(cases) < 15:
+        print("  the case list has been reduced below what the rule needs", file=sys.stderr)
+    if not caught:
+        print("  no case separates the parsed-host rule from a substring match, so this"
+              " list would pass the bug it exists to catch", file=sys.stderr)
+    return 1 if bad or not caught or len(cases) < 15 else 0
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--self-test", action="store_true",
+                    help="check the host rule and exit; needs no credential and no network")
     ap.add_argument("--cache", default=os.environ.get("KATAGAMI_SOURCE_CACHE", "/tmp/katagami-source-cache"))
     args = ap.parse_args()
+    if args.self_test:
+        return self_test()
 
     key = os.environ.get("TEMPER_API_KEY")
     if not key:
@@ -476,7 +555,12 @@ def main():
     docs = {r["fields"]["id"]: json.loads(r["fields"]["document"]) for r in live}
     urls = sorted({s["url"] for d in docs.values() for s in d.get("sources", [])})
     cache = fetch_sources(urls, cache, cache_path)
-    cache = label_wikidata_targets(cache, args.cache)
+    # Searchable text about a source that is not part of the source's own bytes.
+    # Kept beside the cache so `prose_chars` still sees a machine record as one.
+    expansions = label_wikidata_targets(cache, args.cache)
+
+    def searchable(url):
+        return cache.get(url, "") + " " + expansions.get(url, "")
 
     # ---- an explanation naming a vocabulary, cited to nothing from that vocabulary
     #
@@ -500,7 +584,7 @@ def main():
                 for name, hosts in vocab_hosts.items():
                     if not re.search(r"\b%s\b" % re.escape(name), text):
                         continue
-                    if any(h in u for u in cited for h in hosts):
+                    if any(from_host(u, hosts) for u in cited):
                         continue
                     uncited.append((cid, field, name, text))
     print(f"\nAN EXPLANATION NAMES A VOCABULARY AND CITES NOTHING FROM IT: {len(uncited)}")
@@ -537,8 +621,8 @@ def main():
             backed = "prose-backed" if max(prose_chars(t) for t in texts) >= 2000 else "prose-thin "
             by_lane[lane] += 1
             by_count[(n_src, backed)] += 1
-            allblob = fold(" ".join(texts))
-            bysid = {s["id"]: fold(cache.get(s["url"], "")) for s in srcs}
+            allblob = fold(" ".join(searchable(s["url"]) for s in srcs))
+            bysid = {s["id"]: fold(searchable(s["url"])) for s in srcs}
             bad = []
             for kind, field, sids, record in prose_fields(d, wide):
                 # A sentence is read against what it cites, and against the whole
