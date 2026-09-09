@@ -13,7 +13,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2e8f-0eac-7573-b770-bdfcdfeaed5a')",
       "decision": "archive",
       "batch": "B5",
-      "note": "[UnderReview] Coined name (the skill's own example of what is not allowed). Original AI-authored corpus, already pulled for rework by the curator note. No body of work by named hands stands behind it, so there is nothing to credit. If reworked from real plain-language reports, it re-enters as a manifestation under Technical reports (LCGFT gf2015026093), a cell a later LCGFT pass creates. Archived 2026-09-08.",
+      "note": "[UnderReview] Coined name (the skill's own example of what is not allowed). Original AI-authored corpus, already pulled for rework by the curator note. No body of work by named hands stands behind it, so there is nothing to credit. If reworked from real plain-language reports, it re-enters as a manifestation under Technical reports (LCGFT gf2015026093), a cell a later LCGFT pass creates. Archived 2026-09-08. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "technical-reports"
     },
     {
@@ -37,7 +37,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2ed0-ddee-73d2-a58b-55143c504b3d')",
       "decision": "archive",
       "batch": "B5",
-      "note": "[Archived] Already Archived (superseded 2026-07-06). Coined name; stays archived. Its content lives on in the Dana, Slocum and Ship's log records.",
+      "note": "[Archived] Already Archived (superseded 2026-07-06). Coined name; stays archived. Its content lives on in the Dana, Slocum and Ship's log records. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "travel-writing"
     },
     {
@@ -45,7 +45,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2ed1-06ca-7702-a044-c84561480e36')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named (Faraday, The Chemical History of a Candle, 1861). A manifestation under Lectures (LCGFT gf2014026122), a cell for a later LCGFT pass.",
+      "note": "[UnderReview] One writer, honestly named (Faraday, The Chemical History of a Candle, 1861). A manifestation under Lectures (LCGFT gf2014026122), a cell for a later LCGFT pass. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "lectures"
     },
     {
@@ -53,7 +53,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2ed1-3653-7fd3-8eb4-be2fd817a0b4')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named (Pepys, 1660s). A manifestation under Diaries (LCGFT gf2014026085), a cell for a later LCGFT pass.",
+      "note": "[UnderReview] One writer, honestly named (Pepys, 1660s). A manifestation under Diaries (LCGFT gf2014026085), a cell for a later LCGFT pass. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "diaries"
     },
     {
@@ -61,7 +61,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2ed1-612b-78f2-88ac-fa97cb94e3b3')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named (Chesterfield, Letters to His Son, 1774). A manifestation under Personal correspondence (LCGFT gf2014026141), a cell for a later LCGFT pass.",
+      "note": "[UnderReview] One writer, honestly named (Chesterfield, Letters to His Son, 1774). A manifestation under Personal correspondence (LCGFT gf2014026141), a cell for a later LCGFT pass. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "personal-correspondence"
     },
     {
@@ -69,7 +69,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2ed1-8e18-7bc1-8b68-f88b86e693f5')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named (Beeton, Book of Household Management, 1861). The register is the recipe: ingredients, quantities, mode, time, cost. A manifestation under Cookbooks (LCGFT gf2011026169); Handbooks and manuals (gf2014026109) is the broader alternative.",
+      "note": "[UnderReview] One writer, honestly named (Beeton, Book of Household Management, 1861). The register is the recipe: ingredients, quantities, mode, time, cost. A manifestation under Cookbooks (LCGFT gf2011026169); Handbooks and manuals (gf2014026109) is the broader alternative. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "cookbooks"
     },
     {
@@ -77,7 +77,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2eec-7ab9-7b80-9e8c-f00e6135186d')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named (Post, Etiquette, 1922). LCGFT has no etiquette term; the nearest is Handbooks and manuals (gf2014026109). Wikidata 'courtesy book' (Q5178486) is the genre name if a narrower cell is wanted.",
+      "note": "[UnderReview] One writer, honestly named (Post, Etiquette, 1922). LCGFT has no etiquette term; the nearest is Handbooks and manuals (gf2014026109). Wikidata 'courtesy book' (Q5178486) is the genre name if a narrower cell is wanted. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "handbooks-and-manuals"
     },
     {
@@ -85,7 +85,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2eec-a3bc-7641-8935-e106de4a915b')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named (Strunk, The Elements of Style, 1918). A manifestation under Style manuals (LCGFT gf2014026183), a cell for a later LCGFT pass.",
+      "note": "[UnderReview] One writer, honestly named (Strunk, The Elements of Style, 1918). A manifestation under Style manuals (LCGFT gf2014026183), a cell for a later LCGFT pass. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "style-manuals"
     },
     {
@@ -93,7 +93,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2eec-ce55-73f1-a4d7-bc0e5daed02b')",
       "decision": "revise",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named, but the record contradicts itself: name and credits say the Casaubon translation (1634, Gutenberg 2680) while the corpus manifest labels all three excerpts 'Long translation, 1862'. The exemplar wording ('Betimes in the morning say to thyself') is Casaubon's, so fix the manifest labels. The old cell stoic-aphoristic-self-address is archived (B5 item 24); attach under Meditations (LCGFT gf2015026056), whose scope note reads devotional, so the fit is flagged uncertain; Sayings (gf2014026170) is the alternative. Defect recorded as a curator note 2026-09-08; manifest re-attached with the Meditations cell.",
+      "note": "[UnderReview] One writer, honestly named, but the record contradicts itself: name and credits say the Casaubon translation (1634, Gutenberg 2680) while the corpus manifest labels all three excerpts 'Long translation, 1862'. The exemplar wording ('Betimes in the morning say to thyself') is Casaubon's, so fix the manifest labels. The old cell stoic-aphoristic-self-address is archived (B5 item 24); attach under Meditations (LCGFT gf2015026056), whose scope note reads devotional, so the fit is flagged uncertain; Sayings (gf2014026170) is the alternative. Defect recorded as a curator note 2026-09-08; manifest re-attached with the Meditations cell. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "meditations"
     },
     {
@@ -109,7 +109,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2eed-2c97-7891-bb08-2e586e7b9e89')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named (Twain, The Innocents Abroad, 1869). A manifestation under Travel writing (LCGFT gf2014026200), a cell for a later LCGFT pass.",
+      "note": "[UnderReview] One writer, honestly named (Twain, The Innocents Abroad, 1869). A manifestation under Travel writing (LCGFT gf2014026200), a cell for a later LCGFT pass. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "travel-writing"
     },
     {
@@ -133,7 +133,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f38cf-311b-7c21-985c-5cc0ec5448f2')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named (Dana, Two Years Before the Mast, 1840). A manifestation under Travel writing (LCGFT gf2014026200); Memoirs (gf2025026019) is the alternative.",
+      "note": "[UnderReview] One writer, honestly named (Dana, Two Years Before the Mast, 1840). A manifestation under Travel writing (LCGFT gf2014026200); Memoirs (gf2025026019) is the alternative. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "travel-writing"
     },
     {
@@ -141,7 +141,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f38cf-6c62-7e00-9a97-d8bb19a6867b')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named (Slocum, Sailing Alone Around the World, 1900). A manifestation under Travel writing (LCGFT gf2014026200).",
+      "note": "[UnderReview] One writer, honestly named (Slocum, Sailing Alone Around the World, 1900). A manifestation under Travel writing (LCGFT gf2014026200). Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "travel-writing"
     },
     {
@@ -157,7 +157,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f38cf-e5e1-7b50-8349-5e091a2c6ec2')",
       "decision": "keep",
       "batch": "B5",
-      "note": "[UnderReview] A blend of Dana and Slocum. 'Ship's log' is one of the owner's approved source-vocabulary examples (skill, 2026-09-08); LCGFT has no log term, Wikidata has logbook (Q1414013). Attach under Travel writing until a Logbooks cell exists.",
+      "note": "[UnderReview] A blend of Dana and Slocum. 'Ship's log' is one of the owner's approved source-vocabulary examples (skill, 2026-09-08); LCGFT has no log term, Wikidata has logbook (Q1414013). Attach under Travel writing until a Logbooks cell exists. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "travel-writing"
     }
   ]
