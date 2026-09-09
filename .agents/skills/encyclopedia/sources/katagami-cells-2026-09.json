@@ -7,5 +7,198 @@
   "total": 24,
   "totalDerivedFrom": "EncyclopediaCells read back after batch B4, 2026-09-08",
   "lane": "both",
-  "terms": []
+  "terms": [
+    {
+      "term": "Art Nouveau",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('art-nouveau')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Repoint relations to ukiyo-e and decadent-movement; add the AAT concept; scope written from the AAT and Tate pages. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "art-nouveau"
+    },
+    {
+      "term": "Brush-and-ink painting",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('brush-and-ink-painting')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Ink wash painting' at new id ink-wash-painting (the loader derives id from name), then Archive brush-and-ink-painting. Replaces brush-and-ink-painting (coined name). Drops the Katazome resist-dye manifestation (a stencil dyeing craft; the source never mentions it). Takes the generic shuimo record from the literati cell. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "ink-wash-painting"
+    },
+    {
+      "term": "CRT/phosphor graphics",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('crt-phosphor-graphics')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Keep id and name provisionally (no vocabulary name found, 56 made records depend on it); prune six manifestations whose credits name a person, a manufacturer, a product period, a different direction (demoscene), or a Katagami-internal palette; add the AAT object concept; record the naming problem as a question. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "crt-phosphor-graphics"
+    },
+    {
+      "term": "Cubism",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('cubism')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Drop broader to the archived period label; add the AAT concept. Scope otherwise unchanged in substance. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "cubism"
+    },
+    {
+      "term": "Early-modernist European painting",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('early-modernist-european-painting')",
+      "decision": "archive",
+      "batch": "B5",
+      "note": "Archive. A period label, not a practice: the only source (Tate, Modernism) names no such grouping and dates modernism to the early twentieth century, not 1870. Its four children lose the broader link and stand without a parent, which the skill allows. If a root is wanted later, AAT 'Modernist' (300021474) is the vocabulary name. Archived 2026-09-08.",
+      "cellId": "early-modernist-european-painting"
+    },
+    {
+      "term": "Edo-period ukiyo-e prints",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('edo-period-ukiyo-e-prints')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Ukiyo-e' at new id ukiyo-e (the loader derives id from name), then Archive edo-period-ukiyo-e-prints. Replaces edo-period-ukiyo-e-prints: the source name (AAT, Artsy, Wikipedia) is Ukiyo-e, and the genre includes painting, not prints alone. Manifestations carried over. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "ukiyo-e"
+    },
+    {
+      "term": "English-language Decadent prose",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('english-language-decadent-prose')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Decadent movement' at new id decadent-movement (the loader derives id from name), then Archive english-language-decadent-prose. Replaces english-language-decadent-prose: the movement is European and spans writing and art (Wikipedia, AAT); 'English-language' and 'prose' were narrowing qualifiers and the old scope carried a planning sentence. Gains an art map membership, cited. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "decadent-movement"
+    },
+    {
+      "term": "German Expressionism",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('german-expressionism')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Drop broader to the archived period label; add the AAT concept. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "german-expressionism"
+    },
+    {
+      "term": "Gothic atmospheric prose",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('gothic-atmospheric-prose')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Gothic fiction' at new id gothic-fiction (the loader derives id from name), then Archive gothic-atmospheric-prose. Replaces gothic-atmospheric-prose (coined name; the British Library source now redirects to a generic learning page). Named from LCGFT; scope from the LCGFT scope note and the Wikipedia article. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "gothic-fiction"
+    },
+    {
+      "term": "Imagism",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('imagism')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Keep the movement name (Wikipedia and Wikidata); add the LCGFT term Imagist poetry as the writing-lane vocabulary source; repoint the relation to stream-of-consciousness-fiction; scope written from the Wikipedia page. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "imagism"
+    },
+    {
+      "term": "Impressionism",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('impressionism')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Drop broader to the archived period label; drop the relation to naturalist-observational-prose (its source, Impressionism (literature), describes interior mental life, Conrad and Woolf, and says nothing about field observation); repoint ukiyo-e and pictorialism to their new ids; add the AAT concept. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "impressionism"
+    },
+    {
+      "term": "Ligne claire illustration",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('ligne-claire-illustration')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Ligne claire' at new id ligne-claire (the loader derives id from name), then Archive ligne-claire-illustration. Replaces ligne-claire-illustration: the source name is Ligne claire. Manifestations carried over. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "ligne-claire"
+    },
+    {
+      "term": "Modernist interior prose",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('modernist-interior-prose')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Stream of consciousness fiction' at new id stream-of-consciousness-fiction (the loader derives id from name), then Archive modernist-interior-prose. Replaces modernist-interior-prose (coined name). Named from LCGFT; scope from the LCGFT scope note and the Wikipedia article. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "stream-of-consciousness-fiction"
+    },
+    {
+      "term": "Naturalist observational prose",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('naturalist-observational-prose')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Field notes' at new id field-notes (the loader derives id from name), then Archive naturalist-observational-prose. Replaces naturalist-observational-prose (coined name). Drops the relation to Impressionism: its source describes interior mental life, not observation. Manifestations move from the old cell. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "field-notes"
+    },
+    {
+      "term": "Photocopied DIY graphics",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('photocopied-diy-graphics')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Xerox art' at new id xerox-art (the loader derives id from name), then Archive photocopied-diy-graphics. Replaces photocopied-diy-graphics (coined name). Named from Wikipedia and Wikidata. Drops two manifestations whose credits name zine drawing and doujinshi culture rather than the photocopy process. The relation's citation now includes the Risograph article, which is where zine use is actually stated. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "xerox-art"
+    },
+    {
+      "term": "Pictorialist photography",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('pictorialist-photography')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Pictorialism' at new id pictorialism (the loader derives id from name), then Archive pictorialist-photography. Replaces pictorialist-photography: the source name (Artsy, AAT, Wikipedia, Wikidata) is Pictorialism. Manifestations carried over. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "pictorialism"
+    },
+    {
+      "term": "Relief printing traditions",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('relief-printing-traditions')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Relief printing' at new id relief-printing (the loader derives id from name), then Archive relief-printing-traditions. Replaces relief-printing-traditions: 'traditions' was our suffix; the AAT and Wikipedia name is Relief printing. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "relief-printing"
+    },
+    {
+      "term": "Risograph and stencil-duplicator printing",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('risograph-and-stencil-duplicator-printing')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Risograph' at new id risograph (the loader derives id from name), then Archive risograph-and-stencil-duplicator-printing. Replaces risograph-and-stencil-duplicator-printing: the source name (Wikipedia, AAT, Wikidata Q1932429) is Risograph; the mimeograph kin stay inside the scope and sources. Drops one manifestation credited to punk poster art, a different direction. 57 records carried over. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "risograph"
+    },
+    {
+      "term": "Safavid manuscript painting",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('safavid-manuscript-painting')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Persian miniature' at new id persian-miniature (the loader derives id from name), then Archive safavid-manuscript-painting. Replaces safavid-manuscript-painting: the old scope described the Persian miniature tradition at large and cited only that article; Safavid is one dynasty within it. Named from Wikipedia and Wikidata; AAT's Safavid concept kept as a source. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "persian-miniature"
+    },
+    {
+      "term": "Stoic aphoristic self-address",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('stoic-aphoristic-self-address')",
+      "decision": "archive",
+      "batch": "B5",
+      "note": "Archive. Coined name over one author's book; both sources are Stanford Encyclopedia pages, which agents may not open (cite-only). The Marcus Aurelius WritingStyle becomes a manifestation under Meditations (LCGFT gf2015026056) once that cell exists; see the writing ledger. Archived 2026-09-08.",
+      "cellId": "stoic-aphoristic-self-address"
+    },
+    {
+      "term": "Surrealism",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('surrealism')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Drop broader to the archived period label; rewrite the scope from the Tate and AAT pages (Paris, 1924 manifesto, automatism); repoint the nonsense relation to literary-nonsense; add the AAT concept. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "surrealism"
+    },
+    {
+      "term": "Understated social-comic prose",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('understated-social-comic-prose')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Novels of manners' at new id novels-of-manners (the loader derives id from name), then Archive understated-social-comic-prose. Replaces understated-social-comic-prose: coined name over one writer. The cited Comedy of manners article does not mention Austen; LCGFT Novels of manners fits the record exactly. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "novels-of-manners"
+    },
+    {
+      "term": "Victorian literary nonsense",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('victorian-literary-nonsense')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Literary nonsense' at new id literary-nonsense (the loader derives id from name), then Archive victorian-literary-nonsense. Replaces victorian-literary-nonsense: 'Victorian' is a period qualifier and the genre runs from the seventeenth century to Ionesco and Flann O'Brien. One cell for the direction, citing both LCGFT form terms and the Wikipedia article. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "literary-nonsense"
+    },
+    {
+      "term": "Yuan literati ink painting",
+      "ref": "https://openpaw-production.up.railway.app/tdata/EncyclopediaCells('yuan-literati-ink-painting')",
+      "decision": "live",
+      "batch": "B5",
+      "note": "Rename to 'Literati painting' at new id literati-painting (the loader derives id from name), then Archive yuan-literati-ink-painting. Replaces yuan-literati-ink-painting: the tradition runs from the Song to the Qing, so 'Yuan' was a period restriction the sources do not support. Named from Wikipedia with the AAT concept Wen ren as backbone. Written and attested 2026-09-08; superseded identifier archived where renamed.",
+      "cellId": "literati-painting"
+    }
+  ]
 }
