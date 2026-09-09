@@ -947,12 +947,26 @@
       "note": "A practice inside anthropology (fiction written as ethnographic method) with a small, contested body of work; the nearest open reference, Wikipedia's Ethnofiction, describes a different thing."
     },
     {
+      "term": "Evangelism plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026322",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "a purpose label (conversion), as pass 1 declined Didactic fiction"
+    },
+    {
       "term": "Exempla",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026323",
       "decision": "live",
       "batch": "B6",
       "note": "form: the medieval sermon anecdote, with its own handbooks and collections; proposal B6 #4. Written and attested 2026-09-08.",
       "cellId": "exempla"
+    },
+    {
+      "term": "Experimental drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026324",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "an umbrella defined relative to its era, as pass 1 declined Experimental fiction and pass 2 declined Experimental poetry"
     },
     {
       "term": "Experimental fiction",
@@ -977,6 +991,13 @@
       "cellId": "fables"
     },
     {
+      "term": "Fairy tale plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026081",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "subject- and audience-defined (fairy tales adapted for children); the named theatrical form inside it, Christmas pantomimes, is a cell"
+    },
+    {
       "term": "Fairy tales",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026329",
       "decision": "live",
@@ -993,6 +1014,14 @@
       "cellId": "fan-fiction"
     },
     {
+      "term": "Fantasy drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026332",
+      "decision": "live",
+      "batch": "B12",
+      "note": "premise: magic embodied by performers; the D36 twin of the live Fantasy fiction, parent left for an insertion batch; proposal B12 #37. Written and attested 2026-09-09.",
+      "cellId": "fantasy-drama"
+    },
+    {
       "term": "Fantasy fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026333",
       "decision": "live",
@@ -1006,6 +1035,22 @@
       "decision": "deferred",
       "batch": "B8",
       "note": "Deferred, not declined: D36 gives a tradition that lives in prose and in verse a cell per form under a shared parent, so this returns once the parent over the fiction cell exists."
+    },
+    {
+      "term": "Farces",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026335",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: improbable situation, physical business and accelerating plot, continuous from Roman comedy; proposal B12 #1. Written and attested 2026-09-09.",
+      "cellId": "farces"
+    },
+    {
+      "term": "Fastnachtsspiele",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026336",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: German Shrove Tuesday carnival plays of the 15th and 16th centuries, Nuremberg best recorded; proposal B12 #3. Written and attested 2026-09-09.",
+      "cellId": "fastnachtsspiele"
     },
     {
       "term": "Fiction",
@@ -1036,6 +1081,14 @@
       "batch": "B10",
       "note": "form: very short fiction with anthologies, competitions and a stated technique of omission (flagged: pass 2 deferred Micropoetry as a length label); proposal B10 #27. Written and attested 2026-09-09.",
       "cellId": "flash-fiction"
+    },
+    {
+      "term": "Folk drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026341",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: plays belonging to a community and carried by custom; LCGFT's parent for eleven regional traditions; proposal B12 #2. Written and attested 2026-09-09.",
+      "cellId": "folk-drama"
     },
     {
       "term": "Folk literature",
@@ -1108,6 +1161,13 @@
       "note": "subject-defined (organised crime)"
     },
     {
+      "term": "Gay drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026007",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "subject-defined (gay characters and themes), with the Queer fiction children declined in B10"
+    },
+    {
       "term": "Gay fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026122",
       "decision": "declined",
@@ -1128,6 +1188,14 @@
       "batch": "B8",
       "note": "form: the couplet-and-refrain lyric of Arabic, Persian and Urdu poetry; proposal B8 #40. Written and attested 2026-09-09.",
       "cellId": "ghazals-poetry"
+    },
+    {
+      "term": "Ghost plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026356",
+      "decision": "live",
+      "batch": "B12",
+      "note": "premise: the returning dead on stage; the D36 twin of Ghost stories (B10), parent left for an insertion batch; proposal B12 #39. Written and attested 2026-09-09.",
+      "cellId": "ghost-plays"
     },
     {
       "term": "Ghost stories",
@@ -1199,6 +1267,29 @@
       "note": "occasion-defined, as pass 1 declined Christmas fiction"
     },
     {
+      "term": "Hanukkah plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026063",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "occasion-defined"
+    },
+    {
+      "term": "Heroic drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026367",
+      "decision": "live",
+      "batch": "B12",
+      "note": "genre: Restoration rhymed drama of love and honour, theorised by Dryden and parodied at once; proposal B12 #24. Written and attested 2026-09-09.",
+      "cellId": "heroic-drama"
+    },
+    {
+      "term": "Historical drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026369",
+      "decision": "live",
+      "batch": "B12",
+      "note": "setting: the past used to argue about the present; the D36 twin of the live Historical fiction, parent left for an insertion batch; proposal B12 #36. Written and attested 2026-09-09.",
+      "cellId": "historical-drama"
+    },
+    {
       "term": "Historical fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026370",
       "decision": "live",
@@ -1222,6 +1313,14 @@
       "cellId": "horror-fiction"
     },
     {
+      "term": "Horror plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026374",
+      "decision": "live",
+      "batch": "B12",
+      "note": "intent: fright in a shared dark room, the Grand Guignol its purpose-built house; the D36 twin of the live Horror fiction; proposal B12 #38. Written and attested 2026-09-09.",
+      "cellId": "horror-plays"
+    },
+    {
       "term": "Horror poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026375",
       "decision": "deferred",
@@ -1234,6 +1333,13 @@
       "decision": "declined",
       "batch": "B6",
       "note": "a tone umbrella; the practices inside it (satire, parody, black humor, nonsense, tall tales) are the cells"
+    },
+    {
+      "term": "Humorous monologues",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026378",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "a tone label applied to a form, as pass 1 declined Humorous fiction; the form itself, Monologues, is a cell"
     },
     {
       "term": "Humorous poetry",
@@ -1304,6 +1410,20 @@
       "cellId": "imagism"
     },
     {
+      "term": "Impromptus (Drama)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026118",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "A real form, from Molière's L'Impromptu de Versailles onward, but no independent reference answered for it; Wikipedia's Metatheatre covers the wider practice and not this type. Revisit when a source names it."
+    },
+    {
+      "term": "Interludes (Drama)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026386",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "The Tudor interlude is a documented form and LCGFT makes it the parent of Kyōgen plays, but Wikipedia's Interlude is a disambiguation page and no article covers the dramatic form. It returns as an insertion under D38 once a source is found."
+    },
+    {
       "term": "Intersex fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2020026002",
       "decision": "declined",
@@ -1357,6 +1477,14 @@
       "note": "works classed by the maker's age, no practice"
     },
     {
+      "term": "Kabuki plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026393",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: Japanese popular theatre from the early 17th century with its own stagecraft and repertoire; proposal B12 #4. Written and attested 2026-09-09.",
+      "cellId": "kabuki-plays"
+    },
+    {
       "term": "Kafas",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026394",
       "decision": "live",
@@ -1373,6 +1501,22 @@
       "cellId": "kafi-poetry"
     },
     {
+      "term": "Kamishibai plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026022",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: Japanese picture-card street storytelling, with the card change as its unit of time; proposal B12 #8. Written and attested 2026-09-09.",
+      "cellId": "kamishibai-plays"
+    },
+    {
+      "term": "Kamyŏn'gŭk plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026023",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: Korean masked dance drama with fixed satirical types; proposal B12 #9. Written and attested 2026-09-09.",
+      "cellId": "kamyonguk-plays"
+    },
+    {
       "term": "Kasa",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026396",
       "decision": "live",
@@ -1381,12 +1525,72 @@
       "cellId": "kasa"
     },
     {
+      "term": "Khōn plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026024",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: Thai masked court dance drama from the Ramakien, with narrators and piphat; proposal B12 #10. Written and attested 2026-09-09.",
+      "cellId": "khon-plays"
+    },
+    {
+      "term": "Kōlam drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026025",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "Southern Sri Lankan masked dance drama, plausible as a tradition, but no independent reference answered: Wikipedia's Kolam is the rice-flour floor art. Revisit when a source covers the masked drama."
+    },
+    {
       "term": "Koridos",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2020026054",
       "decision": "live",
       "batch": "B8",
       "note": "form: the Philippine metrical romance in octosyllabic quatrains; proposal B8 #38. Written and attested 2026-09-09.",
       "cellId": "koridos"
+    },
+    {
+      "term": "Kotéba plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026026",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "Bambaran comic theatre with a documented practice in Mali, but no independent reference answered: Wikipedia has no article under any spelling tried. Revisit when one exists."
+    },
+    {
+      "term": "Kōwaka drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026027",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: Japanese chanted ballad-drama of the 15th to 17th centuries on the war tales; proposal B12 #7. Written and attested 2026-09-09.",
+      "cellId": "kowaka-drama"
+    },
+    {
+      "term": "Kuai shu",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026028",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "LCGFT gives no scope note. The nearest open reference, Wikipedia's Kuaibanshu, describes a related northern Chinese clapper storytelling form, and the identity of the two could not be confirmed. Revisit when the term is pinned down."
+    },
+    {
+      "term": "Kur̲avañci plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026029",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "Tamil verse dance dramas of the 17th and 18th centuries, plausible as a tradition, but no independent reference answered: the Wikipedia title Kuravanji is a 1960 film. Revisit when a source covers the dramatic form."
+    },
+    {
+      "term": "Kyōgen plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026398",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: comic interludes played between nō acts, transmitted through family schools; proposal B12 #6. Written and attested 2026-09-09.",
+      "cellId": "kyogen-plays"
+    },
+    {
+      "term": "Lakhō̜n chātrī plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026030",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: central Thai votive dance drama, portable and fast; proposal B12 #11. Written and attested 2026-09-09.",
+      "cellId": "lakhon-chatri-plays"
     },
     {
       "term": "Laments",
@@ -1412,11 +1616,33 @@
       "note": "a purpose label (praise); the classical genres it lists as variants (encomia, epinicia, panegyrics) have no LCGFT heading of their own"
     },
     {
+      "term": "Legal drama (Literature)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026405",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "subject-defined (the practice of law), as pass 1 declined Legal fiction"
+    },
+    {
       "term": "Legal fiction (Literature)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026406",
       "decision": "declined",
       "batch": "B6",
       "note": "subject-defined (the practice of law)"
+    },
+    {
+      "term": "Lenong plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026408",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: Betawi folk theatre of Jakarta with gambang kromong music and audience exchange; proposal B12 #14. Written and attested 2026-09-09.",
+      "cellId": "lenong-plays"
+    },
+    {
+      "term": "Lesbian drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026008",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "subject-defined (lesbian characters and themes)"
     },
     {
       "term": "Lesbian fiction",
@@ -1426,12 +1652,42 @@
       "note": "subject-defined (lesbian characters and themes)"
     },
     {
+      "term": "Lian hua lao",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026031",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "Chinese rhythmic storytelling with instruments, but no independent reference answered under any spelling tried. Revisit when one exists."
+    },
+    {
+      "term": "Librettos",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026909",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: dramatic writing made to be sung, with its own constraints and canon (borderline: a component of a musical work); proposal B12 #35. Written and attested 2026-09-09.",
+      "cellId": "librettos"
+    },
+    {
+      "term": "Liederspiels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026411",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "Early nineteenth-century German plays with existing lyrics set to new music. The only open reference is Wikipedia's glossary list of opera genres, which names the term without describing the practice. Revisit when a source treats it."
+    },
+    {
       "term": "Light novels",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026099",
       "decision": "live",
       "batch": "B6",
       "note": "form: Japanese illustrated YA novels in bunkobon format with a recognisable prose manner (borderline: format-defined); proposal B6 #32. Written and attested 2026-09-08.",
       "cellId": "light-novels"
+    },
+    {
+      "term": "Likē drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026032",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: Thai, Cambodian and Malaysian popular folk opera from the late 19th century; proposal B12 #12. Written and attested 2026-09-09.",
+      "cellId": "like-drama"
     },
     {
       "term": "Lilit",
@@ -1474,6 +1730,29 @@
       "cellId": "litrpg-fiction"
     },
     {
+      "term": "Liturgical drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026006",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: medieval sung drama inside the liturgy, with a live scholarly dispute about the category; proposal B12 #16. Written and attested 2026-09-09.",
+      "cellId": "liturgical-drama"
+    },
+    {
+      "term": "Living newspapers",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026417",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: documentary theatre assembled from press and official record, Soviet 1920s and the Federal Theatre Project; proposal B12 #34. Written and attested 2026-09-09.",
+      "cellId": "living-newspapers"
+    },
+    {
+      "term": "Loas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026418",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "Short Spanish curtain-raisers, a real form beside Autos sacramentales, but no independent reference answered. Revisit when a source covers it."
+    },
+    {
       "term": "Love poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026419",
       "decision": "declined",
@@ -1505,12 +1784,35 @@
       "cellId": "macaronic-verse"
     },
     {
+      "term": "Machine plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026002",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "French seventeenth-century plays built around stage machinery. Wikipedia's Machine play redirects to Restoration spectacular, which is the English form and a different body of work. Revisit when a source covers the French one."
+    },
+    {
       "term": "Magic realist fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026424",
       "decision": "live",
       "batch": "B6",
       "note": "manner: the fantastic presented matter-of-factly inside realism; proposal B6 #28. Written and attested 2026-09-08.",
       "cellId": "magic-realist-fiction"
+    },
+    {
+      "term": "Magic realist plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026116",
+      "decision": "live",
+      "batch": "B12",
+      "note": "technique: the impossible left unremarked, enforced by the other actors' behaviour; the D36 twin of the live Magic realist fiction; proposal B12 #44. Written and attested 2026-09-09.",
+      "cellId": "magic-realist-plays"
+    },
+    {
+      "term": "Makyung plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026033",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: Kelantan Malay dance drama, banned in 1991 and UNESCO-recognised in 2005; proposal B12 #13. Written and attested 2026-09-09.",
+      "cellId": "makyung-plays"
     },
     {
       "term": "Martial arts fiction",
@@ -1528,11 +1830,26 @@
       "cellId": "masnavis"
     },
     {
+      "term": "Masques",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026428",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: courtly entertainment where the court itself dances, Jonson and Jones its named collaborators; proposal B12 #22. Written and attested 2026-09-09.",
+      "cellId": "masques"
+    },
+    {
       "term": "Mathematical fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026090",
       "decision": "declined",
       "batch": "B6",
       "note": "subject-defined"
+    },
+    {
+      "term": "Medical drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026429",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "subject-defined (medicine), as pass 1 declined Medical fiction"
     },
     {
       "term": "Medical fiction",
@@ -1542,12 +1859,36 @@
       "note": "subject-defined"
     },
     {
+      "term": "Melodramas (Drama)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026432",
+      "decision": "live",
+      "batch": "B12",
+      "note": "mode: incident and strong feeling over shaded character, dominant on the 19th-century stage; proposal B12 #23. Written and attested 2026-09-09.",
+      "cellId": "melodramas-drama"
+    },
+    {
       "term": "Memorates",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026433",
       "decision": "live",
       "batch": "B6",
       "note": "form: first-person testimony of the uncanny, a named folklore genre since von Sydow (borderline: a folklorists' classification); proposal B6 #3. Written and attested 2026-09-08.",
       "cellId": "memorates"
+    },
+    {
+      "term": "Memory plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026073",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: staged from a narrator's admitted memory; term coined by Tennessee Williams in 1944; proposal B12 #27. Written and attested 2026-09-09.",
+      "cellId": "memory-plays"
+    },
+    {
+      "term": "Metadramas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026434",
+      "decision": "live",
+      "batch": "B12",
+      "note": "technique: drama pointing at its own theatricality; name coined by Lionel Abel in 1963; proposal B12 #26. Written and attested 2026-09-09.",
+      "cellId": "metadramas"
     },
     {
       "term": "Micropoetry",
@@ -1564,12 +1905,58 @@
       "note": "subject-defined (military life)"
     },
     {
+      "term": "Mime plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026117",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: performance carried by gesture alone, codified as technique by Decroux, Barrault and Marceau; proposal B12 #31. Written and attested 2026-09-09.",
+      "cellId": "mime-plays"
+    },
+    {
+      "term": "Missionary plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026436",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "a purpose label (promoting religious missions)"
+    },
+    {
+      "term": "Mock-heroic drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026437",
+      "decision": "live",
+      "batch": "B12",
+      "note": "technique: a trivial subject held in the grand manner so the mismatch satirises; proposal B12 #25. Written and attested 2026-09-09.",
+      "cellId": "mock-heroic-drama"
+    },
+    {
+      "term": "Monodramas (Literature)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026439",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: dramatic work for a single performer, with its own history from the 18th century onward; proposal B12 #28. Written and attested 2026-09-09.",
+      "cellId": "monodramas-literature"
+    },
+    {
+      "term": "Monologues (Drama)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026440",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: extended single-speaker speech, with named varieties (borderline: a component of a play, kept because monologues are published as works); proposal B12 #29. Written and attested 2026-09-09.",
+      "cellId": "monologues-drama"
+    },
+    {
       "term": "Monostichs",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026441",
       "decision": "live",
       "batch": "B8",
       "note": "form: the one-line poem, from the Greek epigram to Apollinaire's Chantre; proposal B8 #20. Written and attested 2026-09-09.",
       "cellId": "monostichs"
+    },
+    {
+      "term": "Monster drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026128",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "subject-defined (monsters), as pass 1 declined Monster fiction"
     },
     {
       "term": "Monster fiction",
@@ -1579,12 +1966,28 @@
       "note": "subject-defined (monsters); vampire and zombie fiction sit under it"
     },
     {
+      "term": "Morality plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026442",
+      "decision": "live",
+      "batch": "B12",
+      "note": "genre: late medieval and Tudor allegory of virtues and vices contending for a soul; proposal B12 #17. Written and attested 2026-09-09.",
+      "cellId": "morality-plays"
+    },
+    {
       "term": "Muʻāraḍāt",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026443",
       "decision": "live",
       "batch": "B8",
       "note": "technique: the answering poem in a model's metre and rhyme; proposal B8 #43. Written and attested 2026-09-09.",
       "cellId": "muaradat"
+    },
+    {
+      "term": "Mummers' plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026444",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: English seasonal folk plays with a constant combat, death and revival; proposal B12 #20. Written and attested 2026-09-09.",
+      "cellId": "mummers-plays"
     },
     {
       "term": "Musical texts",
@@ -1602,11 +2005,26 @@
       "cellId": "muwashshahat"
     },
     {
+      "term": "Mystery and miracle plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026446",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: medieval guild cycles staging biblical history on wagons; proposal B12 #18. Written and attested 2026-09-09.",
+      "cellId": "mystery-and-miracle-plays"
+    },
+    {
       "term": "Mythological fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026098",
       "decision": "declined",
       "batch": "B6",
       "note": "subject-defined (myth retellings)"
+    },
+    {
+      "term": "Mythological plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026447",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "subject-defined (myth retold), as pass 1 declined Mythological fiction"
     },
     {
       "term": "Mythological poetry",
@@ -1623,12 +2041,35 @@
       "note": "subject-defined (the natural world)"
     },
     {
+      "term": "Nautical drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026449",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "A named type of 18th- and 19th-century melodrama with the British sailor as hero, but no independent reference answered. Revisit when a source covers it; the parent Melodramas is now a cell."
+    },
+    {
+      "term": "Nō plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026450",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: Japanese classical dance-drama since the 14th century, with Zeami's written poetics; proposal B12 #5. Written and attested 2026-09-09.",
+      "cellId": "no-plays"
+    },
+    {
       "term": "Noir fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026452",
       "decision": "live",
       "batch": "B10",
       "note": "tradition: crime told from inside the wrongdoing, with a publishing history and its own narrative structure; proposal B10 #23. Written and attested 2026-09-09.",
       "cellId": "noir-fiction"
+    },
+    {
+      "term": "Noir plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026047",
+      "decision": "live",
+      "batch": "B12",
+      "note": "structure: the compromised protagonist and the closed escape on stage; the D36 twin of Noir fiction (B10); proposal B12 #41. Written and attested 2026-09-09.",
+      "cellId": "noir-plays"
     },
     {
       "term": "Nonfiction novels",
@@ -1693,12 +2134,35 @@
       "cellId": "novels-of-manners"
     },
     {
+      "term": "One-act plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026462",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: a single unbroken span, made serious by the little-theatre movement, kept alive by festivals; proposal B12 #30. Written and attested 2026-09-09.",
+      "cellId": "one-act-plays"
+    },
+    {
+      "term": "Pageants",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026464",
+      "decision": "deferred",
+      "batch": "B12",
+      "note": "Commemorative civic performance is a real tradition, but Wikipedia's Pageant is a disambiguation page and no article covers the dramatic form. Revisit when a source is found."
+    },
+    {
       "term": "Panchatantra stories",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026143",
       "decision": "live",
       "batch": "B10",
       "note": "tradition: the retelling line from the Sanskrit collection through Kalila wa-Dimna into Europe (borderline: named after one text); proposal B10 #13. Written and attested 2026-09-09.",
       "cellId": "panchatantra-stories"
+    },
+    {
+      "term": "Paranormal drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026044",
+      "decision": "live",
+      "batch": "B12",
+      "note": "premise: the supernatural real inside the play; the D36 twin of Paranormal fiction (B10); proposal B12 #40. Written and attested 2026-09-09.",
+      "cellId": "paranormal-drama"
     },
     {
       "term": "Paranormal fiction",
@@ -1725,6 +2189,22 @@
       "cellId": "parodies-literature"
     },
     {
+      "term": "Participatory drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026471",
+      "decision": "live",
+      "batch": "B12",
+      "note": "practice: the audience acts inside the play; Boal's forum theatre its most theorised form; proposal B12 #32. Written and attested 2026-09-09.",
+      "cellId": "participatory-drama"
+    },
+    {
+      "term": "Passion plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026472",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: the Passion staged communally at Lent and Easter, Oberammergau continuous since 1633; proposal B12 #19. Written and attested 2026-09-09.",
+      "cellId": "passion-plays"
+    },
+    {
       "term": "Passover fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026108",
       "decision": "declined",
@@ -1738,6 +2218,14 @@
       "batch": "B6",
       "note": "technique: imitation in tribute or patchwork of borrowed passages; proposal B6 #12. Written and attested 2026-09-08.",
       "cellId": "pastiches-literature"
+    },
+    {
+      "term": "Pastoral drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026473",
+      "decision": "live",
+      "batch": "B12",
+      "note": "mode: the pastoral with its own Italian Renaissance canon in Tasso and Guarini; the D36 twin of Pastoral fiction (B10); proposal B12 #42. Written and attested 2026-09-09.",
+      "cellId": "pastoral-drama"
     },
     {
       "term": "Pastoral fiction",
@@ -1756,12 +2244,36 @@
       "cellId": "philosophical-fiction"
     },
     {
+      "term": "Picaresque drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026031",
+      "decision": "live",
+      "batch": "B12",
+      "note": "structure: the episodic rogue on stage; the D36 twin of Picaresque fiction (B10); proposal B12 #43. Written and attested 2026-09-09.",
+      "cellId": "picaresque-drama"
+    },
+    {
       "term": "Picaresque fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026479",
       "decision": "live",
       "batch": "B10",
       "note": "tradition: the episodic rogue narrative from Lazarillo de Tormes onward, with a stated loose structure; proposal B10 #34. Written and attested 2026-09-09.",
       "cellId": "picaresque-fiction"
+    },
+    {
+      "term": "Ping shu",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026480",
+      "decision": "live",
+      "batch": "B12",
+      "note": "form: Chinese solo storytelling without accompaniment, the teller's commentary as its craft; proposal B12 #15. Written and attested 2026-09-09.",
+      "cellId": "ping-shu"
+    },
+    {
+      "term": "Plough Monday plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026057",
+      "decision": "live",
+      "batch": "B12",
+      "note": "tradition: the East Midlands ploughing-season variant of the folk play; proposal B12 #21. Written and attested 2026-09-09.",
+      "cellId": "plough-monday-plays"
     },
     {
       "term": "Poetry",
@@ -1776,6 +2288,13 @@
       "decision": "declined",
       "batch": "B10",
       "note": "subject-defined (the political milieu)"
+    },
+    {
+      "term": "Political plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026084",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "subject-defined (the political milieu), as B10 declined Political fiction"
     },
     {
       "term": "Pornographic fiction",
@@ -1793,11 +2312,26 @@
       "cellId": "portal-fantasy-fiction"
     },
     {
+      "term": "Prank telephone calls",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026059",
+      "decision": "declined",
+      "batch": "B12",
+      "note": "a recorded prank format with no written manner of its own; LCGFT files it as a cataloguing form for the recordings"
+    },
+    {
       "term": "Prison fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026032",
       "decision": "declined",
       "batch": "B10",
       "note": "setting-defined (prisons and prison life)"
+    },
+    {
+      "term": "Problem plays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026487",
+      "decision": "live",
+      "batch": "B12",
+      "note": "genre: a contested social question left open for the audience to argue; Ibsen and Shaw; proposal B12 #33. Written and attested 2026-09-09.",
+      "cellId": "problem-plays"
     },
     {
       "term": "Proletarian fiction",
