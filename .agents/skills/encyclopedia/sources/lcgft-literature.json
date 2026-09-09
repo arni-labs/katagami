@@ -9,174 +9,6 @@
   "lane": "writing",
   "terms": [
     {
-      "term": "Bestiaries",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026239",
-      "decision": "live",
-      "batch": "B6",
-      "note": "tradition: medieval moralised animal compendia, textual and illuminated; proposal B6 #5. Written and attested 2026-09-08.",
-      "cellId": "bestiaries"
-    },
-    {
-      "term": "Black humor",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026248",
-      "decision": "live",
-      "batch": "B6",
-      "note": "mode: comedy from death and the absurd, named by Breton in 1935 and anthologised; proposal B6 #10. Written and attested 2026-09-08.",
-      "cellId": "black-humor"
-    },
-    {
-      "term": "Cartonera books",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026045",
-      "decision": "live",
-      "batch": "B6",
-      "note": "movement: hand-painted cardboard-cover publishing begun in Buenos Aires in 2003; proposal B6 #33. Written and attested 2026-09-08.",
-      "cellId": "cartonera-books"
-    },
-    {
-      "term": "Computer-generated literature",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026018",
-      "decision": "live",
-      "batch": "B6",
-      "note": "technique: text produced by procedure, from Strachey 1952 to language models; proposal B6 #16. Written and attested 2026-09-08.",
-      "cellId": "computer-generated-literature"
-    },
-    {
-      "term": "Cut-ups (Literature)",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026274",
-      "decision": "live",
-      "batch": "B6",
-      "note": "technique: cutting and rearranging an existing text (Gysin, Burroughs); proposal B6 #13. Written and attested 2026-09-08.",
-      "cellId": "cut-ups-literature"
-    },
-    {
-      "term": "Dialogues (Literature)",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026285",
-      "decision": "live",
-      "batch": "B6",
-      "note": "form: the staged conversation as a literary form since Plato; proposal B6 #8. Written and attested 2026-09-08.",
-      "cellId": "dialogues-literature"
-    },
-    {
-      "term": "Drama",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026297",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "a form category of literature, like a medium"
-    },
-    {
-      "term": "Exempla",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026323",
-      "decision": "live",
-      "batch": "B6",
-      "note": "form: the medieval sermon anecdote, with its own handbooks and collections; proposal B6 #4. Written and attested 2026-09-08.",
-      "cellId": "exempla"
-    },
-    {
-      "term": "Fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026339",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "a form category of literature, like a medium; a cell needs a direction inside it"
-    },
-    {
-      "term": "Folk literature",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026342",
-      "decision": "live",
-      "batch": "B6",
-      "note": "tradition: oral composition and transmission, a family of made work with many hands (borderline: a mode of transmission; proposed as the parent of 2 and 3); proposal B6 #1. Written and attested 2026-09-08.",
-      "cellId": "folk-literature"
-    },
-    {
-      "term": "Gift books",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026072",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "a publishing format (the 19th-century illustrated annual); the object is a design artefact, the writing inside it has no manner of its own"
-    },
-    {
-      "term": "Invectives (Literature)",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2021026028",
-      "decision": "deferred",
-      "batch": "B6",
-      "note": "A rhetorical register with a classical body of work (Archilochus, Cicero, Procopius) but the open references are thin; needs a source that treats invective as a practice rather than a tone."
-    },
-    {
-      "term": "Juvenilia",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026031",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "works classed by the maker's age, no practice"
-    },
-    {
-      "term": "Memorates",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026433",
-      "decision": "live",
-      "batch": "B6",
-      "note": "form: first-person testimony of the uncanny, a named folklore genre since von Sydow (borderline: a folklorists' classification); proposal B6 #3. Written and attested 2026-09-08.",
-      "cellId": "memorates"
-    },
-    {
-      "term": "Musical texts",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026002",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "a cataloguing form (song words separated from their music)"
-    },
-    {
-      "term": "Parodies (Literature)",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026470",
-      "decision": "live",
-      "batch": "B6",
-      "note": "technique: mocking imitation of a manner, with its own anthologies; proposal B6 #11. Written and attested 2026-09-08.",
-      "cellId": "parodies-literature"
-    },
-    {
-      "term": "Pastiches (Literature)",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026049",
-      "decision": "live",
-      "batch": "B6",
-      "note": "technique: imitation in tribute or patchwork of borrowed passages; proposal B6 #12. Written and attested 2026-09-08.",
-      "cellId": "pastiches-literature"
-    },
-    {
-      "term": "Poetry",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026481",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "a form category of literature, like a medium"
-    },
-    {
-      "term": "Prologues and epilogues",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026101",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "a part of a work, a cataloguing form"
-    },
-    {
-      "term": "Romances",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026517",
-      "decision": "live",
-      "batch": "B6",
-      "note": "tradition: the medieval chivalric narrative, verse and prose, with a defined history (name: LCGFT variant \"Chivalric romances\" is clearer); proposal B6 #6. Written and attested 2026-09-08.",
-      "cellId": "romances"
-    },
-    {
-      "term": "Sagas",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026522",
-      "decision": "live",
-      "batch": "B6",
-      "note": "tradition: Icelandic and Scandinavian vernacular prose narrative with a recognisable manner; proposal B6 #7. Written and attested 2026-09-08.",
-      "cellId": "sagas"
-    },
-    {
-      "term": "Satirical literature",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026525",
-      "decision": "live",
-      "batch": "B6",
-      "note": "mode: ridicule aimed at reform, a continuous practice since Roman verse satire; proposal B6 #9. Written and attested 2026-09-08.",
-      "cellId": "satirical-literature"
-    },
-    {
       "term": "Action and adventure fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026217",
       "decision": "declined",
@@ -191,361 +23,12 @@
       "note": "A named direction, coined by Nnedi Okorafor in 2018 with a 2020 anthology and some scholarship, but the body of work by other hands is still thin; revisit when it has grown."
     },
     {
-      "term": "Alternative histories (Fiction)",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026220",
+      "term": "Afrofuturist fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026016",
       "decision": "live",
-      "batch": "B6",
-      "note": "device: the point of divergence, with its own body of work and awards (borderline: premise-defined); proposal B6 #29. Written and attested 2026-09-08.",
-      "cellId": "alternative-histories-fiction"
-    },
-    {
-      "term": "Animal fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026034",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (animal protagonists)"
-    },
-    {
-      "term": "Bible fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026240",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (Biblical characters and settings)"
-    },
-    {
-      "term": "Biographical fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026246",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (a real person's life)"
-    },
-    {
-      "term": "Bizarro fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026069",
-      "decision": "live",
-      "batch": "B6",
-      "note": "movement: small-press genre of deliberate weirdness, named 2005, with its own convention; proposal B6 #30. Written and attested 2026-09-08.",
-      "cellId": "bizarro-fiction"
-    },
-    {
-      "term": "Boys love (Fiction)",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026041",
-      "decision": "deferred",
-      "batch": "B6",
-      "note": "A Japanese publishing genre with a real history (tanbi, shonen-ai, yaoi, BL) and conventions, but defined by its romantic pairing; needs a source that treats it as a manner rather than a subject before it becomes a cell."
-    },
-    {
-      "term": "Campus fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026032",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "setting-defined (the university)"
-    },
-    {
-      "term": "Choose-your-own stories",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026259",
-      "decision": "live",
-      "batch": "B6",
-      "note": "form: branching printed fiction with numbered sections; proposal B6 #15. Written and attested 2026-09-08.",
-      "cellId": "choose-your-own-stories"
-    },
-    {
-      "term": "Christmas fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026011",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "occasion-defined"
-    },
-    {
-      "term": "Coming-of-age fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026243",
-      "decision": "live",
-      "batch": "B6",
-      "note": "form: the Bildungsroman, a novel structure with a documented history; proposal B6 #23. Written and attested 2026-09-08.",
-      "cellId": "coming-of-age-fiction"
-    },
-    {
-      "term": "Confessional fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026271",
-      "decision": "deferred",
-      "batch": "B6",
-      "note": "LC's own dictionary source calls the term flexible and misleading; overlaps Fictional autobiographies and Diary fiction, and no page states the difference. Revisit when a source draws the line."
-    },
-    {
-      "term": "Cryptologic fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026142",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (codes and ciphers)"
-    },
-    {
-      "term": "Detective and mystery fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026280",
-      "decision": "live",
-      "batch": "B6",
-      "note": "form: fiction structured around an investigation, continuous since the 1840s (a plot form, kept; the other broad genre roots are declined below); proposal B6 #24. Written and attested 2026-09-08.",
-      "cellId": "detective-and-mystery-fiction"
-    },
-    {
-      "term": "Dialect fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026283",
-      "decision": "live",
-      "batch": "B6",
-      "note": "technique: rendering regional or social speech on the page; proposal B6 #20. Written and attested 2026-09-08.",
-      "cellId": "dialect-fiction"
-    },
-    {
-      "term": "Diary fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026286",
-      "decision": "live",
-      "batch": "B6",
-      "note": "form: fiction made of dated diary entries; proposal B6 #18. Written and attested 2026-09-08.",
-      "cellId": "diary-fiction"
-    },
-    {
-      "term": "Didactic fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026288",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "a purpose label (meant to instruct)"
-    },
-    {
-      "term": "Domestic fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026295",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (home and family life)"
-    },
-    {
-      "term": "Easter fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026013",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "occasion-defined"
-    },
-    {
-      "term": "Epic fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026309",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "a scale label (broad, grandiose)"
-    },
-    {
-      "term": "Epistolary fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026314",
-      "decision": "live",
-      "batch": "B6",
-      "note": "form: fiction made of letters and other documents; proposal B6 #17. Written and attested 2026-09-08.",
-      "cellId": "epistolary-fiction"
-    },
-    {
-      "term": "Erotic fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026320",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (sexual love)"
-    },
-    {
-      "term": "Ethnographic fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026073",
-      "decision": "deferred",
-      "batch": "B6",
-      "note": "A practice inside anthropology (fiction written as ethnographic method) with a small, contested body of work; the nearest open reference, Wikipedia's Ethnofiction, describes a different thing."
-    },
-    {
-      "term": "Experimental fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026325",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "an umbrella defined relative to its era (unconventional at the time), no single practice"
-    },
-    {
-      "term": "Fan fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026330",
-      "decision": "live",
-      "batch": "B6",
-      "note": "practice: fans writing inside existing fictional worlds, with communities and conventions; proposal B6 #31. Written and attested 2026-09-08.",
-      "cellId": "fan-fiction"
-    },
-    {
-      "term": "Fantasy fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026333",
-      "decision": "live",
-      "batch": "B6",
-      "note": "tradition: the fantasy genre, from myth and Alice to The Hobbit, a continuous body of work with conventions (broad genre root, same standing as Detective and mystery fiction); proposal B6 #25. Written and attested 2026-09-08.",
-      "cellId": "fantasy-fiction"
-    },
-    {
-      "term": "Fictional autobiographies",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026340",
-      "decision": "live",
-      "batch": "B6",
-      "note": "form: the pretended autobiography, including autofiction; proposal B6 #22. Written and attested 2026-09-08.",
-      "cellId": "fictional-autobiographies"
-    },
-    {
-      "term": "Fishing fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026025",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined"
-    },
-    {
-      "term": "Folk tales",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026344",
-      "decision": "live",
-      "batch": "B6",
-      "note": "tradition: oral narrative with catalogued tale types and printed collections; manifestation found (Grimm); proposal B6 #2. Written and attested 2026-09-08.",
-      "cellId": "folk-tales"
-    },
-    {
-      "term": "Frame stories",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026347",
-      "decision": "live",
-      "batch": "B6",
-      "note": "technique: a narrative that encloses other narratives; proposal B6 #19. Written and attested 2026-09-08.",
-      "cellId": "frame-stories"
-    },
-    {
-      "term": "Gangster fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026070",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (organised crime)"
-    },
-    {
-      "term": "Gothic fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026360",
-      "decision": "merge",
-      "batch": "B6",
-      "note": "Same direction as the live cell gothic-atmospheric-prose, which pass 0 is renaming to the LCGFT heading Gothic fiction (new id gothic-fiction); add this LCGFT page and https://en.wikipedia.org/wiki/Gothic_fiction to its sources.",
-      "cellId": "gothic-fiction"
-    },
-    {
-      "term": "Historical fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026370",
-      "decision": "live",
-      "batch": "B6",
-      "note": "tradition: the historical novel since Scott (broad genre root, same standing as Detective and mystery fiction); proposal B6 #27. Written and attested 2026-09-08.",
-      "cellId": "historical-fiction"
-    },
-    {
-      "term": "Horror fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026373",
-      "decision": "live",
-      "batch": "B6",
-      "note": "tradition: fiction written to frighten, from folklore and Frankenstein to the present (broad genre root, same standing as Gothic fiction); proposal B6 #26. Written and attested 2026-09-08.",
-      "cellId": "horror-fiction"
-    },
-    {
-      "term": "Humorous fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026377",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "a tone umbrella; the practices inside it (satire, parody, black humor, nonsense, tall tales) are the cells"
-    },
-    {
-      "term": "Hunting fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026141",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined"
-    },
-    {
-      "term": "Hypertext fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026381",
-      "decision": "live",
-      "batch": "B6",
-      "note": "form: linked-node fiction read by traversal, a genre of electronic literature; proposal B6 #14. Written and attested 2026-09-08.",
-      "cellId": "hypertext-fiction"
-    },
-    {
-      "term": "Legal fiction (Literature)",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026406",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (the practice of law)"
-    },
-    {
-      "term": "Light novels",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026099",
-      "decision": "live",
-      "batch": "B6",
-      "note": "form: Japanese illustrated YA novels in bunkobon format with a recognisable prose manner (borderline: format-defined); proposal B6 #32. Written and attested 2026-09-08.",
-      "cellId": "light-novels"
-    },
-    {
-      "term": "Magic realist fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026424",
-      "decision": "live",
-      "batch": "B6",
-      "note": "manner: the fantastic presented matter-of-factly inside realism; proposal B6 #28. Written and attested 2026-09-08.",
-      "cellId": "magic-realist-fiction"
-    },
-    {
-      "term": "Martial arts fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026101",
-      "decision": "deferred",
-      "batch": "B6",
-      "note": "The LCGFT term is subject-wide (ninja picture books and wuxia alike). The wuxia tradition inside it has a movement history and conventions and may deserve a cell under its own name when a source vocabulary names it."
-    },
-    {
-      "term": "Mathematical fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026090",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined"
-    },
-    {
-      "term": "Medical fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026430",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined"
-    },
-    {
-      "term": "Military fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026026",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (military life)"
-    },
-    {
-      "term": "Monster fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026127",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (monsters); vampire and zombie fiction sit under it"
-    },
-    {
-      "term": "Mythological fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026098",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (myth retellings)"
-    },
-    {
-      "term": "Nature fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026095",
-      "decision": "declined",
-      "batch": "B6",
-      "note": "subject-defined (the natural world)"
-    },
-    {
-      "term": "Nonfiction novels",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026454",
-      "decision": "live",
-      "batch": "B6",
-      "note": "technique: novelistic treatment of real events (Hersey, Capote, New Journalism); proposal B6 #21. Written and attested 2026-09-08.",
-      "cellId": "nonfiction-novels"
-    },
-    {
-      "term": "Nonsense fiction",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026002",
-      "decision": "merge",
-      "batch": "B6",
-      "note": "Same direction as the live cell victorian-literary-nonsense, which pass 0 is revising to Literary nonsense (new id literary-nonsense): one cell for verse and prose together, citing LCGFT Nonsense fiction, LCGFT Nonsense verse and https://en.wikipedia.org/wiki/Literary_nonsense. LCGFT splits the direction by form and has no umbrella heading, so the Wikipedia name is the nearest source name. Kept as one cell under D36's test: the sources treat Lear's verse and Carroll's prose as one tradition, so there is nothing true of one form and not the other.",
-      "cellId": "literary-nonsense"
+      "batch": "B10",
+      "note": "movement: named by Mark Dery in 1993, with a critical literature and many hands; proposal B10 #15. Written and attested 2026-09-09.",
+      "cellId": "afrofuturist-fiction"
     },
     {
       "term": "Alcaics",
@@ -556,12 +39,27 @@
       "cellId": "alcaics"
     },
     {
+      "term": "Alternative histories (Fiction)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026220",
+      "decision": "live",
+      "batch": "B6",
+      "note": "device: the point of divergence, with its own body of work and awards (borderline: premise-defined); proposal B6 #29. Written and attested 2026-09-08.",
+      "cellId": "alternative-histories-fiction"
+    },
+    {
       "term": "Anacreontic poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026221",
       "decision": "live",
       "batch": "B8",
       "note": "tradition: verse in the manner of Anacreon, from the Anacreontea to the European revival after 1550; proposal B8 #6. Written and attested 2026-09-09.",
       "cellId": "anacreontic-poetry"
+    },
+    {
+      "term": "Animal fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026034",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (animal protagonists)"
     },
     {
       "term": "Animal poetry",
@@ -571,11 +69,49 @@
       "note": "subject-defined (animals)"
     },
     {
+      "term": "Antinovels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026223",
+      "decision": "live",
+      "batch": "B10",
+      "note": "practice: fiction that refuses the settled conventions of the novel, named by Sartre in 1948, with the nouveau roman as its cluster; proposal B10 #16. Written and attested 2026-09-09.",
+      "cellId": "antinovels"
+    },
+    {
+      "term": "Apocalyptic fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026226",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: collapse as premise, worked out for its social consequences (its second LCGFT parent Survival fiction is deferred); proposal B10 #17. Written and attested 2026-09-09.",
+      "cellId": "apocalyptic-fiction"
+    },
+    {
+      "term": "Aromantic fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026071",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "subject-defined (aromantic characters and themes), as pass 2 declined Aromantic poetry"
+    },
+    {
       "term": "Aromantic poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026005",
       "decision": "declined",
       "batch": "B8",
       "note": "subject-defined (aromantic characters and themes)"
+    },
+    {
+      "term": "Asexual fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026001",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "subject-defined (asexual characters and themes)"
+    },
+    {
+      "term": "Autobiographical fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026231",
+      "decision": "live",
+      "batch": "B10",
+      "note": "technique: life material and invention mixed with no line drawn for the reader (its LCGFT parent Biographical fiction was declined as subject-defined); proposal B10 #32. Written and attested 2026-09-09.",
+      "cellId": "autobiographical-fiction"
     },
     {
       "term": "Ballades (Poetry)",
@@ -593,11 +129,33 @@
       "note": "a quality judgement (verse that fails into bathos); the anthologies of bad verse collect failures for amusement and describe no practice"
     },
     {
+      "term": "Bawdy fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026152",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a tone and subject label (lewd comedy), as pass 2 declined Bawdy poetry"
+    },
+    {
       "term": "Bawdy poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026238",
       "decision": "declined",
       "batch": "B8",
       "note": "a tone and subject label (lewd verse)"
+    },
+    {
+      "term": "Bestiaries",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026239",
+      "decision": "live",
+      "batch": "B6",
+      "note": "tradition: medieval moralised animal compendia, textual and illuminated; proposal B6 #5. Written and attested 2026-09-08.",
+      "cellId": "bestiaries"
+    },
+    {
+      "term": "Bible fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026240",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (Biblical characters and settings)"
     },
     {
       "term": "Biker poetry",
@@ -607,11 +165,41 @@
       "note": "subject- and audience-defined (motorcycling life)"
     },
     {
+      "term": "Biographical fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026246",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (a real person's life)"
+    },
+    {
       "term": "Biographical poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026247",
       "decision": "declined",
       "batch": "B8",
       "note": "subject-defined (a real person's life); Autobiographical poetry and Verse hagiographies sit under it and are decided on their own"
+    },
+    {
+      "term": "Bisexual fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026053",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "subject-defined (bisexual characters and themes)"
+    },
+    {
+      "term": "Bizarro fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026069",
+      "decision": "live",
+      "batch": "B6",
+      "note": "movement: small-press genre of deliberate weirdness, named 2005, with its own convention; proposal B6 #30. Written and attested 2026-09-08.",
+      "cellId": "bizarro-fiction"
+    },
+    {
+      "term": "Black humor",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026248",
+      "decision": "live",
+      "batch": "B6",
+      "note": "mode: comedy from death and the absurd, named by Breton in 1935 and anthologised; proposal B6 #10. Written and attested 2026-09-08.",
+      "cellId": "black-humor"
     },
     {
       "term": "Blank verse",
@@ -630,6 +218,14 @@
       "cellId": "blues-poetry"
     },
     {
+      "term": "Body horror fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2021026047",
+      "decision": "live",
+      "batch": "B10",
+      "note": "mode: horror sourced in the body itself, with a critical literature (borderline against the subject-defined rule); proposal B10 #24. Written and attested 2026-09-09.",
+      "cellId": "body-horror-fiction"
+    },
+    {
       "term": "Bop (Poetry)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026253",
       "decision": "live",
@@ -638,12 +234,71 @@
       "cellId": "bop-poetry"
     },
     {
+      "term": "Boys love (Fiction)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026041",
+      "decision": "deferred",
+      "batch": "B6",
+      "note": "A Japanese publishing genre with a real history (tanbi, shonen-ai, yaoi, BL) and conventions, but defined by its romantic pairing; needs a source that treats it as a manner rather than a subject before it becomes a cell."
+    },
+    {
+      "term": "Campus fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026032",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "setting-defined (the university)"
+    },
+    {
+      "term": "Cartonera books",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026045",
+      "decision": "live",
+      "batch": "B6",
+      "note": "movement: hand-painted cardboard-cover publishing begun in Buenos Aires in 2003; proposal B6 #33. Written and attested 2026-09-08.",
+      "cellId": "cartonera-books"
+    },
+    {
+      "term": "Cell phone novels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026256",
+      "decision": "live",
+      "batch": "B10",
+      "note": "practice: composition and delivery on a phone, which sets the technique; proposal B10 #25. Written and attested 2026-09-09.",
+      "cellId": "cell-phone-novels"
+    },
+    {
       "term": "Centos",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026257",
       "decision": "live",
       "batch": "B8",
       "note": "technique: poems assembled from other poets' lines; nests under Pastiches (Literature); proposal B8 #21. Written and attested 2026-09-09.",
       "cellId": "centos"
+    },
+    {
+      "term": "Choose-your-own stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026259",
+      "decision": "live",
+      "batch": "B6",
+      "note": "form: branching printed fiction with numbered sections; proposal B6 #15. Written and attested 2026-09-08.",
+      "cellId": "choose-your-own-stories"
+    },
+    {
+      "term": "Choral novels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026031",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "LCGFT gives no scope note and no independent reference was found. The collective or first-person-plural narration it appears to name is a real technique; revisit when a source describes it."
+    },
+    {
+      "term": "Christian fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026050",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a purpose label (promotes Christian teachings), as pass 1 declined Didactic fiction"
+    },
+    {
+      "term": "Christmas fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026011",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "occasion-defined"
     },
     {
       "term": "Christmas poetry",
@@ -659,6 +314,92 @@
       "batch": "B8",
       "note": "form: the five-line poem, fixed by Adelaide Crapsey's syllabic cinquain; proposal B8 #8. Written and attested 2026-09-09.",
       "cellId": "cinquains"
+    },
+    {
+      "term": "City mysteries",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026087",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: the nineteenth-century urban descent novel after Les Mystères de Paris, with a wave of imitations; proposal B10 #21. Written and attested 2026-09-09.",
+      "cellId": "city-mysteries"
+    },
+    {
+      "term": "Climate fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2021026022",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: cli-fi, coined about 2007, with a critical literature and a fast-growing body; proposal B10 #20. Written and attested 2026-09-09.",
+      "cellId": "climate-fiction"
+    },
+    {
+      "term": "Coming-of-age fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026243",
+      "decision": "live",
+      "batch": "B6",
+      "note": "form: the Bildungsroman, a novel structure with a documented history; proposal B6 #23. Written and attested 2026-09-08.",
+      "cellId": "coming-of-age-fiction"
+    },
+    {
+      "term": "Computer-generated literature",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026018",
+      "decision": "live",
+      "batch": "B6",
+      "note": "technique: text produced by procedure, from Strachey 1952 to language models; proposal B6 #16. Written and attested 2026-09-08.",
+      "cellId": "computer-generated-literature"
+    },
+    {
+      "term": "Confessional fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026271",
+      "decision": "deferred",
+      "batch": "B6",
+      "note": "LC's own dictionary source calls the term flexible and misleading; overlaps Fictional autobiographies and Diary fiction, and no page states the difference. Revisit when a source draws the line."
+    },
+    {
+      "term": "Cozy mysteries",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026071",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: conventions explicit enough to be published as submission rules, with a large body of work; proposal B10 #22. Written and attested 2026-09-09.",
+      "cellId": "cozy-mysteries"
+    },
+    {
+      "term": "Cronicas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026010",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: the newspaper column between reporting and invention, with a Latin American canon (its second LCGFT parent Creative nonfiction is not yet decided); proposal B10 #26. Written and attested 2026-09-09.",
+      "cellId": "cronicas"
+    },
+    {
+      "term": "Cryptologic fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026142",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (codes and ciphers)"
+    },
+    {
+      "term": "Cumulative tales",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026213",
+      "decision": "live",
+      "batch": "B10",
+      "note": "technique: narrative built by repetition and accumulation; proposal B10 #11. Written and attested 2026-09-09.",
+      "cellId": "cumulative-tales"
+    },
+    {
+      "term": "Cut-ups (Literature)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026274",
+      "decision": "live",
+      "batch": "B6",
+      "note": "technique: cutting and rearranging an existing text (Gysin, Burroughs); proposal B6 #13. Written and attested 2026-09-08.",
+      "cellId": "cut-ups-literature"
+    },
+    {
+      "term": "Cyberpunk fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026275",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: named 1983, fixed by Neuromancer and the Mirrorshades anthology, with a shared surface and politics; proposal B10 #19. Written and attested 2026-09-09.",
+      "cellId": "cyberpunk-fiction"
     },
     {
       "term": "Debate poetry",
@@ -685,12 +426,51 @@
       "cellId": "descorts"
     },
     {
+      "term": "Detective and mystery fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026280",
+      "decision": "live",
+      "batch": "B6",
+      "note": "form: fiction structured around an investigation, continuous since the 1840s (a plot form, kept; the other broad genre roots are declined below); proposal B6 #24. Written and attested 2026-09-08.",
+      "cellId": "detective-and-mystery-fiction"
+    },
+    {
+      "term": "Dialect fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026283",
+      "decision": "live",
+      "batch": "B6",
+      "note": "technique: rendering regional or social speech on the page; proposal B6 #20. Written and attested 2026-09-08.",
+      "cellId": "dialect-fiction"
+    },
+    {
       "term": "Dialect poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026284",
       "decision": "live",
       "batch": "B8",
       "note": "technique: verse in regional or class speech, from Burns to Dunbar; stands apart from Dialect fiction, question raised; proposal B8 #18. Written and attested 2026-09-09.",
       "cellId": "dialect-poetry"
+    },
+    {
+      "term": "Dialogues (Literature)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026285",
+      "decision": "live",
+      "batch": "B6",
+      "note": "form: the staged conversation as a literary form since Plato; proposal B6 #8. Written and attested 2026-09-08.",
+      "cellId": "dialogues-literature"
+    },
+    {
+      "term": "Diary fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026286",
+      "decision": "live",
+      "batch": "B6",
+      "note": "form: fiction made of dated diary entries; proposal B6 #18. Written and attested 2026-09-08.",
+      "cellId": "diary-fiction"
+    },
+    {
+      "term": "Didactic fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026288",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "a purpose label (meant to instruct)"
     },
     {
       "term": "Didactic poetry",
@@ -715,6 +495,13 @@
       "note": "a quality judgement (badly made or deliberately rough verse); the deliberate rough forms inside it, Skeltonic verse for one, have LCGFT headings of their own"
     },
     {
+      "term": "Domestic fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026295",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (home and family life)"
+    },
+    {
       "term": "Domestic poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026084",
       "decision": "declined",
@@ -730,6 +517,28 @@
       "cellId": "double-dactyls"
     },
     {
+      "term": "Drama",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026297",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "a form category of literature, like a medium"
+    },
+    {
+      "term": "Dystopian fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026302",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: a society organised badly on purpose, built by extrapolation; proposal B10 #18. Written and attested 2026-09-09.",
+      "cellId": "dystopian-fiction"
+    },
+    {
+      "term": "Easter fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026013",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "occasion-defined"
+    },
+    {
       "term": "Easter poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2020026052",
       "decision": "declined",
@@ -743,6 +552,14 @@
       "batch": "B8",
       "note": "technique: the echo rhyme that answers a line, a Renaissance and pastoral device; proposal B8 #10. Written and attested 2026-09-09.",
       "cellId": "echo-verse"
+    },
+    {
+      "term": "Ecofiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026067",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: a named branch with criticism treating it as one, unlike its declined LCGFT parent Nature fiction; proposal B10 #7. Written and attested 2026-09-09.",
+      "cellId": "ecofiction"
     },
     {
       "term": "Ekphrastic poetry",
@@ -761,12 +578,34 @@
       "cellId": "englyns"
     },
     {
+      "term": "Epic fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026309",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "a scale label (broad, grandiose)"
+    },
+    {
+      "term": "Epistolary fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026314",
+      "decision": "live",
+      "batch": "B6",
+      "note": "form: fiction made of letters and other documents; proposal B6 #17. Written and attested 2026-09-08.",
+      "cellId": "epistolary-fiction"
+    },
+    {
       "term": "Epistolary poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026315",
       "decision": "live",
       "batch": "B8",
       "note": "form: the verse epistle of Horace, Ovid and Pope; stands apart from Epistolary fiction, question raised; proposal B8 #17. Written and attested 2026-09-09.",
       "cellId": "epistolary-poetry"
+    },
+    {
+      "term": "Erotic fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026320",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (sexual love)"
     },
     {
       "term": "Erotic poetry",
@@ -776,6 +615,28 @@
       "note": "subject-defined (sexual love)"
     },
     {
+      "term": "Ethnographic fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026073",
+      "decision": "deferred",
+      "batch": "B6",
+      "note": "A practice inside anthropology (fiction written as ethnographic method) with a small, contested body of work; the nearest open reference, Wikipedia's Ethnofiction, describes a different thing."
+    },
+    {
+      "term": "Exempla",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026323",
+      "decision": "live",
+      "batch": "B6",
+      "note": "form: the medieval sermon anecdote, with its own handbooks and collections; proposal B6 #4. Written and attested 2026-09-08.",
+      "cellId": "exempla"
+    },
+    {
+      "term": "Experimental fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026325",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "an umbrella defined relative to its era (unconventional at the time), no single practice"
+    },
+    {
       "term": "Experimental poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026326",
       "decision": "declined",
@@ -783,11 +644,81 @@
       "note": "an umbrella defined relative to its era, as pass 1 declined Experimental fiction; its LCGFT children Concrete poetry and Computer poetry are the cells (Computer poetry under the live Computer-generated literature)"
     },
     {
+      "term": "Fables",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026327",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: the animal fable with a stated moral, with canons in Greek, Sanskrit and French; proposal B10 #9. Written and attested 2026-09-09.",
+      "cellId": "fables"
+    },
+    {
+      "term": "Fairy tales",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026329",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: collected and rewritten magic tales with a structure folklorists index; proposal B10 #10. Written and attested 2026-09-09.",
+      "cellId": "fairy-tales"
+    },
+    {
+      "term": "Fan fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026330",
+      "decision": "live",
+      "batch": "B6",
+      "note": "practice: fans writing inside existing fictional worlds, with communities and conventions; proposal B6 #31. Written and attested 2026-09-08.",
+      "cellId": "fan-fiction"
+    },
+    {
+      "term": "Fantasy fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026333",
+      "decision": "live",
+      "batch": "B6",
+      "note": "tradition: the fantasy genre, from myth and Alice to The Hobbit, a continuous body of work with conventions (broad genre root, same standing as Detective and mystery fiction); proposal B6 #25. Written and attested 2026-09-08.",
+      "cellId": "fantasy-fiction"
+    },
+    {
       "term": "Fantasy poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026334",
       "decision": "deferred",
       "batch": "B8",
       "note": "Deferred, not declined: D36 gives a tradition that lives in prose and in verse a cell per form under a shared parent, so this returns once the parent over the fiction cell exists."
+    },
+    {
+      "term": "Fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026339",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "a form category of literature, like a medium; a cell needs a direction inside it"
+    },
+    {
+      "term": "Fictional autobiographies",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026340",
+      "decision": "live",
+      "batch": "B6",
+      "note": "form: the pretended autobiography, including autofiction; proposal B6 #22. Written and attested 2026-09-08.",
+      "cellId": "fictional-autobiographies"
+    },
+    {
+      "term": "Fishing fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026025",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined"
+    },
+    {
+      "term": "Flash fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026543",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: very short fiction with anthologies, competitions and a stated technique of omission (flagged: pass 2 deferred Micropoetry as a length label); proposal B10 #27. Written and attested 2026-09-09.",
+      "cellId": "flash-fiction"
+    },
+    {
+      "term": "Folk literature",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026342",
+      "decision": "live",
+      "batch": "B6",
+      "note": "tradition: oral composition and transmission, a family of made work with many hands (borderline: a mode of transmission; proposed as the parent of 2 and 3); proposal B6 #1. Written and attested 2026-09-08.",
+      "cellId": "folk-literature"
     },
     {
       "term": "Folk poetry",
@@ -798,12 +729,35 @@
       "cellId": "folk-poetry"
     },
     {
+      "term": "Folk tales",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026344",
+      "decision": "live",
+      "batch": "B6",
+      "note": "tradition: oral narrative with catalogued tale types and printed collections; manifestation found (Grimm); proposal B6 #2. Written and attested 2026-09-08.",
+      "cellId": "folk-tales"
+    },
+    {
+      "term": "Forensic fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026103",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "subject-defined (forensic science), as pass 1 declined Medical fiction"
+    },
+    {
       "term": "Found poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026346",
       "decision": "live",
       "batch": "B8",
       "note": "technique: reframing existing text as poetry; LCGFT parent of Erasure poetry; proposal B8 #22. Written and attested 2026-09-09.",
       "cellId": "found-poetry"
+    },
+    {
+      "term": "Frame stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026347",
+      "decision": "live",
+      "batch": "B6",
+      "note": "technique: a narrative that encloses other narratives; proposal B6 #19. Written and attested 2026-09-08.",
+      "cellId": "frame-stories"
     },
     {
       "term": "Free verse",
@@ -822,12 +776,48 @@
       "cellId": "fu"
     },
     {
+      "term": "Gangster fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026070",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (organised crime)"
+    },
+    {
+      "term": "Gay fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026122",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "subject-defined (gay characters and themes)"
+    },
+    {
+      "term": "Genderqueer fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026073",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "subject-defined (genderqueer characters and themes)"
+    },
+    {
       "term": "Ghazals (Poetry)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026355",
       "decision": "live",
       "batch": "B8",
       "note": "form: the couplet-and-refrain lyric of Arabic, Persian and Urdu poetry; proposal B8 #40. Written and attested 2026-09-09.",
       "cellId": "ghazals-poetry"
+    },
+    {
+      "term": "Ghost stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026357",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: the return of the dead, with an English canon and a stated rule of restraint; proposal B10 #14. Written and attested 2026-09-09.",
+      "cellId": "ghost-stories"
+    },
+    {
+      "term": "Gift books",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026072",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "a publishing format (the 19th-century illustrated annual); the object is a design artefact, the writing inside it has no manner of its own"
     },
     {
       "term": "Glosas",
@@ -844,6 +834,14 @@
       "batch": "B8",
       "note": "form: the versified maxim of the Greek gnomic poets and the Old English Maxims; flagged; proposal B8 #25. Written and attested 2026-09-09.",
       "cellId": "gnomic-poetry"
+    },
+    {
+      "term": "Gothic fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026360",
+      "decision": "merge",
+      "batch": "B6",
+      "note": "Same direction as the live cell gothic-atmospheric-prose, which pass 0 is renaming to the LCGFT heading Gothic fiction (new id gothic-fiction); add this LCGFT page and https://en.wikipedia.org/wiki/Gothic_fiction to its sources.",
+      "cellId": "gothic-fiction"
     },
     {
       "term": "Gothic poetry",
@@ -869,11 +867,34 @@
       "cellId": "haiku"
     },
     {
+      "term": "Hanukkah fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026012",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "occasion-defined, as pass 1 declined Christmas fiction"
+    },
+    {
+      "term": "Historical fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026370",
+      "decision": "live",
+      "batch": "B6",
+      "note": "tradition: the historical novel since Scott (broad genre root, same standing as Detective and mystery fiction); proposal B6 #27. Written and attested 2026-09-08.",
+      "cellId": "historical-fiction"
+    },
+    {
       "term": "Historical poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026371",
       "decision": "declined",
       "batch": "B8",
       "note": "setting-defined (a past period)"
+    },
+    {
+      "term": "Horror fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026373",
+      "decision": "live",
+      "batch": "B6",
+      "note": "tradition: fiction written to frighten, from folklore and Frankenstein to the present (broad genre root, same standing as Gothic fiction); proposal B6 #26. Written and attested 2026-09-08.",
+      "cellId": "horror-fiction"
     },
     {
       "term": "Horror poetry",
@@ -883,11 +904,25 @@
       "note": "Deferred, not declined: D36 gives a tradition that lives in prose and in verse a cell per form under a shared parent, so this returns once the parent over the fiction cell exists."
     },
     {
+      "term": "Humorous fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026377",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "a tone umbrella; the practices inside it (satire, parody, black humor, nonsense, tall tales) are the cells"
+    },
+    {
       "term": "Humorous poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026379",
       "decision": "declined",
       "batch": "B8",
       "note": "a tone umbrella, as pass 1 declined Humorous fiction; the forms LCGFT files under it (Limericks, Clerihews, Senryu, Nonsense verse, Verse satire) are decided on their own, Nonsense verse already in the live Literary nonsense"
+    },
+    {
+      "term": "Hunting fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026141",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined"
     },
     {
       "term": "Hyangga",
@@ -896,6 +931,14 @@
       "batch": "B8",
       "note": "form: the earliest Korean-language poems, written in hyangchal; proposal B8 #35. Written and attested 2026-09-09.",
       "cellId": "hyangga"
+    },
+    {
+      "term": "Hypertext fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026381",
+      "decision": "live",
+      "batch": "B6",
+      "note": "form: linked-node fiction read by traversal, a genre of electronic literature; proposal B6 #14. Written and attested 2026-09-08.",
+      "cellId": "hypertext-fiction"
     },
     {
       "term": "Hypertext poetry",
@@ -922,12 +965,34 @@
       "cellId": "imagism"
     },
     {
+      "term": "Intersex fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026002",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "subject-defined (intersex characters and themes)"
+    },
+    {
+      "term": "Invectives (Literature)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2021026028",
+      "decision": "deferred",
+      "batch": "B6",
+      "note": "A rhetorical register with a classical body of work (Archilochus, Cicero, Procopius) but the open references are thin; needs a source that treats invective as a practice rather than a tone."
+    },
+    {
       "term": "Irohauta",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026387",
       "decision": "live",
       "batch": "B8",
       "note": "form: the Japanese pangram poem (Iroha, Ametsuchi no Uta); flagged for its small body; proposal B8 #30. Written and attested 2026-09-09.",
       "cellId": "irohauta"
+    },
+    {
+      "term": "Jack tales",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026388",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: a named tale cycle with collectors and tellers (the independent reference covers it under the hero's name); proposal B10 #12. Written and attested 2026-09-09.",
+      "cellId": "jack-tales"
     },
     {
       "term": "Jazz poetry",
@@ -946,12 +1011,27 @@
       "cellId": "jue-ju"
     },
     {
+      "term": "Juvenilia",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026031",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "works classed by the maker's age, no practice"
+    },
+    {
       "term": "Kafas",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026394",
       "decision": "live",
       "batch": "B8",
       "note": "form: the medieval Armenian monorhymed quatrain poem; independent reference is an open-access Armeniaca article; proposal B8 #37. Written and attested 2026-09-09.",
       "cellId": "kafas"
+    },
+    {
+      "term": "Kāfī (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026395",
+      "decision": "live",
+      "batch": "B8",
+      "note": "tradition: the sung Sufi kafi of Punjab and Sindh; proposal B8 #44. Written and attested 2026-09-09.",
+      "cellId": "kafi-poetry"
     },
     {
       "term": "Kasa",
@@ -968,14 +1048,6 @@
       "batch": "B8",
       "note": "form: the Philippine metrical romance in octosyllabic quatrains; proposal B8 #38. Written and attested 2026-09-09.",
       "cellId": "koridos"
-    },
-    {
-      "term": "Kāfī (Poetry)",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026395",
-      "decision": "live",
-      "batch": "B8",
-      "note": "tradition: the sung Sufi kafi of Punjab and Sindh; proposal B8 #44. Written and attested 2026-09-09.",
-      "cellId": "kafi-poetry"
     },
     {
       "term": "Laments",
@@ -1001,12 +1073,42 @@
       "note": "a purpose label (praise); the classical genres it lists as variants (encomia, epinicia, panegyrics) have no LCGFT heading of their own"
     },
     {
+      "term": "Legal fiction (Literature)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026406",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (the practice of law)"
+    },
+    {
+      "term": "Lesbian fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026001",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "subject-defined (lesbian characters and themes)"
+    },
+    {
+      "term": "Light novels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026099",
+      "decision": "live",
+      "batch": "B6",
+      "note": "form: Japanese illustrated YA novels in bunkobon format with a recognisable prose manner (borderline: format-defined); proposal B6 #32. Written and attested 2026-09-08.",
+      "cellId": "light-novels"
+    },
+    {
       "term": "Lilit",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2020026039",
       "decision": "live",
       "batch": "B8",
       "note": "form: the Thai alternation of rai and khlong; proposal B8 #39. Written and attested 2026-09-09.",
       "cellId": "lilit"
+    },
+    {
+      "term": "Linked stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026126",
+      "decision": "live",
+      "batch": "B10",
+      "note": "technique: the short-story cycle, self-contained stories arranged to make a whole; proposal B10 #28. Written and attested 2026-09-09.",
+      "cellId": "linked-stories"
     },
     {
       "term": "Linked verse",
@@ -1025,19 +1127,19 @@
       "cellId": "liras"
     },
     {
+      "term": "LitRPG (Fiction)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026123",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: game mechanics as a formal device on the page, term introduced 2013; proposal B10 #29. Written and attested 2026-09-09.",
+      "cellId": "litrpg-fiction"
+    },
+    {
       "term": "Love poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026419",
       "decision": "declined",
       "batch": "B8",
       "note": "subject-defined; LCGFT's own source distinguishes it from erotic poetry by subject alone"
-    },
-    {
-      "term": "Lyric poetry",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026422",
-      "decision": "live",
-      "batch": "B8",
-      "note": "mode: LCGFT's parent for Sonnets, Odes, Elegies and eight more forms; proposed as a nesting parent, flagged as a category; proposal B8 #4. Written and attested 2026-09-09.",
-      "cellId": "lyric-poetry"
     },
     {
       "term": "Lü shi",
@@ -1048,12 +1150,35 @@
       "cellId": "lu-shi"
     },
     {
+      "term": "Lyric poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026422",
+      "decision": "live",
+      "batch": "B8",
+      "note": "mode: LCGFT's parent for Sonnets, Odes, Elegies and eight more forms; proposed as a nesting parent, flagged as a category; proposal B8 #4. Written and attested 2026-09-09.",
+      "cellId": "lyric-poetry"
+    },
+    {
       "term": "Macaronic verse",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026423",
       "decision": "live",
       "batch": "B8",
       "note": "technique: verse that mixes languages, from the Carmina Burana and Odasi's Macaronea onward; proposal B8 #19. Written and attested 2026-09-09.",
       "cellId": "macaronic-verse"
+    },
+    {
+      "term": "Magic realist fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026424",
+      "decision": "live",
+      "batch": "B6",
+      "note": "manner: the fantastic presented matter-of-factly inside realism; proposal B6 #28. Written and attested 2026-09-08.",
+      "cellId": "magic-realist-fiction"
+    },
+    {
+      "term": "Martial arts fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026101",
+      "decision": "deferred",
+      "batch": "B6",
+      "note": "The LCGFT term is subject-wide (ninja picture books and wuxia alike). The wuxia tradition inside it has a movement history and conventions and may deserve a cell under its own name when a source vocabulary names it."
     },
     {
       "term": "Masnavis",
@@ -1064,11 +1189,40 @@
       "cellId": "masnavis"
     },
     {
+      "term": "Mathematical fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026090",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined"
+    },
+    {
+      "term": "Medical fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026430",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined"
+    },
+    {
+      "term": "Memorates",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026433",
+      "decision": "live",
+      "batch": "B6",
+      "note": "form: first-person testimony of the uncanny, a named folklore genre since von Sydow (borderline: a folklorists' classification); proposal B6 #3. Written and attested 2026-09-08.",
+      "cellId": "memorates"
+    },
+    {
       "term": "Micropoetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026017",
       "decision": "deferred",
       "batch": "B8",
       "note": "A length label coined for microblogging (2009) with Sebald's micropoems as a precedent; Wikipedia treats it as a genre but its only rule is the platform's character limit, and no source describes conventions beyond brevity. Revisit if a body of work with its own manner appears."
+    },
+    {
+      "term": "Military fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026026",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (military life)"
     },
     {
       "term": "Monostichs",
@@ -1079,12 +1233,11 @@
       "cellId": "monostichs"
     },
     {
-      "term": "Muwashshaḥāt",
-      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026445",
-      "decision": "live",
-      "batch": "B8",
-      "note": "form: the Andalusi girdle poem; proposal B8 #42. Written and attested 2026-09-09.",
-      "cellId": "muwashshahat"
+      "term": "Monster fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026127",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (monsters); vampire and zombie fiction sit under it"
     },
     {
       "term": "Muʻāraḍāt",
@@ -1095,11 +1248,254 @@
       "cellId": "muaradat"
     },
     {
+      "term": "Musical texts",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026002",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "a cataloguing form (song words separated from their music)"
+    },
+    {
+      "term": "Muwashshaḥāt",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026445",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Andalusi girdle poem; proposal B8 #42. Written and attested 2026-09-09.",
+      "cellId": "muwashshahat"
+    },
+    {
+      "term": "Mythological fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026098",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (myth retellings)"
+    },
+    {
       "term": "Mythological poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026055",
       "decision": "declined",
       "batch": "B8",
       "note": "subject-defined (myth retold)"
+    },
+    {
+      "term": "Nature fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026095",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "subject-defined (the natural world)"
+    },
+    {
+      "term": "Noir fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026452",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: crime told from inside the wrongdoing, with a publishing history and its own narrative structure; proposal B10 #23. Written and attested 2026-09-09.",
+      "cellId": "noir-fiction"
+    },
+    {
+      "term": "Nonfiction novels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026454",
+      "decision": "live",
+      "batch": "B6",
+      "note": "technique: novelistic treatment of real events (Hersey, Capote, New Journalism); proposal B6 #21. Written and attested 2026-09-08.",
+      "cellId": "nonfiction-novels"
+    },
+    {
+      "term": "Nonsense fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026002",
+      "decision": "merge",
+      "batch": "B6",
+      "note": "Same direction as the live cell victorian-literary-nonsense, which pass 0 is revising to Literary nonsense (new id literary-nonsense): one cell for verse and prose together, citing LCGFT Nonsense fiction, LCGFT Nonsense verse and https://en.wikipedia.org/wiki/Literary_nonsense. LCGFT splits the direction by form and has no umbrella heading, so the Wikipedia name is the nearest source name. Kept as one cell under D36's test: the sources treat Lear's verse and Carroll's prose as one tradition, so there is nothing true of one form and not the other.",
+      "cellId": "literary-nonsense"
+    },
+    {
+      "term": "Novelizations",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026042",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a publishing format (a novel made from an existing film, play or true story) with no manner of its own, as pass 1 declined Gift books"
+    },
+    {
+      "term": "Novellas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026019",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: the middle length, with a German critical tradition and its own canon (flagged: defined by length); proposal B10 #4. Written and attested 2026-09-09.",
+      "cellId": "novellas"
+    },
+    {
+      "term": "Novelle",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026456",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "The Renaissance Italian short narrative in frame collections. Its only open reference is Wikipedia's Novella article, which treats novella and novelle as one word-history and draws no line between the length form and the Renaissance form; revisit when a source states the difference."
+    },
+    {
+      "term": "Novels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026020",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: kept as a nesting parent the way Lyric poetry was in B8, flagged as a form category; proposal B10 #2. Written and attested 2026-09-09.",
+      "cellId": "novels"
+    },
+    {
+      "term": "Novels in verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026457",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: novel-length narrative carried in verse, with line and stanza as the pacing device (its second LCGFT parent Narrative poetry is not yet decided); proposal B10 #44. Written and attested 2026-09-09.",
+      "cellId": "novels-in-verse"
+    },
+    {
+      "term": "Novels of manners",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026458",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: the novel of manners, realistic fiction whose material is the code of a particular society; the cell was written in an earlier batch and this row backfills the missing decision.",
+      "cellId": "novels-of-manners"
+    },
+    {
+      "term": "Panchatantra stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026143",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: the retelling line from the Sanskrit collection through Kalila wa-Dimna into Europe (borderline: named after one text); proposal B10 #13. Written and attested 2026-09-09.",
+      "cellId": "panchatantra-stories"
+    },
+    {
+      "term": "Paranormal fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026469",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: the supernatural as a premise the story is built on, called supernatural fiction in criticism (borderline: its LCGFT parent Monster fiction was declined as subject-defined); proposal B10 #6. Written and attested 2026-09-09.",
+      "cellId": "paranormal-fiction"
+    },
+    {
+      "term": "Paranormal romance fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026063",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: a crossover genre whose two sets of conventions constrain each other; proposal B10 #31. Written and attested 2026-09-09.",
+      "cellId": "paranormal-romance-fiction"
+    },
+    {
+      "term": "Parodies (Literature)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026470",
+      "decision": "live",
+      "batch": "B6",
+      "note": "technique: mocking imitation of a manner, with its own anthologies; proposal B6 #11. Written and attested 2026-09-08.",
+      "cellId": "parodies-literature"
+    },
+    {
+      "term": "Passover fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026108",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "occasion-defined"
+    },
+    {
+      "term": "Pastiches (Literature)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026049",
+      "decision": "live",
+      "batch": "B6",
+      "note": "technique: imitation in tribute or patchwork of borrowed passages; proposal B6 #12. Written and attested 2026-09-08.",
+      "cellId": "pastiches-literature"
+    },
+    {
+      "term": "Pastoral fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026475",
+      "decision": "live",
+      "batch": "B10",
+      "note": "mode: country life as the standard the reading world is measured against, continuous from Theocritus; proposal B10 #35. Written and attested 2026-09-09.",
+      "cellId": "pastoral-fiction"
+    },
+    {
+      "term": "Philosophical fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026001",
+      "decision": "live",
+      "batch": "B10",
+      "note": "mode: reasoning made load-bearing, with the conte philosophique as its named form; proposal B10 #36. Written and attested 2026-09-09.",
+      "cellId": "philosophical-fiction"
+    },
+    {
+      "term": "Picaresque fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026479",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: the episodic rogue narrative from Lazarillo de Tormes onward, with a stated loose structure; proposal B10 #34. Written and attested 2026-09-09.",
+      "cellId": "picaresque-fiction"
+    },
+    {
+      "term": "Poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026481",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "a form category of literature, like a medium"
+    },
+    {
+      "term": "Political fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026482",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "subject-defined (the political milieu)"
+    },
+    {
+      "term": "Pornographic fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026139",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "content-defined, as pass 1 declined Erotic fiction"
+    },
+    {
+      "term": "Portal fantasy fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026057",
+      "decision": "live",
+      "batch": "B10",
+      "note": "technique: the crossing into a secondary world, a category in Mendlesohn's taxonomy of fantasy; proposal B10 #30. Written and attested 2026-09-09.",
+      "cellId": "portal-fantasy-fiction"
+    },
+    {
+      "term": "Prison fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026032",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "setting-defined (prisons and prison life)"
+    },
+    {
+      "term": "Proletarian fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026138",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: organised with journals and conferences in the USSR, Japan, Britain and the United States; proposal B10 #38. Written and attested 2026-09-09.",
+      "cellId": "proletarian-fiction"
+    },
+    {
+      "term": "Prologues and epilogues",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026101",
+      "decision": "declined",
+      "batch": "B6",
+      "note": "a part of a work, a cataloguing form"
+    },
+    {
+      "term": "Psychological fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026492",
+      "decision": "live",
+      "batch": "B10",
+      "note": "mode: narration positioned close enough to a mind to report the unsaid; proposal B10 #37. Written and attested 2026-09-09.",
+      "cellId": "psychological-fiction"
+    },
+    {
+      "term": "Queer fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026063",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "subject-defined (queer characters and themes); LCGFT's own definition is who appears in the work, and its eight children are declined with it"
+    },
+    {
+      "term": "Railroad fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026023",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "setting-defined (the railroad)"
     },
     {
       "term": "Regulated verse",
@@ -1109,6 +1505,153 @@
       "batch": "B8",
       "note": "Minted in this pass as the parent Jue ju and Lu shi both need; LCGFT has no heading for it, so the name is Wikipedia's. Written and attested 2026-09-09.",
       "namedFrom": "https://en.wikipedia.org/wiki/Regulated_verse"
+    },
+    {
+      "term": "Religious fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026502",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a purpose and subject umbrella; the occasion terms LCGFT files under it are declined with it"
+    },
+    {
+      "term": "Road fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026513",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "The road novel is plausible as a form descended from the picaresque, but no independent reference answered: Wikipedia has no Road novel article. Revisit when a citable source treats it as a manner."
+    },
+    {
+      "term": "Robinsonades",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026514",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: name coined in German in 1731 for the Crusoe imitations, the island as a test of what a society is made of (parent deferred with Survival fiction); proposal B10 #42. Written and attested 2026-09-09.",
+      "cellId": "robinsonades"
+    },
+    {
+      "term": "Romance fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026516",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: a broad genre root whose conventions publishers and readers state as rules; proposal B10 #5. Written and attested 2026-09-09.",
+      "cellId": "romance-fiction"
+    },
+    {
+      "term": "Romances",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026517",
+      "decision": "live",
+      "batch": "B6",
+      "note": "tradition: the medieval chivalric narrative, verse and prose, with a defined history (name: LCGFT variant \"Chivalric romances\" is clearer); proposal B6 #6. Written and attested 2026-09-08.",
+      "cellId": "romances"
+    },
+    {
+      "term": "Romans à clef",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026518",
+      "decision": "live",
+      "batch": "B10",
+      "note": "technique: real people under invented names, so the work is read twice; proposal B10 #33. Written and attested 2026-09-09.",
+      "cellId": "romans-a-clef"
+    },
+    {
+      "term": "Sagas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026522",
+      "decision": "live",
+      "batch": "B6",
+      "note": "tradition: Icelandic and Scandinavian vernacular prose narrative with a recognisable manner; proposal B6 #7. Written and attested 2026-09-08.",
+      "cellId": "sagas"
+    },
+    {
+      "term": "Samurai fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026112",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "Japanese period fiction with samurai protagonists has a publishing history, but no independent reference answered for the fiction: Wikipedia's Jidaigeki covers film, television and theatre. Revisit when a source names the prose tradition."
+    },
+    {
+      "term": "Satirical fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026105",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "Same direction as the live cell Satirical literature, which already covers ridicule aimed at reform in prose and verse; LCGFT splits it by form and states no difference the cell does not already hold. Add this LCGFT page to that cell's sources.",
+      "cellId": "satirical-literature"
+    },
+    {
+      "term": "Satirical literature",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026525",
+      "decision": "live",
+      "batch": "B6",
+      "note": "mode: ridicule aimed at reform, a continuous practice since Roman verse satire; proposal B6 #9. Written and attested 2026-09-08.",
+      "cellId": "satirical-literature"
+    },
+    {
+      "term": "Scar literature",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026104",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: Chinese fiction of 1978 to the early 1980s, named after Lu Xinhua's story, tightly dated; proposal B10 #39. Written and attested 2026-09-09.",
+      "cellId": "scar-literature"
+    },
+    {
+      "term": "School fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026014",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "setting-defined (the school), as pass 1 declined Campus fiction"
+    },
+    {
+      "term": "Science fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026529",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: a broad genre root with continuous conventions since the pulp magazines named it (same standing as the live Fantasy fiction and Horror fiction); proposal B10 #1. Written and attested 2026-09-09.",
+      "cellId": "science-fiction"
+    },
+    {
+      "term": "Sea fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026006",
+      "decision": "live",
+      "batch": "B10",
+      "note": "genre: nautical fiction, with a dated formation, a canon and a technical register (borderline against the setting-defined rule that declined Campus fiction); proposal B10 #43. Written and attested 2026-09-09.",
+      "cellId": "sea-fiction"
+    },
+    {
+      "term": "Sensation fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026075",
+      "decision": "live",
+      "batch": "B10",
+      "note": "genre: British, roughly 1855 to 1890, named by its own reviewers, scandal placed in the drawing room; proposal B10 #40. Written and attested 2026-09-09.",
+      "cellId": "sensation-fiction"
+    },
+    {
+      "term": "Sentimental novels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026536",
+      "decision": "live",
+      "batch": "B10",
+      "note": "genre: strong feeling offered as proof of virtue, bound to the period's argument about sensibility; proposal B10 #41. Written and attested 2026-09-09.",
+      "cellId": "sentimental-novels"
+    },
+    {
+      "term": "Serialized fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026537",
+      "decision": "live",
+      "batch": "B10",
+      "note": "practice: publication in installments, which shapes the writing (same standing as the live Cartonera books); proposal B10 #8. Written and attested 2026-09-09.",
+      "cellId": "serialized-fiction"
+    },
+    {
+      "term": "Short stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026542",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: prose fiction read at one sitting, with a stated technique of compression and its own criticism; proposal B10 #3. Written and attested 2026-09-09.",
+      "cellId": "short-stories"
+    },
+    {
+      "term": "Survival fiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026013",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "The LCGFT parent of Robinsonades and one parent of Apocalyptic fiction, but no independent reference answered: Wikipedia has no Survival fiction article. Deferred rather than declined, because two cells in this batch want it as their parent; it returns as an insertion under D38 once a source is found."
     }
   ]
 }
