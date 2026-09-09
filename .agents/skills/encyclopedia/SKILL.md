@@ -535,6 +535,41 @@ Autonomy is a change in when the human looks, never in what may be built.
   successful run sets it empty, a failed one fills it, and `Define` leaves it
   alone. Read it with the attestation pair.
 
+## Placing what Katagami makes
+
+Anything the commons gains — a writing style, an art style, a design language, a
+palette — belongs in the encyclopedia, and the encyclopedia is where a reader
+finds out what it is an instance of. A record nobody placed is a record nobody
+can reach except by knowing its name already.
+
+**Placement is a periodic pass, not a step in creation.** A run that mints a
+record does not have to stop and find it a home, and should not: finding the
+right cell is judgement work, and a maker in the middle of making is the worst
+person to do it quickly. The placement pass runs afterwards, over everything
+unplaced, on its own schedule.
+
+What the pass does, in order:
+
+1. Read every record in the four sets and every live cell. A record is placed
+   when some cell's `manifestations` names it, keyed on the entity set as well
+   as the id, since ids are only unique within a set.
+2. For each unplaced record, find the cell whose scope its credit actually
+   names. The rule is the same one that governs everything here: what the
+   record's own credit says, never what its name suggests.
+3. **Where no cell fits, mint one** — from a source, under the same discipline
+   as any other cell, cited and attested. A record that has no home is usually
+   telling you the collection is missing a direction rather than that the record
+   is wrong. Where the honest answer is that the record does not belong in the
+   encyclopedia at all, say so in the pass's report rather than forcing it.
+4. Where the record's credit names something the collection deliberately
+   declined, leave it unplaced and record why. An unplaced record with a stated
+   reason is a finding; an unplaced record with no reason is a gap.
+
+The pass reports what it placed, what it minted, and what it left alone with the
+reason. Its count of unplaced records is the number to watch: it should fall
+after each population run and rise when one lands, and a run that leaves it
+unchanged has either placed nothing or measured nothing.
+
 ## Two runtime defects you must not trip over
 
 Temper defects — reported, contained here, not fixed:
