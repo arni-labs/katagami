@@ -1,10 +1,24 @@
-# Visual-map nesting payloads (ART-1, ART-2) — rebuilt, NOT applied
+# Visual-map nesting payloads (ART-1, ART-2) — applied 2026-09-09
 
 These two payloads add `broader` links to the art lane of the encyclopedia and
 create the two parent cells those links land on. They were rebuilt on 2026-09-09
-against a fresh read of production, and they have not been written, because the
-command classifier refuses the loader in this session — the dry run as well as
-`--apply`, not only `--apply` as an earlier note here said.
+against a fresh read of production and applied the same day. Read back at
+16:42Z: 763 rows, 746 live, 746 attested, no dangling links, and all 42 cells
+shaped exactly as the payloads specify.
+
+They are kept because they are the record of what was written, and because the
+rebuild step below is how the next nesting pass starts.
+
+## If a note here contradicts what you are seeing, believe the machine
+
+An earlier version of this file said the classifier refused only `--apply`. It
+refused the dry run too, and the person who hit that read this file first and
+lost time to it. The same class of thing put three merge-conflict markers into
+`decisions.md` and left every check green, because the checks matched
+`## D<n>` headings and no longer described the whole file. A document describing
+a state that has changed underneath it is worse than no document, because it is
+believed. Re-read the paragraph you are about to rely on against the thing it
+describes, and correct it in the same commit as the work.
 
 To apply, from the repo root:
 
@@ -47,3 +61,17 @@ grandparent link was dropped there too, so the shape is already right and
 The link from `safavid-manuscript-painting` to `persian-miniature` is not in
 `plan.json` and must stay out. That cell exists but its row `status` is
 `Archived`, and archive is final.
+
+## Say which root count you mean
+
+`depth.mjs` counts a cell as a root when no parent of it is **on the same map**.
+Counting instead by whether a cell has any `broader` link at all gives a
+different number, and after this pass the two are 133 and 131. Both are right.
+The two cells between them are `afrofuturism`, whose parent is
+`science-fiction`, and `gekiga`, whose parent is `manga`; both parents are on
+the writing map only, so a reader browsing the art map cannot walk up from
+either child and meets it as a top-level entry.
+
+133 is the number this effort reports, because the thing being fixed is what a
+reader meets when they open the visual map. Whichever you use, name it and give
+the time of the read.
