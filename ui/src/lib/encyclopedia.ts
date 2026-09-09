@@ -93,11 +93,15 @@ const API_KEY = cleanEnv(process.env.TEMPER_API_KEY, "");
 
 async function readCellRows(): Promise<RawCellRow[]> {
   const rows: RawCellRow[] = [];
-  let next: string | undefined = `${API_BASE}/tdata/EncyclopediaCells`;
+  const seen = new Set<string>();
+  let next: string | null = `${API_BASE}/tdata/EncyclopediaCells?$top=500`;
   let pages = 0;
   while (next) {
     if (++pages > 50) throw new Error("EncyclopediaCells: pagination exceeded 50 pages");
-    const res = await fetch(next, {
+    if (seen.has(next)) throw new Error("EncyclopediaCells: pagination looped on a repeated nextLink");
+    seen.add(next);
+    const current: string = next;
+    const res = await fetch(current, {
       headers: {
         "X-Tenant-Id": TENANT,
         ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
@@ -108,10 +112,19 @@ async function readCellRows(): Promise<RawCellRow[]> {
     const page = (await res.json()) as { value?: RawCellRow[]; "@odata.nextLink"?: string };
     rows.push(...(page.value ?? []));
     const link = page["@odata.nextLink"];
-    if (link && new URL(link).origin !== new URL(API_BASE).origin) {
+    // A present-but-non-string nextLink would otherwise end paging early and
+    // silently truncate the encyclopedia; treat it as a fault.
+    if (link !== undefined && (typeof link !== "string" || link === "")) {
+      throw new Error("EncyclopediaCells returned an invalid nextLink");
+    }
+    // The backend returns a nextLink relative to the request URI
+    // ("EncyclopediaCells?$skiptoken=…"), so resolve it against the page we
+    // just read rather than treating it as absolute.
+    const resolved = link ? new URL(link, current) : null;
+    if (resolved && resolved.origin !== new URL(API_BASE).origin) {
       throw new Error(`Refusing cross-origin nextLink: ${link}`);
     }
-    next = link;
+    next = resolved ? resolved.toString() : null;
   }
   return rows;
 }
