@@ -45,11 +45,18 @@ export async function GET(req: NextRequest) {
     // for them would drown real failures in warn noise and pump ingest cost.
     //
     // `ours` is the stronger version of that test, and it is what keeps the
-    // sign-in alert honest. The state cookie is set by OUR authorize redirect,
-    // is httpOnly, and no third party can plant it — so its presence means this
-    // really is a flow we started coming back. Without it, anyone could page a
-    // human with `curl 'https://katagami.ai/api/auth/google/callback?error=x'`
-    // five times, and the page would read as a Google outage.
+    // sign-in alert honest. The state cookie is httpOnly and set only by our
+    // own /api/auth/google/start, so its presence means a flow someone started
+    // against that route is coming back. Without it, one line —
+    // `curl 'https://katagami.ai/api/auth/google/callback?error=x'` five times
+    // — pages a human, and the page reads as a Google outage.
+    //
+    // It is not proof of a genuine Google failure. `start` is unauthenticated,
+    // so a deliberate forger needs two requests rather than one: collect the
+    // cookie from `start`, then replay it here. Requiring the `state` parameter
+    // to match would not help — the same self-initiated flow supplies both. So
+    // the monitor message, not this gate, is what stops a spoofed spike being
+    // read as an outage.
     const ours = Boolean(cookieState);
     const googleError = req.nextUrl.searchParams.get("error");
     if (googleError && ours) {

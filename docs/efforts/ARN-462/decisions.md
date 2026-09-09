@@ -274,10 +274,24 @@ introduced that.
 **Options** — gate on the state cookie; drop the reason from the alert; note the
 limit in the message and accept it.
 
-**Chose the cookie gate** because our authorize redirect sets it, it is httpOnly,
-and nobody else can plant it — so its presence means this really is a flow we
-started. Dropping the reason would give back the outage blindness decision 6
-just fixed.
+**Chose the cookie gate** because the cookie is httpOnly and only our own
+`/api/auth/google/start` sets it, so its presence means a flow someone started
+against that route is coming back. Dropping the reason would give back the
+outage blindness D6 just fixed.
+
+**What the gate does NOT buy.** `start` is unauthenticated, so a deliberate
+forger needs two requests rather than one: collect the cookie from `start`, then
+replay it against the callback. Requiring the `state` parameter to match adds
+nothing — the same self-initiated flow supplies both — so it was considered and
+rejected rather than overlooked. The gate defeats the one-line curl and every
+scanner; the monitor message is what stops a determined spoof being read as a
+Google outage, which is why the disclosure is in the alert text and not only
+here.
+
+**The silent side of this tradeoff**: a genuine Google error arriving after the
+state cookie has expired — someone parks on the consent screen past the 10
+minute TTL and Google then errors — now emits nothing at all. Rare, and the cost
+of the gate.
 
 **Deliberately not gated: `state`.** A state failure is most often the cookie
 being missing, so requiring the cookie would suppress exactly the case that
