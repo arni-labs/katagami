@@ -49,6 +49,14 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "aquatint (printing process)",
+      "ref": "https://vocab.getty.edu/aat/300053242",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell aquatint minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 9 manifestations attached.",
+      "cellId": "aquatint"
+    },
+    {
       "term": "Art Deco",
       "ref": "https://vocab.getty.edu/aat/300021426",
       "decision": "live",
@@ -89,12 +97,28 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "Barbizon School",
+      "ref": "https://vocab.getty.edu/aat/300264658",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell barbizon-school minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 4 manifestations attached.",
+      "cellId": "barbizon-school"
+    },
+    {
       "term": "Baroque",
       "ref": "https://vocab.getty.edu/aat/300021147",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "baroque",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Bauhaus",
+      "ref": "https://vocab.getty.edu/aat/300021432",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell bauhaus minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 15 manifestations attached.",
+      "cellId": "bauhaus"
     },
     {
       "term": "Body Art",
@@ -105,12 +129,60 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "botanical illustrations",
+      "ref": "https://vocab.getty.edu/aat/300386711",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell botanical-illustration minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 27 manifestations attached.",
+      "cellId": "botanical-illustration"
+    },
+    {
+      "term": "chiaroscuro",
+      "ref": "https://vocab.getty.edu/aat/300053414",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell chiaroscuro minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 12 manifestations attached.",
+      "cellId": "chiaroscuro"
+    },
+    {
       "term": "Chicago Imagists",
       "ref": "https://vocab.getty.edu/aat/300116666",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "chicago-imagists",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "chronophotography",
+      "ref": "https://vocab.getty.edu/aat/300053535",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell chronophotography minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 3 manifestations attached.",
+      "cellId": "chronophotography"
+    },
+    {
+      "term": "Cloisonnist",
+      "ref": "https://vocab.getty.edu/aat/300021297",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell cloisonnism minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 6 manifestations attached.",
+      "cellId": "cloisonnism"
+    },
+    {
+      "term": "collage (technique)",
+      "ref": "https://vocab.getty.edu/aat/300138699",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell cut-paper-collage minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 25 manifestations attached.",
+      "cellId": "cut-paper-collage"
+    },
+    {
+      "term": "Color-field",
+      "ref": "https://vocab.getty.edu/aat/300022120",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell color-field-painting minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 8 manifestations attached.",
+      "cellId": "color-field-painting"
     },
     {
       "term": "Computer art",
@@ -135,6 +207,22 @@
       "batch": "B21-B23",
       "cellId": "concrete-art",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Constructivist",
+      "ref": "https://vocab.getty.edu/aat/300021393",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell constructivism minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 11 manifestations attached.",
+      "cellId": "constructivism"
+    },
+    {
+      "term": "cyanotypes (photographic prints)",
+      "ref": "https://vocab.getty.edu/aat/300134811",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell cyanotype minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 15 manifestations attached.",
+      "cellId": "cyanotype"
     },
     {
       "term": "Dada",
@@ -177,12 +265,44 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "dye transfer process",
+      "ref": "https://vocab.getty.edu/aat/300053471",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell dye-transfer-printing minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 3 manifestations attached.",
+      "cellId": "dye-transfer-printing"
+    },
+    {
+      "term": "encaustic painting (technique)",
+      "ref": "https://vocab.getty.edu/aat/300053353",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell encaustic-painting minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 3 manifestations attached.",
+      "cellId": "encaustic-painting"
+    },
+    {
       "term": "Expressionism",
       "ref": "https://vocab.getty.edu/aat/300021502",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "expressionism",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Fauve",
+      "ref": "https://vocab.getty.edu/aat/300021300",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell fauvism minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 6 manifestations attached.",
+      "cellId": "fauvism"
+    },
+    {
+      "term": "film noir",
+      "ref": "https://vocab.getty.edu/aat/300263882",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell film-noir minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 8 manifestations attached.",
+      "cellId": "film-noir"
     },
     {
       "term": "Fluxus",
@@ -233,6 +353,30 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "gouache (technique)",
+      "ref": "https://vocab.getty.edu/aat/300404215",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell gouache-painting minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 20 manifestations attached.",
+      "cellId": "gouache-painting"
+    },
+    {
+      "term": "grisaille",
+      "ref": "https://vocab.getty.edu/aat/300053386",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell grisaille minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 3 manifestations attached.",
+      "cellId": "grisaille"
+    },
+    {
+      "term": "halftone screens",
+      "ref": "https://vocab.getty.edu/aat/300236164",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell halftone-printing minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 31 manifestations attached.",
+      "cellId": "halftone-printing"
+    },
+    {
       "term": "Harlem Renaissance",
       "ref": "https://vocab.getty.edu/aat/300121558",
       "decision": "live",
@@ -257,6 +401,14 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "intaglio printing",
+      "ref": "https://vocab.getty.edu/aat/300053218",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell intaglio-printmaking minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 13 manifestations attached.",
+      "cellId": "intaglio-printmaking"
+    },
+    {
       "term": "Japonisme",
       "ref": "https://vocab.getty.edu/aat/300055785",
       "decision": "live",
@@ -273,6 +425,30 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "katazome",
+      "ref": "https://vocab.getty.edu/aat/300417369",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell katazome minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 4 manifestations attached.",
+      "cellId": "katazome"
+    },
+    {
+      "term": "khipus",
+      "ref": "https://vocab.getty.edu/aat/300264828",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell quipu minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 4 manifestations attached.",
+      "cellId": "quipu"
+    },
+    {
+      "term": "kintsugi",
+      "ref": "https://vocab.getty.edu/aat/300445653",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell kintsugi minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 2 manifestations attached.",
+      "cellId": "kintsugi"
+    },
+    {
       "term": "Land Art",
       "ref": "https://vocab.getty.edu/aat/300047857",
       "decision": "live",
@@ -281,12 +457,36 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "letterpress printing",
+      "ref": "https://vocab.getty.edu/aat/300178926",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell letterpress-printing minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 22 manifestations attached.",
+      "cellId": "letterpress-printing"
+    },
+    {
       "term": "Light and Space",
       "ref": "https://vocab.getty.edu/aat/300375712",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "light-and-space",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "line engraving (printing process)",
+      "ref": "https://vocab.getty.edu/aat/300053231",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell line-engraving minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 13 manifestations attached.",
+      "cellId": "line-engraving"
+    },
+    {
+      "term": "lithography",
+      "ref": "https://vocab.getty.edu/aat/300053271",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell lithography minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 24 manifestations attached.",
+      "cellId": "lithography"
     },
     {
       "term": "Luminism",
@@ -305,6 +505,14 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "Memphis",
+      "ref": "https://vocab.getty.edu/aat/300265730",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell memphis-group minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 3 manifestations attached.",
+      "cellId": "memphis-group"
+    },
+    {
       "term": "Mexican Muralism",
       "ref": "https://vocab.getty.edu/aat/300107850",
       "decision": "live",
@@ -313,12 +521,36 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "mezzotint (process)",
+      "ref": "https://vocab.getty.edu/aat/300053233",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell mezzotint minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 4 manifestations attached.",
+      "cellId": "mezzotint"
+    },
+    {
+      "term": "mingei",
+      "ref": "https://vocab.getty.edu/aat/300260035",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell mingei minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 3 manifestations attached.",
+      "cellId": "mingei"
+    },
+    {
       "term": "Minimalism",
       "ref": "https://vocab.getty.edu/aat/300065758",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "minimalism",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "mosaic (process)",
+      "ref": "https://vocab.getty.edu/aat/300138684",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell mosaic minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 5 manifestations attached.",
+      "cellId": "mosaic"
     },
     {
       "term": "Neo-Dada",
@@ -335,6 +567,14 @@
       "batch": "B21-B23",
       "cellId": "neo-expressionism",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Neo-Impressionist",
+      "ref": "https://vocab.getty.edu/aat/300021505",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell neo-impressionism minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 9 manifestations attached.",
+      "cellId": "neo-impressionism"
     },
     {
       "term": "Neo-romanticism",
@@ -366,6 +606,14 @@
       "batch": "B21-B23",
       "cellId": "neue-sachlichkeit",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Nihonga",
+      "ref": "https://vocab.getty.edu/aat/300114441",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell nihonga minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 5 manifestations attached.",
+      "cellId": "nihonga"
     },
     {
       "term": "Northern Renaissance",
@@ -416,6 +664,22 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "photograms",
+      "ref": "https://vocab.getty.edu/aat/300127296",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell photogram minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 18 manifestations attached.",
+      "cellId": "photogram"
+    },
+    {
+      "term": "photogravure (process)",
+      "ref": "https://vocab.getty.edu/aat/300053207",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell photogravure minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 6 manifestations attached.",
+      "cellId": "photogravure"
+    },
+    {
       "term": "Pittura Metafisica",
       "ref": "https://vocab.getty.edu/aat/300021376",
       "decision": "live",
@@ -430,6 +694,14 @@
       "batch": "B21-B23",
       "cellId": "pointillism",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Pop (fine arts styles)",
+      "ref": "https://vocab.getty.edu/aat/300022205",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell pop-art minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 5 manifestations attached.",
+      "cellId": "pop-art"
     },
     {
       "term": "Post-Impressionism",
@@ -512,6 +784,30 @@
       "cellId": "romanticism"
     },
     {
+      "term": "scratchboard",
+      "ref": "https://vocab.getty.edu/aat/300014240",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell scratchboard minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 2 manifestations attached.",
+      "cellId": "scratchboard"
+    },
+    {
+      "term": "screen printing",
+      "ref": "https://vocab.getty.edu/aat/300053281",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell screen-printing minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 65 manifestations attached.",
+      "cellId": "screen-printing"
+    },
+    {
+      "term": "sfumato",
+      "ref": "https://vocab.getty.edu/aat/300053421",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell sfumato minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 2 manifestations attached.",
+      "cellId": "sfumato"
+    },
+    {
       "term": "Shin-hanga",
       "ref": "https://vocab.getty.edu/aat/300262954",
       "decision": "live",
@@ -528,6 +824,14 @@
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
     },
     {
+      "term": "silverpoint (technique)",
+      "ref": "https://vocab.getty.edu/aat/300404634",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell silverpoint minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 3 manifestations attached.",
+      "cellId": "silverpoint"
+    },
+    {
       "term": "Social Realism",
       "ref": "https://vocab.getty.edu/aat/300061066",
       "decision": "live",
@@ -542,6 +846,14 @@
       "batch": "B21-B23",
       "cellId": "socialist-realism",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "stained glass (visual works)",
+      "ref": "https://vocab.getty.edu/aat/300263722",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell stained-glass minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 4 manifestations attached.",
+      "cellId": "stained-glass"
     },
     {
       "term": "Street art",
@@ -568,12 +880,28 @@
       "cellId": "symbolism"
     },
     {
+      "term": "technical illustration (process)",
+      "ref": "https://vocab.getty.edu/aat/300054207",
+      "decision": "live",
+      "batch": "C2",
+      "note": "Cell technical-illustration minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 26 manifestations attached.",
+      "cellId": "technical-illustration"
+    },
+    {
+      "term": "tenebrism",
+      "ref": "https://vocab.getty.edu/aat/300343524",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell tenebrism minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 6 manifestations attached.",
+      "cellId": "tenebrism"
+    },
+    {
       "term": "Tonalism",
       "ref": "https://vocab.getty.edu/aat/300132908",
       "decision": "live",
       "batch": "B21-B23",
       "cellId": "tonalism",
-      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that. The C1 pass recorded the same AAT concept under the label Tonalist while attaching 3 manifestations; that row is folded into this one, since both name this cell."
     },
     {
       "term": "Transavanguardia",
@@ -582,6 +910,14 @@
       "batch": "B21-B23",
       "cellId": "transavanguardia",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "trompe-l'oeil",
+      "ref": "https://vocab.getty.edu/aat/300056506",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell trompe-loeil-painting minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 6 manifestations attached.",
+      "cellId": "trompe-loeil-painting"
     },
     {
       "term": "Unanimism",
@@ -598,6 +934,22 @@
       "batch": "B21-B23",
       "cellId": "viennese-actionism",
       "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "watercolor painting (technique)",
+      "ref": "https://vocab.getty.edu/aat/300389895",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell watercolour-painting minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 39 manifestations attached.",
+      "cellId": "watercolour-painting"
+    },
+    {
+      "term": "wood engraving (process)",
+      "ref": "https://vocab.getty.edu/aat/300053303",
+      "decision": "live",
+      "batch": "C1",
+      "note": "Cell wood-engraving minted from Katagami records whose credits name this direction; the AAT concept is its backbone source. 6 manifestations attached.",
+      "cellId": "wood-engraving"
     },
     {
       "term": "Young British Artists",
