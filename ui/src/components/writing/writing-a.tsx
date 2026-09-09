@@ -52,7 +52,7 @@ function PassageCard({ specimen, shortlisted, onShortlist, onTag, activeTags, in
             ) : null}
           </>
         ) : (
-          <p className="text-[15px] leading-relaxed text-muted-foreground">No exemplar passage is on this record yet.</p>
+          <p className="text-[16px] leading-relaxed text-muted-foreground">No exemplar passage is on this record yet.</p>
         )}
       </div>
       {many ? (
@@ -66,7 +66,7 @@ function PassageCard({ specimen, shortlisted, onShortlist, onTag, activeTags, in
       <span aria-hidden className="sticker-perforation mt-5 block" />
 
       <h3 className="mt-4 font-display text-[24px] font-bold leading-[1.1] tracking-[-0.02em]">{specimen.name}</h3>
-      {specimen.persona ? <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{specimen.persona}</p> : null}
+      {specimen.persona ? <p className="mt-1.5 text-[16px] leading-relaxed text-muted-foreground">{specimen.persona}</p> : null}
       <CreditLine specimen={specimen} className="mt-3" />
       <div className="mt-3"><TagChips tags={specimen.tags} onPick={onTag} active={activeTags} /></div>
       <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-5">
@@ -163,7 +163,7 @@ export function WritingA({ specimens }: { specimens: WritingStyleSpecimen[] }) {
           <div className="flex flex-wrap items-center gap-2 bg-[var(--paper-sticker-hover)] px-4 py-3 shadow-[var(--shadow-card-hover)] backdrop-blur-md">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Shortlist <span className="tabular-nums text-foreground">{shortlist.length}</span></span>
             {chosen.map((s, i) => (
-              <button key={s.id} type="button" onClick={() => toggleShortlist(s.id)} className="inline-flex h-8 items-center gap-2 px-3 font-sans text-[14px] font-semibold shadow-[var(--shadow-sticker)]" style={inkChipStyle(["var(--sakura)", "var(--ramune)", "var(--yuzu)"][i % 3], 22)} aria-label={`Remove ${s.name} from shortlist`}>
+              <button key={s.id} type="button" onClick={() => toggleShortlist(s.id)} className="inline-flex h-8 items-center gap-2 px-3 font-sans text-[16px] font-semibold shadow-[var(--shadow-sticker)]" style={inkChipStyle(["var(--sakura)", "var(--ramune)", "var(--yuzu)"][i % 3], 22)} aria-label={`Remove ${s.name} from shortlist`}>
                 {s.name} <span aria-hidden>×</span>
               </button>
             ))}

@@ -79,7 +79,7 @@ export function CellLinks({ specimen }: { specimen: WritingStyleSpecimen }) {
       {specimen.cells.map((cell, i) => (
         <span key={cell.cellId}>
           {i > 0 ? ", " : ""}
-          <Link href={`/encyclopedia?cell=${encodeURIComponent(cell.cellId)}`} title={cell.explanation} className="normal-case tracking-normal text-[13px] font-semibold text-foreground underline decoration-[var(--ramune)] decoration-2 underline-offset-[3px] hover:decoration-[var(--yuzu)]">
+          <Link href={`/encyclopedia?cell=${encodeURIComponent(cell.cellId)}`} title={cell.explanation} className="normal-case tracking-normal text-[16px] font-semibold text-foreground underline decoration-[var(--ramune)] decoration-2 underline-offset-[3px] hover:decoration-[var(--yuzu)]">
             {cell.cellName}
           </Link>
         </span>
@@ -99,13 +99,13 @@ export function VoiceMdLink({ url, className = "" }: { url: string; className?: 
 
 export function KeyValueTable({ rows, empty }: { rows: Record<string, string>; empty: string }) {
   const entries = Object.entries(rows);
-  if (!entries.length) return <p className="text-[15px] text-muted-foreground">{empty}</p>;
+  if (!entries.length) return <p className="text-[16px] text-muted-foreground">{empty}</p>;
   return (
     <dl className="grid grid-cols-[minmax(0,10rem)_1fr] gap-x-4 gap-y-2">
       {entries.map(([key, value]) => (
         <div key={key} className="contents">
           <dt className="pt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{key.replace(/[_-]+/g, " ")}</dt>
-          <dd className="text-[15px] leading-relaxed text-foreground">{value}</dd>
+          <dd className="text-[16px] leading-relaxed text-foreground">{value}</dd>
         </div>
       ))}
     </dl>
@@ -113,11 +113,11 @@ export function KeyValueTable({ rows, empty }: { rows: Record<string, string>; e
 }
 
 export function BulletList({ items, empty, strike = false }: { items: string[]; empty: string; strike?: boolean }) {
-  if (!items.length) return <p className="text-[15px] text-muted-foreground">{empty}</p>;
+  if (!items.length) return <p className="text-[16px] text-muted-foreground">{empty}</p>;
   return (
     <ul className="grid gap-1.5">
       {items.map((item, i) => (
-        <li key={`${i}-${item}`} className={`flex gap-2.5 text-[15px] leading-relaxed ${strike ? "text-muted-foreground line-through decoration-[var(--sakura)] decoration-2" : "text-foreground"}`}>
+        <li key={`${i}-${item}`} className={`flex gap-2.5 text-[16px] leading-relaxed ${strike ? "text-muted-foreground line-through decoration-[var(--sakura)] decoration-2" : "text-foreground"}`}>
           <span aria-hidden className="mt-[9px] inline-block h-1.5 w-1.5 shrink-0" style={{ background: strike ? "var(--sakura)" : "var(--ramune)" }} />
           {item}
         </li>
@@ -127,14 +127,14 @@ export function BulletList({ items, empty, strike = false }: { items: string[]; 
 }
 
 export function CreditsList({ credits }: { credits: WritingStyleSpecimen["credits"] }) {
-  if (!credits.length) return <p className="text-[15px] text-muted-foreground">No credits recorded.</p>;
+  if (!credits.length) return <p className="text-[16px] text-muted-foreground">No credits recorded.</p>;
   return (
     <ul className="grid gap-2">
       {credits.map((credit, i) => (
         <li key={`${credit.name}-${i}`} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span className="text-[15.5px] font-semibold text-foreground">{credit.name}</span>
+          <span className="text-[16px] font-semibold text-foreground">{credit.name}</span>
           {credit.kind ? <InkStamp ink={credit.kind === "writer" ? "var(--sakura)" : credit.kind === "movement" ? "var(--ramune)" : "var(--graphite)"} tilt={-1}>{CREDIT_KIND_LABEL[credit.kind] ?? credit.kind}</InkStamp> : null}
-          {credit.note ? <span className="w-full text-[14px] leading-relaxed text-muted-foreground">{credit.note}</span> : null}
+          {credit.note ? <span className="w-full text-[16px] leading-relaxed text-muted-foreground">{credit.note}</span> : null}
         </li>
       ))}
     </ul>
@@ -210,7 +210,7 @@ function RailFacet({ facet, selection, onToggle }: { facet: Facet; selection: Fa
               const on = selection[facet.key]?.includes(entry.value) ?? false;
               return (
                 <li key={entry.value}>
-                  <label className="group flex cursor-pointer items-center gap-2.5 py-0.5 text-[15px] text-foreground">
+                  <label className="group flex cursor-pointer items-center gap-2.5 py-0.5 text-[16px] text-foreground">
                     <input type="checkbox" checked={on} onChange={() => onToggle(facet.key, entry.value)} className="peer sr-only" />
                     <span aria-hidden className="grid h-4 w-4 shrink-0 place-items-center shadow-[var(--shadow-sticker)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--ramune)]" style={{ background: on ? "var(--yuzu)" : "var(--paper-sticker)" }}>
                       {on ? <span className="block h-2 w-2 bg-foreground" /> : null}

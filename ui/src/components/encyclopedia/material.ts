@@ -1,5 +1,4 @@
 import type { CellManifestation, EncyclopediaCell, ManifestationRecord, ManifestationSet } from "@/lib/encyclopedia";
-import type { GraphIndex } from "@/lib/encyclopedia-graph";
 
 // What a cell can show of itself on the map: a picture, a passage, a palette.
 // Every piece comes from a study on the cell or from a record the cell names
@@ -46,8 +45,6 @@ export interface MaterialPalette {
 
 export interface CellMaterial {
   image: MaterialImage | null;
-  /** A second picture from another record, for cells that have only pictures. */
-  secondImage: MaterialImage | null;
   text: MaterialText | null;
   palette: MaterialPalette | null;
   /** True when the cell has nothing to show but its name and scope. */
@@ -81,11 +78,6 @@ function resolved(list: CellManifestation[], set: ManifestationSet): Manifestati
   return list.filter((m) => m.entitySet === set && m.record).map((m) => m.record!);
 }
 
-function truncate(value: string, max: number): string {
-  const text = value.replace(/\s+/g, " ").trim();
-  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
-}
-
 export function cellMaterial(cell: EncyclopediaCell): CellMaterial {
   let image: MaterialImage | null = null;
   for (const study of cell.studies) {
@@ -98,7 +90,6 @@ export function cellMaterial(cell: EncyclopediaCell): CellMaterial {
   const pictured = [...resolved(cell.manifestations, "ArtStyles"), ...resolved(cell.manifestations, "DesignLanguages")].filter((r) => r.image);
   const toImage = (record: ManifestationRecord): MaterialImage => ({ source: "record", url: record.image!, alt: record.name, eyebrow: SET_EYEBROW[record.set], ink: SET_INK[record.set], title: record.name, note: record.line, href: record.href, status: record.status });
   if (!image && pictured[0]) image = toImage(pictured[0]);
-  const secondImage = pictured.find((r) => r.image !== image?.url) ? toImage(pictured.find((r) => r.image !== image?.url)!) : null;
 
   let text: MaterialText | null = null;
   for (const study of cell.studies) {
@@ -132,39 +123,7 @@ export function cellMaterial(cell: EncyclopediaCell): CellMaterial {
     if (record) palette = { source: "record", swatches: record.swatches!, eyebrow: SET_EYEBROW.DesignLanguages, ink: SET_INK.DesignLanguages, title: record.name, note: record.line, href: record.href, status: record.status };
   }
 
-  return { image, secondImage, text, palette, nameOnly: !image && !text && !palette };
-}
-
-/** A short, honest excerpt for a small card. */
-export function excerpt(text: string, max = 150): string {
-  return truncate(text, max);
-}
-
-/** How many kinds of material a cell can show — used to pick the opening
- *  focus: the richest cell, then the best connected. */
-export function materialScore(cell: EncyclopediaCell, index: GraphIndex): number {
-  const m = cellMaterial(cell);
-  const kinds = [m.image, m.text, m.palette].filter(Boolean).length;
-  return kinds * 100 + index.neighbours(cell.id).length * 10 + cell.manifestations.length;
-}
-
-export function openingCell(index: GraphIndex): EncyclopediaCell | null {
-  let best: EncyclopediaCell | null = null;
-  let bestScore = -1;
-  for (const cell of index.graph.cells) {
-    const score = materialScore(cell, index);
-    if (score > bestScore || (score === bestScore && best && cell.name < best.name)) { best = cell; bestScore = score; }
-  }
-  return best;
-}
-
-/** The one picture that stands for a cell on the map, with an honest caption:
- *  a study when one exists, otherwise the first pictured record ("from …"). */
-export function representative(cell: EncyclopediaCell): { url: string; alt: string; caption: string; ink: string; href?: string } | null {
-  const m = cellMaterial(cell);
-  if (!m.image) return null;
-  const caption = m.image.source === "study" ? `${m.image.eyebrow} · ${m.image.title}` : `from ${m.image.title} · ${m.image.eyebrow.toLowerCase()}`;
-  return { url: m.image.url, alt: m.image.alt, caption, ink: m.image.ink, href: m.image.href };
+  return { image, text, palette, nameOnly: !image && !text && !palette };
 }
 
 /** What a cell shows of itself when the map is far out and there are no words
@@ -174,17 +133,31 @@ export function representative(cell: EncyclopediaCell): { url: string; alt: stri
  *  name, and the plate says so. Every face carries the caption that says where
  *  it came from; nothing is presented as the cell's own study unless it is. */
 export type CellFace =
-  | { kind: "image"; url: string; alt: string; caption: string; ink: string }
-  | { kind: "palette"; swatches: string[]; caption: string; ink: string }
-  | { kind: "passage"; text: string; caption: string; ink: string }
-  | { kind: "name"; caption: string; ink: string };
+  | { kind: "image"; url: string; alt: string; caption: string; eyebrow: string; ink: string }
+  | { kind: "palette"; swatches: string[]; caption: string; eyebrow: string; ink: string }
+  | { kind: "passage"; text: string; caption: string; eyebrow: string; ink: string }
+  | { kind: "name"; caption: string; eyebrow: string; note: string; ink: string };
 
-export function cellFace(cell: EncyclopediaCell): CellFace {
+/** Every face a cell can turn, best first. The list always ends in a face that
+ *  cannot fail, so a picture whose asset has gone missing steps down to the
+ *  next honest thing the cell has instead of leaving the browser's broken
+ *  image on the paper. The last face says which of the two it is: a cell with
+ *  nothing made for it, or a cell whose picture would not load. */
+export function cellFaces(cell: EncyclopediaCell): CellFace[] {
   const m = cellMaterial(cell);
   const from = (piece: { source: "study" | "record"; eyebrow: string; title: string }) =>
     piece.source === "study" ? `${piece.eyebrow} · ${piece.title}` : `from ${piece.title} · ${piece.eyebrow.toLowerCase()}`;
-  if (m.image) return { kind: "image", url: m.image.url, alt: m.image.alt, caption: from(m.image), ink: m.image.ink };
-  if (m.palette) return { kind: "palette", swatches: m.palette.swatches, caption: from(m.palette), ink: m.palette.ink };
-  if (m.text) return { kind: "passage", text: m.text.text, caption: from(m.text), ink: m.text.ink };
-  return { kind: "name", caption: "Named cell · no material yet", ink: "var(--ramune)" };
+  const faces: CellFace[] = [];
+  if (m.image) faces.push({ kind: "image", url: m.image.url, alt: m.image.alt, caption: from(m.image), eyebrow: m.image.eyebrow, ink: m.image.ink });
+  if (m.palette) faces.push({ kind: "palette", swatches: m.palette.swatches, caption: from(m.palette), eyebrow: m.palette.eyebrow, ink: m.palette.ink });
+  if (m.text) faces.push({ kind: "passage", text: m.text.text, caption: from(m.text), eyebrow: m.text.eyebrow, ink: m.text.ink });
+  faces.push(faces.length
+    ? { kind: "name", caption: "The picture on this cell would not load", eyebrow: "Picture unavailable", note: "The material is recorded; its asset did not load.", ink: "var(--graphite)" }
+    : { kind: "name", caption: "Named cell · no material yet", eyebrow: "Named cell", note: "Nothing has been made for this cell yet.", ink: "var(--ramune)" });
+  return faces;
+}
+
+/** The face a cell turns before anything has failed. */
+export function cellFace(cell: EncyclopediaCell): CellFace {
+  return cellFaces(cell)[0];
 }

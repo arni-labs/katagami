@@ -1,10 +1,10 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import type { CellManifestation, EncyclopediaCell } from "@/lib/encyclopedia";
 import { MAP_LABEL } from "@/lib/encyclopedia-graph";
 import { Tape } from "./chrome";
-import { cellFace, cellMaterial, SET_EYEBROW, SET_INK, type CellFace } from "./material";
+import { cellFaces, cellMaterial, SET_EYEBROW, SET_INK, type CellFace } from "./material";
 import { NAME_W, plateBox, SAT_W, type SatelliteNode } from "./graph-layout";
 
 // The nodes on the map. A plate is a cell: zoomed out it is its picture
@@ -44,7 +44,7 @@ export function PaperStrip({ text, className = "", lines = 8, style }: { text: s
         ...style,
       }}
     >
-      <p className="font-sans text-[14.5px] italic leading-[26px] text-foreground" style={{ display: "-webkit-box", WebkitLineClamp: lines, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+      <p className="font-sans text-[16px] italic leading-[26px] text-foreground" style={{ display: "-webkit-box", WebkitLineClamp: lines, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
         {text}
       </p>
     </div>
@@ -74,18 +74,45 @@ function nameFitSize(name: string, k: number): number {
   return Math.max(18, Math.min(NAME_MAX, wordFits, 14 / k));
 }
 
+/** The face a cell is showing, and a way to step past one that will not load.
+ *  A 404 asset would otherwise leave the browser's broken-image chrome on the
+ *  paper; instead the cell turns the next face it honestly has, and the
+ *  caption under it follows, so the card never credits a picture it is not
+ *  showing. */
+export function useCellFace(cell: EncyclopediaCell): { face: CellFace; onImageError: () => void } {
+  const faces = useMemo(() => cellFaces(cell), [cell]);
+  // The step is remembered per cell and reset during render when the cell
+  // changes, so a fresh cell is never painted as already broken.
+  const [step, setStep] = useState({ id: cell.id, at: 0 });
+  const at = step.id === cell.id ? step.at : 0;
+  if (step.id !== cell.id) setStep({ id: cell.id, at: 0 });
+  return {
+    face: faces[Math.min(at, faces.length - 1)],
+    onImageError: () => setStep((s) => (s.id === cell.id ? { id: s.id, at: Math.min(s.at + 1, faces.length - 1) } : s)),
+  };
+}
+
+/** Whether the picture at `src` failed to load, and a way to say it did. The
+ *  latch resets during render when `src` changes: a new picture starts out
+ *  assumed good. */
+export function useLoadFailure(src: string | undefined): [boolean, () => void] {
+  const [latch, setLatch] = useState({ src, failed: false });
+  if (latch.src !== src) setLatch({ src, failed: false });
+  return [latch.src === src && latch.failed, () => setLatch({ src, failed: true })];
+}
+
 /** The face a cell turns to the map: its picture when it has one, otherwise
  *  the material it does have. Only a cell with no material at all shows the
  *  dashed name box, so the far field reads as material rather than as empty
  *  frames. */
-function Face({ face, lod, k, name }: { face: CellFace; lod: Lod; k: number; name: string }) {
+function Face({ face, lod, k, name, onImageError }: { face: CellFace; lod: Lod; k: number; name: string; onImageError: () => void }) {
   const box = lod === "reading" ? "mt-3" : "";
   const ratio = lod === "reading" ? "4 / 3" : "1 / 1";
   if (face.kind === "image") {
     return (
       <span className={`relative block overflow-hidden ${box}`} style={{ aspectRatio: ratio }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={face.url} alt={face.alt} className="block h-full w-full object-cover" loading="lazy" draggable={false} />
+        <img src={face.url} alt={face.alt} className="block h-full w-full object-cover" loading="lazy" draggable={false} onError={onImageError} />
       </span>
     );
   }
@@ -107,9 +134,9 @@ function Face({ face, lod, k, name }: { face: CellFace; lod: Lod; k: number; nam
   // that no material has been made yet.
   if (lod === "reading") {
     return (
-      <span className="mt-3 block px-3 py-2.5" style={{ outline: "2px dashed color-mix(in oklch, var(--ramune) 45%, transparent)", outlineOffset: -2 }}>
-        <Eyebrow ink="var(--ramune)" style={{ fontSize: 10 }}>Named cell</Eyebrow>
-        <span className="mt-1 block text-[13px] leading-snug text-muted-foreground">Nothing has been made for this cell yet.</span>
+      <span className="mt-3 block px-3 py-2.5" style={{ outline: `2px dashed color-mix(in oklch, ${face.ink} 45%, transparent)`, outlineOffset: -2 }}>
+        <Eyebrow ink={face.ink} style={{ fontSize: 10 }}>{face.eyebrow}</Eyebrow>
+        <span className="mt-1 block text-[16px] leading-snug text-muted-foreground">{face.note}</span>
       </span>
     );
   }
@@ -118,7 +145,7 @@ function Face({ face, lod, k, name }: { face: CellFace; lod: Lod; k: number; nam
   // and a cell with no picture already looks like one.
   return (
     <span className="flex h-full flex-col justify-center px-3 py-3 text-left" style={{ minHeight: 96 }}>
-      {lod === "named" ? <Eyebrow ink="var(--ramune)" style={{ fontSize: Math.min(16, Math.max(9, 5 / k)) }}>Named cell</Eyebrow> : null}
+      {lod === "named" ? <Eyebrow ink={face.ink} style={{ fontSize: Math.min(16, Math.max(9, 5 / k)) }}>{face.eyebrow}</Eyebrow> : null}
       <span
         className={`${lod === "named" ? "mt-1.5" : ""} line-clamp-3 font-display font-bold leading-[1.04] tracking-[-0.02em] text-foreground`}
         style={{ fontSize: nameFitSize(name, k) }}
@@ -149,7 +176,7 @@ export function Plate({
   dimmed: boolean;
   onFocus: () => void;
 }) {
-  const face = cellFace(cell);
+  const { face, onImageError } = useCellFace(cell);
   const box = plateBox(cell);
   const material = cellMaterial(cell);
   const studyText = material.text?.source === "study" ? material.text : null;
@@ -185,10 +212,10 @@ export function Plate({
             <span className="text-muted-foreground">· {cell.state === "Draft" ? "proposed" : cell.state.toLowerCase()}</span>
           </span>
           <span className="mt-1.5 block font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: nameSize }}>{cell.name}</span>
-          {cell.description ? <span className="mt-2 line-clamp-3 text-[13.5px] leading-snug text-muted-foreground">{cell.description}</span> : <span className="mt-2 block text-[13.5px] leading-snug text-muted-foreground">A name and a scope.</span>}
+          {cell.description ? <span className="mt-2 line-clamp-3 text-[16px] leading-snug text-muted-foreground">{cell.description}</span> : <span className="mt-2 block text-[16px] leading-snug text-muted-foreground">A name and a scope.</span>}
         </span>
       ) : null}
-      <Face face={face} lod={lod} k={k} name={cell.name} />
+      <Face face={face} lod={lod} k={k} name={cell.name} onImageError={onImageError} />
       {lod === "reading" ? (
         <span className="mt-2 block font-mono text-[9.5px] uppercase leading-snug tracking-[0.12em] text-muted-foreground">{face.caption}</span>
       ) : null}
@@ -222,9 +249,12 @@ export function Satellite({
   const record = manifestation?.record ?? null;
   const ink = SET_INK[node.set];
   const size = SAT_W;
-  const thumb = record?.image ? (
+  // A record's thumbnail can 404. When it does the satellite shows the next
+  // face the record has rather than a broken-image box.
+  const [imageFailed, markImageFailed] = useLoadFailure(record?.image);
+  const thumb = record?.image && !imageFailed ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={record.image} alt={record.name} className="block h-full w-full object-cover" loading="lazy" draggable={false} />
+    <img src={record.image} alt={record.name} className="block h-full w-full object-cover" loading="lazy" draggable={false} onError={markImageFailed} />
   ) : record?.swatches?.length ? (
     <Swatches colors={record.swatches} className="h-full" />
   ) : record?.excerpt ? (
@@ -237,14 +267,17 @@ export function Satellite({
   const labelSize = Math.min(14, Math.max(9, 9 / k));
 
   if (node.index === -1) {
+    // The ring holds what fits; the rest are real records the sheet lists in
+    // full, so this node opens that list rather than standing for nothing.
     return (
-      <button type="button" onClick={onMore} aria-label={`${node.more} more manifestations`} className={common} style={style}>
+      <button type="button" onClick={onMore} title={`Open the other ${node.more} records this cell names`} aria-label={`Open the other ${node.more} records this cell names`} className={common} style={style}>
         <span className="grid place-items-center bg-[var(--washi)] font-mono font-bold tabular-nums text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, fontSize: Math.min(22, Math.max(12, 11 / k)) }}>+{node.more}</span>
-        {labelled ? <span className="mt-1 block text-center font-mono uppercase tracking-[0.12em] text-muted-foreground" style={{ fontSize: labelSize }}>more</span> : null}
+        {labelled ? <span className="mt-1 block text-center font-mono uppercase tracking-[0.12em] text-muted-foreground" style={{ fontSize: labelSize }}>open all</span> : null}
       </button>
     );
   }
-  const name = record?.name ?? "Record not found";
+  // A read that failed is not an absent record: say which one happened.
+  const name = record?.name ?? (manifestation?.unread ? "Record could not be read" : "Record not found");
   return (
     <a
       href={record?.href}

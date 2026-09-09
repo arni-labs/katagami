@@ -5,8 +5,8 @@ import { ArrowRight, ArrowUpRight, BookOpen, X } from "lucide-react";
 import type { CellManifestation, EncyclopediaCell } from "@/lib/encyclopedia";
 import { GraphIndex, MAP_LABEL, MAP_NAMES_ORDER, relationInk } from "@/lib/encyclopedia-graph";
 import { InkStamp, ProvenanceStamp, RELATION_INK_VAR, inkChipStyle } from "./chrome";
-import { cellFace, cellMaterial, SET_INK, SET_SHORT } from "./material";
-import { Eyebrow, PaperStrip, Swatches } from "./map-cards";
+import { SET_INK, SET_SHORT, type CellFace } from "./material";
+import { Eyebrow, PaperStrip, Swatches, useCellFace, useLoadFailure } from "./map-cards";
 
 // The cell sheet beside the map (a bottom sheet on phones). Title, the
 // PROPOSED CELL and provenance stamps, the scope, then three tabs: Material
@@ -41,11 +41,14 @@ function Row({ children, onClick, href }: { children: ReactNode; onClick?: () =>
 
 function Thumb({ manifestation }: { manifestation: CellManifestation }) {
   const record = manifestation.record;
+  // A thumbnail that 404s falls through to the record's next face instead of
+  // leaving a broken-image box in the list.
+  const [imageFailed, markImageFailed] = useLoadFailure(record?.image);
   const frame = "block h-[76px] w-[76px] shrink-0 overflow-hidden";
   if (!record) return <span className={frame} style={{ outline: "2px dashed color-mix(in oklch, var(--graphite) 45%, transparent)", outlineOffset: -2 }} />;
-  if (record.image) {
+  if (record.image && !imageFailed) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={record.image} alt="" className={`${frame} object-cover`} style={{ boxShadow: "var(--shadow-sticker)" }} loading="lazy" />;
+    return <img src={record.image} alt="" className={`${frame} object-cover`} style={{ boxShadow: "var(--shadow-sticker)" }} loading="lazy" onError={markImageFailed} />;
   }
   if (record.excerpt) return <span className={frame}><PaperStrip text={record.excerpt} lines={3} className="h-full !px-2 !py-1.5 [&_p]:text-[8.5px] [&_p]:leading-[13px]" /></span>;
   if (record.swatches?.length) return <span className={frame}><Swatches colors={record.swatches} className="h-full" /></span>;
@@ -60,33 +63,45 @@ function Heading({ children }: { children: ReactNode }) {
   return <h3 className="font-display text-[19px] font-bold tracking-[-0.02em]">{children}</h3>;
 }
 
-function Manifestations({ cell }: { cell: EncyclopediaCell }) {
-  const [all, setAll] = useState(false);
+function Manifestations({ cell, expandKey }: { cell: EncyclopediaCell; expandKey: number }) {
+  // A new cell opens folded; the "+N" node on the map bumps `expandKey` and
+  // opens the list in full. The records past the ring are on the cell, and
+  // this is where they are all reachable — the node must never read as "the
+  // rest are not there". Both resets happen during render rather than in an
+  // effect, so the list is never painted folded for a frame first.
+  const [opened, setOpened] = useState({ id: cell.id, key: expandKey, all: expandKey > 0 });
+  const current = opened.id === cell.id && opened.key === expandKey
+    ? opened
+    : { id: cell.id, key: expandKey, all: opened.key !== expandKey && expandKey > 0 };
+  if (current !== opened) setOpened(current);
+  const all = current.all;
+  const setAll = (next: boolean) => setOpened({ id: cell.id, key: expandKey, all: next });
   const shown = all ? cell.manifestations : cell.manifestations.slice(0, 6);
   if (!cell.manifestations.length) {
     return (
       <>
         <Heading>Manifestations</Heading>
-        <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">No Katagami record expresses this cell yet. An empty seat is a real finding: a region with no made work.</p>
+        <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">No Katagami record expresses this cell yet. An empty seat is a real finding: a region with no made work.</p>
       </>
     );
   }
   return (
     <>
-      <Heading>Manifestations</Heading>
-      <ul className="mt-1 divide-y divide-transparent">
-        {shown.map((m) => {
+      <Heading>Manifestations <span className="font-mono text-[11px] font-normal tracking-[0.14em] text-muted-foreground tabular-nums">{cell.manifestations.length}</span></Heading>
+      <ul className="mt-1">
+        {shown.map((m, i) => {
           const record = m.record;
           return (
-            <li key={`${m.entitySet}:${m.entityId}`} className="[&+&]:shadow-[inset_0_1px_0_color-mix(in_srgb,var(--foreground)_6%,transparent)]">
+            <li key={`${m.entitySet}:${m.entityId}`}>
+              {i > 0 ? <span aria-hidden className="sticker-perforation block" /> : null}
               <Row href={record?.href}>
                 <span className="w-16 shrink-0 self-start pt-1">
                   <Eyebrow ink={SET_INK[m.entitySet]}>{SET_SHORT[m.entitySet]}</Eyebrow>
                 </span>
                 <Thumb manifestation={m} />
                 <span className="min-w-0 flex-1">
-                  <span className="block font-sans text-[15.5px] font-semibold leading-snug text-foreground">{record?.name ?? "Record not found"}</span>
-                  <span className="mt-0.5 line-clamp-2 text-[13.5px] leading-snug text-muted-foreground">{record ? (record.line || m.explanation) : m.entityId}</span>
+                  <span className="block font-sans text-[16px] font-semibold leading-snug text-foreground">{record?.name ?? (m.unread ? "Record could not be read" : "Record not found")}</span>
+                  <span className="mt-0.5 line-clamp-2 text-[16px] leading-snug text-muted-foreground">{record ? (record.line || m.explanation) : m.unread ? `The read for ${m.entityId} failed. Reload to try it again.` : m.entityId}</span>
                   {record ? <span className="mt-0.5 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground/80">{record.status === "UnderReview" ? "under review" : record.status.toLowerCase()}</span> : null}
                 </span>
               </Row>
@@ -95,11 +110,45 @@ function Manifestations({ cell }: { cell: EncyclopediaCell }) {
         })}
       </ul>
       {cell.manifestations.length > 6 ? (
-        <button type="button" onClick={() => setAll((v) => !v)} className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground underline decoration-[var(--yuzu)] decoration-2 underline-offset-[3px] hover:text-foreground">
+        <button type="button" onClick={() => setAll(!all)} className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground underline decoration-[var(--yuzu)] decoration-2 underline-offset-[3px] hover:text-foreground">
           {all ? "Fewer" : `All ${cell.manifestations.length}`}
         </button>
       ) : null}
     </>
+  );
+}
+
+/** A cell's face at thumbnail size. The face and its fallback belong to the
+ *  row, so the picture and the label it is credited with never disagree. */
+function CellThumb({ face, onImageError, size }: { face: CellFace; onImageError: () => void; size: number }) {
+  const frame = "block shrink-0";
+  const box = { width: size, height: size };
+  if (face.kind === "image") {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={face.url} alt="" className={`${frame} object-cover`} style={{ ...box, boxShadow: "var(--shadow-sticker)" }} loading="lazy" onError={onImageError} />;
+  }
+  if (face.kind === "passage") {
+    return <span className={`${frame} overflow-hidden`} style={box}><PaperStrip text={face.text} lines={3} className="h-full !px-2 !py-1.5 [&_p]:text-[8px] [&_p]:leading-[12px]" /></span>;
+  }
+  if (face.kind === "palette") {
+    return <span className={frame} style={box}><Swatches colors={face.swatches} className="h-full" /></span>;
+  }
+  return <span className={frame} style={{ ...box, outline: `2px dashed color-mix(in oklch, ${face.ink} 60%, transparent)`, outlineOffset: -2 }} />;
+}
+
+function NarrowerRow({ kid, onFocus }: { kid: EncyclopediaCell; onFocus: (id: string) => void }) {
+  const { face, onImageError } = useCellFace(kid);
+  return (
+    <li>
+      <Row onClick={() => onFocus(kid.id)}>
+        <CellThumb face={face} onImageError={onImageError} size={64} />
+        <span className="min-w-0 flex-1">
+          <Eyebrow ink={face.ink}>{face.eyebrow}</Eyebrow>
+          <span className="mt-0.5 block font-sans text-[16px] font-semibold leading-snug text-foreground">{kid.name}</span>
+          <span className="mt-0.5 line-clamp-2 text-[16px] leading-snug text-muted-foreground">{kid.description || "A name and a scope."}</span>
+        </span>
+      </Row>
+    </li>
   );
 }
 
@@ -110,34 +159,10 @@ function Narrower({ cell, index, onFocus }: { cell: EncyclopediaCell; index: Gra
       <Heading>Narrower cells</Heading>
       {kids.length ? (
         <ul className="mt-1">
-          {kids.map((kid) => {
-            const m = cellMaterial(kid);
-            const piece = m.image ?? m.text ?? m.palette;
-            return (
-              <li key={kid.id}>
-                <Row onClick={() => onFocus(kid.id)}>
-                  {m.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={m.image.url} alt="" className="block h-[64px] w-[64px] shrink-0 object-cover" style={{ boxShadow: "var(--shadow-sticker)" }} loading="lazy" />
-                  ) : m.text ? (
-                    <span className="block h-[64px] w-[64px] shrink-0 overflow-hidden"><PaperStrip text={m.text.text} lines={3} className="h-full !px-2 !py-1.5 [&_p]:text-[8px] [&_p]:leading-[12px]" /></span>
-                  ) : m.palette ? (
-                    <span className="block h-[64px] w-[64px] shrink-0"><Swatches colors={m.palette.swatches} className="h-full" /></span>
-                  ) : (
-                    <span className="block h-[64px] w-[64px] shrink-0" style={{ outline: "2px dashed color-mix(in oklch, var(--ramune) 60%, transparent)", outlineOffset: -2 }} />
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <Eyebrow ink={piece ? piece.ink : "var(--ramune)"}>{piece ? piece.eyebrow : "Name only"}</Eyebrow>
-                    <span className="mt-0.5 block font-sans text-[15.5px] font-semibold leading-snug text-foreground">{kid.name}</span>
-                    <span className="mt-0.5 line-clamp-2 text-[13.5px] leading-snug text-muted-foreground">{kid.description || "A name and a scope."}</span>
-                  </span>
-                </Row>
-              </li>
-            );
-          })}
+          {kids.map((kid) => <NarrowerRow key={kid.id} kid={kid} onFocus={onFocus} />)}
         </ul>
       ) : (
-        <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">Nothing narrower under this cell yet.</p>
+        <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">Nothing narrower under this cell yet.</p>
       )}
     </>
   );
@@ -150,7 +175,7 @@ function SourceRow({ source }: { source: EncyclopediaCell["sources"][number] }) 
     <div className="flex gap-3">
       <BookOpen size={20} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="text-[15px] leading-relaxed text-foreground"><em>{source.title}</em>. <span className="text-muted-foreground">{host}</span></p>
+        <p className="text-[16px] leading-relaxed text-foreground"><em>{source.title}</em>. <span className="text-muted-foreground">{host}</span></p>
         <div className="mt-2 flex flex-wrap items-center gap-2.5">
           {source.verifiedBy ? (
             <span className="font-mono text-[10px] uppercase tracking-[0.14em]" style={{ color: "color-mix(in oklch, var(--ramune) 72%, var(--foreground))" }}>Verified by {source.verifiedBy} · {source.verifiedOn}</span>
@@ -159,13 +184,13 @@ function SourceRow({ source }: { source: EncyclopediaCell["sources"][number] }) 
               <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Unverified</span>
               <span className="group/verify relative">
                 <button type="button" disabled aria-disabled="true" aria-describedby={`verify-${source.id}`} className="cursor-not-allowed px-2.5 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.14em] opacity-60" style={inkChipStyle("var(--ramune)")}>Verify</button>
-                <span id={`verify-${source.id}`} role="tooltip" className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-56 bg-[var(--foreground)] px-2.5 py-2 text-[12.5px] leading-snug text-[var(--background)] opacity-0 shadow-[var(--shadow-card)] transition-opacity group-hover/verify:opacity-100 group-focus-within/verify:opacity-100">
+                <span id={`verify-${source.id}`} role="tooltip" className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-64 bg-[var(--foreground)] px-3 py-2.5 text-[16px] leading-snug text-[var(--background)] opacity-0 shadow-[var(--shadow-card)] transition-opacity group-hover/verify:opacity-100 group-focus-within/verify:opacity-100">
                   Verification is coming. Opening the source and recording who checked it will land here.
                 </span>
               </span>
             </>
           )}
-          <a href={source.url} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 font-sans text-[14px] font-semibold" style={{ color: "color-mix(in oklch, var(--ramune) 80%, var(--foreground))" }}>
+          <a href={source.url} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 font-sans text-[16px] font-semibold" style={{ color: "color-mix(in oklch, var(--ramune) 80%, var(--foreground))" }}>
             View source <ArrowUpRight size={14} aria-hidden />
           </a>
         </div>
@@ -180,15 +205,15 @@ function CellRow({ cell, word, explanation, ink, onFocus }: { cell: Encyclopedia
       <Row onClick={() => onFocus(cell.id)}>
         <span className="min-w-0 flex-1">
           <Eyebrow ink={ink}>{word}</Eyebrow>
-          <span className="mt-0.5 block font-sans text-[15.5px] font-semibold leading-snug text-foreground">{cell.name}</span>
-          {explanation ? <span className="mt-0.5 block text-[13.5px] leading-snug text-muted-foreground">{explanation}</span> : null}
+          <span className="mt-0.5 block font-sans text-[16px] font-semibold leading-snug text-foreground">{cell.name}</span>
+          {explanation ? <span className="mt-0.5 block text-[16px] leading-snug text-muted-foreground">{explanation}</span> : null}
         </span>
       </Row>
     </li>
   );
 }
 
-export function SheetBody({ cell, index, tab, onTab, onFocus }: { cell: EncyclopediaCell; index: GraphIndex; tab: SheetTab; onTab: (tab: SheetTab) => void; onFocus: (id: string) => void }) {
+export function SheetBody({ cell, index, tab, onTab, onFocus, expandKey = 0 }: { cell: EncyclopediaCell; index: GraphIndex; tab: SheetTab; onTab: (tab: SheetTab) => void; onFocus: (id: string) => void; expandKey?: number }) {
   const far = index.farJump(cell.id);
   const tabs: Array<{ id: SheetTab; label: string }> = [
     { id: "material", label: "Material" },
@@ -216,13 +241,13 @@ export function SheetBody({ cell, index, tab, onTab, onFocus }: { cell: Encyclop
 
       {tab === "material" ? (
         <div className="pt-5">
-          <Manifestations cell={cell} />
+          <Manifestations cell={cell} expandKey={expandKey} />
           <Divider />
           <Narrower cell={cell} index={index} onFocus={onFocus} />
           <Divider />
           <Heading>Source snippet</Heading>
           <div className="mt-3">
-            {cell.sources[0] ? <SourceRow source={cell.sources[0]} /> : <p className="text-[15px] leading-relaxed text-muted-foreground">No source. {cell.provenance.note ?? "Written from model training data."}</p>}
+            {cell.sources[0] ? <SourceRow source={cell.sources[0]} /> : <p className="text-[16px] leading-relaxed text-muted-foreground">No source. {cell.provenance.note ?? "Written from model training data."}</p>}
           </div>
         </div>
       ) : null}
@@ -234,24 +259,24 @@ export function SheetBody({ cell, index, tab, onTab, onFocus }: { cell: Encyclop
             <ul className="mt-1">
               {cell.broader.map((link) => {
                 const target = index.byId.get(link.cellId);
-                return target ? <CellRow key={link.cellId} cell={target} word="broader" explanation={link.explanation} ink="var(--graphite)" onFocus={onFocus} /> : <li key={link.cellId} className="py-3 text-[14.5px] text-muted-foreground"><span className="font-mono text-[12px]">{link.cellId}</span> is not in the library yet.</li>;
+                return target ? <CellRow key={link.cellId} cell={target} word="broader" explanation={link.explanation} ink="var(--graphite)" onFocus={onFocus} /> : <li key={link.cellId} className="py-3 text-[16px] text-muted-foreground"><span className="font-mono text-[12px]">{link.cellId}</span> is not in the library yet.</li>;
               })}
             </ul>
-          ) : <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">A top-level cell: nothing broader above it.</p>}
+          ) : <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">A top-level cell: nothing broader above it.</p>}
           <Divider />
           <Heading>Narrower</Heading>
           {index.childrenOf(cell.id).length ? (
             <ul className="mt-1">
               {index.childrenOf(cell.id).map((kid) => <CellRow key={kid.id} cell={kid} word="narrower cell" explanation={kid.broader.find((b) => b.cellId === cell.id)?.explanation ?? ""} ink="var(--graphite)" onFocus={onFocus} />)}
             </ul>
-          ) : <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">Nothing narrower yet.</p>}
+          ) : <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">Nothing narrower yet.</p>}
           <Divider />
           <Heading>Relations</Heading>
           {index.neighbours(cell.id).filter((n) => n.via !== "broader" && n.via !== "narrower").length ? (
             <ul className="mt-1">
               {index.neighbours(cell.id).filter((n) => n.via !== "broader" && n.via !== "narrower").map((n) => <CellRow key={n.cell.id} cell={n.cell} word={n.via} explanation={n.explanation} ink={RELATION_INK_VAR[relationInk(n.via)]} onFocus={onFocus} />)}
             </ul>
-          ) : <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">No typed relations recorded.</p>}
+          ) : <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">No typed relations recorded.</p>}
           <Divider />
           <Heading>Jump far</Heading>
           {far ? (
@@ -261,10 +286,10 @@ export function SheetBody({ cell, index, tab, onTab, onFocus }: { cell: Encyclop
                   <span className="font-display text-[19px] font-bold tracking-[-0.02em]">{far.cell.name}</span>
                   <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground tabular-nums">{far.hops} hops</span>
                 </span>
-                <span className="mt-1 block text-[14px] leading-relaxed text-muted-foreground">{far.path.map((id) => index.byId.get(id)?.name ?? id).join(" → ")}</span>
+                <span className="mt-1 block text-[16px] leading-relaxed text-muted-foreground">{far.path.map((id) => index.byId.get(id)?.name ?? id).join(" → ")}</span>
               </span>
             </button>
-          ) : <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">Everything reachable is within one hop.</p>}
+          ) : <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">Everything reachable is within one hop.</p>}
         </div>
       ) : null}
 
@@ -272,17 +297,17 @@ export function SheetBody({ cell, index, tab, onTab, onFocus }: { cell: Encyclop
         <div className="pt-5">
           <Heading>Provenance</Heading>
           <div className="mt-2 flex flex-wrap items-center gap-2"><ProvenanceStamp basis={cell.provenance.basis} /><InkStamp ink="var(--graphite)" tilt={1}>{cell.state || "Draft"}</InkStamp></div>
-          {cell.provenance.note ? <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{cell.provenance.note}</p> : null}
+          {cell.provenance.note ? <p className="mt-3 text-[16px] leading-relaxed text-muted-foreground">{cell.provenance.note}</p> : null}
           <Divider />
           <Heading>Sources <span className="font-mono text-[11px] font-normal tracking-[0.14em] text-muted-foreground tabular-nums">{cell.sources.filter((s) => s.verifiedBy).length}/{cell.sources.length} verified</span></Heading>
-          {cell.sources.length ? <div className="mt-3 grid gap-5">{cell.sources.map((s) => <SourceRow key={s.id} source={s} />)}</div> : <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">No sources yet.</p>}
+          {cell.sources.length ? <div className="mt-3 grid gap-5">{cell.sources.map((s) => <SourceRow key={s.id} source={s} />)}</div> : <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">No sources yet.</p>}
           <Divider />
           <Heading>Maps</Heading>
           <ul className="mt-2 grid gap-2.5">
             {cell.maps.map((m) => (
               <li key={m.map}>
-                <span className="font-sans text-[15.5px] font-semibold">{MAP_LABEL[m.map]}</span>
-                <p className="mt-0.5 text-[14.5px] leading-relaxed text-muted-foreground">{m.explanation}</p>
+                <span className="font-sans text-[16px] font-semibold">{MAP_LABEL[m.map]}</span>
+                <p className="mt-0.5 text-[16px] leading-relaxed text-muted-foreground">{m.explanation}</p>
               </li>
             ))}
           </ul>
@@ -290,7 +315,7 @@ export function SheetBody({ cell, index, tab, onTab, onFocus }: { cell: Encyclop
             <>
               <Divider />
               <Heading>Open questions</Heading>
-              <ul className="mt-2 grid gap-1.5">{cell.questions.map((q) => <li key={q} className="text-[15px] leading-relaxed text-foreground/85">{q}</li>)}</ul>
+              <ul className="mt-2 grid gap-1.5">{cell.questions.map((q) => <li key={q} className="text-[16px] leading-relaxed text-foreground/85">{q}</li>)}</ul>
             </>
           ) : null}
           <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70 break-all">cell · {cell.id}</p>
@@ -338,6 +363,21 @@ export function CloseButton({ onClick, className = "" }: { onClick: () => void; 
   );
 }
 
+function IndexRow({ cell, onFocus }: { cell: EncyclopediaCell; onFocus: (id: string) => void }) {
+  const { face, onImageError } = useCellFace(cell);
+  return (
+    <li>
+      <Row onClick={() => onFocus(cell.id)}>
+        <CellThumb face={face} onImageError={onImageError} size={52} />
+        <span className="min-w-0 flex-1">
+          <span className="block font-sans text-[16px] font-semibold leading-snug text-foreground">{cell.name}</span>
+          <span className="mt-0.5 line-clamp-1 text-[16px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
+        </span>
+      </Row>
+    </li>
+  );
+}
+
 /** The sheet with nothing in focus: an index of every cell, by map, each with
  *  its picture. Picking one focuses it on the map. */
 export function IndexSheet({ index, onFocus }: { index: GraphIndex; onFocus: (id: string) => void }) {
@@ -358,31 +398,7 @@ export function IndexSheet({ index, onFocus }: { index: GraphIndex; onFocus: (id
           <section key={map} className="pt-7">
             <Heading>{MAP_LABEL[map]} <span className="font-mono text-[11px] font-normal tracking-[0.14em] text-muted-foreground tabular-nums">{members.length}</span></Heading>
             <ul className="mt-1">
-              {members.map((cell) => {
-                const face = cellFace(cell);
-                return (
-                  <li key={cell.id}>
-                    <Row onClick={() => onFocus(cell.id)}>
-                      {face.kind === "image" ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={face.url} alt="" className="block h-[52px] w-[52px] shrink-0 object-cover" style={{ boxShadow: "var(--shadow-sticker)" }} loading="lazy" />
-                      ) : face.kind === "palette" ? (
-                        <Swatches colors={face.swatches} className="h-[52px] w-[52px] shrink-0" />
-                      ) : face.kind === "passage" ? (
-                        <span className="block h-[52px] w-[52px] shrink-0" style={{ background: "color-mix(in srgb, var(--yuzu) 12%, var(--washi))", boxShadow: "var(--shadow-sticker)", backgroundImage: "repeating-linear-gradient(180deg, transparent 0 7px, color-mix(in srgb, var(--foreground) 14%, transparent) 7px 8px)" }} />
-                      ) : (
-                        // A cell with nothing made for it yet: a quiet empty
-                        // frame, not another shout of accent colour.
-                        <span className="block h-[52px] w-[52px] shrink-0" style={{ outline: "2px dashed color-mix(in oklch, var(--foreground) 18%, transparent)", outlineOffset: -2 }} />
-                      )}
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-sans text-[15.5px] font-semibold leading-snug text-foreground">{cell.name}</span>
-                        <span className="mt-0.5 line-clamp-1 text-[13px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
-                      </span>
-                    </Row>
-                  </li>
-                );
-              })}
+              {members.map((cell) => <IndexRow key={cell.id} cell={cell} onFocus={onFocus} />)}
             </ul>
           </section>
         );

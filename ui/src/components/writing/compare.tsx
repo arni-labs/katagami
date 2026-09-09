@@ -50,7 +50,7 @@ export function CompareBoard({ specimens, onRemove, onClose }: { specimens: Writ
       </div>
 
       <Row label="Persona">{specimens.map((s) => <p key={s.id} className="text-[16px] leading-relaxed text-foreground">{s.persona || <span className="text-muted-foreground">No persona written.</span>}</p>)}</Row>
-      <Row label="Passage">{specimens.map((s) => (s.exemplars[0] ? <Passage key={s.id} exemplar={s.exemplars[0]} clamp={8} /> : <p key={s.id} className="text-[15px] text-muted-foreground">No exemplar on the record.</p>))}</Row>
+      <Row label="Passage">{specimens.map((s) => (s.exemplars[0] ? <Passage key={s.id} exemplar={s.exemplars[0]} clamp={8} /> : <p key={s.id} className="text-[16px] text-muted-foreground">No exemplar on the record.</p>))}</Row>
       <Row label="Register">{specimens.map((s) => <KeyValueTable key={s.id} rows={s.register} empty="No register recorded." />)}</Row>
       <Row label="Moves">{specimens.map((s) => <BulletList key={s.id} items={s.moves} empty="No moves recorded." />)}</Row>
       <Row label="Refusals">{specimens.map((s) => <BulletList key={s.id} items={s.refusals} empty="No refusals recorded." strike />)}</Row>
@@ -61,11 +61,11 @@ export function CompareBoard({ specimens, onRemove, onClose }: { specimens: Writ
           <div key={s.id} className="grid gap-3">
             <div>
               <div className="mb-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">use</div>
-              {s.vocabulary.use.length ? <p className="text-[15px] leading-relaxed">{s.vocabulary.use.join(", ")}</p> : <p className="text-[15px] text-muted-foreground">None listed.</p>}
+              {s.vocabulary.use.length ? <p className="text-[16px] leading-relaxed">{s.vocabulary.use.join(", ")}</p> : <p className="text-[16px] text-muted-foreground">None listed.</p>}
             </div>
             <div>
               <div className="mb-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">ban</div>
-              {s.vocabulary.ban.length ? <p className="text-[15px] leading-relaxed text-muted-foreground line-through decoration-[var(--sakura)] decoration-2">{s.vocabulary.ban.join(", ")}</p> : <p className="text-[15px] text-muted-foreground">None listed.</p>}
+              {s.vocabulary.ban.length ? <p className="text-[16px] leading-relaxed text-muted-foreground line-through decoration-[var(--sakura)] decoration-2">{s.vocabulary.ban.join(", ")}</p> : <p className="text-[16px] text-muted-foreground">None listed.</p>}
             </div>
           </div>
         ))}

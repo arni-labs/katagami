@@ -39,6 +39,9 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const [sheetOpen, setSheetOpen] = useState(true);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [tab, setTab] = useState<SheetTab>("material");
+  // Bumped by the map's "+N" node: the sheet opens its manifestation list in
+  // full so every record past the ring is reachable from the map.
+  const [expandKey, setExpandKey] = useState(0);
   const [map, setMap] = useState<MapName | null>(null);
   const [query, setQuery] = useState("");
   const desktop = useIsDesktop();
@@ -262,7 +265,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             k={camera.k}
             dimmed={dimmedPlate(s.cellId) || faded(s.cellId)}
             labelled={focusId === s.cellId && lod !== "picture"}
-            onMore={() => { focus(s.cellId); setTab("material"); }}
+            onMore={() => { focus(s.cellId); setTab("material"); setSheetOpen(true); setSheetExpanded(true); setExpandKey((n) => n + 1); }}
           />
         ))}
         {layout.plates.map((p: PlateNode) => (
@@ -287,9 +290,9 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
           The <Marker color="sakura">encyclopedia</Marker>
         </h1>
         <div className="pointer-events-auto mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Filter by map">
-          <button type="button" aria-pressed={map === null} onClick={() => onFilter(null)} className="h-8 px-3 font-sans text-[14px] font-semibold shadow-[var(--shadow-sticker)] sm:h-9 sm:px-4 sm:text-[15px]" style={map === null ? { background: "var(--yuzu)", color: "var(--sumi)" } : { background: "var(--washi)", color: "var(--foreground)" }}>All</button>
+          <button type="button" aria-pressed={map === null} onClick={() => onFilter(null)} className="h-8 px-3 font-sans text-[16px] font-semibold shadow-[var(--shadow-sticker)] sm:h-9 sm:px-4" style={map === null ? { background: "var(--yuzu)", color: "var(--sumi)" } : { background: "var(--washi)", color: "var(--foreground)" }}>All</button>
           {MAP_NAMES_ORDER.map((name) => (
-            <button key={name} type="button" aria-pressed={map === name} onClick={() => onFilter(map === name ? null : name)} disabled={!counts[name]} title={counts[name] ? `${counts[name]} cells` : "No cells on this map yet"} className="h-8 px-3 font-sans text-[14px] font-semibold shadow-[var(--shadow-sticker)] disabled:cursor-not-allowed disabled:opacity-45 sm:h-9 sm:px-4 sm:text-[15px]" style={map === name ? { background: "var(--yuzu)", color: "var(--sumi)" } : { background: "var(--washi)", color: "var(--foreground)" }}>
+            <button key={name} type="button" aria-pressed={map === name} onClick={() => onFilter(map === name ? null : name)} disabled={!counts[name]} title={counts[name] ? `${counts[name]} cells` : "No cells on this map yet"} className="h-8 px-3 font-sans text-[16px] font-semibold shadow-[var(--shadow-sticker)] disabled:cursor-not-allowed disabled:opacity-45 sm:h-9 sm:px-4" style={map === name ? { background: "var(--yuzu)", color: "var(--sumi)" } : { background: "var(--washi)", color: "var(--foreground)" }}>
               {MAP_LABEL[name]}
             </button>
           ))}
@@ -304,11 +307,11 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             {results.length ? results.map((cell) => (
               <li key={cell.id} role="option" aria-selected={false}>
                 <button type="button" onClick={() => { focus(cell.id); setQuery(""); }} className="flex w-full items-baseline gap-3 px-4 py-2.5 text-left hover:bg-[color-mix(in_srgb,var(--yuzu)_22%,transparent)]">
-                  <span className="font-display text-[15px] font-bold tracking-[-0.02em]">{cell.name}</span>
+                  <span className="font-display text-[16px] font-bold tracking-[-0.02em]">{cell.name}</span>
                   <span className="ml-auto shrink-0 font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">{cell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}</span>
                 </button>
               </li>
-            )) : <li className="px-4 py-3 text-[14.5px] text-muted-foreground">No cell matches.</li>}
+            )) : <li className="px-4 py-3 text-[16px] text-muted-foreground">No cell matches.</li>}
           </ul>
         ) : null}
       </div>
@@ -338,7 +341,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
       {desktop ? (
         <div className="pointer-events-none absolute bottom-4 left-6 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="pointer-events-auto flex items-center gap-2 font-sans text-[15px]">
+          <span className="pointer-events-auto flex items-center gap-2 font-sans text-[16px]">
             <button type="button" onClick={() => { clearFocus(); fitAll(); }} className="text-foreground hover:underline">Encyclopedia</button>
             {focusCell ? (<><span className="text-muted-foreground">/</span><span className="font-semibold" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>{focusCell.name}</span></>) : null}
           </span>
@@ -355,7 +358,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     <>
       <div className="mt-6"><SheetTitle cell={focusCell} /></div>
       <p className="mt-4 text-[17px] leading-relaxed text-foreground">{focusCell.description || "A name and a scope. No description has been written for this cell yet."}</p>
-      <SheetBody cell={focusCell} index={index} tab={tab} onTab={setTab} onFocus={focus} />
+      <SheetBody cell={focusCell} index={index} tab={tab} onTab={setTab} onFocus={focus} expandKey={expandKey} />
       <OpenCellButton cell={focusCell} />
     </>
   ) : (
@@ -363,7 +366,9 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   );
 
   const desktopSheet = (
-    <aside className="relative flex h-full flex-col overflow-y-auto px-8 pb-10 pt-6" aria-label="Cell" style={{ boxShadow: "inset 1px 0 0 color-mix(in srgb, var(--foreground) 8%, transparent)" }}>
+    <aside className="relative flex h-full flex-col overflow-y-auto px-8 pb-10 pt-6" aria-label="Cell">
+      {/* The sheet's edge is the house die-cut perforation, not a grey rule. */}
+      <span aria-hidden className="sticker-perforation-y pointer-events-none absolute inset-y-0 left-0" />
       <span aria-hidden className="washi-tape pointer-events-none left-6 top-3" style={{ ["--strip-ink" as string]: "var(--ramune)", transform: "rotate(-4deg)", width: 66 }} />
       <div className="flex justify-end">{focusCell ? <CloseButton onClick={clearFocus} /> : <CloseButton onClick={() => setSheetOpen(false)} />}</div>
       {sheetContent}
@@ -377,7 +382,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       role="dialog"
       aria-label="Cell"
     >
-      <button type="button" onClick={() => setSheetExpanded((v) => !v)} aria-label={sheetExpanded ? "Collapse" : "Expand"} className="mx-auto mt-2 block h-1.5 w-16 rounded-full bg-[color-mix(in_srgb,var(--foreground)_18%,transparent)]" />
+      <button type="button" onClick={() => setSheetExpanded((v) => !v)} aria-label={sheetExpanded ? "Collapse" : "Expand"} className="mx-auto mt-2 block h-1.5 w-16 bg-[color-mix(in_srgb,var(--foreground)_18%,transparent)]" />
       {sheetExpanded ? (
         <>
           <div className="flex items-center justify-between px-5 pt-3">
@@ -392,7 +397,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             <div className="min-w-0"><SheetTitle cell={focusCell} size="md" /></div>
             <button type="button" onClick={() => setSheetExpanded(true)} aria-label="Expand" className="grid h-9 w-9 shrink-0 place-items-center"><ChevronUp size={22} /></button>
           </div>
-          <p className="mt-2 truncate font-sans text-[15px] text-muted-foreground">{focusCell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}{focusCell.manifestations.length ? ` · ${focusCell.manifestations.length} made` : ""}</p>
+          <p className="mt-2 truncate font-sans text-[16px] text-muted-foreground">{focusCell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}{focusCell.manifestations.length ? ` · ${focusCell.manifestations.length} made` : ""}</p>
           <button type="button" onClick={() => setSheetExpanded(true)} className="mt-3 flex h-12 w-full items-center justify-between bg-foreground px-5 font-mono text-[12px] font-bold uppercase tracking-[0.2em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)]">
             View cell <ArrowUpRight size={18} aria-hidden />
           </button>
@@ -401,7 +406,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
         <button type="button" onClick={() => setSheetExpanded(true)} className="flex flex-1 items-center justify-between px-5 pb-4 pt-3 text-left">
           <span>
             <span className="block font-display text-[20px] font-bold tracking-[-0.02em]">{graph.cells.length} cells</span>
-            <span className="mt-0.5 block font-sans text-[14px] text-muted-foreground">Tap a cell on the map, or open the index.</span>
+            <span className="mt-0.5 block font-sans text-[16px] text-muted-foreground">Tap a cell on the map, or open the index.</span>
           </span>
           <ChevronUp size={22} aria-hidden />
         </button>
