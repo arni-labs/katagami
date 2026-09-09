@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
-import { breadthTell, checkCollection, creditOf, descendantsOf, RULES } from "../../scripts/encyclopedia-integrity.mjs";
+import { breadthTell, checkCollection, creditOf, descendantsOf, reconcileRead, RULES } from "../../scripts/encyclopedia-integrity.mjs";
 
 const sha256 = (text) => createHash("sha256").update(text).digest("hex");
 
@@ -181,6 +181,75 @@ test("the tell counts a record held at differing breadth, and not one held at on
   const { context } = checkCollection(sameDepth);
   assert.equal(context.atTwoDepths, 0, "two childless homes are two claims at one depth");
   assert.equal(context.recordsOnSeveralCells, 1);
+});
+
+// The verifier found that a wrong-typed field threw out of the checker, so one
+// malformed cell aborted the sweep and the rest went unreported.
+test("a field of the wrong type is a finding on that cell, and the sweep carries on", () => {
+  for (const [field, value] of [["sources", null], ["manifestations", {}], ["broader", "no"], ["name", 7]]) {
+    const broken = doc("Broken");
+    broken[field] = value;
+    const rows = [cell("broken", broken), cell("fine", doc("Fine"))];
+    const { violations, context } = checkCollection(rows);
+    assert.equal(violations.length, 1, field);
+    assert.equal(violations[0].rule, "unparseable", field);
+    assert.equal(violations[0].cell, "broken", field);
+    assert.match(violations[0].detail, new RegExp(field), field);
+    assert.equal(context.cells, 1, `${field}: the healthy cell is still checked`);
+  }
+});
+
+test("a null or non-object entry inside a list is a finding, not a crash", () => {
+  const rows = [cell("a", doc("A", { manifestations: [null], maps: [{ map: "art", explanation: "x", sourceIds: "s1" }] }))];
+  const { violations } = checkCollection(rows);
+  assert.ok(violations.every((violation) => violation.rule === "unparseable"));
+  assert.ok(violations.length >= 2);
+});
+
+test("a manifestation of an Archived record is counted as a tell, never a violation", () => {
+  const rows = [cell("a", doc("A", { manifestations: [manifestation("en-old", 'credits name "A"')] }))];
+  const records = new Map([["en-old", "Archived"], ["en-live", "Published"]]);
+  const { violations, context } = checkCollection(rows, records);
+  assert.deepEqual(violations, [], "an archived record is a legal manifestation target");
+  assert.equal(context.archivedManifestations, 1);
+});
+
+test("the output states where the depth rule is active and how literal it is", () => {
+  const rows = [
+    cell("parent", doc("Parent", { manifestations: [manifestation("en-1", 'credits name "Parent"'), manifestation("en-2", 'credits name "something else"')] })),
+    cell("leaf", doc("Leaf", { broader: [{ cellId: "parent", explanation: "x", sourceIds: ["s1"] }] })),
+  ];
+  const { context } = checkCollection(rows);
+  assert.equal(context.depthRuleActiveOn, 1, "only the parent has anything below it");
+  assert.equal(context.cells, 2);
+  assert.equal(context.creditsNamingTheirOwnCell, 1, "one of the two credits literally names its own cell");
+  assert.equal(context.creditsTotal, 2);
+});
+
+test("a Set of ids still works where a Map of statuses is not available", () => {
+  const rows = [cell("a", doc("A", { manifestations: [manifestation("en-1", "x")] }))];
+  assert.deepEqual(checkCollection(rows, new Set(["en-1"])).violations, []);
+  assert.equal(checkCollection(rows, new Set(["en-2"])).violations[0].rule, "dangling-manifestation");
+});
+
+// The verifier stopped the paging early and the sweep still reported zero, with
+// a broken cell unread on page two. A read that cannot account for every row
+// must fail the run rather than report a clean result.
+test("a read that saw every row reconciles, and one that did not is reported", () => {
+  assert.equal(reconcileRead("EncyclopediaCells", 738, 738), null);
+  const short = reconcileRead("EncyclopediaCells", 500, 738);
+  assert.match(short.detail, /238 row\(s\) were never seen/);
+  assert.equal(short.set, "EncyclopediaCells");
+});
+
+test("a server that counts fewer rows than it returns is reported as disagreeing with itself", () => {
+  assert.match(reconcileRead("DesignLanguages", 1279, 1278).detail, /disagrees with itself/);
+});
+
+test("a missing count is a failure to check, not a pass", () => {
+  for (const absent of [null, undefined, Number.NaN, "many"]) {
+    assert.match(reconcileRead("ArtStyles", 512, absent).detail, /no @odata.count/);
+  }
 });
 
 test("the tell is a pure function of the parsed cells and their children", () => {
