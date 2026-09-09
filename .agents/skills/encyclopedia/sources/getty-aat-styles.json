@@ -7,5 +7,605 @@
   "total": 6198,
   "totalDerivedFrom": "concepts under the Styles and Periods facet, 2026-09-08; not read end to end, coverage is cells carrying an AAT id",
   "lane": "visual",
-  "terms": []
+  "terms": [
+    {
+      "term": "Abstract Expressionism",
+      "ref": "https://vocab.getty.edu/aat/300022099",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "abstract-expressionism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Academic art",
+      "ref": "https://vocab.getty.edu/aat/300056465",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "academic-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Action Painting",
+      "ref": "https://vocab.getty.edu/aat/300112061",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "action-painting",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Aestheticism",
+      "ref": "https://vocab.getty.edu/aat/300018124",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "aestheticism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "American Regionalism",
+      "ref": "https://vocab.getty.edu/aat/300172866",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "american-regionalism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Art Deco",
+      "ref": "https://vocab.getty.edu/aat/300021426",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "art-deco",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Art Informel",
+      "ref": "https://vocab.getty.edu/aat/300022176",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "art-informel",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Arte Povera",
+      "ref": "https://vocab.getty.edu/aat/300047851",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "arte-povera",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Ashcan School",
+      "ref": "https://vocab.getty.edu/aat/300120324",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "ashcan-school",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Bad Painting",
+      "ref": "https://vocab.getty.edu/aat/300263413",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "bad-painting",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Baroque",
+      "ref": "https://vocab.getty.edu/aat/300021147",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "baroque",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Body Art",
+      "ref": "https://vocab.getty.edu/aat/300386734",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "body-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Chicago Imagists",
+      "ref": "https://vocab.getty.edu/aat/300116666",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "chicago-imagists",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Computer art",
+      "ref": "https://vocab.getty.edu/aat/300069478",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "computer-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Conceptual Art",
+      "ref": "https://vocab.getty.edu/aat/300264827",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "conceptual-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Concrete Art",
+      "ref": "https://vocab.getty.edu/aat/300021436",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "concrete-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Dada",
+      "ref": "https://vocab.getty.edu/aat/300021500",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "dada",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Danube school",
+      "ref": "https://vocab.getty.edu/aat/300263782",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "danube-school",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "De Stijl",
+      "ref": "https://vocab.getty.edu/aat/300021259",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "de-stijl",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Decadent movement",
+      "ref": "https://vocab.getty.edu/aat/300021439",
+      "decision": "live",
+      "batch": "B20",
+      "note": "Read and matched to the existing live cell, which carries the concept as a source. An earlier version of this row said the citation had not been written, which contradicted its own live decision; the cell has carried AAT 300021439 since it was created by another run.",
+      "cellId": "decadent-movement"
+    },
+    {
+      "term": "Deconstructivism",
+      "ref": "https://vocab.getty.edu/aat/300112407",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "deconstructivism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Expressionism",
+      "ref": "https://vocab.getty.edu/aat/300021502",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "expressionism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Fluxus",
+      "ref": "https://vocab.getty.edu/aat/300022168",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "fluxus",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Folk Art",
+      "ref": "https://vocab.getty.edu/aat/300056487",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "folk-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Funk Art",
+      "ref": "https://vocab.getty.edu/aat/300047891",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "funk-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Futurism",
+      "ref": "https://vocab.getty.edu/aat/300021374",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "futurism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Geometric Abstraction",
+      "ref": "https://vocab.getty.edu/aat/300056509",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "geometric-abstraction",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Gothic art",
+      "ref": "https://vocab.getty.edu/aat/300020775",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "gothic-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Harlem Renaissance",
+      "ref": "https://vocab.getty.edu/aat/300121558",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "harlem-renaissance",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "High Renaissance",
+      "ref": "https://vocab.getty.edu/aat/300021142",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "high-renaissance",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Hudson River School",
+      "ref": "https://vocab.getty.edu/aat/300379047",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "hudson-river-school",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Japonisme",
+      "ref": "https://vocab.getty.edu/aat/300055785",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "japonisme",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Kanō school",
+      "ref": "https://vocab.getty.edu/aat/300018653",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "kano-school",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Land Art",
+      "ref": "https://vocab.getty.edu/aat/300047857",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "land-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Light and Space",
+      "ref": "https://vocab.getty.edu/aat/300375712",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "light-and-space",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Luminism",
+      "ref": "https://vocab.getty.edu/aat/300108215",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "luminism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Mannerism",
+      "ref": "https://vocab.getty.edu/aat/300021144",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "mannerism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Mexican Muralism",
+      "ref": "https://vocab.getty.edu/aat/300107850",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "mexican-muralism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Minimalism",
+      "ref": "https://vocab.getty.edu/aat/300065758",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "minimalism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Neo-Dada",
+      "ref": "https://vocab.getty.edu/aat/300022187",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "neo-dada",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Neo-Expressionism",
+      "ref": "https://vocab.getty.edu/aat/300022189",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "neo-expressionism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Neo-romanticism",
+      "ref": "https://vocab.getty.edu/aat/300021476",
+      "decision": "declined",
+      "batch": "B20",
+      "note": "Read and NOT cited. The AAT concept names the British style of the 1930s to 1950s specifically, which is narrower than the movement the cell Neo-romanticism holds."
+    },
+    {
+      "term": "Neoclassicism",
+      "ref": "https://vocab.getty.edu/aat/300021477",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "neoclassicism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Net art",
+      "ref": "https://vocab.getty.edu/aat/300419940",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "net-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Neue Sachlichkeit",
+      "ref": "https://vocab.getty.edu/aat/300056541",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "neue-sachlichkeit",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Northern Renaissance",
+      "ref": "https://vocab.getty.edu/aat/300252246",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "northern-renaissance",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Nouveau Réalisme",
+      "ref": "https://vocab.getty.edu/aat/300112105",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "nouveau-realisme",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Op Art",
+      "ref": "https://vocab.getty.edu/aat/300022195",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "op-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Orientalism",
+      "ref": "https://vocab.getty.edu/aat/300055784",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "orientalism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Orphism (art)",
+      "ref": "https://vocab.getty.edu/aat/300134101",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "orphism-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Outsider Art",
+      "ref": "https://vocab.getty.edu/aat/300056472",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "outsider-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Pittura Metafisica",
+      "ref": "https://vocab.getty.edu/aat/300021376",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "pittura-metafisica",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Pointillism",
+      "ref": "https://vocab.getty.edu/aat/300067450",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "pointillism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Post-Impressionism",
+      "ref": "https://vocab.getty.edu/aat/300021508",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "post-impressionism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Postminimalism",
+      "ref": "https://vocab.getty.edu/aat/300112731",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "postminimalism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Pre-Raphaelite Brotherhood",
+      "ref": "https://vocab.getty.edu/aat/300021225",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "pre-raphaelite-brotherhood",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Process Art",
+      "ref": "https://vocab.getty.edu/aat/300022209",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "process-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Purism",
+      "ref": "https://vocab.getty.edu/aat/300122664",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "purism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Realism (art movement)",
+      "ref": "https://vocab.getty.edu/aat/300172861",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "realism-art-movement",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Relational aesthetics",
+      "ref": "https://vocab.getty.edu/aat/300391190",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "relational-aesthetics",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Rinpa school",
+      "ref": "https://vocab.getty.edu/aat/300106734",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "rinpa-school",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Rococo",
+      "ref": "https://vocab.getty.edu/aat/300021155",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "rococo",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Romanticism",
+      "ref": "https://vocab.getty.edu/aat/300172863",
+      "decision": "live",
+      "batch": "B20",
+      "note": "Read and cited on the cell. The AAT scope note covers the European movement across the visual arts, literature and music, which is the same direction the cell holds.",
+      "cellId": "romanticism"
+    },
+    {
+      "term": "Shin-hanga",
+      "ref": "https://vocab.getty.edu/aat/300262954",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "shin-hanga",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Shunga",
+      "ref": "https://vocab.getty.edu/aat/300041555",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "shunga",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Social Realism",
+      "ref": "https://vocab.getty.edu/aat/300061066",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "social-realism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Socialist Realism",
+      "ref": "https://vocab.getty.edu/aat/300021404",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "socialist-realism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Street art",
+      "ref": "https://vocab.getty.edu/aat/300056477",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "street-art",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Suprematism",
+      "ref": "https://vocab.getty.edu/aat/300021405",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "suprematism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Symbolism",
+      "ref": "https://vocab.getty.edu/aat/300021514",
+      "decision": "live",
+      "batch": "B20",
+      "note": "Read and cited on the cell. The AAT scope note describes the international movement first applied to literature in the late nineteenth century, matching the cell.",
+      "cellId": "symbolism"
+    },
+    {
+      "term": "Tonalism",
+      "ref": "https://vocab.getty.edu/aat/300132908",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "tonalism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Transavanguardia",
+      "ref": "https://vocab.getty.edu/aat/300022218",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "transavanguardia",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Unanimism",
+      "ref": "https://vocab.getty.edu/aat/300122717",
+      "decision": "live",
+      "batch": "B20",
+      "note": "Read and cited on the cell. The AAT scope note dates the founding to 1908 and names Jules Roman; Wikipedia dates it to 1904 and spells the founder Jules Romains. The cell follows Wikipedia and the discrepancy is recorded here.",
+      "cellId": "unanimism"
+    },
+    {
+      "term": "Viennese Actionism",
+      "ref": "https://vocab.getty.edu/aat/300047933",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "viennese-actionism",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    },
+    {
+      "term": "Young British Artists",
+      "ref": "https://vocab.getty.edu/aat/300263412",
+      "decision": "live",
+      "batch": "B21-B23",
+      "cellId": "young-british-artists",
+      "note": "The AAT concept was matched to this cell through the Wikidata item's Getty AAT identifier and cited on the cell; the record page answered on Getty's own host. The canonical vocab.getty.edu URI could not be cited because it redirects off-site and the loader refuses that."
+    }
+  ]
 }

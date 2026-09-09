@@ -7,5 +7,686 @@
   "total": 416,
   "totalDerivedFrom": "SPARQL P31 Q3326717, 2026-09-08",
   "lane": "writing",
-  "terms": []
+  "terms": [
+    {
+      "term": "Abbaye de Créteil",
+      "ref": "https://www.wikidata.org/wiki/Q2275355",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "abbaye-de-creteil",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Acmeist poetry",
+      "ref": "https://www.wikidata.org/wiki/Q420245",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "acmeism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Alternative literature",
+      "ref": "https://www.wikidata.org/wiki/Q4736524",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "alternative-literature",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Asiatic style",
+      "ref": "https://www.wikidata.org/wiki/Q727841",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "asiatic-style",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Atticism",
+      "ref": "https://www.wikidata.org/wiki/Q746783",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "atticism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Birmingham Group (authors)",
+      "ref": "https://www.wikidata.org/wiki/Q4916708",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "birmingham-group",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Bizarro fiction",
+      "ref": "https://www.wikidata.org/wiki/Q3640599",
+      "decision": "merge",
+      "batch": "B19-B20",
+      "cellId": "bizarro-fiction",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers. The merge target already existed, so the item was not on it until this repair added it. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "British Poetry Revival",
+      "ref": "https://www.wikidata.org/wiki/Q4970618",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "british-poetry-revival",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Cartonera",
+      "ref": "https://www.wikidata.org/wiki/Q5047388",
+      "decision": "merge",
+      "batch": "B19-B20",
+      "cellId": "cartonera-books",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers. The merge target already existed, so the item was not on it until this repair added it. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Catholic literary revival",
+      "ref": "https://www.wikidata.org/wiki/Q30693053",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "catholic-literary-revival",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Chicanafuturism",
+      "ref": "https://www.wikidata.org/wiki/Q97359046",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "chicanafuturism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Classical Prose Movement",
+      "ref": "https://www.wikidata.org/wiki/Q5128310",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "classical-prose-movement",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Committed literature",
+      "ref": "https://www.wikidata.org/wiki/Q2403352",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "committed-literature",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Condorism",
+      "ref": "https://www.wikidata.org/wiki/Q5159353",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "condorism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Coppet group",
+      "ref": "https://www.wikidata.org/wiki/Q3117678",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "coppet-group",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Costumbrismo",
+      "ref": "https://www.wikidata.org/wiki/Q1136545",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "costumbrismo",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Créolie",
+      "ref": "https://www.wikidata.org/wiki/Q3006286",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "creolie",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Créolité",
+      "ref": "https://www.wikidata.org/wiki/Q2196653",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "creolite",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Decadent movement",
+      "ref": "https://www.wikidata.org/wiki/Q846094",
+      "decision": "merge",
+      "batch": "B19-B20",
+      "cellId": "decadent-movement",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers. The merge target already existed, so the item was not on it until this repair added it. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Deep image",
+      "ref": "https://www.wikidata.org/wiki/Q3021141",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "deep-image",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Dolce Stil Novo",
+      "ref": "https://www.wikidata.org/wiki/Q542036",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "dolce-stil-novo",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Félibrige",
+      "ref": "https://www.wikidata.org/wiki/Q1165363",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "felibrige",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Forum Lingkar Pena",
+      "ref": "https://www.wikidata.org/wiki/Q19751785",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "forum-lingkar-pena",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Fyrtiotalism",
+      "ref": "https://www.wikidata.org/wiki/Q10500646",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "fyrtiotalism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Generación del 45",
+      "ref": "https://www.wikidata.org/wiki/Q5876881",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "generacion-del-45",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Generation of '38",
+      "ref": "https://www.wikidata.org/wiki/Q5876879",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "generation-of-38",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Grupo Taller de Estocolmo",
+      "ref": "https://www.wikidata.org/wiki/Q2722218",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "grupo-taller-de-estocolmo",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Halqa-e Arbab-e Zauq",
+      "ref": "https://www.wikidata.org/wiki/Q5643493",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "halqa-e-arbab-e-zauq",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Imaginism",
+      "ref": "https://www.wikidata.org/wiki/Q908365",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "imaginism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Impressionism (literature)",
+      "ref": "https://www.wikidata.org/wiki/Q1475680",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "impressionism-literature",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Indianism (arts)",
+      "ref": "https://www.wikidata.org/wiki/Q2368408",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "indianism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Indigenous futurisms",
+      "ref": "https://www.wikidata.org/wiki/Q28407644",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "indigenous-futurisms",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Irrealism (the arts)",
+      "ref": "https://www.wikidata.org/wiki/Q6073550",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "irrealism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Jadid",
+      "ref": "https://www.wikidata.org/wiki/Q1325236",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "jadid",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Jindyworobak Movement",
+      "ref": "https://www.wikidata.org/wiki/Q6202125",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "jindyworobak-movement",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Jutland Movement",
+      "ref": "https://www.wikidata.org/wiki/Q12311796",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "jutland-movement",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Latin American Boom",
+      "ref": "https://www.wikidata.org/wiki/Q1352538",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "latin-american-boom",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Latino Futurism",
+      "ref": "https://www.wikidata.org/wiki/Q135180390",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "latino-futurism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Literary costumbrismo",
+      "ref": "https://www.wikidata.org/wiki/Q5790162",
+      "decision": "merge",
+      "batch": "B19-B20",
+      "cellId": "costumbrismo",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers. The merge target already existed, so the item was not on it until this repair added it. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Mahjar",
+      "ref": "https://www.wikidata.org/wiki/Q7185455",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "mahjar",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Maximalism",
+      "ref": "https://www.wikidata.org/wiki/Q2246318",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "maximalism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Mennonite literature",
+      "ref": "https://www.wikidata.org/wiki/Q85851417",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "mennonite-literature",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Mundane science fiction",
+      "ref": "https://www.wikidata.org/wiki/Q1952674",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "mundane-science-fiction",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Mystical anarchism",
+      "ref": "https://www.wikidata.org/wiki/Q3823401",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "mystical-anarchism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Nadaism",
+      "ref": "https://www.wikidata.org/wiki/Q2496232",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "nadaism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Natural school",
+      "ref": "https://www.wikidata.org/wiki/Q4314206",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "natural-school",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Naturalism (literature)",
+      "ref": "https://www.wikidata.org/wiki/Q55996",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "naturalism-literature",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Naturalism (theatre)",
+      "ref": "https://www.wikidata.org/wiki/Q56001",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "naturalism-theatre",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Négritude",
+      "ref": "https://www.wikidata.org/wiki/Q852544",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "negritude",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Neo-Decadence",
+      "ref": "https://www.wikidata.org/wiki/Q127685183",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "neo-decadence",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Neo-romanticism",
+      "ref": "https://www.wikidata.org/wiki/Q397469",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "neo-romanticism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "New Wave (science fiction)",
+      "ref": "https://www.wikidata.org/wiki/Q2296283",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "new-wave-science-fiction",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Norwegian new realism",
+      "ref": "https://www.wikidata.org/wiki/Q10744336",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "norwegian-new-realism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Novísimos",
+      "ref": "https://www.wikidata.org/wiki/Q3346083",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "novisimos",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Offbeat generation",
+      "ref": "https://www.wikidata.org/wiki/Q7079030",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "offbeat-generation",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Onirism",
+      "ref": "https://www.wikidata.org/wiki/Q3306247",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "onirism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Parnassianism",
+      "ref": "https://www.wikidata.org/wiki/Q335652",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "parnassianism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Pink Decade",
+      "ref": "https://www.wikidata.org/wiki/Q7195987",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "pink-decade",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Pyreneanism",
+      "ref": "https://www.wikidata.org/wiki/Q3411437",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "pyreneanism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Quantum aesthetics",
+      "ref": "https://www.wikidata.org/wiki/Q7269008",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "quantum-aesthetics",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Recluse literature",
+      "ref": "https://www.wikidata.org/wiki/Q7302589",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "recluse-literature",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Rhyming Chroniclers",
+      "ref": "https://www.wikidata.org/wiki/Q7321652",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "rhyming-chroniclers",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Romantic literature",
+      "ref": "https://www.wikidata.org/wiki/Q5977111",
+      "decision": "merge",
+      "batch": "B19-B20",
+      "cellId": "romanticism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers. The merge target already existed, so the item was not on it until this repair added it. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Romanticism",
+      "ref": "https://www.wikidata.org/wiki/Q37068",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "romanticism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Sardinian Literary Spring",
+      "ref": "https://www.wikidata.org/wiki/Q14758079",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "sardinian-literary-spring",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Sastra wangi",
+      "ref": "https://www.wikidata.org/wiki/Q7425812",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "sastra-wangi",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Second Sophistic",
+      "ref": "https://www.wikidata.org/wiki/Q2355080",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "second-sophistic",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Sentimentalism (literature)",
+      "ref": "https://www.wikidata.org/wiki/Q754602",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "sentimentalism-literature",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Serapion Brothers",
+      "ref": "https://www.wikidata.org/wiki/Q1389156",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "serapion-brothers",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Shinkankakuha",
+      "ref": "https://www.wikidata.org/wiki/Q11082779",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "shinkankakuha",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Signalism",
+      "ref": "https://www.wikidata.org/wiki/Q3483628",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "signalism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Stone and Sky (movement)",
+      "ref": "https://www.wikidata.org/wiki/Q6075317",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "stone-and-sky",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Symbolism (movement)",
+      "ref": "https://www.wikidata.org/wiki/Q164800",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "symbolism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "The Papelipolas",
+      "ref": "https://www.wikidata.org/wiki/Q3334809",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "the-papelipolas",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Thơ mới",
+      "ref": "https://www.wikidata.org/wiki/Q7799938",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "tho-moi",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Tzantzismo",
+      "ref": "https://www.wikidata.org/wiki/Q15389577",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "tzantzismo",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Ultra-Romanticism",
+      "ref": "https://www.wikidata.org/wiki/Q745673",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "ultra-romanticism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Unanimism",
+      "ref": "https://www.wikidata.org/wiki/Q2349325",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "unanimism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Verismo (literature)",
+      "ref": "https://www.wikidata.org/wiki/Q215198",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "verismo-literature",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Wellington Group",
+      "ref": "https://www.wikidata.org/wiki/Q7981403",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "wellington-group",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Wiener Gruppe",
+      "ref": "https://www.wikidata.org/wiki/Q259620",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "wiener-gruppe",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Xungen movement",
+      "ref": "https://www.wikidata.org/wiki/Q430833",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "xungen-movement",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Yiddishist movement",
+      "ref": "https://www.wikidata.org/wiki/Q2919734",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "yiddishist-movement",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Young Vienna",
+      "ref": "https://www.wikidata.org/wiki/Q1669652",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "young-vienna",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    },
+    {
+      "term": "Zenitism",
+      "ref": "https://www.wikidata.org/wiki/Q3867190",
+      "decision": "live",
+      "batch": "B19-B20",
+      "cellId": "zenitism",
+      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
+    }
+  ]
 }

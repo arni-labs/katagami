@@ -26,10 +26,9 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
 import { cellDocumentSchema } from "../ui/src/lib/encyclopedia-schema.ts";
 import { identifierFor } from "./encyclopedia-id.mjs";
+import { fetchVerdict } from "./encyclopedia-source-fetch.mjs";
 import { baseConflict } from "./encyclopedia-base.mjs";
 
 const flags = process.argv.slice(2);
@@ -134,60 +133,13 @@ async function exists(path) {
 }
 // A source is reachable when it answers on its own host. A source a named
 // human has opened carries verifiedBy and verifiedOn on the record and is not
-// fetched; the run says so.
-// A citation must point at the public web. The fetch says what it accepts,
-// machine representations first, so a linked-data host answers with the record
-// it serves to scripts and a web page host answers as usual; same-host
-// redirects are followed. Loopback, private, and link-local addresses are
-// refused for the URL and for every redirect hop, so a source cannot steer the
-// runner into something on its own network.
-function privateAddress(address) {
-  if (isIP(address) === 6) {
-    // An IPv4-mapped address arrives either dotted (::ffff:10.0.0.1) or, after
-    // URL canonicalisation, as two hex groups (::ffff:a00:1); judge both as IPv4.
-    const mapped = address.match(/^::ffff:(?:(\d+\.\d+\.\d+\.\d+)|([0-9a-f]{1,4}):([0-9a-f]{1,4}))$/i);
-    if (mapped) {
-      if (mapped[1]) return privateAddress(mapped[1]);
-      const [hi, lo] = [parseInt(mapped[2], 16), parseInt(mapped[3], 16)];
-      return privateAddress(`${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`);
-    }
-    // Loopback, unspecified, unique-local, link-local, multicast.
-    return /^(::1|::)$/i.test(address) || /^(f[cd][0-9a-f]{2}:|fe[89ab][0-9a-f]:|ff[0-9a-f]{2}:)/i.test(address);
-  }
-  const [a, b] = address.split(".").map(Number);
-  // 100.64.0.0/10 is carrier-grade NAT, which Tailscale uses for its hosts.
-  return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
-}
-async function publicHost(url) {
-  const { protocol, hostname: rawHostname } = new URL(url);
-  // URL keeps the brackets on an IPv6 literal; isIP does not want them.
-  const hostname = rawHostname.replace(/^\[|\]$/g, "");
-  if (protocol !== "https:") return `not https (${protocol})`;
-  if (hostname === "localhost" || hostname.endsWith(".local") || hostname.endsWith(".internal")) return `local hostname ${hostname}`;
-  const addresses = isIP(hostname) ? [{ address: hostname }] : await lookup(hostname, { all: true });
-  const bad = addresses.find(({ address }) => privateAddress(address));
-  return bad ? `${hostname} resolves to a private address ${bad.address}` : "";
-}
+// fetched; the run says so. The fetch itself lives in encyclopedia-source-fetch.mjs
+// so that anything asking whether a page can be cited asks the same question
+// this script will ask.
 async function reachable(source) {
   if (source.verifiedBy) return `verified by ${source.verifiedBy} on ${source.verifiedOn}, not fetched`;
   if (checked.has(source.url)) return checked.get(source.url);
-  let verdict = "fetched";
-  try {
-    let url = source.url;
-    verdict = "too many redirects";
-    for (let hop = 0; hop < 5; hop++) {
-      const refused = await publicHost(url);
-      if (refused) { verdict = refused; break; }
-      const response = await fetch(url, { method: "GET", redirect: "manual", signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "Mozilla/5.0 (compatible; katagami-encyclopedia-verifier)", Accept: "application/json, text/html;q=0.9, */*;q=0.8" } });
-      if (response.status >= 300 && response.status < 400 && response.headers.get("location")) {
-        const next = new URL(response.headers.get("location"), url);
-        if (next.host !== new URL(source.url).host) { verdict = `redirected off-site to ${next.host}`; break; }
-        url = next.href; continue;
-      }
-      verdict = response.ok ? "fetched" : `HTTP ${response.status}`;
-      break;
-    }
-  } catch (error) { verdict = `unreachable (${error.name})`; }
+  const verdict = await fetchVerdict(source.url);
   checked.set(source.url, verdict);
   return verdict;
 }
