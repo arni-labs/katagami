@@ -159,6 +159,14 @@ npm install && npm run dev
 
 The gallery runs on `localhost:3000` and talks to the Temper OData API.
 
+## Connect an agent (Cursor plugin)
+
+This repo is a Cursor plugin: `.cursor-plugin/plugin.json` plus root `mcp.json` point at the read-only HTTP server `https://katagami.ai/mcp`. Install the plugin (or paste that URL into any MCP client). Per-client setup lives at [katagami.ai/connect](https://katagami.ai/connect).
+
+Call `describe_catalog` first — it returns the live kinds, families, and facets. Then search with `search_design_languages`, `search_palettes`, or `search_art_styles`, and pull a spec with `get_design_language` / `get_palette` / `get_art_style` (plus `get_design_md`, `get_tokens`, `get_embodiment`, `whoami`).
+
+Anonymous callers see the visitor shelf (the curated sample). Google sign-in on the MCP server unlocks the rest of the catalog. The plugin ships no API keys, env secrets, or tokens.
+
 ## Related
 
 - [Temper](https://github.com/nerdsane/temper) — Policy-driven runtime for governed state machines
