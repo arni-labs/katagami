@@ -867,7 +867,13 @@ Where: `scripts/writing_style_voice_md.py`, `scripts/replace-writing-style-corpo
 <!-- D66–D70 assigned by the team lead for the mobile and performance work on the
      encyclopedia (PR #291). Numbers in this log are assigned rather than chosen:
      five collisions have come from a branch picking its own block by reading the
-     others at a moment when those others were still growing. -->
+     others at a moment when those others were still growing.
+
+     These were written on #291 as D42-D46 and arrive here already renumbered,
+     in one commit rather than as a block followed by a renumber. #291 is closed:
+     the same five code commits ended up in two pull requests, and when they were
+     fast-forwarded into #288 only the code crossed - this file was never on that
+     branch at all, so there was no D42 here to renumber. -->
 
 
 ## D66 The phone gets a browser, not the map made smaller

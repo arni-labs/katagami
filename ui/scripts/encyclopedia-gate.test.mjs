@@ -75,6 +75,17 @@ for (const [route, source] of Object.entries(PAGES)) {
     // Cut at the gate statement itself, so the gate's own calls are outside the
     // window rather than allow-listed inside it. Keywords are skipped because
     // `if (` and `for (` are not calls.
+    // KNOWN LIMIT, reproduced rather than reasoned about: wrapping the gate
+    // defeats this. `try { if (!(await isOwner())…) notFound(); } catch {}`
+    // leaves nothing called before the gate and passes ten of ten, while
+    // `notFound()` throws and the catch eats it — the gate is present but
+    // disarmed. That is a different failure from a read running early, and no
+    // textual check found so far catches it without becoming a grammar of its
+    // own. Driving the page against a stubbed backend, asserting zero reads for
+    // a non-owner, is what closes it.
+    //
+    // Said precisely because the comment this file used to carry claimed a gap
+    // was inherent when it was three lines of work. This one is not.
     const KEYWORD = new Set(["if", "for", "while", "switch", "catch", "return", "typeof", "await", "function"]);
     const gateStatement = body.indexOf("if (!(await isOwner())");
     assert.ok(gateStatement > 0, "the gate is written in the shape this test recognises");
