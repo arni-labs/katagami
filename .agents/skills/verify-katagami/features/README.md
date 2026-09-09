@@ -16,6 +16,8 @@ Enumerated from the code's registration points, not from the docs. Each row cite
 
 **MCP tools** - `mcp/src/tools.ts`, each a `server.registerTool` call (10 tools): whoami, search_styles, katagami_search, get_style, remix, import_art_style_proof_image, submit_art_style, submit_palette_system, submit_design_language, submission_status.
 
+**Sign-in and telemetry** - `ui/src/app/api/auth/google/{start,callback}/route.ts`, `/api/auth/me`, `ui/src/lib/server-telemetry.ts`, `ui/src/lib/analytics.ts`, `ui/src/lib/member-activity.ts`, and the alerting set in `infra/datadog/monitors/` that reads what they emit.
+
 **Read MCP tools** - `ui/src/app/mcp/route.ts`, each a `server.registerTool` call (11 tools): describe_catalog, search_design_languages, get_design_language, get_design_md, get_tokens, search_palettes, get_palette, search_art_styles, get_art_style, get_embodiment, whoami. This is the server published at katagami.ai/mcp and it only reads; the contribution server above is the one that writes.
 
 **CLI commands** - `cli/src/cli.ts`, the `switch (cmd)` in `main()` (8 commands): login, logout, whoami, search, pull, remix, submit, status. Every one is a thin call into an MCP tool, so the CLI and the MCP server share one validation path.
