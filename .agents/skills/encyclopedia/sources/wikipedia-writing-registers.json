@@ -1,0 +1,467 @@
+{
+  "source": "wikipedia-writing-registers",
+  "name": "English Wikipedia, articles naming a writing register",
+  "url": "https://en.wikipedia.org/",
+  "licence": "CC-BY-SA-4.0",
+  "use": "read-and-cite",
+  "total": null,
+  "totalDerivedFrom": "no fixed list: the leaf layer is not enumerable from a catalogue, so a row is written for each article read while looking up the manner named under a live broad cell, from 2026-09-09",
+  "lane": "writing",
+  "terms": [
+    {
+      "term": "Literary realism",
+      "ref": "https://en.wikipedia.org/wiki/Literary_realism",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: ordinary life reported without heightening, from mid-nineteenth-century French and Russian literature; minted as the parent Dirty realism and Kitchen sink realism both needed. Proposal B10 #14. Written and attested 2026-09-09.",
+      "cellId": "literary-realism"
+    },
+    {
+      "term": "Familiar essay",
+      "ref": "https://en.wikipedia.org/wiki/Essay#Familiar",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: the essay addressed to one reader, about the writer and a subject at once, with Lamb as the standing example. The article has no page of its own and names the form in its own section; the cell carries that as a question. Proposal B10 #15. Written and attested 2026-09-09.",
+      "cellId": "familiar-essay"
+    },
+    {
+      "term": "Lyric essay",
+      "ref": "https://en.wikipedia.org/wiki/Lyric_essay",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: the essay built by image and juxtaposition, named by Tall and D'Agata in the Seneca Review in 1997. Proposal B10 #16. Written and attested 2026-09-09.",
+      "cellId": "lyric-essay"
+    },
+    {
+      "term": "Op-ed",
+      "ref": "https://en.wikipedia.org/wiki/Op-ed",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: a signed 500-to-700-word argument from outside the publication, fixed by the New York Times page opposite the editorials. Proposal B10 #17. Written and attested 2026-09-09.",
+      "cellId": "op-ed"
+    },
+    {
+      "term": "Narrative journalism",
+      "ref": "https://en.wikipedia.org/wiki/Narrative_journalism",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: reporting written with the devices of fiction; the working register of long-form nonfiction and the parent New Journalism needed. Proposal B10 #18. Written and attested 2026-09-09.",
+      "cellId": "narrative-journalism"
+    },
+    {
+      "term": "New Journalism",
+      "ref": "https://en.wikipedia.org/wiki/New_Journalism",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: the American narrative reporting of the 1960s and 1970s, named by Wolfe and Johnson's 1973 anthology. Proposal B10 #19. Written and attested 2026-09-09.",
+      "cellId": "new-journalism"
+    },
+    {
+      "term": "Gonzo journalism",
+      "ref": "https://en.wikipedia.org/wiki/Gonzo_journalism",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: first-person reporting with the writer as protagonist, named for Thompson's 1970 Kentucky Derby piece. Proposal B10 #20. Written and attested 2026-09-09.",
+      "cellId": "gonzo-journalism"
+    },
+    {
+      "term": "Explanatory journalism",
+      "ref": "https://en.wikipedia.org/wiki/Explanatory_journalism",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: reporting organised around the background a news item assumes; a Pulitzer category since 1985 and the register most long-form blog posts and topic newsletters use. Proposal B10 #21. Written and attested 2026-09-09.",
+      "cellId": "explanatory-journalism"
+    },
+    {
+      "term": "Nature writing",
+      "ref": "https://en.wikipedia.org/wiki/Nature_writing",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: observation of the natural world kept together with the observer, from Gilbert White through Thoreau, Leopold and Carson; three live writing styles credit it. Proposal B10 #22. Written and attested 2026-09-09.",
+      "cellId": "nature-writing"
+    },
+    {
+      "term": "Advice column",
+      "ref": "https://en.wikipedia.org/wiki/Advice_column",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: a reader's question and a named columnist's answer, continuous since the Athenian Mercury in 1690. Proposal B10 #23. Written and attested 2026-09-09.",
+      "cellId": "advice-column"
+    },
+    {
+      "term": "Liveblogging",
+      "ref": "https://en.wikipedia.org/wiki/Liveblogging",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: rolling timestamped coverage of an event as it happens, standard in news since the mid-2000s. Proposal B10 #24. Written and attested 2026-09-09.",
+      "cellId": "liveblogging"
+    },
+    {
+      "term": "Plain English",
+      "ref": "https://en.wikipedia.org/wiki/Plain_English",
+      "decision": "live",
+      "batch": "B10",
+      "note": "register: writing meant to be understood on one reading, with a shelf of guidance from Gowers in 1948 to the United States federal guidelines; the live Plainhand style credits it. Proposal B10 #25. Written and attested 2026-09-09.",
+      "cellId": "plain-english"
+    },
+    {
+      "term": "Minimalism (technical communication)",
+      "ref": "https://en.wikipedia.org/wiki/Minimalism_(technical_communication)",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: documentation in short task-oriented pieces, set out by John Carroll and carried into the DITA standard. Proposal B10 #26. Written and attested 2026-09-09.",
+      "cellId": "minimalism-technical-communication"
+    },
+    {
+      "term": "Man page",
+      "ref": "https://en.wikipedia.org/wiki/Man_page",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: the Unix manual page, terse and declarative in a fixed sequence of sections, with fifty years of work by many hands. Proposal B10 #27. Written and attested 2026-09-09.",
+      "cellId": "man-page"
+    },
+    {
+      "term": "Aphorism",
+      "ref": "https://en.wikipedia.org/wiki/Aphorism",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: the compressed standalone claim, from La Rochefoucauld through Lichtenberg and Nietzsche; recorded on the Microblogs cell as the nearest named register for the short post. Proposal B10 #28. Written and attested 2026-09-09.",
+      "cellId": "aphorism"
+    },
+    {
+      "term": "Hardboiled",
+      "ref": "https://en.wikipedia.org/wiki/Hardboiled",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: the clipped, dialogue-heavy crime register of the American pulps under Prohibition, with Hammett and Chandler as the standing names. Proposal B10 #29. Written and attested 2026-09-09.",
+      "cellId": "hardboiled"
+    },
+    {
+      "term": "Southern Gothic",
+      "ref": "https://en.wikipedia.org/wiki/Southern_Gothic",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: the Gothic relocated to the American South, where the haunting is social history; Faulkner, O'Connor, McCullers and Welty. Proposal B10 #30. Written and attested 2026-09-09.",
+      "cellId": "southern-gothic"
+    },
+    {
+      "term": "Weird fiction",
+      "ref": "https://en.wikipedia.org/wiki/Weird_fiction",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: horror that invents its own uncategorisable monsters, around Hodgson, M. R. James, Clark Ashton Smith and Lovecraft. Proposal B10 #31. Written and attested 2026-09-09.",
+      "cellId": "weird-fiction"
+    },
+    {
+      "term": "New weird",
+      "ref": "https://en.wikipedia.org/wiki/New_weird",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: weird fiction from the 1990s on, named by M. John Harrison in 2002; Mieville, VanderMeer, Swainston, Bishop. Proposal B10 #32. Written and attested 2026-09-09.",
+      "cellId": "new-weird"
+    },
+    {
+      "term": "Solarpunk",
+      "ref": "https://en.wikipedia.org/wiki/Solarpunk",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: speculative fiction of a future where the climate problem was solved, from 2008 on. Proposal B10 #33. Written and attested 2026-09-09.",
+      "cellId": "solarpunk"
+    },
+    {
+      "term": "High fantasy",
+      "ref": "https://en.wikipedia.org/wiki/High_fantasy",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: the chronicle register of the self-consistent invented world, with the conventions Tolkien fixed. Proposal B10 #34. Written and attested 2026-09-09.",
+      "cellId": "high-fantasy"
+    },
+    {
+      "term": "Sword and sorcery",
+      "ref": "https://en.wikipedia.org/wiki/Sword_and_sorcery",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: fast episodic fantasy of personal danger, from Howard's Conan stories, with the name in use since the early 1960s. Proposal B10 #35. Written and attested 2026-09-09.",
+      "cellId": "sword-and-sorcery"
+    },
+    {
+      "term": "Grimdark",
+      "ref": "https://en.wikipedia.org/wiki/Grimdark",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: dystopian, amoral and violent speculative fiction from the 2000s on, named from the Warhammer 40,000 tagline. Proposal B10 #36. Written and attested 2026-09-09.",
+      "cellId": "grimdark"
+    },
+    {
+      "term": "Autofiction",
+      "ref": "https://en.wikipedia.org/wiki/Autofiction",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: fiction from the author's own life published as fiction, with the author's name on the narrator; Doubrovsky coined the word in 1977. Proposal B10 #37. Written and attested 2026-09-09.",
+      "cellId": "autofiction"
+    },
+    {
+      "term": "Dirty realism",
+      "ref": "https://en.wikipedia.org/wiki/Dirty_realism",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: spare North American fiction of unglamorous life, named by Bill Buford in Granta in 1983; Carver, Wolff, Ford, Beattie. Proposal B10 #38. Written and attested 2026-09-09.",
+      "cellId": "dirty-realism"
+    },
+    {
+      "term": "Kitchen sink realism",
+      "ref": "https://en.wikipedia.org/wiki/Kitchen_sink_realism",
+      "decision": "live",
+      "batch": "B10",
+      "note": "movement: British working-class writing of the late 1950s and early 1960s, with regional speech on the page. Proposal B10 #39. Written and attested 2026-09-09.",
+      "cellId": "kitchen-sink-realism"
+    },
+    {
+      "term": "Hysterical realism",
+      "ref": "https://en.wikipedia.org/wiki/Hysterical_realism",
+      "decision": "live",
+      "batch": "B10",
+      "note": "manner: the long contemporary novel of absurd plotting over careful social reporting, named by James Wood in 2000; the cell records that the name began as a complaint. Proposal B10 #40. Written and attested 2026-09-09.",
+      "cellId": "hysterical-realism"
+    },
+    {
+      "term": "Jeremiad",
+      "ref": "https://en.wikipedia.org/wiki/Jeremiad",
+      "decision": "live",
+      "batch": "B10",
+      "note": "register: sustained denunciation of a society's morals ending in a prophecy of ruin, with a continuous American line from the Puritan sermon. Proposal B10 #42. Written and attested 2026-09-09.",
+      "cellId": "jeremiad"
+    },
+    {
+      "term": "Creative nonfiction",
+      "ref": "https://en.wikipedia.org/wiki/Creative_nonfiction",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the cell named from the Library of Congress heading",
+      "cellId": "creative-nonfiction"
+    },
+    {
+      "term": "Essay",
+      "ref": "https://en.wikipedia.org/wiki/Essay",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Essays cell, which is named from the Library of Congress heading",
+      "cellId": "essays"
+    },
+    {
+      "term": "Autobiography",
+      "ref": "https://en.wikipedia.org/wiki/Autobiography",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Autobiographies cell",
+      "cellId": "autobiographies"
+    },
+    {
+      "term": "Memoir",
+      "ref": "https://en.wikipedia.org/wiki/Memoir",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Memoirs cell",
+      "cellId": "memoirs"
+    },
+    {
+      "term": "Diary",
+      "ref": "https://en.wikipedia.org/wiki/Diary",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Diaries cell",
+      "cellId": "diaries"
+    },
+    {
+      "term": "Travel literature",
+      "ref": "https://en.wikipedia.org/wiki/Travel_literature",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Travel writing cell",
+      "cellId": "travel-writing"
+    },
+    {
+      "term": "Editorial",
+      "ref": "https://en.wikipedia.org/wiki/Editorial",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Editorials cell; the unsigned leader is described inside that cell rather than split off",
+      "cellId": "editorials"
+    },
+    {
+      "term": "Blog",
+      "ref": "https://en.wikipedia.org/wiki/Blog",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Blogs cell",
+      "cellId": "blogs"
+    },
+    {
+      "term": "Microblogging",
+      "ref": "https://en.wikipedia.org/wiki/Microblogging",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Microblogs cell",
+      "cellId": "microblogs"
+    },
+    {
+      "term": "Newsletter",
+      "ref": "https://en.wikipedia.org/wiki/Newsletter",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Newsletters cell",
+      "cellId": "newsletters"
+    },
+    {
+      "term": "Technical writing",
+      "ref": "https://en.wikipedia.org/wiki/Technical_writing",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Handbooks and manuals cell; technical writing itself is a profession rather than a direction, and its manners are the leaves under that cell",
+      "cellId": "handbooks-and-manuals"
+    },
+    {
+      "term": "Style guide",
+      "ref": "https://en.wikipedia.org/wiki/Style_guide",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Style manuals cell",
+      "cellId": "style-manuals"
+    },
+    {
+      "term": "Zine",
+      "ref": "https://en.wikipedia.org/wiki/Zine",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Zines cell",
+      "cellId": "zines"
+    },
+    {
+      "term": "Confessional poetry",
+      "ref": "https://en.wikipedia.org/wiki/Confessional_poetry",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "read as the second source on the Confessional poetry cell, which is named from the Library of Congress heading",
+      "cellId": "confessional-poetry"
+    },
+    {
+      "term": "Personal essay",
+      "ref": "https://en.wikipedia.org/wiki/Personal_essay",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "no article of its own; Wikipedia treats it inside the Essay article and the term needs a citation from criticism before it becomes a cell"
+    },
+    {
+      "term": "Leading article",
+      "ref": "https://en.wikipedia.org/wiki/Leading_article",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "redirects to Editorial; the unsigned leader is described inside the Editorials cell",
+      "cellId": "editorials"
+    },
+    {
+      "term": "Spontaneous prose",
+      "ref": "https://en.wikipedia.org/wiki/Spontaneous_prose",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "redirects to the Jack Kerouac article; one writer's stated method, which belongs in a manifestation credited to him"
+    },
+    {
+      "term": "Profile (journalism)",
+      "ref": "https://en.wikipedia.org/wiki/Profile_(journalism)",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "no article; the magazine profile is a real form and needs a naming citation from criticism"
+    },
+    {
+      "term": "New sincerity",
+      "ref": "https://en.wikipedia.org/wiki/New_sincerity",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "a cross-media stance whose writing practice was not read in this pass"
+    },
+    {
+      "term": "Mundane science fiction",
+      "ref": "https://en.wikipedia.org/wiki/Mundane_science_fiction",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "small body of work; left for a pass that reads the science fiction subgenres"
+    },
+    {
+      "term": "Commonplace book",
+      "ref": "https://en.wikipedia.org/wiki/Commonplace_book",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "a compilation practice; whether it carries a register of its own is unsettled"
+    },
+    {
+      "term": "Prose poetry",
+      "ref": "https://en.wikipedia.org/wiki/Prose_poetry",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "the Library of Congress Literature slice carries Prose poems and that lane decides it"
+    },
+    {
+      "term": "Flash fiction",
+      "ref": "https://en.wikipedia.org/wiki/Flash_fiction",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "already a cell, written by the Library of Congress Literature lane",
+      "cellId": "flash-fiction"
+    },
+    {
+      "term": "Epistolary novel",
+      "ref": "https://en.wikipedia.org/wiki/Epistolary_novel",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "already a cell as Epistolary fiction",
+      "cellId": "epistolary-fiction"
+    },
+    {
+      "term": "Diatribe",
+      "ref": "https://en.wikipedia.org/wiki/Diatribe",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "a rhetorical mode; its body of work was not checked in this pass"
+    },
+    {
+      "term": "Apologia",
+      "ref": "https://en.wikipedia.org/wiki/Apologia",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "a rhetorical form with real works behind it; not read in this pass"
+    },
+    {
+      "term": "Cozy mystery",
+      "ref": "https://en.wikipedia.org/wiki/Cozy_mystery",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "already a cell, written by the Library of Congress Literature lane while this pass was running",
+      "cellId": "cozy-mysteries"
+    },
+    {
+      "term": "Noir fiction",
+      "ref": "https://en.wikipedia.org/wiki/Noir_fiction",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "already a cell, written by the Library of Congress Literature lane while this pass was running",
+      "cellId": "noir-fiction"
+    },
+    {
+      "term": "Cyberpunk",
+      "ref": "https://en.wikipedia.org/wiki/Cyberpunk",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "already a cell as Cyberpunk fiction, written by the Library of Congress Literature lane while this pass was running",
+      "cellId": "cyberpunk-fiction"
+    },
+    {
+      "term": "Science fiction",
+      "ref": "https://en.wikipedia.org/wiki/Science_fiction",
+      "decision": "merge",
+      "batch": "B10",
+      "note": "already a cell, written by the Library of Congress Literature lane while this pass was running",
+      "cellId": "science-fiction"
+    }
+  ]
+}
