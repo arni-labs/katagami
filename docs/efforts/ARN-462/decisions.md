@@ -112,3 +112,66 @@ takes.
 **Given up**: the files can drift from Datadog, since nothing enforces the match.
 
 **Where** — `infra/datadog/monitors/`.
+
+## 6. Panel round 1 — four confirmed findings, one that did not reproduce
+
+**Decision** — fixed all four confirmed findings; recorded the fifth as not
+reproducing rather than changing code to satisfy it.
+
+**Came up because** grok and codex reviewed the first commit.
+
+**What was confirmed and fixed**
+
+- *Explicit JSON null on the unused aliases* (grok). A client that materializes
+  every declared property sends `{id_or_slug: "…", id: null, slug: null}`;
+  `.optional()` rejects null, so a call carrying a good identifier failed — and
+  it worked before those keys existed. `idArg` is now `.nullish()`. Reproduced
+  live before the fix (`Invalid input: expected string, received null`) and
+  passing after.
+- *A handler-side missing id was invisible to the alert* (codex). Since all
+  three keys are optional, a caller using a name we do not take (`identifier`)
+  now reaches the handler and gets `missing_id` — with no `error_kind`, so the
+  monitor watching for a schema/caller disagreement stayed green on exactly
+  that disagreement. The path now records `errorKind: "missing_id"` and
+  `arg_keys`, and monitor m1 matches `(invalid_arguments OR missing_id)`.
+- *A Google outage filed as a user decline* (codex). The callback labelled every
+  Google error redirect `reason: "consent"`, and the sign-in monitor excludes
+  consent as a choice — so `server_error`, `temporarily_unavailable` and an org
+  policy block would have been silently excluded too. `access_denied` keeps
+  `consent`; everything else is `provider`.
+- *The RUM monitor could page on another app's errors, and on a laptop's*
+  (codex and grok). Its query gained `service:katagami-web`. The RUM env tag is
+  baked at build time, so the `VERCEL_REGION` guard cannot reach it; instead
+  `initRum()` returns early on localhost, which the browser knows for certain.
+
+**What did not reproduce** — codex claimed a `tools/call` with no `arguments`
+property is refused by the SDK before `missingId()` runs. Driven live against
+the build, `{"name":"get_design_language"}` with no arguments returns our
+`missing_id` message. Not changed.
+
+**Where** — `ui/src/app/mcp/route.ts`, `ui/src/lib/analytics.ts`,
+`ui/src/app/api/auth/google/callback/route.ts`,
+`infra/datadog/monitors/m1,m5,m6`.
+
+## 7. The argument names are captured before the schema strips them
+
+**Decision** — layer 2 stashes the clamped key list on `extra` while the raw
+request is in hand; layer 1 prefers it over the parsed arguments.
+
+**Came up because** the first fix to finding 2 above shipped and reported
+`arg_keys: (none)` for a call that plainly sent `identifier`. Zod strips
+undeclared keys, so by the time a registered handler runs, the one name worth
+seeing is gone.
+
+**Options** — report the parsed keys and accept the blind spot; re-read the raw
+request in layer 1 (it does not have it); pass the raw keys down.
+
+**Chose passing them down** because the whole diagnostic exists to answer
+"which name did they reach for", and `(none)` answers it wrongly rather than
+incompletely. Verified live: the same call now arrives as `(other)`.
+
+**Given up**: a symbol-keyed field on the SDK's `extra` object, which is
+in-process only and never serialized.
+
+**Where** — `ui/src/app/mcp/route.ts` `RAW_ARG_KEYS` / `stashRawArgKeys` /
+`rawArgKeys`.

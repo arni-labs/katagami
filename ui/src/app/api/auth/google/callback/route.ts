@@ -43,10 +43,19 @@ export async function GET(req: NextRequest) {
     // Emit only for hits that look like a real handshake coming back.
     // Scanners GET this URL bare (no code, no error) constantly; emitting
     // for them would drown real failures in warn noise and pump ingest cost.
-    if (req.nextUrl.searchParams.get("error")) {
-      // Google redirected back with an explicit error (user denied consent,
-      // policy block, …) — that is Google talking, not a broken handshake.
-      trackServerEvent("auth_login_failed", { reason: "consent" }, "warn");
+    const googleError = req.nextUrl.searchParams.get("error");
+    if (googleError) {
+      // Google redirected back with an explicit error. Split it: a person
+      // clicking "Cancel" (`access_denied`) is a choice and must not page
+      // anyone, but `server_error`, `temporarily_unavailable` and an org
+      // policy block are Google failing and every one of them is someone who
+      // wanted an account and did not get one. Filing both under one reason
+      // meant the alert that excludes declines also excluded the outage.
+      trackServerEvent(
+        "auth_login_failed",
+        { reason: googleError === "access_denied" ? "consent" : "provider" },
+        "warn",
+      );
     } else if (code) {
       trackServerEvent("auth_login_failed", { reason: "state" }, "warn");
     }

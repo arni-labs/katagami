@@ -76,6 +76,21 @@ function wasTracked(extra: unknown): boolean {
   );
 }
 
+// Zod strips keys the schema does not declare, so by the time a registered
+// handler runs, the very name we want to see — the one the agent reached for
+// and we do not accept — is already gone. Layer 2 still holds the raw request,
+// so it stashes the clamped key list there for layer 1 to report.
+const RAW_ARG_KEYS = Symbol("katagami.mcp.rawArgKeys");
+function stashRawArgKeys(extra: unknown, keys: string | undefined): void {
+  if (extra && typeof extra === "object") {
+    (extra as Record<symbol, string | undefined>)[RAW_ARG_KEYS] = keys;
+  }
+}
+function rawArgKeys(extra: unknown): string | undefined {
+  if (!extra || typeof extra !== "object") return undefined;
+  return (extra as Record<symbol, string | undefined>)[RAW_ARG_KEYS];
+}
+
 function budgetExceeded(name: string): ToolResult {
   return {
     isError: true,
@@ -126,12 +141,18 @@ function withUsageTracking(server: McpServer): void {
         const result = await Promise.race([Promise.resolve(handler(args, extra)), budget]);
         // Hash + emit only inside after() — a hash/intake throw must not
         // 500 the tool or inflate duration_ms.
+        const missing = isMissingId(result);
         trackMcpToolCall({
           tool: name,
           outcome: result?.isError ? "error" : "success",
           durationMs: Date.now() - started,
           sub: authOf(extra)?.extra?.sub,
-          errorKind: timedOut ? "tool_budget_exceeded" : undefined,
+          errorKind: timedOut
+            ? "tool_budget_exceeded"
+            : missing
+              ? "missing_id"
+              : undefined,
+          argKeys: missing ? (rawArgKeys(extra) ?? argKeysOf(args)) : undefined,
         });
         return result;
       } catch (err) {
@@ -156,20 +177,6 @@ function withUsageTracking(server: McpServer): void {
   // reading the schemas. Report the argument KEY NAMES the caller sent —
   // never values, clamped to a known vocabulary so an arbitrary key cannot
   // blow up cardinality or smuggle content.
-  const KNOWN_ARG_KEYS = new Set([
-    "id_or_slug", "id", "slug", "kind", "format", "query", "medium", "tag",
-    "taxonomy", "family", "limit", "cursor", "color", "role",
-  ]);
-  const argKeysOf = (request: ToolCallRequest): string | undefined => {
-    const args = (request?.params as { arguments?: unknown })?.arguments;
-    if (!args || typeof args !== "object") return "(none)";
-    const keys = Object.keys(args as Record<string, unknown>)
-      .map((k) => (KNOWN_ARG_KEYS.has(k) ? k : "(other)"))
-      .filter((k, i, a) => a.indexOf(k) === i)
-      .sort()
-      .slice(0, 6);
-    return keys.length ? keys.join(",") : "(none)";
-  };
 
   // Layer 2: the tools/call request handler. The SDK installs it via
   // server.server.setRequestHandler("tools/call", …) on first registration,
@@ -185,6 +192,7 @@ function withUsageTracking(server: McpServer): void {
     originalSet(method, async (request: ToolCallRequest, extra: unknown) => {
       const tool = clampToolName(request?.params?.name ?? "unknown");
       const started = Date.now();
+      stashRawArgKeys(extra, argKeysOf((request?.params as { arguments?: unknown })?.arguments));
       try {
         const result = (await handler(request, extra)) as ToolResult;
         if (!wasTracked(extra)) {
@@ -198,7 +206,7 @@ function withUsageTracking(server: McpServer): void {
             durationMs: Date.now() - started,
             sub: authOf(extra)?.extra?.sub,
             errorKind: result?.isError ? "invalid_arguments" : undefined,
-            argKeys: result?.isError ? argKeysOf(request) : undefined,
+            argKeys: result?.isError ? rawArgKeys(extra) : undefined,
           });
         }
         return result;
@@ -231,6 +239,27 @@ function gone(tier: Tier) {
   return { content: [{ type: "text" as const, text: JSON.stringify(body, null, 2) }], isError: true };
 }
 
+// When the SDK rejects a call we know only THAT the arguments were invalid,
+// not WHICH. That gap cost a real diagnosis: 8 failed get_* calls read as
+// "invalid_arguments" and the cause (an agent passing `id`, the field search
+// hands back, where the schema wanted `id_or_slug`) had to be inferred from
+// reading the schemas. Report the argument KEY NAMES the caller sent — never
+// values, clamped to a known vocabulary so an arbitrary key cannot blow up
+// cardinality or smuggle content.
+const KNOWN_ARG_KEYS = new Set([
+  "id_or_slug", "id", "slug", "kind", "format", "query", "medium", "tag",
+  "taxonomy", "family", "limit", "cursor", "color", "role",
+]);
+function argKeysOf(args: unknown): string | undefined {
+  if (!args || typeof args !== "object") return "(none)";
+  const keys = Object.keys(args as Record<string, unknown>)
+    .map((k) => (KNOWN_ARG_KEYS.has(k) ? k : "(other)"))
+    .filter((k, i, a) => a.indexOf(k) === i)
+    .sort()
+    .slice(0, 6);
+  return keys.length ? keys.join(",") : "(none)";
+}
+
 // Agents reach for the field name search HANDED them. Search results carry
 // `id` (lib/catalog.ts toRow), so `get_art_style({id})` is the natural next
 // call — and it used to be rejected by the SDK before our handler ran, which
@@ -238,10 +267,14 @@ function gone(tier: Tier) {
 // (ARN-478). Accept the three names an agent will actually try. All optional
 // at the schema layer so a missing id reaches OUR error message instead of a
 // bare SDK validation failure the caller cannot act on.
+// `.nullish()`, not `.optional()`: clients that materialize every declared
+// property send the unused aliases as JSON null. Rejecting those would refuse
+// get_art_style({id_or_slug: "…", id: null, slug: null}) — a call carrying a
+// perfectly good identifier, and one that worked before these keys existed.
 const idArg = z
   .string()
   .describe("The entity id (en-…) or the slug")
-  .optional();
+  .nullish();
 const ID_ALIASES = { id_or_slug: idArg, id: idArg, slug: idArg };
 
 /** The one place an id is resolved. Returns the caller's value, or null with
@@ -255,24 +288,30 @@ function idOf(a: unknown): string | null {
   return null;
 }
 
+const MISSING_ID_TEXT = JSON.stringify(
+  {
+    error: "missing_id",
+    message:
+      "Pass the entity id or slug. Any of `id_or_slug`, `id` or `slug` works — search results return it as `id`.",
+  },
+  null,
+  2,
+);
+
 function missingId() {
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: JSON.stringify(
-          {
-            error: "missing_id",
-            message:
-              "Pass the entity id or slug. Any of `id_or_slug`, `id` or `slug` works — search results return it as `id`.",
-          },
-          null,
-          2,
-        ),
-      },
-    ],
-    isError: true,
-  };
+  return { content: [{ type: "text" as const, text: MISSING_ID_TEXT }], isError: true };
+}
+
+/** A caller reached a get_* handler with no identifier under any of the three
+ *  names. Since the schema accepts the call, this no longer surfaces as an SDK
+ *  `invalid_arguments` rejection — and without its own error_kind it would sit
+ *  in telemetry as an ordinary handler error, invisible to the monitor whose
+ *  whole job is to catch a schema/caller disagreement. It is the same event,
+ *  so it carries the same diagnostics. */
+function isMissingId(result: ToolResult | undefined): boolean {
+  if (!result?.isError) return false;
+  const first = (result.content as { text?: unknown }[] | undefined)?.[0];
+  return first?.text === MISSING_ID_TEXT;
 }
 
 const baseHandler = createMcpHandler(

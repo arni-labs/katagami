@@ -55,9 +55,26 @@ export function rumEnabled(): boolean {
   return Boolean(e.applicationId && e.clientToken);
 }
 
+/** A page served from a developer's own machine. The RUM env tag is baked at
+ *  build time and `vercel env pull` writes VERCEL_ENV=production into
+ *  .env.local, so a local build tags its browser errors `env:production` and
+ *  can page a human — the same false-page class the server-side telemetry env
+ *  guard closes. The hostname is the one thing the browser knows for certain,
+ *  so a local page simply does not start RUM. */
+export function isLocalHost(hostname: string): boolean {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "[::1]" ||
+    hostname === "::1" ||
+    hostname.endsWith(".localhost")
+  );
+}
+
 /** Initialize the RUM SDK once, in the browser. Safe to call repeatedly. */
 export async function initRum(): Promise<void> {
   if (initialized || typeof window === "undefined") return;
+  if (isLocalHost(window.location.hostname)) return;
   if (starting) return starting;
   const e = readEnv();
   const applicationId = e.applicationId;

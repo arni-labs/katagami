@@ -62,6 +62,7 @@ const dashboard = read("../infra/datadog/katagami-rum-dashboard.json");
 const pkg = read("package.json");
 const meRoute = read("src/app/api/auth/me/route.ts");
 const analytics = read("src/lib/analytics.ts");
+const signinCallback = read("src/app/api/auth/google/callback/route.ts");
 const rumInit = read("src/components/rum-init.tsx");
 const userMenu = read("src/components/user-menu.tsx");
 const sessionMe = read("src/lib/session-me.ts");
@@ -551,6 +552,52 @@ const required = [
     mcp,
     /function missingId\(\)/,
   ],
+  // Panel findings on the fix itself. A client that materializes every declared
+  // property sends the unused aliases as JSON null; `.optional()` rejects that
+  // and refuses a call carrying a perfectly good identifier (grok).
+  [
+    "identifier aliases accept JSON null, not only absence",
+    mcp,
+    /\.describe\("The entity id \(en-…\) or the slug"\)\s*\n\s*\.nullish\(\)/,
+  ],
+  // A caller passing an identifier under a name we do not take (`identifier`)
+  // now reaches the handler instead of being refused by the SDK, so without its
+  // own error_kind the exact disagreement the monitor exists to catch would be
+  // invisible (codex).
+  [
+    "a handler-side missing id is reported as its own error kind",
+    mcp,
+    /errorKind: timedOut[\s\S]{0,120}"missing_id"/,
+  ],
+  [
+    "a handler-side missing id carries the argument names too",
+    mcp,
+    /argKeys: missing \? \(rawArgKeys\(extra\) \?\? argKeysOf\(args\)\) : undefined/,
+  ],
+  // Zod strips undeclared keys, so the name the agent actually reached for is
+  // gone by the time the handler runs. Capture it while the raw request is
+  // still in hand, or every unknown-name rejection reports "(none)".
+  [
+    "argument names are captured before the schema strips them",
+    mcp,
+    /stashRawArgKeys\(extra, argKeysOf\(\(request\?\.params/,
+  ],
+  // A Google outage and a person clicking cancel must not share one reason:
+  // the sign-in alert excludes declines, so conflating them hid the outage
+  // (codex).
+  [
+    "a Google-side failure is not filed as a user decline",
+    signinCallback,
+    /googleError === "access_denied" \? "consent" : "provider"/,
+  ],
+  // RUM's env tag is baked at build time, so a local build with a pulled
+  // production env would tag browser errors env:production and page a human —
+  // the same class the server-side env guard closes (grok).
+  [
+    "a page served from localhost never starts RUM",
+    analytics,
+    /if \(isLocalHost\(window\.location\.hostname\)\) return;/,
+  ],
   // The failure emit must carry its own SHORT abort: reporting a dead rollup
   // cannot be killed by the slow backend it is reporting on (verifier finding).
   [
@@ -596,7 +643,11 @@ const required = [
   ["login-path members snapshot is tagged source:login", callback, /source: "login"/],
   ["state-mismatch emits only when a code came back (bots stay silent)", callback,
     /else if \(code\) \{\s*trackServerEvent\("auth_login_failed", \{ reason: "state" \}/],
-  ["Google consent errors are their own reason", callback, /reason: "consent"/],
+  // `consent` used to cover every Google error redirect. The sign-in alert
+  // excludes it as a user's choice, which also excluded a Google outage, so
+  // the two now carry different reasons (codex panel finding).
+  ["a user decline is reason:consent", callback, /\? "consent"/],
+  ["a Google outage is reason:provider, not a decline", callback, /: "provider"/],
   ["signSession failures are reason:session, not reason:google", callback, /reason: "session"/],
   ["countMembers is bounded by default", oauthAs, /AbortSignal\.timeout\(COUNT_MEMBERS_TIMEOUT_MS\)/],
   ["countMembers reads @odata.count strictly (absent throws, never 0)", oauthAs,
