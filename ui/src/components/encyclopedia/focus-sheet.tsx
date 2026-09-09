@@ -451,7 +451,7 @@ export function IndexSheet({ index, onFocus, scrollRef }: { index: GraphIndex; o
           <span aria-hidden className="absolute -bottom-0.5 left-0 h-[3px] w-full" style={{ background: "var(--yuzu)", opacity: 0.8, mixBlendMode: "var(--ink-blend)" as never, transform: "rotate(-0.4deg)" }} />
         </span>
       </h2>
-      <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">Every attested cell is on the map. Pictures far out, words as you come closer. Pick a cell here or on the paper to read it.</p>
+      <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">The map shows what you open: a category node opens its first cells, a cell opens its narrower cells, and a click on an open cell folds them. Pick a cell here to put it on the paper and read it.</p>
       <div className="mt-4" style={{ height: rows.length * INDEX_ROW_H }}>
         <div style={{ transform: `translateY(${win.offsetTop}px)` }}>
           {rows.slice(win.from, win.to).map((row) =>

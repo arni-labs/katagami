@@ -99,6 +99,31 @@ test("a cell with two parents is on the paper when either is open, and once", ()
   assert.equal([...visible.cells].filter((id) => id === "both").length, 1);
 });
 
+test("a cell shown under one parent spends no slot and counts as nothing hidden under the other", () => {
+  // Q and P both have kid0; P has eleven kids in all. Whichever parent the
+  // walk reaches first shows kid0; the other's page is taken over the kids
+  // it still has to show, so kid0 neither spends one of its slots nor counts
+  // as hidden — before, it took a slot and was then dropped, so a page showed
+  // nine and reported a hidden cell the +N could never reach.
+  const cells = [cell("q", "Q"), cell("p", "P"), cell("kid0", "Kid 0", { broader: ["q", "p"] }), ...Array.from({ length: 10 }, (_, i) => cell(`pk${i}`, `P kid ${i}`, { broader: ["p"] }))];
+  const graph = index(cells);
+  const state = toggle(toggle(initialExpansion(["art"]), "q"), "p");
+  const visible = computeVisible(graph, ["art"], state);
+  const q = visible.shown.get("q").map((c) => c.id);
+  const p = visible.shown.get("p").map((c) => c.id);
+  assert.equal(Number(q.includes("kid0")) + Number(p.includes("kid0")), 1, "kid0 is shown under exactly one parent");
+  if (q.includes("kid0")) {
+    assert.equal(p.length, 10, "P's page is its ten own kids");
+    assert.equal(visible.hidden.get("p"), 0, "and nothing of P's is hidden");
+  } else {
+    assert.equal(p.length, BATCH, "P's page is full");
+    assert.equal(visible.hidden.get("p"), 1, "with one of its eleven left for +N");
+    assert.deepEqual(q, [], "Q has nothing left to show of its own");
+    assert.equal(visible.hidden.get("q"), 0);
+  }
+  assert.equal(visible.cells.size, 2 + q.length + p.length, "every shown cell is on the paper once");
+});
+
 test("a containment cycle no root reaches still opens from its category", () => {
   const cells = [cell("x", "X", { broader: ["y"] }), cell("y", "Y", { broader: ["x"] }), cell("r", "Root")];
   const graph = index(cells);

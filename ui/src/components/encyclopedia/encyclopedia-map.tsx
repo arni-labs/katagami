@@ -161,7 +161,10 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   // The floor zoom follows the paper: with enough open the whole open set
   // needs a zoom below the default floor, and a floor above what fit chose
   // made the next zoom-out zoom in.
-  const minZoom = Math.min(ZOOM_MIN, 0.9 * Math.min(((viewportSizeRef.current.w || 1280) - 80) / Math.max(1, layout.bounds.w), ((viewportSizeRef.current.h || 800) - 370) / Math.max(1, layout.bounds.h)));
+  // Never below a small positive zoom: a phone in landscape leaves the map
+  // shorter than the chrome it reserves, and a floor computed from that room
+  // went negative and mirrored the paper.
+  const minZoom = Math.max(0.02, Math.min(ZOOM_MIN, 0.9 * Math.min(Math.max(120, (viewportSizeRef.current.w || 1280) - 80) / Math.max(1, layout.bounds.w), Math.max(120, (viewportSizeRef.current.h || 800) - 370) / Math.max(1, layout.bounds.h))));
   const { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, glide, centerOn, guardWheel, claimPointer, pinching } = usePanZoom({ x: 0, y: 0, k: 0.2 }, maxZoom, minZoom);
   // The camera, readable from a handler without being one of its
   // dependencies: a card's handlers keep one identity across every pan and
@@ -297,7 +300,10 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     if (!el || !box) return;
     const vw = el.clientWidth; const vh = el.clientHeight;
     const top = desktop ? 96 : 150; const bottom = desktop ? 72 : 220; const side = desktop ? 40 : 12;
-    const k = Math.max(minZoom, Math.min(maxK, maxZoom, (vw - side * 2) / box.w, (vh - top - bottom) / box.h));
+    // The room the chrome leaves, never less than a strip: a short viewport
+    // has less than the chrome reserves, and a negative room made a negative zoom.
+    const roomW = Math.max(120, vw - side * 2); const roomH = Math.max(120, vh - top - bottom);
+    const k = Math.max(minZoom, Math.min(maxK, maxZoom, roomW / box.w, roomH / box.h));
     const x = vw / 2 - (box.x + box.w / 2) * k;
     const y = top + (vh - top - bottom) / 2 - (box.y + box.h / 2) * k;
     if (smooth) glide({ k, x, y }); else setCamera({ k, x, y });
@@ -325,11 +331,13 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
   const fitRegion = useCallback((name: MapName) => {
     const hub = hubs.find((h) => h.map === name);
-    if (!hub) return;
     // Every open cell on the map, whichever cluster it sits in: a cell on
     // both maps is pulled into the frame, not left dimmed in the other one.
-    frameRects([hubRect(hub), ...openPlates.filter((p) => p.cell.maps.some((m) => m.map === name)).map(plateRect)], true);
-  }, [hubs, openPlates, frameRects]);
+    // A map with no category node of its own — Palettes and Design, whose
+    // cells all list another map first — frames its open cells alone.
+    const rects = [...(hub ? [hubRect(hub)] : []), ...openPlates.filter((p) => p.cell.maps.some((m) => m.map === name)).map(plateRect)];
+    if (rects.length) frameRects(rects, true); else fitAll();
+  }, [hubs, openPlates, frameRects, fitAll]);
 
 
   /** Bring a plate to the reading layer, centred in the room the sheet leaves. */
@@ -386,10 +394,15 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     // Frame the branch: come in as far as reading size on the parent when
     // the branch fits at that size, otherwise as far as holds the branch.
     // Never past reading size, and never in for a branch already in view.
+    // A category node opens from wherever the camera is: its ring is framed
+    // only if it does not fit, and the camera never comes in for it. A cell
+    // opens to reading size on the cell — 0.8 over its scale — when the
+    // branch fits at that size.
     const parentScale = hub ? 1 : (layout.byId.get(frameKey.key)?.scale ?? 1);
+    const readingK = hub ? cameraRef.current.k : 0.8 / parentScale;
     const room = cameraRect(cameraRef.current, { w: el.clientWidth, h: el.clientHeight });
-    if (rects.every((r) => contains(room, r)) && cameraRef.current.k >= 0.8 * (hub ? 0.5 : parentScale)) return;
-    frameRects(rects, true, Math.max(cameraRef.current.k, 0.8 / parentScale));
+    if (rects.every((r) => contains(room, r)) && cameraRef.current.k >= readingK) return;
+    frameRects(rects, true, Math.max(cameraRef.current.k, readingK));
     // Framing belongs to the act of opening, not to every later change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frameKey]);
@@ -454,16 +467,6 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
   const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); setOpenedId(null); }, []);
 
-  // A record node that leaves the paper — its cell folded, its ring closed —
-  // takes its open card with it, so Escape never spends a press on nothing.
-  useEffect(() => {
-    setOpenRecords((at) => {
-      if (!at.size) return at;
-      const onPaper = new Set([...layout.satellites.map((s) => s.id), ...(opened?.nodes.map((s) => s.id) ?? [])]);
-      const kept = [...at].filter((id) => onPaper.has(id));
-      return kept.length === at.size ? at : new Set(kept);
-    });
-  }, [layout.satellites, opened]);
 
   /** Open a record node into its card, or fold it back. */
   const openRecord = useCallback((node: SatelliteNode) => {
@@ -493,15 +496,18 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     if (r.top < top) dy = top - r.top; else if (r.bottom > bottom) dy = Math.max(top - r.top, bottom - r.bottom);
     if (r.left < left) dx = left - r.left; else if (r.right > right) dx = Math.max(left - r.left, right - r.right);
     if (dx || dy) glide({ ...cameraRef.current, x: cameraRef.current.x + dx, y: cameraRef.current.y + dy });
-    // Once per opening, after the card is in the DOM.
+    setBringIn(null);
+    // Once per opening: the request is cleared after it acts, and the effect
+    // reads the layout through refs rather than depending on it, so a drag
+    // or a fold while a card is open does not pan the camera again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bringIn, layout]);
+  }, [bringIn]);
   // Escape folds whatever is open, from wherever focus is. A node that opens
   // into a card unmounts the button that had focus, so a key handler on the
   // viewport alone missed the very next Escape.
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== "Escape" || (event.target as HTMLElement | null)?.tagName === "INPUT") return;
+      if (event.key !== "Escape") return;
       setOpenRecords((at) => (at.size ? new Set() : at));
     };
     window.addEventListener("keydown", onKey);
@@ -593,7 +599,9 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     const keyOf = (sat: SatelliteNode) => { const m = manifestationsById.get(sat.cellId)?.[sat.index]; return m ? `${m.entitySet}:${m.entityId}` : sat.id; };
     if (opened) for (const sat of opened.nodes) if (sat.role === "record") byRecord.set(keyOf(sat), sat);
     const sats = layout.satellites.filter((sat) => !(opened && sat.cellId === opened.plate.id));
-    const records = sats.filter((s) => s.role === "record").sort((a, b) => b.scale - a.scale);
+    // A node whose card is open keeps standing for its record ahead of a
+    // larger cell's node that arrives later: the reader is reading it.
+    const records = sats.filter((s) => s.role === "record").sort((a, b) => Number(openRecords.has(b.id)) - Number(openRecords.has(a.id)) || b.scale - a.scale);
     const controls = sats.filter((s) => s.role !== "record");
     const nodes: SatelliteNode[] = [];
     for (const sat of records) {
@@ -604,8 +612,8 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       const plate = layout.byId.get(sat.cellId);
       if (plate) shared.push({ plate, node: first });
     }
-    return { nodes: nodes.concat(controls), also, shared };
-  }, [layout.satellites, layout.byId, opened, manifestationsById]);
+    return { nodes: nodes.concat(controls), also, shared, byRecord, keyOf };
+  }, [layout.satellites, layout.byId, opened, manifestationsById, openRecords]);
   // Then only what prints big enough, and is near the viewport, is mounted.
   const records = useMemo(() => {
     const big = (cellId: string) => { const p = layout.byId.get(cellId); return Boolean(p) && camera.k * p!.scale >= RECORDS_FROM_EK; };
@@ -618,6 +626,27 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       shared: settledRecords.shared.filter(({ plate, node }) => big(plate.id) && (ringHas(node.id) || big(node.cellId)) && (near === null || near.has(node.id) || inView(plateRect(plate)))),
     };
   }, [settledRecords, layout.byId, satelliteIndex, view, measured, opened, camera.k]);
+  // An open card follows its record. When the node that stands for the
+  // record changes — the cell's ring opened, so the ring's node stands for it
+  // now — the open id moves to the node that is drawn; when the record leaves
+  // the paper altogether, its card goes with it, so Escape never spends a
+  // press on nothing.
+  useEffect(() => {
+    setOpenRecords((at) => {
+      if (!at.size) return at;
+      const drawn = new Set([...settledRecords.nodes.map((s) => s.id), ...(opened?.nodes.map((s) => s.id) ?? [])]);
+      const all = new Map([...layout.satellites, ...(opened?.nodes ?? [])].map((s) => [s.id, s]));
+      const next = new Set<string>();
+      for (const id of at) {
+        if (drawn.has(id)) { next.add(id); continue; }
+        const node = all.get(id);
+        const canonical = node ? settledRecords.byRecord.get(settledRecords.keyOf(node)) : undefined;
+        if (canonical && drawn.has(canonical.id)) next.add(canonical.id);
+      }
+      return next.size === at.size && [...next].every((id) => at.has(id)) ? at : next;
+    });
+  }, [settledRecords, layout.satellites, opened]);
+
   const shownRecords = records.nodes.filter((s) => s.role === "record").length + (opened ? opened.nodes.filter((s) => s.role === "record").length : 0);
 
   /** Open a cell's records onto the map, frame them, and unfold the same list
@@ -651,8 +680,8 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   // No words on the lines. The arrow says which end is narrower, the ink says
   // what family a relation is, the legend says what the inks mean, and the
   // sheet carries the relation's own word and explanation. A line touching
-  // the cell in focus, or under the pointer, draws heavier; hovering it shows
-  // its word as a tooltip.
+  // the cell in focus, or under the pointer, draws heavier, and hovering it
+  // shows its word as a tooltip — nothing is printed on the paper.
   const [hoverEdge, setHoverEdge] = useState<string | null>(null);
   const touches = (key: string, a: string, b: string) => hoverEdge === key || (focusId !== null && (a === focusId || b === focusId));
 

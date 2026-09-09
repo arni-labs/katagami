@@ -78,11 +78,15 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     animateTimer.current = window.setTimeout(() => setAnimate(false), 520);
   }, []);
 
-  const clampK = useCallback((k: number) => Math.min(maxZoom, Math.max(minZoom, k)), [maxZoom, minZoom]);
+  /** Clamp a zoom. Given the zoom the camera is at now, the floor is the
+   *  lower of the floor and that zoom: the floor can rise above the camera
+   *  when the paper shrinks under it, and no gesture that asks to zoom out
+   *  may then zoom in. */
+  const clampK = useCallback((k: number, current?: number) => Math.min(maxZoom, Math.max(current === undefined ? minZoom : Math.min(minZoom, current), k)), [maxZoom, minZoom]);
 
   const zoomAbout = useCallback((factor: number, sx: number, sy: number, smooth = false) => {
     setCamera((cam) => {
-      const k = clampK(cam.k * factor);
+      const k = clampK(cam.k * factor, cam.k);
       const ratio = k / cam.k;
       const next = { k, x: sx - (sx - cam.x) * ratio, y: sy - (sy - cam.y) * ratio };
       return next;
@@ -195,7 +199,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
       const [a, b] = [...pinch.current.values()];
       const start = pinchStart.current;
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
-      const k = clampK(start.k * (dist / Math.max(1, start.dist)));
+      const k = clampK(start.k * (dist / Math.max(1, start.dist)), start.k);
       const el = viewportRef.current!;
       const rect = el.getBoundingClientRect();
       const mid = { x: (a.x + b.x) / 2 - rect.left, y: (a.y + b.y) / 2 - rect.top };

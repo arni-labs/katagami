@@ -255,3 +255,38 @@ Confirmed and fixed:
 Dismissed:
 - A category node for maps that have cells only through a second membership — Palettes and Design in production (Codex). No cell has either as its first map, so such a node would open nothing of its own; the intent rejects a category presented as a label with nothing behind it. Those maps' cells are marked on the cards they are drawn on and framed by the filter chips. Whether some cells should list Design first is a data question, recorded under deferred.
 - Risk flags `core_path` and `fundamental_change`: correct descriptions of a layout-engine replacement; they route the merge to Rita, who has instructed it.
+
+## D19 Greptile's later passes: two more fixed
+
+Decision: Two findings Greptile raised on the later heads are fixed with round three: a zoom-out never zooms in when the paper has shrunk under the camera (the floor is the lower of the floor and the camera's own zoom), and a node's page is taken over the cells it still has to show, so a cell shown under another parent neither spends a slot nor counts as hidden.
+
+Came up because: Greptile re-reviewed 256ef393 and 5e44126e and found both; the first is the same class as the round-one and round-two floor bugs from the far side, the second was introduced by the round-two fix for double-reserved slots.
+
+Options: Leave them for a follow-up as advisory findings; fix them in the round-three batch.
+
+Chose the batch because: both are defects this diff introduced and both are small; Greptile is advisory in the record, not in whether a defect gets fixed.
+
+Where: `zoomAbout` in `use-pan-zoom.ts`; `computeVisible` in `expansion.ts` and its test.
+
+## D20 Review round three: fixed, and the spiral assessed
+
+Decision: All fifteen round-three findings are fixed in one batch with Greptile's two (D19); none was dismissed. Because three rounds each produced act-on findings, the arbiter was run on the review history and its Ask put to Rita before a fourth panel.
+
+Came up because: Round three's findings were almost all consequences of round two's fixes — the two-parent paging, the risen zoom floor, the canonical record node, the bring-in effect — plus two gaps the earlier rounds had not reached (a map with no category node never framed, a short phone viewport got a negative floor).
+
+Options: Fix and run a fourth panel; stop and ask; merge with open findings.
+
+Chose fix, then ask, because: the standing rule is three unresolved rounds then the arbiter; the fixes are small and each has a test or a scripted check; and the human decides whether a fourth round is owed before merge.
+
+Fixed:
+- Paging under a node is taken over the cells it still has to show, so a cell shown under another parent spends no slot, counts as nothing hidden, and a +N never promises what paging cannot deliver (Grok, Codex, Fable; test added).
+- Every zoom gesture clamps against the lower of the floor and the camera's own zoom, so a floor that rose when the paper shrank never turns a zoom-out into a zoom-in (Grok; Greptile).
+- The Palettes and Design chips frame their open cells although those maps have no category node (Grok).
+- A node whose card is open stays the node that stands for its record, and when the standing node changes anyway — a ring opened — the open card moves to it rather than vanishing (Grok, Codex, Fable).
+- The zoom floor and the fit room never go negative on a short viewport (Codex).
+- The reading threshold for framing an opened branch is 0.8 over the parent's scale, and a category node opening never zooms in (Codex).
+- The bring-in of an opened record card runs once, on the opening, not on every drag (Fable).
+- Escape folds an open card from any element, the search box included (Codex).
+- The index sheet's copy and two comments described the old map (Grok).
+
+Where: `expansion.ts`, `use-pan-zoom.ts`, `encyclopedia-map.tsx`, `focus-sheet.tsx`, `material.ts`; the round-three record on PR #295.

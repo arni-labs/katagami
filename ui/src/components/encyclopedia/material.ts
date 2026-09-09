@@ -126,12 +126,6 @@ export function cellMaterial(cell: EncyclopediaCell): CellMaterial {
   return { image, text, palette, nameOnly: !image && !text && !palette };
 }
 
-/** What a cell shows of itself when the map is far out and there are no words
- *  yet. A picture when the cell has one; failing that the material it does
- *  have — a palette, a passage — so the field reads as material rather than as
- *  a grid of empty boxes. Only a cell with nothing at all falls back to its
- *  name, and the plate says so. Every face carries the caption that says where
- *  it came from; nothing is presented as the cell's own study unless it is. */
 /** The face a cell turns to the map. Nothing on it says where it came from
  *  — a picture is a visual reference, and the sheet names the record — so a
  *  face carries only what is drawn plus the eyebrow and ink the sheet's
