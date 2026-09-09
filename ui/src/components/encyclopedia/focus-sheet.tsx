@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { ArrowRight, ArrowUpRight, BookOpen, X } from "lucide-react";
-import type { CellManifestation, EncyclopediaCell } from "@/lib/encyclopedia";
+import type { CellManifestation, EncyclopediaCell, MapName } from "@/lib/encyclopedia";
 import { GraphIndex, MAP_LABEL, MAP_NAMES_ORDER, relationInk } from "@/lib/encyclopedia-graph";
 import { InkStamp, ProvenanceStamp, RELATION_INK_VAR, inkChipStyle } from "./chrome";
 import { SET_INK, SET_SHORT, type CellFace } from "./material";
 import { brokenOnArrival, Eyebrow, PaperStrip, Swatches, useCellFace, useLoadFailure } from "./map-cards";
+import { useWindowedList } from "./windowed-list";
 
 // The cell sheet beside the map (a bottom sheet on phones). Title, the
 // PROPOSED CELL and provenance stamps, the scope, then three tabs: Material
@@ -45,7 +46,7 @@ function Thumb({ manifestation }: { manifestation: CellManifestation }) {
   // leaving a broken-image box in the list.
   const [imageFailed, markImageFailed] = useLoadFailure(record?.image);
   const frame = "block h-[76px] w-[76px] shrink-0 overflow-hidden";
-  if (!record) return <span className={frame} style={{ outline: "2px dashed color-mix(in oklch, var(--graphite) 45%, transparent)", outlineOffset: -2 }} />;
+  if (!record) return <span className={frame} style={{ background: "color-mix(in srgb, var(--graphite) 10%, var(--washi))", boxShadow: "var(--shadow-sticker)" }} />;
   if (record.image && !imageFailed) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img ref={(el) => brokenOnArrival(el, markImageFailed)} src={record.image} alt="" className={`${frame} object-cover`} style={{ boxShadow: "var(--shadow-sticker)" }} loading="lazy" onError={markImageFailed} />;
@@ -120,7 +121,7 @@ function Manifestations({ cell, expandKey }: { cell: EncyclopediaCell; expandKey
 
 /** A cell's face at thumbnail size. The face and its fallback belong to the
  *  row, so the picture and the label it is credited with never disagree. */
-function CellThumb({ face, onImageError, size }: { face: CellFace; onImageError: () => void; size: number }) {
+export function CellThumb({ face, onImageError, size }: { face: CellFace; onImageError: () => void; size: number }) {
   const frame = "block shrink-0";
   const box = { width: size, height: size };
   if (face.kind === "image") {
@@ -133,7 +134,10 @@ function CellThumb({ face, onImageError, size }: { face: CellFace; onImageError:
   if (face.kind === "palette") {
     return <span className={frame} style={box}><Swatches colors={face.swatches} className="h-full" /></span>;
   }
-  return <span className={frame} style={{ ...box, outline: `2px dashed color-mix(in oklch, ${face.ink} 60%, transparent)`, outlineOffset: -2 }} />;
+  // Nothing made for this cell yet. Plain tinted paper, the same answer the
+  // map gives: a column of dashed empty frames spends the whole accent budget
+  // on emptiness, and most cells in the library are in this state.
+  return <span className={frame} style={{ ...box, background: `color-mix(in srgb, ${face.ink} 10%, var(--washi))`, boxShadow: "var(--shadow-sticker)" }} />;
 }
 
 function NarrowerRow({ kid, onFocus }: { kid: EncyclopediaCell; onFocus: (id: string) => void }) {
@@ -363,25 +367,44 @@ export function CloseButton({ onClick, className = "" }: { onClick: () => void; 
   );
 }
 
-function IndexRow({ cell, onFocus }: { cell: EncyclopediaCell; onFocus: (id: string) => void }) {
+function IndexRow({ cell, onFocus, height }: { cell: EncyclopediaCell; onFocus: (id: string) => void; height: number }) {
   const { face, onImageError } = useCellFace(cell);
   return (
-    <li>
-      <Row onClick={() => onFocus(cell.id)}>
-        <CellThumb face={face} onImageError={onImageError} size={52} />
-        <span className="min-w-0 flex-1">
-          <span className="block font-sans text-[16px] font-semibold leading-snug text-foreground">{cell.name}</span>
-          <span className="mt-0.5 line-clamp-1 text-[16px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
-        </span>
-      </Row>
-    </li>
+    <button type="button" onClick={() => onFocus(cell.id)} className="group flex w-full items-center gap-4 text-left" style={{ height }}>
+      <CellThumb face={face} onImageError={onImageError} size={52} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-sans text-[16px] font-semibold leading-snug text-foreground">{cell.name}</span>
+        <span className="mt-0.5 block truncate text-[16px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
+      </span>
+      <ArrowRight size={18} className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+    </button>
   );
 }
 
+/** One row's height in the index. Fixed, so the list can be windowed: the
+ *  index is as long as the library, and drawing a row and a thumbnail for
+ *  every cell is what made opening the sheet cost more the bigger the
+ *  encyclopedia got. */
+const INDEX_ROW_H = 84;
+
 /** The sheet with nothing in focus: an index of every cell, by map, each with
- *  its picture. Picking one focuses it on the map. */
-export function IndexSheet({ index, onFocus }: { index: GraphIndex; onFocus: (id: string) => void }) {
+ *  its picture. Picking one focuses it on the map.
+ *
+ *  The maps are one flat list with headings in it rather than four lists, so
+ *  one window covers the whole index however the cells are distributed. */
+export function IndexSheet({ index, onFocus, scrollRef }: { index: GraphIndex; onFocus: (id: string) => void; scrollRef: React.RefObject<HTMLElement | null> }) {
   const cells = index.graph.cells;
+  const rows = useMemo(() => {
+    const out: Array<{ kind: "heading"; map: MapName; count: number } | { kind: "cell"; cell: EncyclopediaCell }> = [];
+    for (const map of MAP_NAMES_ORDER) {
+      const members = cells.filter((c) => index.primaryMap(c) === map);
+      if (!members.length) continue;
+      out.push({ kind: "heading", map, count: members.length });
+      for (const cell of members) out.push({ kind: "cell", cell });
+    }
+    return out;
+  }, [cells, index]);
+  const { window: win } = useWindowedList(rows.length, INDEX_ROW_H, scrollRef);
   return (
     <div className="mt-2">
       <h2 className="font-display text-[30px] font-bold leading-[1.02] tracking-[-0.03em] sm:text-[34px]">
@@ -391,18 +414,19 @@ export function IndexSheet({ index, onFocus }: { index: GraphIndex; onFocus: (id
         </span>
       </h2>
       <p className="mt-4 text-[17px] leading-relaxed text-muted-foreground">Every attested cell is on the map. Pictures far out, words as you come closer. Pick a cell here or on the paper to read it.</p>
-      {MAP_NAMES_ORDER.map((map) => {
-        const members = cells.filter((c) => index.primaryMap(c) === map);
-        if (!members.length) return null;
-        return (
-          <section key={map} className="pt-7">
-            <Heading>{MAP_LABEL[map]} <span className="font-mono text-[11px] font-normal tracking-[0.14em] text-muted-foreground tabular-nums">{members.length}</span></Heading>
-            <ul className="mt-1">
-              {members.map((cell) => <IndexRow key={cell.id} cell={cell} onFocus={onFocus} />)}
-            </ul>
-          </section>
-        );
-      })}
+      <div className="mt-6" style={{ height: rows.length * INDEX_ROW_H }}>
+        <div style={{ transform: `translateY(${win.offsetTop}px)` }}>
+          {rows.slice(win.from, win.to).map((row) =>
+            row.kind === "heading" ? (
+              <div key={`h-${row.map}`} className="flex items-end pb-2" style={{ height: INDEX_ROW_H }}>
+                <Heading>{MAP_LABEL[row.map]} <span className="font-mono text-[11px] font-normal tracking-[0.14em] text-muted-foreground tabular-nums">{row.count}</span></Heading>
+              </div>
+            ) : (
+              <IndexRow key={row.cell.id} cell={row.cell} onFocus={onFocus} height={INDEX_ROW_H} />
+            ),
+          )}
+        </div>
+      </div>
     </div>
   );
 }

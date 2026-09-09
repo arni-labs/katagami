@@ -55,6 +55,11 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
   const pinch = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchStart = useRef<{ dist: number; k: number; mid: { x: number; y: number }; cam: Camera } | null>(null);
   const [dragging, setDragging] = useState(false);
+  // The same fact as `dragging`, readable without being a dependency. A card's
+  // click handler has to know whether the pointer was dragged, and reading it
+  // from state would make every handler change identity on every drag — which
+  // is exactly the re-render the memoised cards exist to avoid.
+  const draggingRef = useRef(false);
   const animateTimer = useRef<number | null>(null);
 
   const glide = useCallback((next: Camera) => {
@@ -175,6 +180,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     const dy = event.clientY - d.y;
     if (!d.moved && Math.hypot(dx, dy) > 4) {
       d.moved = true;
+      draggingRef.current = true;
       setDragging(true);
       try { viewportRef.current?.setPointerCapture(event.pointerId); } catch { /* pointer already gone */ }
     }
@@ -187,7 +193,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     if (drag.current?.id === event.pointerId) {
       drag.current = null;
       // Let the click that follows a real drag be ignored by nodes.
-      window.setTimeout(() => setDragging(false), 0);
+      window.setTimeout(() => { draggingRef.current = false; setDragging(false); }, 0);
     }
   }, []);
 
@@ -212,5 +218,5 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     onPointerLeave: endPointer,
   }), [onWheel, onPointerDown, onPointerMove, endPointer]);
 
-  return { viewportRef, camera, setCamera, animate, dragging, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld };
+  return { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld };
 }
