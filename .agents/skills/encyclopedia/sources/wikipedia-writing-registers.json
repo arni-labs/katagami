@@ -462,6 +462,155 @@
       "batch": "B10",
       "note": "already a cell, written by the Library of Congress Literature lane while this pass was running",
       "cellId": "science-fiction"
+    },
+    {
+      "term": "Courtesy book",
+      "ref": "https://en.wikipedia.org/wiki/Courtesy_book",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: the didactic manual of manners for courtiers, from the thirteenth century to Chesterfield, whom the reference names as the last traditional English example; minted as the leaf the Chesterfield record needed. Proposal B11 #1. Written and attested 2026-09-09.",
+      "cellId": "courtesy-books"
+    },
+    {
+      "term": "Etiquette",
+      "ref": "https://en.wikipedia.org/wiki/Etiquette",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: books of etiquette, which the reference names along with Emily Post's 1922 edition; minted as the leaf the Emily Post record needed, under the name the collection's plurals use. Proposal B11 #2. Written and attested 2026-09-09.",
+      "cellId": "etiquette-books"
+    },
+    {
+      "term": "Outdoor literature",
+      "ref": "https://en.wikipedia.org/wiki/Outdoor_literature",
+      "decision": "live",
+      "batch": "B11",
+      "note": "genre: first-person prose of being out in indifferent country, which the reference exemplifies with Slocum; minted as the leaf the Dana and Slocum records needed. Proposal B11 #4. Written and attested 2026-09-09.",
+      "cellId": "outdoor-literature"
+    },
+    {
+      "term": "Logbook",
+      "ref": "https://en.wikipedia.org/wiki/Logbook",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: the fixed-order operational record the reference traces to the ship's log; minted as the leaf the Ship's log record needed. Proposal B11 #5. Written and attested 2026-09-09.",
+      "cellId": "logbooks"
+    },
+    {
+      "term": "Popular science",
+      "ref": "https://en.wikipedia.org/wiki/Popular_science",
+      "decision": "live",
+      "batch": "B11",
+      "note": "tradition: science written or spoken for people outside it, from Faraday to the modern science book; minted as the parent the Christmas Lectures cell needed. Proposal B11 #7. Written and attested 2026-09-09.",
+      "cellId": "popular-science"
+    },
+    {
+      "term": "Royal Institution Christmas Lectures",
+      "ref": "https://en.wikipedia.org/wiki/Royal_Institution_Christmas_Lectures",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: the annual demonstration lecture to a general audience, running since 1825 and published as text; minted as the leaf the Faraday record needed, whose 1861 publication is the 1860 series. Proposal B11 #8. Written and attested 2026-09-09.",
+      "cellId": "royal-institution-christmas-lectures"
+    },
+    {
+      "term": "Hypomnema",
+      "ref": "https://en.wikipedia.org/wiki/Hypomnema",
+      "decision": "live",
+      "batch": "B11",
+      "note": "practice: the Greek and Roman personal notebook kept for rereading and self-correction, which is what Marcus Aurelius titled To Himself; minted as the leaf that record needed. Proposal B11 #9. Written and attested 2026-09-09.",
+      "cellId": "hypomnemata"
+    },
+    {
+      "term": "Cookbook",
+      "ref": "https://en.wikipedia.org/wiki/Cookbook",
+      "decision": "merge",
+      "batch": "B11",
+      "note": "read as the second source on the Cookbooks cell, which is named from the Library of Congress heading",
+      "cellId": "cookbooks"
+    },
+    {
+      "term": "Conduct book",
+      "ref": "https://en.wikipedia.org/wiki/Conduct_book",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "the reference says conduct books address the conduct of a life in a broad ethical sense and not etiquette, and that the genre declined before Emily Post; it is the wrong home for the record this pass was placing"
+    },
+    {
+      "term": "Journal intime",
+      "ref": "https://en.wikipedia.org/wiki/Journal_intime",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "the article of that title is a 2017 album; the French critical term for the introspective diary has no English article to cite"
+    },
+    {
+      "term": "Home economics",
+      "ref": "https://en.wikipedia.org/wiki/Home_economics",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "a school subject and a field of study, not a writing practice; it was checked as a possible home for the Beeton record"
+    },
+    {
+      "term": "Linguistic prescription",
+      "ref": "https://en.wikipedia.org/wiki/Linguistic_prescription",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a practice rather than a written form; its body of work is the usage guides, and the usage-guide term redirects to the style guide, which is already the Style manuals cell"
+    },
+    {
+      "term": "American humor",
+      "ref": "https://en.wikipedia.org/wiki/American_humor",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "the reference defines it by comparison with other countries and says the boundary is hard to draw; checked as a home for the Twain record and it names no manner"
+    },
+    {
+      "term": "Tall tale",
+      "ref": "https://en.wikipedia.org/wiki/Tall_tale",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a real named form with an American canon; checked as a home for the Twain travel record, which it does not fit, and left for a pass that reads it properly"
+    },
+    {
+      "term": "Nautical fiction",
+      "ref": "https://en.wikipedia.org/wiki/Nautical_fiction",
+      "decision": "merge",
+      "batch": "B11",
+      "note": "already a cell as Sea fiction, written by the Library of Congress Literature lane",
+      "cellId": "sea-fiction"
+    },
+    {
+      "term": "Spiritual exercises",
+      "ref": "https://en.wikipedia.org/wiki/Spiritual_exercises",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "the ancient practice Hadot describes sits beside the Hypomnemata cell; whether it is the same direction was not settled in this pass"
+    },
+    {
+      "term": "Captivity narrative",
+      "ref": "https://en.wikipedia.org/wiki/Captivity_narrative",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a named American nonfiction genre with a canon; not needed for the records this pass was closing"
+    },
+    {
+      "term": "Slave narrative",
+      "ref": "https://en.wikipedia.org/wiki/Slave_narrative",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a named genre with a large canon and a scholarly literature; it deserves a pass of its own rather than a row in this one"
+    },
+    {
+      "term": "Public lecture",
+      "ref": "https://en.wikipedia.org/wiki/Public_lecture",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "an occasion rather than a manner; the Royal Institution series is the practice this pass could name"
+    },
+    {
+      "term": "Science communication",
+      "ref": "https://en.wikipedia.org/wiki/Science_communication",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a field covering practice and research; Popular science is the writing tradition inside it and is the cell this pass took"
     }
   ]
 }

@@ -188,6 +188,86 @@
       "decision": "deferred",
       "batch": "B10",
       "note": "sits beside Zines and Newsletters; whether the three are one cell or three is the open question recorded on the Zines cell"
+    },
+    {
+      "term": "Cookbooks",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2011026169",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: recipes in book form in a fixed entry order, with the household matter around them; minted as the leaf the Beeton record needed. Proposal B11 #3. Written and attested 2026-09-09.",
+      "cellId": "cookbooks"
+    },
+    {
+      "term": "Popular works",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2025026092",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: writing for a reader without the training, which LC defines as works written for the layperson; minted as the parent Popular science needed. Proposal B11 #6. Written and attested 2026-09-09.",
+      "cellId": "popular-works"
+    },
+    {
+      "term": "Recipes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026162",
+      "decision": "merge",
+      "batch": "B11",
+      "note": "the same practice as Cookbooks, which LC separates only by whether the instructions are collected into a book",
+      "cellId": "cookbooks"
+    },
+    {
+      "term": "Lectures",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026122",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a delivery form covering everything spoken to an audience; the Royal Institution Christmas Lectures cell is the manner this pass needed and it is named from its own source"
+    },
+    {
+      "term": "Notebooks",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026133",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "LC defines it as a book produced with blank pages, which is an object rather than a practice"
+    },
+    {
+      "term": "Meditations",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026056",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "LC files it under Devotional literature as thoughts on spiritual truths; whether it covers the Stoic practice the Hypomnemata cell names was not settled in this pass"
+    },
+    {
+      "term": "Devotional literature",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026057",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a real body of work with its own registers; no leaf under it was needed for the records this pass was closing"
+    },
+    {
+      "term": "Self-help publications",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026102",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a modern practice with a large body of work; not read in this pass"
+    },
+    {
+      "term": "Almanacs",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026042",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a compilation form with centuries of work behind it; not read in this pass"
+    },
+    {
+      "term": "Anecdotes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026044",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "sits under Humor at LC and close to the Aphorism cell; needs its own reading before it becomes a cell"
+    },
+    {
+      "term": "Humor",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026110",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "an effect a work aims at, not a practice; the manners inside it are named separately"
     }
   ]
 }
