@@ -6,11 +6,12 @@ import { toWritingStyleSpecimen } from "@/lib/writing-styles";
 import { LabHeader } from "@/components/encyclopedia/lab-header";
 import { WritingA } from "@/components/writing/writing-a";
 
-// Unlisted and owner-only, like the voice lane it is meant to replace.
+// Owner-only, like the voice lane it succeeds: a plain 404 for anyone else,
+// and the nav link appears only after the client-side owner check.
 
 export const dynamic = "force-dynamic";
 export const metadata = {
-  title: "Writing styles — Katagami lab",
+  title: "Writing styles — Katagami",
   robots: { index: false, follow: false },
 };
 
@@ -26,7 +27,7 @@ export default async function WritingPassagesPage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4">
       <LabHeader
-        eyebrow="Writing styles · lab"
+        eyebrow="Writing styles"
         ink="var(--sakura)"
         title="Writing"
         marker="styles"

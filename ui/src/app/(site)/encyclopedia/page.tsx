@@ -4,14 +4,15 @@ import { labPreviewAllowed } from "@/lib/lab-preview";
 import { loadEncyclopedia } from "@/lib/encyclopedia";
 import { EncyclopediaMap } from "@/components/encyclopedia/encyclopedia-map";
 
-// Unlisted and owner-only: the encyclopedia is for owners and curators until
-// a published projection exists. Not in nav, not in search, not indexed.
+// Owner-only: the encyclopedia is for the owner until a published projection
+// exists. Anyone else gets a plain 404, the same pattern as /voice/[id]; the
+// nav link appears only after the client-side owner check. Not indexed.
 // Gating is isOwner(); in a development build KATAGAMI_LAB_PREVIEW=1 opens the
 // page for local review and a production build never reads it.
 
 export const dynamic = "force-dynamic";
 export const metadata = {
-  title: "Encyclopedia — Katagami lab",
+  title: "Encyclopedia — Katagami",
   robots: { index: false, follow: false },
 };
 

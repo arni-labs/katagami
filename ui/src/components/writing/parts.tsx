@@ -79,7 +79,7 @@ export function CellLinks({ specimen }: { specimen: WritingStyleSpecimen }) {
       {specimen.cells.map((cell, i) => (
         <span key={cell.cellId}>
           {i > 0 ? ", " : ""}
-          <Link href={`/lab/encyclopedia?cell=${encodeURIComponent(cell.cellId)}`} title={cell.explanation} className="normal-case tracking-normal text-[13px] font-semibold text-foreground underline decoration-[var(--ramune)] decoration-2 underline-offset-[3px] hover:decoration-[var(--yuzu)]">
+          <Link href={`/encyclopedia?cell=${encodeURIComponent(cell.cellId)}`} title={cell.explanation} className="normal-case tracking-normal text-[13px] font-semibold text-foreground underline decoration-[var(--ramune)] decoration-2 underline-offset-[3px] hover:decoration-[var(--yuzu)]">
             {cell.cellName}
           </Link>
         </span>

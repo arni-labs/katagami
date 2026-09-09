@@ -26,7 +26,11 @@ export const NAV_LINKS: NavLink[] = [
 export const OWNER_NAV_LINKS: NavLink[] = [
   { href: "/owner", label: "Owner", owner: true },
   { href: "/owner/visitor-shelf", label: "Visitor home", owner: true },
-  { href: "/voice", label: "Writing Styles", owner: true },
+  { href: "/encyclopedia", label: "Encyclopedia", owner: true },
+  { href: "/writing", label: "Writing", owner: true },
+  // The voice lane still works and keeps its own intake, so it keeps its way
+  // in; the new Writing page sits beside it rather than replacing its link.
+  { href: "/voice", label: "Voice", owner: true },
   { href: "/under-review", label: "Under Review", owner: true },
 ];
 
