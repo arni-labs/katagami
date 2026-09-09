@@ -264,7 +264,7 @@ function argKeysOf(args: unknown): string | undefined {
 // `id` (lib/catalog.ts toRow), so `get_art_style({id})` is the natural next
 // call — and it used to be rejected by the SDK before our handler ran, which
 // is how 8 of one real user's 26 get_* calls failed in a single session
-// (ARN-478). Accept the three names an agent will actually try. All optional
+// (ARN-462). Accept the three names an agent will actually try. All optional
 // at the schema layer so a missing id reaches OUR error message instead of a
 // bare SDK validation failure the caller cannot act on.
 // `.nullish()`, not `.optional()`: clients that materialize every declared

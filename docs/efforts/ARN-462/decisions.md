@@ -175,3 +175,113 @@ in-process only and never serialized.
 
 **Where** — `ui/src/app/mcp/route.ts` `RAW_ARG_KEYS` / `stashRawArgKeys` /
 `rawArgKeys`.
+
+## 8. Panel round 2 (Fable) — RUM env by hostname, and a monitor for the silence
+
+**Decision** — three more fixes; the seat's two act-on findings were already
+closed by decision 6/7 before its report arrived.
+
+**Came up because** the Fable seat reviewed commit `9618689b`. Its two act-on
+findings — the stale `reason: "consent"` assertion turning the suite red, and
+`arg_keys` reading post-zod arguments so a novel key name reported `(none)` —
+are the same two defects decisions 6 and 7 record, fixed the same way it
+recommended (stash the raw keys from layer 2 onto `extra`). Nothing to redo.
+
+**What was still open and is now fixed**
+
+- *The localhost guard was a deny-list.* A phone testing against
+  `192.168.1.20:3000`, a tunnel, or any preview deployment still tagged its
+  browser errors `env:production` and could page a human. Rather than widen the
+  deny-list or drop RUM on those hosts, `rumEnvFor()` decides the env from the
+  hostname the browser is actually on: only katagami.ai and its subdomains are
+  production, everything else is `preview`. Preview and LAN sessions keep
+  sending RUM — the data is real — under a tag that cannot page anyone. An
+  explicit `NEXT_PUBLIC_DD_RUM_ENV` still wins.
+- *Production going dark was silent.* Every monitor filters `env:production`
+  with `notify_no_data:false`, so if `VERCEL_REGION` ever stops being set, all
+  six match nothing and none of them says so — the exact silent failure decision
+  4 admitted and claimed a contract assertion covered. It does not; that
+  assertion only exercises the local helper. `m7-telemetry-dark.json` fires when
+  no production server event has arrived in four hours, and its message names
+  the `env:local-verify` bucket as the first thing to check.
+- *One contract assertion pinned a helper, not its wiring.* Reverting the
+  layer-2 `argKeys` line alone left every check green with the feature dead.
+  Pinned, along with the RUM env call.
+
+**Options for the RUM env** — allow-list the hostname and start RUM only on
+katagami.ai; widen the localhost deny-list; derive the env from the hostname.
+
+**Chose deriving the env** because an allow-list throws away preview and
+device-testing data to solve a labelling problem, and a wider deny-list is the
+same guess with more entries. Deciding from the hostname is what the browser
+knows for certain, and it is the same shape as the server-side `VERCEL_REGION`
+guard: trust the runtime, not a baked variable.
+
+**Given up**: preview RUM now lands under `env:preview`, so anything that read
+preview data as production stops seeing it — which is the point.
+
+**Where** — `ui/src/lib/analytics.ts` `rumEnvFor`;
+`infra/datadog/monitors/m7-telemetry-dark.json`;
+`ui/scripts/check-telemetry-contract.mjs`.
+
+## 9. The Linear issue id is unverified
+
+**Decision** — used `ARN-462` consistently and flagged it for confirmation
+rather than leaving two different invented ids in the tree.
+
+**Came up because** the panel noticed the code comments said `ARN-478` while the
+effort folder said `ARN-462`. Both are ids I introduced; the Linear MCP has been
+returning "requires re-authorization" for this whole effort, so neither could be
+checked against a real issue.
+
+**Options** — pick one and flag it; drop the id and name the folder for the
+work; block until Linear is reachable.
+
+**Chose one id plus a flag** because the repo convention is
+`docs/efforts/<issue-id>/`, the id appears in two commit messages already, and a
+rename before merge is cheap. Blocking the whole effort on an expired token is
+not proportionate.
+
+**Given up**: if `ARN-462` turns out to be a different real issue, the folder,
+the comments and two commit messages need renaming before this merges. Rita has
+to confirm the number.
+
+**Where** — `docs/efforts/ARN-462/`, `ui/src/app/mcp/route.ts`,
+`ui/scripts/check-telemetry-contract.mjs`.
+
+## 10. Panel round 2, second seat — an unauthenticated GET could page a human
+
+**Decision** — a `provider` sign-in failure is only recorded when our own
+httpOnly state cookie is present. `state` deliberately stays ungated, and both
+monitors now say in their own text which of their counts can be forged.
+
+**Came up because** the Fable seat pointed out that decision 6's consent/provider
+split made a forgeable path pageable. Before it, every unsolicited
+`GET /api/auth/google/callback?error=x` filed as `consent`, which the alert
+excludes. After it, the same five requests file as `provider` and page Rita —
+with no account, no OAuth flow, and no way to tell it from a Google outage. I
+introduced that.
+
+**Options** — gate on the state cookie; drop the reason from the alert; note the
+limit in the message and accept it.
+
+**Chose the cookie gate** because our authorize redirect sets it, it is httpOnly,
+and nobody else can plant it — so its presence means this really is a flow we
+started. Dropping the reason would give back the outage blindness decision 6
+just fixed.
+
+**Deliberately not gated: `state`.** A state failure is most often the cookie
+being missing, so requiring the cookie would suppress exactly the case that
+reason reports. It stays mintable, and m6's message now says so and tells the
+reader to weight a `provider` spike heavier and check whether events cluster on
+one IP. m2 carries the same note, since 20 garbage bearers are equally cheap.
+
+**Known limit, recorded rather than guessed at**: Google also returns
+`access_denied` when a Workspace admin blocks the app, so a policy-blocked
+organization files as a decline and stays out of the alert. The redirect carries
+nothing that separates that from a person clicking Cancel. Written into m6's
+message.
+
+**Where** — `ui/src/app/api/auth/google/callback/route.ts` (`ours`);
+`infra/datadog/monitors/m2`, `m6`; assertion in
+`ui/scripts/check-telemetry-contract.mjs`.

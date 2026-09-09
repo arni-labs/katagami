@@ -529,7 +529,7 @@ const required = [
   ["MCP emit stamps @tier:full (dashboard filters match)", telemetry, /tier: "full"/],
   ["telemetry no-ops without credentials", telemetry, /if \(!intake\) return/],
   ["intake fetch is aborted on hang", telemetry, /signal: intakeAbortSignal\(/],
-  // Friction visibility (ARN-478): a rejected call must say WHICH argument
+  // Friction visibility (ARN-462): a rejected call must say WHICH argument
   // names the caller sent, and the get_* tools must accept the name search
   // actually hands back.
   [
@@ -577,6 +577,21 @@ const required = [
   // Zod strips undeclared keys, so the name the agent actually reached for is
   // gone by the time the handler runs. Capture it while the raw request is
   // still in hand, or every unknown-name rejection reports "(none)".
+  // Pin the WIRING, not just the helper: reverting only this line leaves every
+  // other assertion green with the feature dead (fable panel finding).
+  [
+    "the SDK's own rejection reports the argument names",
+    mcp,
+    /argKeys: result\?\.isError \? rawArgKeys\(extra\) : undefined/,
+  ],
+  // RUM's env is decided by the hostname the browser is actually on, so a
+  // preview or a phone on the LAN cannot page anyone through the site-errors
+  // monitor (fable panel finding).
+  [
+    "only katagami.ai counts as production for RUM",
+    analytics,
+    /env: rumEnvFor\(window\.location\.hostname, e\.env\)/,
+  ],
   [
     "argument names are captured before the schema strips them",
     mcp,
@@ -642,12 +657,16 @@ const required = [
   })(), /^true$/],
   ["login-path members snapshot is tagged source:login", callback, /source: "login"/],
   ["state-mismatch emits only when a code came back (bots stay silent)", callback,
-    /else if \(code\) \{\s*trackServerEvent\("auth_login_failed", \{ reason: "state" \}/],
+    /else if \(code\) \{[\s\S]{0,400}?trackServerEvent\("auth_login_failed", \{ reason: "state" \}/],
   // `consent` used to cover every Google error redirect. The sign-in alert
   // excludes it as a user's choice, which also excluded a Google outage, so
   // the two now carry different reasons (codex panel finding).
   ["a user decline is reason:consent", callback, /\? "consent"/],
   ["a Google outage is reason:provider, not a decline", callback, /: "provider"/],
+  // An unauthenticated GET must not be able to page a human: the provider
+  // reason requires OUR httpOnly state cookie, which nobody else can plant
+  // (fable panel finding).
+  ["only our own flow can report a provider failure", callback, /if \(googleError && ours\)/],
   ["signSession failures are reason:session, not reason:google", callback, /reason: "session"/],
   ["countMembers is bounded by default", oauthAs, /AbortSignal\.timeout\(COUNT_MEMBERS_TIMEOUT_MS\)/],
   ["countMembers reads @odata.count strictly (absent throws, never 0)", oauthAs,
