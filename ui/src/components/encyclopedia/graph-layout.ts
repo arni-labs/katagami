@@ -854,7 +854,11 @@ function boxRingOffset(plate: PlateNode, pad: number, away: number): number {
  *  this is an overlay around one plate, drawn above its neighbours, and the
  *  page steps the rest of the paper back while it is open. */
 export function expandCell(plate: PlateNode, away: number): SatelliteNode[] {
-  const list = plate.cell.manifestations;
+  const seen=new Set<string>();
+  const indices=plate.cell.manifestations.flatMap((m,i)=>{
+    const key=m.entitySet+":"+m.entityId;if(seen.has(key))return [];seen.add(key);return [i];
+  });
+  const list=indices.map(i=>plate.cell.manifestations[i]);
   if (!list.length) return [];
   const slot = NODE_PITCH * plate.scale;
   const out: SatelliteNode[] = [];
@@ -887,7 +891,7 @@ export function expandCell(plate: PlateNode, away: number): SatelliteNode[] {
         out.push({ kind: "satellite", id: `${plate.id}~fold`, cellId: plate.id, set: list[0].entitySet, role: "fold", index: -1, more: list.length, x, y, scale: plate.scale });
       } else {
         const m = list[at - 1];
-        out.push({ kind: "satellite", id: `${plate.id}~${at - 1}`, cellId: plate.id, set: m.entitySet, role: "record", index: at - 1, more: 0, x, y, scale: plate.scale });
+        out.push({ kind: "satellite", id: `${plate.id}~${at - 1}`, cellId: plate.id, set: m.entitySet, role: "record", index: indices[at - 1], more: 0, x, y, scale: plate.scale });
       }
     }
     placed += here;

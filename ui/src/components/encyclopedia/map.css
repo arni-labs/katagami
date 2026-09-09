@@ -1,0 +1,195 @@
+/* Canvas owns its viewport; the reader owns its own scroll area. */
+body:has(.encyclopedia-workspace) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+.route-enter:has(.encyclopedia-workspace) {
+  animation: none;
+  transform: none;
+}
+.encyclopedia-workspace {
+  position: fixed;
+  inset: 64px 0 0;
+  height: auto !important;
+  z-index: 20;
+  background: var(--washi);
+}
+.encyclopedia-workspace [role="application"] {
+  overscroll-behavior: none;
+}
+.encyclopedia-workspace aside {
+  overscroll-behavior: contain;
+}
+.encyclopedia-workspace aside h2 {
+  font-size: 25px;
+}
+.encyclopedia-workspace aside p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.encyclopedia-workspace aside h3 {
+  font-size: 16px;
+}
+.encyclopedia-category {
+  position: absolute;
+  background: var(--washi);
+  box-shadow: var(--shadow-card);
+  z-index: 2;
+  padding: 14px;
+}
+.category-open {
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+.category-visual {
+  height: 104px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.category-visual img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+.category-passage {
+  font-size: 13px;
+  line-height: 1.5;
+  height: 100%;
+  overflow: hidden;
+  color: var(--foreground);
+}
+.category-open strong {
+  font-size: 25px;
+  letter-spacing: -0.02em;
+}
+.category-open span {
+  font-size: 12px;
+}
+.category-caption {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted-foreground);
+  margin-top: 4px;
+}
+.category-action {
+  display: block;
+  color: var(--foreground);
+  font-weight: 600;
+  margin-top: 10px;
+}
+.category-more {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-height: 36px;
+  font-size: 12px;
+  padding: 8px 12px;
+  background: var(--yuzu);
+}
+.encyclopedia-node-controls {
+  position: absolute;
+  display: flex;
+  gap: 6px;
+  z-index: 6;
+}
+.encyclopedia-node-controls button {
+  min-height: 32px;
+  font-size: 12px;
+  padding: 6px 9px;
+  background: var(--washi);
+  box-shadow: var(--shadow-sticker);
+  white-space: nowrap;
+}
+.encyclopedia-node-controls button[aria-expanded="true"] {
+  background: var(--yuzu);
+}
+.encyclopedia-toolbar {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 10;
+  background: var(--washi);
+  padding: 16px 20px 12px;
+}
+.encyclopedia-toolbar h1 {
+  font-size: 24px;
+  line-height: 1.2;
+  margin: 0;
+}
+.encyclopedia-toolbar [role="group"] {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  overflow-x: auto;
+}
+.encyclopedia-toolbar [role="group"] button {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: 13px;
+  flex-shrink: 0;
+  background: var(--washi);
+  box-shadow: var(--shadow-sticker);
+}
+.encyclopedia-toolbar [aria-pressed="true"] {
+  background: var(--yuzu) !important;
+}
+.encyclopedia-search {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  width: 240px;
+  z-index: 12;
+}
+.encyclopedia-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 190px;
+  right: 16px;
+  z-index: 9;
+  font-size: 11px;
+  background: var(--washi);
+  padding: 6px;
+  pointer-events: none;
+}
+@media (max-width: 1023px) {
+  .encyclopedia-workspace {
+    bottom: 64px;
+  }
+  .encyclopedia-toolbar {
+    padding: 12px;
+  }
+  .encyclopedia-toolbar h1 {
+    font-size: 20px;
+  }
+  .encyclopedia-toolbar [role="group"] {
+    margin-top: 52px;
+  }
+  .encyclopedia-search {
+    top: 44px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+  .encyclopedia-node-controls button {
+    min-height: 40px;
+  }
+  .encyclopedia-legend {
+    display: none;
+  }
+}
+@media (max-width: 639px) {
+  .encyclopedia-workspace {
+    top: 56px;
+  }
+}
+
+/* Focus must not scroll transformed world coordinates inside the canvas. */
+.encyclopedia-workspace [role="application"] { overflow:clip; }
+
+html:has(.encyclopedia-workspace) { overflow:clip; }
+body:has(.encyclopedia-workspace) footer { display:none; }
