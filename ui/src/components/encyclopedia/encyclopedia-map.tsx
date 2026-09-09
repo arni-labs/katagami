@@ -257,9 +257,17 @@ export function EncyclopediaMap({
         }
       : g;
   }, [entries, scope.kind, wideOverview]);
+  const branchOffset = scope.kind === "cell" ? 210 : 0;
+  const parentX = (grid.columns * grid.pitchX - 60) / 2;
   const tiles = useMemo(
-    () => visibleTiles(grid, camera, size, scope.kind !== "overview"),
-    [grid, camera, size, scope.kind],
+    () =>
+      visibleTiles(
+        grid,
+        { ...camera, y: camera.y + branchOffset * camera.k },
+        size,
+        scope.kind !== "overview",
+      ).map((tile) => ({ ...tile, y: tile.y + branchOffset })),
+    [grid, camera, size, scope.kind, branchOffset],
   );
   const selectedCell = selected ? index.byId.get(selected) : undefined;
   const scopeCell =
@@ -304,15 +312,21 @@ export function EncyclopediaMap({
               x:
                 size.w / 2 -
                 ((found % grid.columns) * grid.pitchX + CARD_W / 2) * k,
-              y: 24 - Math.floor(found / grid.columns) * grid.pitchY * k,
+              y:
+                24 -
+                (Math.floor(found / grid.columns) * grid.pitchY +
+                  branchOffset) *
+                  k,
             }
           : null;
-      move(
-        target ??
-          restore.current ??
-          cameraFor(grid, size, scope.kind === "overview"),
-        false,
+      const initial = cameraFor(
+        grid,
+        size,
+        scope.kind === "overview",
+        branchOffset,
       );
+      if (branchOffset) initial.x = size.w / 2 - parentX * initial.k;
+      move(target ?? restore.current ?? initial, false);
       restore.current = null;
       searchTarget.current = null;
     } else {
@@ -323,7 +337,17 @@ export function EncyclopediaMap({
       });
     }
     framed.current = { grid, ...size };
-  }, [grid, size, move, setCamera, current, entries, scope.kind]);
+  }, [
+    grid,
+    size,
+    move,
+    setCamera,
+    current,
+    entries,
+    scope.kind,
+    branchOffset,
+    parentX,
+  ]);
 
   const enter = useCallback(
     (next: Scope) => {
@@ -424,6 +448,18 @@ export function EncyclopediaMap({
     ctx.globalAlpha = 0.32;
     ctx.strokeStyle = css.getPropertyValue("--ramune").trim() || "#307ba5";
     ctx.lineWidth = 1;
+    if (scopeCell) {
+      const px = camera.x + parentX * camera.k,
+        py = camera.y + 84;
+      for (const tile of tiles) {
+        const x = camera.x + (tile.x + tile.w / 2) * camera.k,
+          y = camera.y + tile.y * camera.k;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.bezierCurveTo(px, (py + y) / 2, x, (py + y) / 2, x, y);
+        ctx.stroke();
+      }
+    }
     const positions = new Map<string, { x: number; y: number }>();
     for (const t of tiles)
       if (t.count === 1) {
@@ -445,14 +481,14 @@ export function EncyclopediaMap({
         ctx.lineTo(q.x, q.y);
         ctx.stroke();
       }
-  }, [camera, size, tiles, entries, index]);
+  }, [camera, size, tiles, entries, index, scopeCell, parentX]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       if (camera !== current.current) return;
       if (camera.k > 1.8) {
         const centerX = (size.w / 2 - camera.x) / camera.k,
-          centerY = (size.h / 2 - camera.y) / camera.k;
+          centerY = (size.h / 2 - camera.y) / camera.k - branchOffset;
         const col = Math.floor(centerX / grid.pitchX),
           row = Math.floor(centerY / grid.pitchY);
         const entry =
@@ -469,7 +505,7 @@ export function EncyclopediaMap({
       }
     });
     return () => cancelAnimationFrame(frame);
-  }, [camera, size, grid, entries, index, enter, current]);
+  }, [camera, size, grid, entries, index, enter, current, branchOffset]);
 
   const detail = selectedCell ? (
     <>
@@ -664,7 +700,7 @@ export function EncyclopediaMap({
                 zoom(1 / 1.5);
               } else if (e.key === "0") {
                 e.preventDefault();
-                move(cameraFor(grid, size, true));
+                move(cameraFor(grid, size, true, branchOffset));
               } else if (e.key === "Escape") {
                 if (selected) close();
                 else back();
@@ -681,6 +717,25 @@ export function EncyclopediaMap({
             }}
           >
             <canvas ref={canvasRef} className="atlas-canvas" aria-hidden />
+            {scopeCell && (
+              <button
+                className="atlas-parent"
+                style={{
+                  left:
+                    camera.x +
+                    parentX * camera.k -
+                    Math.min(300, CARD_W * camera.k) / 2,
+                  top: camera.y,
+                  width: Math.min(300, CARD_W * camera.k),
+                }}
+                onClick={() => select(scopeCell.id)}
+                aria-label={"Read parent topic " + scopeCell.name}
+              >
+                <span className="atlas-eyebrow">Exploring this topic</span>
+                <strong>{scopeCell.name}</strong>
+                <span>{entries.length} connected nodes</span>
+              </button>
+            )}
             {tiles.map((tile) => {
               const entry = entries[tile.first];
               if (!entry) return null;
@@ -876,7 +931,7 @@ export function EncyclopediaMap({
               </button>
               <button
                 className="atlas-fit"
-                onClick={() => move(cameraFor(grid, size, true))}
+                onClick={() => move(cameraFor(grid, size, true, branchOffset))}
                 title="Fit this map (0)"
                 aria-label="Fit this map"
               >

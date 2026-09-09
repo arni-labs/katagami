@@ -726,3 +726,51 @@
     scroll-behavior: auto !important;
   }
 }
+
+.atlas-parent {
+  position: absolute;
+  height: 84px;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 16px;
+  text-align: center;
+  background: var(--washi);
+  box-shadow: var(--shadow-card);
+  z-index: 1;
+  overflow: hidden;
+}
+.atlas-parent strong {
+  font: 700 19px/1.2 var(--font-display);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.atlas-parent > span:last-child {
+  font-size: 12px;
+  color: var(--graphite);
+}
+
+/* Keep canvas gestures inside the explorer instead of scrolling the page shell. */
+body:has(.atlas) {
+  overflow: clip;
+}
+.atlas {
+  position: fixed;
+  inset: 64px 0 0;
+  height: auto;
+  min-height: 0;
+  z-index: 20;
+}
+@media (max-width: 767px) {
+  .atlas {
+    bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 639px) {
+  .atlas {
+    top: 56px;
+  }
+}

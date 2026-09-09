@@ -49,3 +49,11 @@ test("aggregated tiles partition entries without duplicates", () => {
     987,
   );
 });
+
+test("fit includes space occupied by an expanded parent", () => {
+  const g = makeGrid(20);
+  const size = {w:390,h:500};
+  const c = cameraFor(g,size,true,210);
+  assert.ok(c.y >= 0);
+  assert.ok(c.y + (g.rows*g.pitchY - 60 + 210)*c.k <= size.h);
+});

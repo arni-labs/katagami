@@ -23,3 +23,27 @@ Came up because: EncyclopediaCells list returned policy1004 and no approval deci
 Options: Use a different credential or endpoint without confirmation; ask Rita to authorize the application read route and continue fixture-based verification independently.
 Chose explicit authorization because: The existing denial cannot be silently bypassed. The local production-backed preview remains unverified until access is resolved.
 Where: ARN-475; production read attempt in this Codex session.
+
+## Keep the expanded parent visible
+
+**Decision:** Show the expanded topic above its immediate children with visible connectors.
+
+**Came up because:** The first browser inspection showed that children alone looked like an unrelated card grid.
+
+**Options:** Keep breadcrumbs as the only parent context, or retain a parent node in the canvas.
+
+**Chose a parent node over breadcrumbs alone because:** It explains the relationship spatially while still drawing only visible children; it adds vertical space, included in fit-to-map framing.
+
+**Where:** ui/src/components/encyclopedia/encyclopedia-map.tsx and scene.ts.
+
+## Keep the explorer inside the available viewport
+
+**Decision:** Fix the encyclopedia canvas between the existing site navigation bars.
+
+**Came up because:** Mobile browser verification scrolled the page shell during topic navigation, moving search offscreen and revealing the site footer.
+
+**Options:** Keep the full document scroll, or give the explorer its own fixed viewport.
+
+**Chose a fixed viewport because:** Navigation and search stay available while canvas gestures remain local; the encyclopedia does not need the site footer during exploration.
+
+**Where:** ui/src/components/encyclopedia/map.css.

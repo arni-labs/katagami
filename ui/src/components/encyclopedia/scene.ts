@@ -48,9 +48,14 @@ export function zoomAt(
   const ratio = k / c.k;
   return { k, x: x - (x - c.x) * ratio, y: y - (y - c.y) * ratio };
 }
-export function cameraFor(g: Grid, size: Size, whole = false): Camera {
+export function cameraFor(
+  g: Grid,
+  size: Size,
+  whole = false,
+  topSpace = 0,
+): Camera {
   const w = Math.max(CARD_W, g.columns * g.pitchX - 60);
-  const h = Math.max(CARD_H, g.rows * g.pitchY - 60);
+  const h = Math.max(CARD_H, g.rows * g.pitchY - 60) + topSpace;
   const fit = Math.min(
     0.95,
     Math.max(1, size.w - 48) / w,
