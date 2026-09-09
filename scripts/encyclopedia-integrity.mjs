@@ -235,11 +235,20 @@ export function breadthTell(parsed, childrenById, records = null) {
   // name a row in any status. That asymmetry is deliberate, and the collection
   // uses it: archived records are attached with "(Archived)" written into the
   // explanation. Counted so a reader sees them rather than discovering them.
+  // Counted both ways over ONE snapshot, set-qualified and by bare id, because
+  // the count-neutrality of the keying is the actual claim and the collection
+  // moves underneath a comparison made across two runs. If they disagree, the
+  // keying changed what is counted and the run says so instead of picking one.
   let archived = 0;
+  let archivedByBareId = 0;
   if (records instanceof Map) {
+    const bare = new Map();
+    for (const [entryKey, status] of records) bare.set(entryKey.includes(":") ? entryKey.slice(entryKey.indexOf(":") + 1) : entryKey, status);
     for (const [, doc] of parsed) {
       for (const entry of doc.manifestations) {
-        if (entry && typeof entry === "object" && statusOfRecord(entry.entitySet, entry.entityId) === "Archived") archived += 1;
+        if (!entry || typeof entry !== "object") continue;
+        if (statusOfRecord(entry.entitySet, entry.entityId) === "Archived") archived += 1;
+        if (bare.get(entry.entityId) === "Archived") archivedByBareId += 1;
       }
     }
   }
@@ -261,6 +270,7 @@ export function breadthTell(parsed, childrenById, records = null) {
   }
   return {
     archivedManifestations: archived,
+    archivedManifestationsByBareId: archivedByBareId,
     depthRuleActiveOn: active,
     creditsNamingTheirOwnCell: literal,
     creditsTotal: total,
@@ -393,6 +403,9 @@ async function main() {
   console.log(`  records on several cells of differing breadth: ${context.atTwoDepths}`);
   console.log(`  records on more than one cell at all: ${context.recordsOnSeveralCells}`);
   console.log(`  manifestations of Archived records: ${context.archivedManifestations} (a cell link must point at a live Draft; a manifestation may name a row in any status, and these say "(Archived)" in their explanation)`);
+  if (context.archivedManifestations !== context.archivedManifestationsByBareId) {
+    console.log(`    counted by bare id over the same snapshot: ${context.archivedManifestationsByBareId}. The two disagree, so keying on the entity set changed what is counted; do not report either number alone.`);
+  }
   console.log(`\nWhat the misplacement rule did NOT check. It matches a descendant's name literally`);
   console.log(`inside the credit, so a paraphrased misplacement passes, and it is only active where`);
   console.log(`a cell has something below it. The zero above is honest and narrower than it reads.`);

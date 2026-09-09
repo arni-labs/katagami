@@ -253,6 +253,23 @@ test("a record id that exists in another set does not satisfy the reference", ()
   assert.deepEqual(checkCollection(rows, here).violations, []);
 });
 
+// A claim compared across two runs is a claim about a moving collection. The
+// count is taken both ways over one snapshot so count-neutrality is provable.
+test("the archived tell is counted both ways over one snapshot", () => {
+  const rows = [cell("a", doc("A", { manifestations: [manifestation("en-1", 'credits name "A"')] }))];
+  const agreeing = new Map([["ArtStyles:en-1", "Archived"]]);
+  const both = checkCollection(rows, agreeing).context;
+  assert.equal(both.archivedManifestations, 1);
+  assert.equal(both.archivedManifestationsByBareId, 1, "count-neutral, which is the property actually claimed");
+
+  // The set-qualified answer is 0 and the bare answer is 1: the keying changed
+  // what is counted, and the run has to be able to say so.
+  const differing = new Map([["WritingStyles:en-1", "Archived"]]);
+  const split = checkCollection(rows, differing).context;
+  assert.equal(split.archivedManifestations, 0);
+  assert.equal(split.archivedManifestationsByBareId, 1);
+});
+
 test("the archived tell keys on the set too, so it counts the right record", () => {
   const rows = [cell("a", doc("A", { manifestations: [manifestation("en-1", 'credits name "A"')] }))];
   const records = new Map([["ArtStyles:en-1", "Archived"], ["WritingStyles:en-1", "Published"]]);

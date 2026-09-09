@@ -37,14 +37,30 @@ function stub({ short = [], repeat = [], cells = 2 } = {}) {
     DesignLanguages: [{ entity_id: "dl-1", status: "Published" }, { entity_id: "dl-2", status: "Published" }],
     ArtStyles: [], PaletteSystems: [], WritingStyles: [],
   };
+  // Preconditions are checked when the fixture is built, before any request, so
+  // a test asking for a failure the data cannot exhibit fails here rather than
+  // quietly getting the happy path. A one-row set cannot be read short and
+  // cannot carry a duplicate; that was a real bug in this file twice.
+  for (const set of short) {
+    if ((rows[set] ?? []).length < 2) throw new Error(`stub: ${set} has ${(rows[set] ?? []).length} row(s); a set needs at least 2 to be read short`);
+  }
+  for (const set of repeat) {
+    if ((rows[set] ?? []).length < 2) throw new Error(`stub: ${set} has ${(rows[set] ?? []).length} row(s); a set needs at least 2 to carry a duplicate`);
+  }
   const server = createServer((request, response) => {
     const set = decodeURIComponent(request.url.split("?")[0].split("/").pop());
     const all = rows[set] ?? [];
     // A short read returns one row and no nextLink, while counting them all.
     // A repeated read returns the right NUMBER of rows with one duplicated, so
     // a reconciliation counting row objects would pass while a row went unread.
+    //
+    // Both preconditions are asserted rather than defaulted. A set too small to
+    // be read short, or too small to hold a duplicate, silently produced a
+    // COMPLETE read before, so a test asking for that failure got a passing run
+    // that proved nothing. A fixture that cannot exhibit the failure must say so
+    // rather than quietly become the happy path.
     const value = short.includes(set) ? all.slice(0, 1)
-      : repeat.includes(set) && all.length > 1 ? [all[0], ...all.slice(0, all.length - 1)]
+      : repeat.includes(set) ? [all[0], ...all.slice(0, all.length - 1)]
       : all;
     response.writeHead(200, { "content-type": "application/json" });
     response.end(JSON.stringify({ value, "@odata.count": all.length }));
@@ -66,6 +82,19 @@ async function withStub(options, body) {
   try { return await body(`http://127.0.0.1:${server.address().port}`); }
   finally { await new Promise((resolve) => server.close(resolve)); }
 }
+
+// The guard above is itself a claim, so it is tested: asking the stub for a
+// failure it cannot produce must fail loudly rather than pass.
+test("the stub refuses to fake a failure a set is too small to exhibit", async () => {
+  await assert.rejects(
+    () => withStub({ short: ["WritingStyles"] }, (origin) => run(origin)),
+    /WritingStyles has 0 row\(s\); a set needs at least 2 to be read short/,
+  );
+  await assert.rejects(
+    () => withStub({ repeat: ["ArtStyles"] }, (origin) => run(origin)),
+    /a set needs at least 2 to carry a duplicate/,
+  );
+});
 
 test("a complete read exits 0", async () => {
   const { code, stdout } = await withStub({}, (origin) => run(origin));
