@@ -32,6 +32,13 @@
       "note": "a publishing format (the production text with full stage directions), as pass 1 declined Gift books"
     },
     {
+      "term": "Action and adventure comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026216",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a plot-mode umbrella, as pass 1 declined Action and adventure fiction"
+    },
+    {
       "term": "Action and adventure fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026217",
       "decision": "declined",
@@ -51,6 +58,14 @@
       "decision": "deferred",
       "batch": "B6",
       "note": "A named direction, coined by Nnedi Okorafor in 2018 with a 2020 anthology and some scholarship, but the body of work by other hands is still thin; revisit when it has grown."
+    },
+    {
+      "term": "Afrofuturist comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026011",
+      "decision": "live",
+      "batch": "B17",
+      "note": "movement: the D36 twin of Afrofuturist fiction (B10) in comics, parent left for an insertion batch; proposal B17 #29. Written and attested 2026-09-09.",
+      "cellId": "afrofuturist-comics"
     },
     {
       "term": "Afrofuturist fiction",
@@ -92,6 +107,14 @@
       "note": "a teaching function applied to nursery rhymes (rhymes that run through the alphabet); the form itself is the cell Abecedariuses"
     },
     {
+      "term": "Alternative histories (Comics)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026154",
+      "decision": "live",
+      "batch": "B18",
+      "note": "premise: the D36 twin of the live Alternative histories (Fiction) in comics, parent left for an insertion batch; proposal B18 #9. Written and attested 2026-09-09.",
+      "cellId": "alternative-histories-comics"
+    },
+    {
       "term": "Alternative histories (Drama)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026155",
       "decision": "live",
@@ -114,6 +137,13 @@
       "batch": "B8",
       "note": "tradition: verse in the manner of Anacreon, from the Anacreontea to the European revival after 1550; proposal B8 #6. Written and attested 2026-09-09.",
       "cellId": "anacreontic-poetry"
+    },
+    {
+      "term": "Animal comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026076",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "subject-defined (animals), as pass 1 declined Animal fiction"
     },
     {
       "term": "Animal fiction",
@@ -146,6 +176,14 @@
       "cellId": "antinovels"
     },
     {
+      "term": "Apocalyptic comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026224",
+      "decision": "live",
+      "batch": "B17",
+      "note": "premise: the D36 twin of Apocalyptic fiction (B10) in comics, parent left for an insertion batch; proposal B17 #30. Written and attested 2026-09-09.",
+      "cellId": "apocalyptic-comics"
+    },
+    {
       "term": "Apocalyptic drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026225",
       "decision": "live",
@@ -162,6 +200,13 @@
       "cellId": "apocalyptic-fiction"
     },
     {
+      "term": "Aromantic comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026070",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (aromantic characters and themes)"
+    },
+    {
       "term": "Aromantic fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026071",
       "decision": "declined",
@@ -174,6 +219,21 @@
       "decision": "declined",
       "batch": "B8",
       "note": "subject-defined (aromantic characters and themes)"
+    },
+    {
+      "term": "Arthurian romances",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026227",
+      "decision": "live",
+      "batch": "B17",
+      "note": "tradition: the Arthurian branch of medieval romance, grown by accretion from Geoffrey to Malory; proposal B17 #5. Written and attested 2026-09-09.",
+      "cellId": "arthurian-romances"
+    },
+    {
+      "term": "Asexual comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026004",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (asexual characters and themes)"
     },
     {
       "term": "Asexual fiction",
@@ -204,6 +264,14 @@
       "batch": "B14",
       "note": "genre: the dawn parting, a fixed dramatic situation from the troubadour alba onward; proposal B14 #9. Written and attested 2026-09-09.",
       "cellId": "aubades"
+    },
+    {
+      "term": "Autobiographical comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026229",
+      "decision": "live",
+      "batch": "B18",
+      "note": "practice: the maker draws their own life and therefore draws themselves, from the underground comix movement onward (the reference is a list article, flagged); proposal B18 #11. Written and attested 2026-09-09.",
+      "cellId": "autobiographical-comics"
     },
     {
       "term": "Autobiographical drama",
@@ -241,6 +309,14 @@
       "batch": "B11",
       "note": "tradition: Corpus Christi allegorical one-act plays on carts, Calderón central, banned 1765; proposal B11 #27. Written and attested 2026-09-09.",
       "cellId": "autos-sacramentales"
+    },
+    {
+      "term": "Avadana stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026109",
+      "decision": "live",
+      "batch": "B17",
+      "note": "genre: Buddhist deed-and-consequence narratives with a stated present-past-identification frame; proposal B17 #7. Written and attested 2026-09-09.",
+      "cellId": "avadana-stories"
     },
     {
       "term": "Azharot",
@@ -311,6 +387,13 @@
       "cellId": "bestiaries"
     },
     {
+      "term": "Bible comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026108",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (Biblical characters and events), as pass 1 declined Bible fiction"
+    },
+    {
       "term": "Bible fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026240",
       "decision": "declined",
@@ -325,11 +408,25 @@
       "note": "subject-defined (Biblical characters and events), as pass 1 declined Bible fiction; the medieval cycle traditions have headings of their own"
     },
     {
+      "term": "Bible stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026242",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form for paraphrase (Biblical texts retold as stories), like the other scripture-paraphrase terms"
+    },
+    {
       "term": "Biker poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026001",
       "decision": "declined",
       "batch": "B8",
       "note": "subject- and audience-defined (motorcycling life)"
+    },
+    {
+      "term": "Biographical comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026244",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (a real person's life), as pass 1 declined Biographical fiction"
     },
     {
       "term": "Biographical drama",
@@ -351,6 +448,13 @@
       "decision": "declined",
       "batch": "B8",
       "note": "subject-defined (a real person's life); Autobiographical poetry and Verse hagiographies sit under it and are decided on their own"
+    },
+    {
+      "term": "Bisexual comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026062",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (bisexual characters and themes)"
     },
     {
       "term": "Bisexual drama",
@@ -413,6 +517,14 @@
       "cellId": "blues-poetry"
     },
     {
+      "term": "Body horror comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026073",
+      "decision": "live",
+      "batch": "B18",
+      "note": "mode: the D36 twin of Body horror fiction (B10) in comics, parent left for an insertion batch; proposal B18 #2. Written and attested 2026-09-09.",
+      "cellId": "body-horror-comics"
+    },
+    {
       "term": "Body horror fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2021026047",
       "decision": "live",
@@ -421,11 +533,25 @@
       "cellId": "body-horror-fiction"
     },
     {
+      "term": "Book of Mormon comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026107",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (characters and events from the Book of Mormon)"
+    },
+    {
       "term": "Book of Mormon plays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026251",
       "decision": "declined",
       "batch": "B11",
       "note": "subject-defined (characters and events from the Book of Mormon)"
+    },
+    {
+      "term": "Book of Mormon stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026252",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form for paraphrase (Book of Mormon texts retold as stories)"
     },
     {
       "term": "Bop (Poetry)",
@@ -441,6 +567,21 @@
       "decision": "deferred",
       "batch": "B6",
       "note": "A Japanese publishing genre with a real history (tanbi, shonen-ai, yaoi, BL) and conventions, but defined by its romantic pairing; needs a source that treats it as a manner rather than a subject before it becomes a cell."
+    },
+    {
+      "term": "Boys love (Manga)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026096",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Boys love in manga, as pass 2 deferred Boys love (Fiction): a publishing genre with a real history, but the sources define it by its romantic pairing. It returns when one treats it as a manner."
+    },
+    {
+      "term": "Burlesques (Literature)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026254",
+      "decision": "live",
+      "batch": "B17",
+      "note": "mode: a known original mocked by mismatching its manner and its subject; proposal B17 #8. Written and attested 2026-09-09.",
+      "cellId": "burlesques-literature"
     },
     {
       "term": "Burrakatha plays",
@@ -471,6 +612,13 @@
       "decision": "declined",
       "batch": "B6",
       "note": "setting-defined (the university)"
+    },
+    {
+      "term": "Carol texts",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026071",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form under the declined Musical texts"
     },
     {
       "term": "Cartonera books",
@@ -511,6 +659,14 @@
       "batch": "B6",
       "note": "form: branching printed fiction with numbered sections; proposal B6 #15. Written and attested 2026-09-08.",
       "cellId": "choose-your-own-stories"
+    },
+    {
+      "term": "Choose-your-own-story comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026022",
+      "decision": "live",
+      "batch": "B17",
+      "note": "structure: branching choice laid out in panels; the D36 twin of the live Choose-your-own stories; proposal B17 #22. Written and attested 2026-09-09.",
+      "cellId": "choose-your-own-story-comics"
     },
     {
       "term": "Choral novels",
@@ -636,6 +792,44 @@
       "cellId": "comedy-sketches"
     },
     {
+      "term": "Comics (Graphic works)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026266",
+      "decision": "live",
+      "batch": "B17",
+      "note": "form: sequential images with their own grammar of panel, gutter and page turn; LCGFT's parent for 38 terms; proposal B17 #9. Written and attested 2026-09-09.",
+      "cellId": "comics-graphic-works"
+    },
+    {
+      "term": "Comics adaptations",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026005",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a production practice (a comic made from a work in another medium), as B10 declined Novelizations"
+    },
+    {
+      "term": "Comics journalism",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026049",
+      "decision": "live",
+      "batch": "B17",
+      "note": "practice: reporting in comics with the reporter drawn in, established by Joe Sacco; proposal B17 #18. Written and attested 2026-09-09.",
+      "cellId": "comics-journalism"
+    },
+    {
+      "term": "Comics scripts",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026086",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Comics scripts has no LCGFT scope note and no independent reference answered for the comics script as a form of writing, though Screenplays was kept on that basis. Revisit when a source treats it."
+    },
+    {
+      "term": "Coming-of-age comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026107",
+      "decision": "live",
+      "batch": "B18",
+      "note": "passage: the D36 twin of the live Coming-of-age fiction in comics, parent left for an insertion batch; proposal B18 #10. Written and attested 2026-09-09.",
+      "cellId": "coming-of-age-comics"
+    },
+    {
       "term": "Coming-of-age drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026062",
       "decision": "live",
@@ -729,6 +923,13 @@
       "cellId": "counting-out-rhymes"
     },
     {
+      "term": "Country lyrics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026066",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form under the declined Musical texts"
+    },
+    {
       "term": "Cowboy poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026028",
       "decision": "live",
@@ -784,6 +985,14 @@
       "cellId": "cut-ups-literature"
     },
     {
+      "term": "Cyberpunk comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026017",
+      "decision": "live",
+      "batch": "B17",
+      "note": "movement: the D36 twin of Cyberpunk fiction (B10) in comics, parent left for an insertion batch; proposal B17 #32. Written and attested 2026-09-09.",
+      "cellId": "cyberpunk-comics"
+    },
+    {
       "term": "Cyberpunk fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026275",
       "decision": "live",
@@ -821,6 +1030,14 @@
       "batch": "B8",
       "note": "form: the troubadour descort of deliberately unlike stanzas; proposal B8 #15. Written and attested 2026-09-09.",
       "cellId": "descorts"
+    },
+    {
+      "term": "Detective and mystery comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026279",
+      "decision": "live",
+      "batch": "B18",
+      "note": "form: the investigation with clues drawn into the panel; the D36 twin of the live Detective and mystery fiction; proposal B18 #3. Written and attested 2026-09-09.",
+      "cellId": "detective-and-mystery-comics"
     },
     {
       "term": "Detective and mystery fiction",
@@ -914,6 +1131,20 @@
       "note": "Shaw's discussion play is a real critical term, but its LCGFT parent Problem plays has not been read yet and the two should be decided together; the open reference covers both under Problem play."
     },
     {
+      "term": "Doctrine and Covenants stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026291",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form for paraphrase (Doctrine and Covenants texts retold as stories)"
+    },
+    {
+      "term": "Documentary comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026292",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Documentary comics overlaps Comics journalism, which is now a cell, and LCGFT's own note distinguishes them only by intent; no independent reference answered for the documentary term on its own."
+    },
+    {
       "term": "Documentary poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2023026067",
       "decision": "live",
@@ -927,6 +1158,13 @@
       "decision": "declined",
       "batch": "B8",
       "note": "a quality judgement (badly made or deliberately rough verse); the deliberate rough forms inside it, Skeltonic verse for one, have LCGFT headings of their own"
+    },
+    {
+      "term": "Domestic comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026005",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (home and family life), as pass 1 declined Domestic fiction"
     },
     {
       "term": "Domestic drama",
@@ -1004,6 +1242,14 @@
       "note": "a cataloguing form counting speakers (a play for two)"
     },
     {
+      "term": "Dystopian comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026301",
+      "decision": "live",
+      "batch": "B17",
+      "note": "premise: the D36 twin of Dystopian fiction (B10) in comics, parent left for an insertion batch; proposal B17 #31. Written and attested 2026-09-09.",
+      "cellId": "dystopian-comics"
+    },
+    {
       "term": "Dystopian fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026302",
       "decision": "live",
@@ -1065,6 +1311,21 @@
       "cellId": "ecopoetry"
     },
     {
+      "term": "Educational comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026305",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a purpose label (comics meant to impart knowledge), as pass 1 declined Didactic fiction"
+    },
+    {
+      "term": "Eight-pagers (Comic books)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026572",
+      "decision": "live",
+      "batch": "B17",
+      "note": "form: the Tijuana bible, clandestine eight-page pornographic parody comics, 1920s to early 1960s; proposal B17 #17. Written and attested 2026-09-09.",
+      "cellId": "eight-pagers-comic-books"
+    },
+    {
       "term": "Ekphrastic poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026306",
       "decision": "live",
@@ -1087,6 +1348,13 @@
       "batch": "B8",
       "note": "form: the Welsh strict-metre tercet or quatrain; proposal B8 #11. Written and attested 2026-09-09.",
       "cellId": "englyns"
+    },
+    {
+      "term": "Environmental comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026013",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Environmental comics would be the D36 twin of Ecofiction, but no reference describes a comics body of work with its own conventions."
     },
     {
       "term": "Environmental drama",
@@ -1157,6 +1425,13 @@
       "cellId": "erasure-poetry"
     },
     {
+      "term": "Erotic comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026318",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (sexual love), as pass 1 declined Erotic fiction"
+    },
+    {
       "term": "Erotic drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026319",
       "decision": "declined",
@@ -1200,6 +1475,13 @@
       "cellId": "exempla"
     },
     {
+      "term": "Experimental comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026063",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "an umbrella defined relative to its era, as pass 1 declined Experimental fiction"
+    },
+    {
       "term": "Experimental drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026324",
       "decision": "declined",
@@ -1237,6 +1519,13 @@
       "cellId": "fabliaux"
     },
     {
+      "term": "Fairy tale comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026025",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "adaptation- and subject-defined (comics retelling fairy tales), as B12 declined Fairy tale plays"
+    },
+    {
       "term": "Fairy tale plays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026081",
       "decision": "declined",
@@ -1258,6 +1547,14 @@
       "batch": "B6",
       "note": "practice: fans writing inside existing fictional worlds, with communities and conventions; proposal B6 #31. Written and attested 2026-09-08.",
       "cellId": "fan-fiction"
+    },
+    {
+      "term": "Fantasy comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026331",
+      "decision": "live",
+      "batch": "B18",
+      "note": "premise: the D36 twin of the live Fantasy fiction in comics, parent left for an insertion batch; proposal B18 #5. Written and attested 2026-09-09.",
+      "cellId": "fantasy-comics"
     },
     {
       "term": "Fantasy drama",
@@ -1360,6 +1657,13 @@
       "cellId": "folk-poetry"
     },
     {
+      "term": "Folk song texts",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026145",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form under the declined Musical texts"
+    },
+    {
       "term": "Folk tales",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026344",
       "decision": "live",
@@ -1373,6 +1677,14 @@
       "decision": "declined",
       "batch": "B10",
       "note": "subject-defined (forensic science), as pass 1 declined Medical fiction"
+    },
+    {
+      "term": "Fotonovelas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026345",
+      "decision": "live",
+      "batch": "B17",
+      "note": "form: comics made from photographs, a mass market in Italy, Spain and Latin America from the late 1940s; proposal B17 #15. Written and attested 2026-09-09.",
+      "cellId": "fotonovelas"
     },
     {
       "term": "Found poetry",
@@ -1407,11 +1719,26 @@
       "cellId": "fu"
     },
     {
+      "term": "Funny animal comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026131",
+      "decision": "live",
+      "batch": "B17",
+      "note": "convention: animals living human lives in a cartoon register, later used against itself in Maus and Blacksad; proposal B17 #16. Written and attested 2026-09-09.",
+      "cellId": "funny-animal-comics"
+    },
+    {
       "term": "Gangster fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026070",
       "decision": "declined",
       "batch": "B6",
       "note": "subject-defined (organised crime)"
+    },
+    {
+      "term": "Gay comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026011",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (gay characters and themes)"
     },
     {
       "term": "Gay drama",
@@ -1435,6 +1762,13 @@
       "note": "subject-defined (gay characters and themes)"
     },
     {
+      "term": "Genderqueer comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026102",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (genderqueer characters and themes)"
+    },
+    {
       "term": "Genderqueer fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026073",
       "decision": "declined",
@@ -1455,6 +1789,13 @@
       "batch": "B8",
       "note": "form: the couplet-and-refrain lyric of Arabic, Persian and Urdu poetry; proposal B8 #40. Written and attested 2026-09-09.",
       "cellId": "ghazals-poetry"
+    },
+    {
+      "term": "Ghost comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026038",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Ghost comics has no LCGFT scope note and no reference treats it as a body of work of its own, as with Ghost poetry in B14."
     },
     {
       "term": "Ghost plays",
@@ -1518,12 +1859,49 @@
       "note": "Proposed as a merge into Gothic fiction; the owner ruled separate cells with a shared parent, so this returns as its own cell under a Gothic literature parent in a later batch."
     },
     {
+      "term": "Graphic medicine (Comics)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026149",
+      "decision": "live",
+      "batch": "B17",
+      "note": "movement: comics in medical education and patient care, named by Ian Williams in 2007, with conferences and a book series; proposal B17 #19. Written and attested 2026-09-09.",
+      "cellId": "graphic-medicine-comics"
+    },
+    {
+      "term": "Graphic novel adaptations",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026130",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a production practice, with Comics adaptations"
+    },
+    {
+      "term": "Graphic novels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026362",
+      "decision": "live",
+      "batch": "B17",
+      "note": "format: comics at book length, named in 1978 and disputed inside the field; proposal B17 #10. Written and attested 2026-09-09.",
+      "cellId": "graphic-novels"
+    },
+    {
+      "term": "Grassroots comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026363",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Grassroots comics, the World Comics activist practice, is a real documented movement, but no independent reference answered under that name. Revisit when a source is found."
+    },
+    {
       "term": "Graveyard poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026364",
       "decision": "live",
       "batch": "B8",
       "note": "tradition: the eighteenth-century Graveyard school, precursor of the Gothic; proposal B8 #48. Written and attested 2026-09-09.",
       "cellId": "graveyard-poetry"
+    },
+    {
+      "term": "Hadith stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026365",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form for paraphrase (Hadith texts retold as stories)"
     },
     {
       "term": "Hahiwang",
@@ -1571,6 +1949,21 @@
       "cellId": "heroic-drama"
     },
     {
+      "term": "Hip-hop lyrics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026157",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form under the declined Musical texts. Flagged in the report: rap and hip-hop lyrics have a written craft with its own scholarship, and this is the decline in the music group most likely to be worth reversing"
+    },
+    {
+      "term": "Historical comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026368",
+      "decision": "live",
+      "batch": "B18",
+      "note": "setting: the D36 twin of the live Historical fiction in comics, parent left for an insertion batch; proposal B18 #8. Written and attested 2026-09-09.",
+      "cellId": "historical-comics"
+    },
+    {
       "term": "Historical drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026369",
       "decision": "live",
@@ -1594,6 +1987,14 @@
       "note": "setting-defined (a past period)"
     },
     {
+      "term": "Horror comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026372",
+      "decision": "live",
+      "batch": "B18",
+      "note": "intent: fright in comics, with the Comics Code of 1954 as the genre's own censorship history; the D36 twin of the live Horror fiction; proposal B18 #1. Written and attested 2026-09-09.",
+      "cellId": "horror-comics"
+    },
+    {
       "term": "Horror fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026373",
       "decision": "live",
@@ -1615,6 +2016,13 @@
       "decision": "deferred",
       "batch": "B8",
       "note": "Deferred, not declined: D36 gives a tradition that lives in prose and in verse a cell per form under a shared parent, so this returns once the parent over the fiction cell exists."
+    },
+    {
+      "term": "Humorous comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026376",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a tone umbrella, as pass 1 declined Humorous fiction"
     },
     {
       "term": "Humorous fiction",
@@ -1651,6 +2059,13 @@
       "batch": "B8",
       "note": "form: the earliest Korean-language poems, written in hyangchal; proposal B8 #35. Written and attested 2026-09-09.",
       "cellId": "hyangga"
+    },
+    {
+      "term": "Hymn texts",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026006",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form under the declined Musical texts"
     },
     {
       "term": "Hypertext fiction",
@@ -1706,11 +2121,33 @@
       "note": "A real form, from Molière's L'Impromptu de Versailles onward, but no independent reference answered for it; Wikipedia's Metatheatre covers the wider practice and not this type. Revisit when a source names it."
     },
     {
+      "term": "Indigenous futurisms comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2021026015",
+      "decision": "live",
+      "batch": "B17",
+      "note": "movement: Indigenous Futurisms in comics, named by Grace Dillon in 2003; proposal B17 #20. Written and attested 2026-09-09.",
+      "cellId": "indigenous-futurisms-comics"
+    },
+    {
+      "term": "Instructional comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026385",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a purpose label (comics that teach or train), with Educational comics"
+    },
+    {
       "term": "Interludes (Drama)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026386",
       "decision": "deferred",
       "batch": "B12",
       "note": "The Tudor interlude is a documented form and LCGFT makes it the parent of Kyōgen plays, but Wikipedia's Interlude is a disambiguation page and no article covers the dramatic form. It returns as an insertion under D38 once a source is found."
+    },
+    {
+      "term": "Intersex comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2021026041",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (intersex characters and themes)"
     },
     {
       "term": "Intersex fiction",
@@ -1742,12 +2179,28 @@
       "cellId": "irohauta"
     },
     {
+      "term": "Isekai manga",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026122",
+      "decision": "live",
+      "batch": "B17",
+      "note": "subgenre: transfer into another world, dominant commercially in the 2010s through web-novel serialisation; proposal B17 #27. Written and attested 2026-09-09.",
+      "cellId": "isekai-manga"
+    },
+    {
       "term": "Jack tales",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026388",
       "decision": "live",
       "batch": "B10",
       "note": "tradition: a named tale cycle with collectors and tellers (the independent reference covers it under the hero's name); proposal B10 #12. Written and attested 2026-09-09.",
       "cellId": "jack-tales"
+    },
+    {
+      "term": "Jataka stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026389",
+      "decision": "live",
+      "batch": "B17",
+      "note": "tradition: Buddhist past-birth tales with a fixed closing identification, carved on stupas from the 2nd century BC; proposal B17 #6. Written and attested 2026-09-09.",
+      "cellId": "jataka-stories"
     },
     {
       "term": "Jazz poetry",
@@ -1874,6 +2327,13 @@
       "note": "Bambaran comic theatre with a documented practice in Mali, but no independent reference answered: Wikipedia has no article under any spelling tried. Revisit when one exists."
     },
     {
+      "term": "Kouta texts",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026069",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form under the declined Musical texts"
+    },
+    {
       "term": "Kōwaka drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026027",
       "decision": "live",
@@ -1959,6 +2419,13 @@
       "cellId": "lays-narrative-poetry"
     },
     {
+      "term": "Legal comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026111",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (the practice of law), as pass 1 declined Legal fiction"
+    },
+    {
       "term": "Legal drama (Literature)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026405",
       "decision": "declined",
@@ -1973,12 +2440,27 @@
       "note": "subject-defined (the practice of law)"
     },
     {
+      "term": "Legends",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026407",
+      "decision": "live",
+      "batch": "B17",
+      "note": "genre: traditional narrative told as history, separated from myth by its human setting; proposal B17 #1. Written and attested 2026-09-09.",
+      "cellId": "legends"
+    },
+    {
       "term": "Lenong plays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026408",
       "decision": "live",
       "batch": "B12",
       "note": "tradition: Betawi folk theatre of Jakarta with gambang kromong music and audience exchange; proposal B12 #14. Written and attested 2026-09-09.",
       "cellId": "lenong-plays"
+    },
+    {
+      "term": "Lesbian comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026010",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (lesbian characters and themes)"
     },
     {
       "term": "Lesbian drama",
@@ -2156,6 +2638,14 @@
       "note": "French seventeenth-century plays built around stage machinery. Wikipedia's Machine play redirects to Restoration spectacular, which is the English form and a different body of work. Revisit when a source covers the French one."
     },
     {
+      "term": "Magic realist comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026069",
+      "decision": "live",
+      "batch": "B18",
+      "note": "technique: the impossible held in the same drawing register as the real; the D36 twin of the live Magic realist fiction; proposal B18 #13. Written and attested 2026-09-09.",
+      "cellId": "magic-realist-comics"
+    },
+    {
       "term": "Magic realist fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026424",
       "decision": "live",
@@ -2180,12 +2670,35 @@
       "cellId": "makyung-plays"
     },
     {
+      "term": "Manga",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026036",
+      "decision": "live",
+      "batch": "B17",
+      "note": "tradition: Japanese comics with a described set of formal conventions and their own publishing structure; proposal B17 #11. Written and attested 2026-09-09.",
+      "cellId": "manga"
+    },
+    {
+      "term": "Manhwa",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026083",
+      "decision": "live",
+      "batch": "B17",
+      "note": "tradition: Korean comics, with the vertical-scrolling webtoon changing the drawing since about 2003; proposal B17 #12. Written and attested 2026-09-09.",
+      "cellId": "manhwa"
+    },
+    {
       "term": "Maqāmāt",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026425",
       "decision": "live",
       "batch": "B15",
       "note": "form: Arabic rhymed-prose trickster tales invented by al-Hamadhani, canonised by al-Hariri; proposal B15 #8. Written and attested 2026-09-09.",
       "cellId": "maqamat"
+    },
+    {
+      "term": "Martial arts comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026004",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Martial arts comics, as pass 2 deferred Martial arts fiction: the LCGFT term is subject-wide, and the wuxia tradition inside it may deserve a cell under its own name."
     },
     {
       "term": "Martial arts fiction",
@@ -2348,6 +2861,13 @@
       "cellId": "monostichs"
     },
     {
+      "term": "Monster comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026104",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "subject-defined (monsters), as pass 1 declined Monster fiction"
+    },
+    {
       "term": "Monster drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026128",
       "decision": "declined",
@@ -2409,6 +2929,13 @@
       "cellId": "mystery-and-miracle-plays"
     },
     {
+      "term": "Mythological comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026073",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "subject-defined (myth retold), as pass 1 declined Mythological fiction"
+    },
+    {
       "term": "Mythological fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026098",
       "decision": "declined",
@@ -2428,6 +2955,14 @@
       "decision": "declined",
       "batch": "B8",
       "note": "subject-defined (myth retold)"
+    },
+    {
+      "term": "Myths",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026043",
+      "decision": "live",
+      "batch": "B17",
+      "note": "genre: traditional narrative accounting for the world, tied to belief and rite; proposal B17 #2. Written and attested 2026-09-09.",
+      "cellId": "myths"
     },
     {
       "term": "Narrative poetry",
@@ -2474,6 +3009,14 @@
       "cellId": "no-plays"
     },
     {
+      "term": "Noir comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026451",
+      "decision": "live",
+      "batch": "B18",
+      "note": "structure: the D36 twin of Noir fiction (B10) in comics, parent left for an insertion batch; proposal B18 #4. Written and attested 2026-09-09.",
+      "cellId": "noir-comics"
+    },
+    {
       "term": "Noir fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026452",
       "decision": "live",
@@ -2495,6 +3038,13 @@
       "decision": "deferred",
       "batch": "B15",
       "note": "Noir poetry has no LCGFT scope note and no reference treats verse in the noir manner as a body of work of its own. Revisit when one appears."
+    },
+    {
+      "term": "Nonfiction comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026453",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a truth-claim umbrella; the practices inside it, Comics journalism and Graphic medicine among them, are the cells"
     },
     {
       "term": "Nonfiction novels",
@@ -2627,6 +3177,22 @@
       "batch": "B15",
       "note": "form: interlocking quatrains where every line is heard twice, from the Malay pantun berkait; proposal B15 #18. Written and attested 2026-09-09.",
       "cellId": "pantoums"
+    },
+    {
+      "term": "Parables",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026467",
+      "decision": "live",
+      "batch": "B17",
+      "note": "form: short human story leaving its lesson unstated, distinguished from the fable by its characters; proposal B17 #3. Written and attested 2026-09-09.",
+      "cellId": "parables"
+    },
+    {
+      "term": "Paranormal comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026468",
+      "decision": "live",
+      "batch": "B18",
+      "note": "premise: the D36 twin of Paranormal fiction (B10) in comics, parent left for an insertion batch; proposal B18 #12. Written and attested 2026-09-09.",
+      "cellId": "paranormal-comics"
     },
     {
       "term": "Paranormal drama",
@@ -2788,6 +3354,13 @@
       "cellId": "ping-shu"
     },
     {
+      "term": "Pirate comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026058",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (pirates)"
+    },
+    {
       "term": "Plough Monday plays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2024026057",
       "decision": "live",
@@ -2801,6 +3374,13 @@
       "decision": "declined",
       "batch": "B6",
       "note": "a form category of literature, like a medium"
+    },
+    {
+      "term": "Political comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026159",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (the political milieu), as B10 declined Political fiction"
     },
     {
       "term": "Political fiction",
@@ -2822,6 +3402,20 @@
       "decision": "declined",
       "batch": "B15",
       "note": "subject-defined (the political milieu), as B10 declined Political fiction"
+    },
+    {
+      "term": "Popular music lyrics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026003",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form (song words separated from their music), as pass 1 declined Musical texts"
+    },
+    {
+      "term": "Pornographic comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026485",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "content-defined, as B10 declined Pornographic fiction"
     },
     {
       "term": "Pornographic fiction",
@@ -2907,6 +3501,14 @@
       "cellId": "psalms"
     },
     {
+      "term": "Psychological comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026048",
+      "decision": "live",
+      "batch": "B18",
+      "note": "mode: interiority carried by caption, remembered panel and breaking layout; the D36 twin of Psychological fiction (B10); proposal B18 #14. Written and attested 2026-09-09.",
+      "cellId": "psychological-comics"
+    },
+    {
       "term": "Psychological fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026492",
       "decision": "live",
@@ -2955,6 +3557,13 @@
       "cellId": "quatrains"
     },
     {
+      "term": "Queer comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026162",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (queer characters and themes), as B10 declined Queer fiction; its eight LCGFT children are declined with it"
+    },
+    {
       "term": "Queer fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026063",
       "decision": "declined",
@@ -2967,6 +3576,13 @@
       "decision": "declined",
       "batch": "B15",
       "note": "subject-defined (queer characters and themes), as B10 declined Queer fiction"
+    },
+    {
+      "term": "Qurʼan stories",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026498",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form for paraphrase (Qurʼanic texts retold as stories)"
     },
     {
       "term": "Radio plays",
@@ -2984,6 +3600,13 @@
       "note": "setting-defined (the railroad)"
     },
     {
+      "term": "Rap lyrics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026007",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form under the declined Musical texts, with Hip-hop lyrics"
+    },
+    {
       "term": "Rāsalīlā drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026035",
       "decision": "live",
@@ -2999,6 +3622,13 @@
       "batch": "B8",
       "note": "Minted in this pass as the parent Jue ju and Lu shi both need; LCGFT has no heading for it, so the name is Wikipedia's. Written and attested 2026-09-09.",
       "namedFrom": "https://en.wikipedia.org/wiki/Regulated_verse"
+    },
+    {
+      "term": "Religious comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026500",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "a subject umbrella, as B10 declined Religious fiction; its LCGFT children are declined with it"
     },
     {
       "term": "Religious drama",
@@ -3106,12 +3736,34 @@
       "note": "The road novel is plausible as a form descended from the picaresque, but no independent reference answered: Wikipedia has no Road novel article. Revisit when a citable source treats it as a manner."
     },
     {
+      "term": "Road trip comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2021026038",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Road trip comics, as B10 deferred Road fiction: no independent reference answered for the road narrative as a form."
+    },
+    {
       "term": "Robinsonades",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026514",
       "decision": "live",
       "batch": "B10",
       "note": "tradition: name coined in German in 1731 for the Crusoe imitations, the island as a test of what a society is made of (parent deferred with Survival fiction); proposal B10 #42. Written and attested 2026-09-09.",
       "cellId": "robinsonades"
+    },
+    {
+      "term": "Rock lyrics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026008",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form under the declined Musical texts"
+    },
+    {
+      "term": "Romance comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026515",
+      "decision": "live",
+      "batch": "B18",
+      "note": "genre: created by Simon and Kirby in 1947, briefly the largest American category, with a separate shōjo line; the D36 twin of Romance fiction (B10); proposal B18 #6. Written and attested 2026-09-09.",
+      "cellId": "romance-comics"
     },
     {
       "term": "Romance fiction",
@@ -3176,12 +3828,26 @@
       "cellId": "roundels"
     },
     {
+      "term": "Sacred music texts",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026004",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form under the declined Musical texts"
+    },
+    {
       "term": "Sagas",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026522",
       "decision": "live",
       "batch": "B6",
       "note": "tradition: Icelandic and Scandinavian vernacular prose narrative with a recognisable manner; proposal B6 #7. Written and attested 2026-09-08.",
       "cellId": "sagas"
+    },
+    {
+      "term": "Samurai comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026024",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Samurai comics, as B10 deferred Samurai fiction: no independent reference answered for the prose or comics tradition under that name."
     },
     {
       "term": "Samurai fiction",
@@ -3219,6 +3885,14 @@
       "decision": "deferred",
       "batch": "B16",
       "note": "Sasŏl sijo, the expanded colloquial sijo, is a real Korean form, but no independent reference answered for it on its own; the parent Sijo is now a cell. Revisit when a source treats the variant."
+    },
+    {
+      "term": "Satirical comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026071",
+      "decision": "merge",
+      "batch": "B18",
+      "note": "Same direction as the live cell Satirical literature, which already covers ridicule aimed at reform across forms; LCGFT splits it by form and states no difference the cell does not hold. Add this LCGFT page to that cell's sources.",
+      "cellId": "satirical-literature"
     },
     {
       "term": "Satirical drama",
@@ -3268,6 +3942,13 @@
       "note": "Schnaderhüpfel, four-line Alpine improvised verse, is a real tradition, but no independent reference answered under that name. Revisit when a source is found."
     },
     {
+      "term": "School comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026088",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "setting-defined (the school), as B10 declined School fiction"
+    },
+    {
       "term": "School fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2020026014",
       "decision": "declined",
@@ -3288,6 +3969,14 @@
       "batch": "B10",
       "note": "tradition: a broad genre root with continuous conventions since the pulp magazines named it (same standing as the live Fantasy fiction and Horror fiction); proposal B10 #1. Written and attested 2026-09-09.",
       "cellId": "science-fiction"
+    },
+    {
+      "term": "Science fiction comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026530",
+      "decision": "live",
+      "batch": "B17",
+      "note": "premise: the D36 twin of Science fiction (B10) in comics, parent left for an insertion batch; proposal B17 #28. Written and attested 2026-09-09.",
+      "cellId": "science-fiction-comics"
     },
     {
       "term": "Science fiction plays",
@@ -3327,6 +4016,14 @@
       "decision": "declined",
       "batch": "B16",
       "note": "subject-defined (the sea); the genre with its own manner, Sea fiction, was kept in B10 on the strength of its critical name"
+    },
+    {
+      "term": "Seinen manga",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026089",
+      "decision": "live",
+      "batch": "B17",
+      "note": "category: the seinen editorial category, with slower pacing and more formal room; proposal B17 #25. Written and attested 2026-09-09.",
+      "cellId": "seinen-manga"
     },
     {
       "term": "Senryu",
@@ -3408,6 +4105,22 @@
       "cellId": "shadow-plays"
     },
     {
+      "term": "Shōjo manga",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026060",
+      "decision": "live",
+      "batch": "B17",
+      "note": "category: the shōjo editorial category, which produced a documented visual grammar under the Year 24 Group (borderline: an audience label kept for the manner); proposal B17 #23. Written and attested 2026-09-09.",
+      "cellId": "shojo-manga"
+    },
+    {
+      "term": "Shōnen manga",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026061",
+      "decision": "live",
+      "batch": "B17",
+      "note": "category: the shōnen editorial category, whose magazine ranking system shapes the serialised method (borderline, as above); proposal B17 #24. Written and attested 2026-09-09.",
+      "cellId": "shonen-manga"
+    },
+    {
       "term": "Short stories",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026542",
       "decision": "live",
@@ -3463,6 +4176,21 @@
       "cellId": "slapstick-comedy-plays"
     },
     {
+      "term": "Slice-of-life comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026062",
+      "decision": "live",
+      "batch": "B17",
+      "note": "mode: vignette and accumulation in place of plot; proposal B17 #21. Written and attested 2026-09-09.",
+      "cellId": "slice-of-life-comics"
+    },
+    {
+      "term": "Social issue comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026079",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Social issue comics has no LCGFT scope note; the direction is held by Social problem fiction (B11) and no source describes a comics body of work with conventions of its own."
+    },
+    {
       "term": "Social problem fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026040",
       "decision": "live",
@@ -3494,6 +4222,20 @@
       "cellId": "soliloquies"
     },
     {
+      "term": "Song texts",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026005",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a cataloguing form under the declined Musical texts"
+    },
+    {
+      "term": "Songsters",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026087",
+      "decision": "declined",
+      "batch": "B17",
+      "note": "a publishing format (the pocket song-text collection), as pass 1 declined Gift books"
+    },
+    {
       "term": "Sonnets",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026549",
       "decision": "live",
@@ -3510,6 +4252,14 @@
       "cellId": "sound-poetry"
     },
     {
+      "term": "Space operas (Comics)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026019",
+      "decision": "live",
+      "batch": "B17",
+      "note": "subgenre: the D36 twin of Space operas (B11) in comics, parent left for an insertion batch; proposal B17 #34. Written and attested 2026-09-09.",
+      "cellId": "space-operas-comics"
+    },
+    {
       "term": "Space operas (Fiction)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026551",
       "decision": "live",
@@ -3524,6 +4274,13 @@
       "batch": "B16",
       "note": "tradition: poetry written to be performed, from the Beats and the Black Arts Movement to the slam; proposal B16 #22. Written and attested 2026-09-09.",
       "cellId": "spoken-word-poetry"
+    },
+    {
+      "term": "Sports comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026553",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (sport), as B11 declined Sports fiction"
     },
     {
       "term": "Sports fiction",
@@ -3547,6 +4304,13 @@
       "note": "subject-defined (sport), as B11 declined Sports fiction"
     },
     {
+      "term": "Spy comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026554",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Spy comics has no LCGFT scope note and no reference describes a comics body of work with conventions of its own; the direction is held by Spy fiction (B11)."
+    },
+    {
       "term": "Spy fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026555",
       "decision": "live",
@@ -3560,6 +4324,14 @@
       "decision": "deferred",
       "batch": "B13",
       "note": "Stationendrama is a documented German expressionist structure, but no independent reference answered under that name, and its LCGFT parent Episodic plays is itself deferred. Revisit together."
+    },
+    {
+      "term": "Steampunk comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026557",
+      "decision": "live",
+      "batch": "B17",
+      "note": "movement: the D36 twin of Steampunk fiction (B11) in comics, parent left for an insertion batch; proposal B17 #33. Written and attested 2026-09-09.",
+      "cellId": "steampunk-comics"
     },
     {
       "term": "Steampunk fiction",
@@ -3599,6 +4371,14 @@
       "batch": "B11",
       "note": "tradition: the hollow earth and the descent, from Holberg and Verne, with a scientific pretext of its day; proposal B11 #5. Written and attested 2026-09-09.",
       "cellId": "subterranean-fiction"
+    },
+    {
+      "term": "Superhero comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026562",
+      "decision": "live",
+      "batch": "B17",
+      "note": "genre: the dominant North American comic-book genre since 1938, with shared-continuity practice specific to the form; the D36 twin of Superhero fiction (B11); proposal B17 #36. Written and attested 2026-09-09.",
+      "cellId": "superhero-comics"
     },
     {
       "term": "Superhero fiction",
@@ -3692,6 +4472,13 @@
       "note": "subject-defined (people who work in the theatre)"
     },
     {
+      "term": "Thriller comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026563",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Thriller comics has no LCGFT scope note and no reference describes a comics body of work of its own; the direction is held by Thrillers (B11)."
+    },
+    {
       "term": "Thriller plays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026045",
       "decision": "live",
@@ -3706,6 +4493,14 @@
       "batch": "B11",
       "note": "genre: defined by narrative construction, pace and engineered suspense, rather than by material; proposal B11 #8. Written and attested 2026-09-09.",
       "cellId": "thrillers-fiction"
+    },
+    {
+      "term": "Time-travel comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026008",
+      "decision": "live",
+      "batch": "B17",
+      "note": "device: the D36 twin of Time-travel fiction (B11) in comics, parent left for an insertion batch; proposal B17 #35. Written and attested 2026-09-09.",
+      "cellId": "time-travel-comics"
     },
     {
       "term": "Time-travel fiction",
@@ -3729,6 +4524,14 @@
       "batch": "B13",
       "note": "genre: Roman comedy in Roman dress and setting, known authors, fragmentary corpus; proposal B13 #5. Written and attested 2026-09-09.",
       "cellId": "togatae"
+    },
+    {
+      "term": "Tongue twisters",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026575",
+      "decision": "live",
+      "batch": "B17",
+      "note": "form: phrases built to defeat articulation; the difficulty is the whole work; proposal B17 #4. Written and attested 2026-09-09.",
+      "cellId": "tongue-twisters"
     },
     {
       "term": "Topeng plays",
@@ -3763,6 +4566,13 @@
       "cellId": "tragicomedies"
     },
     {
+      "term": "Transgender comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026063",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (transgender characters and themes)"
+    },
+    {
       "term": "Transgender drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026078",
       "decision": "declined",
@@ -3784,12 +4594,41 @@
       "note": "subject-defined (transgender characters and themes), with the other identity terms declined in B10, B11, B14 and B15"
     },
     {
+      "term": "Travel comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026049",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (travel), and a nonfiction subject grouping rather than a manner"
+    },
+    {
       "term": "Triolets",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026578",
       "decision": "live",
       "batch": "B16",
       "note": "form: eight lines where five are repetition; medieval French, revived in English; proposal B16 #8. Written and attested 2026-09-09.",
       "cellId": "triolets"
+    },
+    {
+      "term": "True crime comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026579",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (real crimes retold)"
+    },
+    {
+      "term": "Two-Spirit comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026050",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (Two-Spirit characters and themes), with the other identity terms"
+    },
+    {
+      "term": "Underground comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026580",
+      "decision": "live",
+      "batch": "B17",
+      "note": "movement: American small-press comics of the late 1960s and 1970s, independent distribution making the content possible; proposal B17 #14. Written and attested 2026-09-09.",
+      "cellId": "underground-comics"
     },
     {
       "term": "Urban fiction",
@@ -3830,6 +4669,13 @@
       "batch": "B16",
       "note": "premise: the good society described in verse; the D36 twin of Utopian fiction (B11); proposal B16 #26. Written and attested 2026-09-09.",
       "cellId": "utopian-poetry"
+    },
+    {
+      "term": "Vampire comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026021",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Vampire comics has no LCGFT scope note and no reference treats it as a body of work of its own, as with Vampire drama in B13."
     },
     {
       "term": "Vampire drama",
@@ -3902,6 +4748,13 @@
       "cellId": "visual-poetry"
     },
     {
+      "term": "War comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026589",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (military conflict), as B11 declined War fiction"
+    },
+    {
       "term": "War drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026591",
       "decision": "declined",
@@ -3923,6 +4776,21 @@
       "note": "subject-defined (military conflict), as B11 declined War fiction. Flagged in the report: the English war poets are a strongly named canon and this is the decline most likely to be worth reversing"
     },
     {
+      "term": "Webcomics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026011",
+      "decision": "live",
+      "batch": "B17",
+      "note": "form: comics published online, where the removed constraints became techniques; proposal B17 #13. Written and attested 2026-09-09.",
+      "cellId": "webcomics"
+    },
+    {
+      "term": "Werewolf comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026039",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Werewolf comics, as with Werewolf fiction in B11 and Werewolf drama in B13: no reference treats it as a body of work of its own."
+    },
+    {
       "term": "Werewolf drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026129",
       "decision": "deferred",
@@ -3935,6 +4803,14 @@
       "decision": "deferred",
       "batch": "B11",
       "note": "Plausible as a tradition beside Vampire fiction, but no independent reference treats werewolf writing as a body of work with its own conventions the way Wikipedia's Vampire literature does. Revisit when one exists."
+    },
+    {
+      "term": "Western comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026593",
+      "decision": "live",
+      "batch": "B18",
+      "note": "genre: the American comic-book Western and the longer-lived European album tradition; the D36 twin of Western fiction (B11); proposal B18 #7. Written and attested 2026-09-09.",
+      "cellId": "western-comics"
     },
     {
       "term": "Western fiction",
@@ -3952,11 +4828,25 @@
       "note": "Western plays would be the D36 twin of Western fiction, but no reference treats stage Westerns as a body of work with conventions of their own."
     },
     {
+      "term": "Witch comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026129",
+      "decision": "declined",
+      "batch": "B18",
+      "note": "subject-defined (witches and witchcraft), as B11 declined Witch fiction"
+    },
+    {
       "term": "Witch fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026094",
       "decision": "declined",
       "batch": "B11",
       "note": "subject-defined (witches and witchcraft)"
+    },
+    {
+      "term": "Wordless comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026084",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Wordless comics has no LCGFT scope note and overlaps the cell Wordless novels, which holds the woodcut-novel tradition specifically; no source draws the line between the two. Revisit when one does."
     },
     {
       "term": "Wordless novels",
@@ -3995,6 +4885,21 @@
       "batch": "B16",
       "note": "form: Chinese folk-song verse named after the imperial Music Bureau, written to inherited titles; proposal B16 #5. Written and attested 2026-09-09.",
       "cellId": "yue-fu"
+    },
+    {
+      "term": "Yuri manga",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026059",
+      "decision": "live",
+      "batch": "B17",
+      "note": "genre: yuri, with an ancestry in Class S fiction and its own magazines and tropes (borderline against the identity terms declined earlier); proposal B17 #26. Written and attested 2026-09-09.",
+      "cellId": "yuri-manga"
+    },
+    {
+      "term": "Zombie comics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026037",
+      "decision": "deferred",
+      "batch": "B18",
+      "note": "Zombie comics has no LCGFT scope note and no reference treats it as a body of work of its own, as with Zombie drama in B13."
     },
     {
       "term": "Zombie drama",
