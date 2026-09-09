@@ -1,4 +1,8 @@
-import type { EncyclopediaCell, MapName } from "@/lib/encyclopedia";
+import type {
+  EncyclopediaCell,
+  MapName,
+  ManifestationRecord,
+} from "@/lib/encyclopedia";
 import { GraphIndex, MAP_NAMES_ORDER } from "@/lib/encyclopedia-graph";
 import { plateBox, type GraphLayout, type PlateNode } from "./graph-layout";
 import { cellFaces } from "./material";
@@ -15,6 +19,7 @@ export interface CategoryNode {
   shown: number;
   preview: EncyclopediaCell | undefined;
   rootIds: string[];
+  example?: ManifestationRecord;
 }
 export function branchChildren(
   index: GraphIndex,
@@ -38,11 +43,12 @@ export function categoryEntries(
   index: GraphIndex,
   map: MapName,
 ): EncyclopediaCell[] {
-  const members = [...index.byId.values()].filter(
-    (c) => index.primaryMap(c) === map,
+  const members = [...index.byId.values()].filter((c) =>
+    c.maps.some((m) => m.map === map),
   );
   const entries = members.filter(
-    (c) => !index.parentsOf(c.id).some((p) => index.primaryMap(p) === map),
+    (c) =>
+      !index.parentsOf(c.id).some((p) => p.maps.some((m) => m.map === map)),
   );
   const reached = new Set<string>();
   const visit = (start: EncyclopediaCell) => {
@@ -52,7 +58,9 @@ export function categoryEntries(
       if (reached.has(c.id)) continue;
       reached.add(c.id);
       queue.push(
-        ...index.childrenOf(c.id).filter((k) => index.primaryMap(k) === map),
+        ...index
+          .childrenOf(c.id)
+          .filter((k) => k.maps.some((m) => m.map === map)),
       );
     }
   };
@@ -85,8 +93,8 @@ export function disclosureLayout(
   const placed = new Set<string>();
   let categoryX = 0;
   for (const map of MAP_NAMES_ORDER) {
-    const members = [...index.byId.values()].filter(
-      (c) => index.primaryMap(c) === map,
+    const members = [...index.byId.values()].filter((c) =>
+      c.maps.some((m) => m.map === map),
     );
     if (!members.length) continue;
     const entries = categoryEntries(index, map);
@@ -94,7 +102,11 @@ export function disclosureLayout(
     const roots = entries.slice(0, limit);
     for (const id of pinned) {
       const c = index.byId.get(id);
-      if (c && index.primaryMap(c) === map && !roots.some((r) => r.id === id))
+      if (
+        c &&
+        c.maps.some((m) => m.map === map) &&
+        !roots.some((r) => r.id === id)
+      )
         roots.push(c);
     }
     let row = 0,
@@ -139,6 +151,22 @@ export function disclosureLayout(
       entries,
       shown: Math.min(limit, entries.length),
       rootIds: roots.map((c) => c.id),
+      example:
+        members
+          .flatMap((c) => c.manifestations)
+          .map((m) => m.record)
+          .find(
+            (r) =>
+              r &&
+              r.set ===
+                {
+                  art: "ArtStyles",
+                  writing: "WritingStyles",
+                  palettes: "PaletteSystems",
+                  design: "DesignLanguages",
+                }[map] &&
+              (r.image || r.excerpt || r.swatches?.length),
+          ) ?? undefined,
       preview: members.find((c) =>
         c.studies.some((s) => s.representations.length),
       ),
@@ -146,8 +174,10 @@ export function disclosureLayout(
     categoryX = right + (roots.length ? 220 : 100);
   }
   const regions = hubs.map((h) => {
-    const nodes = plates.filter((p) => index.primaryMap(p.cell) === h.map);
-    const x = h.x - h.w / 2,
+    const nodes = plates.filter((p) =>
+      p.cell.maps.some((m) => m.map === h.map),
+    );
+    const x = Math.min(h.x - h.w / 2, ...nodes.map((p) => p.x - p.w / 2)),
       top = Math.min(-h.h / 2, ...nodes.map((p) => p.y - p.h / 2));
     const bottom = Math.max(h.h / 2, ...nodes.map((p) => p.y + p.h / 2 + 70));
     const right = Math.max(h.x + h.w / 2, ...nodes.map((p) => p.x + p.w / 2));

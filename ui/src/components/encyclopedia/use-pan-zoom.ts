@@ -126,7 +126,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
   }, [clampK]);
 
   const onWheel = useCallback((event: WheelEvent) => {
-    if(event.target instanceof Element && event.target.closest("[data-map-control]"))return;
+    if(event.target instanceof Element && event.target.closest("[data-map-scroll]"))return;
     event.preventDefault();
     setAnimate(false);
     const el = viewportRef.current;

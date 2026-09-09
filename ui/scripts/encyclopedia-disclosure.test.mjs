@@ -108,3 +108,26 @@ test("repeated links to one record produce one map node", () => {
   );
   assert.equal(nodes.filter((n) => n.role === "record").length, 1);
 });
+
+test("secondary categories have visual entries without duplicating shared topics", () => {
+  const c = cell("Shared");
+  c.maps.push({ map: "design", explanation: "", sourceIds: [] });
+  const i = index([c]);
+  const l = disclosureLayout(
+    i,
+    new Map([
+      ["art", 8],
+      ["design", 8],
+    ]),
+    new Map(),
+    new Set(),
+  );
+  assert.deepEqual(
+    l.categories.map((h) => h.map),
+    ["art", "design"],
+  );
+  assert.equal(l.plates.length, 1);
+  assert.deepEqual(l.categories.find((h) => h.map === "design").rootIds, [
+    "Shared",
+  ]);
+});

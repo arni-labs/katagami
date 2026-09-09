@@ -34,3 +34,34 @@ test("wheel is captured when a canvas mounts after the browse view", () => {
   flush(() => root.unmount());
   el.remove();
 });
+
+test("wheel over a category control still zooms, while a results list scrolls independently", () => {
+  let camera;
+  function Probe() {
+    camera = usePanZoom();
+    return React.createElement(
+      "div",
+      { ref: camera.bindViewport },
+      React.createElement("button", { "data-map-control": true }, "Art"),
+      React.createElement("div", { "data-map-scroll": true }, "Results"),
+    );
+  }
+  const el = document.createElement("div");
+  document.body.append(el);
+  const root = createRoot(el);
+  flush(() => root.render(React.createElement(Probe)));
+  for (const [target, prevented] of [
+    [el.querySelector("button"), true],
+    [el.querySelector("[data-map-scroll]"), false],
+  ]) {
+    const event = new window.WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      deltaY: 100,
+    });
+    flush(() => target.dispatchEvent(event));
+    assert.equal(event.defaultPrevented, prevented);
+  }
+  flush(() => root.unmount());
+  el.remove();
+});

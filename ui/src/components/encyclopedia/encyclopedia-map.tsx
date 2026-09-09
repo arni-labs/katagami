@@ -253,13 +253,13 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
   const focus = useCallback((id: string) => {
     if (!index.byId.has(id)) return;
-    setPinned(at=>new Set([...at,id]));
+    if(!layout.byId.has(id))setPinned(at=>new Set([...at,id]));
     setOpenedId((open) => (open === id ? open : null));
     setFocusId(id);
     setSheetOpen(true);
     setSheetExpanded(false);
     setTab("material");
-  }, [index]);
+  }, [index,layout.byId]);
   useEffect(()=>{if(focusId)frameFocus(focusId);},[focusId,frameFocus]);
 
   /** One handler for every card on the paper. It reads whether the pointer was
@@ -553,7 +553,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       <div data-map-control className="encyclopedia-search">
         <SearchBox value={query} onChange={setQuery} placeholder="Find a cell" />
         {query.trim() ? (
-          <ul role="listbox" className="absolute left-0 right-0 top-full z-30 mt-1.5 max-h-72 overflow-y-auto bg-[var(--washi)] py-1 shadow-[var(--shadow-card-hover)]">
+          <ul data-map-scroll role="listbox" className="absolute left-0 right-0 top-full z-30 mt-1.5 max-h-72 overflow-y-auto bg-[var(--washi)] py-1 shadow-[var(--shadow-card-hover)]">
             {results.length ? results.map((cell) => (
               <li key={cell.id} role="option" aria-selected={false}>
                 <button type="button" onClick={() => { focus(cell.id); setQuery(""); }} className="flex w-full items-baseline gap-3 px-4 py-2.5 text-left hover:bg-[color-mix(in_srgb,var(--yuzu)_22%,transparent)]">

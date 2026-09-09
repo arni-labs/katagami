@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { Shapes, PenLine, Palette, LayoutGrid } from "lucide-react";
 import type { MapName } from "@/lib/encyclopedia";
 import { MAP_LABEL, MAP_INK } from "@/lib/encyclopedia-graph";
@@ -47,6 +48,8 @@ export function CategoryCard({
   onMore: (map: MapName) => void;
 }) {
   const Icon = icons[node.map];
+  const [imageFailed, setImageFailed] = useState(false);
+  const example = node.example;
   return (
     <section
       data-map-control
@@ -68,6 +71,17 @@ export function CategoryCard({
         <div className="category-visual" style={{ color: MAP_INK[node.map] }}>
           {node.preview ? (
             <Study cell={node.preview} />
+          ) : example?.image && !imageFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={example.image}
+              alt={`Related record: ${example.name}`}
+              loading="lazy"
+              draggable={false}
+              onError={() => setImageFailed(true)}
+            />
+          ) : example?.excerpt ? (
+            <p className="category-passage">{example.excerpt}</p>
           ) : (
             <Icon size={58} strokeWidth={1.3} />
           )}
@@ -79,7 +93,9 @@ export function CategoryCard({
         <span className="category-caption">
           {node.preview
             ? `Study from ${node.preview.name}`
-            : "Explore topics and connections"}
+            : example
+              ? `Related record · ${example.name}`
+              : "Explore topics and connections"}
         </span>
         <span className="category-action">
           {node.shown ? "Collapse branch −" : "Expand topics +"}

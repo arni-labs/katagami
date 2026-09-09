@@ -187,3 +187,6 @@ body:has(.encyclopedia-workspace) {
     top: 56px;
   }
 }
+
+/* Focus must not scroll transformed world coordinates inside the canvas. */
+.encyclopedia-workspace [role="application"] { overflow:clip; }
