@@ -268,16 +268,19 @@ for (const cell of ordered) {
         const stored = JSON.parse(existing.fields.document);
         assert.equal(stored.name, cell.name, `'${cell.id}' already holds a different cell, "${stored.name}"`);
       }
-      // Define replaces the whole document, so two runs revising different parts
-      // of one cell have no safe ordering: the second write wins and the first
-      // is lost with no error on either side. It happened on the night of
-      // 2026-09-09, when one run added manifestations to five cells and another
-      // rewrote their prose from a copy taken before those writes. A payload
-      // built from a document it read states the hash it read, and the write is
-      // refused if the stored document has moved since.
-      const conflict = baseConflict({ id: cell.id, baseHash: cell.baseHash, stored: existing.fields.document, writing: cell.document });
-      assert.ok(!conflict, conflict);
     }
+    // Define replaces the whole document, so two runs revising different parts
+    // of one cell have no safe ordering: the second write wins and the first is
+    // lost with no error on either side. It happened on the night of
+    // 2026-09-09, when one run added manifestations to five cells and another
+    // rewrote their prose from a copy taken before those writes. A payload built
+    // from a document it read states the hash it read, and the write is refused
+    // if the stored document has moved since. This sits outside the guard above
+    // because a cell that held a document when the payload was built and holds
+    // none now has moved too, and the plan must say so rather than reporting a
+    // write it would refuse.
+    const conflict = baseConflict({ id: cell.id, baseHash: cell.baseHash, stored: existing?.fields.document, writing: cell.document });
+    assert.ok(!conflict, conflict);
     if (settled(existing, cell)) { console.log(`${label}: already stored and attested`); continue; }
     // A cell already holding exactly this document is an interrupted earlier
     // run being resumed; only a different document is a conflict for the verb.
