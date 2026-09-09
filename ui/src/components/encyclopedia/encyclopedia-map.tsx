@@ -270,11 +270,12 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); setOpenedId(null); }, []);
 
   const toggleCategory=useCallback((name:MapName)=>{
+    if(draggingRef.current)return;
     setOpenCategories(at=>{const next=new Map(at);if(next.has(name))next.delete(name);else next.set(name,BRANCH_PAGE);return next;});
     setPinned(at=>new Set([...at].filter(id=>{const c=index.byId.get(id);return c&&index.primaryMap(c)!==name;})));
     setFocusId(null);setOpenedId(null);setSheetOpen(false);
     setMap(name);
-  },[index]);
+  },[index,draggingRef]);
   const moreCategory=useCallback((name:MapName)=>setOpenCategories(at=>new Map(at).set(name,(at.get(name)??0)+BRANCH_PAGE)),[]);
   const toggleBranch=useCallback((id:string)=>{
     setExpanded(at=>{const next=new Map(at);if(next.has(id))next.delete(id);else next.set(id,BRANCH_PAGE);return next;});

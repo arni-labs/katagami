@@ -53,7 +53,6 @@ export function CategoryCard({
   const example = node.example;
   return (
     <section
-      data-map-control
       data-category={node.map}
       className="encyclopedia-category"
       style={{
@@ -106,7 +105,7 @@ export function CategoryCard({
         </span>
       </button>
       {node.shown > 0 && node.shown < node.entries.length ? (
-        <button className="category-more" onClick={() => onMore(node.map)}>
+        <button data-map-control className="category-more" onClick={() => onMore(node.map)}>
           Show {Math.min(BRANCH_PAGE, node.entries.length - node.shown)} more ·{" "}
           {node.shown}/{node.entries.length}
         </button>
