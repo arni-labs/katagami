@@ -20,16 +20,22 @@ version runs rather than a third reimplementation of it. The structural check is
 also its work, added after it noticed the first check had never asked a
 structural question at all.
 
+It scores twice. The DESCRIPTION-ONLY number is the one to quote, because it is
+the number proof-283-b measured and hand-verified. The ALL-PROSE number reads
+every explanation and question too, and it is larger: the nesting run found ten
+of its sixteen defects in a `maps` explanation rather than in scope text, and the
+hypomnemata defect that started all of this lived in a manifestation explanation.
+Both are printed so a wider sweep cannot be mistaken for a worse collection.
+
 WHAT THIS DOES NOT CHECK, which matters as much as what it does:
 
-  * Only the `description` field. Not map, broader, relation or manifestation
-    explanations. The hypomnemata defect that started this lived in a
-    manifestation explanation, so this sweep would have missed the very case
-    that produced it.
   * A claim carried by paraphrase rather than by the name reads as unsupported.
+    This is the largest source of remaining false positives.
   * A wrong date next to a right name passes, because the name is present.
   * A name in a source that could not be retrieved is not scored at all; those
     cells are listed separately rather than counted either way.
+  * A structural mismatch is not read for whether the cell discloses it. The
+    explanation is printed instead, because that is a reading.
 
 False-positive rate for the name check: 0 of 30 cells hand-verified, which is a
 95% upper bound of 10% by the rule of three. The sample and its verdicts are in
@@ -59,12 +65,44 @@ def fold(s):
     return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c)).lower()
 
 
-def names_in(desc):
+ORDINAL = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6,
+           "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10, "eleventh": 11,
+           "twelfth": 12, "thirteenth": 13, "fourteenth": 14, "fifteenth": 15,
+           "sixteenth": 16, "seventeenth": 17, "eighteenth": 18, "nineteenth": 19,
+           "twentieth": 20, "twenty-first": 21}
+
+
+def variants(name):
+    """Other surface forms of the same claim. A description writing "the thirteenth
+    century" and a source writing 1223 are saying one thing, and flagging that as
+    unsupported buried four real findings in the nesting run's first pass."""
+    out = {name}
+    m = re.match(r"(?i)^(%s)[- ]century$" % "|".join(ORDINAL), name.strip())
+    if m:
+        n = ORDINAL[m.group(1).lower()]
+        out.add(f"{n}th century")
+        out.update(str(y) for y in range((n - 1) * 100, n * 100, 10))
+    return out
+
+
+def names_in(text):
     out = set()
-    for m in re.finditer(r"(?<![.!?]\s)(?<!^)\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]+){0,3})\b", desc):
+    for m in re.finditer(r"(?<![.!?]\s)(?<!^)\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]+){0,3})\b", text):
         if m.group(1).split()[0] not in STOP:
             out.add(m.group(1))
+    for m in re.finditer(r"(?i)\b((?:%s)[- ]century)\b" % "|".join(ORDINAL), text):
+        out.add(m.group(1))
     return out
+
+
+def prose_fields(d, wide):
+    """The description alone, or every sentence a reader sees."""
+    parts = [d.get("description", "")]
+    if wide:
+        for k in ("maps", "broader", "relations", "manifestations"):
+            parts += [e.get("explanation", "") for e in d.get(k, [])]
+        parts += d.get("questions", [])
+    return parts
 
 
 def get(url, timeout=60):
@@ -225,38 +263,90 @@ def main():
     urls = sorted({s["url"] for d in docs.values() for s in d.get("sources", [])})
     cache = fetch_sources(urls, cache, cache_path)
 
-    # ---- does a cited source carry the names the scope asserts
-    flagged, partial, scored = [], [], 0
-    lane_total, lane_flagged = collections.Counter(), collections.Counter()
-    for cid, d in sorted(docs.items()):
-        srcs = d.get("sources", [])
-        texts = [cache.get(s["url"], "") for s in srcs]
-        lanes = ",".join(sorted(m["map"] for m in d.get("maps", []))) or "(none)"
-        if not srcs or not all(texts):
-            partial.append(cid)
-            continue
-        scored += 1
-        lane_total[lanes] += 1
-        blob = fold(" ".join(texts))
-        bad = []
-        for n in sorted(names_in(d.get("description", ""))):
-            toks = [t for t in n.split() if t not in STOP]
-            if toks and all(fold(t) not in blob for t in toks):
-                bad.append((n, "strict" if all(fold(t)[:5] not in blob for t in toks) else "loose"))
-        if bad:
-            flagged.append((cid, bad, lanes))
-            lane_flagged[lanes] += 1
+    # ---- does a cited source carry the names the prose asserts
+    def score(wide):
+        flagged, partial, scored = [], [], 0
+        by_lane, by_lane_flag = collections.Counter(), collections.Counter()
+        by_count, by_count_flag = collections.Counter(), collections.Counter()
+        for cid, d in sorted(docs.items()):
+            srcs = d.get("sources", [])
+            texts = [cache.get(s["url"], "") for s in srcs]
+            if not srcs or not all(texts):
+                partial.append(cid)
+                continue
+            scored += 1
+            lane = ",".join(sorted(m["map"] for m in d.get("maps", []))) or "(none)"
+            n_src = len(srcs)
+            by_lane[lane] += 1
+            by_count[n_src] += 1
+            blob = fold(" ".join(texts))
+            bad = []
+            for field in prose_fields(d, wide):
+                for n in sorted(names_in(field)):
+                    forms = variants(n)
+                    if any(all(fold(t) in blob for t in f.split() if t not in STOP) for f in forms):
+                        continue
+                    toks = [t for t in n.split() if t not in STOP]
+                    if not toks or not all(fold(t) not in blob for t in toks):
+                        continue
+                    bad.append((n, "strict" if all(fold(t)[:5] not in blob for t in toks) else "loose"))
+            bad = sorted(set(bad))
+            if bad:
+                flagged.append((cid, bad, lane, n_src))
+                by_lane_flag[lane] += 1
+                by_count_flag[n_src] += 1
+        return flagged, partial, scored, by_lane, by_lane_flag, by_count, by_count_flag
 
-    strict = [f for f in flagged if any(k == "strict" for _, k in f[1])]
-    print(f"\nlive cells {len(live)}, scored {scored}, not scored {len(partial)}")
-    print(f"CELLS ASSERTING A NAME NO CITED SOURCE CARRIES: {len(strict)} strict, {len(flagged)} loose,"
-          f" of {scored} ({100 * len(strict) / max(scored, 1):.1f}% strict)")
-    print("  false-positive rate on the strict rule: 0 of 30 cells hand-verified,")
-    print("  95% upper bound 10% by the rule of three. Reads the description field only.")
-    for lane in sorted(lane_total):
-        print(f"    {lane:16} {lane_flagged[lane]:4} / {lane_total[lane]:4}")
-    for cid, bad, lanes in strict:
-        print(f"  {cid:44} {lanes:14} {[n for n, k in bad if k == 'strict']}")
+    narrow = score(False)
+    wide = score(True)
+    for label, (flagged, partial, scored, by_lane, by_lane_flag, by_count, by_count_flag) in (
+            ("DESCRIPTION ONLY, the measured and hand-verified number", narrow),
+            ("EVERY SENTENCE A READER SEES, including explanations and questions", wide)):
+        strict = [f for f in flagged if any(k == "strict" for _, k in f[1])]
+        print(f"\n{label}")
+        print(f"  scored {scored}, not scored {len(partial)}")
+        print(f"  asserting a name no cited source carries: {len(strict)} strict, {len(flagged)} loose"
+              f" ({100 * len(strict) / max(scored, 1):.1f}% strict)")
+        # The rate is not uniform and a single number reads as if it were. Read
+        # this split with care: a run that repaired its own cells by cutting the
+        # unsupported claim leaves those cells with fewer names and no findings,
+        # so a bucket can look clean because it was fixed rather than because it
+        # was never at risk. The nesting run reported fifteen of its sixteen
+        # defects in single-source cells and repaired them that way, and the
+        # collection now shows the opposite split. Both can be true.
+        print("  by number of cited sources:")
+        for n in sorted(by_count):
+            f, t = by_count_flag[n], by_count[n]
+            print(f"    {n} source{'s' if n != 1 else ' '}   {f:4} / {t:4}   {100 * f / t:5.1f}%")
+        print("  by map lane:")
+        for lane in sorted(by_lane):
+            print(f"    {lane:18} {by_lane_flag[lane]:4} / {by_lane[lane]:4}")
+        if label.startswith("DESCRIPTION"):
+            print("  false-positive rate on the strict rule: 0 of 30 cells hand-verified,")
+            print("  95% upper bound 10% by the rule of three.")
+        else:
+            print("  FALSE-POSITIVE RATE UNKNOWN for this wider number. The hand-verified")
+            print("  sample covers description hits only. Explanations are shorter and more")
+            print("  formulaic than scope text, so the rate almost certainly differs, and")
+            print("  quoting this figure beside the verified one would borrow its error bar.")
+            for cid, bad, lane, n_src in strict:
+                print(f"    {cid:44} {lane:14} {n_src}src {[n for n, k in bad if k == 'strict']}")
+
+    flagged, partial, scored = narrow[0], narrow[1], narrow[2]
+
+    # ---- a page can resolve, be the right page, and carry nothing
+    # Epistolary literature credited Horace and Ovid's Heroides to an article 180
+    # characters long that names neither. An empty page satisfies any check that
+    # only asks whether a name appears somewhere in a cell's sources, because it
+    # contributes nothing and reduces nothing.
+    thin = sorted({(s["url"], len(cache.get(s["url"], ""))) for d in docs.values()
+                   for s in d.get("sources", []) if 0 < len(cache.get(s["url"], "")) < 400})
+    if thin:
+        print(f"\nSOURCES THAT RESOLVE AND CARRY ALMOST NOTHING ({len(thin)}, under 400 characters):")
+        for url, n in thin:
+            cells_using = sorted(cid for cid, d in docs.items()
+                                 if any(x["url"] == url for x in d.get("sources", [])))
+            print(f"  {n:4} chars  {url}\n            cited by {', '.join(cells_using)}")
 
     # ---- does a parent link match the record it is cited to
     ok, mismatch, unknown = 0, [], 0
