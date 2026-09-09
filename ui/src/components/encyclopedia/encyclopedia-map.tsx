@@ -286,7 +286,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const onFilter=(name:MapName|null)=>{
     setMap(name);
     if(name){setOpenCategories(at=>new Map(at).set(name,Math.max(BRANCH_PAGE,at.get(name)??0)));setFocusId(null);}
-    else {setOpenCategories(new Map());setExpanded(new Map());setPinned(new Set());clearFocus();setSheetOpen(false);}
+    else {clearFocus();setSheetOpen(false);fitAll();}
   };
   useEffect(()=>{
     if(focusId)return;
@@ -549,6 +549,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
           {!desktop ? <button onClick={()=>setPhoneView("browse")}>Browse</button> : null}
           <button aria-pressed={map===null} onClick={()=>onFilter(null)}>Overview</button>
           {MAP_NAMES_ORDER.map(name=><button key={name} aria-pressed={map===name} disabled={!counts[name]} onClick={()=>onFilter(name)}>{MAP_LABEL[name]}</button>)}
+          {openCategories.size||expanded.size||pinned.size ? <button onClick={()=>{setOpenCategories(new Map());setExpanded(new Map());setPinned(new Set());setMap(null);clearFocus();setSheetOpen(false);}}>Collapse all</button> : null}
         </div>
       </div>
 
