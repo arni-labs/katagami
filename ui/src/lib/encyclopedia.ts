@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { cellDocumentSchema } from "@/lib/encyclopedia-schema";
 import { getFileUrl, listWritingStyles, paletteCore, parseJson, type LaneEntity } from "@/lib/odata";
+import { checkPageCursor, resolveNextLink } from "@/lib/odata-paging";
 
 // The encyclopedia read model. Server-side: fetch the raw EncyclopediaCells
 // rows, keep only attested documents (document_validated AND the stored hash
@@ -102,8 +103,7 @@ async function readCellRows(): Promise<RawCellRow[]> {
   let next: string | null = `${API_BASE}/tdata/EncyclopediaCells?$top=500`;
   let pages = 0;
   while (next) {
-    if (++pages > 50) throw new Error("EncyclopediaCells: pagination exceeded 50 pages");
-    if (seen.has(next)) throw new Error("EncyclopediaCells: pagination looped on a repeated nextLink");
+    checkPageCursor(next, seen, ++pages, "EncyclopediaCells");
     seen.add(next);
     const current: string = next;
     const res = await fetch(current, {
@@ -116,20 +116,7 @@ async function readCellRows(): Promise<RawCellRow[]> {
     if (!res.ok) throw new Error(`EncyclopediaCells ${res.status}: ${await res.text()}`);
     const page = (await res.json()) as { value?: RawCellRow[]; "@odata.nextLink"?: string };
     rows.push(...(page.value ?? []));
-    const link = page["@odata.nextLink"];
-    // A present-but-non-string nextLink would otherwise end paging early and
-    // silently truncate the encyclopedia; treat it as a fault.
-    if (link !== undefined && (typeof link !== "string" || link === "")) {
-      throw new Error("EncyclopediaCells returned an invalid nextLink");
-    }
-    // The backend returns a nextLink relative to the request URI
-    // ("EncyclopediaCells?$skiptoken=…"), so resolve it against the page we
-    // just read rather than treating it as absolute.
-    const resolved = link ? new URL(link, current) : null;
-    if (resolved && resolved.origin !== new URL(API_BASE).origin) {
-      throw new Error(`Refusing cross-origin nextLink: ${link}`);
-    }
-    next = resolved ? resolved.toString() : null;
+    next = resolveNextLink(page["@odata.nextLink"], current, API_BASE);
   }
   return rows;
 }
