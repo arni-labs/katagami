@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
 import { hasCuratorAccess } from "@/lib/owner";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import {
 } from "@/lib/odata";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { anonMaySee } from "@/lib/catalog";
+import { resolvePublicDetail } from "@/lib/public-detail.mjs";
 import { RelatedLanguages } from "@/components/related-languages";
 import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
@@ -57,87 +58,48 @@ function pickTitleInk(colors?: Record<string, string>): string {
   );
 }
 
+/**
+ * ByIdOrSlug + entity_id gate. A miss / unpublished / off-shelf must
+ * notFound() HERE, not only in the page body: generateMetadata returning
+ * `{ title: "katagami ✦ language" }` is the 200-chrome leftover (~97k).
+ */
+const visibleLanguage = cache(async (id: string) => {
+  const lang = await resolvePublicDetail(id, {
+    getByIdOrSlug: getDesignLanguageByIdOrSlug,
+    maySee: (entityId) => anonMaySee("language", entityId),
+    hasFullAccess: hasFullGalleryAccess,
+    hasCurator: hasCuratorAccess,
+  });
+  if (!lang) notFound();
+  return lang;
+});
+
 export async function generateMetadata({
   params,
 }: LanguagePageProps): Promise<Metadata> {
   const { id } = await params;
-
-  try {
-    // id OR slug. The by-key reader 404'd /language/komawari while the UUID
-    // path rendered the real Komawari page. A miss slug stays generic title.
-    const lang = await getDesignLanguageByIdOrSlug(id);
-    if (!lang) {
-      return { title: pageTitle() };
-    }
-    // ARN-331: don't leak a non-Published name into <title>/OG — the page body
-    // 404s below, but metadata renders first. Cookie check only on this branch,
-    // same cache invariant as the body gate.
-    if (lang.status !== "Published" && !(await hasCuratorAccess())) {
-      return { title: pageTitle() };
-    }
-    // ARN-385: a signed-out visitor reaches only the owner-picked featured shelf.
-    // Don't leak a non-featured language's name into <title>/OG for anon — the
-    // page body 404s below, but metadata renders first. Membership comes from the
-    // ONE catalog primitive (anonMaySee) so this can never diverge from the shelf.
-    // Gate the resolved entity id (the URL may be a slug; featuredIds() is id-keyed).
-    if (
-      lang.status === "Published" &&
-      !(await hasFullGalleryAccess()) &&
-      !(await anonMaySee("language", lang.entity_id))
-    ) {
-      return { title: pageTitle() };
-    }
-    const name = lang.fields.name || "Untitled";
-    return {
+  const lang = await visibleLanguage(id);
+  const name = lang.fields.name || "Untitled";
+  return {
+    title: pageTitle(name),
+    description: `${name} in the Katagami design language library.`,
+    openGraph: {
       title: pageTitle(name),
       description: `${name} in the Katagami design language library.`,
-      openGraph: {
-        title: pageTitle(name),
-        description: `${name} in the Katagami design language library.`,
-        url: `/language/${id}`,
-      },
-      twitter: {
-        title: pageTitle(name),
-        description: `${name} in the Katagami design language library.`,
-      },
-    };
-  } catch {
-    return {
-      title: pageTitle(),
-    };
-  }
+      url: `/language/${id}`,
+    },
+    twitter: {
+      title: pageTitle(name),
+      description: `${name} in the Katagami design language library.`,
+    },
+  };
 }
 
 export default async function LanguageDetailPage({
   params,
 }: LanguagePageProps) {
   const { id } = await params;
-
-  // id OR slug. The by-key reader served a ~97k not-found shell for
-  // /language/komawari while the UUID rendered the real ~584k page.
-  // A miss slug stays 404.
-  const lang = await getDesignLanguageByIdOrSlug(id);
-  if (!lang) notFound();
-
-  // Non-published languages are the curator's queue: owner previews them,
-  // everyone else 404s. The check runs ONLY on this branch — Published
-  // renders never execute cookies(), preserving the full-route cache
-  // (the sign-in rollout invariant for this page).
-  if (lang.status !== "Published" && !(await hasCuratorAccess())) notFound();
-
-  // ARN-385: signed-out visitors reach only the owner-picked featured shelf — a
-  // Published-but-unfeatured language is not viewable by direct URL when anon.
-  // Membership comes from the ONE catalog primitive (anonMaySee), mirroring the
-  // home teaser and read-MCP exactly. Cookie check only on this branch,
-  // preserving the cache invariant. Gate the resolved entity id (the URL may
-  // be a slug; featuredIds() is id-keyed).
-  if (
-    lang.status === "Published" &&
-    !(await hasFullGalleryAccess()) &&
-    !(await anonMaySee("language", lang.entity_id))
-  ) {
-    notFound();
-  }
+  const lang = await visibleLanguage(id);
 
   const f = lang.fields;
 

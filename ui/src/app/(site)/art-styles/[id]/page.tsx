@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { hasCuratorAccess } from "@/lib/owner";
 import Link from "next/link";
@@ -12,6 +14,7 @@ import {
 } from "@/lib/odata";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { anonMaySee, featuredIds } from "@/lib/catalog";
+import { resolvePublicDetail } from "@/lib/public-detail.mjs";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { artStyleImages } from "@/lib/lane-items";
 import { PageHero } from "@/components/page-hero";
@@ -25,6 +28,33 @@ import { artStyleGallerySources } from "@/lib/art-style-prompt-state";
 export const dynamic = "force-dynamic";
 
 const CHIP = "bg-[color-mix(in_srgb,var(--foreground)_4%,var(--card))]";
+
+/**
+ * ByIdOrSlug + entity_id gate. A miss / unpublished / off-shelf must
+ * notFound() in generateMetadata, not only in the page body. A route-level
+ * `loading.tsx` above this segment streams 200 chrome (~100k) around the
+ * not-found copy — the list page keeps its Suspense skeleton instead.
+ */
+const visibleArtStyle = cache(async (id: string) => {
+  const art = await resolvePublicDetail(id, {
+    getByIdOrSlug: getArtStyleByIdOrSlug,
+    maySee: (entityId) => anonMaySee("art_style", entityId),
+    hasFullAccess: hasFullGalleryAccess,
+    hasCurator: hasCuratorAccess,
+  });
+  if (!art) notFound();
+  return art;
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  await visibleArtStyle(id);
+  return {};
+}
 
 // Image URL resolution is shared with the catalog cards (lib/lane-items
 // artStyleImages): CDN-first from published asset URLs, /api/file proxy
@@ -41,34 +71,9 @@ function cellText(v: unknown): string {
 
 export default async function ArtStyleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // id OR slug. The by-key reader served a ~100k not-found shell for
-  // /art-styles/cathode-ray while the UUID rendered the real ~354k page.
-  // A miss slug stays 404.
-  const art = await getArtStyleByIdOrSlug(id);
-  if (!art) notFound();
-  // Non-published entries are the curator's queue: a curator (owner|curator,
-  // the set Cedar grants the review actions to) sees them (preview), everyone
-  // else gets a 404. The role check runs ONLY on this branch, so Published
-  // renders never touch cookies() and stay cacheable.
+  const art = await visibleArtStyle(id);
   const isPublished = art.status === "Published";
-  const curatorPreview = !isPublished && (await hasCuratorAccess());
-  if (!isPublished && !curatorPreview) notFound();
-
-  // ARN-385: a signed-out visitor reaches only the owner-picked featured shelf —
-  // the same set the /art-styles teaser and the read-MCP anonymous sample show.
-  // A Published-but-unfeatured style is not viewable by direct URL when anon.
-  // Membership comes from the ONE catalog primitive (anonMaySee), so the gate
-  // can never diverge from the shelf or the MCP. Cookie check only on this
-  // branch, so featured renders for anon and every signed-in render stay off
-  // the role path. Gate the resolved entity id (the URL may be a slug;
-  // featuredIds() is id-keyed).
-  if (
-    isPublished &&
-    !(await hasFullGalleryAccess()) &&
-    !(await anonMaySee("art_style", art.entity_id))
-  ) {
-    notFound();
-  }
+  const curatorPreview = !isPublished;
 
   const f = art.fields;
   const name = artStyleDisplayName(f);

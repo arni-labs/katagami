@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { transform } from "sucrase";
 
@@ -202,14 +202,19 @@ assert.match(
   "the art-style first page is a slim cached card list, not a live 4s collection",
 );
 assert.match(
-  readFileSync(resolve("src/app/(site)/art-styles/loading.tsx"), "utf8"),
-  /CardGridSkeleton/,
-  "Art Styles nav must paint a shell immediately",
+  artStylesPage,
+  /<Suspense fallback=\{<CardGridSkeleton/,
+  "Art Styles page paints a CardGridSkeleton inside Suspense (not a route loading.tsx — that wraps /art-styles/[id] as 200 chrome)",
 );
-assert.match(
-  readFileSync(resolve("src/app/(site)/language/[id]/loading.tsx"), "utf8"),
-  /LanguageDetailSkeleton/,
-  "language detail clicks must paint a shell immediately",
+assert.equal(
+  existsSync(resolve("src/app/(site)/art-styles/loading.tsx")),
+  false,
+  "art-styles/loading.tsx would stream 200 chrome around off-shelf / miss [id] 404s",
+);
+assert.equal(
+  existsSync(resolve("src/app/(site)/language/[id]/loading.tsx")),
+  false,
+  "language/[id]/loading.tsx would stream 200 chrome around miss/off-shelf 404s",
 );
 
 const homepage = readFileSync(resolve("src/app/(site)/page.tsx"), "utf8");
