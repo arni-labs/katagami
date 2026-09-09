@@ -93,64 +93,21 @@ function click(el, selector) {
   drain();
 }
 
-test("overview, child expansion and saved back navigation", () => {
-  const view = mount([
-    cell("Parent"),
-    cell("Child", "art", ["Parent"]),
-    cell("Grandchild", "art", ["Child"]),
-    cell("Poetry", "writing"),
-    cell("Color", "palettes"),
-    cell("Layout", "design"),
-  ]);
-  assert.equal(view.el.querySelectorAll(".atlas-region").length, 4);
-  click(view.el, ".atlas-region");
-  assert.ok(view.el.querySelector('[aria-label="Read about Parent"]'));
-  assert.equal(view.el.querySelector('[aria-label="Read about Child"]'), null);
-  click(view.el, '[aria-label="Explore Parent"]');
-  assert.ok(view.el.querySelector('[aria-label="Read about Child"]'));
-  assert.equal(
-    view.el.querySelector('[aria-label="Read about Grandchild"]'),
-    null,
-  );
-  click(view.el, '[aria-label="Explore Child"]');
-  assert.ok(view.el.querySelector('[aria-label="Read about Grandchild"]'));
-  click(view.el, '[aria-label="Back to previous map"]');
-  assert.ok(view.el.querySelector('[aria-label="Read about Child"]'));
-  view.close();
+
+test("the original map, filters, reader tabs and rich focus remain on one page",()=>{
+ const v=mount([cell("Parent"),cell("Child","art",["Parent"])]);
+ assert.ok(v.el.querySelector('[role="application"]'));
+ assert.ok(v.el.querySelector('[aria-label="Filter by map"]'));
+ assert.ok(v.el.querySelector('[data-plate="Parent"]'));
+ click(v.el,'[data-plate="Parent"]');
+ assert.ok(v.el.querySelector('[data-plate="Parent"][aria-current="true"]'));
+ assert.ok(v.el.querySelector(".encyclopedia-focus-material"));
+ for(const word of ["Material","Connections","Notes"])assert.ok(v.el.textContent.includes(word),word);
+ const depth=[...v.el.querySelectorAll("button")].find(b=>b.textContent.includes("Depth on"));assert.ok(depth);
+ flush(()=>depth.click());drain();assert.ok(v.el.textContent.includes("Depth off"));
+ v.close();
 });
-test("a disconnected cycle has a reachable entry point", () => {
-  const view = mount([
-    cell("Cycle A", "art", ["Cycle B"]),
-    cell("Cycle B", "art", ["Cycle A"]),
-  ]);
-  click(view.el, ".atlas-region");
-  assert.equal(view.el.querySelectorAll(".atlas-topic").length, 1);
-  click(view.el, '[aria-label^="Explore Cycle"]');
-  assert.equal(view.el.querySelectorAll(".atlas-topic").length, 1);
-  view.close();
-});
-test("reading opens and closes without expanding descendants", () => {
-  const view = mount([cell("Parent"), cell("Child", "art", ["Parent"])]);
-  click(view.el, ".atlas-region");
-  click(view.el, '[aria-label="Read about Parent"]');
-  assert.ok(view.el.querySelector('aside[aria-label="Topic details"]'));
-  assert.equal(view.el.querySelector('[aria-label="Read about Child"]'), null);
-  click(view.el, '[aria-label="Close topic details"]');
-  assert.equal(view.el.querySelector("aside"), null);
-  view.close();
-});
-test("twenty thousand roots mount only visible nodes", () => {
-  const view = mount(
-    Array.from({ length: 20000 }, (_, i) =>
-      cell("Topic " + String(i).padStart(5, "0")),
-    ),
-  );
-  click(view.el, ".atlas-region");
-  assert.ok(
-    view.el.querySelectorAll(".atlas-node,.atlas-cluster").length < 200,
-  );
-  assert.ok(
-    view.el.querySelector('input[aria-label="Search the encyclopedia"]'),
-  );
-  view.close();
+test("a disconnected cycle remains represented in the existing map",()=>{
+ const v=mount([cell("Cycle A","art",["Cycle B"]),cell("Cycle B","art",["Cycle A"])]);
+ assert.ok(v.el.querySelector('[data-plate="Cycle A"]'));assert.ok(v.el.querySelector('[data-plate="Cycle B"]'));v.close();
 });

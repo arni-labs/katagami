@@ -71,3 +71,27 @@ Where: ARN-475; production read attempt in this Codex session.
 **Chose removing the route transform because:** It restores viewport positioning without adding a portal or changing other pages.
 
 **Where:** ui/src/components/encyclopedia/map.css.
+
+## Restore and improve the existing encyclopedia UI
+
+**Decision:** Restore the pre-effort encyclopedia map as the base and apply performance, richer focus cards, and spatial depth within it.
+
+**Came up because:** Rita said the uniform-card prototype disregarded the existing UI and supplied desktop and mobile references. She explicitly requires iteration on the existing /encyclopedia experience, preserving all existing views and controls.
+
+**Options:** Continue the replacement grid and build a separate neighborhood view, or restore the established map, cards, typed connectors, minimap, and detail sheet.
+
+**Chose the existing UI because:** It already carries the required content structure. The replacement removed that visual hierarchy. The prototype is preserved at commit 6885cc80 and /tmp/arn475-uniform-prototype.tsx; it is not a separate user route.
+
+**Where:** ui/src/components/encyclopedia/encyclopedia-map.tsx, map-cards.tsx, and map-space.ts.
+
+## Keep spatial depth readable
+
+**Decision:** Compare flat and depth projections using the same focused neighborhood and front-facing material cards.
+
+**Came up because:** The references communicate depth through a dominant focal node, smaller context, rich mixed media, and labelled relationships; a freely orbiting sphere would hide text and connections.
+
+**Options:** Uniform grid; orbiting sphere with tilted cards; existing map with an expanded focal node and optional depth projection.
+
+**Chose a depth projection because:** It retains the existing 2D camera gestures and readable HTML cards while rotation reveals spatial layering. Depth can be turned off in the same view for direct comparison.
+
+**Where:** map-space.ts and the Depth controls on /encyclopedia.
