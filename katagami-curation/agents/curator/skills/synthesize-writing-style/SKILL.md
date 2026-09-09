@@ -345,3 +345,54 @@ Order the writes: files to `Ready`, then `SetName` / `SetVoiceLayer` /
 `bands_self_consistent` — correct, since new text has not been attested and the
 bands have not been re-proved), then `SetExemplars` and the rest. The two gates
 it clears belong to the finalizer; never set them yourself.
+
+## How a derived band lies (2026-09-09)
+
+Bands are derived from the corpus, so a band is only as honest as the corpus it
+was derived from. An unrepresentative corpus produces a band that measures the
+corpus rather than the register, and it goes wrong in both directions. Two cases,
+found the same night:
+
+- **Too loose.** A Charles Lamb corpus included Dream-Children, which runs at a
+  mean sentence length of 74 words against 23 to 32 for the other essays. The
+  derived ceiling came out near 100 words a sentence. Almost any English prose
+  would have passed it.
+- **Too tight.** A National Hurricane Center corpus was four forecast discussions
+  of one storm. The derived character-trigram ceiling came out at 0.103, which
+  was measuring *Helene* — Florida, Big Bend, Appalachians, Gulf of Mexico —
+  rather than the register. A replica written in the same register about a
+  different storm failed at 0.209, and still failed at 0.123 after being
+  lengthened to corpus length to rule out sampling noise. Any honest forecast
+  discussion about any other storm would have failed that band.
+
+**The tell in both directions is a threshold no reasonable text can sit inside**,
+whether because everything fits or because almost nothing does. When you see one,
+suspect the corpus before the number.
+
+**The fix is the corpus, never the number.** Lamb's corpus lost Dream-Children
+for a more typical essay and the ceiling came back to 43. The NHC corpus traded
+one Helene discussion for a Hurricane Milton one, the honest ceiling moved to
+0.141, and the replica passed at 0.123 with nothing widened. Widening a band to
+admit a text you like is how a contract stops proving anything.
+
+Two practical rules that follow:
+
+- **Sample across subjects, not just across passages.** Four passages about one
+  storm, one voyage, or one argument give you one subject measured four times.
+  Where the register spans occasions, the corpus should too.
+- **Write the replica before you trust the band.** The replica is the only test
+  that asks whether a *different* text in the same register can pass. A corpus
+  passes its own bands by construction; that proves nothing.
+
+## Which runtime each call belongs to (2026-09-09)
+
+`temper.write(...)` above is available **only inside the CurationJob sandbox** —
+the runtime an agent gets while executing a curation job. It does not exist on
+the Temper MCP `execute` tool, which offers `list`, `get`, `create`, `action`,
+`patch` and no file-content method at all; `temper.write` there raises
+`'Temper' object has no attribute 'write'`.
+
+That matters because most of this skill reads as though the reader is inside a
+curation job, and an agent sent to fix an existing style usually is not. If you
+are working a style from outside a job, the Files route in the section above is
+the only way to write a corpus file, a VOICE.md or a replication sample.
