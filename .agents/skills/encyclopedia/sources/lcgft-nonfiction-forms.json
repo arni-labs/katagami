@@ -1,0 +1,273 @@
+{
+  "source": "lcgft-nonfiction-forms",
+  "name": "Library of Congress Genre/Form Terms, nonfiction and informational forms",
+  "url": "https://id.loc.gov/authorities/genreForms.html",
+  "licence": "public domain",
+  "use": "read-and-cite",
+  "total": 634,
+  "totalDerivedFrom": "terms under Creative nonfiction, Informational works, Discursive works and Instructional and educational works in genreForms.madsrdf.nt.gz, parsed 2026-09-09; the nonfiction lane the Literature slice does not reach",
+  "lane": "writing",
+  "terms": [
+    {
+      "term": "Creative nonfiction",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026074",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: factual prose written with the devices of fiction; the parent the essay, memoir, travel and reported-narrative cells all needed. Proposal B10 #1. Written and attested 2026-09-09.",
+      "cellId": "creative-nonfiction"
+    },
+    {
+      "term": "Essays",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026094",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: the writer's own argument or observation in short prose, from Montaigne onward. Proposal B10 #2. Written and attested 2026-09-09.",
+      "cellId": "essays"
+    },
+    {
+      "term": "Autobiographies",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026047",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: a self-written account of a whole life, running from Augustine to the present. Proposal B10 #3. Written and attested 2026-09-09.",
+      "cellId": "autobiographies"
+    },
+    {
+      "term": "Memoirs",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2025026019",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: an account of one part of a life, which LC separates from autobiography by its narrowed focus. Proposal B10 #4. Written and attested 2026-09-09.",
+      "cellId": "memoirs"
+    },
+    {
+      "term": "Diaries",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026085",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: dated serial entries written by someone who cannot see ahead; the live Diary fiction cell imitates it. Proposal B10 #5. Written and attested 2026-09-09.",
+      "cellId": "diaries"
+    },
+    {
+      "term": "Travel writing",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026200",
+      "decision": "live",
+      "batch": "B10",
+      "note": "tradition: prose about a journey where the writer's noticing carries the piece. Proposal B10 #6. Written and attested 2026-09-09.",
+      "cellId": "travel-writing"
+    },
+    {
+      "term": "Editorials",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2021026030",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: argument written to a fixed length on the day's business, signed or in the publication's own voice. Proposal B10 #7. Written and attested 2026-09-09.",
+      "cellId": "editorials"
+    },
+    {
+      "term": "Blogs",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026051",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: dated posts newest first, with a documented register and two decades of work by many hands; the cell carries the question of whether this is a medium rather than a direction. Proposal B10 #8. Written and attested 2026-09-09.",
+      "cellId": "blogs"
+    },
+    {
+      "term": "Microblogs",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026172",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: short untitled posts in a stream; minted because the owner's brief names social posts, and the cell records that criticism has not yet named any manner inside it. Proposal B10 #9. Written and attested 2026-09-09.",
+      "cellId": "microblogs"
+    },
+    {
+      "term": "Newsletters",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026131",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: writing sent to a subscriber list on a schedule, in a register closer to a letter than an article; carries the same medium-or-direction question as Blogs. Proposal B10 #10. Written and attested 2026-09-09.",
+      "cellId": "newsletters"
+    },
+    {
+      "term": "Handbooks and manuals",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026109",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: instructions arranged so a reader can enter at any point; the parent the documentation leaves needed. Proposal B10 #11. Written and attested 2026-09-09.",
+      "cellId": "handbooks-and-manuals"
+    },
+    {
+      "term": "Style manuals",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026183",
+      "decision": "live",
+      "batch": "B10",
+      "note": "form: books that set how writing in a house or field is done, with Fowler, Strunk and White and Chicago as the standing works. Proposal B10 #12. Written and attested 2026-09-09.",
+      "cellId": "style-manuals"
+    },
+    {
+      "term": "Zines",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026210",
+      "decision": "live",
+      "batch": "B10",
+      "note": "practice: self-published small-run magazines with a first-person unedited register, from 1930s fanzines through punk to now. Proposal B10 #13. Written and attested 2026-09-09.",
+      "cellId": "zines"
+    },
+    {
+      "term": "Informational works",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026113",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a cataloguing bucket for anything whose purpose is to convey fact; the same reason Fiction and Poetry were declined"
+    },
+    {
+      "term": "Discursive works",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026089",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a cataloguing bucket above Editorials, Speeches and Interviews; no practice of its own"
+    },
+    {
+      "term": "Instructional and educational works",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026114",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a cataloguing bucket above Handbooks and manuals, Recipes and Textbooks; no practice of its own"
+    },
+    {
+      "term": "Reference works",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026165",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a cataloguing bucket for works consulted rather than read through"
+    },
+    {
+      "term": "Records (Documents)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026163",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a cataloguing bucket for kept records; Diaries is decided on its own"
+    },
+    {
+      "term": "Serial publications",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026174",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a publication schedule, not a direction"
+    },
+    {
+      "term": "Ephemera",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026093",
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a preservation category for material not meant to be kept"
+    },
+    {
+      "term": "Biographies",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026049",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "a form with a real body of work and its own conventions; it sits between Autobiographies and Creative nonfiction at LC and was not read in this pass"
+    },
+    {
+      "term": "Personal narratives",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026142",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "eyewitness accounts of wars and disasters; a real form, left for a pass that can read its body of work"
+    },
+    {
+      "term": "Literary criticism",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026126",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "a real practice with its own registers; no leaf under it was needed for the writing collection this pass serves"
+    },
+    {
+      "term": "Little magazines",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026022",
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "sits beside Zines and Newsletters; whether the three are one cell or three is the open question recorded on the Zines cell"
+    },
+    {
+      "term": "Cookbooks",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2011026169",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: recipes in book form in a fixed entry order, with the household matter around them; minted as the leaf the Beeton record needed. Proposal B11 #3. Written and attested 2026-09-09.",
+      "cellId": "cookbooks"
+    },
+    {
+      "term": "Popular works",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2025026092",
+      "decision": "live",
+      "batch": "B11",
+      "note": "form: writing for a reader without the training, which LC defines as works written for the layperson; minted as the parent Popular science needed. Proposal B11 #6. Written and attested 2026-09-09.",
+      "cellId": "popular-works"
+    },
+    {
+      "term": "Recipes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026162",
+      "decision": "merge",
+      "batch": "B11",
+      "note": "the same practice as Cookbooks, which LC separates only by whether the instructions are collected into a book",
+      "cellId": "cookbooks"
+    },
+    {
+      "term": "Lectures",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026122",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a delivery form covering everything spoken to an audience; the Royal Institution Christmas Lectures cell is the manner this pass needed and it is named from its own source"
+    },
+    {
+      "term": "Notebooks",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026133",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "LC defines it as a book produced with blank pages, which is an object rather than a practice"
+    },
+    {
+      "term": "Meditations",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026056",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "LC files it under Devotional literature as thoughts on spiritual truths; whether it covers the Stoic practice the Hypomnemata cell names was not settled in this pass"
+    },
+    {
+      "term": "Devotional literature",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026057",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a real body of work with its own registers; no leaf under it was needed for the records this pass was closing"
+    },
+    {
+      "term": "Self-help publications",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026102",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a modern practice with a large body of work; not read in this pass"
+    },
+    {
+      "term": "Almanacs",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026042",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "a compilation form with centuries of work behind it; not read in this pass"
+    },
+    {
+      "term": "Anecdotes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026044",
+      "decision": "deferred",
+      "batch": "B11",
+      "note": "sits under Humor at LC and close to the Aphorism cell; needs its own reading before it becomes a cell"
+    },
+    {
+      "term": "Humor",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026110",
+      "decision": "declined",
+      "batch": "B11",
+      "note": "an effect a work aims at, not a practice; the manners inside it are named separately"
+    }
+  ]
+}

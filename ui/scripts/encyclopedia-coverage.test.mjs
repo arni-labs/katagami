@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { loadSources, summarize, validateSource } from "../../scripts/encyclopedia-coverage.mjs";
+import { loadSources, summarize, validateSource, danglingCellIds } from "../../scripts/encyclopedia-coverage.mjs";
 
 const base = {
   source: "example",
@@ -66,4 +66,32 @@ test("coverage is decided over total, and null totals have no coverage", () => {
   });
   assert.equal(summarize({ ...base, total: null }).coverage, null);
   assert.equal(summarize({ ...base, use: "backbone", total: 6198, terms: [{ ...term, decision: "live", cellId: "x" }] }).coverage, null);
+});
+
+test("a cellId naming a cell that exists is fine, and one naming nothing is not", () => {
+  const sources = [{ source: "s", terms: [
+    { term: "Diaries", cellId: "diaries" },
+    { term: "Plainhand", cellId: "technical-reports" },
+    { term: "Undecided" },
+  ] }];
+  const findings = danglingCellIds(sources, new Set(["diaries"]));
+  assert.equal(findings.length, 1);
+  assert.match(findings[0], /Plainhand/);
+  assert.match(findings[0], /technical-reports/);
+  assert.match(findings[0], /does not exist/);
+});
+
+test("the rule takes an array as readily as a set, and reports nothing when all resolve", () => {
+  const sources = [{ source: "s", terms: [{ term: "A", cellId: "a" }, { term: "B", cellId: "b" }] }];
+  assert.deepEqual(danglingCellIds(sources, ["a", "b"]), []);
+});
+
+test("a blank cellId is left to the format validator rather than reported twice", () => {
+  const sources = [{ source: "s", terms: [{ term: "A", cellId: "  " }] }];
+  assert.deepEqual(danglingCellIds(sources, []), []);
+});
+
+test("findings name the ledger they came from, since a row is only findable there", () => {
+  const sources = [{ source: "lcgft-literature", terms: [{ term: "Ghost", cellId: "nowhere" }] }];
+  assert.match(danglingCellIds(sources, [])[0], /^lcgft-literature: /);
 });

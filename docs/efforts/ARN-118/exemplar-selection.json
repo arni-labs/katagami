@@ -1,0 +1,75 @@
+{
+  "note": "Exemplar selections for the seventeen public-domain writing styles. Each key addresses a verbatim passage in that style's own corpus, resolved by exemplar_lib.by_key. The annotation is ours and describes the construction; the passage is never touched.",
+  "floor_words": 150,
+  "ceiling_words": 400,
+  "styles": {
+    "austen-novels": [
+      ["corpus-3.md:para:-:0:1", "the narration slides into the character's own words and keeps the judgement she is passing on herself"],
+      ["corpus-1.md:para:-:3:7", "a refusal delivered inside the forms of politeness, the sting carried by the courtesy"]
+    ],
+    "faraday-lectures": [
+      ["corpus-1.md:para:-:0:0", "the demonstration is described as it happens in front of the audience, with the apparatus pointed at"],
+      ["corpus-2.md:para:-:0:1", "a proportion stated, then the weights that establish it"]
+    ],
+    "pepys-diary": [
+      ["corpus-2.md:para:-:3:4", "the day taken in order from rising to bed, business and appetite given the same weight"],
+      ["corpus-3.md:para:-:1:1", "the parenthesis carries the household business while the main clause keeps going"]
+    ],
+    "chesterfield-letters": [
+      ["corpus-2.md:para:-:0:0", "advice issued as an allowance of hours, with the reason attached to it"],
+      ["corpus-1.md:para:-:1:2", "approval, then a correction, then the letter closes on one word"]
+    ],
+    "beeton-household-manual": [
+      ["corpus-2.md:para:-:0:1", "the method runs as a single imperative sequence with the timings inside it"],
+      ["corpus-3.md:para:-:0:3", "quantities first, then the order of work, then how long it stands"]
+    ],
+    "post-etiquette": [
+      ["corpus-1.md:para:-:2:4", "a rule established through a named example and a line quoted from her"],
+      ["corpus-2.md:para:-:0:2", "the custom stated, then the tradition it rests on"]
+    ],
+    "strunk-style-manual": [
+      ["corpus-1.md:para:-:5:10", "the principle is stated once, then examples are set against it one at a time"],
+      ["corpus-2.md:para:-:4:7", "an instruction that names the fault it is correcting before it gives the remedy"]
+    ],
+    "aurelius-meditations-casaubon": [
+      ["corpus-2.md:para:-:0:1", "numbered addresses to himself, each finished within a sentence or two"],
+      ["corpus-3.md:para:-:2:4", "an analogy opens the entry and the whole argument is carried out inside it"]
+    ],
+    "grimm-fairy-tales-taylor": [
+      ["corpus-1.md:para:-:0:0", "the opening formula sets the household and its imbalance in three sentences"],
+      ["corpus-1.md:para:-:3:6", "speech reported in full, with the bargain spoken aloud by both sides"]
+    ],
+    "twain-travel-letters": [
+      ["corpus-1.md:para:-:0:3", "the solemn cadence is built up and then spent on the trivial object"],
+      ["corpus-3.md:para:-:3:5", "a portrait assembled from two habits held together in one sentence"]
+    ],
+    "darwin-voyage-journal": [
+      ["corpus-1.md:para:-:1:1", "the date is given, then the conditions, then what was counted"],
+      ["corpus-3.md:para:-:0:0", "a process followed step by step in the order it was watched"]
+    ],
+    "white-selborne-letters": [
+      ["corpus-2.md:para:-:0:1", "an observation reported to a correspondent, with the watcher's own care described"],
+      ["corpus-3.md:para:-:3:4", "a claim about numbers, then the enquiry standing behind it"]
+    ],
+    "dana-sea-narrative": [
+      ["corpus-3.md:sent:1:9:19", "the crew's speech carries the working of the ship"],
+      ["corpus-2.md:sent:2:5:11", "the work ahead listed in the order it will be done"]
+    ],
+    "slocum-voyage-narrative": [
+      ["corpus-1.md:para:-:2:2", "the chase told in the order it happened, the hailed word kept as it was spoken"],
+      ["corpus-3.md:para:-:2:4", "the port's kindness itemised, then the evening in one sentence"]
+    ],
+    "field-notes": [
+      ["corpus-2.md:para:-:0:0", "the entry opens on its date and the object of the day's work"],
+      ["corpus-4.md:para:-:1:3", "an accident of digging is followed until it yields an identification"]
+    ],
+    "ships-log": [
+      ["corpus-1.md:para:-:1:1", "the call goes up and the watch's gear is listed as it is put away"],
+      ["corpus-3.md:para:-:0:1", "distance run, then the weather, then the anchorage"]
+    ],
+    "aphorism": [
+      ["corpus-1.md:para:-:1:13", "each numbered claim is general and stops as soon as it is complete"],
+      ["corpus-3.md:para:-:2:13", "the run alternates lengths so a short maxim lands against a longer one"]
+    ]
+  }
+}

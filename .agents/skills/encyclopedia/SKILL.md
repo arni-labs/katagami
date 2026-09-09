@@ -261,6 +261,18 @@ Enforced by the contract, so plan for it:
   `maps` each require `sourceIds` resolving into this cell's `sources`. Sources are
   citations — title plus HTTPS URL — not reproduced material. The apply script
   fetches every source URL and resolves every link target before writing.
+- **An explanation that reports a filing must match the record; one that reasons
+  from a definition only has to say so.** "The Library of Congress files it here"
+  is checkable against the record's `hasBroaderAuthority`, and a link whose
+  explanation says that and does not match is wrong. "The record defines it this
+  way, so we place it here" is a curatorial refinement, which the collection
+  allows one level below the authority, and it is honest exactly when it admits
+  being one. Blank verse links to Iambic poetry on the definition and says so;
+  Memorates claimed a folk-literature filing the genre/form record does not make,
+  and had to be rewritten. Name the vocabulary too: the genre/form authority and
+  the LCSH subject heading are different vocabularies and do not settle each
+  other.
+
 - **A map membership is a cited claim.** `maps` entries are `{map, explanation,
   sourceIds}`, not bare words: a cell sits on the writing map because of
   something a reader can check, so a cell cannot be dragged across media by its
@@ -350,6 +362,34 @@ Rules that hold in every pass:
   forms, one cell is right and the forms live in its scope: Literary nonsense
   holds Lear's verse and Carroll's prose together. The test is whether you could
   say something about one form that is not true of the other (D36).
+- **A parent taken from a vocabulary is read, not walked.** Where a source
+  states a cell's broader term directly, write the link and cite the record. Where
+  the nearest term that is a cell is more than one step up, open the pages and
+  check that the intermediate term means what its label suggests before writing.
+  A label can match a cell's name and carry a different sense: Precisionism was
+  linked to Realism through Wikidata's magic realism, where "realism" is the
+  nineteenth-century movement rather than the modernist tendency Precisionism
+  belongs to (D47).
+- **Whose article makes the containment claim decides how strong it is.** A cell
+  whose own page says what it belongs to is stating it about itself, and the link
+  is firm: Cloisonnism opens "a style of post-Impressionist painting". A claim
+  that appears only in the parent's article, which lists the cell among what the
+  term covers, is the umbrella's reading and the explanation says so, because a
+  reader should not be left thinking the movement said it of itself:
+  Neo-Impressionism never calls itself post-Impressionist. Chronology does not
+  settle this either way, since a retrospective umbrella does not require its
+  members to come after it. Found in the visual pass review.
+- **A citation supports a claim only if the source makes it.** `cited` means the
+  page carries the sentence, not that the page was fetched. Before you set
+  `cited`, find the sentence in the fetched text and keep it; if you cannot find
+  it, change the sentence or change the source. This binds every claim you
+  attribute to a source: a scope sentence naming a person, a date or a work, a
+  broader link's explanation, a map membership, a manifestation, and a ledger row
+  recording a merge, whose reference has to reach the cell it names. The loader
+  proves a URL resolves and nothing further; only the writer can prove it
+  supports the claim. Three branches broke this in one night by three different
+  routes, the sharpest being a cell that credited Faraday at the Royal
+  Institution to a page containing none of those words.
 - Manifestations ride along: search `credits` across all record sets at every
   status and list what exists. Most new cells will have none on day one.
 
@@ -413,11 +453,45 @@ Autonomy is a change in when the human looks, never in what may be built.
 
 ## Maintaining
 
+- **A pass that gives a cell children revisits that cell's questions.** `questions`
+  is how a cell tells the owner what it does not know, so an entry the same pass
+  has answered sends her to look at something already done. Re-read every parent
+  you linked children to, in the same batch, and restate any count of children
+  from production rather than from the plan (D49).
+- **Archived rows are not absent rows.** A sweep that filters to live attested
+  Drafts will report an archived cell as missing, and the two call for opposite
+  actions: archive is final, so a link into an archived cell is dropped rather
+  than a cell created. Read the status before reporting a cell as absent. The
+  tell: two runs disagreeing about whether a row exists is usually two runs
+  disagreeing about what exists means.
 - **Integrity sweep**: every cell's attestation pair *and* that its document
   parses under the current contract (an attested cell written under an older
   version is not current); every `cellId` and manifestation pointer resolves;
   sources still answer. Dangling links are the
-  failure this collection accumulates.
+  failure this collection accumulates. The ledgers point the other way and are
+  checked separately, because a `cellId` naming a cell that has never existed
+  passes the format validator and stays green forever. Four did:
+
+  ```bash
+  node scripts/encyclopedia-cellids.mjs   # needs TEMPER_API_KEY; exits 1 on a dangling row
+  ```
+- **Claim support**: `cited` has to mean the page carries the sentence, not that
+  the page was reachable. Before setting it, find the claim in the fetched text
+  and keep it; if you cannot find it, change the sentence or change the source.
+  Reading a lead section and writing the rest from memory produces prose that
+  passes every other check. Measured on 2026-09-09, one live cell in nine
+  asserted a name no cited source carried.
+
+  ```bash
+  TEMPER_API_KEY=... python3 scripts/encyclopedia_support.py
+  ```
+
+  Reporting only, never a build gate. It prints its own false-positive rate and
+  what it does not check, which includes every explanation field: it reads the
+  description alone, so it would have missed the manifestation defect that
+  produced it. It also checks each parent link cited to a Library of Congress
+  record against that record's own broader authority, which is the crisper half.
+
 - **Gap watch**: maps with no cells, cells with no manifestations, recollected
   cells that could now be cited, clusters of made work with no cell over them,
   broad cells whose only children are broad (the leaf layer is missing under

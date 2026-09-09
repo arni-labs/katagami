@@ -46,6 +46,16 @@ jobs:
         working-directory: ui
       - name: Every source ledger validates
         run: node scripts/encyclopedia-coverage.mjs
+      # A cellId naming a cell that has never existed passes the format
+      # validator, so this asks production. It needs a credential the fork and
+      # most pull requests do not have, and it is skipped rather than failed
+      # when the secret is absent: a check that cannot run must not read as a
+      # check that passed.
+      - name: Every ledger cellId names a cell that exists
+        if: ${{ secrets.TEMPER_API_KEY != '' }}
+        env:
+          TEMPER_API_KEY: ${{ secrets.TEMPER_API_KEY }}
+        run: node scripts/encyclopedia-cellids.mjs
 
   writing-style-contract:
     runs-on: ubuntu-latest

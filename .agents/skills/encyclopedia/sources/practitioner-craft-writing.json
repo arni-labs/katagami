@@ -1,0 +1,102 @@
+{
+  "source": "practitioner-craft-writing",
+  "name": "Practitioner and trade-press sources naming a writing form",
+  "url": "https://www.poynter.org/",
+  "licence": "cite-only, read in a browser and cited",
+  "use": "read-and-cite",
+  "total": null,
+  "totalDerivedFrom": "no fixed list: newsroom and newsletter craft writing, the trade press and essays by people who write the form, read where criticism had named nothing, from 2026-09-09",
+  "lane": "writing",
+  "terms": [
+    {
+      "term": "Tweetstorm",
+      "ref": "https://www.poynter.org/tech-tools/2017/2017-the-year-of-the-conversational-explanatory-tweetstorm/",
+      "decision": "live",
+      "batch": "B14",
+      "note": "form: the essay run as a numbered sequence of capped posts, named in the trade press and in criticism, with craft advice on how to write it and a body of work by named journalists from 2016. Proposal B14 #1, minted with no manifestation on instruction. Written and attested 2026-09-09.",
+      "cellId": "tweetstorm"
+    },
+    {
+      "term": "Morning brief",
+      "ref": "https://www.poynter.org/business-work/2019/behind-the-success-of-the-seattle-times-morning-brief-newsletter/",
+      "decision": "declined",
+      "batch": "B14",
+      "note": "read as the strongest candidate for a Newsletters leaf; the piece describes one newspaper's product and its workflow, names no generic form and no other newsroom writing in it"
+    },
+    {
+      "term": "Hot take",
+      "ref": "https://en.wikipedia.org/wiki/Hot_take",
+      "decision": "deferred",
+      "batch": "B14",
+      "note": "a named register with a documented origin in sports talk radio, but it belongs to opinion writing at speed and appears in columns as much as in posts; it needs a parent this pass did not have"
+    },
+    {
+      "term": "Shitposting",
+      "ref": "https://en.wikipedia.org/wiki/Shitposting",
+      "decision": "declined",
+      "batch": "B14",
+      "note": "defined by its effect on a discussion rather than by how the writing is made, so it names a behaviour and not a manner"
+    },
+    {
+      "term": "Copypasta",
+      "ref": "https://en.wikipedia.org/wiki/Copypasta",
+      "decision": "declined",
+      "batch": "B14",
+      "note": "a practice of reproduction rather than of authorship"
+    },
+    {
+      "term": "Thread (online communication)",
+      "ref": "https://en.wikipedia.org/wiki/Thread_(online_communication)",
+      "decision": "merge",
+      "batch": "B14",
+      "note": "the article is mostly about software conversation threading; its passage on numbered essays posted in real time is cited on the Tweetstorm cell",
+      "cellId": "tweetstorm"
+    },
+    {
+      "term": "Linklog",
+      "ref": "https://en.wikipedia.org/wiki/Linklog",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: the blog whose post titles link out with the writer's note attached, the filter-style weblog B10 could not name; deferred in B14 for sitting outside that pass's two gaps, minted on instruction. Proposal B15 #3. Written and attested 2026-09-09.",
+      "cellId": "linklog"
+    },
+    {
+      "term": "Listicle",
+      "ref": "https://en.wikipedia.org/wiki/Listicle",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: the article built as a numbered list, count in the title and a subheading per entry, placed under both Journalism and Blogs because the reference names them together. Proposal B15 #4. Written and attested 2026-09-09.",
+      "cellId": "listicle"
+    },
+    {
+      "term": "Service journalism",
+      "ref": "https://en.wikipedia.org/wiki/Service_journalism",
+      "decision": "live",
+      "batch": "B15",
+      "note": "register: news you can use, reporting written to be acted on; parented under the new Journalism cell and linked from Newsletters, which it is the nearest thing to a manner for. Proposal B15 #2. Written and attested 2026-09-09.",
+      "cellId": "service-journalism"
+    },
+    {
+      "term": "Digest form",
+      "ref": "https://en.wikipedia.org/wiki/Mailing_list",
+      "decision": "declined",
+      "batch": "B14",
+      "note": "the mailing-list article defines digest as a delivery mode, all of a day's messages combined into one email, which is a schedule and not a manner"
+    },
+    {
+      "term": "Journalism",
+      "ref": "https://en.wikipedia.org/wiki/Journalism",
+      "decision": "live",
+      "batch": "B15",
+      "cellId": "journalism",
+      "note": "practice: reporting under verification and a deadline, with its own conventions; minted as the parent Service journalism needed, reversing B14's decline because the reference's opening definition covers the methods and the organising literary styles as well as the occupation. Proposal B15 #1. Written and attested 2026-09-09."
+    },
+    {
+      "term": "News style",
+      "ref": "https://en.wikipedia.org/wiki/News_style",
+      "decision": "deferred",
+      "batch": "B15",
+      "note": "the inverted pyramid and the five questions, which the Journalism cell describes inside its own scope; a separate cell for the house register is arguable and was not read in this pass"
+    }
+  ]
+}

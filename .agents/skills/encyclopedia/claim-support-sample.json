@@ -1,0 +1,130 @@
+{
+ "verified_at": "2026-09-09",
+ "head": "12fab57c37c706880455ef2e4f91ef5747120d3f",
+ "rule": "strict (name absent from every cited source even under a five-character stem, diacritics folded)",
+ "how": "each name re-checked against the FULL article plaintext fetched live (action=query&prop=extracts&explaintext=1, redirects resolved) plus the cached record for every non-Wikipedia co-source, so a co-cited LoC or Wikidata record cannot be silently ignored",
+ "cells_sampled": 30,
+ "cells_confirmed": 30,
+ "cells_with_any_false_positive": 0,
+ "names_checked": 51,
+ "false_positives": 0,
+ "false_positive_rate": "0 of 30 cells; 95% upper bound 10% by the rule of three (3/n)",
+ "samples": [
+  {
+   "round": 1,
+   "cells": {
+    "antinovels": [
+     "Butor"
+    ],
+    "bengal-school-of-art": [
+     "Ajanta"
+    ],
+    "domestic-drama": [
+     "Diderot",
+     "France",
+     "Ibsen",
+     "Miller"
+    ],
+    "naturalism-theatre": [
+     "Antoine",
+     "Libre"
+    ],
+    "palinodes": [
+     "Canterbury Tales"
+    ],
+    "robinsonades": [
+     "Flies",
+     "Lord"
+    ],
+    "school-of-paris": [
+     "Giacometti"
+    ],
+    "metadramas": [
+     "Mousetrap"
+    ],
+    "xungen-movement": [
+     "Scar"
+    ],
+    "spoken-word-poetry": [
+     "Beats"
+    ]
+   }
+  },
+  {
+   "round": 2,
+   "cells": {
+    "apocalyptic-drama": [
+     "Beckett",
+     "Endgame"
+    ],
+    "coming-of-age-comics": [
+     "Fun Home"
+    ],
+    "coming-of-age-drama": [
+     "Hansberry",
+     "Raisin",
+     "Spring Awakening"
+    ],
+    "commedia-erudita": [
+     "European"
+    ],
+    "deep-image": [
+     "Jungian"
+    ],
+    "dolce-stil-novo": [
+     "Bologna",
+     "Florence"
+    ],
+    "epistolary-literature": [
+     "Horace",
+     "Ovid"
+    ],
+    "imaginism": [
+     "Soviet"
+    ],
+    "magic-realist-plays": [
+     "Caribbean"
+    ],
+    "muaradat": [
+     "Ahmad Shawqi",
+     "Burda",
+     "Busiri"
+    ],
+    "naturalism-literature": [
+     "Hardy"
+    ],
+    "pink-decade": [
+     "Kerala"
+    ],
+    "postminimalism": [
+     "Lynda Benglis"
+    ],
+    "psychological-fiction": [
+     "Constant",
+     "Eliot"
+    ],
+    "qasidas": [
+     "Hausa"
+    ],
+    "tenebrism": [
+     "Naples",
+     "Spain"
+    ],
+    "togatae": [
+     "Menander"
+    ],
+    "tragicomedies": [
+     "Chekhov"
+    ],
+    "utopian-fiction": [
+     "Bellamy"
+    ],
+    "young-vienna": [
+     "Habsburg"
+    ]
+   }
+  }
+ ],
+ "harness": "proof-283-b, ported to scripts/encyclopedia_support.py",
+ "note": "The hand-verified sample behind the false-positive rate the sweep prints. Kept beside the ledgers so the number travels with the code rather than being re-derived by whoever runs it next."
+}

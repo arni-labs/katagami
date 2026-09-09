@@ -21,7 +21,10 @@ export function PublishVoiceButton({ id }: { id: string }) {
             }
           })
         }
-        className="rounded-[9999px] bg-foreground px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-85 disabled:opacity-50"
+        /* Radius 0: `ui/DESIGN.md` gives every rectangular surface on
+           katagami.ai square corners, and this button now sits on the writing
+           lane's page beside controls that already follow it. */
+        className="inline-flex h-10 items-center bg-foreground px-5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-transform hover:-translate-y-[2px] disabled:opacity-50 disabled:hover:translate-y-0 motion-reduce:transition-none"
       >
         {pending ? "Publishing…" : "Publish this voice"}
       </button>
