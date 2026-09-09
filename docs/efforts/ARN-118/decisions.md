@@ -645,4 +645,23 @@ the Renaissance-period footing the other run raised against itself, and
 `dusseldorf-school-of-photography` on a lineage the article attributes to
 critics.
 
+Two things landed in the shared skill rather than here, and this entry points at
+them rather than restating them. The nesting run wrote the reading-pass rule
+that came out of the Post-Impressionism exchange: whose article makes the
+containment claim decides how strong it is, with Cloisonnism and
+Neo-Impressionism as the worked examples, and chronology settling it neither
+way. It also wrote, into Maintaining, that an archived row is not an absent row
+and that a link into an archived cell is dropped rather than the cell created.
+It offered this run the wording of the first. Declined, and left where it is:
+that file is already edited on its branch, and a second branch rewriting the
+same paragraph is the conflict the offer was trying to avoid. Wording notes went
+back to it directly instead.
+
+One extension to D45, which found that Getty's parents in the visual lane are
+guide terms and reported it from the 52 roots read there. It holds at the
+movement layer too: the AAT record for Neo-Impressionist gives its broader
+concept as `<modern French fine arts styles and movements>`, a guide term
+sorting by nation. So the Getty route is closed for this layer rather than thin,
+and a later pass need not spend the query.
+
 Where: `/private/tmp/encyclopedia-passes/report-nesting-visual.md`, item 1.
