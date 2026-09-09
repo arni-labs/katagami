@@ -29,6 +29,7 @@ import { createHash } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { cellDocumentSchema } from "../ui/src/lib/encyclopedia-schema.ts";
+import { identifierFor } from "./encyclopedia-id.mjs";
 
 const flags = process.argv.slice(2);
 const expectAt = flags.indexOf("--expect");
@@ -71,11 +72,6 @@ async function request(path, method = "GET", body) {
   return { status: response.status, data };
 }
 
-export function identifierFor(name) {
-  const id = name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  assert.match(id, /^[a-z0-9][a-z0-9-]{0,159}$/, `cannot derive an identifier from ${name}`);
-  return id;
-}
 
 // Build and validate every document before touching the deployment, so a
 // rejected document is found here rather than half way through the batch.
