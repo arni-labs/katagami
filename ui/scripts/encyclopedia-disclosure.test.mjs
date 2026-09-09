@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createFlush, loadUiModule } from "./react-harness.mjs";
 createFlush();
 const { GraphIndex } = loadUiModule("src/lib/encyclopedia-graph.ts");
-const { disclosureLayout, categoryEntries } = loadUiModule(
+const { disclosureLayout, categoryEntries, relationCaption } = loadUiModule(
   "src/components/encyclopedia/disclosure.ts",
 );
 const { cellFaces } = loadUiModule("src/components/encyclopedia/material.ts");
@@ -130,4 +130,22 @@ test("secondary categories have visual entries without duplicating shared topics
   assert.deepEqual(l.categories.find((h) => h.map === "design").rootIds, [
     "Shared",
   ]);
+});
+
+test("reciprocal relation labels read from the selected topic", () => {
+  const a = cell("Impressionism"),
+    b = cell("Ukiyo-e");
+  a.relations = [
+    { cellId: b.id, label: "influenced by", explanation: "", sourceIds: [] },
+  ];
+  b.relations = [
+    { cellId: a.id, label: "influenced", explanation: "", sourceIds: [] },
+  ];
+  const line = index([a, b]).relationLines[0];
+  assert.deepEqual(relationCaption(line, a.id), {
+    from: a.id,
+    to: b.id,
+    label: "influenced by",
+  });
+  assert.equal(relationCaption(line, b.id).label, "influenced");
 });

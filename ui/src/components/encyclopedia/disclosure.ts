@@ -3,7 +3,11 @@ import type {
   MapName,
   ManifestationRecord,
 } from "@/lib/encyclopedia";
-import { GraphIndex, MAP_NAMES_ORDER } from "@/lib/encyclopedia-graph";
+import {
+  GraphIndex,
+  MAP_NAMES_ORDER,
+  type RelationLine,
+} from "@/lib/encyclopedia-graph";
 import { plateBox, type GraphLayout, type PlateNode } from "./graph-layout";
 import { cellFaces } from "./material";
 
@@ -213,5 +217,20 @@ export function disclosureLayout(
     bounds,
     topBounds,
     topCentre: { x: topBounds.w / 2, y: 0 },
+  };
+}
+
+/** Read a relation from the selected topic, retaining its recorded direction. */
+export function relationCaption(line: RelationLine, focusId: string | null) {
+  const chosen =
+    line.entries.find((e) => e.from === focusId) ?? line.entries[0];
+  return {
+    from: chosen.from,
+    to: chosen.to,
+    label: [
+      ...new Set(
+        line.entries.filter((e) => e.from === chosen.from).map((e) => e.label),
+      ),
+    ].join(" / "),
   };
 }

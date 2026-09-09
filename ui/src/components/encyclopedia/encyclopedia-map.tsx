@@ -14,7 +14,7 @@ import { CloseButton, IndexSheet, OpenCellButton, SheetBody, SheetTitle, type Sh
 import { EncyclopediaBrowse } from "./browse";
 import { useMounted, usePanZoom, usePrefersReducedMotion, ZOOM_MAX } from "./use-pan-zoom";
 import { cameraRect, SpatialIndex } from "./spatial-index";
-import { disclosureLayout, branchChildren, BRANCH_PAGE } from "./disclosure";
+import { disclosureLayout, branchChildren, relationCaption, BRANCH_PAGE } from "./disclosure";
 import { CategoryCard } from "./category-node";
 import "./map.css";
 
@@ -443,6 +443,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       >
         {layout.categories.map(node=><CategoryCard key={node.map} node={node} onToggle={toggleCategory} onMore={moreCategory}/>)}
         <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden>
+          <defs><marker id="encyclopedia-edge-arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth={8/camera.k} markerHeight={8/camera.k} markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M 0 0 L 8 4 L 0 8 Z" fill="context-stroke"/></marker></defs>
           {!opened && layout.categories.flatMap(h=>h.rootIds.map(id=>{
             const p=layout.byId.get(id);if(!p)return null;
             return <path key={h.map+id} d={`M ${h.x+h.w/2} ${h.y} C ${h.x+240} ${h.y}, ${p.x-220} ${p.y}, ${p.x-p.w/2} ${p.y}`} fill="none" stroke="var(--ramune)" strokeWidth={strokeW} strokeDasharray={dash}/>;
@@ -454,7 +455,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             const key = `${e.from}-${e.to}`;
             return (
               <g key={key}>
-                <path d={d} fill="none" stroke="color-mix(in oklch, var(--foreground) 55%, transparent)" strokeWidth={strokeW * 1.1} strokeDasharray={dash} strokeLinecap="round" />
+                <path d={d} markerEnd="url(#encyclopedia-edge-arrow)" fill="none" stroke="color-mix(in oklch, var(--foreground) 55%, transparent)" strokeWidth={strokeW * 1.1} strokeDasharray={dash} strokeLinecap="round" />
                 {/* A wide invisible stroke so the thin dashed line is still
                     easy to put the pointer on. */}
                 <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 12} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(key)} onMouseLeave={() => setHoverEdge((at) => (at === key ? null : at))} />
@@ -467,10 +468,11 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             const a = layout.byId.get(line.a)!; const b = layout.byId.get(line.b)!;
             const { d, label } = plateConnector(a, b);
             const ink = RELATION_INK_VAR[line.ink];
-            const word = line.entries.length === 1 ? line.entries[0].label : line.entries.map((e) => e.label).join(" / ");
+            const caption=relationCaption(line,focusId);
+            const word=caption.label;
             return (
               <g key={line.key}>
-                <path d={d} fill="none" stroke={ink} strokeWidth={strokeW * 1.3} strokeDasharray={dash} strokeLinecap="round" style={{ mixBlendMode: "var(--ink-blend)" as never }} />
+                <path d={d} markerEnd={caption.from===line.a ? "url(#encyclopedia-edge-arrow)" : undefined} markerStart={caption.from===line.b ? "url(#encyclopedia-edge-arrow)" : undefined} fill="none" stroke={ink} strokeWidth={strokeW * 1.3} strokeDasharray={dash} strokeLinecap="round" style={{ mixBlendMode: "var(--ink-blend)" as never }} />
                 <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 12} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(line.key)} onMouseLeave={() => setHoverEdge((at) => (at === line.key ? null : at))} />
                 {wordFor(line.key, line.a, line.b) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: labelPx, fill: `color-mix(in oklch, ${ink} 70%, var(--foreground))`, paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: labelHalo, strokeLinejoin: "round" }}>{word}</text> : null}
               </g>
