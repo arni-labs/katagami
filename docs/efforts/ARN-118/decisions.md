@@ -1368,6 +1368,7 @@ Where: `scripts/encyclopedia_support.py`, the strict-flag print; the guidance in
 
 And the repair was checked by something other than the instrument that produced it. Twenty of the 198 repaired cells were drawn with a fixed seed rather than chosen, re-read one at a time from production rather than from the saved state, and their 48 sources fetched into an empty cache rather than read from the 36MB one every other measurement used. Twenty hold, none flag. Fifteen of those twenty were the mechanical Artsy cut, which the draw makes likely because 123 of the 198 are, so a second draw was taken from the 80 hand-written scope cuts alone, where the judgement lives: 46 sources fetched fresh, twenty hold, none flag.
 
+
 ## D78 Modernism is written as a direction because Tate states its principles
 
 Decision: The Modernism cell's scope is written from the three principles Tate's art-term page states, and never from the movement's dates.
@@ -1382,6 +1383,7 @@ What was given up: the cell cannot be used to sweep in a movement because its da
 
 Where: `docs/efforts/ARN-118/payloads/mkmodernism.mjs`, the `modernism` document; cell `modernism` in production.
 
+
 ## D79 Abstract art stays a root, and it is the decline that costs the most
 
 Decision: Abstract art is not placed under Modernism.
@@ -1393,6 +1395,7 @@ Options: Place it on Tate's modernism page saying the succession culminates in a
 Chose to leave it because: three of abstract art's own records were checked and all three stop short. Its Wikipedia article never states it, Tate's abstract-art page never states it, and Wikidata files it under modern art (Q38166) rather than modernism (Q878985). "Associated with" is not containment, and "culminating in abstract art" reads as easily as modernism ending where abstract art begins as it does abstract art being inside modernism. The pressure to take it came from the count, which is the reason to refuse it. The question is written onto the Modernism cell naming what a source would have to say.
 
 Where: `modernism` cell, first `questions` entry.
+
 
 ## D80 Whose article makes the claim is written into the explanation, and three links say it is the umbrella's
 
@@ -1406,6 +1409,7 @@ Chose to mark the three because: a reader should not come away thinking Surreali
 
 Where: `broader` explanations on `surrealism`, `dada`, `bauhaus`.
 
+
 ## D81 Getty AAT was re-checked at the movement layer rather than assumed closed
 
 Decision: The AAT records for eleven candidate movements were fetched and read before AAT was written off as a source of parents here.
@@ -1417,3 +1421,46 @@ Options: Cite the earlier finding and skip the queries; re-check a sample; re-ch
 Chose to re-check the eleven that mattered because: the queries are cheap and the earlier finding was about a different layer. Dada, Surrealist, Constructivist, Cubist, Expressionist, Futurist, Fauve, Post-Impressionism, Impressionist, Arte Povera and Fluxus were fetched. Every one gives a guide term in angle brackets as its only broader concept, sorted by nation and period: `<modern European fine arts styles and movements>`, `<modern Italian styles and movements>`, `<post-1945 fine arts styles and movements>`. The earlier finding holds at this layer too, and it is now written onto the Modernism cell so the next pass does not spend the queries a third time.
 
 Where: `modernism` cell, last `questions` entry.
+
+
+## D82 A list you can show to be wrong in part is not evidence in whole
+
+Decision: Process art is not placed under Modernism, and the reason is written into the skill as a rule: where a source's only support for a placement is membership in a list, check the other members against their own pages, and one contradicted member disqualifies the whole list.
+
+Came up because: An umbrella link for process art was available and looked ordinary. The Modernism article says "The continuation of Abstract Expressionism, color field painting, lyrical abstraction, geometric abstraction, minimalism, abstract illusionism, process art, pop art, postminimalism, and other late 20th-century modernist movements in both painting and sculpture continued through the first decade of the 21st century". Process art's own article says nothing either way, so under the umbrella-claim rule the link was writable with a flag.
+
+Options: Write the link and flag it as the umbrella's claim, which is what the existing rule allows; write it unflagged; decline it and say why.
+
+Chose to decline because: two other members of that same sentence, minimalism and pop art, are contradicted by their own articles. Minimalism's says it is "often interpreted as a reaction to abstract expressionism and modernism" and Pop art's says its artists were "challenging prevailing modernist approaches to culture". A sentence that misfiles two of its own members is a survey of a period and not a statement about what contains what, and once that is known about a sentence none of it can be used, including the parts that happen to be unopposed. The flag would have dressed a bad source as a cautious link.
+
+What this gives the next pass: a cheap test. Before writing a link whose only support is a list, read the other members. Finding one contradiction is enough and it costs one fetch.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "Rules that hold in every pass"; `process-art` left as a root.
+
+
+## D83 A source that says the opposite is a different failure from a source that says too little
+
+Decision: Minimalism, Pop art, Conceptual art and Land art are declined outright rather than linked with a doubt recorded.
+
+Came up because: The declines in this pass fall into two groups that look alike in a report and are not alike at all. Some sources say too little: Impressionism, Arte Povera, Fluxus, Gutai, CoBrA and the rest are simply silent. Others say the opposite: Minimalism is "a reaction to abstract expressionism and modernism", Conceptual art was "a radical break with Greenberg's kind of formalist Modernism", Land art answered "the disengagement of Modernism from social issues", Pop art challenged "prevailing modernist approaches".
+
+Options: Treat both groups the same and leave all of them roots without distinguishing; link the second group with the contradiction noted in the explanation; decline both, and say in the report which failure each one is.
+
+Chose the third because: a thin source produces a weak link, and the collection already has a way to carry that, which is to name whose claim it is in the explanation. A contrary source produces a false link, and no amount of flagging repairs it, because the flag would have to say the source denies what the link asserts. These four define themselves against modernism, so a `broader` edge would invert their own account of what they are, and a reader walking up from Minimalism would arrive at the thing Minimalism was made against.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "Rules that hold in every pass"; `modernism` cell, fourth `questions` entry.
+
+
+## D84 Getty AAT is closed by facet and not by vocabulary
+
+Decision: The AAT is recorded as having a parent layer for materials and techniques and none for styles and movements, rather than as open or closed as a whole.
+
+Came up because: Two passes reached opposite-looking conclusions about the same vocabulary. An earlier pass read 52 cell-level records and reported that the visual lane gets no parent layer from the AAT at all. The medium-axis run then used the AAT successfully to place media and technique cells. Both were right about what they read, and neither had measured the other half.
+
+Options: Take the earlier finding as settled and skip the queries here; take the medium-axis result as evidence the earlier finding was wrong; measure the half that was still unmeasured.
+
+Chose to measure because: carrying either finding across the boundary would have been an assumption dressed as a result, which is the failure this effort keeps finding. The AAT records for Dada, Surrealist, Constructivist, Cubist, Expressionist, Futurist, Fauve, Post-Impressionism, Impressionist, Arte Povera and Fluxus were fetched. Every one gives a guide term in angle brackets as its only broader concept: `<modern European fine arts styles and movements>`, `<modern Russian fine arts styles and movements>`, `<modern Italian styles and movements>`, `<modern French fine arts styles and movements>`, `<post-1945 fine arts styles and movements>`. Sorted by nation and by period, which is a shelving order and not a parent.
+
+The result is a property of the facet. Styles and Periods has no parent layer to offer this collection; the materials and techniques side does. A future pass should not spend these queries on a movement, and should not apply the closure to a technique.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "Rules that hold in every pass"; `modernism` cell, last `questions` entry.

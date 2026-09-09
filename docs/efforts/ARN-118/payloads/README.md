@@ -120,6 +120,10 @@ Applied at 2026-09-09T20:27Z; all ten written and attested. The loader needs
 `ui/node_modules` present, because it imports the shared contract from
 `ui/src/lib/encyclopedia-schema.ts` and that file wants zod 4. In a fresh
 worktree it fails with `z.url is not a function` until `npm ci` has run in `ui`.
+The message reads as a broken loader and it is a missing dependency: a script
+that writes rows to the API needs the site's dependencies installed, because the
+contract it validates against is a file in the site's source tree, and it needs
+them even though it never renders a page.
 
 Read the counts down a column, never across two:
 
@@ -132,3 +136,28 @@ Nine children placed and one new root created, so each root count falls by
 eight rather than nine. Modernism is on the writing and design maps as well,
 where it is a root with no children: 123 writing roots and 14 design roots at
 the same read, each one higher than before this batch.
+
+## Batch ART-4 (Modernism questions) — applied 2026-09-09
+
+`mkmodernism-q.mjs` adds one `questions` entry to the `modernism` cell, naming
+the archived `early-modernist-european-painting` row and why it was not reused.
+It is a separate batch because the finding came from the owner's review of the
+ART-3 report and not from the placement work.
+
+The builder is also the re-check that a pass giving a cell children owes that
+cell's `questions`. Before it writes anything it confirms against the same read
+that `early-modernist-european-painting` really is archived, that `modernism`
+has exactly nine children, and that the sixteen cells the questions name as
+non-children are still non-children. It throws rather than writing if any of
+those has moved, so a question cannot outlive the fact it describes.
+
+```
+node --env-file=<repo>/.env.katagami-curator.local fetch-cells.mjs
+node mkmodernism-q.mjs
+node --env-file=<repo>/.env.katagami-curator.local ../../../../scripts/create-encyclopedia-cells.mjs \
+  docs/efforts/ARN-118/payloads/batch-art-4.json --expect 1 --apply   # from the repo root
+```
+
+Applied at 2026-09-09T20:36Z. Read back: 771 rows, 754 live, 754 attested, eight
+questions on the cell, and the art root counts unchanged at 111 by map parent
+and 109 by any link.
