@@ -418,3 +418,64 @@ Options: A host rule for id.loc.gov (rejected: special handling); cite the `.jso
 Chose the header because: It is what a well-behaved script says on every fetch, it changes nothing about the safety checks (same-host redirects, private-address refusal, 2xx only), and on Getty it is strictly stricter, turning a soft-404 HTML page into a real 404. Given up: nothing observed; Wikipedia and ordinary pages answer as before.
 
 Where: `scripts/create-encyclopedia-cells.mjs` (the fetch in the source check); PR #279.
+
+## D36 A direction that appears in prose and in verse gets a cell each, under a shared parent
+
+Decision: Where a technique or tradition exists in more than one literary form, the direction is carried by a parent cell, and a form gets its own cell under it when that form's practice has its own canon and hands. Epistolary fiction and Epistolary poetry stand apart under an epistolary parent; the same for dialect, hypertext, and the Gothic. Where the practice reads as one across forms, one cell is right and the forms are described in its scope: Literary nonsense is the standing example, holding Lear's verse and Carroll's prose together because the sources treat them as one tradition and the Library of Congress splits them only by cataloguing form. The test is whether a reader could say something about one form that is not true of the other; where they could not, splitting invents a distinction.
+
+Came up because: Pass 2 proposed merging Gothic poetry into the live Gothic fiction cell and asked whether epistolary, dialect and hypertext poetry should merge into their fiction twins. The owner answered: "They can be separate cells with a parent. That's the point of this nested stuff."
+
+Options: One cell per direction across forms, with the forms described inside its scope; a cell per form with a parent above them; or the judgment above, which allows both and says how to choose.
+
+Chose the judgment because: a rule that always splits would divide Literary nonsense, which every source treats as one tradition across verse and prose, and a rule that never splits would put Gothic poetry inside a cell about novels. Each verse tradition that does have its own canon and hands earns its own cell, and the nesting is what makes the collection explorable. Given up: an agent working alone has to make a call rather than follow a mechanical rule, so the test is written down and the reasoning goes in the document.
+
+Where: this ledger's Gothic poetry row; the parent cells arrive in a later numbered batch. `.agents/skills/encyclopedia/sources/lcgft-literature.json`.
+
+## D37 Cells sit at depths, and a made record manifests a leaf
+
+Decision: A cell may be broad (a genre, form or movement: Fantasy fiction, Diaries) or a leaf (a manner: a form plus a stance plus a period or milieu, narrow enough to write a recognisable paragraph in). A writing style, art style or design language manifests a leaf, never a broad cell. Leaf cells are cited from criticism and scholarship, or recorded as recollected; they are not harvested from a catalogue.
+
+Came up because: The owner stopped the writing-style work: "the writing styles that we have right now can't be directly attached to existing cells because existing cells are broad... we can't create a new writing style called fantasy novel." Ninety writing cells were live and not one of them could host a voice, because every source read so far (Library of Congress, Wikidata, Wikipedia) catalogues works and therefore stops at genre and form.
+
+Options: Attach voices to the broad cells anyway and let scope drift; keep harvesting vocabularies and hope depth appears; name the leaf layer as its own kind of curation with its own sources.
+
+Chose the leaf layer because: the vocabularies stop where they stop by design, so more slices add breadth and never reach the level a voice occupies. Naming the leaf explicitly also says what the encyclopedia is for: below the catalogue, it stops mirroring a library and starts being ours. Given up: leaves are slower to make than terms are to read, and some will be recollected rather than cited.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "What is and is not a cell".
+
+## D38 The graph is expected to deepen in place
+
+Decision: Inserting a cell between an existing parent and child is a normal maintenance move, not a rewrite. Create the middle cell under the old parent, then Define the child under the middle cell, dropping the child's link to the grandparent unless it remains a separate parent for a separate reason. Both operations ride in one numbered batch, and the new links carry their own explanations and citations.
+
+Came up because: The owner described the collection as living: "imagine neurons forming connections... later on some agent discovers that something could go in between there... you insert between, created a missing node in the middle if that is where that node most organically would sit."
+
+Options: Treat the hierarchy as settled once approved and only add at the edges; allow insertion as an ordinary move with stated evidence.
+
+Chose insertion because: the depth of the graph is discovered, not designed, and the collection would otherwise ossify at whatever shape the first pass happened to give it. No new machinery is needed: Create plus Define is what the loader already does. Given up: a child's parent can change between reads, so anything caching the hierarchy must tolerate that.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "Maintaining"; the gap watch now also looks for broad cells with no leaves and for links that span too far.
+
+
+## D39 The prose an agent writes is product prose; the example text is not
+
+Decision: In a writing style, the corpus passages and the exemplars quoted from them are the specimen and are never edited by anyone. A public-domain passage is copied character for character from its named edition; an original passage is written in-register once and is not rewritten afterwards. Everything else a reader sees — persona, register lines, moves, refusals, annotations, curator notes, the framing sentences of the VOICE.md, and an encyclopedia cell's scope text — is product prose and goes through the unspeak skill before it is attached.
+
+Came up because: The owner asked how the standing unspeak rule lands on a writing style, where an agent writes both the framing and, on an original basis, the specimen itself. An earlier wording said the specimen "must be free of the tells", which reads as a licence to clean a passage after the fact.
+
+Options: Run unspeak over everything including the specimen; exempt the whole style from it; or split the two kinds of text and say which rule governs which.
+
+Chose the split because: a corpus is evidence. Editing it would make the style's measured fingerprint describe prose nobody wrote, and on a public-domain basis it would misquote a real author. Writing an original passage clean is a rule about authorship, and it keeps a corpus from teaching the tells it carries. Given up: an original corpus written before this rule may carry tells, and correcting it means writing a new corpus rather than editing the old one.
+
+Where: `katagami-curation/agents/curator/skills/synthesize-writing-style/SKILL.md`, "Prose an agent writes here goes through unspeak"; `.agents/skills/encyclopedia/SKILL.md`, the scope-text rule.
+
+## D40 An unattended run may mint, under a stated boundary
+
+Decision: The owner may authorise a run that creates content without waiting for her numbered approval. When she does: Draft only, nothing published or deleted, every mint numbered in a morning report with its citation and one line of reasoning, consent public-domain or pipeline-original, a question written into the document rather than settled by the agent, and ledger counts that match what the coverage command prints.
+
+Came up because: The owner asked for an overnight build so she could browse the collection in the morning: "run agents overnight because I'm going to sleep to actually build out the remaining encyclopedia from the remaining sources... and create good writing styles and connect them."
+
+Options: Keep the approval discipline absolute and have the night produce proposals only; or allow minting inside a boundary that keeps every act visible and reversible.
+
+Chose the boundary because: proposals alone would have left her nothing to browse, which was the point of the night. Draft-only plus a numbered report keeps the cost of a wrong mint at one instruction, and Archive is reversible in the sense that matters: identity and history survive.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "Working unattended"; `/private/tmp/encyclopedia-passes/OVERNIGHT.md` carries the same boundary to each agent.

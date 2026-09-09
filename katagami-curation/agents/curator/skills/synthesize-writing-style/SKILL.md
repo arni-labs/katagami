@@ -217,6 +217,56 @@ Every writing style MUST attach replication before it can pass verification:
    fails verification with missing_replication or voice_bands_violation.
 Replicas are displayed in the UI labeled as replicas — never as author text.
 
+## What the collection should contain (owner brief, 2026-09-09)
+
+The nineteen styles that existed before this brief were chosen because their
+corpora were convenient, not because they mapped anything. The owner called
+that selection random. What she wants instead:
+
+- **Styles a person would actually write in today**: modern fiction and
+  nonfiction, essays and long-form blog posts, newsletters, documentation,
+  social posts. A historical register earns its place when a living writer still
+  reaches for it, not because the text was easy to obtain.
+- **Representative, not accidental.** The set should cover the space: the plain
+  and the ornate, the intimate and the institutional, the fast and the
+  considered, argument and narration and instruction. A new style is worth
+  making when it sits somewhere no existing style sits.
+- **Consent-clean by construction.** `public_domain` with the work and edition
+  named, or `original` — the pipeline authors the corpus in-register, which is
+  the only honest way to build a modern voice. Never a living author's prose,
+  never in-copyright text, never a scrape.
+- **Attached to a leaf cell.** A style manifests a manner, not a genre. If the
+  only cell that fits is broad (Fantasy fiction, Diaries), the leaf under it is
+  missing and belongs in a numbered encyclopedia batch first. See "What is and
+  is not a cell" in `.agents/skills/encyclopedia/SKILL.md`.
+
+## Prose an agent writes here goes through unspeak
+
+A writing style contains two kinds of text and they are governed differently.
+
+**The example text is never edited by anyone.** The corpus passages and the
+exemplars quoted from them, which the VOICE.md carries under "Gold standard
+samples", are the style itself. On a public-domain basis they are a real human's
+sentences, copied character for character from the named edition; nothing alters
+them, not `unspeak`, not a curator, not a later pass. On an `original` basis the
+pipeline writes them in the target register at the moment of authoring, and from
+then on they are the specimen and are not rewritten toward any other voice.
+Write an original passage free of the tells `unspeak` names, because a corpus
+carrying them teaches them; that is a rule about how you write it, never a
+licence to edit it afterwards.
+
+**Everything else is product prose**: the persona, the register lines, the moves
+and refusals, the exemplar annotations, the curator notes, and every framing
+sentence in the VOICE.md around the quoted passages. A human reads all of it on
+katagami.ai. Run it through the `unspeak` skill before attaching it, the whole
+workflow, not a glance at the word list. The owner's standing rule is that every
+user-facing sentence goes through unspeak; this is where a writing style's
+sentences are.
+
+The contrast frame "X, not Y" is banned in the product prose, and in an original
+passage at the moment you write it. A public-domain passage stands as its author
+wrote it whatever it contains.
+
 ## Names and where a style sits (owner decision, 2026-09-08; replaces the two-level shape of 2026-07-06)
 
 - **A writing style is named by the source vocabulary** the encyclopedia reads

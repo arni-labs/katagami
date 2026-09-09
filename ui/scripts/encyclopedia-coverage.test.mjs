@@ -50,6 +50,14 @@ test("a term is decided once, by name and by ref, and never more terms than the 
   assert.ok(validateSource({ ...base, terms: many }, "example.json").some((error) => error.includes("more terms")));
 });
 
+test("a row naming a cell minted from another vocabulary is tracked but is not one of the source's terms", () => {
+  const minted = { ...term, decision: "live", cellId: "regulated-verse", namedFrom: "https://en.wikipedia.org/wiki/Regulated_verse" };
+  assert.deepEqual(validateSource({ ...base, terms: [minted] }, "example.json"), []);
+  assert.deepEqual(summarize({ ...base, terms: [term, minted] }), { decided: 1, counts: { cell: 1, minted: 1 }, coverage: 0.1 });
+  assert.ok(validateSource({ ...base, terms: [{ ...minted, decision: "declined" }] }, "example.json").some((error) => error.includes("namedFrom")));
+  assert.ok(validateSource({ ...base, terms: [{ ...minted, namedFrom: "" }] }, "example.json").some((error) => error.includes("namedFrom")));
+});
+
 test("coverage is decided over total, and null totals have no coverage", () => {
   assert.deepEqual(summarize({ ...base, terms: [term, { ...term, term: "Haiku", decision: "declined" }] }), {
     decided: 2,

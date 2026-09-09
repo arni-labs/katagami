@@ -1,0 +1,58 @@
+name: tests
+
+# The suites nothing was running. A contract test asserting a marker in a skill
+# file broke in PR #277 and stayed broken through three later pull requests,
+# because no workflow ran it. These jobs only block a merge once they are named
+# as required checks in branch protection, which is a repository setting, not
+# something this file can assert. The UI jobs are green
+# on master; the writing-style contract job is red on master today and turns
+# green when the pull request that adds this file merges, which is the point.
+#
+# The wider katagami-curation contract suite is not here. Master carries 28
+# pre-existing problems in it (24 failures and 4 errors over 486 tests with the
+# dev dependency installed); this branch removes one, so 27 stay ungated. The
+# count moves with the environment, since the modules that evaluate Cedar
+# policies error rather than skip without the bindings.
+# Those belong to their own effort. Adding them here would gate every pull
+# request on breakage none of them caused.
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Read-only: these jobs run repository code and need nothing but the checkout.
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
+        working-directory: ui
+      - run: npm test
+        working-directory: ui
+      - run: npx tsc --noEmit
+        working-directory: ui
+      - name: Every source ledger validates
+        run: node scripts/encyclopedia-coverage.mjs
+
+  writing-style-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python3 -m unittest tests.test_writing_style_contract -v
+        working-directory: katagami-curation

@@ -55,6 +55,28 @@ work by multiple hands? If it names a vibe or a single artefact, it is not a
 cell. When unsure, propose it with the uncertainty stated and let the human
 decide — never mint quietly.
 
+**Cells sit at different depths, and the depth decides what can hang off them.**
+A broad cell names a genre, form or movement: Fantasy fiction, Diaries, Poetry.
+A leaf cell names a *manner* — a form plus a stance plus a period or milieu,
+narrow enough that you could write a paragraph in it and be recognised:
+"Restoration private diary", "high-fantasy chronicle narration". Both are cells;
+they differ only in how far down they sit.
+
+This matters because **a made record manifests a leaf, not a broad cell.** A
+writing style is a voice — rhythm, diction, stance — and no voice embodies
+"Fantasy fiction", which says what a book is about and how it is shelved, not
+how it sounds. So a WritingStyle attaches to the leaf under it. A design
+language or art style behaves the same way: it embodies a manner, not a whole
+movement.
+
+The controlled vocabularies stop short of the leaf. The Library of Congress,
+Wikidata and Wikipedia catalogue works, so they name genres and forms and go no
+further. Leaf cells therefore come from criticism, scholarship, prefaces and
+studies of a particular register, cited like anything else; where nothing
+citable exists, `recollected` with its fixed sentence is the honest basis. Do
+not manufacture leaves to fill a level — a leaf with no body of work behind it
+is not a cell, it is a label.
+
 Structure is recursive and deliberately incomplete. A cell can have several
 broader cells. Disconnected cells are fine. The top stays open — a few
 provisional roots, allowed to be wrong. Do not invent a tidy taxonomy to make
@@ -314,10 +336,20 @@ Rules that hold in every pass:
   writer and belongs under a cell.
 - **Scope text is ours and cites the page it was read from.** Nothing is copied:
   share-alike (Aesthetics Wiki, Wikipedia) and attribution (Artsy, Getty) sources
-  are read, decided, and cited.
-- **One cell per direction across media.** A movement that spans art and writing
-  gains a second `maps` membership, explained and cited; it never becomes a second
-  cell.
+  are read, decided, and cited. A reader sees this prose on katagami.ai, so it
+  goes through the `unspeak` skill like every other user-facing sentence: no
+  metaphor nouns, no inflated diction, no "X, not Y", no sentence that wraps its
+  point in a setup and a tail. Say what the direction is and stop.
+- **One cell per direction; a cell per form.** A movement that spans art and
+  writing gains a second `maps` membership, explained and cited, rather than a
+  second cell. But where a direction has a distinct practice in more than one
+  literary form — Gothic fiction and Gothic poetry, epistolary fiction and
+  epistolary poetry — the direction is carried by a parent and each form gets a
+  cell under it, because each has its own canon and hands. The parent is what a
+  reader looking for "the Gothic" finds. Where the practice reads as one across
+  forms, one cell is right and the forms live in its scope: Literary nonsense
+  holds Lear's verse and Carroll's prose together. The test is whether you could
+  say something about one form that is not true of the other (D36).
 - Manifestations ride along: search `credits` across all record sets at every
   status and list what exists. Most new cells will have none on day one.
 
@@ -355,6 +387,30 @@ node scripts/encyclopedia-coverage.mjs
 It validates every row and refuses a malformed ledger; `cd ui && npm test` runs
 the same check. Write a row when you decide, not when you report.
 
+## Working unattended
+
+The approval discipline above is the default and it stands. The owner may
+authorise a run that mints without waiting for her numbers — she did so on
+2026-09-09 for an overnight build. When she does, these hold and are not
+negotiable by the agent:
+
+- **Draft only.** Nothing is published. Nothing is deleted. Archive is the only
+  removal and it is reserved for the owner's morning decisions.
+- **Everything minted is numbered and reported.** A run ends with a report that
+  lists every cell, link and record it created, each with a number, its
+  citation, and the one line of reasoning that put it there. Striking any of them
+  must cost the owner one instruction.
+- **Consent stays clean.** Corpora are public domain with the work and edition
+  named, or authored by the pipeline in-register. No in-copyright text, no
+  living author's prose, nothing that would need a permission we do not hold.
+- **Uncertainty is recorded, not resolved.** A borderline cell is minted with its
+  question in the document, or deferred. An agent working alone does not get to
+  settle a question it would have asked; it writes the question down.
+- **The ledgers stay true.** A row goes in when the decision is made, and the
+  morning report's counts must equal what `encyclopedia-coverage.mjs` prints.
+
+Autonomy is a change in when the human looks, never in what may be built.
+
 ## Maintaining
 
 - **Integrity sweep**: every cell's attestation pair *and* that its document
@@ -363,8 +419,22 @@ the same check. Write a row when you decide, not when you report.
   sources still answer. Dangling links are the
   failure this collection accumulates.
 - **Gap watch**: maps with no cells, cells with no manifestations, recollected
-  cells that could now be cited, clusters of made work with no cell over them.
-  These become the next proposal, not a quiet fix.
+  cells that could now be cited, clusters of made work with no cell over them,
+  broad cells whose only children are broad (the leaf layer is missing under
+  them), and `broader` links that span a distance a reader would not accept in
+  one step. These become the next proposal, not a quiet fix.
+- **Inserting a cell between a parent and a child.** The collection is expected
+  to deepen: a pass discovers that something belongs between two cells that are
+  already linked. Create the middle cell with `broader` naming the old parent,
+  then `Define` the child with `broader` naming the middle cell. The child's old
+  link to the grandparent is dropped, because the grandparent is still reached
+  through the middle; keep both only when the grandparent is a genuinely
+  separate parent for a separate reason, and say which reason. The new links
+  need their own explanations and citations — a child's old explanation of why
+  it sat under the grandparent does not describe why it now sits under the
+  middle. Both operations go in one numbered batch so the graph is never
+  approved half-rewired, and the same rule holds in the other direction: a new
+  root over an existing root, or a leaf under an existing leaf.
 - **Finding manifestations**: search records' `credits`, not their names. A
   record declares its lineage there (`{kind: "movement", name: "French
   Impressionism"}`), across every status — Draft, UnderReview, Published all

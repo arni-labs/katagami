@@ -544,8 +544,571 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026002",
       "decision": "merge",
       "batch": "B6",
-      "note": "Same direction as the live cell victorian-literary-nonsense, which pass 0 is revising to Literary nonsense (new id literary-nonsense): one cell for verse and prose together, citing LCGFT Nonsense fiction, LCGFT Nonsense verse and https://en.wikipedia.org/wiki/Literary_nonsense. LCGFT splits the direction by form and has no umbrella heading, so the Wikipedia name is the nearest source name.",
+      "note": "Same direction as the live cell victorian-literary-nonsense, which pass 0 is revising to Literary nonsense (new id literary-nonsense): one cell for verse and prose together, citing LCGFT Nonsense fiction, LCGFT Nonsense verse and https://en.wikipedia.org/wiki/Literary_nonsense. LCGFT splits the direction by form and has no umbrella heading, so the Wikipedia name is the nearest source name. Kept as one cell under D36's test: the sources treat Lear's verse and Carroll's prose as one tradition, so there is nothing true of one form and not the other.",
       "cellId": "literary-nonsense"
+    },
+    {
+      "term": "Alcaics",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026065",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Alcaic stanza of Alcaeus and Horace, imitated by Hölderlin and Tennyson; proposal B8 #5. Written and attested 2026-09-09.",
+      "cellId": "alcaics"
+    },
+    {
+      "term": "Anacreontic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026221",
+      "decision": "live",
+      "batch": "B8",
+      "note": "tradition: verse in the manner of Anacreon, from the Anacreontea to the European revival after 1550; proposal B8 #6. Written and attested 2026-09-09.",
+      "cellId": "anacreontic-poetry"
+    },
+    {
+      "term": "Animal poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026123",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "subject-defined (animals)"
+    },
+    {
+      "term": "Aromantic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026005",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "subject-defined (aromantic characters and themes)"
+    },
+    {
+      "term": "Ballades (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026235",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Old French ballade, three stanzas and an envoy; proposal B8 #7. Written and attested 2026-09-09.",
+      "cellId": "ballades-poetry"
+    },
+    {
+      "term": "Bathetic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026236",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "a quality judgement (verse that fails into bathos); the anthologies of bad verse collect failures for amusement and describe no practice"
+    },
+    {
+      "term": "Bawdy poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026238",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "a tone and subject label (lewd verse)"
+    },
+    {
+      "term": "Biker poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026001",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "subject- and audience-defined (motorcycling life)"
+    },
+    {
+      "term": "Biographical poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026247",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "subject-defined (a real person's life); Autobiographical poetry and Verse hagiographies sit under it and are decided on their own"
+    },
+    {
+      "term": "Blank verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026249",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: unrhymed regular metre, usually iambic pentameter; nests under Iambic poetry; proposal B8 #2. Written and attested 2026-09-09.",
+      "cellId": "blank-verse"
+    },
+    {
+      "term": "Blues poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026250",
+      "decision": "live",
+      "batch": "B8",
+      "note": "tradition: verse in the form and matter of the blues, from oral tradition through Langston Hughes; proposal B8 #45. Written and attested 2026-09-09.",
+      "cellId": "blues-poetry"
+    },
+    {
+      "term": "Bop (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026253",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: Weaver's three-stanza refrain form from Cave Canem; flagged as young; proposal B8 #47. Written and attested 2026-09-09.",
+      "cellId": "bop-poetry"
+    },
+    {
+      "term": "Centos",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026257",
+      "decision": "live",
+      "batch": "B8",
+      "note": "technique: poems assembled from other poets' lines; nests under Pastiches (Literature); proposal B8 #21. Written and attested 2026-09-09.",
+      "cellId": "centos"
+    },
+    {
+      "term": "Christmas poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026014",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "occasion-defined"
+    },
+    {
+      "term": "Cinquains",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026260",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the five-line poem, fixed by Adelaide Crapsey's syllabic cinquain; proposal B8 #8. Written and attested 2026-09-09.",
+      "cellId": "cinquains"
+    },
+    {
+      "term": "Debate poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026276",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the verse debate referred to a judge, from Sumer to the medieval débat and tenso; proposal B8 #16. Written and attested 2026-09-09.",
+      "cellId": "debate-poetry"
+    },
+    {
+      "term": "Decimas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026277",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Spanish ten-line octosyllabic stanza, the espinela; proposal B8 #12. Written and attested 2026-09-09.",
+      "cellId": "decimas"
+    },
+    {
+      "term": "Descorts",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026278",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the troubadour descort of deliberately unlike stanzas; proposal B8 #15. Written and attested 2026-09-09.",
+      "cellId": "descorts"
+    },
+    {
+      "term": "Dialect poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026284",
+      "decision": "live",
+      "batch": "B8",
+      "note": "technique: verse in regional or class speech, from Burns to Dunbar; stands apart from Dialect fiction, question raised; proposal B8 #18. Written and attested 2026-09-09.",
+      "cellId": "dialect-poetry"
+    },
+    {
+      "term": "Didactic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026289",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "a purpose label (meant to instruct); its LCGFT child Georgics will stand on its own when its slice is read"
+    },
+    {
+      "term": "Documentary poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2023026067",
+      "decision": "live",
+      "batch": "B8",
+      "note": "technique: poems built from primary documents (Rukeyser's Book of the Dead onward); proposal B8 #23. Written and attested 2026-09-09.",
+      "cellId": "documentary-poetry"
+    },
+    {
+      "term": "Doggerel",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026293",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "a quality judgement (badly made or deliberately rough verse); the deliberate rough forms inside it, Skeltonic verse for one, have LCGFT headings of their own"
+    },
+    {
+      "term": "Domestic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026084",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "subject-defined (home and family life)"
+    },
+    {
+      "term": "Double dactyls",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026296",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: Hecht and Pascal's 1951 light-verse form in two dactylic quatrains; proposal B8 #9. Written and attested 2026-09-09.",
+      "cellId": "double-dactyls"
+    },
+    {
+      "term": "Easter poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026052",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "occasion-defined"
+    },
+    {
+      "term": "Echo verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026304",
+      "decision": "live",
+      "batch": "B8",
+      "note": "technique: the echo rhyme that answers a line, a Renaissance and pastoral device; proposal B8 #10. Written and attested 2026-09-09.",
+      "cellId": "echo-verse"
+    },
+    {
+      "term": "Ekphrastic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026306",
+      "decision": "live",
+      "batch": "B8",
+      "note": "technique: poems on works of visual art, from Homer's shield to Keats's urn; proposal B8 #24. Written and attested 2026-09-09.",
+      "cellId": "ekphrastic-poetry"
+    },
+    {
+      "term": "Englyns",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026308",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Welsh strict-metre tercet or quatrain; proposal B8 #11. Written and attested 2026-09-09.",
+      "cellId": "englyns"
+    },
+    {
+      "term": "Epistolary poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026315",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the verse epistle of Horace, Ovid and Pope; stands apart from Epistolary fiction, question raised; proposal B8 #17. Written and attested 2026-09-09.",
+      "cellId": "epistolary-poetry"
+    },
+    {
+      "term": "Erotic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026321",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "subject-defined (sexual love)"
+    },
+    {
+      "term": "Experimental poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026326",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "an umbrella defined relative to its era, as pass 1 declined Experimental fiction; its LCGFT children Concrete poetry and Computer poetry are the cells (Computer poetry under the live Computer-generated literature)"
+    },
+    {
+      "term": "Fantasy poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026334",
+      "decision": "deferred",
+      "batch": "B8",
+      "note": "Deferred, not declined: D36 gives a tradition that lives in prose and in verse a cell per form under a shared parent, so this returns once the parent over the fiction cell exists."
+    },
+    {
+      "term": "Folk poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026343",
+      "decision": "live",
+      "batch": "B8",
+      "note": "tradition: oral verse; nests under Folk literature, LCGFT parent of Cowboy poetry, Toasts and Hahiwang; proposal B8 #27. Written and attested 2026-09-09.",
+      "cellId": "folk-poetry"
+    },
+    {
+      "term": "Found poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026346",
+      "decision": "live",
+      "batch": "B8",
+      "note": "technique: reframing existing text as poetry; LCGFT parent of Erasure poetry; proposal B8 #22. Written and attested 2026-09-09.",
+      "cellId": "found-poetry"
+    },
+    {
+      "term": "Free verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026348",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: verse without regular metre, from French vers libre through Imagism to the dominant modern form; LCGFT parent of Renshi; proposal B8 #3. Written and attested 2026-09-09.",
+      "cellId": "free-verse"
+    },
+    {
+      "term": "Fu",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026349",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Han rhapsody, rhymed exhaustive description between verse and prose; proposal B8 #31. Written and attested 2026-09-09.",
+      "cellId": "fu"
+    },
+    {
+      "term": "Ghazals (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026355",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the couplet-and-refrain lyric of Arabic, Persian and Urdu poetry; proposal B8 #40. Written and attested 2026-09-09.",
+      "cellId": "ghazals-poetry"
+    },
+    {
+      "term": "Glosas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026358",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Spanish glosa, stanzas that gloss and repeat a borrowed opening; proposal B8 #14. Written and attested 2026-09-09.",
+      "cellId": "glosas"
+    },
+    {
+      "term": "Gnomic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026359",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the versified maxim of the Greek gnomic poets and the Old English Maxims; flagged; proposal B8 #25. Written and attested 2026-09-09.",
+      "cellId": "gnomic-poetry"
+    },
+    {
+      "term": "Gothic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026361",
+      "decision": "deferred",
+      "batch": "B8",
+      "note": "Proposed as a merge into Gothic fiction; the owner ruled separate cells with a shared parent, so this returns as its own cell under a Gothic literature parent in a later batch."
+    },
+    {
+      "term": "Graveyard poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026364",
+      "decision": "live",
+      "batch": "B8",
+      "note": "tradition: the eighteenth-century Graveyard school, precursor of the Gothic; proposal B8 #48. Written and attested 2026-09-09.",
+      "cellId": "graveyard-poetry"
+    },
+    {
+      "term": "Haiku",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026366",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Japanese seventeen-sound poem, from hokku to Shiki and English haiku; proposal B8 #29. Written and attested 2026-09-09.",
+      "cellId": "haiku"
+    },
+    {
+      "term": "Historical poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026371",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "setting-defined (a past period)"
+    },
+    {
+      "term": "Horror poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026375",
+      "decision": "deferred",
+      "batch": "B8",
+      "note": "Deferred, not declined: D36 gives a tradition that lives in prose and in verse a cell per form under a shared parent, so this returns once the parent over the fiction cell exists."
+    },
+    {
+      "term": "Humorous poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026379",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "a tone umbrella, as pass 1 declined Humorous fiction; the forms LCGFT files under it (Limericks, Clerihews, Senryu, Nonsense verse, Verse satire) are decided on their own, Nonsense verse already in the live Literary nonsense"
+    },
+    {
+      "term": "Hyangga",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026380",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the earliest Korean-language poems, written in hyangchal; proposal B8 #35. Written and attested 2026-09-09.",
+      "cellId": "hyangga"
+    },
+    {
+      "term": "Hypertext poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026382",
+      "decision": "live",
+      "batch": "B8",
+      "note": "technique: screen-composed poetry (digital poetry at large); stands apart from Hypertext fiction, question raised; proposal B8 #50. Written and attested 2026-09-09.",
+      "cellId": "hypertext-poetry"
+    },
+    {
+      "term": "Iambic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026383",
+      "decision": "live",
+      "batch": "B8",
+      "note": "technique: the iambic metre, LCGFT's parent for Alexandrines and Rhyme royal; proposed parent of Blank verse; proposal B8 #1. Written and attested 2026-09-09.",
+      "cellId": "iambic-poetry"
+    },
+    {
+      "term": "Imagist poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026384",
+      "decision": "merge",
+      "batch": "B8",
+      "note": "Same direction as the live cell Imagism, which already cites this LCGFT page as a source; nothing to add beyond confirming the pointer.",
+      "cellId": "imagism"
+    },
+    {
+      "term": "Irohauta",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026387",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Japanese pangram poem (Iroha, Ametsuchi no Uta); flagged for its small body; proposal B8 #30. Written and attested 2026-09-09.",
+      "cellId": "irohauta"
+    },
+    {
+      "term": "Jazz poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026390",
+      "decision": "live",
+      "batch": "B8",
+      "note": "tradition: jazz-rhythmed verse from the Harlem Renaissance through the Beats and Black Arts; proposal B8 #46. Written and attested 2026-09-09.",
+      "cellId": "jazz-poetry"
+    },
+    {
+      "term": "Jue ju",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026392",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the regulated Chinese quatrain; nests under the proposed Regulated verse; proposal B8 #33. Written and attested 2026-09-09.",
+      "cellId": "jue-ju"
+    },
+    {
+      "term": "Kafas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026394",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the medieval Armenian monorhymed quatrain poem; independent reference is an open-access Armeniaca article; proposal B8 #37. Written and attested 2026-09-09.",
+      "cellId": "kafas"
+    },
+    {
+      "term": "Kasa",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026396",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the long Korean parallel-line poem of the Joseon period; proposal B8 #36. Written and attested 2026-09-09.",
+      "cellId": "kasa"
+    },
+    {
+      "term": "Koridos",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026054",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Philippine metrical romance in octosyllabic quatrains; proposal B8 #38. Written and attested 2026-09-09.",
+      "cellId": "koridos"
+    },
+    {
+      "term": "Kāfī (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026395",
+      "decision": "live",
+      "batch": "B8",
+      "note": "tradition: the sung Sufi kafi of Punjab and Sindh; proposal B8 #44. Written and attested 2026-09-09.",
+      "cellId": "kafi-poetry"
+    },
+    {
+      "term": "Laments",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026400",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the non-narrative grief poem of oral tradition, Sumer to Deor; flagged; proposal B8 #26. Written and attested 2026-09-09.",
+      "cellId": "laments"
+    },
+    {
+      "term": "Language poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026401",
+      "decision": "live",
+      "batch": "B8",
+      "note": "movement: the L=A=N=G=U=A=G=E poets of the 1970s onward; proposal B8 #49. Written and attested 2026-09-09.",
+      "cellId": "language-poetry"
+    },
+    {
+      "term": "Laudatory poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026403",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "a purpose label (praise); the classical genres it lists as variants (encomia, epinicia, panegyrics) have no LCGFT heading of their own"
+    },
+    {
+      "term": "Lilit",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026039",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Thai alternation of rai and khlong; proposal B8 #39. Written and attested 2026-09-09.",
+      "cellId": "lilit"
+    },
+    {
+      "term": "Linked verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026413",
+      "decision": "live",
+      "batch": "B8",
+      "note": "technique: collaborative stanza-by-stanza composition; LCGFT parent of Renga, Rengay, Renku and Renshi; proposal B8 #28. Written and attested 2026-09-09.",
+      "cellId": "linked-verse"
+    },
+    {
+      "term": "Liras",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026414",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the five-line Spanish stanza of Garcilaso and Fray Luis de León; proposal B8 #13. Written and attested 2026-09-09.",
+      "cellId": "liras"
+    },
+    {
+      "term": "Love poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026419",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "subject-defined; LCGFT's own source distinguishes it from erotic poetry by subject alone"
+    },
+    {
+      "term": "Lyric poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026422",
+      "decision": "live",
+      "batch": "B8",
+      "note": "mode: LCGFT's parent for Sonnets, Odes, Elegies and eight more forms; proposed as a nesting parent, flagged as a category; proposal B8 #4. Written and attested 2026-09-09.",
+      "cellId": "lyric-poetry"
+    },
+    {
+      "term": "Lü shi",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026420",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: eight-line Chinese regulated verse of the Tang; nests under the proposed Regulated verse; proposal B8 #34. Written and attested 2026-09-09.",
+      "cellId": "lu-shi"
+    },
+    {
+      "term": "Macaronic verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026423",
+      "decision": "live",
+      "batch": "B8",
+      "note": "technique: verse that mixes languages, from the Carmina Burana and Odasi's Macaronea onward; proposal B8 #19. Written and attested 2026-09-09.",
+      "cellId": "macaronic-verse"
+    },
+    {
+      "term": "Masnavis",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026427",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Persian rhyming-couplet long poem; proposal B8 #41. Written and attested 2026-09-09.",
+      "cellId": "masnavis"
+    },
+    {
+      "term": "Micropoetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026017",
+      "decision": "deferred",
+      "batch": "B8",
+      "note": "A length label coined for microblogging (2009) with Sebald's micropoems as a precedent; Wikipedia treats it as a genre but its only rule is the platform's character limit, and no source describes conventions beyond brevity. Revisit if a body of work with its own manner appears."
+    },
+    {
+      "term": "Monostichs",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026441",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the one-line poem, from the Greek epigram to Apollinaire's Chantre; proposal B8 #20. Written and attested 2026-09-09.",
+      "cellId": "monostichs"
+    },
+    {
+      "term": "Muwashshaḥāt",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026445",
+      "decision": "live",
+      "batch": "B8",
+      "note": "form: the Andalusi girdle poem; proposal B8 #42. Written and attested 2026-09-09.",
+      "cellId": "muwashshahat"
+    },
+    {
+      "term": "Muʻāraḍāt",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026443",
+      "decision": "live",
+      "batch": "B8",
+      "note": "technique: the answering poem in a model's metre and rhyme; proposal B8 #43. Written and attested 2026-09-09.",
+      "cellId": "muaradat"
+    },
+    {
+      "term": "Mythological poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2017026055",
+      "decision": "declined",
+      "batch": "B8",
+      "note": "subject-defined (myth retold)"
+    },
+    {
+      "term": "Regulated verse",
+      "ref": "https://en.wikipedia.org/wiki/Regulated_verse",
+      "decision": "live",
+      "cellId": "regulated-verse",
+      "batch": "B8",
+      "note": "Minted in this pass as the parent Jue ju and Lu shi both need; LCGFT has no heading for it, so the name is Wikipedia's. Written and attested 2026-09-09.",
+      "namedFrom": "https://en.wikipedia.org/wiki/Regulated_verse"
     }
   ]
 }
