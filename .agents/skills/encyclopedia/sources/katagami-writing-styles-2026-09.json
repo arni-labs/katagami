@@ -93,7 +93,7 @@
       "ref": "https://openpaw-production.up.railway.app/tdata/WritingStyles('en-019f2eec-ce55-73f1-a4d7-bc0e5daed02b')",
       "decision": "revise",
       "batch": "B5",
-      "note": "[UnderReview] One writer, honestly named, but the record contradicts itself: name and credits say the Casaubon translation (1634, Gutenberg 2680) while the corpus manifest labels all three excerpts 'Long translation, 1862'. The exemplar wording ('Betimes in the morning say to thyself') is Casaubon's, so fix the manifest labels. The old cell stoic-aphoristic-self-address is archived (B5 item 24); attach under Meditations (LCGFT gf2015026056), whose scope note reads devotional, so the fit is flagged uncertain; Sayings (gf2014026170) is the alternative. Defect recorded as a curator note 2026-09-08; manifest re-attached with the Meditations cell. Cell not yet created; attach when its LCGFT pass lands.",
+      "note": "[UnderReview] One writer, honestly named, but the record contradicts itself: name and credits say the Casaubon translation (1634, Gutenberg 2680) while the corpus manifest labels all three excerpts 'Long translation, 1862'. The exemplar wording ('Betimes in the morning say to thyself') is Casaubon's, so fix the manifest labels. The old cell stoic-aphoristic-self-address is archived (B5 item 24); attach under Meditations (LCGFT gf2015026056), whose scope note reads devotional, so the fit is flagged uncertain; Sayings (gf2014026170) is the alternative. Defect recorded as a curator note 2026-09-08; the Meditations cell (LCGFT gf2015026056) does not exist yet; the pass that creates it re-attaches this corpus with corrected labels and attaches the record. Cell not yet created; attach when its LCGFT pass lands.",
       "cellId": "meditations"
     },
     {
