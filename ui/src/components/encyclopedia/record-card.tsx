@@ -30,6 +30,7 @@ export function RecordCard({
   cell,
   index,
   at,
+  cellAt,
   room,
   onClose,
   onFocusCell,
