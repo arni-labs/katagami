@@ -105,6 +105,84 @@ function plateRect(p: PlateNode) {
   return { x: p.x - p.w / 2, y: p.y - p.h / 2, w: p.w, h: p.h };
 }
 
+/** A uniform grid over the paper, over points held in typed arrays. Every
+ *  pass below only cares about pairs closer together than a known reach; with
+ *  the points bucketed at that reach, each one compares against its
+ *  neighbours instead of against everything, and the layout stays linear in
+ *  the number of points. A thousand cells settle in milliseconds where the
+ *  pairwise sweep needed hundreds of millions of comparisons and froze the
+ *  tab. Rebuilt in place each iteration so the passes allocate nothing. */
+class PointGrid {
+  private readonly buckets = new Map<number, number[]>();
+  private xs: Float64Array = new Float64Array(0);
+  private ys: Float64Array = new Float64Array(0);
+
+  constructor(private readonly size: number, private readonly count: number) {}
+
+  /** Bucket index for a point. A coordinate far outside the paper clamps into
+   *  an edge bucket: that only ever puts more candidates in front of the exact
+   *  check, never fewer. */
+  private key(x: number, y: number): number {
+    const cx = Math.min(20000, Math.max(-20000, Math.floor(x / this.size)));
+    const cy = Math.min(20000, Math.max(-20000, Math.floor(y / this.size)));
+    return (cx + 20000) * 40001 + (cy + 20000);
+  }
+
+  rebuild(xs: Float64Array, ys: Float64Array): void {
+    this.xs = xs; this.ys = ys;
+    for (const bucket of this.buckets.values()) bucket.length = 0;
+    for (let i = 0; i < this.count; i++) {
+      const key = this.key(xs[i], ys[i]);
+      const bucket = this.buckets.get(key);
+      if (bucket) bucket.push(i);
+      else this.buckets.set(key, [i]);
+    }
+  }
+
+  /** Writes the indices in the nine buckets around a point into `out` — a
+   *  superset of everything within `size` of it — and returns how many. */
+  near(x: number, y: number, out: Int32Array): number {
+    let n = 0;
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const bucket = this.buckets.get(this.key(x + dx * this.size, y + dy * this.size));
+        if (!bucket) continue;
+        for (const i of bucket) { if (n < out.length) out[n++] = i; }
+      }
+    }
+    return n;
+  }
+
+  /** The point nearest to index `self` among its neighbouring buckets, or -1
+   *  when nothing is close enough to matter. */
+  nearest(self: number, out: Int32Array): number {
+    const found = this.near(this.xs[self], this.ys[self], out);
+    let best = -1;
+    let bestD = Infinity;
+    for (let q = 0; q < found; q++) {
+      const i = out[q];
+      if (i === self) continue;
+      const d = Math.hypot(this.xs[i] - this.xs[self], this.ys[i] - this.ys[self]);
+      if (d < bestD || (d === bestD && i < best)) { bestD = d; best = i; }
+    }
+    return best;
+  }
+}
+
+/** Min/max over a list without spreading it into an argument list: at a
+ *  thousand cells the satellite array is long enough for `Math.min(...list)`
+ *  to be a stack risk. */
+function extent<T>(items: readonly T[], value: (item: T) => number): { min: number; max: number } {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const item of items) {
+    const v = value(item);
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  return { min, max };
+}
+
 export function layoutGraph(index: GraphIndex): GraphLayout {
   const cells = index.graph.cells;
   const plates = new Map<string, PlateNode>();
@@ -144,8 +222,16 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
       placed.add(cell.id);
       i++;
     };
-    // Depth-first so children land next to their parent in the grid.
-    const visit = (cell: EncyclopediaCell) => { put(cell); for (const kid of index.childrenOf(cell.id)) if (index.primaryMap(kid) === shape.map) visit(kid); };
+    // Depth-first so children land next to their parent in the grid. `broader`
+    // is data, not a proven tree: a cell may name a descendant as its parent,
+    // and C → B → A → B would otherwise recurse until the stack gave out and
+    // the page came up blank. Placement is the visit mark, so each cell is
+    // walked once whatever shape the links make.
+    const visit = (cell: EncyclopediaCell) => {
+      if (placed.has(cell.id)) return;
+      put(cell);
+      for (const kid of index.childrenOf(cell.id)) if (index.primaryMap(kid) === shape.map) visit(kid);
+    };
     roots.forEach(visit);
     shape.members.forEach(put);
     regions.push({ map: shape.map, x: originX - GRID_X / 2, y: originY - GRID_Y / 2, w: shape.w, h: shape.h, count: shape.members.length });
@@ -167,129 +253,209 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
     for (const link of cell.broader) { const other = plates.get(link.cellId); if (other) edges.push([plates.get(cell.id)!, other]); }
     for (const rel of cell.relations) { const other = plates.get(rel.cellId); if (other) edges.push([plates.get(cell.id)!, other]); }
   }
+  // Both plate passes below only act on pairs closer than the larger of
+  // (footW(A) + footW(B)) / 2 + 80 and the same in y — never more than one
+  // widest footprint plus 80. Bucket the paper at exactly that reach and the
+  // nine buckets around a plate hold every plate it can push against. The
+  // positions and forces live in typed arrays for the duration: at a thousand
+  // cells the per-iteration maps cost more than the arithmetic did.
+  const count = nodes.length;
+  const px = new Float64Array(count);
+  const py = new Float64Array(count);
+  const fw = new Float64Array(count);
+  const fh = new Float64Array(count);
+  const gx = new Float64Array(count);
+  const gy = new Float64Array(count);
+  const rank = new Map<PlateNode, number>();
+  let widestFoot = 0;
+  nodes.forEach((n, i) => {
+    rank.set(n, i);
+    px[i] = n.x; py[i] = n.y;
+    fw[i] = footW(n); fh[i] = footH(n);
+    const c = centres.get(index.primaryMap(n.cell))!;
+    gx[i] = c.x; gy[i] = c.y;
+    widestFoot = Math.max(widestFoot, fw[i], fh[i]);
+  });
+  const plateReach = Math.max(120, widestFoot + 80);
+  const grid = new PointGrid(plateReach, count);
+  const near = new Int32Array(count);
+  const edgeA = new Int32Array(edges.length);
+  const edgeB = new Int32Array(edges.length);
+  edges.forEach(([a, b], i) => { edgeA[i] = rank.get(a)!; edgeB[i] = rank.get(b)!; });
+
+  const fx = new Float64Array(count);
+  const fy = new Float64Array(count);
   const REST = 560;
   for (let iter = 0; iter < 260; iter++) {
     const t = 1 - iter / 260;
     const step = 0.12 * t + 0.02;
-    const fx = new Map<string, number>();
-    const fy = new Map<string, number>();
-    for (const n of nodes) { fx.set(n.id, 0); fy.set(n.id, 0); }
+    fx.fill(0); fy.fill(0);
     // Repulsion between plates (short range).
-    for (let a = 0; a < nodes.length; a++) {
-      for (let b = a + 1; b < nodes.length; b++) {
-        const A = nodes[a]; const B = nodes[b];
-        let dx = B.x - A.x; let dy = B.y - A.y;
+    grid.rebuild(px, py);
+    for (let a = 0; a < count; a++) {
+      const found = grid.near(px[a], py[a], near);
+      for (let q = 0; q < found; q++) {
+        const b = near[q];
+        // Each unordered pair is handled once, by the earlier of the two.
+        if (b <= a) continue;
+        let dx = px[b] - px[a]; let dy = py[b] - py[a];
         const d = Math.hypot(dx, dy) || 1;
-        const reach = (footW(A) + footW(B)) / 2 + 80;
+        const reach = (fw[a] + fw[b]) / 2 + 80;
         if (d > reach) continue;
         dx /= d; dy /= d;
         const f = (reach - d) * 0.9;
-        fx.set(A.id, fx.get(A.id)! - dx * f); fy.set(A.id, fy.get(A.id)! - dy * f);
-        fx.set(B.id, fx.get(B.id)! + dx * f); fy.set(B.id, fy.get(B.id)! + dy * f);
+        fx[a] -= dx * f; fy[a] -= dy * f;
+        fx[b] += dx * f; fy[b] += dy * f;
       }
     }
     // Springs along edges.
-    for (const [A, B] of edges) {
-      let dx = B.x - A.x; let dy = B.y - A.y;
+    for (let e = 0; e < edgeA.length; e++) {
+      const a = edgeA[e]; const b = edgeB[e];
+      let dx = px[b] - px[a]; let dy = py[b] - py[a];
       const d = Math.hypot(dx, dy) || 1;
       dx /= d; dy /= d;
       const f = (d - REST) * 0.35;
-      fx.set(A.id, fx.get(A.id)! + dx * f); fy.set(A.id, fy.get(A.id)! + dy * f);
-      fx.set(B.id, fx.get(B.id)! - dx * f); fy.set(B.id, fy.get(B.id)! - dy * f);
+      fx[a] += dx * f; fy[a] += dy * f;
+      fx[b] -= dx * f; fy[b] -= dy * f;
     }
     // Gravity to the map's centre keeps regions apart and roughly square.
-    for (const n of nodes) {
-      const c = centres.get(index.primaryMap(n.cell))!;
-      fx.set(n.id, fx.get(n.id)! + (c.x - n.x) * 0.05);
-      fy.set(n.id, fy.get(n.id)! + (c.y - n.y) * 0.05);
+    for (let i = 0; i < count; i++) {
+      fx[i] += (gx[i] - px[i]) * 0.05;
+      fy[i] += (gy[i] - py[i]) * 0.05;
     }
-    for (const n of nodes) { n.x += fx.get(n.id)! * step; n.y += fy.get(n.id)! * step; }
+    for (let i = 0; i < count; i++) { px[i] += fx[i] * step; py[i] += fy[i] * step; }
   }
 
   // ── separate footprints (plate + its ring of satellites) ─────────────
-  for (let iter = 0; iter < 120; iter++) {
+  // Every pass is now cheap, so the sweep runs until nothing overlaps rather
+  // than stopping at a fixed count and leaving plates on top of each other.
+  // The cap is a guard against a configuration that cannot settle, not the
+  // expected exit: at a hundred cells this clears in a handful of passes, and
+  // a synthetic thousand clears well inside it.
+  for (let iter = 0; iter < 4000; iter++) {
     let moved = false;
-    for (let a = 0; a < nodes.length; a++) {
-      for (let b = a + 1; b < nodes.length; b++) {
-        const A = nodes[a]; const B = nodes[b];
-        const dx = B.x - A.x; const dy = B.y - A.y;
-        const ox = (footW(A) + footW(B)) / 2 + 24 - Math.abs(dx);
-        const oy = (footH(A) + footH(B)) / 2 + 24 - Math.abs(dy);
+    grid.rebuild(px, py);
+    for (let a = 0; a < count; a++) {
+      const found = grid.near(px[a], py[a], near);
+      for (let q = 0; q < found; q++) {
+        const b = near[q];
+        if (b <= a) continue;
+        const dx = px[b] - px[a]; const dy = py[b] - py[a];
+        const ox = (fw[a] + fw[b]) / 2 + 24 - Math.abs(dx);
+        const oy = (fh[a] + fh[b]) / 2 + 24 - Math.abs(dy);
         if (ox <= 0 || oy <= 0) continue;
         moved = true;
-        if (ox < oy) { const s = (ox / 2 + 1) * (dx >= 0 ? 1 : -1); A.x -= s; B.x += s; }
-        else { const s = (oy / 2 + 1) * (dy >= 0 ? 1 : -1); A.y -= s; B.y += s; }
+        if (ox < oy) { const sh = (ox / 2 + 1) * (dx >= 0 ? 1 : -1); px[a] -= sh; px[b] += sh; }
+        else { const sh = (oy / 2 + 1) * (dy >= 0 ? 1 : -1); py[a] -= sh; py[b] += sh; }
       }
     }
     if (!moved) break;
   }
+  for (let i = 0; i < count; i++) { nodes[i].x = px[i]; nodes[i].y = py[i]; }
 
   // Snap positions to whole pixels so the SVG and the cards agree.
   for (const n of nodes) { n.x = Math.round(n.x); n.y = Math.round(n.y); }
 
   // ── satellites on a ring, facing away from the nearest other plate ───
+  // The plates are settled and snapped, so one grid over them serves both the
+  // ring direction below and the satellite separation after it.
+  grid.rebuild(px, py);
   const satellites: SatelliteNode[] = [];
-  for (const n of nodes) {
+  for (let i = 0; i < count; i++) {
+    const n = nodes[i];
     const list = n.cell.manifestations;
     if (!list.length) continue;
     const shown = Math.min(MAX_SATELLITES, list.length);
     const extra = list.length - shown;
-    const count = shown + (extra > 0 ? 1 : 0);
-    // Open the ring on the side away from the closest neighbour.
-    let nearest: PlateNode | null = null; let best = Infinity;
-    for (const o of nodes) { if (o === n) continue; const d = Math.hypot(o.x - n.x, o.y - n.y); if (d < best) { best = d; nearest = o; } }
-    const away = nearest ? Math.atan2(n.y - nearest.y, n.x - nearest.x) : -Math.PI / 2;
-    const arc = count <= 3 ? Math.PI * 0.8 : Math.PI * 1.6;
-    for (let i = 0; i < count; i++) {
-      const angle = count === 1 ? away : away - arc / 2 + (arc * i) / (count - 1);
+    const ring = shown + (extra > 0 ? 1 : 0);
+    // Open the ring on the side away from the closest neighbour. Only plates
+    // near enough to crowd the ring matter, so the search stays local; a plate
+    // alone in its part of the paper has nothing to lean away from and opens
+    // its ring upward.
+    const nearestAt = grid.nearest(i, near);
+    const away = nearestAt >= 0 ? Math.atan2(n.y - nodes[nearestAt].y, n.x - nodes[nearestAt].x) : -Math.PI / 2;
+    const arc = ring <= 3 ? Math.PI * 0.8 : Math.PI * 1.6;
+    for (let j = 0; j < ring; j++) {
+      const angle = ring === 1 ? away : away - arc / 2 + (arc * j) / (ring - 1);
       // Stretch the ring to the plate's proportions.
       const x = Math.round(n.x + Math.cos(angle) * ringX(n));
       const y = Math.round(n.y + Math.sin(angle) * ringY(n));
-      const isMore = extra > 0 && i === count - 1;
-      const m = isMore ? list[shown - 1] : list[i];
-      satellites.push({ kind: "satellite", id: isMore ? `${n.id}~more` : `${n.id}~${i}`, cellId: n.id, set: m.entitySet, index: isMore ? -1 : i, more: isMore ? extra : 0, x, y });
+      const isMore = extra > 0 && j === ring - 1;
+      // The overflow node stands for the records past the ring, so it takes
+      // the set of the first of them rather than repeating the last one drawn.
+      const m = isMore ? list[shown] : list[j];
+      satellites.push({ kind: "satellite", id: isMore ? `${n.id}~more` : `${n.id}~${j}`, cellId: n.id, set: m.entitySet, index: isMore ? -1 : j, more: isMore ? extra : 0, x, y });
     }
   }
-  // Push satellites out of plates and off each other.
+
+  // Push satellites out of plates and off each other. A satellite only ever
+  // touches a plate whose half-box plus its own reaches it, and only ever
+  // touches another satellite within one satellite plus the gap, so both are
+  // bucketed at those reaches — nine thousand satellites would otherwise be
+  // eighty passes over eighty million pairs.
+  const satCount = satellites.length;
+  const sx = new Float64Array(satCount);
+  const sy = new Float64Array(satCount);
+  satellites.forEach((s, i) => { sx[i] = s.x; sy[i] = s.y; });
+  let halfBox = 0;
+  for (const p of nodes) halfBox = Math.max(halfBox, p.w / 2, p.h / 2);
+  const plateGrid = new PointGrid(Math.max(60, halfBox + SAT_W / 2 + 16), count);
+  plateGrid.rebuild(px, py);
+  const satGrid = new PointGrid(Math.max(SAT_W, SAT_H) + 10, satCount);
+  const nearSats = new Int32Array(Math.max(satCount, count));
   for (let iter = 0; iter < 80; iter++) {
     let moved = false;
-    for (const s of satellites) {
-      for (const p of nodes) {
-        const ox = (p.w / 2 + SAT_W / 2 + 16) - Math.abs(s.x - p.x);
-        const oy = (p.h / 2 + SAT_H / 2 + 16) - Math.abs(s.y - p.y);
+    for (let a = 0; a < satCount; a++) {
+      const found = plateGrid.near(sx[a], sy[a], nearSats);
+      for (let q = 0; q < found; q++) {
+        const p = nodes[nearSats[q]];
+        const ox = (p.w / 2 + SAT_W / 2 + 16) - Math.abs(sx[a] - p.x);
+        const oy = (p.h / 2 + SAT_H / 2 + 16) - Math.abs(sy[a] - p.y);
         if (ox <= 0 || oy <= 0) continue;
         moved = true;
-        if (ox < oy) s.x += (ox + 1) * (s.x >= p.x ? 1 : -1); else s.y += (oy + 1) * (s.y >= p.y ? 1 : -1);
+        if (ox < oy) sx[a] += (ox + 1) * (sx[a] >= p.x ? 1 : -1); else sy[a] += (oy + 1) * (sy[a] >= p.y ? 1 : -1);
       }
     }
-    for (let a = 0; a < satellites.length; a++) {
-      for (let b = a + 1; b < satellites.length; b++) {
-        const A = satellites[a]; const B = satellites[b];
-        const dx = B.x - A.x; const dy = B.y - A.y;
+    satGrid.rebuild(sx, sy);
+    for (let a = 0; a < satCount; a++) {
+      const found = satGrid.near(sx[a], sy[a], nearSats);
+      for (let q = 0; q < found; q++) {
+        const b = nearSats[q];
+        if (b <= a) continue;
+        const dx = sx[b] - sx[a]; const dy = sy[b] - sy[a];
         const ox = SAT_W + 10 - Math.abs(dx); const oy = SAT_H + 10 - Math.abs(dy);
         if (ox <= 0 || oy <= 0) continue;
         moved = true;
-        if (ox < oy) { const s = (ox / 2 + 1) * (dx >= 0 ? 1 : -1); A.x -= s; B.x += s; }
-        else { const s = (oy / 2 + 1) * (dy >= 0 ? 1 : -1); A.y -= s; B.y += s; }
+        if (ox < oy) { const sh = (ox / 2 + 1) * (dx >= 0 ? 1 : -1); sx[a] -= sh; sx[b] += sh; }
+        else { const sh = (oy / 2 + 1) * (dy >= 0 ? 1 : -1); sy[a] -= sh; sy[b] += sh; }
       }
     }
     if (!moved) break;
   }
+  satellites.forEach((s, i) => { s.x = sx[i]; s.y = sy[i]; });
   for (const s of satellites) { s.x = Math.round(s.x); s.y = Math.round(s.y); }
 
   // Regions follow their members.
+  const byMap = new Map<MapName, PlateNode[]>();
+  for (const n of nodes) {
+    const map = index.primaryMap(n.cell);
+    const list = byMap.get(map);
+    if (list) list.push(n); else byMap.set(map, [n]);
+  }
   for (const r of regions) {
-    const members = nodes.filter((n) => index.primaryMap(n.cell) === r.map);
+    const members = byMap.get(r.map) ?? [];
     if (!members.length) continue;
-    const left = Math.min(...members.map((m) => m.x - footW(m) / 2)); const right = Math.max(...members.map((m) => m.x + footW(m) / 2));
-    const topY = Math.min(...members.map((m) => m.y - footH(m) / 2)); const bottomY = Math.max(...members.map((m) => m.y + footH(m) / 2));
-    r.x = left - 40; r.y = topY - 120; r.w = right - left + 80; r.h = bottomY - topY + 160;
+    const x = extent(members, (m) => m.x - footW(m) / 2);
+    const right = extent(members, (m) => m.x + footW(m) / 2).max;
+    const y = extent(members, (m) => m.y - footH(m) / 2);
+    const bottom = extent(members, (m) => m.y + footH(m) / 2).max;
+    r.x = x.min - 40; r.y = y.min - 120; r.w = right - x.min + 80; r.h = bottom - y.min + 160;
   }
   const all = [...nodes.map(plateRect), ...satellites.map((s) => ({ x: s.x - SAT_W / 2, y: s.y - SAT_H / 2, w: SAT_W, h: SAT_H })), ...regions];
   if (!all.length) return { plates: nodes, satellites, regions, byId: plates, bounds: { x: 0, y: 0, w: 1, h: 1 } };
-  const minX = Math.min(...all.map((r) => r.x)); const minY = Math.min(...all.map((r) => r.y));
-  const maxX = Math.max(...all.map((r) => r.x + r.w)); const maxY = Math.max(...all.map((r) => r.y + r.h));
-  return { plates: nodes, satellites, regions, byId: plates, bounds: { x: minX, y: minY, w: maxX - minX, h: maxY - minY } };
+  const left = extent(all, (r) => r.x).min; const top = extent(all, (r) => r.y).min;
+  const right = extent(all, (r) => r.x + r.w).max; const bottom = extent(all, (r) => r.y + r.h).max;
+  return { plates: nodes, satellites, regions, byId: plates, bounds: { x: left, y: top, w: right - left, h: bottom - top } };
 }
 
 /** A dashed connector between two plates: a soft S-curve, and the point where
