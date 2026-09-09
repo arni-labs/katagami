@@ -381,6 +381,30 @@ node scripts/encyclopedia-coverage.mjs
 It validates every row and refuses a malformed ledger; `cd ui && npm test` runs
 the same check. Write a row when you decide, not when you report.
 
+## Working unattended
+
+The approval discipline above is the default and it stands. The owner may
+authorise a run that mints without waiting for her numbers — she did so on
+2026-09-09 for an overnight build. When she does, these hold and are not
+negotiable by the agent:
+
+- **Draft only.** Nothing is published. Nothing is deleted. Archive is the only
+  removal and it is reserved for the owner's morning decisions.
+- **Everything minted is numbered and reported.** A run ends with a report that
+  lists every cell, link and record it created, each with a number, its
+  citation, and the one line of reasoning that put it there. Striking any of them
+  must cost the owner one instruction.
+- **Consent stays clean.** Corpora are public domain with the work and edition
+  named, or authored by the pipeline in-register. No in-copyright text, no
+  living author's prose, nothing that would need a permission we do not hold.
+- **Uncertainty is recorded, not resolved.** A borderline cell is minted with its
+  question in the document, or deferred. An agent working alone does not get to
+  settle a question it would have asked; it writes the question down.
+- **The ledgers stay true.** A row goes in when the decision is made, and the
+  morning report's counts must equal what `encyclopedia-coverage.mjs` prints.
+
+Autonomy is a change in when the human looks, never in what may be built.
+
 ## Maintaining
 
 - **Integrity sweep**: every cell's attestation pair *and* that its document

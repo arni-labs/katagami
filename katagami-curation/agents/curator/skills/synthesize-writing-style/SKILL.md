@@ -217,6 +217,29 @@ Every writing style MUST attach replication before it can pass verification:
    fails verification with missing_replication or voice_bands_violation.
 Replicas are displayed in the UI labeled as replicas — never as author text.
 
+## What the collection should contain (owner brief, 2026-09-09)
+
+The nineteen styles that existed before this brief were chosen because their
+corpora were convenient, not because they mapped anything. The owner called
+that selection random. What she wants instead:
+
+- **Styles a person would actually write in today**: modern fiction and
+  nonfiction, essays and long-form blog posts, newsletters, documentation,
+  social posts. A historical register earns its place when a living writer still
+  reaches for it, not because the text was easy to obtain.
+- **Representative, not accidental.** The set should cover the space: the plain
+  and the ornate, the intimate and the institutional, the fast and the
+  considered, argument and narration and instruction. A new style is worth
+  making when it sits somewhere no existing style sits.
+- **Consent-clean by construction.** `public_domain` with the work and edition
+  named, or `original` — the pipeline authors the corpus in-register, which is
+  the only honest way to build a modern voice. Never a living author's prose,
+  never in-copyright text, never a scrape.
+- **Attached to a leaf cell.** A style manifests a manner, not a genre. If the
+  only cell that fits is broad (Fantasy fiction, Diaries), the leaf under it is
+  missing and belongs in a numbered encyclopedia batch first. See "What is and
+  is not a cell" in `.agents/skills/encyclopedia/SKILL.md`.
+
 ## Names and where a style sits (owner decision, 2026-09-08; replaces the two-level shape of 2026-07-06)
 
 - **A writing style is named by the source vocabulary** the encyclopedia reads
