@@ -1,0 +1,155 @@
+{
+  "batch": "W1",
+  "created": [
+    {
+      "number": 11,
+      "slug": "hammett-maltese-falcon",
+      "name": "Dashiell Hammett — The Maltese Falcon (1930)",
+      "id": "en-01a087f1-6552-7cd1-a91c-0fe0d3bbb340"
+    },
+    {
+      "number": 12,
+      "slug": "james-ghost-stories",
+      "name": "M. R. James — ghost stories (1904)",
+      "id": "en-01a087f1-96f8-7690-92ed-200ebf4addbc"
+    },
+    {
+      "number": 13,
+      "slug": "lovecraft-call-of-cthulhu",
+      "name": "H. P. Lovecraft — The Call of Cthulhu (1928)",
+      "id": "en-01a087f1-c3f5-7013-b011-a54b030a021a"
+    },
+    {
+      "number": 141,
+      "slug": "buchan-thirty-nine-steps",
+      "name": "John Buchan — The Thirty-Nine Steps (1915)",
+      "id": "en-01a087f1-edd0-7c00-98cd-80984eece3b2"
+    },
+    {
+      "number": 142,
+      "slug": "childers-riddle-of-the-sands",
+      "name": "Erskine Childers — The Riddle of the Sands (1903)",
+      "id": "en-01a087f2-3c6e-79f3-8a2a-11db29716a96"
+    },
+    {
+      "number": 14,
+      "slug": "spy-fiction",
+      "name": "Spy fiction",
+      "id": "en-01a087f2-8438-7190-b1fe-8a1ad396bd3b"
+    },
+    {
+      "number": 15,
+      "slug": "jerome-three-men-in-a-boat",
+      "name": "Jerome K. Jerome — Three Men in a Boat (1889)",
+      "id": "en-01a087f2-b420-7d62-858a-22910efab10e"
+    },
+    {
+      "number": 16,
+      "slug": "wister-the-virginian",
+      "name": "Owen Wister — The Virginian (1902)",
+      "id": "en-01a087f2-df30-7be0-91f3-d10cd57bae27"
+    },
+    {
+      "number": 17,
+      "slug": "zamyatin-we-zilboorg",
+      "name": "Yevgeny Zamyatin — We (Zilboorg translation, 1924)",
+      "id": "en-01a087f3-0d8f-71d1-ba61-13f7705e1fc2"
+    },
+    {
+      "number": 18,
+      "slug": "richardson-pointed-roofs",
+      "name": "Dorothy Richardson — Pointed Roofs (1915)",
+      "id": "en-01a087f3-40f3-77c3-a42f-a35d96b719d9"
+    },
+    {
+      "number": 19,
+      "slug": "grossmith-diary-of-a-nobody",
+      "name": "George and Weedon Grossmith — The Diary of a Nobody (1892)",
+      "id": "en-01a087f3-71f2-74c0-bd98-6e29b2f26c5d"
+    },
+    {
+      "number": 20,
+      "slug": "wells-war-of-the-worlds",
+      "name": "H. G. Wells — The War of the Worlds (1898)",
+      "id": "en-01a087f3-9a22-7492-b238-55f0135ce0c0"
+    },
+    {
+      "number": 21,
+      "slug": "london-people-of-the-abyss",
+      "name": "Jack London — The People of the Abyss (1903)",
+      "id": "en-01a087f3-cac8-7291-9a2d-03ec8061c6f8"
+    },
+    {
+      "number": 22,
+      "slug": "grant-personal-memoirs",
+      "name": "Ulysses S. Grant — Personal Memoirs (1885)",
+      "id": "en-01a087f3-f93f-7941-a346-a994c5ef8cfa"
+    },
+    {
+      "number": 23,
+      "slug": "douglass-narrative",
+      "name": "Frederick Douglass — Narrative of the Life (1845)",
+      "id": "en-01a087f4-2845-7722-abab-3839d5b5853a"
+    },
+    {
+      "number": 24,
+      "slug": "hazlitt-table-talk",
+      "name": "William Hazlitt — Table-Talk (1821)",
+      "id": "en-01a087f4-5814-7770-8a29-b049acb51785"
+    },
+    {
+      "number": 25,
+      "slug": "thoreau-walden",
+      "name": "Henry David Thoreau — Walden (1854)",
+      "id": "en-01a087f4-8474-7dc0-928d-1b0e10754ae2"
+    },
+    {
+      "number": 26,
+      "slug": "bierce-devils-dictionary",
+      "name": "Ambrose Bierce — The Devil's Dictionary (1911)",
+      "id": "en-01a087f4-b23f-7901-9dee-48214d992ac1"
+    },
+    {
+      "number": 27,
+      "slug": "bierce-fantastic-fables",
+      "name": "Ambrose Bierce — Fantastic Fables (1899)",
+      "id": "en-01a087f4-f1bf-7082-819b-eafbbb1db364"
+    },
+    {
+      "number": 29,
+      "slug": "imagism",
+      "name": "Imagism",
+      "id": "en-01a087f5-1ed0-7510-98b1-98530a106968"
+    },
+    {
+      "number": 301,
+      "slug": "morris-volsunga-saga",
+      "name": "William Morris and Eiríkr Magnússon — Volsunga Saga (1870)",
+      "id": "en-01a087f5-4b13-7270-b227-0e20bc5d227d"
+    },
+    {
+      "number": 302,
+      "slug": "dasent-burnt-njal",
+      "name": "George Webbe Dasent — The Story of Burnt Njal (1861)",
+      "id": "en-01a087f5-764a-7a00-8ee4-af10b963c036"
+    },
+    {
+      "number": 30,
+      "slug": "sagas",
+      "name": "Sagas",
+      "id": "en-01a087f5-a1d9-7941-b74d-e4f4981c691f"
+    },
+    {
+      "number": 31,
+      "slug": "gibran-the-prophet",
+      "name": "Kahlil Gibran — The Prophet (1923)",
+      "id": "en-01a087f5-d0f5-7161-bc52-67e4dbb59706"
+    },
+    {
+      "number": 32,
+      "slug": "wilde-importance-of-being-earnest",
+      "name": "Oscar Wilde — The Importance of Being Earnest (1895)",
+      "id": "en-01a087f6-016c-7b62-8bb5-b64f4dd7e931"
+    }
+  ]
+}

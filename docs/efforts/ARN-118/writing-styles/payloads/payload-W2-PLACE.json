@@ -1,0 +1,92 @@
+{
+ "batch": "W2-PLACE",
+ "approval": "Owner approval of batch 1 of WRITING-STYLE-CANDIDATES.md (ARN-118, 2026-09-09), which names Accident reports (LCGFT gf2024026078) as the cell to mint for candidate 1. Draft only; every mint numbered and reported.",
+ "allowedOperation": "Create private Draft EncyclopediaCell documents for batch W2-PLACE (accident reports placement), contract version 3: two new cells, the broader link between them and the source it cites, and one manifestation naming the new WritingStyles record; no change of status and no studies.",
+ "cells": [
+  {
+   "number": 1,
+   "name": "Technical reports",
+   "id": "technical-reports",
+   "new": true,
+   "version": 3,
+   "description": "Documents that give the details and the results of an investigation of a scientific or technical problem, written by the people who carried it out and addressed to whoever commissioned it. The form states its method, reports what was measured, and separates what the work established from what it did not.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "The Library of Congress genre and form vocabulary carries it as a heading for works of this kind.",
+     "sourceIds": [
+      "lcgft-technical-reports"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "lcgft-technical-reports",
+     "title": "Technical reports — LCGFT gf2015026093",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2015026093"
+    }
+   ],
+   "broader": [],
+   "relations": [],
+   "questions": [
+    "The Library of Congress files Technical reports under Informational works (gf2014026113), and the collection holds no cell for that term. Whether it needs one, or whether this cell stays a root, is unsettled."
+   ],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 2,
+   "name": "Accident reports",
+   "id": "accident-reports",
+   "new": true,
+   "version": 3,
+   "description": "Reports of an investigation into a single accident, written by the body that investigated it. The account runs forward in clock time, each fact carrying the record or instrument it came from, and it ends in a stated cause. The form is used by transport safety boards, regulators and insurers.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "The Library of Congress genre and form vocabulary carries it as a heading for works of this kind.",
+     "sourceIds": [
+      "lcgft-accident-reports"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "lcgft-accident-reports",
+     "title": "Accident reports — LCGFT gf2024026078",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2024026078"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "technical-reports",
+     "explanation": "The Library of Congress files Accident reports under Technical reports.",
+     "sourceIds": [
+      "lcgft-accident-reports"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [
+    "The collection holds no cell for the safety recommendation, which every report in this form ends with and which is addressed to a different reader; whether that is a form of its own is unread."
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a0880a-2c8f-7731-9688-b01647dca91b",
+     "explanation": "The record's credits name the accident report and its corpus is one accident narrative from each of four National Transportation Safety Board reports, in aviation, highway, marine and railroad.",
+     "sourceIds": [
+      "lcgft-accident-reports"
+     ]
+    }
+   ],
+   "studies": []
+  }
+ ]
+}

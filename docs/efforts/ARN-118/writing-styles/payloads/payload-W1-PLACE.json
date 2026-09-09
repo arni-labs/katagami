@@ -1,0 +1,1337 @@
+{
+ "batch": "W1-PLACE",
+ "approval": "Owner approval of all five batches of WRITING-STYLE-CANDIDATES.md (ARN-118, 2026-09-09), which names the cell each candidate attaches to and the cells that would have to be minted. Draft only; every mint numbered and reported.",
+ "allowedOperation": "Define private Draft EncyclopediaCell documents for batch W1-PLACE (writing-style placement), contract version 3: manifestations naming the twenty-five new WritingStyles records, the questions three cells now carry, and two new cells with the broader links and sources those links cite; no change of status and no studies.",
+ "cells": [
+  {
+   "number": 1,
+   "name": "Scientific romance",
+   "id": "scientific-romance",
+   "new": true,
+   "version": 3,
+   "description": "The British form of speculative fiction of the late nineteenth century and the first half of the twentieth, named in hindsight rather than by the writers themselves. H. G. Wells's early novels became its exemplars, and the term was secured by his own 1933 omnibus The Scientific Romances of H.G. Wells. It is marked off from American genre science fiction by long evolutionary perspectives, a pessimism about where civilisation is going, and a narrator who observes and broods rather than acts. Brian Stableford's Scientific Romance in Britain 1890-1950 (1985) is the study the term's modern use rests on.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A named form of prose fiction with its own canon, its own period and a book-length critical study.",
+     "sourceIds": [
+      "sfe-scientific-romance"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "sfe-scientific-romance",
+     "title": "Scientific Romance — The Encyclopedia of Science Fiction",
+     "url": "https://sf-encyclopedia.com/entry/scientific_romance"
+    },
+    {
+     "id": "wp-scientific-romance",
+     "title": "Scientific romance — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Scientific_romance"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "science-fiction",
+     "explanation": "The Encyclopedia of Science Fiction defines it as a form of sf found in the UK from the late nineteenth century onward, so this cell is placed one level below Science fiction on that definition. LCGFT has no heading for it.",
+     "sourceIds": [
+      "sfe-scientific-romance"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [
+    "Wells's later work and the between-the-wars authors the Encyclopedia of Science Fiction lists under this term have no cells yet; whether any of them needs one is unread."
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f3-9a22-7492-b238-55f0135ce0c0",
+     "explanation": "The record's credits name the scientific romance and the corpus is four runs of The War of the Worlds (1898), one of the novels the Encyclopedia of Science Fiction gives as the form's exemplars.",
+     "sourceIds": [
+      "sfe-scientific-romance"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 2,
+   "name": "Slave narratives",
+   "id": "slave-narratives",
+   "new": true,
+   "version": 3,
+   "description": "First-person accounts of enslavement written or dictated by the people who were enslaved, published in the United States and Britain mostly between the 1770s and the end of the American Civil War, and written to be read as evidence by an audience deciding a public question. The narrative runs in chronology, names people and places, and states what the writer knows and what was kept from them.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "The Library of Congress genre and form vocabulary carries it as a heading for works of this kind.",
+     "sourceIds": [
+      "lcgft-slave-narratives"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "lcgft-slave-narratives",
+     "title": "Slave narratives — LCGFT gf2014026176",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026176"
+    },
+    {
+     "id": "wp-slave-narrative",
+     "title": "Slave narrative — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Slave_narrative"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "autobiographies",
+     "explanation": "The Library of Congress files Slave narratives under Autobiographies.",
+     "sourceIds": [
+      "lcgft-slave-narratives"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [
+    "Whether the American slave narrative and the British abolitionist narrative are one practice or two is unread; the Library of Congress heading covers both."
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f4-2845-7722-abab-3839d5b5853a",
+     "explanation": "The record's credits name the slave narrative and the corpus is four chapters of Douglass's Narrative of the Life (1845).",
+     "sourceIds": [
+      "lcgft-slave-narratives"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 3,
+   "name": "Hardboiled",
+   "id": "hardboiled",
+   "new": false,
+   "version": 3,
+   "baseHash": "645f42142e007b10a2787f7d662bc93d30074d95616a5767ef69e7e141cd19eb",
+   "description": "Crime fiction told by or around a detective who is cynical, physically at risk, and no better than the system he works in. It formed in American pulp magazines during Prohibition and after, and Hammett and Chandler wrote it. The prose is clipped and present, heavy on dialogue and physical detail, and it withholds interiority. The wit is in the similes, and the plot is a route through a city.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A crime fiction genre with a fixed period, a canon and settled conventions of voice.",
+     "sourceIds": [
+      "wp-hardboiled"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "detective-and-mystery-fiction",
+     "explanation": "It takes its characters and settings from crime and detective fiction.",
+     "sourceIds": [
+      "wp-hardboiled"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "noir-fiction",
+     "label": "shares a technique",
+     "explanation": "Both use the same cities, the same period and the same clipped register, and noir moves the viewpoint off the detective.",
+     "sourceIds": [
+      "wp-hardboiled"
+     ]
+    },
+    {
+     "cellId": "cozy-mysteries",
+     "label": "defined against",
+     "explanation": "The cozy mystery is the crime story with the violence and the sexuality taken out.",
+     "sourceIds": [
+      "wp-hardboiled"
+     ]
+    }
+   ],
+   "questions": [],
+   "sources": [
+    {
+     "id": "wp-hardboiled",
+     "title": "Hardboiled — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Hardboiled"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f1-6552-7cd1-a91c-0fe0d3bbb340",
+     "explanation": "The record's credits name the register \"Hardboiled detective fiction\" and the corpus is four passages of The Maltese Falcon (1930).",
+     "sourceIds": [
+      "wp-hardboiled"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 4,
+   "name": "Ghost stories",
+   "id": "ghost-stories",
+   "new": false,
+   "version": 3,
+   "baseHash": "2ad1aa6c740fe468b68113faf55d0945c5a8792c207f3a0605e2551bb7953a2b",
+   "description": "Fiction built on the return of the dead, whether the ghost is seen, felt or only inferred. The English literary form is shaped by the Victorian Christmas magazine number and reaches its most disciplined statement in M. R. James, whose rule was an ordinary setting disturbed by one intrusion. Its technique is restraint: the story withholds and lets the reader supply what is withheld.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A tradition with a canon, its own critical rules and a continuous body of work; LCGFT files it under Paranormal fiction.",
+     "sourceIds": [
+      "lcgft-ghost-stories",
+      "wp-ghost-story"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "paranormal-fiction",
+     "explanation": "LCGFT files Ghost stories under Paranormal fiction; the return of the dead is the supernatural premise the story is built on.",
+     "sourceIds": [
+      "lcgft-ghost-stories",
+      "wp-ghost-story"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "sources": [
+    {
+     "id": "lcgft-ghost-stories",
+     "title": "Ghost stories — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026357"
+    },
+    {
+     "id": "wp-ghost-story",
+     "title": "Ghost story — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Ghost_story"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f1-96f8-7690-92ed-200ebf4addbc",
+     "explanation": "The record's credits name the antiquarian ghost story and the corpus is four stories from Ghost Stories of an Antiquary (1904).",
+     "sourceIds": [
+      "wp-ghost-story"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 5,
+   "name": "Weird fiction",
+   "id": "weird-fiction",
+   "new": false,
+   "version": 3,
+   "baseHash": "331ec90fbac61879bf7b0982b6e852ace116281da1bd528ec5c6677a648da728",
+   "description": "Horror that drops the inherited monsters and invents things that fit no category, aiming at awe as much as fear. It formed in the late nineteenth and early twentieth centuries around Hodgson, M. R. James, Clark Ashton Smith and Lovecraft. The writing works by withholding, by the narrator's failure to describe, and by a scale that makes the human observer irrelevant. Its recurring move is a document or a report presented as evidence.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A subgenre with a fixed period, a canon and a critical literature.",
+     "sourceIds": [
+      "wp-weird-fiction"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "horror-fiction",
+     "explanation": "It works inside supernatural horror and either avoids or reinterprets that tradition's antagonists.",
+     "sourceIds": [
+      "wp-weird-fiction"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "gothic-fiction",
+     "label": "reacted against",
+     "explanation": "It invents its monsters instead of using the Gothic stock of ghosts, vampires and werewolves.",
+     "sourceIds": [
+      "wp-weird-fiction"
+     ]
+    }
+   ],
+   "questions": [],
+   "sources": [
+    {
+     "id": "wp-weird-fiction",
+     "title": "Weird fiction — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Weird_fiction"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f1-c3f5-7013-b011-a54b030a021a",
+     "explanation": "The record's credits name the register \"Weird fiction\" and the corpus is four runs of The Call of Cthulhu (1928).",
+     "sourceIds": [
+      "wp-weird-fiction"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 6,
+   "name": "Spy fiction",
+   "id": "spy-fiction",
+   "new": false,
+   "version": 3,
+   "baseHash": "ff9c70b0a31afdcd0ce0c30cc90f7114c4c263fa193e7015d8aef009cf893a0b",
+   "description": "Fiction about espionage, built on secrecy, betrayal and divided loyalty. It forms in the years before 1914 with Erskine Childers and John Buchan and splits after 1945 into the adventure line of Fleming and the bureaucratic line of Le Carré and Deighton. Its recurring technique is withheld information: the reader is kept at the same disadvantage as the agent.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A genre with a dated formation, two well-described lines and a stated narrative technique; LCGFT files it directly under Fiction.",
+     "sourceIds": [
+      "lcgft-spy-fiction",
+      "wp-spy-fiction"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "fiction",
+     "explanation": "Its Library of Congress record gives Fiction as a broader term.",
+     "sourceIds": [
+      "lcgft-spy-fiction"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "sources": [
+    {
+     "id": "lcgft-spy-fiction",
+     "title": "Spy fiction — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026555"
+    },
+    {
+     "id": "wp-spy-fiction",
+     "title": "Spy fiction — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Spy_fiction"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f2-8438-7190-b1fe-8a1ad396bd3b",
+     "explanation": "The record's credits name the register \"Spy fiction\" and its corpus is two passages each from Buchan and Childers; it is the lineage child of the two author voices below.",
+     "sourceIds": [
+      "wp-spy-fiction"
+     ]
+    },
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f1-edd0-7c00-98cd-80984eece3b2",
+     "explanation": "Built from The Thirty-Nine Steps (1915) and credited to Buchan; one of the two author voices the blend above names as parents.",
+     "sourceIds": [
+      "wp-spy-fiction"
+     ]
+    },
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f2-3c6e-79f3-8a2a-11db29716a96",
+     "explanation": "Built from The Riddle of the Sands (1903) and credited to Childers; the other parent of the blend above.",
+     "sourceIds": [
+      "wp-spy-fiction"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 7,
+   "name": "Humorous fiction",
+   "id": "humorous-fiction",
+   "new": false,
+   "version": 3,
+   "baseHash": "65a868c9d2b44fafaaa3afe8d53bf329e78c27d66b65662d0f689e0cd8a3c8cc",
+   "description": "Fiction written to be funny, where the narration or the plot is turned toward comedy whatever the subject. The Library of Congress files tall tales under the heading.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A genre with a canon from Fielding through Twain and Wodehouse; the Library of Congress files it under Fiction.",
+     "sourceIds": [
+      "lcgft-humorous-fiction",
+      "wp-comic-novel"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "fiction",
+     "explanation": "The Library of Congress record gives Fiction as one of its two broader terms; the other is Humor, which is a quality rather than a body of work.",
+     "sourceIds": [
+      "lcgft-humorous-fiction"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [
+    "Returns from B6, which declined it as \"a tone umbrella; the practices inside it (satire, parody, black humor, nonsense, tall tales) are the cells\". It returns because the Library of Congress files Tall tales under it and a comic novel canon runs from Fielding to Wodehouse. Strike this cell to keep the earlier ruling."
+   ],
+   "sources": [
+    {
+     "id": "lcgft-humorous-fiction",
+     "title": "Humorous fiction — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026377"
+    },
+    {
+     "id": "wp-comic-novel",
+     "title": "Comic novel — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Comic_novel"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f2-b420-7d62-858a-22910efab10e",
+     "explanation": "The record's credits name the comic digression and the corpus is four runs of Three Men in a Boat (1889).",
+     "sourceIds": [
+      "lcgft-humorous-fiction"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 8,
+   "name": "Western fiction",
+   "id": "western-fiction",
+   "new": false,
+   "version": 3,
+   "baseHash": "9a9981e8d920758ab6a25adb26a9ddc7d57b55d5685645da4584c01e9b785a22",
+   "description": "Fiction of the American frontier in the decades of westward expansion, with the conflict between law and lawlessness as its recurring shape. The dime novels of the 1860s begin it, Owen Wister's The Virginian in 1902 gives it literary standing, and Zane Grey and Louis L'Amour carry it through the twentieth century. Its conventions are strong enough that revisionist Westerns are read as arguments with them.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A genre with conventions firm enough to be argued against from inside, a dated history and a large canon; LCGFT files it directly under Fiction.",
+     "sourceIds": [
+      "lcgft-western-fiction",
+      "wp-western-fiction"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "fiction",
+     "explanation": "Its Library of Congress record gives Fiction as a broader term.",
+     "sourceIds": [
+      "lcgft-western-fiction"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [
+    "Borderline against the rule that declined Campus fiction and Railroad fiction as setting-defined. Kept because the Western has conventions later writers argue with, which a setting alone would not produce."
+   ],
+   "sources": [
+    {
+     "id": "lcgft-western-fiction",
+     "title": "Western fiction — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026594"
+    },
+    {
+     "id": "wp-western-fiction",
+     "title": "Western fiction — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Western_fiction"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f2-df30-7be0-91f3-d10cd57bae27",
+     "explanation": "The record's credits name the register \"Western fiction\" and the corpus is four runs of The Virginian (1902).",
+     "sourceIds": [
+      "wp-western-fiction"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 9,
+   "name": "Dystopian fiction",
+   "id": "dystopian-fiction",
+   "new": false,
+   "version": 3,
+   "baseHash": "653b0ec974e412b29859632304f370a82692297608e27df733ea91867e9687d9",
+   "description": "Fiction set in a society organised badly on purpose, where the arrangement itself is the antagonist. Zamyatin's We, Huxley's Brave New World and Orwell's Nineteen Eighty-Four fix the form in the first half of the twentieth century, and it is read as an argument about the present. Its technique is extrapolation: one tendency is taken to its end and the reader is asked to recognise it.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A premise-defined family with an explicit argumentative technique and a substantial canon; LCGFT files it under Science fiction.",
+     "sourceIds": [
+      "lcgft-dystopian-fiction",
+      "wp-utopian-and-dystopian-fiction"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "science-fiction",
+     "explanation": "LCGFT files Dystopian fiction under Science fiction; the society is a speculative construction reasoned out from a premise.",
+     "sourceIds": [
+      "lcgft-dystopian-fiction",
+      "wp-utopian-and-dystopian-fiction"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "sources": [
+    {
+     "id": "lcgft-dystopian-fiction",
+     "title": "Dystopian fiction — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026302"
+    },
+    {
+     "id": "wp-utopian-and-dystopian-fiction",
+     "title": "Utopian and dystopian fiction — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Utopian_and_dystopian_fiction"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f3-0d8f-71d1-ba61-13f7705e1fc2",
+     "explanation": "The record's credits name the register \"Dystopian fiction\" and the corpus is four Records of Zilboorg's 1924 translation of We.",
+     "sourceIds": [
+      "lcgft-dystopian-fiction"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 10,
+   "name": "Stream of consciousness fiction",
+   "id": "stream-of-consciousness-fiction",
+   "new": false,
+   "version": 3,
+   "baseHash": "689143931fe25f32a00b954059239c2544488caf49b70b8e71424dcd13c32d2b",
+   "description": "Fiction that renders a character's perceptions, thoughts and memories as they arrive, by association and often against conventional grammar and punctuation. Dorothy Richardson's Pointed Roofs (1915), Joyce's Ulysses (1922) and Woolf's Mrs Dalloway (1925) are the founding English examples; May Sinclair applied the phrase to fiction in 1918.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A fiction technique and genre in the Library of Congress vocabulary.",
+     "sourceIds": [
+      "lcgft-stream-of-consciousness-fiction",
+      "wp-stream-of-consciousness"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "psychological-fiction",
+     "explanation": "Its Library of Congress record gives Psychological fiction as a broader term.",
+     "sourceIds": [
+      "lcgft-stream-of-consciousness-fiction"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "imagism",
+     "label": "shares a moment and a turn inward",
+     "explanation": "Both belong to the first wave of literary modernism, one in the poem, one in the novel's interior.",
+     "sourceIds": [
+      "wp-literary-modernism"
+     ]
+    }
+   ],
+   "questions": [
+    "LCGFT places this under Psychological fiction (gf2014026492), which is not yet a cell; add the broader link when that cell exists."
+   ],
+   "sources": [
+    {
+     "id": "lcgft-stream-of-consciousness-fiction",
+     "title": "Stream of consciousness fiction — Library of Congress Genre/Form Terms gf2014026561",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026561"
+    },
+    {
+     "id": "wp-stream-of-consciousness",
+     "title": "Stream of consciousness — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Stream_of_consciousness"
+    },
+    {
+     "id": "wp-literary-modernism",
+     "title": "Literary modernism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Literary_modernism"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f3-40f3-77c3-a42f-a35d96b719d9",
+     "explanation": "The record's credits name stream of consciousness as its technique and the corpus is four runs of Pointed Roofs (1915).",
+     "sourceIds": [
+      "wp-stream-of-consciousness"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 11,
+   "name": "Diary fiction",
+   "id": "diary-fiction",
+   "new": false,
+   "version": 3,
+   "baseHash": "fca50fc027141e2ccfcfaedf249ed6d496d1f161de5f2be45c4539e8ed6dd7b0",
+   "description": "Fiction written as a character's dated diary or journal. Early printed examples include the Grossmiths' Diary of a Nobody; Dracula, Adrian Mole and Diary of a Wimpy Kid show the range from horror to comedy. LCGFT keeps letters and messages under Epistolary fiction and diaries here.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A narrative form defined by the dated entry.",
+     "sourceIds": [
+      "lcgft-diary-fiction",
+      "wp-diary-fictional"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "fiction",
+     "explanation": "Its Library of Congress record gives Fiction as a broader term.",
+     "sourceIds": [
+      "lcgft-diary-fiction"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "epistolary-fiction",
+     "label": "shares a technique",
+     "explanation": "Both are documentary forms: the story is assembled from papers a character is supposed to have written, and LCGFT cross-refers the two.",
+     "sourceIds": [
+      "lcgft-diary-fiction"
+     ]
+    }
+   ],
+   "questions": [],
+   "sources": [
+    {
+     "id": "lcgft-diary-fiction",
+     "title": "Diary fiction — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026286"
+    },
+    {
+     "id": "wp-diary-fictional",
+     "title": "Diary, section Fictional diaries — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Diary#Fictional_diaries"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f3-71f2-74c0-bd98-6e29b2f26c5d",
+     "explanation": "The record's credits name the comic diary and the corpus is four runs of The Diary of a Nobody (1892).",
+     "sourceIds": [
+      "lcgft-diary-fiction"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 12,
+   "name": "Narrative journalism",
+   "id": "narrative-journalism",
+   "new": false,
+   "version": 3,
+   "baseHash": "8befa193b06a2905749ff2bc1a788aad123ebee300d32e6a44f3341cbd0f4c36",
+   "description": "Reporting written with the devices of fiction: scenes in order, dialogue as it was said, a point of view, and characters the reader follows. Everything in it is checkable and the reporting behind it is usually long. It is the working register of magazine and long-form nonfiction, and its other name is literary journalism.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "Reporting written as literature, which is what the creative nonfiction heading covers.",
+     "sourceIds": [
+      "wp-narrative-journalism"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "creative-nonfiction",
+     "explanation": "It is a form of creative nonfiction, applying literary technique to a news story.",
+     "sourceIds": [
+      "wp-narrative-journalism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "sources": [
+    {
+     "id": "wp-narrative-journalism",
+     "title": "Narrative journalism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Narrative_journalism"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f3-cac8-7291-9a2d-03ec8061c6f8",
+     "explanation": "The record's credits name immersion reporting and the corpus is four runs of The People of the Abyss (1903).",
+     "sourceIds": [
+      "wp-narrative-journalism"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 13,
+   "name": "Memoirs",
+   "id": "memoirs",
+   "new": false,
+   "version": 3,
+   "baseHash": "7cbcbce2b69084c7fc736ec5c335675472618e17f13a6ccece14cec1237e2eaf",
+   "description": "An account of one part of a life: a job, an illness, a marriage, a few years. It has autobiography's first person and claim to fact in a narrower frame, so the writing can slow down and stay inside scenes. In voice it is close to the personal essay, and in construction close to the novel. A memoirist settles what the period was about before settling what goes in.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "The Library of Congress separates it from autobiography by its narrower focus, and the modern form is written and published in quantity.",
+     "sourceIds": [
+      "lcgft-memoirs",
+      "wp-memoir"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "autobiographies",
+     "explanation": "The Library of Congress files Memoirs under Autobiographies, as autobiographies covering one event, period or theme.",
+     "sourceIds": [
+      "lcgft-memoirs"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "sources": [
+    {
+     "id": "lcgft-memoirs",
+     "title": "Memoirs — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2025026019"
+    },
+    {
+     "id": "wp-memoir",
+     "title": "Memoir — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Memoir"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f3-f93f-7941-a346-a994c5ef8cfa",
+     "explanation": "The record's credits name the military memoir and the corpus is four runs of Grant's Personal Memoirs (1885).",
+     "sourceIds": [
+      "wp-memoir"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 14,
+   "name": "Familiar essay",
+   "id": "familiar-essay",
+   "new": false,
+   "version": 3,
+   "baseHash": "28dac9ca4fe4c2609418505c0defd39c0861d9699553f701e46d92e3c2a63958",
+   "description": "An essay addressed to one reader as if in conversation, about the writer and about a particular subject at the same time. Its heyday was the early nineteenth century and Charles Lamb is its best-known writer. The voice is companionable and digressive, with feeling and argument in equal measure. Writers use it when a piece has to be personal without becoming a confession.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A named manner of the English essay, described in the Wikipedia article on the essay form.",
+     "sourceIds": [
+      "wp-essay-familiar"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "essays",
+     "explanation": "It is a way of writing an essay, separated from the critical and the personal essay by how it balances thought and feeling.",
+     "sourceIds": [
+      "wp-essay-familiar"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [
+    "Named from the section of the Wikipedia essay article that describes the form, which cites Anne Fadiman. A standalone reference on the familiar essay would be a better citation, and it should be added when one is found."
+   ],
+   "sources": [
+    {
+     "id": "wp-essay-familiar",
+     "title": "Essay: Familiar — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Essay#Familiar"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f4-5814-7770-8a29-b049acb51785",
+     "explanation": "The record's credits name the register \"Familiar essay\" and the corpus is four essays from Table-Talk (1821).",
+     "sourceIds": [
+      "wp-essay-familiar"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 15,
+   "name": "Nature writing",
+   "id": "nature-writing",
+   "new": false,
+   "version": 3,
+   "baseHash": "ee89c69bf86117b63f8db5ad3c014c4ca5f694cec7217a4e0c6357f38623fdeb",
+   "description": "Prose about the natural world in which the observation and the observer are both on the page. It draws on natural history and adds reflection, usually in the first person, with dates and places attached. Gilbert White in the 1780s is the early figure and the line runs through Thoreau, Leopold and Carson. It is exact about what was seen and unhurried about what it means.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A prose tradition that begins with Gilbert White in the 1780s and runs to the present.",
+     "sourceIds": [
+      "wp-nature-writing"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "creative-nonfiction",
+     "explanation": "It is nonfiction prose using literary technique on observed fact, which is what the creative nonfiction heading covers.",
+     "sourceIds": [
+      "wp-nature-writing"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "field-notes",
+     "label": "shares a technique",
+     "explanation": "Both record dated, placed observation, and nature writing adds the reflection that field notes leave out.",
+     "sourceIds": [
+      "wp-nature-writing"
+     ]
+    }
+   ],
+   "questions": [
+    "Two writing styles now sit on this branch: Walden here and the Darwin and White voices on the child cell Field notes. Whether Walden belongs on a narrower cell of its own, and what would name one, is unsettled; the collection declined to mint a leaf for a single book."
+   ],
+   "sources": [
+    {
+     "id": "wp-nature-writing",
+     "title": "Nature writing — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Nature_writing"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f4-8474-7dc0-928d-1b0e10754ae2",
+     "explanation": "The record's credits name the register \"Nature writing\" and the corpus is four runs of Walden (1854).",
+     "sourceIds": [
+      "wp-nature-writing"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 16,
+   "name": "Epigrams",
+   "id": "epigrams",
+   "new": false,
+   "version": 3,
+   "baseHash": "4cc0d26010db233acdfce3737fdd7e1a9c78cd5c668c82159582dc63af1c8911",
+   "description": "Very short poems or statements that turn on a single point, usually with a sting at the end. The Library of Congress files priamels under the heading.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A form with a canon from the Greek Anthology and Martial onward; the Library of Congress files it under Sayings.",
+     "sourceIds": [
+      "lcgft-epigrams",
+      "wp-epigram"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "sayings",
+     "explanation": "The Library of Congress record gives Sayings as its broader term.",
+     "sourceIds": [
+      "lcgft-epigrams"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "sources": [
+    {
+     "id": "lcgft-epigrams",
+     "title": "Epigrams — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026312"
+    },
+    {
+     "id": "wp-epigram",
+     "title": "Epigram — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Epigram"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f4-b23f-7901-9dee-48214d992ac1",
+     "explanation": "The record's credits name the epigram and the corpus is four runs of entries from The Devil's Dictionary (1911).",
+     "sourceIds": [
+      "wp-epigram"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 17,
+   "name": "Fables",
+   "id": "fables",
+   "new": false,
+   "version": 3,
+   "baseHash": "342ebc6b86b137e126cd547e567b9dc21496799530c873d69be6e327ec0086b4",
+   "description": "Short narratives in prose or verse whose characters are animals, plants or objects that speak and act as people do, and which end in a moral. The Greek collection attributed to Aesop is the root of the European line, with the Sanskrit Panchatantra and the Arabic Kalila wa-Dimna as parallel traditions, and La Fontaine's verse fables in the seventeenth century as its most famous rewriting. The moral closes the form.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A tradition with a canon in several languages and a stated formal rule; LCGFT files it under Folk tales and Exempla.",
+     "sourceIds": [
+      "lcgft-fables",
+      "wp-fable"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "folk-tales",
+     "explanation": "LCGFT files Fables under Folk tales; the fable travels by retelling and most of its texts have no single author.",
+     "sourceIds": [
+      "lcgft-fables",
+      "wp-fable"
+     ]
+    },
+    {
+     "cellId": "exempla",
+     "explanation": "LCGFT files Fables under Exempla; a fable is a short narrative told to prove a moral point, which is what an exemplum does.",
+     "sourceIds": [
+      "lcgft-fables",
+      "wp-fable"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "sources": [
+    {
+     "id": "lcgft-fables",
+     "title": "Fables — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026327"
+    },
+    {
+     "id": "wp-fable",
+     "title": "Fable — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Fable"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f4-f1bf-7082-819b-eafbbb1db364",
+     "explanation": "The record's credits name the register \"Fable\" and the corpus is four runs of Fantastic Fables (1899).",
+     "sourceIds": [
+      "wp-fable"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 18,
+   "name": "Imagism",
+   "id": "imagism",
+   "new": false,
+   "version": 3,
+   "baseHash": "b0f5fbdca37b2509ba9ffbac4da0dec5edc96a1b39787812f8b6f21c569e9ad0",
+   "description": "A London poetry movement of about 1908 to 1917 around Hulme, Flint, Pound, H.D. and Aldington. Its rules: treat the thing directly, use no word that does not contribute, and compose by the musical phrase rather than the metronome. Library of Congress catalogues the poems as Imagist poetry.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A movement in poetry.",
+     "sourceIds": [
+      "wp-imagism",
+      "lcgft-imagist-poetry"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "poetry",
+     "explanation": "Its Library of Congress record gives Poetry as a broader term.",
+     "sourceIds": [
+      "lcgft-imagist-poetry"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "stream-of-consciousness-fiction",
+     "label": "shares a moment and a turn inward",
+     "explanation": "Both belong to the first wave of literary modernism, one in the poem, one in the novel's interior.",
+     "sourceIds": [
+      "wp-literary-modernism"
+     ]
+    }
+   ],
+   "questions": [],
+   "sources": [
+    {
+     "id": "wp-imagism",
+     "title": "Imagism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Imagism"
+    },
+    {
+     "id": "lcgft-imagist-poetry",
+     "title": "Imagist poetry — Library of Congress Genre/Form Terms gf2014026384",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026384"
+    },
+    {
+     "id": "wp-literary-modernism",
+     "title": "Literary modernism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Literary_modernism"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f5-1ed0-7510-98b1-98530a106968",
+     "explanation": "The record's credits name the movement \"Imagism\" and the corpus is four runs of the Some Imagist Poets anthologies of 1915 and 1917.",
+     "sourceIds": [
+      "wp-imagism"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 19,
+   "name": "Sagas",
+   "id": "sagas",
+   "new": false,
+   "version": 3,
+   "baseHash": "cf74afbecbb4d709113835a2e1696eab62eedaff7f28aade55f59ab259a44368",
+   "description": "Prose narratives written in Iceland and Scandinavia from the twelfth century on, about settlers, feuds, kings, saints and legendary heroes. They were composed in Old Norse and Icelandic at a time when Latin was Europe's language of history, and verse stanzas are embedded in the prose. The sagas of Icelanders are the best-known group.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A vernacular prose tradition with a recognisable manner and a defined body of texts.",
+     "sourceIds": [
+      "lcgft-sagas",
+      "wp-saga"
+     ]
+    }
+   ],
+   "broader": [],
+   "relations": [
+    {
+     "cellId": "romances",
+     "label": "absorbed",
+     "explanation": "Chivalric romances were translated into Old Norse and composed locally as sagas, so the two traditions overlap.",
+     "sourceIds": [
+      "wp-saga"
+     ]
+    }
+   ],
+   "questions": [],
+   "sources": [
+    {
+     "id": "lcgft-sagas",
+     "title": "Sagas — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026522"
+    },
+    {
+     "id": "wp-saga",
+     "title": "Saga — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Saga"
+    },
+    {
+     "id": "wp-sagas-of-icelanders",
+     "title": "Sagas of Icelanders — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Sagas_of_Icelanders"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f5-a1d9-7941-b74d-e4f4981c691f",
+     "explanation": "The record's credits name the Icelandic family saga and its corpus is two passages each from the Morris and Dasent translations; it is the lineage child of the two author voices below.",
+     "sourceIds": [
+      "wp-sagas-of-icelanders"
+     ]
+    },
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f5-4b13-7270-b227-0e20bc5d227d",
+     "explanation": "Built from the Morris and Magnusson translation of the Volsunga Saga (1870) and credited to the translators; one parent of the blend above.",
+     "sourceIds": [
+      "wp-sagas-of-icelanders"
+     ]
+    },
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f5-764a-7a00-8ee4-af10b963c036",
+     "explanation": "Built from Dasent's translation of The Story of Burnt Njal (1861) and credited to the translator; the other parent of the blend above.",
+     "sourceIds": [
+      "wp-sagas-of-icelanders"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 20,
+   "name": "Mahjar",
+   "id": "mahjar",
+   "new": false,
+   "version": 3,
+   "baseHash": "481dccdeb86d1f124da1f11a418a10ad8c5c0e08cf60b0791c67ae72f4767b5f",
+   "description": "The literature of Arabic-speaking writers who emigrated from Ottoman Syria, Lebanon and Palestine to the Americas around 1900 and formed a movement in the 1910s. Kahlil Gibran, Mikhail Naimy and Elia Abu Madi founded the Pen League in New York in 1920, and their encounter with English-language Romanticism loosened classical Arabic form. It is usually read as the late phase of the Nahda.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A named literary movement with a period, identified members and a body of work. Wikipedia lists it in Category:Literary movements.",
+     "sourceIds": [
+      "wp-mahjar",
+      "wd-q7185455"
+     ]
+    }
+   ],
+   "broader": [],
+   "relations": [],
+   "questions": [
+    "Mahjar is a movement and the writing style placed here is one register inside it, the second-person address of The Prophet. Whether the movement needs a narrower cell under it for that register, and what body of work would stand behind such a cell, is unsettled."
+   ],
+   "sources": [
+    {
+     "id": "wp-mahjar",
+     "title": "Mahjar — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Mahjar"
+    },
+    {
+     "id": "wd-q7185455",
+     "title": "Mahjar (Q7185455) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q7185455"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f5-d0f5-7161-bc52-67e4dbb59706",
+     "explanation": "The record's credits name the movement \"Mahjar\" and the corpus is four runs of The Prophet (1923), which Gibran wrote in English.",
+     "sourceIds": [
+      "wp-mahjar"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 21,
+   "name": "Comedies of manners",
+   "id": "comedies-of-manners",
+   "new": false,
+   "version": 3,
+   "baseHash": "15eab263a8629760fa075f375a23b659f85503190894a247352606e143f44f42",
+   "description": "Comedy that satirises the code of a particular society by putting its wit and its hypocrisies on stage. The English Restoration line of Etherege, Wycherley and Congreve is the classic case, revived by Sheridan, Wilde and Coward. Dialogue carries almost all of it: the plot exists to give the talk somewhere to happen.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "A named dramatic genre with a canon across three centuries and a stated reliance on dialogue; LCGFT files it under Comedy plays.",
+     "sourceIds": [
+      "lcgft-comedies-of-manners",
+      "wp-comedy-of-manners"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "comedy-plays",
+     "explanation": "LCGFT files Comedies of manners under Comedy plays; the form satirises through comic action and wit.",
+     "sourceIds": [
+      "lcgft-comedies-of-manners",
+      "wp-comedy-of-manners"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "sources": [
+    {
+     "id": "lcgft-comedies-of-manners",
+     "title": "Comedies of manners — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026263"
+    },
+    {
+     "id": "wp-comedy-of-manners",
+     "title": "Comedy of manners — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Comedy_of_manners"
+    }
+   ],
+   "manifestations": [
+    {
+     "entitySet": "WritingStyles",
+     "entityId": "en-01a087f6-016c-7b62-8bb5-b64f4dd7e931",
+     "explanation": "The record's credits name the comedy of manners and the corpus is the opening of each act of The Importance of Being Earnest (1895).",
+     "sourceIds": [
+      "wp-comedy-of-manners"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 22,
+   "name": "Free verse",
+   "id": "free-verse",
+   "new": false,
+   "version": 3,
+   "baseHash": "8286c0882d20e87069cae075e6ee4ea68856fdf931f8a59b586440c4395793b4",
+   "description": "Poetry that drops regular metre and usually rhyme and takes its rhythm from the cadence of speech and the shape of the line. It descends from the French vers libre of the 1880s; Hulme and Flint brought it to the London Poets' Club in 1909, the Imagists made it their medium, and it became the dominant form of twentieth-century poetry in English. Whitman is its great forerunner.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "writing",
+     "explanation": "LCGFT files it under Poetry, and it is a way of building a poem.",
+     "sourceIds": [
+      "lcgft-free-verse",
+      "wp-free-verse"
+     ]
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "poetry",
+     "explanation": "Its Library of Congress record gives Poetry as a broader term.",
+     "sourceIds": [
+      "lcgft-free-verse"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "imagism",
+     "label": "carried by",
+     "explanation": "Free verse became the heart of the Imagist movement through Flint's advocacy, and Imagism was the wellspring from which the main current of English Modernism flowed.",
+     "sourceIds": [
+      "wp-free-verse"
+     ]
+    }
+   ],
+   "questions": [
+    "This cell holds no writing style. Whitman's Leaves of Grass was read as a corpus for one and the derived sentence-length band came out at 14.2 to 304.8 words, because free verse does not punctuate sentences the way prose does, so the band admitted any prose and proved nothing. A free-verse style needs a measurement the current bands schema does not have."
+   ],
+   "sources": [
+    {
+     "id": "lcgft-free-verse",
+     "title": "Free verse — Library of Congress Genre/Form Terms",
+     "url": "https://id.loc.gov/authorities/genreForms/gf2014026348"
+    },
+    {
+     "id": "wp-free-verse",
+     "title": "Free verse — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Free_verse"
+    }
+   ],
+   "manifestations": [],
+   "studies": []
+  }
+ ]
+}

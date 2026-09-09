@@ -1367,3 +1367,95 @@ One description flag is also left standing, and it is the only claim in the 81 t
 Where: `scripts/encyclopedia_support.py`, the strict-flag print; the guidance in `.agents/skills/encyclopedia/SKILL.md`.
 
 And the repair was checked by something other than the instrument that produced it. Twenty of the 198 repaired cells were drawn with a fixed seed rather than chosen, re-read one at a time from production rather than from the saved state, and their 48 sources fetched into an empty cache rather than read from the 36MB one every other measurement used. Twenty hold, none flag. Fifteen of those twenty were the mechanical Artsy cut, which the draw makes likely because 123 of the 198 are, so a second draw was taken from the 80 hand-written scope cuts alone, where the judgement lives: 46 sources fetched fresh, twenty hold, none flag.
+
+
+## D78 A creation loader states that it is not overwriting, where a revision states baseHash
+
+Decision: `scripts/create-writing-styles.py` refuses any slug the deployment already holds, at any status, checked in the plan and again immediately before the first write.
+
+Came up because: the approved candidates are new styles, and the only loader in the repository swaps the corpus of a style that already exists. That loader's safety comes from `baseHash`, the sha256 of the exemplars string as its author read it, which a style with no document cannot have.
+
+Options: Extend the replace loader with a create mode; write a sibling loader; create the rows by hand and then run the replace loader over them.
+
+Chose the sibling because: the replace loader's whole plan is built around a row that exists, and a create mode would have made every guard conditional. A creation needs the opposite guarantee from a revision — not "the bytes have not moved" but "there are no bytes" — and the slug is what a reader, the checker and every other script use as identity. Creating by hand and then replacing would have written 25 rows in a state no proof had passed.
+
+Given up: two loaders now share the same proof code by copy rather than by import. They are held together by `scripts/check-writing-style-exemplars.py`, which runs against the deployment and fails whichever one drifts.
+
+Where: `scripts/create-writing-styles.py`; batch W1 (25 styles) and W2 (1 style), applied 2026-09-09.
+
+## D79 Free verse was dropped because its derived band admitted anything
+
+Decision: Candidate 28, Whitman's Leaves of Grass for the Free verse cell, was built to the point of measurement and then dropped.
+
+Came up because: the four passages measured sentence means of 20.7, 81.2, 225.8 and 20.3 words, which put the derived band at 14.2 to 304.8. Free verse does not punctuate sentences the way prose does, so the checker's sentence splitter sees a whole catalogue as one sentence.
+
+Options: Keep the wide band; choose only the two passages whose means are near 20; drop the candidate.
+
+Chose to drop because: a ceiling of 304 words a sentence is inert against any English prose, and the floor of 14.2 does little more. Choosing the two passages that would have given a narrow band is choosing a corpus to fit a band, which is the defect this effort has already paid for twice from the other direction. The cell now carries the reason as a question, so the next run does not repeat the measurement.
+
+Given up: the Free verse cell stays empty and the collection holds no free-verse style.
+
+Where: `docs/efforts/ARN-118/writing-styles/sources.py`; the `free-verse` cell's `questions`, batch W1-PLACE.
+
+## D80 A blend costs three records, and the Sagas candidate is one too
+
+Decision: Spy fiction and Sagas are each built as a lineage child over two author voices, so the two candidates cost six records rather than two.
+
+Came up because: the two-level rule in `synthesize-writing-style/SKILL.md` makes a single-author corpus an author voice and a multi-author corpus a lineage child whose `parent_ids` name the voices it mixes. The approval names candidate 14 as the only blend; candidate 30 draws on two named Victorian translators and is structurally identical.
+
+Options: Build both as blends with parents; build Sagas as a single style with two authors in its consent block, which is what the live High fantasy style does; ask before proceeding.
+
+Chose to build both as blends because: the rule is explicit and its purpose is that author voices are the calibration set a blend is measured against. Following it for one candidate and not the other would have left the collection with two shapes for the same situation and no way to say which is right. High fantasy predates the rule.
+
+Given up: four records the approval did not name by number, all Draft, all reported. Buchan, Childers, Morris and Dasent each stand as an author voice and each attaches to the same cell as the child above it, which is the shape the live Field notes blend already uses.
+
+Where: `docs/efforts/ARN-118/writing-styles/entries_b.py`; batch W1; the `spy-fiction` and `sagas` cells, batch W1-PLACE.
+
+## D81 An extraction proves it only deleted, and a rule that deleted prose was thrown away
+
+Decision: Every federal passage is checked to be an in-order subsequence of its source, and every token the extraction removed is listed and read.
+
+Came up because: a line-level filter written to strip running heads from the United States Reports deleted "Federal Communications Commission (FCC or Commission)" from the middle of a sentence of Scalia's dissent, and every other check in the build stayed green.
+
+Options: Keep patching the filter; verify the result against the source; drop the source.
+
+Chose to verify because: the subsequence property is cheap and it proves the half that matters — no word was changed, reordered or inserted — while the list of removals proves the other half by being read. An unrestricted footnote rule had already turned "milepost (MP) 480.2" into "milepost 480." before this check existed.
+
+Given up: candidate 2, the Supreme Court dissents, is not built. The bound volumes interleave the running head with the prose in a way no line rule survived the check, the two newer volumes read (570 and 573) drop the fi and fl ligatures outright and lose letters, and supremecourt.gov returns 404 to scripted requests for slip opinions. Nine NTSB reports and five bound volumes are downloaded and the extraction is written, so the next run starts from a state, not from nothing.
+
+Where: `docs/efforts/ARN-118/writing-styles/fed.py`, `removed_by` and `carve`.
+
+## D82 A cell is minted only where the question could have been answered no
+
+Decision: Four cells were minted for this pass: Slave narratives, Technical reports, Accident reports and Scientific romance.
+
+Came up because: four styles had no cell narrow enough to attach to, and minting from a source is the only route the encyclopedia allows.
+
+Options: Attach at the broad parent; mint; leave the record unplaced with a question.
+
+Chose to mint the four because each question was research rather than justification. Does the Library of Congress have a genre term for slave narratives, and what does it file it under: yes, gf2014026176, under Autobiographies, which is exactly the broad cell the style would otherwise have taken. Does it have one for accident reports: yes, gf2024026078, under Technical reports, which the collection also lacked. Does it have one for the scientific romance: no, and the search returned nothing, so that cell rests on the Encyclopedia of Science Fiction's entry, which defines the term as a form of science fiction found in the UK from the late nineteenth century and names Wells's early novels as its exemplars, and on Stableford's 1985 study which that entry cites.
+
+Given up: Walden is attached at Nature writing, whose child Field notes is already occupied, and no leaf was minted for it, because a leaf with one book behind it is a label. The Prophet is attached at Mahjar, which is a movement and broader than the style. Both cells now carry the question rather than only this log.
+
+The Encyclopedia of Science Fiction is not in the source table in `.agents/skills/encyclopedia/SKILL.md`, and this pass opened it. It is not proposed as a reading-pass source; it was read once, for one cell, because the writing lane's own vocabulary has no term for the register and a reference work that does exists.
+
+Where: batches W1-PLACE (22 cells) and W2-PLACE (2 cells), applied 2026-09-09.
+
+## D83 Ten of the eleven modern federal candidates were not built, and why each failed
+
+Decision: Batch 1 of the approval yielded one style, the National Transportation Safety Board accident reports. The other nine were not built.
+
+Came up because: the approval's own recommendation put the value in batch 1, and every source in it had been checked as reachable rather than as extractable.
+
+What each turned out to be, checked on 2026-09-09:
+
+- **Supreme Court dissents.** See D81. Downloaded, extraction written, rejected on the check.
+- **Federal Plain Language Guidelines.** plainlanguage.gov has been restructured and the guidelines now redirect to digital.gov; the pages survive as markdown in GSA's archived repository, which was retrieved. Measured after removing front matter, headings, tables and lists, the whole set is 5,031 words of running prose and the longest continuous piece is 539 words. The corpus standard is four contiguous runs, and this source has one.
+- **NASA Johnson Space Center oral histories.** The transcript index the approval names now serves a NASA WordPress page with no transcript links.
+- **Department of Justice antitrust complaints.** The two case-document links found on the Antitrust Division's own case pages resolved to a court memorandum opinion and to the Department's equal employment opportunity policy. The complaints were not located.
+- **Centers for Disease Control field investigations.** The MMWR article URL pattern returns 403 to scripted requests and the Emerging Infectious Diseases article URL tried returns 404.
+- **Presidential inaugural addresses.** Every GPO-CDOC package tried on govinfo returns its not-found page. The Compilation of Presidential Documents serves single documents and the inaugural package was not found.
+- **Federal Writers' Project life histories.** The Library of Congress collection API works and returns items. The text is page-level ALTO OCR of 1930s typescript, so a corpus from it would measure the OCR.
+- **Federal Writers' Project American Guide Series**, **NASA mission science articles**, and **popular science**: not attempted in this run.
+
+Where: this log; the report on PR #305.
