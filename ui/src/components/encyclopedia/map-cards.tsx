@@ -92,6 +92,17 @@ export function useCellFace(cell: EncyclopediaCell): { face: CellFace; onImageEr
   };
 }
 
+/** React attaches `onError` when it mounts the element, so a picture that
+ *  already 404'd while the HTML was parsing never fires one — and React does
+ *  not re-check an image it finds already broken. A finished image with no
+ *  intrinsic width is a failed image, so every picture below is also asked
+ *  that question the moment its element exists. Without this the fallbacks
+ *  only caught pictures that failed after hydration, which is nearly none of
+ *  them. */
+export function brokenOnArrival(img: HTMLImageElement | null, onFail: () => void): void {
+  if (img && img.complete && img.naturalWidth === 0) onFail();
+}
+
 /** Whether the picture at `src` failed to load, and a way to say it did. The
  *  latch resets during render when `src` changes: a new picture starts out
  *  assumed good. */
@@ -115,7 +126,7 @@ function Face({ face, lod, k, name, fill, onImageError }: { face: CellFace; lod:
     return (
       <span className="relative block overflow-hidden" style={shape}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={face.url} alt={face.alt} className="block h-full w-full object-cover" loading="lazy" draggable={false} onError={onImageError} />
+        <img ref={(el) => brokenOnArrival(el, onImageError)} src={face.url} alt={face.alt} className="block h-full w-full object-cover" loading="lazy" draggable={false} onError={onImageError} />
       </span>
     );
   }
@@ -155,6 +166,8 @@ export function Plate({
   cell,
   x,
   y,
+  level,
+  scale,
   lod,
   k,
   focused,
@@ -165,6 +178,12 @@ export function Plate({
   cell: EncyclopediaCell;
   x: number;
   y: number;
+  /** Which layer of the map this cell is on, and what share of full size it
+   *  therefore draws at. The card is always built at full size and scaled, so
+   *  its type and spacing come down with it and a cell on a lower layer is the
+   *  same object seen from further away. */
+  level: number;
+  scale: number;
   lod: Lod;
   k: number;
   focused: boolean;
@@ -175,7 +194,10 @@ export function Plate({
   onFocus: () => void;
 }) {
   const { face, onImageError } = useCellFace(cell);
-  const box = plateBox(cell);
+  // The card is laid out at full size; `scale` puts it on the paper at the
+  // size its level draws at. The layout reserved exactly this box.
+  const full = plateBox(cell);
+  const box = { w: full.w * scale, h: full.h * scale };
   const material = cellMaterial(cell);
   const reading = lod === "reading";
   const studyText = reading && material.text?.source === "study" ? material.text : null;
@@ -193,8 +215,11 @@ export function Plate({
       style={{
         left: x - box.w / 2,
         top: y - box.h / 2,
-        width: box.w,
-        height: box.h,
+        width: full.w,
+        height: full.h,
+        transform: scale === 1 ? undefined : `scale(${scale})`,
+        transformOrigin: "0 0",
+        marginLeft: scale === 1 ? undefined : 0,
         // The reservation is the card. Anything the content does inside stays
         // inside; nothing can reach a neighbouring plate.
         overflow: "hidden",
@@ -209,6 +234,7 @@ export function Plate({
         zIndex: focused ? 4 : 2,
       }}
       data-plate={cell.id}
+      data-level={level}
     >
       {focused ? <Tape ink="var(--ramune)" className="-top-2 left-5" rotate={-3} width={58} /> : null}
       {reading ? (
@@ -268,12 +294,14 @@ export function Satellite({
   const record = manifestation?.record ?? null;
   const ink = SET_INK[node.set];
   const size = SAT_W;
+  // A record of a deep cell is as small as the cell is, and its label with it.
+  const scale = node.scale;
   // A record's thumbnail can 404. When it does the satellite shows the next
   // face the record has rather than a broken-image box.
   const [imageFailed, markImageFailed] = useLoadFailure(record?.image);
   const thumb = record?.image && !imageFailed ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={record.image} alt={record.name} className="block h-full w-full object-cover" loading="lazy" draggable={false} onError={markImageFailed} />
+    <img ref={(el) => brokenOnArrival(el, markImageFailed)} src={record.image} alt={record.name} className="block h-full w-full object-cover" loading="lazy" draggable={false} onError={markImageFailed} />
   ) : record?.swatches?.length ? (
     <Swatches colors={record.swatches} className="h-full" />
   ) : record?.excerpt ? (
@@ -282,8 +310,19 @@ export function Satellite({
     <span className="block h-full w-full" style={{ background: `color-mix(in srgb, ${ink} 12%, var(--washi))` }} />
   );
   const common = "absolute block text-left transition-opacity duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]";
-  const style: CSSProperties = { left: node.x - size / 2, top: node.y - size / 2, width: size, opacity: dimmed ? dimTo : 1, zIndex: 1 };
-  const labelSize = Math.min(14, Math.max(9, 9 / k));
+  const style: CSSProperties = {
+    left: node.x - (size * scale) / 2,
+    top: node.y - (size * scale) / 2,
+    width: size,
+    opacity: dimmed ? dimTo : 1,
+    zIndex: 1,
+    transform: scale === 1 ? undefined : `scale(${scale})`,
+    transformOrigin: "0 0",
+  };
+  // Type counter-scales against the camera and against the cell's own level,
+  // so a label reads the same whatever level it belongs to.
+  const effectiveK = k * scale;
+  const labelSize = Math.min(14, Math.max(9, 9 / effectiveK));
 
   if (node.role === "more") {
     // The ring holds eight; the rest are real records, and this opens them onto
@@ -291,7 +330,7 @@ export function Satellite({
     const label = `Open the other ${node.more} records this cell names on the map`;
     return (
       <button type="button" onClick={onToggle} title={label} aria-label={label} aria-expanded={false} className={common} style={style}>
-        <span className="grid place-items-center bg-[var(--washi)] font-mono font-bold tabular-nums text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, fontSize: Math.min(22, Math.max(12, 11 / k)) }}>+{node.more}</span>
+        <span className="grid place-items-center bg-[var(--washi)] font-mono font-bold tabular-nums text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, fontSize: Math.min(22, Math.max(12, 11 / effectiveK)) }}>+{node.more}</span>
         {labelled ? <span className="mt-1 block text-center font-mono uppercase tracking-[0.12em] text-muted-foreground" style={{ fontSize: labelSize }}>open all</span> : null}
       </button>
     );
@@ -300,7 +339,7 @@ export function Satellite({
     const label = `Fold the ${node.more} records of this cell back into one node`;
     return (
       <button type="button" onClick={onToggle} title={label} aria-label={label} aria-expanded className={common} style={{ ...style, zIndex: 4 }}>
-        <span className="grid place-items-center font-mono font-bold text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, background: "color-mix(in srgb, var(--yuzu) 42%, var(--washi))", fontSize: Math.min(26, Math.max(14, 13 / k)) }}>−</span>
+        <span className="grid place-items-center font-mono font-bold text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, background: "color-mix(in srgb, var(--yuzu) 42%, var(--washi))", fontSize: Math.min(26, Math.max(14, 13 / effectiveK)) }}>−</span>
         {labelled ? <span className="mt-1 block text-center font-mono uppercase tracking-[0.12em] text-muted-foreground" style={{ fontSize: labelSize }}>fold</span> : null}
       </button>
     );
@@ -323,7 +362,7 @@ export function Satellite({
         // dotted line where there is room for it; the line itself is only a
         // few dozen pixels long once the satellite hugs its cell.
         <span className="mt-1 block w-[132px] -translate-x-[38px] text-center">
-          <Eyebrow ink={ink} style={{ fontSize: Math.min(11, Math.max(8, 7.5 / k)) }}>{SET_EYEBROW[node.set]}</Eyebrow>
+          <Eyebrow ink={ink} style={{ fontSize: Math.min(11, Math.max(8, 7.5 / effectiveK)) }}>{SET_EYEBROW[node.set]}</Eyebrow>
           <span className="block truncate font-sans font-semibold leading-tight text-foreground" style={{ fontSize: labelSize }}>{name}</span>
         </span>
       ) : null}

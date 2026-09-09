@@ -6,7 +6,7 @@ import type { CellManifestation, EncyclopediaCell } from "@/lib/encyclopedia";
 import { GraphIndex, MAP_LABEL, MAP_NAMES_ORDER, relationInk } from "@/lib/encyclopedia-graph";
 import { InkStamp, ProvenanceStamp, RELATION_INK_VAR, inkChipStyle } from "./chrome";
 import { SET_INK, SET_SHORT, type CellFace } from "./material";
-import { Eyebrow, PaperStrip, Swatches, useCellFace, useLoadFailure } from "./map-cards";
+import { brokenOnArrival, Eyebrow, PaperStrip, Swatches, useCellFace, useLoadFailure } from "./map-cards";
 
 // The cell sheet beside the map (a bottom sheet on phones). Title, the
 // PROPOSED CELL and provenance stamps, the scope, then three tabs: Material
@@ -48,7 +48,7 @@ function Thumb({ manifestation }: { manifestation: CellManifestation }) {
   if (!record) return <span className={frame} style={{ outline: "2px dashed color-mix(in oklch, var(--graphite) 45%, transparent)", outlineOffset: -2 }} />;
   if (record.image && !imageFailed) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={record.image} alt="" className={`${frame} object-cover`} style={{ boxShadow: "var(--shadow-sticker)" }} loading="lazy" onError={markImageFailed} />;
+    return <img ref={(el) => brokenOnArrival(el, markImageFailed)} src={record.image} alt="" className={`${frame} object-cover`} style={{ boxShadow: "var(--shadow-sticker)" }} loading="lazy" onError={markImageFailed} />;
   }
   if (record.excerpt) return <span className={frame}><PaperStrip text={record.excerpt} lines={3} className="h-full !px-2 !py-1.5 [&_p]:text-[8.5px] [&_p]:leading-[13px]" /></span>;
   if (record.swatches?.length) return <span className={frame}><Swatches colors={record.swatches} className="h-full" /></span>;
@@ -125,7 +125,7 @@ function CellThumb({ face, onImageError, size }: { face: CellFace; onImageError:
   const box = { width: size, height: size };
   if (face.kind === "image") {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={face.url} alt="" className={`${frame} object-cover`} style={{ ...box, boxShadow: "var(--shadow-sticker)" }} loading="lazy" onError={onImageError} />;
+    return <img ref={(el) => brokenOnArrival(el, onImageError)} src={face.url} alt="" className={`${frame} object-cover`} style={{ ...box, boxShadow: "var(--shadow-sticker)" }} loading="lazy" onError={onImageError} />;
   }
   if (face.kind === "passage") {
     return <span className={`${frame} overflow-hidden`} style={box}><PaperStrip text={face.text} lines={3} className="h-full !px-2 !py-1.5 [&_p]:text-[8px] [&_p]:leading-[12px]" /></span>;
