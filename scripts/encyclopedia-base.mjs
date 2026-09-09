@@ -17,7 +17,13 @@ import { createHash } from "node:crypto";
 export const documentHash = (document) => createHash("sha256").update(document).digest("hex");
 
 export function baseConflict({ id, baseHash, stored, writing }) {
-  if (stored === undefined || stored === "") return null;
+  // A payload that names the bytes it was built from is describing a cell that
+  // held a document when it was read. Finding none now is not an exemption: the
+  // document moved, and moving to nothing is a move.
+  if (stored === undefined || stored === "") {
+    if (baseHash === undefined) return null;
+    return `'${id}' held a document when this payload was built and holds none now; re-read it before writing.`;
+  }
   if (stored === writing) return null;
   if (baseHash === undefined) {
     return `'${id}' already holds a document and this payload does not say which bytes it was built from. Read the cell, put the sha256 of its stored document in the cell's baseHash, and rebuild your change on those bytes.`;

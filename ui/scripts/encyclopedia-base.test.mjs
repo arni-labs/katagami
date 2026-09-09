@@ -31,9 +31,15 @@ test("a payload with no base that replays the stored bytes is still not a confli
   assert.equal(baseConflict({ id: "diaries", baseHash: undefined, stored: read, writing: read }), null);
 });
 
-test("a cell that does not exist yet, or holds nothing, is not a conflict", () => {
-  assert.equal(baseConflict({ id: "diaries", baseHash: base, stored: undefined, writing: read }), null);
-  assert.equal(baseConflict({ id: "diaries", baseHash: base, stored: "", writing: read }), null);
+test("creating a cell that does not exist, or holds nothing, needs no base", () => {
+  assert.equal(baseConflict({ id: "diaries", baseHash: undefined, stored: undefined, writing: read }), null);
+  assert.equal(baseConflict({ id: "diaries", baseHash: undefined, stored: "", writing: read }), null);
+});
+
+test("a payload that names a base and finds no document has watched the cell move to nothing", () => {
+  const conflict = baseConflict({ id: "diaries", baseHash: base, stored: "", writing: read });
+  assert.match(conflict, /held a document when this payload was built and holds none now/);
+  assert.match(baseConflict({ id: "diaries", baseHash: base, stored: undefined, writing: read }), /holds none now/);
 });
 
 test("the hash is over the document bytes, so any change to them is seen", () => {

@@ -289,8 +289,12 @@ for (const cell of ordered) {
 
     assert.ok([200, 201].includes((await request("/tdata/EncyclopediaCells", "POST", { id: cell.id })).status), "create refused");
     // Define is valid only from Draft, so recover a cell left mid-validation by
-    // an interrupted run before rewriting it.
+    // an interrupted run before rewriting it. Check the base FIRST: a cell that
+    // is validating may be another run's write in flight, and abandoning that
+    // validation would disrupt a run this one is about to refuse anyway.
     existing = await read(cell);
+    const beforeRecovery = baseConflict({ id: cell.id, baseHash: cell.baseHash, stored: existing?.fields.document, writing: cell.document });
+    assert.ok(!beforeRecovery, beforeRecovery && `${beforeRecovery} Nothing was written to it and no validation was abandoned.`);
     if (existing?.status === "ValidatingDocument") {
       const abandoned = await request(`/tdata/EncyclopediaCells('${cell.id}')/Temper.AbandonValidation`, "POST", {});
       assert.ok([200, 409].includes(abandoned.status), `AbandonValidation: ${JSON.stringify(abandoned.data)}`);
