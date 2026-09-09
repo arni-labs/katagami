@@ -2,7 +2,7 @@
 """Hold every live writing style to the exemplar contract.
 
 An exemplar is the evidence a reader judges a voice by, so a sentence cannot be
-one. The rule this script enforces has three parts, and each one failed silently
+one. The rule this script enforces has four parts, and each one failed silently
 before it was written down:
 
   1. Every live style carries one to three exemplars, each between 150 and 400
@@ -16,6 +16,14 @@ before it was written down:
      own corpus. Exemplars and corpus are evidence and nobody edits them, so an
      exemplar that has drifted from the corpus by a word is a defect even when
      the drift reads better.
+  4. The same rule applied to the VOICE.md, which quotes whole corpus passages
+     inside itself. VOICE.md is the copy that travels: it is the file handed to
+     another agent as a prompt, so it is the one most likely to be read and
+     reused. A style whose corpus is replaced without its VOICE.md being rebuilt
+     goes on serving the old passages under the new name, and every entity field
+     looks correct the whole time. This is what catches that without anyone
+     opening the file by hand. The replica section is exempt, because a replica
+     is written from the contract and is never claimed to be corpus.
 
     python3 scripts/check-writing-style-exemplars.py [--snapshot styles.json]
 
@@ -49,8 +57,18 @@ def get(path):
     return json.load(urllib.request.urlopen(request, timeout=120))
 
 
+def file_text(file_id):
+    origin = os.environ.get("TEMPER_API_URL", "https://openpaw-production.up.railway.app")
+    request = urllib.request.Request(
+        f"{origin}/tdata/Files('{file_id}')/$value",
+        headers={"Authorization": f"Bearer {os.environ['TEMPER_API_KEY']}",
+                 "X-Tenant-Id": os.environ.get("TEMPER_TENANT", "default")},
+    )
+    return urllib.request.urlopen(request, timeout=120).read().decode("utf-8")
+
+
 def styles_and_corpora(snapshot):
-    """Returns [(fields, [(name, text), ...])] for every live style."""
+    """Returns [(fields, [(name, text), ...], voice_md)] for every live style."""
     if snapshot:
         loaded = json.load(open(snapshot))
         rows, cached = loaded["value"], loaded.get("corpora", {})
@@ -63,18 +81,12 @@ def styles_and_corpora(snapshot):
             continue
         slug = fields["slug"]
         if slug in cached:
-            corpus = [(name, body) for name, body in cached[slug]]
+            corpus, voice_md = [(name, body) for name, body in cached[slug]], cached.get(f"{slug}:voice")
         else:
-            corpus = []
-            for n, file_id in enumerate(fields.get("corpus_file_ids") or [], 1):
-                url = f"{os.environ.get('TEMPER_API_URL')}/tdata/Files('{file_id}')/$value"
-                request = urllib.request.Request(
-                    url,
-                    headers={"Authorization": f"Bearer {os.environ['TEMPER_API_KEY']}",
-                             "X-Tenant-Id": os.environ.get("TEMPER_TENANT", "default")},
-                )
-                corpus.append((f"corpus-{n}.md", urllib.request.urlopen(request, timeout=120).read().decode("utf-8")))
-        out.append((fields, corpus))
+            corpus = [(f"corpus-{n}.md", file_text(file_id))
+                      for n, file_id in enumerate(fields.get("corpus_file_ids") or [], 1)]
+            voice_md = file_text(fields["voice_md_file_id"]) if fields.get("voice_md_file_id") else None
+        out.append((fields, corpus, voice_md))
     return out
 
 
@@ -83,7 +95,45 @@ def flat(text):
     return re.sub(r"\s+", " ", text).strip()
 
 
-def problems_with(fields, corpus):
+# The sections of a VOICE.md that quote the corpus. Every VOICE.md format the
+# collection has used calls them one of these. "Known-good replica" is left out
+# on purpose: a replica is written from the contract and is labelled a replica.
+QUOTING_SECTIONS = ("Gold standard samples", "How it reads")
+SCAFFOLDING = re.compile(r"^(Source:|The voice is these passages|Each numbered entry|The strongest guide|—\s)")
+
+
+def quoted_passages(voice_md):
+    """Every block of prose a VOICE.md presents as corpus, in any of its formats.
+
+    The older format puts one whole passage per line as `N. "..."`. The beta
+    format numbers a `Source:` label and indents the passage under it, and its
+    "How it reads" excerpt is a blockquote. All three reduce to the same thing:
+    contiguous lines of quoted prose."""
+    passages, block, inside = [], [], False
+    for line in voice_md.split("\n") + ["## end"]:
+        if line.startswith("## "):
+            if block:
+                passages.append("\n".join(block))
+                block = []
+            inside = line[3:].strip() in QUOTING_SECTIONS
+            continue
+        if not inside:
+            continue
+        numbered = re.match(r'^\d+\.\s+"(.*)"\s*$', line)
+        if numbered:
+            passages.append(numbered.group(1))
+            continue
+        stripped = line[2:] if line.startswith("> ") else (line[3:] if line.startswith("   ") else None)
+        if stripped is None or SCAFFOLDING.match(stripped.strip()) or not stripped.strip():
+            if block:
+                passages.append("\n".join(block))
+                block = []
+            continue
+        block.append(stripped)
+    return [p for p in passages if len(words_of(p)) >= 12]
+
+
+def problems_with(fields, corpus, voice_md=None):
     found = []
     name = fields["name"]
     exemplars = json.loads(fields.get("exemplars") or "[]")
@@ -102,11 +152,23 @@ def problems_with(fields, corpus):
     for violation in check(bands, corpus, [(f"{name} exemplar {i}", e.get("text", "")) for i, e in enumerate(exemplars, 1)]):
         found.append(violation)
     basis = (json.loads(fields.get("consent") or "{}")).get("basis")
+    haystack = " ".join(flat(body) for _, body in corpus)
     if basis == "public_domain":
-        haystack = " ".join(flat(body) for _, body in corpus)
         for i, exemplar in enumerate(exemplars, 1):
             if flat(exemplar.get("text", "")) not in haystack:
                 found.append(f"{name}: exemplar {i} is not a verbatim run of its own corpus")
+    if voice_md:
+        passages = quoted_passages(voice_md)
+        # A file that quotes nothing would satisfy the rule below by having no
+        # passages to fail it, which is the same exemption the word floor taught
+        # us about. Every VOICE.md format the collection uses quotes the corpus,
+        # so none is the wrong answer rather than a clean one.
+        if not passages:
+            found.append(f"{name}: VOICE.md quotes no corpus passage, so nothing here was checked")
+        for i, passage in enumerate(passages, 1):
+            if flat(passage) not in haystack:
+                found.append(f"{name}: VOICE.md passage {i} is not in the style's own corpus "
+                             f"(\"{flat(passage)[:60]}…\")")
     return found
 
 
@@ -116,8 +178,8 @@ def main():
         snapshot = sys.argv[sys.argv.index("--snapshot") + 1]
     everything = styles_and_corpora(snapshot)
     problems = []
-    for fields, corpus in everything:
-        found = problems_with(fields, corpus)
+    for fields, corpus, voice_md in everything:
+        found = problems_with(fields, corpus, voice_md)
         mark = "ok" if not found else f"{len(found)} problem(s)"
         print(f"{fields['name'][:44]:<45} {fields['Status']:<12} {mark}")
         problems += found

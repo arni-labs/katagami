@@ -152,6 +152,32 @@ changes. Lord Dunsany is the third name usually given and is not carried: he die
 in 1957, so his work is public domain in the United States and remains in
 copyright in countries applying life plus seventy until 2028.
 
+## Styles that are public domain in the United States only
+
+Three of the collection's styles rest on the United States rule that anything
+published before 1929 is public domain there, while their authors died recently
+enough that the work is still in copyright in countries applying life plus
+seventy. Katagami publishes at katagami.ai to readers in both. Recording the
+class rather than deciding it style by style:
+
+| style | author died | clear in life+70 countries from |
+|---|---|---|
+| Emily Post — etiquette manual (1922) | 1960 | 2031 |
+| The Crisis — editorial page (1910-1911) | Du Bois, 1963 | 2034 |
+| William Strunk Jr. — style manual (1918) | 1946 | 2017 (clear now) |
+
+Emily Post was already in this position before this effort; The Crisis joins her.
+Two candidates were rejected on exactly this test rather than admitted to the
+class: Lord Dunsany (died 1957, clear 2028) for High fantasy, and Hemingway's
+*In Our Time* for the dirty-realism slot. Where an author who is clear everywhere
+does the same job, that author is preferred, which is why the corpora above are
+Morris and MacDonald rather than Dunsany, and Anderson rather than Hemingway.
+
+What the class needs and does not have is a decision about whether the site
+should serve a corpus that is public domain only in the United States to a reader
+outside it. That is the owner's call, recorded here so it is asked once rather
+than re-litigated per style.
+
 ## Bands
 
 Every style's mechanical bands are derived from its own new corpus rather than
