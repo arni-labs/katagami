@@ -40,7 +40,7 @@ Status: accepted. Intent: docs/efforts/ARN-436/intent.md
    and Datadog routing keys (`status`, `service`, `ddtags`, `message`,
    `hostname`, …) cannot be overridden. A module-load invariant rejects
    identity-shaped or reserved allow-list entries.
-10. `check-telemetry-contract.mjs` runs in `npm run test:auth` AND in
+10. `check-telemetry-contract.mjs` runs in `npm test` AND in
     `prebuild` (every Vercel build) and locks the behaviors above.
 11. `@odata.count` is read strictly (`readODataCount`): a 200 without the
     field, or a non-numeric value, throws — never a silent zero on the
