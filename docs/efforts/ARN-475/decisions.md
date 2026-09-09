@@ -96,3 +96,37 @@ Where: the records loop in `layoutVisible`; the test "no two open cards overlap"
 - Motion when siblings shift: positions snap today.
 - The layout tests assert no overlap over the open set; the real library's shape (245 roots, Poetry with 91 narrower cells) has not been asserted in a test, only looked at.
 - Full 3D, free rotation, and the rendering technology for either.
+
+## D9 Nodes can be dragged, and a branch moves as one thing
+
+Decision: A card or a category node can be picked up with the pointer. The move is an offset keyed by the node's id, on top of the computed layout, and everything open under the node moves with it. Offsets live in component state for the session.
+
+Came up because: Rita asked to drag nodes; they were static.
+
+Options: Move only the node; move the node with its open branch; persist moves.
+
+Chose the branch because: a card and the cells it has opened are one thing to a reader; moving the card away from its own narrower cells would make the lines the only thing holding the branch together. Given up: a single card cannot be pulled out of its branch. Persistence is not decided.
+
+Where: `startNodeDrag` and the displaced `layout` in `encyclopedia-map.tsx`; `onDragStart` on `Plate` and `Hub` in `map-cards.tsx`.
+
+## D10 No words on the lines
+
+Decision: Lines carry no text. The arrowhead says which end is narrower, the ink says the relation family, the legend says what the inks mean, the sheet carries the relation's word and explanation, and hovering a line shows both as a tooltip.
+
+Came up because: Rita: "there should never be any text that just makes it busy."
+
+Where: the line SVG in `encyclopedia-map.tsx`.
+
+## D11 A cell on two maps says so, and the filter frames it
+
+Decision: A cell drawn in one map's cluster that also belongs to another map carries a small mark in that map's ink with the map's name, raised when that map is the filter; the map filter frames every open cell on the map wherever it sits, and dims only cells not on it.
+
+Came up because: Rita asked whether art and writing were connected at all. Checked against production: 52 cells sit on both maps, 6 hierarchy links and 10 typed relations cross them, and the map showed none of this — a dual-map cell was placed in its first map's cluster with no mark, and the filter framed only that cluster.
+
+Where: `alsoOn` in `encyclopedia-map.tsx` and the mark in `PlateCard`; `fitRegion`.
+
+## D12 The sheet is set small
+
+Decision: Sheet prose is 13.5px, headings 14.5px, titles 24px; the phone browser and the cards come down with it. The 17px body floor in the design contract is for pages; this is a working panel beside a dense canvas, and Rita asked for it (2026-09-09).
+
+Where: `focus-sheet.tsx`, `browse.tsx`, `map-cards.tsx`.
