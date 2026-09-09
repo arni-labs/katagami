@@ -957,7 +957,7 @@ export function EncyclopediaMap({
           The <Marker color="sakura">encyclopedia</Marker>
         </h1>
         <div
-          className="pointer-events-auto mt-4 flex flex-wrap items-center gap-2"
+          className="encyclopedia-filters pointer-events-auto mt-4 flex items-center gap-2"
           role="group"
           aria-label="Filter by map"
         >
@@ -999,7 +999,11 @@ export function EncyclopediaMap({
         </div>
       </div>
 
-      <div data-map-control className="encyclopedia-depth-controls">
+      <div
+        data-map-control
+        className="encyclopedia-depth-controls"
+        style={!desktop ? { bottom: focusCell ? 222 : 136 } : undefined}
+      >
         <button
           type="button"
           aria-pressed={depth}
@@ -1069,14 +1073,16 @@ export function EncyclopediaMap({
 
       {/* zoom + minimap */}
       <div
-        className={`absolute z-20 ${desktop ? "bottom-12 left-6 flex items-end gap-2" : "bottom-4 right-3"}`}
+        data-map-control
+        style={!desktop ? { bottom: focusCell ? 222 : 136 } : undefined}
+        className={`absolute z-20 ${desktop ? "bottom-12 left-6 flex items-end gap-2" : "right-3"}`}
       >
         <div className="flex flex-col gap-1.5">
           <button
             type="button"
             onClick={() => zoomStep(1)}
             aria-label="Zoom in"
-            className="grid h-9 w-9 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"
+            className="grid h-11 w-11 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"
           >
             <Plus size={16} strokeWidth={2.2} />
           </button>
@@ -1084,7 +1090,7 @@ export function EncyclopediaMap({
             type="button"
             onClick={() => zoomStep(-1)}
             aria-label="Zoom out"
-            className="grid h-9 w-9 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"
+            className="grid h-11 w-11 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"
           >
             <Minus size={16} strokeWidth={2.2} />
           </button>
@@ -1093,7 +1099,7 @@ export function EncyclopediaMap({
             onClick={() => fitAll()}
             aria-label="Fit everything"
             title="Fit (0)"
-            className="grid h-9 w-9 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"
+            className="grid h-11 w-11 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"
           >
             <Maximize2 size={15} strokeWidth={2.2} />
           </button>

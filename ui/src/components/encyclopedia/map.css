@@ -124,3 +124,14 @@ body:has(.encyclopedia-workspace) {
     top: 56px;
   }
 }
+
+.encyclopedia-filters {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  max-width: calc(100vw - 40px);
+  padding-bottom: 8px;
+}
+.encyclopedia-filters button {
+  flex-shrink: 0;
+  min-height: 44px;
+}
