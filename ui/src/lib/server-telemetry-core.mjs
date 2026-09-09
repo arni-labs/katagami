@@ -68,7 +68,11 @@ export const RESERVED_LOG_KEYS = new Set([
 export const EVENT_ATTRS = {
   auth_login: new Set(["registration", "upsert_ok", "user_hash"]),
   auth_login_failed: new Set(["reason"]),
-  mcp_tool_call: new Set(["tool", "tier", "outcome", "duration_ms", "user_hash", "error_kind"]),
+  // `arg_keys` is the clamped list of argument NAMES a rejected call sent
+  // (never values, clamped to KNOWN_ARG_KEYS at the call site in
+  // app/mcp/route.ts) — it is what turns "invalid_arguments" into a
+  // diagnosis of which parameter shape an agent reached for.
+  mcp_tool_call: new Set(["tool", "tier", "outcome", "duration_ms", "user_hash", "error_kind", "arg_keys"]),
   // `reason` is the closed bearer-rejection vocabulary from
   // AUTH_REJECTION_REASONS in catalog-auth-core.mjs (expired | signature |
   // claims | audience | scope | generation | grant_revoked |
@@ -194,7 +198,25 @@ export function telemetryEnabled(env = process.env) {
   return resolveLogsIntake(env) !== null;
 }
 
+/**
+ * The env tag, and the one thing that keeps a laptop out of the production
+ * stream.
+ *
+ * `vercel env pull` writes VERCEL_ENV=production and VERCEL=1 straight into
+ * `.env.local`, so a locally started server holding a pulled production env
+ * used to emit events indistinguishable from real traffic — same service, same
+ * env tag. That is not a cosmetic mislabel: the alerting set pages a human on
+ * counts of those events, and the per-user activity numbers are read as real
+ * usage. A developer verifying a change could page Rita and inflate her
+ * numbers, and did (2026-09-09).
+ *
+ * VERCEL_REGION is the discriminator. Vercel sets it per invocation at runtime
+ * — deployed events carry `hostname: iad1` — and `vercel env pull` does not
+ * write it, so no pulled file can forge it. Production and preview tags now
+ * require it; everything else is a local run and says so.
+ */
 export function telemetryEnv(env = process.env) {
+  if (!env.VERCEL_REGION) return "local-verify";
   if (env.VERCEL_ENV === "production") return "production";
   if (env.VERCEL_ENV === "preview") return "preview";
   return "local-verify";

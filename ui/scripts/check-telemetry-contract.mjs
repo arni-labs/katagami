@@ -18,6 +18,7 @@ import {
   principalPepper,
   resolveLogsIntake,
   RESERVED_LOG_KEYS,
+  telemetryEnv,
 } from "../src/lib/server-telemetry-core.mjs";
 import { readODataCount } from "../src/lib/odata-count.mjs";
 import {
@@ -61,6 +62,7 @@ const dashboard = read("../infra/datadog/katagami-rum-dashboard.json");
 const pkg = read("package.json");
 const meRoute = read("src/app/api/auth/me/route.ts");
 const analytics = read("src/lib/analytics.ts");
+const signinCallback = read("src/app/api/auth/google/callback/route.ts");
 const rumInit = read("src/components/rum-init.tsx");
 const userMenu = read("src/components/user-menu.tsx");
 const sessionMe = read("src/lib/session-me.ts");
@@ -527,6 +529,97 @@ const required = [
   ["MCP emit stamps @tier:full (dashboard filters match)", telemetry, /tier: "full"/],
   ["telemetry no-ops without credentials", telemetry, /if \(!intake\) return/],
   ["intake fetch is aborted on hang", telemetry, /signal: intakeAbortSignal\(/],
+  // Friction visibility (ARN-462): a rejected call must say WHICH argument
+  // names the caller sent, and the get_* tools must accept the name search
+  // actually hands back.
+  [
+    "rejected tool calls report the argument names sent",
+    telemetry,
+    /arg_keys: argKeys/,
+  ],
+  [
+    "argument names are clamped to a known vocabulary, never free text",
+    mcp,
+    /KNOWN_ARG_KEYS\.has\(k\) \? k : "\(other\)"/,
+  ],
+  [
+    "get_* tools accept id and slug, not just id_or_slug",
+    mcp,
+    /ID_ALIASES = \{ id_or_slug: idArg, id: idArg, slug: idArg \}/,
+  ],
+  [
+    "a missing id returns our message, not a bare SDK rejection",
+    mcp,
+    /function missingId\(\)/,
+  ],
+  // Panel findings on the fix itself. A client that materializes every declared
+  // property sends the unused aliases as JSON null; `.optional()` rejects that
+  // and refuses a call carrying a perfectly good identifier (grok).
+  // The other field an agent has to guess. An invalid kind is still an SDK
+  // rejection, but the schema now names the accepted values (verifier finding).
+  [
+    "the kind values are named in the schema, not left to be guessed",
+    mcp,
+    /the same values search results and get_\* responses carry/,
+  ],
+  [
+    "identifier aliases accept JSON null, not only absence",
+    mcp,
+    /\.describe\("The entity id \(en-…\) or the slug"\)\s*\n\s*\.nullish\(\)/,
+  ],
+  // A caller passing an identifier under a name we do not take (`identifier`)
+  // now reaches the handler instead of being refused by the SDK, so without its
+  // own error_kind the exact disagreement the monitor exists to catch would be
+  // invisible (codex).
+  [
+    "a handler-side missing id is reported as its own error kind",
+    mcp,
+    /errorKind: timedOut[\s\S]{0,120}"missing_id"/,
+  ],
+  [
+    "a handler-side missing id carries the argument names too",
+    mcp,
+    /argKeys: missing \? \(rawArgKeys\(extra\) \?\? argKeysOf\(args\)\) : undefined/,
+  ],
+  // Zod strips undeclared keys, so the name the agent actually reached for is
+  // gone by the time the handler runs. Capture it while the raw request is
+  // still in hand, or every unknown-name rejection reports "(none)".
+  // Pin the WIRING, not just the helper: reverting only this line leaves every
+  // other assertion green with the feature dead (fable panel finding).
+  [
+    "the SDK's own rejection reports the argument names",
+    mcp,
+    /argKeys: result\?\.isError \? rawArgKeys\(extra\) : undefined/,
+  ],
+  // RUM's env is decided by the hostname the browser is actually on, so a
+  // preview or a phone on the LAN cannot page anyone through the site-errors
+  // monitor (fable panel finding).
+  [
+    "only katagami.ai counts as production for RUM",
+    analytics,
+    /env: rumEnvFor\(window\.location\.hostname, e\.env\)/,
+  ],
+  [
+    "argument names are captured before the schema strips them",
+    mcp,
+    /stashRawArgKeys\(extra, argKeysOf\(\(request\?\.params/,
+  ],
+  // A Google outage and a person clicking cancel must not share one reason:
+  // the sign-in alert excludes declines, so conflating them hid the outage
+  // (codex).
+  [
+    "a Google-side failure is not filed as a user decline",
+    signinCallback,
+    /googleError === "access_denied" \? "consent" : "provider"/,
+  ],
+  // RUM's env tag is baked at build time, so a local build with a pulled
+  // production env would tag browser errors env:production and page a human —
+  // the same class the server-side env guard closes (grok).
+  [
+    "a page served from localhost never starts RUM",
+    analytics,
+    /if \(isLocalHost\(window\.location\.hostname\)\) return;/,
+  ],
   // The failure emit must carry its own SHORT abort: reporting a dead rollup
   // cannot be killed by the slow backend it is reporting on (verifier finding).
   [
@@ -571,8 +664,16 @@ const required = [
   })(), /^true$/],
   ["login-path members snapshot is tagged source:login", callback, /source: "login"/],
   ["state-mismatch emits only when a code came back (bots stay silent)", callback,
-    /else if \(code\) \{\s*trackServerEvent\("auth_login_failed", \{ reason: "state" \}/],
-  ["Google consent errors are their own reason", callback, /reason: "consent"/],
+    /else if \(code\) \{[\s\S]{0,400}?trackServerEvent\("auth_login_failed", \{ reason: "state" \}/],
+  // `consent` used to cover every Google error redirect. The sign-in alert
+  // excludes it as a user's choice, which also excluded a Google outage, so
+  // the two now carry different reasons (codex panel finding).
+  ["a user decline is reason:consent", callback, /\? "consent"/],
+  ["a Google outage is reason:provider, not a decline", callback, /: "provider"/],
+  // An unauthenticated GET must not be able to page a human: the provider
+  // reason requires OUR httpOnly state cookie, which nobody else can plant
+  // (fable panel finding).
+  ["only our own flow can report a provider failure", callback, /if \(googleError && ours\)/],
   ["signSession failures are reason:session, not reason:google", callback, /reason: "session"/],
   ["countMembers is bounded by default", oauthAs, /AbortSignal\.timeout\(COUNT_MEMBERS_TIMEOUT_MS\)/],
   ["countMembers reads @odata.count strictly (absent throws, never 0)", oauthAs,
@@ -778,6 +879,36 @@ if (/anonymous sample vs signed-in full/.test(dashboard)) {
   failed += 1;
 } else {
   console.log("ok: dashboard no longer claims anonymous sample vs signed-in full");
+}
+
+// A laptop must not be able to write into the production stream. `vercel env
+// pull` writes VERCEL_ENV=production and VERCEL=1 into .env.local, so the env
+// tag has to hang on something only a real invocation sets: VERCEL_REGION.
+// Without this, verification traffic pages a human and inflates the usage
+// numbers, and it did (2026-09-09).
+{
+  const pulled = { VERCEL_ENV: "production", VERCEL: "1", VERCEL_URL: "katagami.ai" };
+  assert.equal(
+    telemetryEnv(pulled),
+    "local-verify",
+    "a pulled production env with no VERCEL_REGION must tag as local-verify",
+  );
+  assert.equal(
+    telemetryEnv({ ...pulled, VERCEL_REGION: "iad1" }),
+    "production",
+    "a real deployed invocation must still tag as production",
+  );
+  assert.equal(
+    telemetryEnv({ VERCEL_ENV: "preview", VERCEL_REGION: "iad1" }),
+    "preview",
+    "preview deployments keep their own tag",
+  );
+  assert.match(
+    logPayload("probe", {}, "info", pulled).ddtags,
+    /env:local-verify/,
+    "the emitted payload carries the local tag, not just the helper",
+  );
+  console.log("ok: only a real Vercel invocation can tag events production");
 }
 
 if (failed > 0) {

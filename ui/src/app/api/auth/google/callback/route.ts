@@ -43,11 +43,45 @@ export async function GET(req: NextRequest) {
     // Emit only for hits that look like a real handshake coming back.
     // Scanners GET this URL bare (no code, no error) constantly; emitting
     // for them would drown real failures in warn noise and pump ingest cost.
-    if (req.nextUrl.searchParams.get("error")) {
-      // Google redirected back with an explicit error (user denied consent,
-      // policy block, …) — that is Google talking, not a broken handshake.
-      trackServerEvent("auth_login_failed", { reason: "consent" }, "warn");
+    //
+    // `ours` is the stronger version of that test, and it is what keeps the
+    // sign-in alert honest. The state cookie is httpOnly and set only by our
+    // own /api/auth/google/start, so its presence means a flow someone started
+    // against that route is coming back. Without it, one line —
+    // `curl 'https://katagami.ai/api/auth/google/callback?error=x'` five times
+    // — pages a human, and the page reads as a Google outage.
+    //
+    // It is not proof of a genuine Google failure. `start` is unauthenticated,
+    // so a deliberate forger needs two requests rather than one: collect the
+    // cookie from `start`, then replay it here. Requiring the `state` parameter
+    // to match would not help — the same self-initiated flow supplies both. So
+    // the monitor message, not this gate, is what stops a spoofed spike being
+    // read as an outage.
+    const ours = Boolean(cookieState);
+    const googleError = req.nextUrl.searchParams.get("error");
+    if (googleError && ours) {
+      // Google redirected back with an explicit error. Split it: a person
+      // clicking "Cancel" (`access_denied`) is a choice and must not page
+      // anyone, but `server_error`, `temporarily_unavailable` and an org
+      // policy block are Google failing and every one of them is someone who
+      // wanted an account and did not get one. Filing both under one reason
+      // meant the alert that excludes declines also excluded the outage.
+      //
+      // `access_denied` is not purely voluntary — Google also returns it when a
+      // Workspace admin blocks the app — so a policy-blocked org still files as
+      // a decline and stays out of the alert. The redirect carries nothing that
+      // separates the two, so this is a known limit, recorded rather than
+      // guessed at.
+      trackServerEvent(
+        "auth_login_failed",
+        { reason: googleError === "access_denied" ? "consent" : "provider" },
+        "warn",
+      );
     } else if (code) {
+      // Deliberately NOT gated on `ours`: a state failure is most often the
+      // cookie being missing, so requiring it would suppress the very case this
+      // reason exists to report. That leaves reason:state mintable by an
+      // unauthenticated GET, which the monitor message says out loud.
       trackServerEvent("auth_login_failed", { reason: "state" }, "warn");
     }
     return NextResponse.redirect(new URL("/signin?error=state", origin));

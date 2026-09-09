@@ -1,0 +1,19 @@
+{
+  "name": "[Katagami] People cannot sign in",
+  "type": "log alert",
+  "query": "logs(\"service:katagami-server env:production @evt:auth_login_failed -@reason:consent\").index(\"*\").rollup(\"count\").last(\"1h\") >= 5",
+  "message": "Five or more sign-in attempts failed in the last hour, excluding the ones where the person declined the Google consent screen (@reason:consent), which is a choice and not a fault.\n\nThe reasons that matter here:\n  provider \u2014 Google returned server_error, temporarily_unavailable, or a policy block; that is an outage, not a choice\n  state \u2014 the callback arrived with a code but no matching cookie; usually a cookie or redirect-URI problem\n  google \u2014 the token exchange with Google failed; check client credentials\n  session \u2014 our own session signing failed; that is our bug, not Google's\n\nEvery one of these is a person who wanted an account and did not get one.\n\nLogs: https://app.datadoghq.com/logs?query=service%3Akatagami-server%20env%3Aproduction%20%40evt%3Aauth_login_failed\n\nBefore treating a spike as an outage, check it is not forged: reason:state is\nmintable by anyone who GETs this callback with a `code` parameter and no\naccount, because a missing cookie IS the failure that reason reports. A\nprovider spike is much harder to fake \u2014 it needs our own httpOnly state cookie\n\u2014 so weight that one heavier, and look at whether the events cluster on one IP.\n\nA Workspace admin blocking the app also comes back as access_denied, so it\nfiles as consent and this alert will not see it. The redirect carries nothing\nthat separates that from a person clicking Cancel.\n\n@rita.mirai@gmail.com",
+  "tags": [
+    "katagami",
+    "friction",
+    "auth"
+  ],
+  "options": {
+    "notify_no_data": false,
+    "renotify_interval": 1440,
+    "thresholds": {
+      "critical": 5
+    },
+    "include_tags": true
+  }
+}

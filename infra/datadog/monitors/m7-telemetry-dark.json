@@ -1,0 +1,20 @@
+{
+  "name": "[Katagami] Production telemetry has gone quiet",
+  "type": "log alert",
+  "query": "logs(\"service:katagami-server env:production\").index(\"*\").rollup(\"count\").last(\"4h\") < 1",
+  "message": "No server event has arrived from production in four hours. Katagami is not that quiet \u2014 this almost certainly means the telemetry is broken, not that nobody used the site.\n\nEvery other Katagami monitor filters env:production. While this condition holds, none of them can fire, so silence from them means nothing.\n\nCauses in order of likelihood:\n  VERCEL_REGION is no longer set at runtime, so telemetryEnv tags everything local-verify (check for events under env:local-verify \u2014 if they are there, this is it)\n  DD_API_KEY was removed or rotated in Vercel, so emitServerEvent fails closed\n  the site is down\n\nLogs: https://app.datadoghq.com/logs?query=service%3Akatagami-server\n\n@rita.mirai@gmail.com",
+  "tags": [
+    "katagami",
+    "friction",
+    "heartbeat"
+  ],
+  "options": {
+    "notify_no_data": true,
+    "no_data_timeframe": 240,
+    "renotify_interval": 1440,
+    "thresholds": {
+      "critical": 1
+    },
+    "include_tags": true
+  }
+}
