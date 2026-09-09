@@ -9,7 +9,7 @@
    "id": "art-informel",
    "new": false,
    "version": 3,
-   "baseHash": "d80c2305239a8b7f4dcac75c1701a917f202415d30fe912cbaa1a697f4a60cb6",
+   "baseHash": "76a34c2c88ae6d8c32f5ed85b2664bb2a671ab52e2f3294cb447870d75a69787",
    "description": "European gestural abstraction of the 1940s and 1950s, named by the critic Michel Tapié in 1950 for painting made without a preconceived form. It runs parallel to American Abstract Expressionism and gathers tachisme, matter painting and lyrical abstraction under one label, with Dubuffet, Fautrier and Wols among its painters. Its argument is that the mark should be found in the making.",
    "provenance": {
     "basis": "cited"
@@ -39,7 +39,7 @@
     {
      "id": "aat-300022176",
      "title": "Art Informel — Getty Art & Architecture Thesaurus 300022176",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022176"
+     "url": "https://vocab.getty.edu/aat/300022176"
     }
    ],
    "broader": [
@@ -203,7 +203,7 @@
    "id": "concrete-art",
    "new": false,
    "version": 3,
-   "baseHash": "d94a5134bff6788cfe544bebb6d7eb1d298ed9d659a1bfd46eecafdba08e48c0",
+   "baseHash": "1dbe50c38324ab77bd0f0315eea9d027d896ab98ab1442b0e71bc172947e16a3",
    "description": "Abstraction that refers to nothing outside itself, formulated by Theo van Doesburg in 1930 and taken up after his death by Max Bill. Its forms are geometric, planned in advance and conceived before execution, which is what the word concrete claims: the work is a real object in its own right. It carried into Latin America and produced its own movements there.",
    "provenance": {
     "basis": "cited"
@@ -233,7 +233,7 @@
     {
      "id": "aat-300021436",
      "title": "Concrete Art — Getty Art & Architecture Thesaurus 300021436",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021436"
+     "url": "https://vocab.getty.edu/aat/300021436"
     }
    ],
    "broader": [
@@ -256,7 +256,7 @@
    "id": "suprematism",
    "new": false,
    "version": 3,
-   "baseHash": "d43feafc6e285c7643635946686d8f0f34a11aad87af3d1d272a06491c8b13c0",
+   "baseHash": "ef9ddf91585c5cc4b07eef0e9ac6002f6e18d5a3e6eee7326c1aeb377f1fcb9b",
    "description": "Kazimir Malevich's abstraction, declared in 1915, built from a few geometric shapes in a limited palette and grounded in what he called the supremacy of pure artistic feeling. The Black Square is its founding statement, hung in the corner where an icon would go. It is an argument that painting can be about nothing outside itself and still be about everything.",
    "provenance": {
     "basis": "cited"
@@ -286,7 +286,7 @@
     {
      "id": "aat-300021405",
      "title": "Suprematism — Getty Art & Architecture Thesaurus 300021405",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021405"
+     "url": "https://vocab.getty.edu/aat/300021405"
     }
    ],
    "broader": [
@@ -309,7 +309,7 @@
    "id": "de-stijl",
    "new": false,
    "version": 3,
-   "baseHash": "1e4905964c35001d79b9eca7b0d6758cb1d05015ae0db0e122b4c082b855be3b",
+   "baseHash": "6451ec3dd3e1727cb80e8567bb4713c9c696ce5f11dba558ffa0c2e86c0d469a",
    "description": "A Dutch movement founded in 1917 around the magazine of the same name, which reduced painting to horizontals, verticals, the three primaries and black, white and grey. Mondrian and Van Doesburg argued it as a universal language of balance, and the programme ran straight into furniture, typography and architecture. Rietveld's chair and the Schröder House are the argument built.",
    "provenance": {
     "basis": "cited"
@@ -348,7 +348,7 @@
     {
      "id": "aat-300021259",
      "title": "De Stijl — Getty Art & Architecture Thesaurus 300021259",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300021259"
+     "url": "https://vocab.getty.edu/aat/300021259"
     }
    ],
    "broader": [
@@ -371,7 +371,7 @@
    "id": "op-art",
    "new": false,
    "version": 3,
-   "baseHash": "9f9f473cd383a7bb062a63692e1be3b09d106bd8b179cd88a0c5c1f906132025",
+   "baseHash": "7c9b6131338b0ee6573c799a1848cff36b4b619f853ec969caf24376019b23fc",
    "description": "Abstraction built to act on the eye, using precise geometric pattern, high contrast and colour interaction to produce flicker, movement and after-images. Bridget Riley and Victor Vasarely are its central figures, and the term dates from 1964 and the Responsive Eye exhibition that followed. The picture is completed in the viewer's perception, which is the claim the work makes.",
    "provenance": {
     "basis": "cited"
@@ -401,7 +401,7 @@
     {
      "id": "aat-300022195",
      "title": "Op Art — Getty Art & Architecture Thesaurus 300022195",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022195"
+     "url": "https://vocab.getty.edu/aat/300022195"
     }
    ],
    "broader": [
@@ -994,7 +994,7 @@
    "id": "american-regionalism",
    "new": false,
    "version": 3,
-   "baseHash": "b983a391210c5a72f383521619c7a52b067411a70387ff5f1daca6d41c1af569",
+   "baseHash": "47c042740f5eaeb94879e3a3ca04a31e89719fa298cb4740869250aa27ef62e1",
    "description": "An American realist movement of the 1930s that painted rural and small-town life, chiefly in the Midwest, in a plain legible style against European modernism. Grant Wood, Thomas Hart Benton and John Steuart Curry are its three principal painters, and the Depression and the federal art programmes carried it. It ended in the 1940s as the war and abstraction changed what American painting was for.",
    "provenance": {
     "basis": "cited"
@@ -1024,7 +1024,7 @@
     {
      "id": "aat-300172866",
      "title": "American Regionalism — Getty Art & Architecture Thesaurus 300172866",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300172866"
+     "url": "https://vocab.getty.edu/aat/300172866"
     }
    ],
    "broader": [
@@ -1387,7 +1387,7 @@
    "id": "neo-dada",
    "new": false,
    "version": 3,
-   "baseHash": "04bb14d09ac3ed3d800b15205d3243ef153a9933f83840dcf955a9d479b24578",
+   "baseHash": "df804df2876ac195cc573a5b79a4b5d55bead0af461f07f8667fbe0aa8bfe578",
    "description": "American work of the late 1950s and early 1960s that took up Dada's methods, chance, found objects and irony, against the rhetoric of Abstract Expressionism. John Cage's teaching is the direct conduit, and Rauschenberg's combines and Johns's flags and targets are the central works. Barbara Rose popularised the label in the 1960s.",
    "provenance": {
     "basis": "cited"
@@ -1417,7 +1417,7 @@
     {
      "id": "aat-300022187",
      "title": "Neo-Dada — Getty Art & Architecture Thesaurus 300022187",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022187"
+     "url": "https://vocab.getty.edu/aat/300022187"
     }
    ],
    "broader": [
@@ -1440,7 +1440,7 @@
    "id": "neo-expressionism",
    "new": false,
    "version": 3,
-   "baseHash": "b2eec0120792fcea1441b508c1c9e9d2e55063b927c5664ad19772826ad2557c",
+   "baseHash": "eef96ed63ff7aefa91be8c89b1e6cb3637c35b7cf171cc5a86680e85a5c140dc",
    "description": "A return to figuration in large, roughly handled paintings, emerging in the late 1970s and dominating the 1980s market. Germany's Baselitz, Kiefer and Immendorff, Italy's Transavanguardia and New York's Schnabel, Salle and Fischl are its principal groupings. It answered Minimal and Conceptual art with subjectivity, myth and paint applied thickly.",
    "provenance": {
     "basis": "cited"
@@ -1470,7 +1470,7 @@
     {
      "id": "aat-300022189",
      "title": "Neo-Expressionism — Getty Art & Architecture Thesaurus 300022189",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022189"
+     "url": "https://vocab.getty.edu/aat/300022189"
     }
    ],
    "broader": [
@@ -1493,7 +1493,7 @@
    "id": "transavanguardia",
    "new": false,
    "version": 3,
-   "baseHash": "45fa2ca0a760e9b910c6c384868625e5e17a305d00bf3b4a41fb8436905bc998",
+   "baseHash": "becb090f330b36e546804a387a405a8ce612c9af792905ce4a594f4b30cc522d",
    "description": "The Italian branch of Neo-Expressionism, named by the critic Achille Bonito Oliva around 1979, which returned to figuration, myth and quotation after Arte Povera's austerity. Chia, Clemente, Cucchi and Paladino are its painters. Its programme is an explicit refusal of the avant-garde's forward march.",
    "provenance": {
     "basis": "cited"
@@ -1523,7 +1523,7 @@
     {
      "id": "aat-300022218",
      "title": "Transavanguardia — Getty Art & Architecture Thesaurus 300022218",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300022218"
+     "url": "https://vocab.getty.edu/aat/300022218"
     }
    ],
    "broader": [
@@ -1645,7 +1645,7 @@
    "id": "postminimalism",
    "new": false,
    "version": 3,
-   "baseHash": "441844380566f8a7fc34feda2812a7001ee117b3e84a664dcc3deaa9667824d0",
+   "baseHash": "26b224566fff6e92697f2a6cc7d2787098f4886fb651a620293a718a3b147465",
    "description": "Work of the late 1960s and early 1970s that took Minimalism's clarity and let process, gravity, softness and chance back in. Robert Pincus-Witten coined the term in 1971; Eva Hesse, Richard Serra's early lead pieces and Lynda Benglis's poured floors are its cases. Poor and unstable materials are used deliberately, against the fabricated box.",
    "provenance": {
     "basis": "cited"
@@ -1675,7 +1675,7 @@
     {
      "id": "aat-300112731",
      "title": "Postminimalism — Getty Art & Architecture Thesaurus 300112731",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300112731"
+     "url": "https://vocab.getty.edu/aat/300112731"
     }
    ],
    "broader": [
@@ -1698,7 +1698,7 @@
    "id": "body-art",
    "new": false,
    "version": 3,
-   "baseHash": "c8f356be5b2e69173afc900da6243564fc78dc91f2033c6c4dd4f5ba3fb0ac20",
+   "baseHash": "7c6d2e966f6ea9fa68cd7f72f4338f0da3b6196e9cd4230ec564c34b5586130f",
    "description": "Art in which the artist's own body is the material, emerging from Conceptual art and performance in the late 1960s and 1970s. Acconci, Burden, Abramović and the Viennese Actionists worked with endurance, risk, injury and duration, and the results usually survive as photographs and film. Presence and its documentation are both problems the work poses.",
    "provenance": {
     "basis": "cited"
@@ -1728,7 +1728,7 @@
     {
      "id": "aat-300386734",
      "title": "Body Art — Getty Art & Architecture Thesaurus 300386734",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300386734"
+     "url": "https://vocab.getty.edu/aat/300386734"
     }
    ],
    "broader": [
@@ -1960,7 +1960,7 @@
    "id": "shin-hanga",
    "new": false,
    "version": 3,
-   "baseHash": "5042418fa1a36bb4f4272e037187485b5f5de03393fc23aadec2895a5eef1157",
+   "baseHash": "42e07dad4dc07aca08ec8963374b54132b15e1b1057475bb8806b3f6e0fcfe5b",
    "description": "A Japanese print movement of the Taishō and Shōwa periods that revived ukiyo-e by keeping its collaborative division of labour between artist, carver, printer and publisher, while taking in Western light and perspective. The publisher Watanabe Shōzaburō organised it and much of the audience was Western. It runs alongside sōsaku-hanga, which insisted the artist do everything.",
    "provenance": {
     "basis": "cited"
@@ -1990,7 +1990,7 @@
     {
      "id": "aat-300262954",
      "title": "Shin-hanga — Getty Art & Architecture Thesaurus 300262954",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300262954"
+     "url": "https://vocab.getty.edu/aat/300262954"
     }
    ],
    "broader": [
