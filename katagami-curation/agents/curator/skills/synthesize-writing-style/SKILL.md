@@ -240,6 +240,27 @@ that selection random. What she wants instead:
   missing and belongs in a numbered encyclopedia batch first. See "What is and
   is not a cell" in `.agents/skills/encyclopedia/SKILL.md`.
 
+## Prose an agent writes here goes through unspeak
+
+A writing style contains two kinds of text and they are governed differently.
+
+**The specimen** — the corpus passages and the exemplars — is the style itself.
+For a public-domain basis it is a real human's text, quoted verbatim. For an
+`original` basis the pipeline writes it in-register, and it must stay in that
+register: do not rewrite it toward any other voice. It still must be free of the
+tells `unspeak` names, because a corpus carrying them teaches them, but its
+register is its own.
+
+**Everything else is product prose**: the persona, the register lines, the moves
+and refusals, the exemplar annotations, the curator notes, and every framing
+sentence in the VOICE.md around the quoted passages. A human reads all of it on
+katagami.ai. Run it through the `unspeak` skill before attaching it, the whole
+workflow, not a glance at the word list. The owner's standing rule is that every
+user-facing sentence goes through unspeak; this is where a writing style's
+sentences are.
+
+The contrast frame "X, not Y" is banned in all of it, specimen included.
+
 ## Names and where a style sits (owner decision, 2026-09-08; replaces the two-level shape of 2026-07-06)
 
 - **A writing style is named by the source vocabulary** the encyclopedia reads

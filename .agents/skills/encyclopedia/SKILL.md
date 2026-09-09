@@ -336,7 +336,10 @@ Rules that hold in every pass:
   writer and belongs under a cell.
 - **Scope text is ours and cites the page it was read from.** Nothing is copied:
   share-alike (Aesthetics Wiki, Wikipedia) and attribution (Artsy, Getty) sources
-  are read, decided, and cited.
+  are read, decided, and cited. A reader sees this prose on katagami.ai, so it
+  goes through the `unspeak` skill like every other user-facing sentence: no
+  metaphor nouns, no inflated diction, no "X, not Y", no sentence that wraps its
+  point in a setup and a tail. Say what the direction is and stop.
 - **One cell per direction; a cell per form.** A movement that spans art and
   writing gains a second `maps` membership, explained and cited, rather than a
   second cell. But where a direction has a distinct practice in more than one
