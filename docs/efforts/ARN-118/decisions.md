@@ -1150,3 +1150,29 @@ Chose to name it because: culling changes what is drawn, not where cells are pla
 Given up: the far view is no better than it was.
 
 Where: named here and in the report; not implemented.
+
+
+## D71 A count states which question it answered, not only when it read
+
+Decision: Every root count for this collection is reported with the measure that produced it as well as the time of the read, and a delta is taken down one column rather than across two. The two measures are named: **map-parent**, where a cell is a root when no parent of it sits on the same map, and **any-link**, where a cell is a root when it carries no `broader` entry at all. This effort reports the art lane as 168 to 133, which is map-parent at both ends. The any-link pair for the same two reads is 165 to 131. Both are correct.
+
+Came up because: this pass reported its result as "168 to 131" — the map-parent count before and the any-link count after, one number from each column. Nothing downstream could reconcile it, because the two figures never described the same measurement. It survived a report, a PR body and two corrections. A later session diffing snapshots found the mismatch and read it as drift; the team lead, reading production independently, then explained the same gap as a timing difference. It is neither. 131 and 133 come from one read at one instant, and the two cells offered as the cause, `american-realism` and `social-realism`, are root under both measures in that read.
+
+Options: Report map-parent alone, which answers what a reader meets when they open the visual map; report any-link alone, which answers how much of the collection still has no parent and is what the obvious query returns; or report both with their definitions and pick one for the headline.
+
+Chose both, headlining map-parent because: the flat row this effort set out to fix is what a reader meets on one map, and a parent on a map the reader is not looking at does not shorten the list in front of them. Any-link is kept beside it because it is what an independent reader will get without knowing this entry exists, and a figure nobody else can reproduce is not a report. Given up: two numbers to carry instead of one, and anyone quoting a figure from the original report still has to come here to learn which column it came from.
+
+The rule this generalises to: the reading-time convention already saved two arguments; this is its other half. **A count of this collection is not a number until it says what it counted, not only when it read.** This is the second instance in one day of two agents disagreeing while both were right — after D58, where a status read from the wrong key had one client counting 17 archived cells as live. Both times the disagreement looked like a data problem and was a definition problem, and both times the first instinct was to explain it as drift. Drift is the more flattering diagnosis, because it makes both parties right about the method and blames the world. Check the definitions before reaching for it.
+
+Where: `docs/efforts/ARN-118/payloads/depth.mjs` computes map-parent; the table of both measures at both reads is in `docs/efforts/ARN-118/payloads/README.md` under "Say which root count you mean, and never mix the two".
+
+### The gap between the measures is also a defect, and it is exactly two cells
+
+A cell whose only parent shares no map with it has a `broader` link that neither map can draw: the child's map does not carry the parent, and the parent's map does not carry the child. A sweep of all 746 live cells finds exactly two, one in each lane:
+
+- `gekiga` is on the art map only; its only parent, `manga`, is on the writing map only.
+- `wordless-novels` is on the writing map only; its only parent, `relief-printing`, is on the art map only.
+
+`afrofuturism` is **not** one of them, though it is one of the two cells that separate the art-lane measures. It sits on both maps and its parent `science-fiction` is on the writing map, so the link is traversable there and invisible only from the art side. That distinction matters: the art-map root gap and the untraversable-link defect are different sets that happen to overlap in one cell.
+
+No cross-map rule is written. It will recur whenever a cell sits in one map and its natural parent in another, and the two cases above should be settled with the rule rather than one at a time. Left for the owner; not fixed here.

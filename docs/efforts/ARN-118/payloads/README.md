@@ -90,5 +90,13 @@ parent, 165 to 131 by any link. Pick a column, say which one, and give the time
 of the read.
 
 The gap is also a defect worth someone's attention rather than only a counting
-quirk. `gekiga` is on the art map only and its only parent is on the writing map
-only, so that link is traversable from neither side.
+quirk, though the two sets are not the same. A cell whose only parent shares no
+map with it has a link neither map can draw. A sweep of all 746 live cells finds
+exactly two, one in each lane: `gekiga`, on the art map only, under `manga` on
+the writing map only; and `wordless-novels`, on the writing map only, under
+`relief-printing` on the art map only.
+
+`afrofuturism` is not one of them. It sits on both maps, so its link to
+`science-fiction` is traversable on the writing map and merely invisible from
+the art side. The root gap and the untraversable-link defect overlap in one cell
+and are different sets. No cross-map rule is written; see D71.
