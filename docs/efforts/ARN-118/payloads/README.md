@@ -100,3 +100,35 @@ the writing map only; and `wordless-novels`, on the writing map only, under
 `science-fiction` is traversable on the writing map and merely invisible from
 the art side. The root gap and the untraversable-link defect overlap in one cell
 and are different sets. No cross-map rule is written; see D71.
+
+## Batch ART-3 (Modernism) — applied 2026-09-09
+
+`mkmodernism.mjs` builds `batch-art-3.json`: the new `modernism` cell and nine
+`broader` links onto it. It reads `cells-raw.json`, takes each child's document
+exactly as production returned it, appends one `broader` entry and the source
+that entry cites, and leaves every other field alone. Rebuild before applying,
+the same as the two batches above:
+
+```
+node --env-file=<repo>/.env.katagami-curator.local fetch-cells.mjs
+node mkmodernism.mjs
+node --env-file=<repo>/.env.katagami-curator.local ../../../../scripts/create-encyclopedia-cells.mjs \
+  docs/efforts/ARN-118/payloads/batch-art-3.json --expect 10 --apply   # from the repo root
+```
+
+Applied at 2026-09-09T20:27Z; all ten written and attested. The loader needs
+`ui/node_modules` present, because it imports the shared contract from
+`ui/src/lib/encyclopedia-schema.ts` and that file wants zod 4. In a fresh
+worktree it fails with `z.url is not a function` until `npm ci` has run in `ui`.
+
+Read the counts down a column, never across two:
+
+| read | art cells | no `broader` link at all | no parent on the art map |
+|---|---|---|---|
+| 2026-09-09 20:05:47Z, before ART-3 | 219 | 117 | 119 |
+| 2026-09-09 20:27:44Z, after ART-3 | 220 | 109 | 111 |
+
+Nine children placed and one new root created, so each root count falls by
+eight rather than nine. Modernism is on the writing and design maps as well,
+where it is a root with no children: 123 writing roots and 14 design roots at
+the same read, each one higher than before this batch.
