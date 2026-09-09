@@ -1773,6 +1773,14 @@
       "cellId": "jue-ju"
     },
     {
+      "term": "Jump rope rhymes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026092",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: skipping rhymes whose metre is set by the rope; proposal B15 #3. Written and attested 2026-09-09.",
+      "cellId": "jump-rope-rhymes"
+    },
+    {
       "term": "Juvenilia",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2024026031",
       "decision": "declined",
@@ -1802,6 +1810,14 @@
       "batch": "B8",
       "note": "tradition: the sung Sufi kafi of Punjab and Sindh; proposal B8 #44. Written and attested 2026-09-09.",
       "cellId": "kafi-poetry"
+    },
+    {
+      "term": "Kakawin",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2024026059",
+      "decision": "live",
+      "batch": "B15",
+      "note": "tradition: Old Javanese narrative poetry in Sanskrit-derived quantitative metres, continued in Bali; proposal B15 #10. Written and attested 2026-09-09.",
+      "cellId": "kakawin"
     },
     {
       "term": "Kamishibai plays",
@@ -1888,6 +1904,14 @@
       "cellId": "kyogen-plays"
     },
     {
+      "term": "Kyōka",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026399",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: Edo-period comic tanka whose parody depends on knowing the serious form; proposal B15 #11. Written and attested 2026-09-09.",
+      "cellId": "kyoka"
+    },
+    {
       "term": "Lakhō̜n chātrī plays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026030",
       "decision": "live",
@@ -1912,11 +1936,27 @@
       "cellId": "language-poetry"
     },
     {
+      "term": "Lanternes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026402",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: a five-line syllabic shape on a Japanese model (thin body of work, flagged); proposal B15 #25. Written and attested 2026-09-09.",
+      "cellId": "lanternes"
+    },
+    {
       "term": "Laudatory poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026403",
       "decision": "declined",
       "batch": "B8",
       "note": "a purpose label (praise); the classical genres it lists as variants (encomia, epinicia, panegyrics) have no LCGFT heading of their own"
+    },
+    {
+      "term": "Lays (Narrative poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026404",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: short rhymed medieval tales of love and chivalry, Marie de France central; proposal B15 #15. Written and attested 2026-09-09.",
+      "cellId": "lays-narrative-poetry"
     },
     {
       "term": "Legal drama (Literature)",
@@ -1953,6 +1993,13 @@
       "decision": "declined",
       "batch": "B10",
       "note": "subject-defined (lesbian characters and themes)"
+    },
+    {
+      "term": "Lesbian poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026003",
+      "decision": "declined",
+      "batch": "B15",
+      "note": "subject-defined (lesbian characters and themes), with the other identity terms declined in B10, B11 and B14"
     },
     {
       "term": "Lian hua lao",
@@ -2001,6 +2048,14 @@
       "cellId": "lilit"
     },
     {
+      "term": "Limericks",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026412",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: five lines rhyming aabba with a fixed stress pattern, popularised by Lear in 1846; proposal B15 #16. Written and attested 2026-09-09.",
+      "cellId": "limericks"
+    },
+    {
       "term": "Linked stories",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026126",
       "decision": "live",
@@ -2039,6 +2094,13 @@
       "batch": "B12",
       "note": "tradition: medieval sung drama inside the liturgy, with a live scholarly dispute about the category; proposal B12 #16. Written and attested 2026-09-09.",
       "cellId": "liturgical-drama"
+    },
+    {
+      "term": "Liturgical poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026416",
+      "decision": "declined",
+      "batch": "B15",
+      "note": "a function label (verse written for public worship), as this batch declines Religious poetry; the named liturgical forms inside it, Azharot among them, are the cells"
     },
     {
       "term": "Living newspapers",
@@ -2118,6 +2180,14 @@
       "cellId": "makyung-plays"
     },
     {
+      "term": "Maqāmāt",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026425",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: Arabic rhymed-prose trickster tales invented by al-Hamadhani, canonised by al-Hariri; proposal B15 #8. Written and attested 2026-09-09.",
+      "cellId": "maqamat"
+    },
+    {
       "term": "Martial arts fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026101",
       "decision": "deferred",
@@ -2148,6 +2218,13 @@
       "note": "subject-defined"
     },
     {
+      "term": "Mawlids (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026090",
+      "decision": "deferred",
+      "batch": "B15",
+      "note": "Mawlid poems in praise of the Prophet's birth are a real textual tradition with named works, but Wikipedia's Mawlid is about the festival and does not treat the poetry as a form. Revisit when a source does."
+    },
+    {
       "term": "Medical drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026429",
       "decision": "declined",
@@ -2160,6 +2237,14 @@
       "decision": "declined",
       "batch": "B6",
       "note": "subject-defined"
+    },
+    {
+      "term": "Melic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026431",
+      "decision": "live",
+      "batch": "B15",
+      "note": "body: Greek lyric sung to the lyre, with a fixed Alexandrian canon of nine poets; proposal B15 #5. Written and attested 2026-09-09.",
+      "cellId": "melic-poetry"
     },
     {
       "term": "Melodramas (Drama)",
@@ -2229,6 +2314,14 @@
       "batch": "B12",
       "note": "technique: a trivial subject held in the grand manner so the mismatch satirises; proposal B12 #25. Written and attested 2026-09-09.",
       "cellId": "mock-heroic-drama"
+    },
+    {
+      "term": "Mock-heroic poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026438",
+      "decision": "live",
+      "batch": "B15",
+      "note": "technique: the epic manner around a trivial subject, Pope central; the D36 twin of Mock-heroic drama (B12); proposal B15 #30. Written and attested 2026-09-09.",
+      "cellId": "mock-heroic-poetry"
     },
     {
       "term": "Monodramas (Literature)",
@@ -2337,6 +2430,14 @@
       "note": "subject-defined (myth retold)"
     },
     {
+      "term": "Narrative poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026448",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: kept as a nesting parent for the epic, the lay, the beast epic and the verse novel; proposal B15 #1. Written and attested 2026-09-09.",
+      "cellId": "narrative-poetry"
+    },
+    {
       "term": "Nature fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026095",
       "decision": "declined",
@@ -2344,11 +2445,25 @@
       "note": "subject-defined (the natural world)"
     },
     {
+      "term": "Nature poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026111",
+      "decision": "declined",
+      "batch": "B15",
+      "note": "subject-defined (the natural world), as pass 1 declined Nature fiction; the cell inside it is Ecopoetry, kept for the argument it makes"
+    },
+    {
       "term": "Nautical drama",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026449",
       "decision": "deferred",
       "batch": "B12",
       "note": "A named type of 18th- and 19th-century melodrama with the British sailor as hero, but no independent reference answered. Revisit when a source covers it; the parent Melodramas is now a cell."
+    },
+    {
+      "term": "Nirat",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2020026040",
+      "decision": "deferred",
+      "batch": "B15",
+      "note": "Nirat, the Thai poetry of journey and separation, is a named form, but the only open reference is the broad Thai literature article. Revisit when a source treats the form on its own."
     },
     {
       "term": "Nō plays",
@@ -2375,6 +2490,13 @@
       "cellId": "noir-plays"
     },
     {
+      "term": "Noir poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026112",
+      "decision": "deferred",
+      "batch": "B15",
+      "note": "Noir poetry has no LCGFT scope note and no reference treats verse in the noir manner as a body of work of its own. Revisit when one appears."
+    },
+    {
       "term": "Nonfiction novels",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026454",
       "decision": "live",
@@ -2388,6 +2510,14 @@
       "decision": "merge",
       "batch": "B6",
       "note": "Same direction as the live cell victorian-literary-nonsense, which pass 0 is revising to Literary nonsense (new id literary-nonsense): one cell for verse and prose together, citing LCGFT Nonsense fiction, LCGFT Nonsense verse and https://en.wikipedia.org/wiki/Literary_nonsense. LCGFT splits the direction by form and has no umbrella heading, so the Wikipedia name is the nearest source name. Kept as one cell under D36's test: the sources treat Lear's verse and Carroll's prose as one tradition, so there is nothing true of one form and not the other.",
+      "cellId": "literary-nonsense"
+    },
+    {
+      "term": "Nonsense verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026455",
+      "decision": "merge",
+      "batch": "B15",
+      "note": "Same direction as the live cell Literary nonsense, which pass 0 established as one cell for Lear's verse and Carroll's prose together; pass 1 already recorded that placement when it merged Nonsense fiction. Add this LCGFT page to that cell's sources.",
       "cellId": "literary-nonsense"
     },
     {
@@ -2437,6 +2567,29 @@
       "cellId": "novels-of-manners"
     },
     {
+      "term": "Nursery rhymes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026459",
+      "decision": "live",
+      "batch": "B15",
+      "note": "tradition: children's oral verse with a collected corpus and its own scholarship; proposal B15 #2. Written and attested 2026-09-09.",
+      "cellId": "nursery-rhymes"
+    },
+    {
+      "term": "Occasional verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026460",
+      "decision": "declined",
+      "batch": "B15",
+      "note": "occasion-defined umbrella (verse written for a particular occasion); the named forms LCGFT files under it, Epithalamia among them, are decided on their own"
+    },
+    {
+      "term": "Odes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026461",
+      "decision": "live",
+      "batch": "B15",
+      "note": "genre: the formal lyric of praise, with Pindaric, Horatian and irregular sub-forms; proposal B15 #4. Written and attested 2026-09-09.",
+      "cellId": "odes"
+    },
+    {
       "term": "One-act plays",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026462",
       "decision": "live",
@@ -2452,12 +2605,28 @@
       "note": "Commemorative civic performance is a real tradition, but Wikipedia's Pageant is a disambiguation page and no article covers the dramatic form. Revisit when a source is found."
     },
     {
+      "term": "Palinodes",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026465",
+      "decision": "live",
+      "batch": "B15",
+      "note": "genre: the poem that retracts an earlier poem, from Stesichorus onward; proposal B15 #22. Written and attested 2026-09-09.",
+      "cellId": "palinodes"
+    },
+    {
       "term": "Panchatantra stories",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026143",
       "decision": "live",
       "batch": "B10",
       "note": "tradition: the retelling line from the Sanskrit collection through Kalila wa-Dimna into Europe (borderline: named after one text); proposal B10 #13. Written and attested 2026-09-09.",
       "cellId": "panchatantra-stories"
+    },
+    {
+      "term": "Pantoums",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026466",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: interlocking quatrains where every line is heard twice, from the Malay pantun berkait; proposal B15 #18. Written and attested 2026-09-09.",
+      "cellId": "pantoums"
     },
     {
       "term": "Paranormal drama",
@@ -2474,6 +2643,14 @@
       "batch": "B10",
       "note": "tradition: the supernatural as a premise the story is built on, called supernatural fiction in criticism (borderline: its LCGFT parent Monster fiction was declined as subject-defined); proposal B10 #6. Written and attested 2026-09-09.",
       "cellId": "paranormal-fiction"
+    },
+    {
+      "term": "Paranormal poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2018026065",
+      "decision": "live",
+      "batch": "B15",
+      "note": "premise: the supernatural real in verse, carried by ballad and the Gothic revival; the D36 twin of Paranormal fiction (B10); proposal B15 #32. Written and attested 2026-09-09.",
+      "cellId": "paranormal-poetry"
     },
     {
       "term": "Paranormal romance fiction",
@@ -2531,6 +2708,14 @@
       "cellId": "pastoral-drama"
     },
     {
+      "term": "Pastoral elegies",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026474",
+      "decision": "live",
+      "batch": "B15",
+      "note": "genre: mourning carried entirely by the pastoral convention, Lycidas and Adonais; proposal B15 #27. Written and attested 2026-09-09.",
+      "cellId": "pastoral-elegies"
+    },
+    {
       "term": "Pastoral fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026475",
       "decision": "live",
@@ -2539,12 +2724,44 @@
       "cellId": "pastoral-fiction"
     },
     {
+      "term": "Pastoral poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026476",
+      "decision": "live",
+      "batch": "B15",
+      "note": "mode: country life as the standard, founded by Theocritus and Virgil; the D36 twin of Pastoral fiction (B10) and Pastoral drama (B11); proposal B15 #26. Written and attested 2026-09-09.",
+      "cellId": "pastoral-poetry"
+    },
+    {
+      "term": "Pastourelles",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026477",
+      "decision": "live",
+      "batch": "B15",
+      "note": "genre: the fixed knight-and-shepherdess encounter of Old French lyric; proposal B15 #28. Written and attested 2026-09-09.",
+      "cellId": "pastourelles"
+    },
+    {
+      "term": "Pattern poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026478",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: verse set in the shape of its subject, from the Greek technopaegnia to Apollinaire; proposal B15 #24. Written and attested 2026-09-09.",
+      "cellId": "pattern-poetry"
+    },
+    {
       "term": "Philosophical fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2016026001",
       "decision": "live",
       "batch": "B10",
       "note": "mode: reasoning made load-bearing, with the conte philosophique as its named form; proposal B10 #36. Written and attested 2026-09-09.",
       "cellId": "philosophical-fiction"
+    },
+    {
+      "term": "Philosophical poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2019026112",
+      "decision": "live",
+      "batch": "B15",
+      "note": "mode: philosophical argument carried by verse, from Lucretius onward; the D36 twin of Philosophical fiction (B10); proposal B15 #31. Written and attested 2026-09-09.",
+      "cellId": "philosophical-poetry"
     },
     {
       "term": "Picaresque drama",
@@ -2600,6 +2817,13 @@
       "note": "subject-defined (the political milieu), as B10 declined Political fiction"
     },
     {
+      "term": "Political poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2016026085",
+      "decision": "declined",
+      "batch": "B15",
+      "note": "subject-defined (the political milieu), as B10 declined Political fiction"
+    },
+    {
       "term": "Pornographic fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026139",
       "decision": "declined",
@@ -2620,6 +2844,14 @@
       "decision": "declined",
       "batch": "B12",
       "note": "a recorded prank format with no written manner of its own; LCGFT files it as a cataloguing form for the recordings"
+    },
+    {
+      "term": "Priamels",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026486",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: a list of foils resolved in a final turn, classical in Sappho and a genre in late medieval Germany; proposal B15 #23. Written and attested 2026-09-09.",
+      "cellId": "priamels"
     },
     {
       "term": "Prison fiction",
@@ -2659,6 +2891,22 @@
       "note": "a working production document (the annotated prompt copy), a cataloguing form rather than a manner of writing"
     },
     {
+      "term": "Prose poems",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026488",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: poetry that gives up the line, argued for by Baudelaire in the 1860s; proposal B15 #7. Written and attested 2026-09-09.",
+      "cellId": "prose-poems"
+    },
+    {
+      "term": "Psalms",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026079",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: Hebrew sacred poetry built on parallelism, with a long tradition of imitation (the independent reference is the biblical collection rather than the form, flagged); proposal B15 #29. Written and attested 2026-09-09.",
+      "cellId": "psalms"
+    },
+    {
       "term": "Psychological fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026492",
       "decision": "live",
@@ -2683,11 +2931,42 @@
       "cellId": "purim-plays"
     },
     {
+      "term": "Qaṣīdas",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026495",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: the monorhymed Arabic ode with its fixed sequence of parts, carried into Persian, Turkish, Urdu and Hausa; proposal B15 #6. Written and attested 2026-09-09.",
+      "cellId": "qasidas"
+    },
+    {
+      "term": "Qu (Poetry)",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026496",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: classical Chinese verse to named tune patterns, dominant under the Yuan; proposal B15 #9. Written and attested 2026-09-09.",
+      "cellId": "qu-poetry"
+    },
+    {
+      "term": "Quatrains",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026497",
+      "decision": "live",
+      "batch": "B15",
+      "note": "unit: the four-line stanza, kept as a nesting parent (borderline: a stanza shape); proposal B15 #17. Written and attested 2026-09-09.",
+      "cellId": "quatrains"
+    },
+    {
       "term": "Queer fiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026063",
       "decision": "declined",
       "batch": "B10",
       "note": "subject-defined (queer characters and themes); LCGFT's own definition is who appears in the work, and its eight children are declined with it"
+    },
+    {
+      "term": "Queer poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2022026037",
+      "decision": "declined",
+      "batch": "B15",
+      "note": "subject-defined (queer characters and themes), as B10 declined Queer fiction"
     },
     {
       "term": "Radio plays",
@@ -2736,12 +3015,73 @@
       "note": "a purpose and subject umbrella; the occasion terms LCGFT files under it are declined with it"
     },
     {
+      "term": "Religious poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026503",
+      "decision": "declined",
+      "batch": "B15",
+      "note": "a subject umbrella, as B10 declined Religious fiction and B13 declined Religious drama; the named forms inside it are the cells"
+    },
+    {
+      "term": "Renga",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026504",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: Japanese collaborative linked verse with codified linking rules; proposal B15 #12. Written and attested 2026-09-09.",
+      "cellId": "renga"
+    },
+    {
+      "term": "Rengay",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026505",
+      "decision": "deferred",
+      "batch": "B15",
+      "note": "Rengay, a six-stanza collaborative form invented in 1992 by Garry Gay, is plausible, but no independent reference answered. Revisit when a source is found; the parent Linked verse is already a cell."
+    },
+    {
+      "term": "Renku",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026506",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: the haikai branch of linked verse, worked by Bashō and his circle; proposal B15 #13. Written and attested 2026-09-09.",
+      "cellId": "renku"
+    },
+    {
+      "term": "Renshi",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026507",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: collaborative linked free verse invented by Ōoka Makoto in the 1980s; proposal B15 #14. Written and attested 2026-09-09.",
+      "cellId": "renshi"
+    },
+    {
       "term": "Revenge tragedies",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026508",
       "decision": "live",
       "batch": "B13",
       "note": "genre: Elizabethan and Jacobean revenge machinery, named as a genre by Thorndike in 1902; proposal B13 #3. Written and attested 2026-09-09.",
       "cellId": "revenge-tragedies"
+    },
+    {
+      "term": "Revolutionary poetry",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026509",
+      "decision": "declined",
+      "batch": "B15",
+      "note": "subject-defined (liberation struggles); the movements that wrote it, Proletarian fiction among them, are the cells"
+    },
+    {
+      "term": "Rhopalic verse",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026510",
+      "decision": "live",
+      "batch": "B15",
+      "note": "constraint: each word one syllable longer than the last, noticed in Homer and then written deliberately (thin body of work, flagged); proposal B15 #21. Written and attested 2026-09-09.",
+      "cellId": "rhopalic-verse"
+    },
+    {
+      "term": "Rhyme royal",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2015026061",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: the ababbcc stanza Chaucer brought into English, dominant in the 15th and 16th centuries; proposal B15 #20. Written and attested 2026-09-09.",
+      "cellId": "rhyme-royal"
     },
     {
       "term": "Ritterdrama",
@@ -2795,6 +3135,14 @@
       "decision": "declined",
       "batch": "B13",
       "note": "subject-defined (romantic love). Romance fiction was kept because its conventions are published as rules by its own market; the stage form has no equivalent, so the same words do not make the same case"
+    },
+    {
+      "term": "Rondeaux",
+      "ref": "http://id.loc.gov/authorities/genreForms/gf2014026520",
+      "decision": "live",
+      "batch": "B15",
+      "note": "form: one of the three French formes fixes, fifteen lines on two rhymes with a returning refrain; proposal B15 #19. Written and attested 2026-09-09.",
+      "cellId": "rondeaux"
     },
     {
       "term": "Sagas",
