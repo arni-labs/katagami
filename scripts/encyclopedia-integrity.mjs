@@ -9,7 +9,9 @@
 //
 // The plain invocation exits 2 against production today, and that is the guard
 // working rather than a bug here: DesignLanguages pages 1278 rows while the
-// server counts 1279, a disagreement filed against Temper on 2026-09-09. Until
+// server counts 1279 as read on 2026-09-09, a disagreement filed against Temper
+// and confirmed independently that day. It is live production state and may be
+// fixed under you, so re-check the numbers before trusting this note. Until
 // that is fixed, a clean run needs --allow-count-mismatch, which reports over
 // what was read and prints the mismatch at the top and in the summary line.
 //
