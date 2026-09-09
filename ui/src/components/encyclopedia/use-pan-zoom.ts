@@ -21,6 +21,10 @@ export interface WorldRect {
 }
 
 export const ZOOM_MIN = 0.18;
+/** How far in the camera goes by default. A map with layers needs more than
+ *  this: a cell on the deepest layer draws at a fraction of full size, so
+ *  reading it means coming in by the reciprocal of that fraction. The
+ *  encyclopedia passes its own ceiling for exactly that reason. */
 export const ZOOM_MAX = 3.2;
 
 export function usePrefersReducedMotion(): boolean {
@@ -43,7 +47,7 @@ export function useMounted(): boolean {
   return useSyncExternalStore(noop, () => true, () => false);
 }
 
-export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
+export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: number = ZOOM_MAX) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [camera, setCamera] = useState<Camera>(initial);
   const [animate, setAnimate] = useState(false);
@@ -51,6 +55,11 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
   const pinch = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchStart = useRef<{ dist: number; k: number; mid: { x: number; y: number }; cam: Camera } | null>(null);
   const [dragging, setDragging] = useState(false);
+  // The same fact as `dragging`, readable without being a dependency. A card's
+  // click handler has to know whether the pointer was dragged, and reading it
+  // from state would make every handler change identity on every drag — which
+  // is exactly the re-render the memoised cards exist to avoid.
+  const draggingRef = useRef(false);
   const animateTimer = useRef<number | null>(null);
 
   const glide = useCallback((next: Camera) => {
@@ -60,7 +69,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
     animateTimer.current = window.setTimeout(() => setAnimate(false), 520);
   }, []);
 
-  const clampK = (k: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, k));
+  const clampK = useCallback((k: number) => Math.min(maxZoom, Math.max(ZOOM_MIN, k)), [maxZoom]);
 
   const zoomAbout = useCallback((factor: number, sx: number, sy: number, smooth = false) => {
     setCamera((cam) => {
@@ -74,7 +83,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
       if (animateTimer.current) window.clearTimeout(animateTimer.current);
       animateTimer.current = window.setTimeout(() => setAnimate(false), 320);
     }
-  }, []);
+  }, [clampK]);
 
   const zoomStep = useCallback((direction: 1 | -1) => {
     const el = viewportRef.current;
@@ -97,7 +106,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
     const h = Math.max(1, maxY - minY);
     const k = clampK(Math.min(maxK, (vw - padding * 2) / w, (vh - padding * 2) / h));
     glide({ k, x: (vw - w * k) / 2 - minX * k, y: (vh - h * k) / 2 - minY * k });
-  }, [glide]);
+  }, [glide, clampK]);
 
   /** Put a world point at a screen point (defaults to the viewport centre). */
   const centerOn = useCallback((wx: number, wy: number, k?: number, screen?: { x: number; y: number }) => {
@@ -112,7 +121,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
     setAnimate(true);
     if (animateTimer.current) window.clearTimeout(animateTimer.current);
     animateTimer.current = window.setTimeout(() => setAnimate(false), 520);
-  }, []);
+  }, [clampK]);
 
   const onWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
     const el = viewportRef.current;
@@ -171,11 +180,12 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
     const dy = event.clientY - d.y;
     if (!d.moved && Math.hypot(dx, dy) > 4) {
       d.moved = true;
+      draggingRef.current = true;
       setDragging(true);
       try { viewportRef.current?.setPointerCapture(event.pointerId); } catch { /* pointer already gone */ }
     }
     if (d.moved) setCamera((cam) => ({ ...cam, x: d.cx + dx, y: d.cy + dy }));
-  }, []);
+  }, [clampK]);
 
   const endPointer = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     pinch.current.delete(event.pointerId);
@@ -183,7 +193,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
     if (drag.current?.id === event.pointerId) {
       drag.current = null;
       // Let the click that follows a real drag be ignored by nodes.
-      window.setTimeout(() => setDragging(false), 0);
+      window.setTimeout(() => { draggingRef.current = false; setDragging(false); }, 0);
     }
   }, []);
 
@@ -208,5 +218,5 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }) {
     onPointerLeave: endPointer,
   }), [onWheel, onPointerDown, onPointerMove, endPointer]);
 
-  return { viewportRef, camera, setCamera, animate, dragging, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld };
+  return { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld };
 }

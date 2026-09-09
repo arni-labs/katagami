@@ -1,17 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, ArrowUpRight, ChevronUp, Maximize2, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, ChevronUp, List, Maximize2, Minus, Plus } from "lucide-react";
 import type { EncyclopediaGraph, MapName } from "@/lib/encyclopedia";
 import { GraphIndex, MAP_INK, MAP_LABEL, MAP_NAMES_ORDER, type RelationInk } from "@/lib/encyclopedia-graph";
 import { Marker } from "@/components/page-hero";
 import { RELATION_INK_VAR, SearchBox } from "./chrome";
 import { SET_INK } from "./material";
-import { expandCell, expandedRadius, layoutGraph, levelScale, PLATE_W, plateConnector, type PlateNode, type SatelliteNode } from "./graph-layout";
+import { expandCell, expandedRadius, layoutFromSeed, levelScale, PLATE_W, plateConnector, SAT_H, SAT_W, type LayoutSeed, type PlateNode, type SatelliteNode } from "./graph-layout";
 import { lodFor, Plate, Satellite } from "./map-cards";
 import { CloseButton, IndexSheet, OpenCellButton, SheetBody, SheetTitle, type SheetTab } from "./focus-sheet";
-import { useMounted, usePanZoom, usePrefersReducedMotion } from "./use-pan-zoom";
+import { EncyclopediaBrowse } from "./browse";
+import { useMounted, usePanZoom, usePrefersReducedMotion, ZOOM_MAX } from "./use-pan-zoom";
+import { cameraRect, SpatialIndex } from "./spatial-index";
 
 // The encyclopedia: one map of every attested cell. Cells are plates grouped
 // by map; broader and typed relations are dashed lines with the word on them;
@@ -24,22 +26,53 @@ import { useMounted, usePanZoom, usePrefersReducedMotion } from "./use-pan-zoom"
  *  these a plate is a smudge and the field stops being worth looking at. */
 const READABLE_PLATE_PX = 104;
 const READABLE_CARD_PX = 44;
+/** The smallest an opened record node may print at. A ring of sixty records
+ *  fitted to a 390px screen puts each node at about fifteen pixels, too small
+ *  to hit, so below this the ring runs off the screen and is panned instead. */
+const HITTABLE_NODE_PX = 34;
+/** How far outside the viewport a card is still mounted, in screen pixels. A
+ *  margin means a card is on the paper slightly before it is panned into view
+ *  and is not thrown away the moment it leaves, so a slow drag never shows a
+ *  bare edge; a whole viewport of margin is enough for the fastest flick a
+ *  finger makes and still bounds what is mounted to a constant. */
+const CULL_MARGIN_PX = 420;
 
-function useIsDesktop(): boolean {
-  const [desktop, setDesktop] = useState(true);
-  useEffect(() => {
-    const media = window.matchMedia("(min-width: 1024px)");
-    const update = () => setDesktop(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-  return desktop;
+/** How far in the camera goes to hold an opened cell's ring. One place decides
+ *  it, because the opening frame and the fit control have to agree: they drifted
+ *  apart once and fit put the records below the size they can be clicked at. */
+function zoomForRing(radius: number, room: { w: number; h: number }, satPx: number): number {
+  const fit = Math.min(room.w, room.h) / (radius * 2);
+  const floor = HITTABLE_NODE_PX / Math.max(1, satPx);
+  return Math.max(floor, Math.min(1.1, fit));
 }
 
-export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaGraph; initialCellId?: string | null }) {
+/** Whether there is room for the map beside a sheet.
+ *
+ *  Read through `useSyncExternalStore` rather than set from an effect, so the
+ *  first client render already knows which of the two the reader is on. With
+ *  an effect the phone painted the desktop layout first and swapped it a frame
+ *  later, which now means painting a whole map before replacing it with the
+ *  browser. The server has no window and says desktop, as it always did. */
+function useIsDesktop(): boolean {
+  const subscribe = useCallback((notify: () => void) => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    media.addEventListener("change", notify);
+    return () => media.removeEventListener("change", notify);
+  }, []);
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia("(min-width: 1024px)").matches,
+    () => true,
+  );
+}
+
+export function EncyclopediaMap({ graph, layout: seed, initialCellId }: { graph: EncyclopediaGraph; layout: LayoutSeed; initialCellId?: string | null }) {
   const index = useMemo(() => new GraphIndex(graph), [graph]);
-  const layout = useMemo(() => layoutGraph(index), [index]);
+  // Settled on the server; here the cells are put back on the geometry, which
+  // is linear in the number of cells rather than the seconds a full layout
+  // takes. Nothing about the field changes — it is the same pure function's
+  // output, computed once.
+  const layout = useMemo(() => layoutFromSeed(seed, index), [seed, index]);
   const initial = initialCellId && layout.byId.has(initialCellId) ? initialCellId : null;
   const [focusId, setFocusId] = useState<string | null>(initial);
   const [sheetOpen, setSheetOpen] = useState(true);
@@ -52,11 +85,58 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const [openedId, setOpenedId] = useState<string | null>(null);
   const [map, setMap] = useState<MapName | null>(null);
   const [query, setQuery] = useState("");
+  // What the phone is showing. The browser is the way in — see `browse.tsx`
+  // for why — and the map is a tap away from it and a tap back. On a desktop
+  // this is not read at all: there the map has the room it needs.
+  const [phoneView, setPhoneView] = useState<"browse" | "map">("browse");
   const desktop = useIsDesktop();
   const mounted = useMounted();
   const reduced = usePrefersReducedMotion();
-  const { viewportRef, camera, setCamera, animate, dragging, handlers, zoomStep, glide, centerOn } = usePanZoom({ x: 0, y: 0, k: 0.2 });
+  // Reading a card means seeing it at the size it was designed at, so the
+  // camera must be able to reach 1 / scale for the deepest layer the library
+  // has. With four layers that is a zoom of 8, well past the default ceiling —
+  // and without it the text on a deep cell never becomes legible however far
+  // in you go, which would make the whole premise of the layers false.
+  const deepestLevel = useMemo(() => seed.plates.reduce((d, p) => Math.max(d, p.level), 0), [seed]);
+  const maxZoom = Math.max(ZOOM_MAX, 1 / levelScale(deepestLevel) * 1.25);
+  const { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, glide, centerOn } = usePanZoom({ x: 0, y: 0, k: 0.2 }, maxZoom);
   const lod = lodFor(camera.k);
+
+  // The viewport's size in state, kept current by a ResizeObserver. Both the
+  // culling below and the minimap read it during render, so it cannot live in
+  // the ref alone.
+  //
+  // Measured from a callback ref rather than an effect, because the map is not
+  // always on the page when this component mounts: on a phone it appears only
+  // when the reader asks for it. An effect keyed on the ref object ran once,
+  // found nothing, and never ran again — so the phone's map had no measured
+  // viewport, fell back to drawing by card size alone, and mounted every plate
+  // in the library exactly as it did before any of this. The element tells us
+  // when it arrives and when it leaves.
+  const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
+  const sizeObserver = useRef<ResizeObserver | null>(null);
+  // Whether the camera has been framed yet. Declared here because the ref
+  // callback below clears it: a map mounted again is framed again rather than
+  // left wherever its initial camera happened to be.
+  const framed = useRef(false);
+  const attachViewport = useCallback((el: HTMLDivElement | null) => {
+    viewportRef.current = el;
+    sizeObserver.current?.disconnect();
+    sizeObserver.current = null;
+    if (!el) {
+      setViewportSize({ w: 0, h: 0 });
+      framed.current = false;
+      return;
+    }
+    const measure = () =>
+      setViewportSize((at) => (at.w === el.clientWidth && at.h === el.clientHeight ? at : { w: el.clientWidth, h: el.clientHeight }));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    sizeObserver.current = observer;
+  }, [viewportRef]);
+  useEffect(() => () => sizeObserver.current?.disconnect(), []);
+
 
   // ── one layer at a time ────────────────────────────────────────────────
   // A cell is drawn once its card would actually print big enough to read.
@@ -66,17 +146,51 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   // Cells below the drawn layers are still on the map and still reachable — by
   // zooming, by search, or by focusing a cell above them — they are simply not
   // all drawn at once. Five hundred cells at one size is a mesh.
-  const zoomForLevel = useCallback((level: number) => READABLE_CARD_PX / (levelScale(level) * PLATE_W), []);
-  const visiblePlates = useMemo(
-    () => layout.plates.filter((p) => camera.k * p.scale * PLATE_W >= READABLE_CARD_PX),
-    [layout.plates, camera.k],
+  // The paper indexed by where things are, built once per settled field. Both
+  // queries below are answered in time proportional to what is on screen, so
+  // the map costs the same over five thousand cells as over five hundred.
+  const plateIndex = useMemo(() => new SpatialIndex(layout.plates, layout.bounds), [layout]);
+  const satelliteBoxes = useMemo(
+    () => layout.satellites.map((node) => ({ x: node.x, y: node.y, w: SAT_W * node.scale, h: SAT_H * node.scale, node })),
+    [layout.satellites],
   );
+  const satelliteIndex = useMemo(() => new SpatialIndex(satelliteBoxes, layout.bounds), [satelliteBoxes, layout.bounds]);
+
+  /** The part of the paper the camera is over, with a margin. */
+  const view = useMemo(() => cameraRect(camera, viewportSize, CULL_MARGIN_PX), [camera, viewportSize]);
+  /** True once the viewport has been measured. Until then the map draws by
+   *  size alone, as it always did: that is the far view, a few dozen cards,
+   *  and it keeps the server-rendered HTML and the first client render the
+   *  same. */
+  const measured = viewportSize.w > 0 && viewportSize.h > 0;
+
+  // ── what is actually drawn ──────────────────────────────────────────────
+  // Two rules, and a card has to pass both. It has to print big enough to read
+  // — judge a card by its own width, not by the widest a card can be, because
+  // a cell with no material draws narrower than a pictured one. And it has to
+  // be somewhere near the viewport. The size rule alone mounted every plate in
+  // the library at reading zoom to show the two that fit on a phone.
+  const visiblePlates = useMemo(() => {
+    const readable = (p: PlateNode) => camera.k * p.w >= READABLE_CARD_PX;
+    if (!measured) return layout.plates.filter(readable);
+    return plateIndex.query(view).filter(readable);
+  }, [layout.plates, plateIndex, view, camera.k, measured]);
   const visibleIds = useMemo(() => new Set(visiblePlates.map((p) => p.id)), [visiblePlates]);
-  /** The deepest layer currently drawn, and how many the library has. */
-  const deepestShown = useMemo(() => visiblePlates.reduce((d, p) => Math.max(d, p.level), 0), [visiblePlates]);
+  /** The deepest layer the camera has reached, and how many the library has.
+   *  Read from the zoom rather than from what happens to be on screen, so
+   *  panning at a fixed zoom does not make the readout flicker between layers
+   *  as cards of different sizes come and go. */
   const levels = useMemo(() => layout.plates.reduce((d, p) => Math.max(d, p.level), 0), [layout.plates]);
+  const deepestShown = useMemo(() => {
+    let deepest = 0;
+    for (let level = 0; level <= levels; level++) {
+      if (camera.k * PLATE_W * levelScale(level) >= READABLE_CARD_PX) deepest = level;
+    }
+    return deepest;
+  }, [camera.k, levels]);
 
   const focusCell = focusId ? index.byId.get(focusId) ?? null : null;
+  const focusPlate = focusId ? layout.byId.get(focusId) ?? null : null;
 
   const opened = useMemo(() => {
     const plate = openedId ? layout.byId.get(openedId) : null;
@@ -101,8 +215,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     // camera off the thing the reader just opened, which reads as a bug the
     // first time anyone opens a ring and presses 0.
     if (opened) {
-      const r = opened.radius;
-      const k = Math.max(0.05, Math.min(1.1, Math.min((vw - side * 2) / (r * 2), (vh - top - bottom) / (r * 2))));
+      const k = zoomForRing(opened.radius, { w: vw - side * 2, h: vh - top - bottom }, SAT_W * opened.plate.scale);
       const x = vw / 2 - opened.plate.x * k;
       const y = top + (vh - top - bottom) / 2 - opened.plate.y * k;
       if (smooth) glide({ k, x, y }); else setCamera({ k, x, y });
@@ -146,28 +259,43 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     const el = viewportRef.current;
     const p = layout.byId.get(id);
     if (!el || !p) return;
-    // Come in far enough that the cell's own level is drawn: focusing a deep
-    // cell from search or from the index must actually show it.
-    const k = Math.max(camera.k, 1, zoomForLevel(p.level) * 1.1);
+    // Come in far enough that the card reads, not merely far enough that it is
+    // drawn. A cell on a lower layer draws at a fraction of full size, so its
+    // 22px title only reaches 22px on screen at 1 / scale; stopping at the
+    // threshold that makes it visible left that title at about three pixels.
+    const k = Math.min(maxZoom, Math.max(camera.k, 1 / p.scale));
     if (desktop) centerOn(p.x, p.y, k, { x: el.clientWidth / 2, y: el.clientHeight / 2 + 30 });
     else {
       const fit = Math.min(k, (el.clientWidth - 40) / p.w);
       centerOn(p.x, p.y, fit, { x: el.clientWidth / 2, y: 196 + p.h * 0.5 * fit - 40 });
     }
-  }, [viewportRef, layout.byId, camera.k, desktop, centerOn, zoomForLevel]);
+  }, [viewportRef, layout.byId, camera.k, desktop, centerOn, maxZoom]);
+
+  /** The sheet is the index's scroll parent, so the windowed list can read it. */
+  const sheetScrollRef = useRef<HTMLElement | null>(null);
+  const mobileSheetScrollRef = useRef<HTMLDivElement | null>(null);
 
   // First framing happens once the viewport has a size. The flag is set when
   // the frame actually runs, so a dependency change that cancels the pending
   // frame (the desktop/phone switch on first paint) schedules it again.
-  const framed = useRef(false);
   useEffect(() => {
     if (framed.current) return;
     const id = requestAnimationFrame(() => {
+      // A viewport with no size cannot be framed, and latching against one
+      // would leave the map wherever the initial camera happened to be. This
+      // is the case when the phone opens on the browser and the map is only
+      // mounted later, on request.
+      const el = viewportRef.current;
+      if (!el || !el.clientWidth || !el.clientHeight) return;
       framed.current = true;
-      if (initial) frameFocus(initial); else fitAll(false);
+      // The cell in focus, when there is one, is where the reader already is —
+      // handed over by the phone browser, or named in the URL. Only an
+      // unfocused map opens on the whole field.
+      const target = focusId ?? initial;
+      if (target) frameFocus(target); else fitAll(false);
     });
     return () => cancelAnimationFrame(id);
-  }, [initial, frameFocus, fitAll]);
+  }, [initial, focusId, frameFocus, fitAll, viewportRef, viewportSize]);
   useEffect(() => {
     const onResize = () => { if (!focusId) fitAll(false); };
     window.addEventListener("resize", onResize);
@@ -183,6 +311,11 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     setTab("material");
     frameFocus(id);
   }, [layout.byId, frameFocus]);
+
+  /** One handler for every card on the paper. It reads whether the pointer was
+   *  dragged from a ref rather than from state, so its identity never changes
+   *  and a memoised card is not re-rendered by the act of panning past it. */
+  const focusUnlessDragging = useCallback((id: string) => { if (!draggingRef.current) focus(id); }, [focus, draggingRef]);
 
   const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); setOpenedId(null); }, []);
 
@@ -240,10 +373,14 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
   const baseSatellites: SatelliteNode[] = useMemo(
     () => {
-      const drawn = layout.satellites.filter((s) => visibleIds.has(s.cellId));
-      return opened ? drawn.filter((s) => s.cellId !== opened.plate.id) : drawn;
+      // A record node belongs to a cell that is drawn, and is itself near the
+      // viewport. The second test matters at the reading layer, where a cell's
+      // ring can reach well outside the screen its plate is on.
+      const near = measured ? satelliteIndex.query(view).map((b) => b.node) : layout.satellites;
+      const drawn = near.filter((sat) => visibleIds.has(sat.cellId));
+      return opened ? drawn.filter((sat) => sat.cellId !== opened.plate.id) : drawn;
     },
-    [layout.satellites, opened, visibleIds],
+    [layout.satellites, satelliteIndex, view, measured, opened, visibleIds],
   );
   const shownRecords = (opened ? baseSatellites.concat(opened.nodes) : layout.satellites).filter((s) => s.role === "record").length;
 
@@ -264,21 +401,21 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     const el = viewportRef.current;
     if (!opened || !el) return;
     const room = desktop ? 120 : 200;
-    const fit = (Math.min(el.clientWidth, el.clientHeight) - room) / (opened.radius * 2);
-    // Frame the ring, coming in from the far view or pulling back from a close
-    // one — clamping to the camera's current zoom left sixty records as a
-    // ten-pixel clump when the cell was opened from the whole map. The floor
-    // matters on a phone: a wide ring that fits a 390px screen puts every
-    // record at fifteen pixels, too small to hit. Below the floor the ring
-    // runs off the screen and is panned instead, which keeps every record a
-    // real target.
-    const k = Math.max(0.6, Math.min(1.1, fit));
+    const k = zoomForRing(opened.radius, { w: el.clientWidth - room, h: el.clientHeight - room }, SAT_W * opened.plate.scale);
     centerOn(opened.plate.x, opened.plate.y, k, { x: el.clientWidth / 2, y: el.clientHeight / 2 });
     // Framing belongs to the act of opening a cell, not to every camera move.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened?.plate.id]);
 
-  const strokeW = Math.max(1.2, 1.5 / camera.k);
+  // Everything below is drawn INSIDE the layer the camera scales, so a value
+  // written in world units is multiplied by the zoom on the way to the screen.
+  // Each one therefore divides by it to come out the size it says. The floors
+  // here were set when the camera stopped at 3.2; the ceiling is now derived
+  // from the library's depth and reaches 8, where a 1.2 floor draws a line at
+  // ten screen pixels and a 13px word at a hundred and four.
+  const strokeW = 1.5 / camera.k;
+  const labelPx = 13 / camera.k;
+  const labelHalo = 6 / camera.k;
   const dash = `${5 / camera.k} ${6 / camera.k}`;
   const dots = `${1.5 / camera.k} ${5 / camera.k}`;
   const showWords = lod === "reading";
@@ -293,40 +430,70 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     showWords && (hoverEdge === key || (focusId !== null && (a === focusId || b === focusId)));
 
   // ── minimap ─────────────────────────────────────────────────────────────
-  // The viewport size lives in state (a ResizeObserver keeps it current) so
-  // the minimap can read it during render without touching the ref.
-  const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
-  useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(() => setViewportSize({ w: el.clientWidth, h: el.clientHeight }));
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [viewportRef]);
-  const mini = (() => {
-    const W = 132; const H = 84;
+  // The minimap's own geometry depends on the field, not on the camera, so it
+  // is settled once. Fitting it to the union of the field and the viewport
+  // instead — as it was — rescaled the whole minimap on every pan, which both
+  // redrew every plate in the library each frame and made the field itself
+  // drift under the reader while they were using it to keep their place.
+  const MINI_W = 132;
+  const MINI_H = 84;
+  const miniField = useMemo(() => {
     // An opened ring reaches past the plate it belongs to, so the paper the
-    // minimap draws has to include it. Without this the ring is off the
-    // minimap and the viewport rectangle sits outside the field it is drawn
-    // over, which reads as the minimap being broken.
+    // minimap draws has to include it.
     const field = layout.bounds;
-    const b = opened
-      ? {
-          x: Math.min(field.x, opened.plate.x - opened.radius),
-          y: Math.min(field.y, opened.plate.y - opened.radius),
-          w: Math.max(field.x + field.w, opened.plate.x + opened.radius) - Math.min(field.x, opened.plate.x - opened.radius),
-          h: Math.max(field.y + field.h, opened.plate.y + opened.radius) - Math.min(field.y, opened.plate.y - opened.radius),
-        }
-      : field;
+    if (!opened) return field;
+    const x = Math.min(field.x, opened.plate.x - opened.radius);
+    const y = Math.min(field.y, opened.plate.y - opened.radius);
+    return {
+      x,
+      y,
+      w: Math.max(field.x + field.w, opened.plate.x + opened.radius) - x,
+      h: Math.max(field.y + field.h, opened.plate.y + opened.radius) - y,
+    };
+  }, [layout.bounds, opened]);
+  const miniGeometry = useMemo(() => {
+    const s = Math.min(MINI_W / Math.max(1, miniField.w), MINI_H / Math.max(1, miniField.h));
+    return {
+      s,
+      ox: (MINI_W - miniField.w * s) / 2 - miniField.x * s,
+      oy: (MINI_H - miniField.h * s) / 2 - miniField.y * s,
+    };
+  }, [miniField]);
+  const mini = (() => {
+    const { s, ox, oy } = miniGeometry;
     const has = viewportSize.w > 0;
-    const vw = has ? viewportSize.w / camera.k : b.w; const vh = has ? viewportSize.h / camera.k : b.h;
-    const vx = has ? -camera.x / camera.k : b.x; const vy = has ? -camera.y / camera.k : b.y;
-    const minX = Math.min(b.x, vx); const minY = Math.min(b.y, vy);
-    const maxX = Math.max(b.x + b.w, vx + vw); const maxY = Math.max(b.y + b.h, vy + vh);
-    const s = Math.min(W / (maxX - minX), H / (maxY - minY));
-    const ox = (W - (maxX - minX) * s) / 2 - minX * s; const oy = (H - (maxY - minY) * s) / 2 - minY * s;
-    return { W, H, s, ox, oy, view: { x: vx, y: vy, w: vw, h: vh } };
+    const vw = has ? viewportSize.w / camera.k : miniField.w;
+    const vh = has ? viewportSize.h / camera.k : miniField.h;
+    const vx = has ? -camera.x / camera.k : miniField.x;
+    const vy = has ? -camera.y / camera.k : miniField.y;
+    // Panned off the edge of the field, the rectangle stays on the minimap
+    // rather than sliding off it: it is there to say where you are looking,
+    // and a rectangle drawn outside the paper says nothing.
+    const clamp = (lo: number, hi: number, at: number) => Math.max(lo, Math.min(hi, at));
+    const cx = clamp(miniField.x, miniField.x + Math.max(0, miniField.w - vw), vx);
+    const cy = clamp(miniField.y, miniField.y + Math.max(0, miniField.h - vh), vy);
+    return { W: MINI_W, H: MINI_H, s, ox, oy, view: { x: cx, y: cy, w: Math.min(vw, miniField.w), h: Math.min(vh, miniField.h) } };
   })();
+
+  /** The field on the minimap. Static for a given layout, so panning and
+   *  zooming redraw one rectangle rather than one per cell in the library. */
+  const miniPlates = useMemo(
+    () => (
+      <>
+        {layout.plates.map((p) => (
+          <rect
+            key={p.id}
+            x={miniGeometry.ox + (p.x - p.w / 2) * miniGeometry.s}
+            y={miniGeometry.oy + (p.y - p.h / 2) * miniGeometry.s}
+            width={Math.max(2.5, p.w * miniGeometry.s)}
+            height={Math.max(2.5, p.h * miniGeometry.s)}
+            fill="color-mix(in oklch, var(--foreground) 22%, transparent)"
+          />
+        ))}
+      </>
+    ),
+    [layout.plates, miniGeometry],
+  );
 
   /** What the inks on the paper mean. With the words off every line but the
    *  focused one, this is where a reader learns to read them. Only the
@@ -342,7 +509,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
   const mapViewport = (
     <div
-      ref={viewportRef}
+      ref={attachViewport}
       className="relative h-full w-full select-none overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--ramune)]"
       style={{ touchAction: "none", cursor: dragging ? "grabbing" : "grab" }}
       tabIndex={0}
@@ -359,7 +526,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
         {layout.regions.map((r) => (
           <div key={r.map} className="pointer-events-none absolute" style={{ left: r.x, top: r.y, width: r.w, height: r.h, opacity: map && map !== r.map ? 0.25 : 1 }}>
             <span aria-hidden className="halftone-wash absolute -right-10 -top-10 h-[420px] w-[620px]" style={{ ["--wash-ink" as string]: MAP_INK[r.map], opacity: 0.35 }} />
-            <div className="absolute left-10 top-8" style={{ transform: `scale(${Math.max(1, Math.min(3.2, 0.6 / camera.k))})`, transformOrigin: "0 0" }}>
+            <div className="absolute left-10 top-8" style={{ transform: `scale(${Math.min(3.2, 0.6 / camera.k)})`, transformOrigin: "0 0" }}>
               <div className="font-mono text-[28px] font-bold uppercase tracking-[0.3em]" style={{ color: `color-mix(in oklch, ${MAP_INK[r.map]} 72%, var(--foreground))` }}>{MAP_LABEL[r.map]}</div>
               <div className="mt-1 font-mono text-[12px] uppercase tracking-[0.2em] text-muted-foreground">{r.count ? `${r.count} cells` : "no cells here yet"}</div>
             </div>
@@ -395,7 +562,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
                 {/* A wide invisible stroke so the thin dashed line is still
                     easy to put the pointer on. */}
                 <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 12} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(key)} onMouseLeave={() => setHoverEdge((at) => (at === key ? null : at))} />
-                {wordFor(key, e.from, e.to) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: 13, fill: "var(--muted-foreground)", paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: 6, strokeLinejoin: "round" }}>narrower cell</text> : null}
+                {wordFor(key, e.from, e.to) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: labelPx, fill: "var(--muted-foreground)", paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: labelHalo, strokeLinejoin: "round" }}>narrower cell</text> : null}
               </g>
             );
           })}
@@ -410,7 +577,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
               <g key={line.key} opacity={dim ? 0.2 : 1}>
                 <path d={d} fill="none" stroke={ink} strokeWidth={strokeW * 1.3} strokeDasharray={dash} strokeLinecap="round" style={{ mixBlendMode: "var(--ink-blend)" as never }} />
                 <path d={d} fill="none" stroke="transparent" strokeWidth={strokeW * 12} style={{ pointerEvents: "stroke" }} onMouseEnter={() => setHoverEdge(line.key)} onMouseLeave={() => setHoverEdge((at) => (at === line.key ? null : at))} />
-                {wordFor(line.key, line.a, line.b) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: 13, fill: `color-mix(in oklch, ${ink} 70%, var(--foreground))`, paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: 6, strokeLinejoin: "round" }}>{word}</text> : null}
+                {wordFor(line.key, line.a, line.b) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: labelPx, fill: `color-mix(in oklch, ${ink} 70%, var(--foreground))`, paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: labelHalo, strokeLinejoin: "round" }}>{word}</text> : null}
               </g>
             );
           })}
@@ -425,7 +592,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             dimmed={dimmedPlate(s.cellId) || faded(s.cellId)}
             dimTo={dimTo}
             labelled={focusId === s.cellId && lod !== "picture"}
-            onToggle={() => toggleOpen(s.cellId)}
+            onToggle={toggleOpen}
           />
         ))}
         {/* Plain paper laid over the stepped-back field and masked out at its
@@ -480,7 +647,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
                   // they would bury the ring, so the labels stand down and the
                   // sheet carries the list.
                   labelled={lod !== "picture" && opened.nodes.length <= 14}
-                  onToggle={() => toggleOpen(s.cellId)}
+                  onToggle={toggleOpen}
                 />
               ))}
             </div>
@@ -499,7 +666,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             focused={focusId === p.id}
             dimmed={dimmedPlate(p.id) || faded(p.id)}
             dimTo={dimTo}
-            onFocus={() => { if (!dragging) focus(p.id); }}
+            onFocus={focusUnlessDragging}
           />
         ))}
       </div>
@@ -507,10 +674,15 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       {/* title block, on the paper */}
       <div className="pointer-events-none absolute left-0 top-0 max-w-full bg-[var(--washi)] pb-4 pl-5 pr-5 pt-5 sm:pl-8 sm:pr-8 sm:pt-7" style={{ maskImage: "linear-gradient(90deg, black 94%, transparent)", WebkitMaskImage: "linear-gradient(90deg, black 94%, transparent)" }}>
         <div className="font-mono text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>Encyclopedia</div>
-        <h1 className="mt-1 font-display text-[36px] font-bold leading-[1] tracking-[-0.03em] sm:text-[44px]">
+        <h1 className="mt-1 font-display text-[24px] font-bold leading-[1.05] tracking-[-0.03em] sm:text-[44px]">
           The <Marker color="sakura">encyclopedia</Marker>
         </h1>
-        <div className="pointer-events-auto mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Filter by map">
+        <div className="pointer-events-auto mt-3 flex items-center gap-2 overflow-x-auto pb-1 sm:mt-4 sm:flex-wrap sm:overflow-visible" role="group" aria-label="Filter by map">
+          {!desktop ? (
+            <button type="button" onClick={() => setPhoneView("browse")} className="inline-flex h-11 shrink-0 items-center gap-2 bg-foreground px-4 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[var(--shadow-sticker)]">
+              <List size={16} aria-hidden /> Browse
+            </button>
+          ) : null}
           <button type="button" aria-pressed={map === null} onClick={() => onFilter(null)} className="h-8 px-3 font-sans text-[16px] font-semibold shadow-[var(--shadow-sticker)] sm:h-9 sm:px-4" style={map === null ? { background: "var(--yuzu)", color: "var(--sumi)" } : { background: "var(--washi)", color: "var(--foreground)" }}>All</button>
           {MAP_NAMES_ORDER.map((name) => (
             <button key={name} type="button" aria-pressed={map === name} onClick={() => onFilter(map === name ? null : name)} disabled={!counts[name]} title={counts[name] ? `${counts[name]} cells` : "No cells on this map yet"} className="h-8 px-3 font-sans text-[16px] font-semibold shadow-[var(--shadow-sticker)] disabled:cursor-not-allowed disabled:opacity-45 sm:h-9 sm:px-4" style={map === name ? { background: "var(--yuzu)", color: "var(--sumi)" } : { background: "var(--washi)", color: "var(--foreground)" }}>
@@ -547,9 +719,16 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
         {desktop ? (
           <div className="bg-[var(--washi)] p-2 shadow-[var(--shadow-sticker)]">
             <svg width={mini.W} height={mini.H} aria-hidden className="block">
-              {layout.plates.map((p) => (
-                <rect key={p.id} x={mini.ox + (p.x - p.w / 2) * mini.s} y={mini.oy + (p.y - p.h / 2) * mini.s} width={Math.max(2.5, p.w * mini.s)} height={Math.max(2.5, p.h * mini.s)} fill={p.id === focusId ? "var(--ramune)" : "color-mix(in oklch, var(--foreground) 22%, transparent)"} />
-              ))}
+              {miniPlates}
+              {focusPlate ? (
+                <rect
+                  x={mini.ox + (focusPlate.x - focusPlate.w / 2) * mini.s}
+                  y={mini.oy + (focusPlate.y - focusPlate.h / 2) * mini.s}
+                  width={Math.max(2.5, focusPlate.w * mini.s)}
+                  height={Math.max(2.5, focusPlate.h * mini.s)}
+                  fill="var(--ramune)"
+                />
+              ) : null}
               {/* An opened cell's records are on the paper too, so they are on
                   the minimap: a ring around the cell you opened, in the same
                   ink as the cell itself. */}
@@ -578,7 +757,9 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             {levels > 0
               ? <>showing {visiblePlates.length} · {deepestShown + 1} of {levels + 1} layers{deepestShown < levels ? " · zoom in for the next" : ""}</>
               : <>{visiblePlates.length} on the map</>}
-            {" · "}{shownRecords} manifestations · distances are schematic
+            {" · "}{shownRecords} manifestations
+            {graph.withheld ? <> · <span title="Not attested under the current contract, so not shown.">{graph.withheld} withheld</span></> : null}
+            {" · distances are schematic"}
           </span>
           <span className="ml-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             <span className="flex items-center gap-1.5">
@@ -599,24 +780,29 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   );
 
   // ── the sheet ──────────────────────────────────────────────────────────
-  const sheetContent = focusCell ? (
-    <>
-      <div className="mt-6"><SheetTitle cell={focusCell} /></div>
-      <p className="mt-4 text-[17px] leading-relaxed text-foreground">{focusCell.description || "A name and a scope. No description has been written for this cell yet."}</p>
-      <SheetBody cell={focusCell} index={index} tab={tab} onTab={setTab} onFocus={focus} expandKey={expandKey} />
-      <OpenCellButton cell={focusCell} />
-    </>
-  ) : (
-    <IndexSheet index={index} onFocus={focus} />
-  );
+  // The index is windowed against whichever element is actually scrolling it,
+  // and that is a different element in the sheet beside the map and in the
+  // sheet on a phone. Passing the desktop one to both left the phone's index
+  // stuck at the two dozen rows it starts with.
+  const sheetContent = (scrollRef: React.RefObject<HTMLElement | null>) =>
+    focusCell ? (
+      <>
+        <div className="mt-6"><SheetTitle cell={focusCell} /></div>
+        <p className="mt-4 text-[17px] leading-relaxed text-foreground">{focusCell.description || "A name and a scope. No description has been written for this cell yet."}</p>
+        <SheetBody cell={focusCell} index={index} tab={tab} onTab={setTab} onFocus={focus} expandKey={expandKey} />
+        <OpenCellButton cell={focusCell} />
+      </>
+    ) : (
+      <IndexSheet index={index} onFocus={focus} scrollRef={scrollRef} />
+    );
 
   const desktopSheet = (
-    <aside className="relative flex h-full flex-col overflow-y-auto px-8 pb-10 pt-6" aria-label="Cell">
+    <aside ref={sheetScrollRef} className="relative flex h-full flex-col overflow-y-auto px-8 pb-10 pt-6" aria-label="Cell">
       {/* The sheet's edge is the house die-cut perforation, not a grey rule. */}
       <span aria-hidden className="sticker-perforation-y pointer-events-none absolute inset-y-0 left-0" />
       <span aria-hidden className="washi-tape pointer-events-none left-6 top-3" style={{ ["--strip-ink" as string]: "var(--ramune)", transform: "rotate(-4deg)", width: 66 }} />
       <div className="flex justify-end">{focusCell ? <CloseButton onClick={clearFocus} /> : <CloseButton onClick={() => setSheetOpen(false)} />}</div>
-      {sheetContent}
+      {sheetContent(sheetScrollRef)}
     </aside>
   );
 
@@ -634,7 +820,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             <button type="button" onClick={() => setSheetExpanded(false)} className="inline-flex items-center gap-2 font-sans text-[17px] text-foreground"><ArrowLeft size={18} aria-hidden /> Back to map</button>
             {focusCell ? <CloseButton onClick={clearFocus} /> : null}
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-4">{sheetContent}</div>
+          <div ref={mobileSheetScrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-4">{sheetContent(mobileSheetScrollRef)}</div>
         </>
       ) : focusCell ? (
         <div className="px-5 pb-4 pt-3">
@@ -660,18 +846,41 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     document.body,
   ) : null;
 
+  const showMap = desktop || phoneView === "map";
+
   return (
     <div className="relative w-full" style={{ height: desktop ? "calc(100dvh - 64px)" : "calc(100dvh - 56px - 64px)" }}>
-      <div className={`grid h-full ${desktop && sheetOpen ? "grid-cols-[minmax(0,1fr)_440px]" : "grid-cols-1"}`}>
-        <div className="relative min-w-0">
-          {mapViewport}
-          {desktop && !sheetOpen ? (
-            <button type="button" onClick={() => setSheetOpen(true)} className="absolute right-6 top-7 h-9 bg-foreground px-4 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)]">Show sheet</button>
-          ) : null}
+      {!desktop && phoneView === "browse" ? (
+        <EncyclopediaBrowse
+          index={index}
+          focusId={focusId}
+          onFocus={focus}
+          onClearFocus={clearFocus}
+          onShowMap={(cellId) => {
+            // Carry the cell the reader is on across the seam. Tapping MAP and
+            // landing somewhere else breaks the one thing the two views owe
+            // each other: reading a cell without losing your place.
+            if (cellId) { setFocusId(cellId); setSheetOpen(true); }
+            setPhoneView("map");
+          }}
+          map={map}
+          onMap={setMap}
+          counts={counts}
+          withheld={graph.withheld}
+        />
+      ) : null}
+      {showMap ? (
+        <div className={`grid h-full ${desktop && sheetOpen ? "grid-cols-[minmax(0,1fr)_440px]" : "grid-cols-1"}`}>
+          <div className="relative min-w-0">
+            {mapViewport}
+            {desktop && !sheetOpen ? (
+              <button type="button" onClick={() => setSheetOpen(true)} className="absolute right-6 top-7 h-9 bg-foreground px-4 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)]">Show sheet</button>
+            ) : null}
+          </div>
+          {desktop && sheetOpen ? desktopSheet : null}
         </div>
-        {desktop && sheetOpen ? desktopSheet : null}
-      </div>
-      {!desktop ? mobileSheet : null}
+      ) : null}
+      {!desktop && phoneView === "map" ? mobileSheet : null}
     </div>
   );
 }

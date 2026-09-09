@@ -730,7 +730,6 @@ The detached HEAD happened three times in one day on one branch, and all three w
 One more, about evidence rather than instruments. Offering "the count is unchanged at 67" as proof that a refactor was count-neutral compared two runs over a collection that was moving underneath them, and the number had gone to 66 for reasons unrelated to the change. The claim was right and its evidence could not support it. **A property of a transformation is demonstrated by computing both ways over one snapshot, never by comparing two runs**, and the integrity script now reports the archived count both set-qualified and by bare id so the neutrality is visible rather than asserted.
 
 Where: the run's own watch; `ui/scripts/encyclopedia-integrity.test.mjs`; this rule belongs to whoever writes the next one.
-=======
 
 
 ## D60 An exemplar is a passage, and a check with a floor exempts everything below it
@@ -863,3 +862,90 @@ directions is a threshold that no reasonable text can sit inside.
 
 Where: `scripts/writing_style_voice_md.py`, `scripts/replace-writing-style-corpora.py`,
 `scripts/check-writing-style-exemplars.py`; `docs/efforts/ARN-118/corpus-sources.md`.
+=======
+
+<!-- D66–D70 assigned by the team lead for the mobile and performance work on the
+     encyclopedia (PR #291). Numbers in this log are assigned rather than chosen:
+     five collisions have come from a branch picking its own block by reading the
+     others at a moment when those others were still growing.
+
+     These were written on #291 as D42-D46 and arrive here already renumbered,
+     in one commit rather than as a block followed by a renumber. #291 is closed:
+     the same five code commits ended up in two pull requests, and when they were
+     fast-forwarded into #288 only the code crossed - this file was never on that
+     branch at all, so there was no D42 here to renumber. -->
+
+
+## D66 The phone gets a browser, not the map made smaller
+
+Decision: Below 1024px the encyclopedia opens as a search-and-drill-down browser over the cells. The map is still there, one tap from the browser and one tap back, with the culling below applied to it.
+
+Came up because: The owner said the encyclopedia is not responsive and is very difficult to browse on a phone, and named that as the harder half of the work.
+
+Options: Keep one map and give it phone affordances — bigger hit targets, a search field, a cleaner sheet; or give small screens a different way in and keep the map available.
+
+Chose the browser because: the four things browsing this collection means — reach a cell you have in mind, step between a cell and its neighbours, read one without losing your place, get back out — are all navigation, and none of them is served by panning. A map buys spatial recall and overview and pays for both in screen area a 393px viewport does not have: the far view holds a top layer that does not fit and the reading layer holds about two cards. The collection's own shape is a shallow hierarchy — 265 roots, 479 cells with a parent, four levels — which is a drill-down natively. Measured, the browser's interactive time barely moves across 744, 2,232 and 5,208 cells (1,326ms, 1,394ms, 1,953ms) because the list is windowed, where the map's frame rate used to collapse from 19 fps to 2.4. Given up: the phone loses the field at a glance, which is a real thing to lose — hence the map staying one tap away rather than being removed.
+
+Where: `ui/src/components/encyclopedia/browse.tsx`, and the view switch in `ui/src/components/encyclopedia/encyclopedia-map.tsx`.
+
+
+## D67 The map draws what is on screen, not what the library holds
+
+Decision: Plates and satellites are looked up in a uniform grid over the settled field and mounted only if they overlap the camera, with a 420px margin.
+
+Came up because: Measured on a phone at the reading layer, the map mounted every plate in the library — 5,208 cards and 3,416 images to show the two that fit on a 393px screen. A single 40-step drag took 34.8 seconds, 34.9 of it in long tasks.
+
+Options: Cull with a linear scan over the plates each frame; index the field spatially; or render the field to a canvas instead of DOM cards.
+
+Chose the grid because: a linear scan fixes the DOM cost but leaves a per-frame pass proportional to the library, which is the thing the requirement is about. Canvas would be the fastest and would throw away the cards' text, links, focus behaviour and accessibility, which the map's whole design rests on. Given up: a card's box must be known to the index, so the grid has to be rebuilt when the layout changes — cheap, since the layout is already computed once per state of the library.
+
+Where: `ui/src/components/encyclopedia/spatial-index.ts`, `ui/src/components/encyclopedia/encyclopedia-map.tsx`, `ui/scripts/encyclopedia-culling.test.mjs`.
+
+
+## D68 Both settling loops stop when they stop helping
+
+Decision: The relaxation and the separation sweeps end on a measurement — movement per card, and cleared overlap — with their old fixed counts kept as guards.
+
+Came up because: The separation sweep's comment said it ran "until nothing overlaps". Measured over the live 744 cells it never reaches that and always spent its full 900-pass guard; passes 100 to 900 took 89% of the time, took the overlapping-pair count from 354 to 202, and did not improve the deepest overlap by a single pixel.
+
+Options: Lower the pass cap; scale the cap by cell count; or stop on a convergence measurement.
+
+Chose the measurement because: a lower cap is a guess that is wrong at both ends — at 744 cells the sweep still has real work at pass 200, and at 5,208 it still has work at pass 800. Scaling by count degrades the field precisely where it is densest. Stopping on progress does the right thing at both sizes: over the live library it settles in a third of the passes and brings the deepest overlap down from 130px to 76px; at 5,208 it takes about the same time and leaves 1,271 overlapping pairs instead of 1,519. Given up: the threshold and the patience count are two tuned numbers where there was one; both were chosen from the measured curve rather than picked, and the layout's determinism test covers the result.
+
+Where: `ui/src/components/encyclopedia/graph-layout.ts`.
+
+
+## D69 The library is read once and shared, and the cache may never see the request
+
+Decision: The graph read is held for sixty seconds behind a single flight. The module that holds it may not import `next/headers` or mention a header, cookie, session, token or user, and a contract test enforces that.
+
+Came up because: The read cost 3.5s on every request — a third of interactive time on a phone and all of desktop's problem — and at a genuine 5,000 cells it would be roughly seven times that.
+
+Options: Leave it; cache per request only; hold it in the process behind a TTL.
+
+Chose the held read because: it is the same bytes for everyone the gate lets through, so there is one answer to hold. That is also exactly what makes it dangerous, so the safety condition is written down and tested rather than assumed: the gate runs in the request, before the read, and the cache cannot become per-reader because it cannot see the reader. Given up: a cell written now appears within a minute rather than immediately, and a stale-but-good copy is served in preference to a failure, with the failure logged.
+
+Two things happened while writing that guard, and both are about instruments rather than about caching.
+
+The gate contract test already asserted the ordering that matters — every read of the library must run after the owner check, or a stranger's request reaches the backend with the tenant's key on its way to a 404. It matched read names with `indexOf` and skipped any name it did not find. Renaming the read to `loadEncyclopediaCached`, which I did, therefore removed the encyclopedia page from that assertion entirely, and the suite stayed green. **The general rule is that a check must fail when its subject disappears, not merely when its subject is wrong.** A check that silently skips what it cannot find will report a pass for a page it is no longer looking at, and the greener it looks the less it is doing. The test now requires each page to match at least one known read and fails on anything read-shaped appearing above the gate.
+
+The second is the same shape one level down. My first attempt at the "the cache may not see the request" assertion listed forbidden call syntax — `cookies(`, `headers(` — and passed a mutation that added `import { cookies } from "next/headers"`, which is exactly how request state actually gets into a module that should not have it. It was found by running mutations against the new check until they bit, rather than by trusting the first green. A new assertion is worth what it fails on; until it has failed on something it is a comment.
+
+Where: `ui/src/lib/encyclopedia-cache.ts`, `ui/src/lib/held-read.ts`, `ui/scripts/encyclopedia-cache.test.mjs`, `ui/scripts/encyclopedia-gate.test.mjs`.
+
+
+## D70 The far view's arithmetic is named, not half-fixed
+
+Decision: The map's four regions each have to be big enough to hold every cell they contain, and the top layer is spread across all four, so the far view can show everything small or some of it large and no threshold gives both. Nesting each layer inside its parent's territory is the fix. It is not built here.
+
+Came up because: It is the structural half of the 5,000-cell problem, and the culling work sits next to it.
+
+Options: Attempt the nesting inside this effort; or fix the rendering cost and name the layout problem.
+
+Chose to name it because: culling changes what is drawn, not where cells are placed, so it does not make nesting cheap and does not address the far view at all. What it does change is the constraint around it — the cost of a card is no longer tied to the size of the field, so whoever restructures the geometry can pack the layers differently without watching the frame rate collapse.
+
+**The part nobody has written down: nesting would very likely fix the cold layout as well, and that should change how it is prioritised.** The separation sweep is the layout's dominant cost — 19.9s of the 30.4s of settling at 5,208 cells — and what drives it is how densely the field is packed, because every pair pushed apart pushes each of them into another. Nesting means a lower layer claims no paper until you enter its parent's territory, so the settled field holds far fewer cells competing for the same room at any one level. That is the same variable. So the fix for the far view, which is a legibility problem, is plausibly also the fix for the ~n^1.5 cold layout, which is the sharpest ceiling left and currently 28.3s at 5,208. It is not two pieces of work with one of them optional; it may be one piece of work that pays twice.
+
+Given up: the far view is no better than it was.
+
+Where: named here and in the report; not implemented.

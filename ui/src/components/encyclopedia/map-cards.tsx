@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { memo, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import type { CellManifestation, EncyclopediaCell } from "@/lib/encyclopedia";
 import { MAP_LABEL } from "@/lib/encyclopedia-graph";
 import { Tape } from "./chrome";
@@ -162,7 +162,7 @@ function Face({ face, lod, k, name, fill, onImageError }: { face: CellFace; lod:
  *  caption are set, and the picture takes whatever height is left over. A long
  *  scope and a study on the same cell used to push a reading-mode card a
  *  hundred and eighty pixels past its reservation and over its neighbour. */
-export function Plate({
+function PlateCard({
   cell,
   x,
   y,
@@ -191,7 +191,9 @@ export function Plate({
   /** How far back a dimmed card steps. A hint at the reading layer, much
    *  deeper behind an opened cell so its ring reads as one object. */
   dimTo?: number;
-  onFocus: () => void;
+  /** Takes the cell id, so one handler serves every card on the paper and a
+   *  card is not re-rendered merely because its parent made a new closure. */
+  onFocus: (id: string) => void;
 }) {
   const { face, onImageError } = useCellFace(cell);
   // The card is laid out at full size; `scale` puts it on the paper at the
@@ -208,7 +210,7 @@ export function Plate({
   return (
     <button
       type="button"
-      onClick={onFocus}
+      onClick={() => onFocus(cell.id)}
       aria-label={`${cell.name}. Focus this cell.`}
       aria-current={focused ? "true" : undefined}
       className="absolute flex flex-col text-left transition-[opacity,box-shadow] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]"
@@ -270,7 +272,7 @@ export function Plate({
 /** One node on the paper: a manifestation record joined to its cell by a
  *  dotted line and opening that record's page, or the control that opens the
  *  cell's remaining records onto the map and folds them away again. */
-export function Satellite({
+function SatelliteNodeCard({
   node,
   manifestation,
   k,
@@ -288,8 +290,9 @@ export function Satellite({
   /** Names are drawn only around the cell in focus. Every satellite naming
    *  itself at once buried the map under overlapping labels. */
   labelled: boolean;
-  /** Open this cell's remaining records onto the map, or fold them away. */
-  onToggle: () => void;
+  /** Open this cell's remaining records onto the map, or fold them away.
+   *  Takes the cell id for the same reason `Plate.onFocus` does. */
+  onToggle: (cellId: string) => void;
 }) {
   const record = manifestation?.record ?? null;
   const ink = SET_INK[node.set];
@@ -329,7 +332,7 @@ export function Satellite({
     // the paper as nodes of their own rather than standing in for them.
     const label = `Open the other ${node.more} records this cell names on the map`;
     return (
-      <button type="button" onClick={onToggle} title={label} aria-label={label} aria-expanded={false} className={common} style={style}>
+      <button type="button" onClick={() => onToggle(node.cellId)} title={label} aria-label={label} aria-expanded={false} className={common} style={style}>
         <span className="grid place-items-center bg-[var(--washi)] font-mono font-bold tabular-nums text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, fontSize: Math.min(22, Math.max(12, 11 / effectiveK)) }}>+{node.more}</span>
         {labelled ? <span className="mt-1 block text-center font-mono uppercase tracking-[0.12em] text-muted-foreground" style={{ fontSize: labelSize }}>open all</span> : null}
       </button>
@@ -338,7 +341,7 @@ export function Satellite({
   if (node.role === "fold") {
     const label = `Fold the ${node.more} records of this cell back into one node`;
     return (
-      <button type="button" onClick={onToggle} title={label} aria-label={label} aria-expanded className={common} style={{ ...style, zIndex: 4 }}>
+      <button type="button" onClick={() => onToggle(node.cellId)} title={label} aria-label={label} aria-expanded className={common} style={{ ...style, zIndex: 4 }}>
         <span className="grid place-items-center font-mono font-bold text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, background: "color-mix(in srgb, var(--yuzu) 42%, var(--washi))", fontSize: Math.min(26, Math.max(14, 13 / effectiveK)) }}>−</span>
         {labelled ? <span className="mt-1 block text-center font-mono uppercase tracking-[0.12em] text-muted-foreground" style={{ fontSize: labelSize }}>fold</span> : null}
       </button>
@@ -369,3 +372,11 @@ export function Satellite({
     </a>
   );
 }
+
+/** Cards are memoised because the camera lives in state: without this every
+ *  pointermove during a drag reconciled every card on the paper, which is what
+ *  held a phone at nineteen frames a second over seven hundred cells and at
+ *  two over five thousand. Panning changes neither `k` nor any card's props,
+ *  so a drag now costs one transform and no card work at all. */
+export const Plate = memo(PlateCard);
+export const Satellite = memo(SatelliteNodeCard);

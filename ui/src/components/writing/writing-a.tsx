@@ -156,7 +156,17 @@ export function WritingA({ specimens }: { specimens: WritingStyleSpecimen[] }) {
           which would otherwise turn "fixed" into "relative to the page". */}
       {mounted ? createPortal(
       <div
-        className={`fixed inset-x-0 bottom-0 z-40 max-md:bottom-[64px] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${shortlist.length ? "translate-y-0" : "translate-y-full"}`}
+        // On a phone the bar sits above the bottom navigation, so sliding it
+        // down by its own height parks it exactly over that navigation instead
+        // of off the screen: it stayed visible and swallowed taps on controls
+        // that worked before this page existed. Empty, it clears its own
+        // height AND that offset, and stops taking pointer events at all —
+        // aria-hidden only hides it from a screen reader.
+        className={`fixed inset-x-0 bottom-0 z-40 max-md:bottom-[64px] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+          shortlist.length
+            ? "translate-y-0"
+            : "pointer-events-none translate-y-full max-md:translate-y-[calc(100%+64px)]"
+        }`}
         aria-hidden={!shortlist.length}
       >
         <div className="mx-auto max-w-7xl px-4 pb-3">
