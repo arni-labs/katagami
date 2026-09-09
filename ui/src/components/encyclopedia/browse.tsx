@@ -267,7 +267,7 @@ export function EncyclopediaBrowse({
       {/* ── what the reader is looking at ────────────────────────────────── */}
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {cell ? (
-          <div className="px-5 pb-16">
+          <div data-cell-page className="px-5 pb-16">
             {ancestry.length > 1 ? (
               <nav aria-label="Where this cell sits" className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
                 {ancestry.slice(0, -1).map((up) => (

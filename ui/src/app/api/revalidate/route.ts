@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
-import { forgetEncyclopedia } from "@/lib/encyclopedia-cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { isOwner } from "@/lib/owner";
+import { ENCYCLOPEDIA_TAG } from "@/lib/encyclopedia-cache";
+import { readsTheEncyclopedia } from "@/lib/encyclopedia-paths";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,14 @@ export const dynamic = "force-dynamic";
  * Auth: an `x-revalidate-token` header matching REVALIDATE_TOKEN, OR an
  * allowlisted owner session (isOwner()). Body: { paths: string[] } where every
  * path starts with "/". Returns JSON listing what was revalidated.
+ *
+ * The encyclopedia is held in the server process, outside Next's cache,
+ * because the read costs seconds and is the same for every reader the owner
+ * gate lets through. `revalidatePath` cannot see that copy, so a curator who
+ * wrote a cell and called this endpoint would still be served the previous
+ * library for up to a minute — the exact stale-content complaint this endpoint
+ * exists to answer. Any path that renders cells revalidates the tag the held
+ * read watches.
  */
 
 export async function POST(request: Request) {
@@ -65,12 +74,20 @@ export async function POST(request: Request) {
   for (const path of revalidated) {
     revalidatePath(path);
   }
-  // The encyclopedia is held in the server process, outside Next's cache, so
-  // revalidating a path does not touch it: a published change would sit behind
-  // a stale library until the hold expired on its own. Publishing is rare and
-  // the read is cheap to repeat, so every revalidation drops it rather than
-  // trying to work out whether this particular path implicates the library.
-  forgetEncyclopedia();
+  // Revalidating the tag, not calling a function: a route handler and a page
+  // render do not share module state, so dropping the held copy from here
+  // reached nothing. Measured — same process id on both sides, the drop ran,
+  // and the next render was still served the page's own copy.
+  const droppedEncyclopedia = revalidated.some(readsTheEncyclopedia);
+  if (droppedEncyclopedia) {
+    revalidateTag(ENCYCLOPEDIA_TAG, "max");
+    // And the path the epoch entry is scoped to. Measured: revalidating the
+    // tag alone dropped nothing, and revalidating "/encyclopedia" did — the
+    // cached epoch belongs to the render that read it. So a write announced
+    // against "/writing" has to say "/encyclopedia" as well, or the library it
+    // shares with that page stays held. Both are cheap and idempotent.
+    revalidatePath("/encyclopedia");
+  }
 
-  return NextResponse.json({ revalidated, count: revalidated.length });
+  return NextResponse.json({ revalidated, count: revalidated.length, droppedEncyclopedia });
 }

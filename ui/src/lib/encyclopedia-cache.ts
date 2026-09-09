@@ -1,5 +1,6 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { loadEncyclopedia, type EncyclopediaGraph } from "@/lib/encyclopedia";
 import { heldRead } from "@/lib/held-read";
 
@@ -9,26 +10,52 @@ import { heldRead } from "@/lib/held-read";
 // asking — every owner sees the same library — so paying for that read once
 // per request was paying for it once per reader.
 //
-// Two things are true of the read that make this safe. It is a projection of
-// rows nobody edits during a page view, and it is the same for everyone the
-// gate lets through. So the result is held for a short while, and the ones
-// asking for it while a read is already in flight wait on that read rather
-// than starting their own.
+// So it is held for a minute and shared, and callers arriving during a read
+// wait on that read rather than starting their own.
 
-/** How long a loaded library is served before it is read again. Short enough
- *  that a cell written now is on the page within a minute, long enough that a
- *  reader clicking around the encyclopedia pays for the read once. */
+/** How long a loaded library is served before it is read again. */
 const TTL_MS = 60_000;
+
+/** The tag the pipeline revalidates when it has written a cell. */
+export const ENCYCLOPEDIA_TAG = "encyclopedia";
+
+/** A number that changes when, and only when, the encyclopedia tag is
+ *  revalidated.
+ *
+ *  This exists because a process-level cache cannot be dropped over HTTP. A
+ *  route handler and a page render do not share module state — measured, with
+ *  the same process id on both sides: `forget()` ran in the handler and the
+ *  next page render was still served the copy the page's own module held. So
+ *  an endpoint that called `forget` looked like it worked, and did nothing.
+ *
+ *  Next's cache is the thing both sides do share, so the signal travels
+ *  through it instead. The value is one timestamp, not a library, so it costs
+ *  nothing to read and nothing to store, and on a deployment with a shared
+ *  data cache the signal reaches every instance rather than one process. */
+const readEpoch = unstable_cache(
+  async () => Date.now(),
+  ["encyclopedia-epoch-v1"],
+  { tags: [ENCYCLOPEDIA_TAG] },
+);
 
 const encyclopedia = heldRead(loadEncyclopedia, TTL_MS, "encyclopedia");
 
-/** The encyclopedia, read at most once per TTL however many callers ask. */
-export function loadEncyclopediaCached(): Promise<EncyclopediaGraph> {
+/** The epoch the held copy was read under. A change means the library has been
+ *  written to since, and the copy is discarded whatever its age. */
+let heldAt: number | null = null;
+
+/** The encyclopedia, read at most once per TTL however many callers ask, and
+ *  re-read as soon as the pipeline says the library has moved. */
+export async function loadEncyclopediaCached(): Promise<EncyclopediaGraph> {
+  const epoch = await readEpoch();
+  if (heldAt !== null && heldAt !== epoch) encyclopedia.forget();
+  heldAt = epoch;
   return encyclopedia.get();
 }
 
-/** Drop what is held, so the next read goes to the backend. For tests and for
- *  the revalidate route. */
+/** Drop what this process holds. The tag is what makes a drop travel; this is
+ *  the local half, for tests and for a caller already inside the render. */
 export function forgetEncyclopedia(): void {
+  heldAt = null;
   encyclopedia.forget();
 }
