@@ -34,6 +34,10 @@ export interface ManifestationRecord {
   swatches?: string[];
   /** One line of the record's own voice: a persona, a medium, a philosophy. */
   line?: string;
+  /** A writing style's first exemplar passage, verbatim from the record. */
+  excerpt?: string;
+  /** The exemplar's own annotation, when the record carries one. */
+  excerptNote?: string;
 }
 
 export interface CellManifestation {
@@ -170,7 +174,7 @@ const SELECT: Record<ManifestationSet, string[]> = {
   ArtStyles: ["Id", "name", "slug", "status", "thumbnail_asset_url", "thumbnail_file_id", "medium"],
   DesignLanguages: ["Id", "name", "slug", "status", "thumbnail_asset_url", "landing_thumbnail_asset_url", "thumbnail_file_id", "tokens", "philosophy"],
   PaletteSystems: ["Id", "name", "slug", "status", "signature", "mood"],
-  WritingStyles: ["Id", "name", "slug", "status", "persona", "thumbnail_asset_url", "thumbnail_file_id"],
+  WritingStyles: ["Id", "name", "slug", "status", "persona", "exemplars", "thumbnail_asset_url", "thumbnail_file_id"],
 };
 
 const BATCH = 20;
@@ -247,8 +251,19 @@ function toRecord(set: ManifestationSet, id: string, f: Record<string, string | 
       const swatches = core.signature.map((sw) => (sw.hex.startsWith("#") ? sw.hex : `#${sw.hex}`));
       return { set, id, name: f.name ?? "Untitled palette", status, href: `/palettes/${id}`, swatches: swatches.length ? swatches : undefined, line: truncate(core.mood.summary) };
     }
-    case "WritingStyles":
-      return { set, id, name: f.name ?? "Untitled writing style", status, href: `/voice/${id}`, image: laneImage(f), line: truncate(f.persona) };
+    case "WritingStyles": {
+      const exemplar = (parseJson<Array<{ text?: unknown; annotation?: unknown }>>(f.exemplars) ?? []).find((e) => typeof e?.text === "string" && (e.text as string).trim());
+      return {
+        set, id,
+        name: f.name ?? "Untitled writing style",
+        status,
+        href: `/voice/${id}`,
+        image: laneImage(f),
+        line: truncate(f.persona),
+        excerpt: exemplar ? String(exemplar.text).trim() : undefined,
+        excerptNote: exemplar && typeof exemplar.annotation === "string" && exemplar.annotation.trim() ? exemplar.annotation.trim() : undefined,
+      };
+    }
   }
 }
 

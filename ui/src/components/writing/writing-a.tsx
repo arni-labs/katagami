@@ -9,7 +9,7 @@ import { useMounted, usePrefersReducedMotion } from "@/components/encyclopedia/u
 import { CellLinks, CreditLine, FacetControls, Passage, StatusStamp, TagChips, VoiceMdLink } from "./parts";
 import { CompareBoard } from "./compare";
 
-// Variation A — passage first. The text is the hero: each card opens on a real
+// The writing styles page: passage first. The text is the hero: each card opens on a real
 // exemplar passage, quoted with its credit, and the name comes after. Filters
 // are a rail built from the records' own fields. A shortlist collects styles;
 // compare lays two or three side by side.
@@ -70,7 +70,7 @@ function PassageCard({ specimen, shortlisted, onShortlist, onTag, activeTags, in
       <CreditLine specimen={specimen} className="mt-3" />
       <div className="mt-3"><TagChips tags={specimen.tags} onPick={onTag} active={activeTags} /></div>
       <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-5">
-        <CellLinks specimen={specimen} variant="a" />
+        <CellLinks specimen={specimen} />
         <VoiceMdLink url={specimen.voiceMdUrl} />
       </div>
     </article>

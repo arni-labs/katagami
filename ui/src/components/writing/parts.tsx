@@ -69,7 +69,7 @@ export function TagChips({ tags, onPick, active }: { tags: string[]; onPick?: (t
   );
 }
 
-export function CellLinks({ specimen, variant }: { specimen: WritingStyleSpecimen; variant: "a" | "b" }) {
+export function CellLinks({ specimen }: { specimen: WritingStyleSpecimen }) {
   if (!specimen.cells.length) {
     return <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">Encyclopedia: no cell claims this style yet</p>;
   }
@@ -79,7 +79,7 @@ export function CellLinks({ specimen, variant }: { specimen: WritingStyleSpecime
       {specimen.cells.map((cell, i) => (
         <span key={cell.cellId}>
           {i > 0 ? ", " : ""}
-          <Link href={`/lab/encyclopedia/${variant}?cell=${encodeURIComponent(cell.cellId)}`} title={cell.explanation} className="normal-case tracking-normal text-[13px] font-semibold text-foreground underline decoration-[var(--ramune)] decoration-2 underline-offset-[3px] hover:decoration-[var(--yuzu)]">
+          <Link href={`/lab/encyclopedia?cell=${encodeURIComponent(cell.cellId)}`} title={cell.explanation} className="normal-case tracking-normal text-[13px] font-semibold text-foreground underline decoration-[var(--ramune)] decoration-2 underline-offset-[3px] hover:decoration-[var(--yuzu)]">
             {cell.cellName}
           </Link>
         </span>

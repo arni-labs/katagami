@@ -10,7 +10,7 @@ import { WritingA } from "@/components/writing/writing-a";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
-  title: "Writing styles · passages — Katagami lab",
+  title: "Writing styles — Katagami lab",
   robots: { index: false, follow: false },
 };
 
@@ -26,16 +26,12 @@ export default async function WritingPassagesPage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4">
       <LabHeader
-        eyebrow="Writing styles · variation A · passages"
+        eyebrow="Writing styles · lab"
         ink="var(--sakura)"
         title="Writing"
         marker="styles"
         markerColor="sakura"
         description="The passage comes first. Every card opens on a real exemplar from the record, quoted with its credit; the name, persona and contract follow. Shortlist a few and compare them side by side."
-        variants={[
-          { href: "/lab/writing/a", label: "A · passages", active: true },
-          { href: "/lab/writing/b", label: "B · index", active: false },
-        ]}
         stats={[
           { value: specimens.length, label: "styles" },
           { value: passages, label: "passages" },

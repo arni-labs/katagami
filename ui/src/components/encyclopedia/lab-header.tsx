@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Marker } from "@/components/page-hero";
 
-// Compact page head shared by the four lab pages: eyebrow, title with one
-// highlighter swipe, a line of description, and the variation switch.
+// Compact page head for the lab pages: eyebrow, title with one highlighter
+// swipe, a line of description, and the counts.
 
 export function LabHeader({
   eyebrow,
@@ -21,7 +21,7 @@ export function LabHeader({
   marker: string;
   markerColor: "sakura" | "yuzu" | "ramune" | "matcha";
   description: ReactNode;
-  variants: Array<{ href: string; label: string; active: boolean }>;
+  variants?: Array<{ href: string; label: string; active: boolean }>;
   stats: Array<{ value: number | string; label: string }>;
 }) {
   return (
@@ -47,7 +47,7 @@ export function LabHeader({
               </div>
             ))}
           </div>
-          <nav aria-label="Variation" className="flex items-center gap-1.5">
+          {variants?.length ? <nav aria-label="Variation" className="flex items-center gap-1.5">
             {variants.map((variant) => (
               <Link
                 key={variant.href}
@@ -59,7 +59,7 @@ export function LabHeader({
                 {variant.label}
               </Link>
             ))}
-          </nav>
+          </nav> : null}
         </div>
       </div>
       <span aria-hidden className="sticker-perforation mt-6 block" />
