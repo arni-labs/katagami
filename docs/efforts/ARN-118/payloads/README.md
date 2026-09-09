@@ -12,7 +12,7 @@ To apply:
 node --env-file=<repo>/.env.katagami-curator.local scripts/create-encyclopedia-cells.mjs \
   docs/efforts/ARN-118/payloads/batch-art-1.json --expect 7 --apply
 node --env-file=<repo>/.env.katagami-curator.local scripts/create-encyclopedia-cells.mjs \
-  docs/efforts/ARN-118/payloads/batch-art-2.json --expect 38 --apply
+  docs/efforts/ARN-118/payloads/batch-art-2.json --expect 35 --apply
 ```
 
 Do not apply them as they stand. Every revising cell carries a `baseHash` taken
@@ -31,5 +31,5 @@ which `mkbatch.mjs` skips. Editing `plan.json` and regenerating is the way to
 change what gets written.
 
 Batch ART-1 creates Performance art and Information design and links the five
-cells that sit under them. Batch ART-2 holds the 38 remaining revisions and
+cells that sit under them. Batch ART-2 holds the 35 remaining revisions and
 depends on nothing in ART-1, so the two can go in either order.

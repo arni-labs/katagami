@@ -523,3 +523,83 @@ Options: Ask the peer to apply the payload; write the documents through a direct
 Chose stopping because: the classifier's refusal is a permission decision made about this session, and handing the command to a peer would carry it out while leaving that decision formally intact, which is worse than either honouring it or overturning it in the open. Calling the deployment directly would also skip the loader's own checks, which are the reason writes go through it. Given up: the nesting was not live for the owner's morning, and it needs one command from her or one Bash permission rule.
 
 Where: `docs/efforts/ARN-118/payloads/README.md` carries the two commands; the refusal is reported in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
+
+## D46 amended: the other run stopped, so the redundant links were removed after all
+
+The rule above held for about an hour and then the condition it depended on
+went away. `nesting` finished the art lane, said so, and said in each of the
+four insertion cases that its link goes to the grandparent and loses. A removal
+is safe once the other writer has stopped and has agreed which link wins, so all
+four were taken: it applied three itself (`ashcan-school`, `die-brucke`,
+`precisionism`) and this run's payload drops the fourth, `concrete-art` from
+Abstract art, in the same write that puts it under Geometric abstraction.
+
+What survives from D46 is the narrower rule, and it is the one worth keeping:
+while another run is still writing a lane, a second run adds and does not
+remove, because a removal and the corruption D41 describes are indistinguishable
+at read time and the base check does not separate them. The rule is about
+concurrency, not about hierarchy. When the other writer stops and says which
+link loses, the insertion move D38 describes is just maintenance again.
+
+## D48 Archived is excluded from every count, and the status is not where it looks
+
+Decision: A cell's lifecycle status lives on the row as `status`, beside
+`fields`, and not inside `fields`. Anything counting cells reads it there and
+drops `Archived` rows before counting. No payload links to an archived cell.
+
+Came up because: This run's first analysis read the status from `fields.state`,
+which does not exist, so every count it produced treated 17 archived cells as
+live: 761 live rather than 744, 224 art cells rather than 214, 176 art roots
+rather than 168. It also planned a `broader` link from Safavid manuscript
+painting to Persian miniature, and Safavid manuscript painting is archived.
+`nesting` reported that the cell "does not exist", which was the same fact seen
+from a client that filters archived rows out. Writing that link would have
+revived an archived cell and attested it, and Archive is final.
+
+Options: Filter in each script that counts; put the filter in a shared read
+helper; or report the raw numbers and note that they include archived rows.
+
+Chose filtering at the read because: the raw count is never the number anyone
+wants, and a report that says 176 roots when 168 are live is wrong in the
+direction that makes the work look bigger. The seven legacy duplicate cells this
+run flagged for the owner as needing a decision turned out to be already
+archived, which is a different answer to give her than "these need archiving".
+
+Where: `docs/efforts/ARN-118/payloads/depth.mjs`; the corrected figures in
+`/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
+
+## D49 The curated layer stops at 131 roots, and going lower is the owner's call
+
+Decision: The pass nests what three independent sources support and stops. The
+131 art cells left as roots stay roots, and the report says which lever was
+tried against them and what it returned, rather than reaching for a parent that
+is not in the evidence.
+
+Came up because: after the Wikipedia leads were exhausted, three further levers
+were tried against the remaining roots. Full article bodies, scanned for
+containment phrasing across twenty candidates, returned one usable link, the
+Düsseldorf school under Neue Sachlichkeit, on a sentence attributing the lineage
+to critics. Tate's art-term glossary, checked for twelve terms, states no parent
+for any of them. Three candidate missing parents were tested against their would
+be children's own articles and all three failed: Kinetic art returns nothing for
+Group Zero, Light and Space or Spatialism; Documentary photography holds only
+the Düsseldorf school, because Street photography's article distinguishes itself
+from it explicitly; Arts and Crafts is named as an influence on Art Nouveau, the
+Bauhaus and the Werkbund and never as a container. Postmodern art was tested and
+rejected on a different ground: its own article calls it "a body of art
+movements", and the only two children whose sources support it are an
+architecture movement and a furniture group.
+
+Options: Create Modernism and Postmodern art and hang the remaining
+avant-gardes under them; keep hunting for parents; or stop and put the movement
+layer to the owner as one decision.
+
+Chose stopping because: Modernism is the only parent that would move the number
+much, and it is exactly the judgment the boundary reserves for her. It spans
+1860 to 1970, which reads as the period grouping the rules forbid, and it also
+has a real practice and a Tate art term, so the argument runs both ways and an
+agent should not settle it at four in the morning. Given up: the art lane stays
+at 131 roots against the writing lane's 133 out of a much larger set, and it
+looks flatter than it is.
+
+Where: `/private/tmp/encyclopedia-passes/report-nesting-visual.md`, item 1.

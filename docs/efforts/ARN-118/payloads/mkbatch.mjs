@@ -67,6 +67,16 @@ for (const [childId, edges] of byChild) {
     }
     doc.broader.push({ cellId: e.parent, explanation: e.explanation, sourceIds: e.sourceIds });
   }
+  // The insertion move, D38. `nesting` has stopped writing and said in each of
+  // these four cases that its link goes to the grandparent and loses, so the
+  // grandparent link is removed in the same payload that adds the middle one.
+  for (const grandparent of (plan.drops || {})[childId] || []) {
+    const was = doc.broader.length;
+    doc.broader = doc.broader.filter((b) => b.cellId !== grandparent);
+    if (doc.broader.length === was) console.error(`drop skipped: ${childId} does not link to ${grandparent}`);
+    else console.error(`dropped ${childId} -> ${grandparent}, the grandparent of a link this batch adds`);
+  }
+  if (!doc.broader.length && (plan.drops || {})[childId]) problems.push(`${childId}: every parent was dropped`);
   if (JSON.stringify(doc) === JSON.stringify(row.parsed)) { console.error(`no change: ${childId}`); continue; }
   built.push({
     number: 0, name: doc.name, id: childId, new: false, version: 3, baseHash: row.hash,

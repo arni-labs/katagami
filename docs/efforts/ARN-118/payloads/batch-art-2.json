@@ -238,13 +238,6 @@
    ],
    "broader": [
     {
-     "cellId": "abstract-art",
-     "explanation": "Its Wikidata item files it as a subclass of abstract art.",
-     "sourceIds": [
-      "wd-q10822316"
-     ]
-    },
-    {
      "cellId": "geometric-abstraction",
      "explanation": "The movement rests on a strong emphasis on geometrical abstraction, in van Doesburg's formulation and in Max Bill's.",
      "sourceIds": [
@@ -997,71 +990,6 @@
   },
   {
    "number": 16,
-   "name": "Ashcan School",
-   "id": "ashcan-school",
-   "new": false,
-   "version": 3,
-   "baseHash": "e6aaf7b567869c7f5b19009ea223957ca8f6e45b5e27a573b9f604539eb1eed9",
-   "description": "American painters of the early twentieth century who took New York's poorer streets as their subject, working fast and dark in a manner learned from newspaper illustration. Robert Henri led them and Sloan, Luks, Glackens and Bellows worked with him; the name was applied later and unkindly. Their argument was against genteel aestheticism, and it was about subject matter before it was about style.",
-   "provenance": {
-    "basis": "cited"
-   },
-   "maps": [
-    {
-     "map": "art",
-     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
-     "sourceIds": [
-      "wp-ashcan-school",
-      "wd-q724976",
-      "aat-300120324"
-     ]
-    }
-   ],
-   "sources": [
-    {
-     "id": "wp-ashcan-school",
-     "title": "Ashcan School — Wikipedia",
-     "url": "https://en.wikipedia.org/wiki/Ashcan_School"
-    },
-    {
-     "id": "wd-q724976",
-     "title": "Ashcan School (Q724976) — Wikidata",
-     "url": "https://www.wikidata.org/wiki/Q724976"
-    },
-    {
-     "id": "aat-300120324",
-     "title": "Ashcan School — Getty Art & Architecture Thesaurus 300120324",
-     "url": "https://www.getty.edu/vow/AATFullDisplay?find=&place=&nation=&logic=&note=&role=&subjectid=300120324"
-    },
-    {
-     "id": "wp-american-realism",
-     "title": "American realism — Wikipedia",
-     "url": "https://en.wikipedia.org/wiki/American_realism"
-    }
-   ],
-   "broader": [
-    {
-     "cellId": "realism-art-movement",
-     "explanation": "Its Wikidata item files it as part of realism.",
-     "sourceIds": [
-      "wd-q724976"
-     ]
-    },
-    {
-     "cellId": "american-realism",
-     "explanation": "American realism's own account treats the Ashcan painters as its core group in painting and Robert Henri as an American realist.",
-     "sourceIds": [
-      "wp-american-realism"
-     ]
-    }
-   ],
-   "relations": [],
-   "questions": [],
-   "manifestations": [],
-   "studies": []
-  },
-  {
-   "number": 17,
    "name": "American Regionalism",
    "id": "american-regionalism",
    "new": false,
@@ -1114,7 +1042,7 @@
    "studies": []
   },
   {
-   "number": 18,
+   "number": 17,
    "name": "Venetian painting",
    "id": "venetian-painting",
    "new": false,
@@ -1161,7 +1089,7 @@
    "studies": []
   },
   {
-   "number": 19,
+   "number": 18,
    "name": "Sfumato",
    "id": "sfumato",
    "new": false,
@@ -1234,7 +1162,7 @@
    "studies": []
   },
   {
-   "number": 20,
+   "number": 19,
    "name": "Bestiaries",
    "id": "bestiaries",
    "new": false,
@@ -1297,7 +1225,7 @@
    "studies": []
   },
   {
-   "number": 21,
+   "number": 20,
    "name": "Grand Manner",
    "id": "grand-manner",
    "new": false,
@@ -1344,7 +1272,7 @@
    "studies": []
   },
   {
-   "number": 22,
+   "number": 21,
    "name": "Neo-romanticism",
    "id": "neo-romanticism",
    "new": false,
@@ -1399,7 +1327,7 @@
    "studies": []
   },
   {
-   "number": 23,
+   "number": 22,
    "name": "Indianism",
    "id": "indianism",
    "new": false,
@@ -1454,7 +1382,7 @@
    "studies": []
   },
   {
-   "number": 24,
+   "number": 23,
    "name": "Neo-Dada",
    "id": "neo-dada",
    "new": false,
@@ -1507,7 +1435,7 @@
    "studies": []
   },
   {
-   "number": 25,
+   "number": 24,
    "name": "Neo-Expressionism",
    "id": "neo-expressionism",
    "new": false,
@@ -1560,7 +1488,7 @@
    "studies": []
   },
   {
-   "number": 26,
+   "number": 25,
    "name": "Transavanguardia",
    "id": "transavanguardia",
    "new": false,
@@ -1613,7 +1541,7 @@
    "studies": []
   },
   {
-   "number": 27,
+   "number": 26,
    "name": "Junge Wilde",
    "id": "junge-wilde",
    "new": false,
@@ -1665,61 +1593,7 @@
    "studies": []
   },
   {
-   "number": 28,
-   "name": "Die Brücke",
-   "id": "die-brucke",
-   "new": false,
-   "version": 3,
-   "baseHash": "1b25f3efd74d02f2709c667faad4a4fe6e40888b0faa5c08da6ef8d57ae4b26c",
-   "description": "A German Expressionist group founded in Dresden in 1905 by four architecture students, Bleyl, Heckel, Kirchner and Schmidt-Rottluff, later joined by Nolde, Pechstein and Mueller. They painted in harsh colour with cut, angular drawing, revived the woodcut, and lived and worked communally. The group dissolved in 1913.",
-   "provenance": {
-    "basis": "cited"
-   },
-   "maps": [
-    {
-     "map": "art",
-     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
-     "sourceIds": [
-      "wp-die-brucke",
-      "wd-q152778"
-     ]
-    }
-   ],
-   "sources": [
-    {
-     "id": "wp-die-brucke",
-     "title": "Die Brücke — Wikipedia",
-     "url": "https://en.wikipedia.org/wiki/Die_Brücke"
-    },
-    {
-     "id": "wd-q152778",
-     "title": "Die Brücke (Q152778) — Wikidata",
-     "url": "https://www.wikidata.org/wiki/Q152778"
-    }
-   ],
-   "broader": [
-    {
-     "cellId": "expressionism",
-     "explanation": "Its Wikidata item gives its movement as expressionism.",
-     "sourceIds": [
-      "wd-q152778"
-     ]
-    },
-    {
-     "cellId": "german-expressionism",
-     "explanation": "A group of German Expressionist artists formed in Dresden in 1905. The cell already links to Expressionism, and this places it with the German Expressionist painting it made.",
-     "sourceIds": [
-      "wp-die-brucke"
-     ]
-    }
-   ],
-   "relations": [],
-   "questions": [],
-   "manifestations": [],
-   "studies": []
-  },
-  {
-   "number": 29,
+   "number": 27,
    "name": "Der Blaue Reiter",
    "id": "der-blaue-reiter",
    "new": false,
@@ -1766,7 +1640,7 @@
    "studies": []
   },
   {
-   "number": 30,
+   "number": 28,
    "name": "Postminimalism",
    "id": "postminimalism",
    "new": false,
@@ -1819,7 +1693,7 @@
    "studies": []
   },
   {
-   "number": 31,
+   "number": 29,
    "name": "Body Art",
    "id": "body-art",
    "new": false,
@@ -1872,7 +1746,7 @@
    "studies": []
   },
   {
-   "number": 32,
+   "number": 30,
    "name": "Group Material",
    "id": "group-material",
    "new": false,
@@ -1919,7 +1793,7 @@
    "studies": []
   },
   {
-   "number": 33,
+   "number": 31,
    "name": "Pixel art",
    "id": "pixel-art",
    "new": false,
@@ -2034,7 +1908,7 @@
    "studies": []
   },
   {
-   "number": 34,
+   "number": 32,
    "name": "Post-Internet",
    "id": "post-internet",
    "new": false,
@@ -2081,7 +1955,7 @@
    "studies": []
   },
   {
-   "number": 35,
+   "number": 33,
    "name": "Shin-hanga",
    "id": "shin-hanga",
    "new": false,
@@ -2134,61 +2008,7 @@
    "studies": []
   },
   {
-   "number": 36,
-   "name": "Precisionism",
-   "id": "precisionism",
-   "new": false,
-   "version": 3,
-   "baseHash": "6ce55ba30b4b0e3f93a3ebbeb2f2121ddc889afca9661e6b196e076d8b34c350",
-   "description": "An American movement after the First World War that painted grain elevators, factories, bridges and skyscrapers as clean geometry in flat planes of light, with detail removed. Charles Demuth and Charles Sheeler are its principal painters, drawing on Cubism, Purism and Futurism. Its subject is industry and its manner is admiring and impersonal.",
-   "provenance": {
-    "basis": "cited"
-   },
-   "maps": [
-    {
-     "map": "art",
-     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
-     "sourceIds": [
-      "wp-precisionism",
-      "wd-q1578378"
-     ]
-    }
-   ],
-   "sources": [
-    {
-     "id": "wp-precisionism",
-     "title": "Precisionism — Wikipedia",
-     "url": "https://en.wikipedia.org/wiki/Precisionism"
-    },
-    {
-     "id": "wd-q1578378",
-     "title": "Precisionism (Q1578378) — Wikidata",
-     "url": "https://www.wikidata.org/wiki/Q1578378"
-    }
-   ],
-   "broader": [
-    {
-     "cellId": "realism-art-movement",
-     "explanation": "Its Wikidata item files it as a subclass of realism via magic realism.",
-     "sourceIds": [
-      "wd-q1578378"
-     ]
-    },
-    {
-     "cellId": "american-modernism",
-     "explanation": "A modernist art movement that emerged in the United States after the First World War.",
-     "sourceIds": [
-      "wp-precisionism"
-     ]
-    }
-   ],
-   "relations": [],
-   "questions": [],
-   "manifestations": [],
-   "studies": []
-  },
-  {
-   "number": 37,
+   "number": 34,
    "name": "Chicanafuturism",
    "id": "chicanafuturism",
    "new": false,
@@ -2243,38 +2063,44 @@
    "studies": []
   },
   {
-   "number": 38,
-   "name": "Safavid manuscript painting",
-   "id": "safavid-manuscript-painting",
+   "number": 35,
+   "name": "Düsseldorf school of photography",
+   "id": "dusseldorf-school-of-photography",
    "new": false,
    "version": 3,
-   "baseHash": "31fa7ee3bed31eecdf541b377514bf360b22a94be4756e4a10b2a1292df56d62",
-   "description": "Detailed scenes, patterned architecture and textiles, and colour relationships across elaborate page compositions.",
+   "baseHash": "3b39bc32c43791be55d95b15e06d8d49de7f2cacb0934596a15a7152d50c53ce",
+   "description": "The photographers who came out of Bernd and Hilla Becher's class at the Kunstakademie Düsseldorf from 1976, working in large format, serial typologies and a deliberately detached documentary manner. Gursky, Struth, Ruff and Höfer are its best-known members, and the prints became very large as the approach entered the museum. The Bechers' own industrial typologies are its model.",
    "provenance": {
     "basis": "cited"
    },
    "maps": [
     {
      "map": "art",
-     "explanation": "A painting tradition in the manuscript.",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
      "sourceIds": [
-      "wp-persian-miniature"
+      "wp-dusseldorf-school-of-photography",
+      "wd-q1272382"
      ]
     }
    ],
    "sources": [
     {
-     "id": "wp-persian-miniature",
-     "title": "Persian miniature — Wikipedia",
-     "url": "https://en.wikipedia.org/wiki/Persian_miniature"
+     "id": "wp-dusseldorf-school-of-photography",
+     "title": "Düsseldorf school of photography — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Düsseldorf_school_of_photography"
+    },
+    {
+     "id": "wd-q1272382",
+     "title": "Düsseldorf School of Photography (Q1272382) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q1272382"
     }
    ],
    "broader": [
     {
-     "cellId": "persian-miniature",
-     "explanation": "The Safavid schools of 1501 to 1736 are the later synthesis inside the Persian miniature tradition the cell already cites.",
+     "cellId": "neue-sachlichkeit",
+     "explanation": "Critics place the Bechers' approach in the lineage of the Neue Sachlichkeit movement of the 1920s, and their typologies are the model the class worked from.",
      "sourceIds": [
-      "wp-persian-miniature"
+      "wp-dusseldorf-school-of-photography"
      ]
     }
    ],

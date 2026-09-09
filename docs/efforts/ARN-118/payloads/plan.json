@@ -332,7 +332,8 @@
       "explanation": "The Venetian school is treated as a major force in Italian Renaissance painting.",
       "sourceIds": [
         "wp-venetian-painting"
-      ]
+      ],
+      "flag": "renaissance-period-footing"
     },
     {
       "child": "sfumato",
@@ -340,7 +341,8 @@
       "explanation": "One of the canonical painting modes of the Renaissance, one of four available to Italian High Renaissance painters.",
       "sourceIds": [
         "wp-sfumato"
-      ]
+      ],
+      "flag": "renaissance-period-footing"
     },
     {
       "child": "gothic-art",
@@ -589,12 +591,13 @@
       ]
     },
     {
-      "child": "safavid-manuscript-painting",
-      "parent": "persian-miniature",
-      "explanation": "The Safavid schools of 1501 to 1736 are the later synthesis inside the Persian miniature tradition the cell already cites.",
+      "child": "dusseldorf-school-of-photography",
+      "parent": "neue-sachlichkeit",
+      "explanation": "Critics place the Bechers' approach in the lineage of the Neue Sachlichkeit movement of the 1920s, and their typologies are the model the class worked from.",
       "sourceIds": [
-        "wp-persian-miniature"
-      ]
+        "wp-dusseldorf-school-of-photography"
+      ],
+      "flag": "attributed-lineage"
     }
   ],
   "addSources": {
@@ -653,6 +656,20 @@
         "title": "Post-painterly abstraction — Wikipedia",
         "url": "https://en.wikipedia.org/wiki/Post-painterly_abstraction"
       }
+    ]
+  },
+  "drops": {
+    "die-brucke": [
+      "expressionism"
+    ],
+    "ashcan-school": [
+      "realism-art-movement"
+    ],
+    "concrete-art": [
+      "abstract-art"
+    ],
+    "precisionism": [
+      "realism-art-movement"
     ]
   }
 }
