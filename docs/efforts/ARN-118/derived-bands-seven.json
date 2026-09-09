@@ -117,7 +117,7 @@
   "schema": "katagami:voice-bands/v1",
   "sentence_length": {
    "mean": [
-    13.6,
+    13.4,
     31.2
    ],
    "stdev_min": 5.1
@@ -140,14 +140,14 @@
    ]
   },
   "type_token_ratio": {
-   "min": 0.41,
+   "min": 0.43,
    "window_words": 500
   },
   "function_words": {
-   "max_distance": 0.052
+   "max_distance": 0.051
   },
   "char_trigrams": {
-   "max_distance": 0.103
+   "max_distance": 0.141
   },
   "min_words_to_evaluate": 150
  },

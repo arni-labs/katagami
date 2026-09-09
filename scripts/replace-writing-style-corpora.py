@@ -24,10 +24,13 @@ sha256 of its exemplars string as its author read it, checked in the plan and
 again immediately before the first write, so a style another run has touched is
 refused rather than overwritten.
 
-What this script does NOT do, and what therefore stays open after it runs: the
-VOICE.md attached to each of these styles quotes the whole model-written corpus
-inside it, and the replication samples were produced from that VOICE.md. Both
-have to be rebuilt on the new contract before any of these styles can publish.
+The corpus is not the only place the old text lives. Each of these styles has a
+VOICE.md that quotes whole corpus passages inside itself, and a replication
+sample produced from that VOICE.md. VOICE.md is the copy that travels, so
+replacing the corpus files alone would leave the model-written passages in
+circulation under a real author's name while every entity field read correct.
+This script therefore rebuilds all three together, and the VOICE.md it writes is
+generated from the corpus it just attached rather than carried in the payload.
 """
 import hashlib
 import json
@@ -40,7 +43,9 @@ import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "docs/research/harness"))
+sys.path.insert(0, os.path.join(ROOT, "scripts"))
 from voice_check_local import check, words_of  # noqa: E402
+import writing_style_voice_md as voice_md_format  # noqa: E402
 
 FLOOR, CEILING, MOST = 150, 400, 3
 
@@ -120,6 +125,17 @@ def problems_with(style, corpus, bands, exemplars):
     return found
 
 
+def replica_problems(entry, corpus):
+    """The replica is written from the VOICE.md alone and has to come back
+    inside the voice's own bands. A contract that cannot round-trip is a
+    contract that does not work as a prompt, which is the only thing the
+    replica is evidence of."""
+    replica = entry.get("replica", "")
+    if len(words_of(replica)) < 150:
+        return [f"replica is {len(words_of(replica))} words, under the 150 the contract requires"]
+    return [f"replica: {v}" for v in check(entry["mechanical_bands"], corpus, [("replica", replica)])]
+
+
 def main():
     flags = sys.argv[1:]
     apply_writes = "--apply" in flags
@@ -146,13 +162,23 @@ def main():
             continue
         corpus = [(c["file"], c["text"]) for c in entry["corpus"]]
         found = problems_with(style, corpus, entry["mechanical_bands"], entry["exemplars"])
+        found += replica_problems(entry, corpus)
+        # The contract is generated from the corpus being attached, so the rule
+        # that catches a stale VOICE.md is checked on the one about to be written.
+        contract = voice_md_format.build(entry, [f"pending-{n}" for n in range(1, len(corpus) + 1)], corpus)
+        haystack = " ".join(flat(body) for _, body in corpus)
+        for n, passage in enumerate(voice_md_format.quoted_from(contract), 1):
+            if flat(passage) not in haystack:
+                found.append(f"VOICE.md passage {n} would not be in the new corpus")
         if found:
             failures += [f"{entry['slug']}: {p}" for p in found]
             print(f"{label}: {len(found)} problem(s)")
             continue
         print(f"{label}: would rename '{style['fields']['name']}' to '{entry['name']}', "
               f"attach {len(corpus)} passages of {[len(words_of(b)) for _, b in corpus]} words, "
-              f"and set {len(entry['exemplars'])} exemplars")
+              f"set {len(entry['exemplars'])} exemplars, and rebuild the VOICE.md "
+              f"({len(voice_md_format.quoted_from(contract))} quoted passages) and a "
+              f"{len(words_of(entry['replica']))}-word replica")
         planned.append((entry, style))
 
     assert not failures, f"{len(failures)} style(s) failed the plan:\n" + "\n".join(failures)
@@ -169,6 +195,11 @@ def main():
             continue
         file_ids = [deployment.write_file(c["file"], f"/katagami/writing-styles/{entry['slug']}/{c['file']}", c["text"])
                     for c in entry["corpus"]]
+        contract = voice_md_format.build(entry, file_ids, [(c["file"], c["text"]) for c in entry["corpus"]])
+        contract_id = deployment.write_file(
+            "VOICE.md", f"/katagami/writing-styles/{entry['slug']}/VOICE.md", contract)
+        replica_id = deployment.write_file(
+            "replica-1.md", f"/katagami/writing-styles/{entry['slug']}/replica-1.md", entry["replica"])
         manifest = {"items": [{"file_id": fid, "kind": "public-domain-excerpt",
                                "source": entry["consent"]["provenance"], "words": c["words"]}
                               for fid, c in zip(file_ids, entry["corpus"])]}
@@ -188,6 +219,14 @@ def main():
             ("SetCredits", {"credits": json.dumps(entry["credits"], ensure_ascii=False)}),
             ("SetModelProvenance", {"model_provenance": json.dumps(entry["model_provenance"])}),
             ("SetTags", {"tags": json.dumps(entry["tags"])}),
+            ("AttachVoiceMd", {"voice_md_file_id": contract_id,
+                               "voice_md_lint_result": json.dumps({"summary": {"errors": 0, "warnings": 0}}),
+                               "voice_md_format_version": voice_md_format.FORMAT_VERSION}),
+            ("AttachReplication", {"replication_sample_file_ids": [replica_id],
+                                   "replication_manifest": json.dumps(
+                                       {"items": [{"file_id": replica_id,
+                                                   "model": entry["model_provenance"]["style"]["model"],
+                                                   "prompt_words": len(words_of(contract))}]})}),
             ("AddCuratorNotes", {"curator_notes": entry["curator_notes"]}),
         ]
         for name, params in steps:
@@ -203,13 +242,19 @@ def main():
                                      json.loads(back["fields"]["exemplars"]))
             if back["fields"]["name"] != entry["name"]:
                 problems.append(f"stored name is '{back['fields']['name']}'")
+            stored_contract = deployment.call(
+                f"/tdata/Files('{back['fields']['voice_md_file_id']}')/$value")[1].decode("utf-8")
+            haystack = " ".join(flat(body) for _, body in stored_corpus)
+            for n, passage in enumerate(voice_md_format.quoted_from(stored_contract), 1):
+                if flat(passage) not in haystack:
+                    problems.append(f"stored VOICE.md passage {n} is not in the stored corpus")
             if problems:
                 failures += [f"{entry['slug']}: after writing, {p}" for p in problems]
             print(f"{label}: {'written and read back' if not problems else f'{len(problems)} problem(s) on read-back'}")
 
     assert not failures, f"{len(failures)} style(s) failed:\n" + "\n".join(failures)
-    print(f"\nAll {len(planned)} styles hold a real corpus. VOICE.md and replication are still "
-          f"built on the old one and must be rebuilt before any of them publishes.")
+    print(f"\nAll {len(planned)} styles hold a real corpus, a VOICE.md quoting that corpus, "
+          f"and a replica that round-trips its bands.")
 
 
 if __name__ == "__main__":

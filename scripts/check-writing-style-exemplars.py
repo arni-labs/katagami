@@ -40,7 +40,9 @@ import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "docs/research/harness"))
+sys.path.insert(0, os.path.join(ROOT, "scripts"))
 from voice_check_local import check, words_of  # noqa: E402
+from writing_style_voice_md import quoted_from  # noqa: E402
 
 FLOOR, CEILING = 150, 400
 MOST_EXEMPLARS = 3
@@ -95,44 +97,6 @@ def flat(text):
     return re.sub(r"\s+", " ", text).strip()
 
 
-# The sections of a VOICE.md that quote the corpus. Every VOICE.md format the
-# collection has used calls them one of these. "Known-good replica" is left out
-# on purpose: a replica is written from the contract and is labelled a replica.
-QUOTING_SECTIONS = ("Gold standard samples", "How it reads")
-SCAFFOLDING = re.compile(r"^(Source:|The voice is these passages|Each numbered entry|The strongest guide|—\s)")
-
-
-def quoted_passages(voice_md):
-    """Every block of prose a VOICE.md presents as corpus, in any of its formats.
-
-    The older format puts one whole passage per line as `N. "..."`. The beta
-    format numbers a `Source:` label and indents the passage under it, and its
-    "How it reads" excerpt is a blockquote. All three reduce to the same thing:
-    contiguous lines of quoted prose."""
-    passages, block, inside = [], [], False
-    for line in voice_md.split("\n") + ["## end"]:
-        if line.startswith("## "):
-            if block:
-                passages.append("\n".join(block))
-                block = []
-            inside = line[3:].strip() in QUOTING_SECTIONS
-            continue
-        if not inside:
-            continue
-        numbered = re.match(r'^\d+\.\s+"(.*)"\s*$', line)
-        if numbered:
-            passages.append(numbered.group(1))
-            continue
-        stripped = line[2:] if line.startswith("> ") else (line[3:] if line.startswith("   ") else None)
-        if stripped is None or SCAFFOLDING.match(stripped.strip()) or not stripped.strip():
-            if block:
-                passages.append("\n".join(block))
-                block = []
-            continue
-        block.append(stripped)
-    return [p for p in passages if len(words_of(p)) >= 12]
-
-
 def problems_with(fields, corpus, voice_md=None):
     found = []
     name = fields["name"]
@@ -158,7 +122,7 @@ def problems_with(fields, corpus, voice_md=None):
             if flat(exemplar.get("text", "")) not in haystack:
                 found.append(f"{name}: exemplar {i} is not a verbatim run of its own corpus")
     if voice_md:
-        passages = quoted_passages(voice_md)
+        passages = quoted_from(voice_md)
         # A file that quotes nothing would satisfy the rule below by having no
         # passages to fail it, which is the same exemption the word floor taught
         # us about. Every VOICE.md format the collection uses quotes the corpus,

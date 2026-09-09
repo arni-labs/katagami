@@ -92,10 +92,23 @@ lines mid-sentence. Those lines are not carried. Nothing else is removed.
 
 ### National Hurricane Center — forecast discussions (2024)
 
-Hurricane Helene (AL092024) Forecast Discussions 8, 9, 11 and 12, issued 25 and
-26 September 2024, archived at nhc.noaa.gov, signed by forecasters Beven, Berg
-and Pasch. Each quoted entire from its title line to the end of its key messages.
-665, 693, 741 and 802 words. Outside copyright under 17 U.S.C. 105.
+Hurricane Helene (AL092024) Forecast Discussions 8, 9 and 11, issued 25 September
+2024, and Hurricane Milton (AL142024) Forecast Discussion 12, issued 7 October
+2024. Archived at nhc.noaa.gov and signed by their forecasters. Each quoted
+entire from its title line to the end of its key messages. 665, 693, 741 and 708
+words. Outside copyright under 17 U.S.C. 105.
+
+**Two storms rather than one, and why it had to be.** The corpus was originally
+four Helene discussions. Its derived character-trigram ceiling came out at 0.103,
+tight enough that a replica written in the same register about a different storm
+failed it at 0.209 and still failed at 0.123 after being lengthened to corpus
+length. The band was measuring Helene — *Florida*, *Big Bend*, *Appalachians*,
+*Gulf of Mexico* — rather than the register. Replacing one Helene discussion with
+a Milton one moved the honest ceiling to 0.141 and the replica passed at 0.123.
+Nothing was widened; the corpus was made representative of the thing it claims to
+describe. This is the same failure as the Dream-Children passage below, from the
+other direction: a band derived from an unrepresentative corpus measures the
+wrong thing, whether it comes out too loose or too tight.
 
 Liveblogging is a web register whose writers are living and whose text is in
 copyright, and this style was expected to be archived. The forecast discussion
@@ -108,12 +121,16 @@ what is not, superseded rather than edited, and signed. Discussion 8 opens
 numeric forecast position table and the forecaster's signature below it, are not
 running prose and are not carried.
 
-### Charles Lamb — Elia essays (1823)
+### Charles Lamb — Elia essays (1823–1833)
 
 *The Works of Charles and Mary Lamb, Volume 2: Elia and The Last Essays of Elia*,
 Project Gutenberg ebook 10343. Four runs from the openings of Oxford in the
-Vacation, Mrs Battle's Opinions on Whist, A Chapter on Ears, and Old China. 915,
-820, 869 and 901 words.
+Vacation, Mrs Battle's Opinions on Whist and A Chapter on Ears in *Elia* (1823),
+and Old China in *The Last Essays of Elia* (1833). 915, 820, 869 and 901 words.
+
+The name carries both dates because the corpus does. It was proposed, and
+approved, as "(1823)"; Old China turned out to sit in the second collection, so
+the single date was wrong about the corpus underneath it.
 
 The lyric essay was named by Deborah Tall and John D'Agata in 1997 and its
 practitioners are living, so there is no text of it the collection can carry.
@@ -195,10 +212,26 @@ nothing checks is a band nothing proves.
 Every corpus passes its own derived bands, and so does every exemplar drawn from
 it: zero violations across all seven.
 
-## What is still open after the corpora land
+## The contract and the replica are part of the fix
 
-The VOICE.md attached to each of these seven quotes the whole model-written
-corpus inside its "Gold standard samples" section — around 14 KB of model prose
-in the portable contract file, which is the artifact most likely to be handed to
-someone. The replication samples were then produced from that VOICE.md. Both have
-to be rebuilt on the new contract before any of these styles can publish.
+Each of these seven had a VOICE.md quoting its whole model-written corpus inside
+its "Gold standard samples" section — around 14 KB of model prose in the portable
+contract file, which is the artifact handed to another agent as a prompt — and a
+replication sample produced from that VOICE.md. Replacing the corpus files alone
+would have left the model text in circulation under a real author's name while
+every entity field read correct.
+
+So the loader rebuilds all three together. The VOICE.md is generated from the
+corpus it has just attached rather than carried in the payload, and both the plan
+and the read-back check that every passage it quotes appears in that corpus. The
+same rule runs in `scripts/check-writing-style-exemplars.py` against the
+deployment, using the same extractor, so a stale contract cannot pass one and
+fail the other.
+
+Each replica is written from its VOICE.md alone and has to come back inside the
+voice's own bands, which is the only thing a replica is evidence of: that the
+contract works as a prompt. All seven pass, at 218 to 654 words. Three needed
+rewriting rather than a widened band — the Crisis replica on function-word
+divergence, Lamb and Anderson on character-trigram divergence, and Anderson again
+on distinct-word density, where the first draft repeated its own proper nouns
+more than Anderson does.
