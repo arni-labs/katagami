@@ -27,6 +27,19 @@ of its sixteen defects in a `maps` explanation rather than in scope text, and th
 hypomnemata defect that started all of this lived in a manifestation explanation.
 Both are printed so a wider sweep cannot be mistaken for a worse collection.
 
+THE NEXT QUESTIONS OF BYTES ALREADY FETCHED, so the list is inherited rather
+than rediscovered. The structural check reads one predicate,
+`hasBroaderAuthority`. The same records carry three more things the collection
+makes claims against and nothing asks about:
+
+  * `authoritativeLabel`, against the cell's own name. A cell named from a
+    source vocabulary should carry that vocabulary's label.
+  * `hasVariantLabel`, which is where a legitimate alternate name lives. A name
+    check that does not read these will flag a correct variant as unsupported.
+  * `hasNarrowerAuthority`, against the cells that claim this one as a parent.
+    The broader check runs child to parent; this is the same edge from the other
+    end and would catch a parent that has been given children it does not have.
+
 WHAT THIS DOES NOT CHECK, which matters as much as what it does:
 
   * A claim carried by paraphrase rather than by the name reads as unsupported.
@@ -93,6 +106,39 @@ def names_in(text):
     for m in re.finditer(r"(?i)\b((?:%s)[- ]century)\b" % "|".join(ORDINAL), text):
         out.add(m.group(1))
     return out
+
+
+def prose_chars(raw):
+    """How much running text a source actually gives a writer.
+
+    The mechanism behind the defect is not how many sources a cell cites, it is
+    whether any of them carries sentences. A Library of Congress record gives a
+    label and its narrower terms and no prose, so there is nothing to write a
+    scope sentence from except what the writer already knows. The art run
+    measured this on its own unrepaired cells: 13 of 20 cells standing on a
+    record alone carried an unsupported claim, against 4 of 20 on two sources,
+    with both groups asserting the same number of names (2.95 against 2.85), so
+    the difference is not that one group said more.
+
+    A JSON record counts only its sentence-shaped string values, which is where a
+    scope note lives; anything else counts its whole text.
+    """
+    try:
+        rec = json.loads(raw)
+    except Exception:  # noqa: BLE001 - not a record, so it is page text
+        return len(raw)
+
+    total = 0
+    stack = [rec]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, dict):
+            stack.extend(node.values())
+        elif isinstance(node, list):
+            stack.extend(node)
+        elif isinstance(node, str) and " " in node and (len(node) > 80 or node.rstrip().endswith(".")):
+            total += len(node)
+    return total
 
 
 def prose_fields(d, wide):
@@ -309,8 +355,13 @@ def main():
             scored += 1
             lane = ",".join(sorted(m["map"] for m in d.get("maps", []))) or "(none)"
             n_src = len(srcs)
+            # 2,000 characters of running text is about the 3rd percentile of what
+            # a cell has available, and every cell standing on Library of Congress
+            # records alone falls under it. It is a threshold on a distribution
+            # rather than a guess: the collection's median is roughly 18,000.
+            backed = "prose-backed" if max(prose_chars(t) for t in texts) >= 2000 else "prose-thin "
             by_lane[lane] += 1
-            by_count[n_src] += 1
+            by_count[(n_src, backed)] += 1
             blob = fold(" ".join(texts))
             bad = []
             for field in prose_fields(d, wide):
@@ -324,9 +375,9 @@ def main():
                     bad.append((n, "strict" if all(fold(t)[:5] not in blob for t in toks) else "loose"))
             bad = sorted(set(bad))
             if bad:
-                flagged.append((cid, bad, lane, n_src))
+                flagged.append((cid, bad, lane, n_src, backed))
                 by_lane_flag[lane] += 1
-                by_count_flag[n_src] += 1
+                by_count_flag[(n_src, backed)] += 1
         return flagged, partial, scored, by_lane, by_lane_flag, by_count, by_count_flag
 
     narrow = score(False)
@@ -346,9 +397,35 @@ def main():
         # was never at risk. The nesting run reported fifteen of its sixteen
         # defects in single-source cells and repaired them that way, and the
         # collection now shows the opposite split. Both can be true.
-        print("  by number of cited sources:")
-        for n in sorted(by_count):
-            f, t = by_count_flag[n], by_count[n]
+        # Two cuts, and a warning that belongs with both. The mechanism is real
+        # and was measured on unrepaired cells elsewhere: 13 of 20 cells standing
+        # on a Library of Congress record alone carried an unsupported claim,
+        # against 4 of 20 on two sources, with both groups asserting the same
+        # number of names. A record gives a label and its narrower terms and no
+        # prose, so there is nothing to write a scope sentence from except what
+        # the writer already knows.
+        #
+        # This collection cannot show it. Those cells were repaired by deleting
+        # the unsupported claim, so they now carry fewer names and flag less,
+        # and both cuts here run the opposite way. Swapping source count for
+        # prose does not fix that, because it is the same cells either way. A
+        # repaired population cannot measure the risk that produced it, and
+        # these splits are reported for drift rather than as evidence.
+        backed_t, backed_f = collections.Counter(), collections.Counter()
+        for (n, b), t in by_count.items():
+            backed_t[b] += t
+            backed_f[b] += by_count_flag[(n, b)]
+        print("  by whether any cited source carries prose (2,000 chars, about p3).")
+        print("  Both cuts below are confounded: the cells that carried the defect were")
+        print("  repaired by cutting claims, so they now have less to flag. Read them as")
+        print("  drift, not as evidence about risk.")
+        for b in sorted(backed_t):
+            f, t = backed_f[b], backed_t[b]
+            print(f"    {b}   {f:4} / {t:4}   {100 * f / t:5.1f}%")
+        print("  by number of cited sources, which is the weaker cut:")
+        for n in sorted({k[0] for k in by_count}):
+            f = sum(by_count_flag[(n, b)] for b in backed_t)
+            t = sum(by_count[(n, b)] for b in backed_t)
             print(f"    {n} source{'s' if n != 1 else ' '}   {f:4} / {t:4}   {100 * f / t:5.1f}%")
         print("  by map lane:")
         for lane in sorted(by_lane):
@@ -361,8 +438,8 @@ def main():
             print("  sample covers description hits only. Explanations are shorter and more")
             print("  formulaic than scope text, so the rate almost certainly differs, and")
             print("  quoting this figure beside the verified one would borrow its error bar.")
-            for cid, bad, lane, n_src in strict:
-                print(f"    {cid:44} {lane:14} {n_src}src {[n for n, k in bad if k == 'strict']}")
+            for cid, bad, lane, n_src, backed in strict:
+                print(f"    {cid:44} {lane:12} {n_src}src {backed} {[n for n, k in bad if k == 'strict']}")
 
     flagged, partial, scored = narrow[0], narrow[1], narrow[2]
 
