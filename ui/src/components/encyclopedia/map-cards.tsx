@@ -1,30 +1,38 @@
 "use client";
 
-import type { CSSProperties, ReactNode, Ref } from "react";
-import type { EncyclopediaCell } from "@/lib/encyclopedia";
-import type { GraphIndex } from "@/lib/encyclopedia-graph";
+import type { CSSProperties, ReactNode } from "react";
+import type { CellManifestation, EncyclopediaCell } from "@/lib/encyclopedia";
+import { MAP_LABEL } from "@/lib/encyclopedia-graph";
 import { Tape } from "./chrome";
-import { cellMaterial, excerpt, type CellMaterial } from "./material";
-import { FOCUS_W, NEIGHBOUR_W, type PlacedCard } from "./focus-layout";
+import { cellFace, cellMaterial, SET_EYEBROW, SET_INK, type CellFace } from "./material";
+import { NAME_W, plateBox, SAT_W, type SatelliteNode } from "./graph-layout";
 
-// The two cards on the map. The focused cell is a large specimen sheet that
-// holds its real material: a picture, a passage set on a paper strip, a
-// palette as swatches, and a dashed "named cell" for a narrower cell with no
-// material yet. A neighbour is a small sheet with one piece of material and
-// a mono eyebrow, or its name and scope when it has none.
+// The nodes on the map. A plate is a cell: zoomed out it is its picture
+// (the field reads as pictures); zooming in adds words progressively — the
+// name, then the eyebrow and scope, then the caption saying where the picture
+// comes from. A satellite is one manifestation: a small thumbnail joined to
+// its cell by a dotted line, opening the record's own page.
+
+export type Lod = "picture" | "named" | "reading";
+
+export function lodFor(k: number): Lod {
+  if (k < 0.32) return "picture";
+  if (k < 0.72) return "named";
+  return "reading";
+}
 
 const PAPER = "var(--washi)";
 
-export function Eyebrow({ ink, children, className = "" }: { ink: string; children: ReactNode; className?: string }) {
+export function Eyebrow({ ink, children, className = "", style }: { ink: string; children: ReactNode; className?: string; style?: CSSProperties }) {
   return (
-    <span className={`block font-mono text-[10px] font-bold uppercase tracking-[0.16em] ${className}`} style={{ color: `color-mix(in oklch, ${ink} 78%, var(--foreground))` }}>
+    <span className={`block font-mono text-[10px] font-bold uppercase tracking-[0.16em] ${className}`} style={{ color: `color-mix(in oklch, ${ink} 78%, var(--foreground))`, ...style }}>
       {children}
     </span>
   );
 }
 
-/** A passage on a strip of paper — the writing counterpart of a study plate. */
-export function PaperStrip({ text, className = "", lines = 8 }: { text: string; className?: string; lines?: number }) {
+/** A passage on a strip of paper. */
+export function PaperStrip({ text, className = "", lines = 8, style }: { text: string; className?: string; lines?: number; style?: CSSProperties }) {
   return (
     <div
       className={`relative overflow-hidden px-4 py-3 ${className}`}
@@ -33,6 +41,7 @@ export function PaperStrip({ text, className = "", lines = 8 }: { text: string; 
         boxShadow: "var(--shadow-sticker)",
         backgroundImage: "repeating-linear-gradient(180deg, transparent 0 25px, color-mix(in srgb, var(--foreground) 6%, transparent) 25px 26px)",
         backgroundPosition: "0 10px",
+        ...style,
       }}
     >
       <p className="font-sans text-[14.5px] italic leading-[26px] text-foreground" style={{ display: "-webkit-box", WebkitLineClamp: lines, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
@@ -42,9 +51,9 @@ export function PaperStrip({ text, className = "", lines = 8 }: { text: string; 
   );
 }
 
-export function Swatches({ colors, className = "" }: { colors: string[]; className?: string }) {
+export function Swatches({ colors, className = "", style }: { colors: string[]; className?: string; style?: CSSProperties }) {
   return (
-    <div className={`flex ${className}`} style={{ boxShadow: "var(--shadow-sticker)" }}>
+    <div className={`flex ${className}`} style={{ boxShadow: "var(--shadow-sticker)", ...style }}>
       {colors.slice(0, 8).map((hex, i) => (
         <span key={`${hex}-${i}`} className="h-full flex-1" style={{ background: hex }} title={hex} />
       ))}
@@ -52,189 +61,210 @@ export function Swatches({ colors, className = "" }: { colors: string[]; classNa
   );
 }
 
-/** The dashed placeholder for a cell that has a name and a scope, nothing more. */
-export function NamedCell({ cell, onClick, className = "", style }: { cell: EncyclopediaCell; onClick?: () => void; className?: string; style?: CSSProperties }) {
-  const body = (
-    <>
-      <Eyebrow ink="var(--ramune)">Named cell</Eyebrow>
-      <span className="mt-2 block font-display text-[16px] font-bold leading-tight tracking-[-0.02em] text-foreground">{cell.name}</span>
-      {cell.description ? <span className="mt-1 line-clamp-2 text-[13px] leading-snug text-muted-foreground">{cell.description}</span> : null}
-    </>
-  );
-  const frame = `block text-left px-4 py-4 ${className}`;
-  const dashed: CSSProperties = { outline: "2px dashed color-mix(in oklch, var(--ramune) 65%, transparent)", outlineOffset: -2, ...style };
-  return onClick ? (
-    <button type="button" onClick={onClick} className={`${frame} focus-visible:outline-solid`} style={dashed}>{body}</button>
-  ) : (
-    <div className={frame} style={dashed}>{body}</div>
-  );
+/** A named cell's name counter-scales so it stays legible as the map pulls
+ *  back. Two limits keep the field from turning into a ransom note: one
+ *  ceiling shared by every card, so names are set at one size rather than
+ *  each at its own, and a per-name guard so a long word is never broken
+ *  across lines. */
+const NAME_MAX = 34;
+
+function nameFitSize(name: string, k: number): number {
+  const longest = Math.max(4, ...name.split(/\s+/).map((word) => word.length));
+  const wordFits = (NAME_W - 26) / (longest * 0.56);
+  return Math.max(18, Math.min(NAME_MAX, wordFits, 14 / k));
 }
 
-function StatusNote({ status }: { status?: string }) {
-  if (!status) return null;
-  const label = status === "UnderReview" ? "under review" : status.toLowerCase();
-  return <span className="text-muted-foreground/80"> · {label}</span>;
-}
-
-export function FocusCard({
-  card,
-  index,
-  material,
-  onOpen,
-  onFocus,
-  cardRef,
-  lod,
-  k,
-}: {
-  card: PlacedCard;
-  index: GraphIndex;
-  material: CellMaterial;
-  onOpen: () => void;
-  onFocus: (id: string) => void;
-  cardRef: Ref<HTMLDivElement>;
-  lod: "full" | "compact";
-  k: number;
-}) {
-  const { cell } = card;
-  const namedNarrower = index.childrenOf(cell.id).find((kid) => cellMaterial(kid).nameOnly);
-  const second = !material.text && !material.palette ? material.secondImage : null;
-  const twoColumns = Boolean(material.image && (material.text || material.palette || namedNarrower || second));
+/** The face a cell turns to the map: its picture when it has one, otherwise
+ *  the material it does have. Only a cell with no material at all shows the
+ *  dashed name box, so the far field reads as material rather than as empty
+ *  frames. */
+function Face({ face, lod, k, name }: { face: CellFace; lod: Lod; k: number; name: string }) {
+  const box = lod === "reading" ? "mt-3" : "";
+  const ratio = lod === "reading" ? "4 / 3" : "1 / 1";
+  if (face.kind === "image") {
+    return (
+      <span className={`relative block overflow-hidden ${box}`} style={{ aspectRatio: ratio }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={face.url} alt={face.alt} className="block h-full w-full object-cover" loading="lazy" draggable={false} />
+      </span>
+    );
+  }
+  if (face.kind === "palette") {
+    return <Swatches colors={face.swatches} className={box} style={{ aspectRatio: ratio }} />;
+  }
+  if (face.kind === "passage") {
+    return (
+      <PaperStrip
+        text={face.text}
+        className={`${box} flex items-center`}
+        lines={lod === "reading" ? 7 : 9}
+        style={{ aspectRatio: ratio }}
+      />
+    );
+  }
+  // Nothing but a name and a scope. Far out the plate IS the name; close in
+  // the name is already in the plate's header, so all that is left to say is
+  // that no material has been made yet.
+  if (lod === "reading") {
+    return (
+      <span className="mt-3 block px-3 py-2.5" style={{ outline: "2px dashed color-mix(in oklch, var(--ramune) 45%, transparent)", outlineOffset: -2 }}>
+        <Eyebrow ink="var(--ramune)" style={{ fontSize: 10 }}>Named cell</Eyebrow>
+        <span className="mt-1 block text-[13px] leading-snug text-muted-foreground">Nothing has been made for this cell yet.</span>
+      </span>
+    );
+  }
+  // Far out the card is nothing but the name on paper. No dashed frame here:
+  // ninety of them at once would spend the whole accent budget on emptiness,
+  // and a cell with no picture already looks like one.
   return (
-    <div
-      ref={cardRef}
-      className="absolute"
-      style={{ left: card.x, top: card.y, width: FOCUS_W, background: PAPER, boxShadow: "var(--shadow-card-hover)", outline: "2px solid color-mix(in oklch, var(--ramune) 70%, transparent)", outlineOffset: -2 }}
-      data-card="focus"
-    >
-      <Tape ink="var(--ramune)" className="-top-2 left-7" rotate={-3} width={64} />
-      <div className="px-6 pb-6 pt-6">
-        <button type="button" onClick={onOpen} className="block text-left font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground hover:underline hover:decoration-[var(--yuzu)] hover:decoration-[4px] hover:underline-offset-[4px]" style={{ fontSize: lod === "compact" ? Math.min(44, Math.max(24, 20 / k)) : 24 }}>
-          {cell.name}
-        </button>
-        {lod === "compact" ? (
-          <p className="mt-3 leading-snug text-muted-foreground" style={{ fontSize: Math.min(30, Math.max(15, 13 / k)) }}>{cell.description || "A name and a scope."}</p>
-        ) : material.nameOnly ? (
-          <div className="mt-4">
-            <p className="text-[16px] leading-relaxed text-foreground">{cell.description || "A name and a scope. No description has been written yet."}</p>
-            <div className="mt-5 px-4 py-4" style={{ outline: "2px dashed color-mix(in oklch, var(--ramune) 65%, transparent)", outlineOffset: -2 }}>
-              <Eyebrow ink="var(--ramune)">Name only</Eyebrow>
-              <p className="mt-1.5 text-[14px] leading-snug text-muted-foreground">No study, no made thing points here yet. The cell is a region on the map waiting for material.</p>
-            </div>
-          </div>
-        ) : (
-          <div className={`mt-4 grid gap-5 ${twoColumns ? "grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : "grid-cols-1"}`}>
-            {material.image ? (
-              <figure className="min-w-0">
-                <a href={material.image.href ?? undefined} target={material.image.href ? "_blank" : undefined} rel="noreferrer" className="block" onClick={(e) => { if (!material.image?.href) e.preventDefault(); }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={material.image.url} alt={material.image.alt} className="block w-full object-cover" style={{ aspectRatio: twoColumns ? "3 / 4" : "16 / 10", boxShadow: "var(--shadow-sticker)" }} loading="lazy" draggable={false} />
-                </a>
-                <figcaption className="mt-2.5">
-                  <Eyebrow ink={material.image.ink}>{material.image.eyebrow}</Eyebrow>
-                  <span className="mt-1 block text-[14px] leading-snug text-foreground">{material.image.title}<StatusNote status={material.image.status} /></span>
-                  {material.image.note ? <span className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug text-muted-foreground">{material.image.note}</span> : null}
-                </figcaption>
-              </figure>
-            ) : null}
-            <div className="flex min-w-0 flex-col gap-5">
-              {second ? (
-                <figure className="min-w-0">
-                  <a href={second.href ?? undefined} target={second.href ? "_blank" : undefined} rel="noreferrer" className="block" onClick={(e) => { if (!second.href) e.preventDefault(); }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={second.url} alt={second.alt} className="block w-full object-cover" style={{ aspectRatio: "3 / 4", boxShadow: "var(--shadow-sticker)" }} loading="lazy" draggable={false} />
-                  </a>
-                  <figcaption className="mt-2.5">
-                    <Eyebrow ink={second.ink}>{second.eyebrow}</Eyebrow>
-                    <span className="mt-1 block text-[14px] leading-snug text-foreground">{second.title}<StatusNote status={second.status} /></span>
-                    {second.note ? <span className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug text-muted-foreground">{second.note}</span> : null}
-                  </figcaption>
-                </figure>
-              ) : null}
-              {material.text ? (
-                <div>
-                  <Eyebrow ink={material.text.ink}>{material.text.eyebrow}</Eyebrow>
-                  <span className="mt-1 block font-display text-[16px] font-bold leading-tight tracking-[-0.02em] text-foreground">{material.text.title}</span>
-                  {material.text.note ? <span className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug text-muted-foreground">{material.text.note}</span> : null}
-                  <PaperStrip text={material.text.text} className="mt-2.5" lines={twoColumns ? 7 : 6} />
-                </div>
-              ) : null}
-              {material.palette ? (
-                <div>
-                  <Eyebrow ink={material.palette.ink}>{material.palette.eyebrow}</Eyebrow>
-                  <span className="mt-1 block text-[14px] leading-snug text-foreground">{material.palette.title}<StatusNote status={material.palette.status} /></span>
-                  <Swatches colors={material.palette.swatches} className="mt-2 h-11" />
-                  {material.palette.note ? <span className="mt-1 block text-[12.5px] text-muted-foreground">{material.palette.note}</span> : null}
-                </div>
-              ) : null}
-              {namedNarrower ? <NamedCell cell={namedNarrower} onClick={() => onFocus(namedNarrower.id)} /> : null}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+    <span className="flex h-full flex-col justify-center px-3 py-3 text-left" style={{ minHeight: 96 }}>
+      {lod === "named" ? <Eyebrow ink="var(--ramune)" style={{ fontSize: Math.min(16, Math.max(9, 5 / k)) }}>Named cell</Eyebrow> : null}
+      <span
+        className={`${lod === "named" ? "mt-1.5" : ""} line-clamp-3 font-display font-bold leading-[1.04] tracking-[-0.02em] text-foreground`}
+        style={{ fontSize: nameFitSize(name, k) }}
+      >
+        {name}
+      </span>
+    </span>
   );
 }
 
-export function NeighbourCard({
-  card,
-  material,
-  onFocus,
-  cardRef,
+/** A cell on the map. Fixed width; the height grows with the zoom layer. */
+export function Plate({
+  cell,
+  x,
+  y,
   lod,
-  fixedSize,
-  dimmed,
   k,
+  focused,
+  dimmed,
+  onFocus,
 }: {
-  card: PlacedCard;
-  material: CellMaterial;
-  onFocus: () => void;
-  cardRef: Ref<HTMLButtonElement>;
-  lod: "full" | "compact";
-  /** Measured full size, held while compact so the layout does not shift. */
-  fixedSize?: { w: number; h: number };
-  dimmed: boolean;
-  /** Camera scale, for counter-scaling compact names. */
+  cell: EncyclopediaCell;
+  x: number;
+  y: number;
+  lod: Lod;
   k: number;
+  focused: boolean;
+  dimmed: boolean;
+  onFocus: () => void;
 }) {
-  const { cell } = card;
-  const piece = material.image ?? material.text ?? material.palette;
+  const face = cellFace(cell);
+  const box = plateBox(cell);
+  const material = cellMaterial(cell);
+  const studyText = material.text?.source === "study" ? material.text : null;
+  const studyPalette = material.palette?.source === "study" ? material.palette : null;
+  // Names counter-scale so they read at every zoom the layer is shown at.
+  const nameSize = lod === "reading" ? 22 : Math.min(110, Math.max(20, 15 / k));
   return (
     <button
-      ref={cardRef}
       type="button"
       onClick={onFocus}
-      aria-label={`${cell.name}, ${card.word}. Focus this cell.`}
-      className="absolute block text-left transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[2px] hover:shadow-[var(--shadow-card-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-      style={{ left: card.x, top: card.y, width: NEIGHBOUR_W, background: PAPER, boxShadow: "var(--shadow-card)", opacity: dimmed ? 0.35 : 1, ...(lod === "compact" && fixedSize ? { height: fixedSize.h } : {}) }}
-      data-card={card.role}
+      aria-label={`${cell.name}. Focus this cell.`}
+      aria-current={focused ? "true" : undefined}
+      className="absolute block text-left transition-[opacity,box-shadow] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]"
+      style={{
+        left: x - box.w / 2,
+        top: y - box.h / 2,
+        width: box.w,
+        background: PAPER,
+        boxShadow: focused ? "var(--shadow-card-hover)" : "var(--shadow-card)",
+        outline: focused ? "2px solid color-mix(in oklch, var(--ramune) 70%, transparent)" : undefined,
+        outlineOffset: -2,
+        opacity: dimmed ? 0.3 : 1,
+        padding: lod === "picture" ? 6 : lod === "named" ? 8 : 16,
+        zIndex: focused ? 3 : 2,
+      }}
+      data-plate={cell.id}
     >
-      {lod === "compact" ? (
-        <span className="flex h-full flex-col justify-center px-4 py-4">
-          {/* Names grow as the camera pulls back, so the map stays readable. */}
-          <span className="block font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: Math.min(34, Math.max(17, 14 / k)) }}>{cell.name}</span>
+      {focused ? <Tape ink="var(--ramune)" className="-top-2 left-5" rotate={-3} width={58} /> : null}
+      {lod === "reading" ? (
+        <span className="block">
+          <span className="flex items-center gap-2 font-mono text-[9.5px] font-bold uppercase tracking-[0.16em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>
+            {cell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}
+            <span className="text-muted-foreground">· {cell.state === "Draft" ? "proposed" : cell.state.toLowerCase()}</span>
+          </span>
+          <span className="mt-1.5 block font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: nameSize }}>{cell.name}</span>
+          {cell.description ? <span className="mt-2 line-clamp-3 text-[13.5px] leading-snug text-muted-foreground">{cell.description}</span> : <span className="mt-2 block text-[13.5px] leading-snug text-muted-foreground">A name and a scope.</span>}
         </span>
-      ) : (
-        <span className="block px-4 pb-4 pt-4">
-          <span className="block font-display text-[16px] font-bold leading-[1.1] tracking-[-0.02em] text-foreground">{cell.name}</span>
-          {piece ? (
-            <span className="mt-3 block">
-              {material.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={material.image.url} alt={material.image.alt} className="block w-full object-cover" style={{ aspectRatio: "4 / 3", boxShadow: "var(--shadow-sticker)" }} loading="lazy" draggable={false} />
-              ) : material.text ? (
-                <PaperStrip text={excerpt(material.text.text, 160)} lines={4} />
-              ) : material.palette ? (
-                <Swatches colors={material.palette.swatches} className="h-9" />
-              ) : null}
-              <Eyebrow ink={piece.ink} className="mt-2.5">{piece.eyebrow}</Eyebrow>
-              <span className="mt-1 block text-[13.5px] leading-snug text-foreground">{piece.title}</span>
-              {piece.note ? <span className="mt-0.5 line-clamp-1 text-[12px] leading-snug text-muted-foreground">{piece.note}</span> : null}
-            </span>
-          ) : (
-            <span className="mt-2 line-clamp-4 text-[13.5px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
-          )}
-        </span>
-      )}
+      ) : null}
+      <Face face={face} lod={lod} k={k} name={cell.name} />
+      {lod === "reading" ? (
+        <span className="mt-2 block font-mono text-[9.5px] uppercase leading-snug tracking-[0.12em] text-muted-foreground">{face.caption}</span>
+      ) : null}
+      {lod === "reading" && studyText ? <PaperStrip text={studyText.text} className="mt-3" lines={5} /> : null}
+      {lod === "reading" && studyPalette ? <Swatches colors={studyPalette.swatches} className="mt-3 h-9" /> : null}
+      {lod === "named" && face.kind !== "name" ? (
+        <span className="mt-2 block truncate font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: Math.min(40, nameSize) }}>{cell.name}</span>
+      ) : null}
     </button>
+  );
+}
+
+/** One manifestation, joined to its cell. Opens the record's own page. */
+export function Satellite({
+  node,
+  manifestation,
+  k,
+  dimmed,
+  labelled,
+  onMore,
+}: {
+  node: SatelliteNode;
+  manifestation: CellManifestation | null;
+  k: number;
+  dimmed: boolean;
+  /** Names are drawn only around the cell in focus. Every satellite naming
+   *  itself at once buried the map under overlapping labels. */
+  labelled: boolean;
+  onMore: () => void;
+}) {
+  const record = manifestation?.record ?? null;
+  const ink = SET_INK[node.set];
+  const size = SAT_W;
+  const thumb = record?.image ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={record.image} alt={record.name} className="block h-full w-full object-cover" loading="lazy" draggable={false} />
+  ) : record?.swatches?.length ? (
+    <Swatches colors={record.swatches} className="h-full" />
+  ) : record?.excerpt ? (
+    <PaperStrip text={record.excerpt} lines={3} className="h-full !px-2 !py-1.5 [&_p]:text-[8px] [&_p]:leading-[12px]" />
+  ) : (
+    <span className="block h-full w-full" style={{ background: `color-mix(in srgb, ${ink} 12%, var(--washi))` }} />
+  );
+  const common = "absolute block text-left transition-opacity duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)]";
+  const style: CSSProperties = { left: node.x - size / 2, top: node.y - size / 2, width: size, opacity: dimmed ? 0.3 : 1, zIndex: 1 };
+  const labelSize = Math.min(14, Math.max(9, 9 / k));
+
+  if (node.index === -1) {
+    return (
+      <button type="button" onClick={onMore} aria-label={`${node.more} more manifestations`} className={common} style={style}>
+        <span className="grid place-items-center bg-[var(--washi)] font-mono font-bold tabular-nums text-foreground shadow-[var(--shadow-sticker)]" style={{ width: size, height: size, fontSize: Math.min(22, Math.max(12, 11 / k)) }}>+{node.more}</span>
+        {labelled ? <span className="mt-1 block text-center font-mono uppercase tracking-[0.12em] text-muted-foreground" style={{ fontSize: labelSize }}>more</span> : null}
+      </button>
+    );
+  }
+  const name = record?.name ?? "Record not found";
+  return (
+    <a
+      href={record?.href}
+      target={record ? "_blank" : undefined}
+      rel="noreferrer"
+      aria-label={`${SET_EYEBROW[node.set]}: ${name}. Open the record.`}
+      className={common}
+      style={style}
+      onClick={(e) => { if (!record) e.preventDefault(); }}
+    >
+      <span className="block overflow-hidden bg-[var(--washi)] p-[3px] shadow-[var(--shadow-sticker)]" style={{ width: size, height: size }}>{thumb}</span>
+      {labelled ? (
+        // The set names the connection, so it sits at the satellite end of the
+        // dotted line where there is room for it; the line itself is only a
+        // few dozen pixels long once the satellite hugs its cell.
+        <span className="mt-1 block w-[132px] -translate-x-[38px] text-center">
+          <Eyebrow ink={ink} style={{ fontSize: Math.min(11, Math.max(8, 7.5 / k)) }}>{SET_EYEBROW[node.set]}</Eyebrow>
+          <span className="block truncate font-sans font-semibold leading-tight text-foreground" style={{ fontSize: labelSize }}>{name}</span>
+        </span>
+      ) : null}
+    </a>
   );
 }

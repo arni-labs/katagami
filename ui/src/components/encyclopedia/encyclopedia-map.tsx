@@ -1,27 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowUpRight, ChevronUp, Maximize2, Minus, Plus } from "lucide-react";
 import type { EncyclopediaGraph, MapName } from "@/lib/encyclopedia";
-import { GraphIndex, MAP_LABEL, MAP_NAMES_ORDER } from "@/lib/encyclopedia-graph";
+import { GraphIndex, MAP_INK, MAP_LABEL, MAP_NAMES_ORDER } from "@/lib/encyclopedia-graph";
 import { Marker } from "@/components/page-hero";
-import { SearchBox } from "./chrome";
-import { cellMaterial, openingCell } from "./material";
-import { connector, layoutFocus, type Size } from "./focus-layout";
-import { FocusCard, NeighbourCard } from "./map-cards";
-import { CloseButton, OpenCellButton, SheetBody, SheetTitle, type SheetTab } from "./focus-sheet";
+import { RELATION_INK_VAR, SearchBox } from "./chrome";
+import { SET_INK } from "./material";
+import { layoutGraph, plateConnector, type PlateNode } from "./graph-layout";
+import { lodFor, Plate, Satellite } from "./map-cards";
+import { CloseButton, IndexSheet, OpenCellButton, SheetBody, SheetTitle, type SheetTab } from "./focus-sheet";
 import { useMounted, usePanZoom, usePrefersReducedMotion } from "./use-pan-zoom";
 
-// The encyclopedia map. One cell is in focus as a large specimen card; its
-// broader, narrower and related cells sit around it, joined by dashed lines
-// that carry the relation word. Click a neighbour and it takes the focus: the
-// map re-centres and its own neighbours appear — that is how you go a level
-// deeper or wider. The sheet beside the map (below it on a phone) holds the
-// full material. Drag to pan, scroll to zoom; zoomed out, cards fold to their
-// names.
-
-const SHEET_W = 440;
+// The encyclopedia: one map of every attested cell. Cells are plates grouped
+// by map; broader and typed relations are dashed lines with the word on them;
+// each cell's manifestations are small satellites on dotted lines. Zoomed out
+// the field is pictures; zooming in adds the words. Clicking a cell focuses
+// it: the camera moves to it and the sheet opens. The map never changes shape.
 
 function useIsDesktop(): boolean {
   const [desktop, setDesktop] = useState(true);
@@ -37,126 +33,89 @@ function useIsDesktop(): boolean {
 
 export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaGraph; initialCellId?: string | null }) {
   const index = useMemo(() => new GraphIndex(graph), [graph]);
-  const opening = useMemo(() => (initialCellId && index.byId.has(initialCellId) ? index.byId.get(initialCellId)! : openingCell(index)), [index, initialCellId]);
-  const [focusId, setFocusId] = useState<string | null>(opening?.id ?? null);
-  const [trail, setTrail] = useState<string[]>(opening ? [opening.id] : []);
+  const layout = useMemo(() => layoutGraph(index), [index]);
+  const initial = initialCellId && layout.byId.has(initialCellId) ? initialCellId : null;
+  const [focusId, setFocusId] = useState<string | null>(initial);
   const [sheetOpen, setSheetOpen] = useState(true);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [tab, setTab] = useState<SheetTab>("material");
   const [map, setMap] = useState<MapName | null>(null);
   const [query, setQuery] = useState("");
-  const [sizes, setSizes] = useState<Map<string, Size>>(() => new Map());
   const desktop = useIsDesktop();
   const mounted = useMounted();
   const reduced = usePrefersReducedMotion();
-
-  const layout = useMemo(() => layoutFocus(index, focusId, sizes), [index, focusId, sizes]);
+  const { viewportRef, camera, setCamera, animate, dragging, handlers, zoomStep, glide, centerOn } = usePanZoom({ x: 0, y: 0, k: 0.2 });
+  const lod = lodFor(camera.k);
   const focusCell = focusId ? index.byId.get(focusId) ?? null : null;
-  const materials = useMemo(() => new Map(layout.cards.map((c) => [c.cell.id, cellMaterial(c.cell)])), [layout]);
-
-  const { viewportRef, camera, setCamera, animate, dragging, handlers, zoomStep, glide } = usePanZoom({ x: 0, y: 0, k: 1 });
-  const lod: "full" | "compact" = camera.k < 0.62 ? "compact" : "full";
-
-  // ── measure cards so the layout uses real sizes ─────────────────────────
-  const cardEls = useRef(new Map<string, HTMLElement>());
-  const setCardEl = useCallback((id: string) => (el: HTMLElement | null) => {
-    if (el) cardEls.current.set(id, el);
-    else cardEls.current.delete(id);
-  }, []);
-  useLayoutEffect(() => {
-    if (lod === "compact") return;
-    let changed = false;
-    const next = new Map(sizes);
-    for (const card of layout.cards) {
-      const el = cardEls.current.get(card.cell.id);
-      if (!el) continue;
-      const w = Math.round(el.offsetWidth);
-      const h = Math.round(el.offsetHeight);
-      const prev = next.get(card.cell.id);
-      if (!prev || prev.w !== w || prev.h !== h) { next.set(card.cell.id, { w, h }); changed = true; }
-    }
-    if (changed) setSizes(next);
-  }, [lod, sizes, layout.cards]);
 
   // ── framing ─────────────────────────────────────────────────────────────
-  const frame = useCallback((smooth = true) => {
+  const fitAll = useCallback((smooth = true) => {
     const el = viewportRef.current;
-    if (!el || !layout.focus) return;
-    const vw = el.clientWidth;
-    const vh = el.clientHeight;
-    // Leave the title block and the controls their room.
-    const top = desktop ? 150 : 176;
-    const bottom = desktop ? 150 : 206 + 16;
-    const side = desktop ? 48 : 12;
+    if (!el) return;
+    const vw = el.clientWidth; const vh = el.clientHeight;
+    const top = desktop ? 118 : 176; const bottom = desktop ? 104 : 230; const side = desktop ? 32 : 12;
     const b = layout.bounds;
-    const f = layout.focus;
-    if (!desktop) {
-      // On a phone the focused card fills the width; neighbours sit just off
-      // the edge and are a drag away, as in the reference.
-      const k = Math.min(1, (vw - side * 2) / f.w, (vh - top - bottom) / f.h);
-      const x = vw / 2 - (f.x + f.w / 2) * k;
-      const y = top + ((vh - top - bottom) - f.h * k) / 2 - f.y * k;
-      if (smooth) glide({ k, x, y }); else setCamera({ k, x, y });
-      return;
-    }
-    const k = Math.min(1, (vw - side * 2) / b.w, (vh - top - bottom) / b.h);
-    // Centre the focused card; if that pushes a neighbour off the paper,
-    // shift just enough to bring it back.
-    let x = vw / 2 - (f.x + f.w / 2) * k;
-    if (b.x * k + x < side) x = side - b.x * k;
-    else if ((b.x + b.w) * k + x > vw - side) x = vw - side - (b.x + b.w) * k;
-    let y = top + (vh - top - bottom) / 2 - (f.y + f.h / 2) * k;
-    if (b.y * k + y < top) y = top - b.y * k;
-    else if ((b.y + b.h) * k + y > vh - bottom) y = vh - bottom - (b.y + b.h) * k;
-    if (smooth) glide({ k, x, y });
-    else setCamera({ k, x, y });
-  }, [viewportRef, layout, desktop, glide, setCamera]);
+    const k = Math.max(0.05, Math.min(1, (vw - side * 2) / b.w, (vh - top - bottom) / b.h));
+    const x = (vw - b.w * k) / 2 - b.x * k;
+    const y = top + ((vh - top - bottom) - b.h * k) / 2 - b.y * k;
+    if (smooth) glide({ k, x, y }); else setCamera({ k, x, y });
+  }, [viewportRef, layout.bounds, desktop, glide, setCamera]);
 
-  // Frame after a focus change, and keep re-framing while the cards settle
-  // (fonts and images arriving change their heights for a moment).
-  const settleUntil = useRef(Date.now() + 4000);
-  const layoutKey = `${focusId}|${layout.cards.map((c) => `${c.cell.id}:${c.w}x${c.h}`).join(",")}|${desktop}|${sheetOpen}`;
+  const fitRegion = useCallback((name: MapName) => {
+    const el = viewportRef.current;
+    const r = layout.regions.find((rg) => rg.map === name);
+    if (!el || !r) return;
+    const vw = el.clientWidth; const vh = el.clientHeight;
+    const top = desktop ? 150 : 176; const bottom = desktop ? 130 : 230; const side = desktop ? 48 : 12;
+    const k = Math.max(0.05, Math.min(1, (vw - side * 2) / r.w, (vh - top - bottom) / r.h));
+    glide({ k, x: (vw - r.w * k) / 2 - r.x * k, y: top + ((vh - top - bottom) - r.h * k) / 2 - r.y * k });
+  }, [viewportRef, layout.regions, desktop, glide]);
+
+  /** Bring a plate to the reading layer, centred in the room the sheet leaves. */
+  const frameFocus = useCallback((id: string) => {
+    const el = viewportRef.current;
+    const p = layout.byId.get(id);
+    if (!el || !p) return;
+    const k = Math.max(camera.k, 1);
+    if (desktop) centerOn(p.x, p.y, k, { x: el.clientWidth / 2, y: el.clientHeight / 2 + 30 });
+    else {
+      const fit = Math.min(k, (el.clientWidth - 40) / p.w);
+      centerOn(p.x, p.y, fit, { x: el.clientWidth / 2, y: 196 + p.h * 0.5 * fit - 40 });
+    }
+  }, [viewportRef, layout.byId, camera.k, desktop, centerOn]);
+
+  // First framing happens once the viewport has a size. The flag is set when
+  // the frame actually runs, so a dependency change that cancels the pending
+  // frame (the desktop/phone switch on first paint) schedules it again.
+  const framed = useRef(false);
   useEffect(() => {
-    if (Date.now() > settleUntil.current) return;
-    const measured = layout.cards.every((c) => sizes.has(c.cell.id));
-    if (!measured) return;
-    const id = requestAnimationFrame(() => frame(true));
+    if (framed.current) return;
+    const id = requestAnimationFrame(() => {
+      framed.current = true;
+      if (initial) frameFocus(initial); else fitAll(false);
+    });
     return () => cancelAnimationFrame(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layoutKey]);
+  }, [initial, frameFocus, fitAll]);
   useEffect(() => {
-    const onResize = () => frame(false);
+    const onResize = () => { if (!focusId) fitAll(false); };
     window.addEventListener("resize", onResize);
-    // Web fonts arriving re-wrap every title; frame once more when they land.
-    let cancelled = false;
-    document.fonts?.ready.then(() => { if (!cancelled) frame(true); });
-    return () => { cancelled = true; window.removeEventListener("resize", onResize); };
-  }, [frame]);
+    return () => window.removeEventListener("resize", onResize);
+  }, [fitAll, focusId]);
 
   const focus = useCallback((id: string) => {
-    if (!index.byId.has(id) || id === focusId) { setSheetOpen(true); return; }
+    if (!layout.byId.has(id)) return;
     setFocusId(id);
-    setTrail((t) => [...t.filter((x) => x !== id), id].slice(-4));
     setSheetOpen(true);
     setSheetExpanded(false);
     setTab("material");
-    settleUntil.current = Date.now() + 3000;
-  }, [index, focusId]);
+    frameFocus(id);
+  }, [layout.byId, frameFocus]);
 
-  const goBack = useCallback(() => {
-    if (trail.length < 2) return;
-    const previous = trail[trail.length - 2];
-    setTrail((t) => t.slice(0, -1));
-    setFocusId(previous);
-    settleUntil.current = Date.now() + 3000;
-  }, [trail]);
+  const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); }, []);
 
   const onFilter = (next: MapName | null) => {
     setMap(next);
-    if (next && focusCell && !focusCell.maps.some((m) => m.map === next)) {
-      const first = index.graph.cells.filter((c) => c.maps.some((m) => m.map === next)).sort((a, b) => index.neighbours(b.id).length - index.neighbours(a.id).length)[0];
-      if (first) focus(first.id);
-    }
+    if (next) fitRegion(next); else fitAll();
   };
 
   const results = useMemo(() => (query.trim() ? index.search(query, map).slice(0, 8) : []), [index, query, map]);
@@ -173,36 +132,56 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     if (pan[event.key]) { const [dx, dy] = pan[event.key]; setCamera((c) => ({ ...c, x: c.x + dx, y: c.y + dy })); event.preventDefault(); return; }
     if (event.key === "+" || event.key === "=") { zoomStep(1); event.preventDefault(); }
     else if (event.key === "-" || event.key === "_") { zoomStep(-1); event.preventDefault(); }
-    else if (event.key === "0") { frame(true); event.preventDefault(); }
-    else if (event.key === "Backspace") { goBack(); event.preventDefault(); }
-    else if (event.key === "Escape") { if (sheetExpanded) setSheetExpanded(false); else setSheetOpen(false); }
+    else if (event.key === "0") { fitAll(); event.preventDefault(); }
+    else if (event.key === "Escape") { if (sheetExpanded) setSheetExpanded(false); else if (focusId) clearFocus(); }
   };
 
-  const dimmed = (cellId: string) => (map ? !index.byId.get(cellId)?.maps.some((m) => m.map === map) : false);
-  const strokeW = 1.5 / camera.k;
-  const dash = `${5 / camera.k} ${6 / camera.k}`;
-  const showSheet = sheetOpen && focusCell;
+  // ── emphasis ────────────────────────────────────────────────────────────
+  const neighbourIds = useMemo(() => {
+    if (!focusId) return null;
+    const set = new Set<string>([focusId]);
+    for (const n of index.neighbours(focusId)) set.add(n.cell.id);
+    return set;
+  }, [index, focusId]);
+  const dimmedPlate = (id: string) => {
+    const cell = index.byId.get(id)!;
+    if (map && !cell.maps.some((m) => m.map === map)) return true;
+    return false;
+  };
+  const faded = (id: string) => Boolean(neighbourIds && lod === "reading" && !neighbourIds.has(id));
+  const manifestationsById = useMemo(() => new Map(graph.cells.map((c) => [c.id, c.manifestations])), [graph]);
 
-  // ── minimap geometry ────────────────────────────────────────────────────
-  const mini = (() => {
+  const strokeW = Math.max(1.2, 1.5 / camera.k);
+  const dash = `${5 / camera.k} ${6 / camera.k}`;
+  const dots = `${1.5 / camera.k} ${5 / camera.k}`;
+  const showWords = lod === "reading";
+
+  // ── minimap ─────────────────────────────────────────────────────────────
+  // The viewport size lives in state (a ResizeObserver keeps it current) so
+  // the minimap can read it during render without touching the ref.
+  const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
+  useEffect(() => {
     const el = viewportRef.current;
-    const W = 132;
-    const H = 84;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setViewportSize({ w: el.clientWidth, h: el.clientHeight }));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [viewportRef]);
+  const mini = (() => {
+    const W = 132; const H = 84;
     const b = layout.bounds;
-    // World box shown: layout bounds padded so the viewport rectangle fits.
-    const vw = el ? el.clientWidth / camera.k : b.w;
-    const vh = el ? el.clientHeight / camera.k : b.h;
-    const vx = el ? -camera.x / camera.k : b.x;
-    const vy = el ? -camera.y / camera.k : b.y;
-    const minX = Math.min(b.x, vx);
-    const minY = Math.min(b.y, vy);
-    const maxX = Math.max(b.x + b.w, vx + vw);
-    const maxY = Math.max(b.y + b.h, vy + vh);
+    const has = viewportSize.w > 0;
+    const vw = has ? viewportSize.w / camera.k : b.w; const vh = has ? viewportSize.h / camera.k : b.h;
+    const vx = has ? -camera.x / camera.k : b.x; const vy = has ? -camera.y / camera.k : b.y;
+    const minX = Math.min(b.x, vx); const minY = Math.min(b.y, vy);
+    const maxX = Math.max(b.x + b.w, vx + vw); const maxY = Math.max(b.y + b.h, vy + vh);
     const s = Math.min(W / (maxX - minX), H / (maxY - minY));
-    const ox = (W - (maxX - minX) * s) / 2 - minX * s;
-    const oy = (H - (maxY - minY) * s) / 2 - minY * s;
+    const ox = (W - (maxX - minX) * s) / 2 - minX * s; const oy = (H - (maxY - minY) * s) / 2 - minY * s;
     return { W, H, s, ox, oy, view: { x: vx, y: vy, w: vw, h: vh } };
   })();
+
+  const relationLines = useMemo(() => index.relationLines.filter((l) => layout.byId.has(l.a) && layout.byId.has(l.b)), [index, layout.byId]);
+  const broaderEdges = useMemo(() => index.edges.filter((e) => e.kind === "broader" && layout.byId.has(e.from) && layout.byId.has(e.to)), [index, layout.byId]);
 
   const mapViewport = (
     <div
@@ -211,7 +190,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       style={{ touchAction: "none", cursor: dragging ? "grabbing" : "grab" }}
       tabIndex={0}
       role="application"
-      aria-label="Encyclopedia map. Drag to pan, scroll to zoom, click a cell to bring it into focus."
+      aria-label="Encyclopedia map. Drag to pan, scroll to zoom, click a cell to focus it."
       onKeyDown={onKey}
       {...handlers}
     >
@@ -219,68 +198,90 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
         className="absolute left-0 top-0 h-0 w-0"
         style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.k})`, transformOrigin: "0 0", transition: animate && !reduced ? "transform 520ms cubic-bezier(0.22, 1, 0.36, 1)" : undefined, willChange: "transform" }}
       >
-        {layout.focus ? (
-          <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden>
-            {layout.cards.filter((c) => c.role !== "focus").map((card) => {
-              const { d, label } = connector(card, layout.focus!);
-              const dim = dimmed(card.cell.id);
-              const words = card.word.split(" ");
-              const lines = words.length > 2 ? [words.slice(0, Math.ceil(words.length / 2)).join(" "), words.slice(Math.ceil(words.length / 2)).join(" ")] : [card.word];
-              return (
-                <g key={card.cell.id} opacity={dim ? 0.3 : 1}>
-                  <path d={d} fill="none" stroke="color-mix(in oklch, var(--foreground) 55%, transparent)" strokeWidth={strokeW} strokeDasharray={dash} strokeLinecap="round" />
-                  <text
-                    x={label.x}
-                    y={label.y}
-                    textAnchor={card.side === "left" || card.side === "right" ? "middle" : "start"}
-                    dominantBaseline="middle"
-                    className="font-sans"
-                    style={{ fontSize: 13, fill: "var(--muted-foreground)", paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: 6, strokeLinejoin: "round" }}
-                  >
-                    {lines.map((line, i) => <tspan key={i} x={label.x} dy={i === 0 ? -(lines.length - 1) * 16 : 16}>{line}</tspan>)}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-        ) : null}
-
-        {layout.cards.map((card) =>
-          card.role === "focus" ? (
-            <FocusCard
-              key={card.cell.id}
-              card={card}
-              index={index}
-              material={materials.get(card.cell.id)!}
-              lod={lod}
-              k={camera.k}
-              onOpen={() => { setSheetOpen(true); setSheetExpanded(true); }}
-              onFocus={focus}
-              cardRef={setCardEl(card.cell.id)}
-            />
-          ) : (
-            <NeighbourCard
-              key={card.cell.id}
-              card={card}
-              material={materials.get(card.cell.id)!}
-              lod={lod}
-              k={camera.k}
-              fixedSize={sizes.get(card.cell.id)}
-              dimmed={dimmed(card.cell.id)}
-              onFocus={() => { if (!dragging) focus(card.cell.id); }}
-              cardRef={setCardEl(card.cell.id)}
-            />
-          ),
-        )}
-        {focusCell && layout.cards.length === 1 ? (
-          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap font-sans text-[13px] text-muted-foreground" style={{ top: layout.focus!.y + layout.focus!.h + 28 }}>
-            No connections recorded for this cell yet.
+        {/* map regions */}
+        {layout.regions.map((r) => (
+          <div key={r.map} className="pointer-events-none absolute" style={{ left: r.x, top: r.y, width: r.w, height: r.h, opacity: map && map !== r.map ? 0.25 : 1 }}>
+            <span aria-hidden className="halftone-wash absolute -right-10 -top-10 h-[420px] w-[620px]" style={{ ["--wash-ink" as string]: MAP_INK[r.map], opacity: 0.35 }} />
+            <div className="absolute left-10 top-8" style={{ transform: `scale(${Math.max(1, Math.min(3.2, 0.6 / camera.k))})`, transformOrigin: "0 0" }}>
+              <div className="font-mono text-[28px] font-bold uppercase tracking-[0.3em]" style={{ color: `color-mix(in oklch, ${MAP_INK[r.map]} 72%, var(--foreground))` }}>{MAP_LABEL[r.map]}</div>
+              <div className="mt-1 font-mono text-[12px] uppercase tracking-[0.2em] text-muted-foreground">{r.count ? `${r.count} cells` : "no cells here yet"}</div>
+            </div>
           </div>
-        ) : null}
+        ))}
+
+        <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden>
+          {/* satellite dotted lines */}
+          {layout.satellites.map((s) => {
+            const p = layout.byId.get(s.cellId)!;
+            const dim = dimmedPlate(s.cellId) || faded(s.cellId);
+            // Start the line at the plate's edge, not its centre: a satellite
+            // hugs its cell, so a line drawn from the middle would spend all
+            // of itself hidden behind the plate.
+            const dx = s.x - p.x; const dy = s.y - p.y;
+            const span = Math.max(Math.abs(dx) / (p.w / 2), Math.abs(dy) / (p.h / 2), 0.0001);
+            const x1 = p.x + dx / span; const y1 = p.y + dy / span;
+            return (
+              <g key={s.id} opacity={dim ? 0.2 : 0.9}>
+                <line x1={x1} y1={y1} x2={s.x} y2={s.y} stroke={`color-mix(in oklch, ${SET_INK[s.set]} 60%, var(--foreground))`} strokeWidth={strokeW} strokeDasharray={dots} strokeLinecap="round" />
+              </g>
+            );
+          })}
+          {/* broader → narrower */}
+          {broaderEdges.map((e) => {
+            const a = layout.byId.get(e.from)!; const b = layout.byId.get(e.to)!;
+            const { d, label } = plateConnector(a, b);
+            const dim = (dimmedPlate(a.id) && dimmedPlate(b.id)) || (faded(a.id) && faded(b.id));
+            return (
+              <g key={`${e.from}-${e.to}`} opacity={dim ? 0.2 : 1}>
+                <path d={d} fill="none" stroke="color-mix(in oklch, var(--foreground) 55%, transparent)" strokeWidth={strokeW * 1.1} strokeDasharray={dash} strokeLinecap="round" />
+                {showWords && (!focusId || e.from === focusId || e.to === focusId) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: 13, fill: "var(--muted-foreground)", paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: 6, strokeLinejoin: "round" }}>narrower cell</text> : null}
+              </g>
+            );
+          })}
+          {/* typed relations */}
+          {relationLines.map((line) => {
+            const a = layout.byId.get(line.a)!; const b = layout.byId.get(line.b)!;
+            const { d, label } = plateConnector(a, b);
+            const dim = (dimmedPlate(a.id) && dimmedPlate(b.id)) || (faded(a.id) && faded(b.id));
+            const ink = RELATION_INK_VAR[line.ink];
+            const word = line.entries.length === 1 ? line.entries[0].label : line.entries.map((e) => e.label).join(" / ");
+            return (
+              <g key={line.key} opacity={dim ? 0.2 : 1}>
+                <path d={d} fill="none" stroke={ink} strokeWidth={strokeW * 1.3} strokeDasharray={dash} strokeLinecap="round" style={{ mixBlendMode: "var(--ink-blend)" as never }} />
+                {showWords && (!focusId || line.a === focusId || line.b === focusId) ? <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="font-sans" style={{ fontSize: 13, fill: `color-mix(in oklch, ${ink} 70%, var(--foreground))`, paintOrder: "stroke", stroke: "var(--washi)", strokeWidth: 6, strokeLinejoin: "round" }}>{word}</text> : null}
+              </g>
+            );
+          })}
+        </svg>
+
+        {layout.satellites.map((s) => (
+          <Satellite
+            key={s.id}
+            node={s}
+            manifestation={s.index >= 0 ? manifestationsById.get(s.cellId)?.[s.index] ?? null : null}
+            k={camera.k}
+            dimmed={dimmedPlate(s.cellId) || faded(s.cellId)}
+            labelled={focusId === s.cellId && lod !== "picture"}
+            onMore={() => { focus(s.cellId); setTab("material"); }}
+          />
+        ))}
+        {layout.plates.map((p: PlateNode) => (
+          <Plate
+            key={p.id}
+            cell={p.cell}
+            x={p.x}
+            y={p.y}
+            lod={lod}
+            k={camera.k}
+            focused={focusId === p.id}
+            dimmed={dimmedPlate(p.id) || faded(p.id)}
+            onFocus={() => { if (!dragging) focus(p.id); }}
+          />
+        ))}
       </div>
 
       {/* title block, on the paper */}
-      <div className="pointer-events-none absolute left-0 top-0 bg-[var(--washi)] pb-4 pl-5 pr-6 pt-5 sm:pl-8 sm:pr-8 sm:pt-7" style={{ maskImage: "linear-gradient(90deg, black 85%, transparent)", WebkitMaskImage: "linear-gradient(90deg, black 85%, transparent)" }}>
+      <div className="pointer-events-none absolute left-0 top-0 max-w-full bg-[var(--washi)] pb-4 pl-5 pr-5 pt-5 sm:pl-8 sm:pr-8 sm:pt-7" style={{ maskImage: "linear-gradient(90deg, black 94%, transparent)", WebkitMaskImage: "linear-gradient(90deg, black 94%, transparent)" }}>
         <div className="font-mono text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>Encyclopedia</div>
         <h1 className="mt-1 font-display text-[36px] font-bold leading-[1] tracking-[-0.03em] sm:text-[44px]">
           The <Marker color="sakura">encyclopedia</Marker>
@@ -312,18 +313,18 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
         ) : null}
       </div>
 
-      {/* zoom + minimap, bottom left on desktop; zoom on the right on phones */}
+      {/* zoom + minimap */}
       <div className={`absolute z-20 ${desktop ? "bottom-12 left-6 flex items-end gap-2" : "bottom-4 right-3"}`}>
         <div className="flex flex-col gap-1.5">
           <button type="button" onClick={() => zoomStep(1)} aria-label="Zoom in" className="grid h-9 w-9 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"><Plus size={16} strokeWidth={2.2} /></button>
           <button type="button" onClick={() => zoomStep(-1)} aria-label="Zoom out" className="grid h-9 w-9 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"><Minus size={16} strokeWidth={2.2} /></button>
-          <button type="button" onClick={() => frame(true)} aria-label="Fit" title="Fit (0)" className="grid h-9 w-9 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"><Maximize2 size={15} strokeWidth={2.2} /></button>
+          <button type="button" onClick={() => fitAll()} aria-label="Fit everything" title="Fit (0)" className="grid h-9 w-9 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"><Maximize2 size={15} strokeWidth={2.2} /></button>
         </div>
         {desktop ? (
           <div className="bg-[var(--washi)] p-2 shadow-[var(--shadow-sticker)]">
             <svg width={mini.W} height={mini.H} aria-hidden className="block">
-              {layout.cards.map((c) => (
-                <rect key={c.cell.id} x={mini.ox + c.x * mini.s} y={mini.oy + c.y * mini.s} width={Math.max(3, c.w * mini.s)} height={Math.max(3, c.h * mini.s)} fill={c.role === "focus" ? "color-mix(in oklch, var(--ramune) 30%, transparent)" : "color-mix(in oklch, var(--foreground) 14%, transparent)"} />
+              {layout.plates.map((p) => (
+                <rect key={p.id} x={mini.ox + (p.x - p.w / 2) * mini.s} y={mini.oy + (p.y - p.h / 2) * mini.s} width={Math.max(2.5, p.w * mini.s)} height={Math.max(2.5, p.h * mini.s)} fill={p.id === focusId ? "var(--ramune)" : "color-mix(in oklch, var(--foreground) 22%, transparent)"} />
               ))}
               <rect x={mini.ox + mini.view.x * mini.s} y={mini.oy + mini.view.y * mini.s} width={mini.view.w * mini.s} height={mini.view.h * mini.s} fill="none" stroke="var(--ramune)" strokeWidth={1.5} />
             </svg>
@@ -335,20 +336,14 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
         ) : null}
       </div>
 
-      {/* trail, bottom left */}
       {desktop ? (
         <div className="pointer-events-none absolute bottom-4 left-6 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="pointer-events-auto flex items-center gap-2 font-sans text-[15px]">
-            <button type="button" onClick={() => { if (opening) focus(opening.id); }} className="text-foreground hover:underline">Encyclopedia</button>
-            {trail.map((id) => (
-              <span key={id} className="flex items-center gap-2">
-                <span className="text-muted-foreground">/</span>
-                <button type="button" onClick={() => focus(id)} className={id === focusId ? "font-semibold" : "text-muted-foreground hover:text-foreground"} style={id === focusId ? { color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" } : undefined}>{index.byId.get(id)?.name}</button>
-              </span>
-            ))}
+            <button type="button" onClick={() => { clearFocus(); fitAll(); }} className="text-foreground hover:underline">Encyclopedia</button>
+            {focusCell ? (<><span className="text-muted-foreground">/</span><span className="font-semibold" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>{focusCell.name}</span></>) : null}
           </span>
           <span className="ml-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            <span style={{ color: "color-mix(in oklch, var(--sakura) 78%, var(--foreground))" }}>Draft cells</span> · Distances are schematic
+            <span style={{ color: "color-mix(in oklch, var(--sakura) 78%, var(--foreground))" }}>{graph.cells.length} draft cells</span> · {layout.satellites.filter((s) => s.index >= 0).length} manifestations on the map · distances are schematic
           </span>
         </div>
       ) : null}
@@ -356,21 +351,29 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   );
 
   // ── the sheet ──────────────────────────────────────────────────────────
-  const desktopSheet = focusCell ? (
-    <aside className="relative flex h-full flex-col overflow-y-auto px-8 pb-10 pt-6" aria-label="Cell" style={{ boxShadow: "inset 1px 0 0 color-mix(in srgb, var(--foreground) 8%, transparent)" }}>
-      <span aria-hidden className="washi-tape pointer-events-none left-6 top-3" style={{ ["--strip-ink" as string]: "var(--ramune)", transform: "rotate(-4deg)", width: 66 }} />
-      <div className="flex justify-end"><CloseButton onClick={() => setSheetOpen(false)} /></div>
+  const sheetContent = focusCell ? (
+    <>
       <div className="mt-6"><SheetTitle cell={focusCell} /></div>
       <p className="mt-4 text-[17px] leading-relaxed text-foreground">{focusCell.description || "A name and a scope. No description has been written for this cell yet."}</p>
       <SheetBody cell={focusCell} index={index} tab={tab} onTab={setTab} onFocus={focus} />
       <OpenCellButton cell={focusCell} />
-    </aside>
-  ) : null;
+    </>
+  ) : (
+    <IndexSheet index={index} onFocus={focus} />
+  );
 
-  const mobileSheet = focusCell && mounted ? createPortal(
+  const desktopSheet = (
+    <aside className="relative flex h-full flex-col overflow-y-auto px-8 pb-10 pt-6" aria-label="Cell" style={{ boxShadow: "inset 1px 0 0 color-mix(in srgb, var(--foreground) 8%, transparent)" }}>
+      <span aria-hidden className="washi-tape pointer-events-none left-6 top-3" style={{ ["--strip-ink" as string]: "var(--ramune)", transform: "rotate(-4deg)", width: 66 }} />
+      <div className="flex justify-end">{focusCell ? <CloseButton onClick={clearFocus} /> : <CloseButton onClick={() => setSheetOpen(false)} />}</div>
+      {sheetContent}
+    </aside>
+  );
+
+  const mobileSheet = mounted ? createPortal(
     <div
       className="fixed inset-x-0 z-40 flex flex-col bg-[var(--washi)] shadow-[var(--shadow-card-hover)] lg:hidden"
-      style={{ bottom: 64, height: sheetExpanded ? "calc(100dvh - 64px - 56px)" : 206, transition: reduced ? undefined : "height 380ms cubic-bezier(0.22,1,0.36,1)" }}
+      style={{ bottom: 64, height: sheetExpanded ? "calc(100dvh - 64px - 56px)" : focusCell ? 206 : 120, transition: reduced ? undefined : "height 380ms cubic-bezier(0.22,1,0.36,1)" }}
       role="dialog"
       aria-label="Cell"
     >
@@ -379,16 +382,11 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
         <>
           <div className="flex items-center justify-between px-5 pt-3">
             <button type="button" onClick={() => setSheetExpanded(false)} className="inline-flex items-center gap-2 font-sans text-[17px] text-foreground"><ArrowLeft size={18} aria-hidden /> Back to map</button>
-            <CloseButton onClick={() => { setSheetExpanded(false); setSheetOpen(false); }} />
+            {focusCell ? <CloseButton onClick={clearFocus} /> : null}
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-4">
-            <SheetTitle cell={focusCell} />
-            <p className="mt-4 text-[17px] leading-relaxed text-foreground">{focusCell.description || "A name and a scope. No description has been written for this cell yet."}</p>
-            <SheetBody cell={focusCell} index={index} tab={tab} onTab={setTab} onFocus={focus} />
-            <OpenCellButton cell={focusCell} />
-          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-4">{sheetContent}</div>
         </>
-      ) : (
+      ) : focusCell ? (
         <div className="px-5 pb-4 pt-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0"><SheetTitle cell={focusCell} size="md" /></div>
@@ -399,32 +397,32 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             View cell <ArrowUpRight size={18} aria-hidden />
           </button>
         </div>
+      ) : (
+        <button type="button" onClick={() => setSheetExpanded(true)} className="flex flex-1 items-center justify-between px-5 pb-4 pt-3 text-left">
+          <span>
+            <span className="block font-display text-[20px] font-bold tracking-[-0.02em]">{graph.cells.length} cells</span>
+            <span className="mt-0.5 block font-sans text-[14px] text-muted-foreground">Tap a cell on the map, or open the index.</span>
+          </span>
+          <ChevronUp size={22} aria-hidden />
+        </button>
       )}
     </div>,
     document.body,
   ) : null;
 
-  const mobileClosedPill = focusCell && mounted && !sheetOpen ? createPortal(
-    <button type="button" onClick={() => setSheetOpen(true)} className="fixed left-1/2 z-40 -translate-x-1/2 bg-foreground px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] lg:hidden" style={{ bottom: 76 }}>
-      Show cell
-    </button>,
-    document.body,
-  ) : null;
-
   return (
     <div className="relative w-full" style={{ height: desktop ? "calc(100dvh - 64px)" : "calc(100dvh - 56px - 64px)" }}>
-      <div className={`grid h-full ${desktop && showSheet ? "grid-cols-[minmax(0,1fr)_440px]" : "grid-cols-1"}`} style={{ ["--sheet-w" as string]: `${SHEET_W}px` }}>
+      <div className={`grid h-full ${desktop && sheetOpen ? "grid-cols-[minmax(0,1fr)_440px]" : "grid-cols-1"}`}>
         <div className="relative min-w-0">
           {mapViewport}
-          {!desktop && focusCell && sheetOpen ? <div aria-hidden style={{ height: 0 }} /> : null}
-          {desktop && !sheetOpen && focusCell ? (
-            <button type="button" onClick={() => setSheetOpen(true)} className="absolute right-6 top-7 h-9 bg-foreground px-4 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)]">Show cell</button>
+          {desktop && !sheetOpen ? (
+            <button type="button" onClick={() => setSheetOpen(true)} className="absolute right-6 top-7 h-9 bg-foreground px-4 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)]">Show sheet</button>
           ) : null}
         </div>
-        {desktop && showSheet ? desktopSheet : null}
+        {desktop && sheetOpen ? desktopSheet : null}
       </div>
-      {!desktop && sheetOpen ? mobileSheet : null}
-      {!desktop ? mobileClosedPill : null}
+      {!desktop ? mobileSheet : null}
     </div>
   );
 }
+

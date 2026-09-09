@@ -3,9 +3,9 @@
 import { useState, type ReactNode } from "react";
 import { ArrowRight, ArrowUpRight, BookOpen, X } from "lucide-react";
 import type { CellManifestation, EncyclopediaCell } from "@/lib/encyclopedia";
-import { GraphIndex, MAP_LABEL, relationInk } from "@/lib/encyclopedia-graph";
+import { GraphIndex, MAP_LABEL, MAP_NAMES_ORDER, relationInk } from "@/lib/encyclopedia-graph";
 import { InkStamp, ProvenanceStamp, RELATION_INK_VAR, inkChipStyle } from "./chrome";
-import { cellMaterial, SET_INK, SET_SHORT } from "./material";
+import { cellFace, cellMaterial, SET_INK, SET_SHORT } from "./material";
 import { Eyebrow, PaperStrip, Swatches } from "./map-cards";
 
 // The cell sheet beside the map (a bottom sheet on phones). Title, the
@@ -320,7 +320,7 @@ export function SheetTitle({ cell, size = "lg" }: { cell: EncyclopediaCell; size
 export function OpenCellButton({ cell }: { cell: EncyclopediaCell }) {
   return (
     <a
-      href={`/lab/encyclopedia?cell=${encodeURIComponent(cell.id)}`}
+      href={`/encyclopedia?cell=${encodeURIComponent(cell.id)}`}
       target="_blank"
       rel="noreferrer"
       className="mt-6 flex h-12 items-center justify-between bg-foreground px-5 font-mono text-[12px] font-bold uppercase tracking-[0.2em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-transform hover:-translate-y-[2px] hover:rotate-[-0.5deg] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0"
@@ -335,5 +335,58 @@ export function CloseButton({ onClick, className = "" }: { onClick: () => void; 
     <button type="button" onClick={onClick} aria-label="Close" className={`grid h-9 w-9 place-items-center text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] ${className}`}>
       <X size={20} />
     </button>
+  );
+}
+
+/** The sheet with nothing in focus: an index of every cell, by map, each with
+ *  its picture. Picking one focuses it on the map. */
+export function IndexSheet({ index, onFocus }: { index: GraphIndex; onFocus: (id: string) => void }) {
+  const cells = index.graph.cells;
+  return (
+    <div className="mt-2">
+      <h2 className="font-display text-[30px] font-bold leading-[1.02] tracking-[-0.03em] sm:text-[34px]">
+        <span className="relative inline-block">
+          {cells.length} cells
+          <span aria-hidden className="absolute -bottom-1 left-0 h-[6px] w-full" style={{ background: "var(--yuzu)", opacity: 0.85, mixBlendMode: "var(--ink-blend)" as never, transform: "rotate(-0.4deg)" }} />
+        </span>
+      </h2>
+      <p className="mt-4 text-[16px] leading-relaxed text-muted-foreground">Every attested cell is on the map. Pictures far out, words as you come closer. Pick a cell here or on the paper to read it.</p>
+      {MAP_NAMES_ORDER.map((map) => {
+        const members = cells.filter((c) => index.primaryMap(c) === map);
+        if (!members.length) return null;
+        return (
+          <section key={map} className="pt-7">
+            <Heading>{MAP_LABEL[map]} <span className="font-mono text-[11px] font-normal tracking-[0.14em] text-muted-foreground tabular-nums">{members.length}</span></Heading>
+            <ul className="mt-1">
+              {members.map((cell) => {
+                const face = cellFace(cell);
+                return (
+                  <li key={cell.id}>
+                    <Row onClick={() => onFocus(cell.id)}>
+                      {face.kind === "image" ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={face.url} alt="" className="block h-[52px] w-[52px] shrink-0 object-cover" style={{ boxShadow: "var(--shadow-sticker)" }} loading="lazy" />
+                      ) : face.kind === "palette" ? (
+                        <Swatches colors={face.swatches} className="h-[52px] w-[52px] shrink-0" />
+                      ) : face.kind === "passage" ? (
+                        <span className="block h-[52px] w-[52px] shrink-0" style={{ background: "color-mix(in srgb, var(--yuzu) 12%, var(--washi))", boxShadow: "var(--shadow-sticker)", backgroundImage: "repeating-linear-gradient(180deg, transparent 0 7px, color-mix(in srgb, var(--foreground) 14%, transparent) 7px 8px)" }} />
+                      ) : (
+                        // A cell with nothing made for it yet: a quiet empty
+                        // frame, not another shout of accent colour.
+                        <span className="block h-[52px] w-[52px] shrink-0" style={{ outline: "2px dashed color-mix(in oklch, var(--foreground) 18%, transparent)", outlineOffset: -2 }} />
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-sans text-[15.5px] font-semibold leading-snug text-foreground">{cell.name}</span>
+                        <span className="mt-0.5 line-clamp-1 text-[13px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
+                      </span>
+                    </Row>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })}
+    </div>
   );
 }
