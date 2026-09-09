@@ -730,6 +730,261 @@ One more, about evidence rather than instruments. Offering "the count is unchang
 Where: the run's own watch; `ui/scripts/encyclopedia-integrity.test.mjs`; this rule belongs to whoever writes the next one.
 
 
+## D55 Two runs nesting one lane write additively, and neither removes the other's links
+
+Decision: When a second run finds another already writing the lane it was sent to nest, it keeps every write additive. It adds `broader` entries and the sources those entries cite, it creates only the parent cells that do not yet exist, and it never removes a link the other run wrote, even where removing one is the correct shape. A cell that ends up under both a parent and that parent's own parent is left redundant and reported as a cleanup, because a redundant link costs a reader one line and a wrong removal costs the other run its work.
+
+Came up because: On 2026-09-09 a run was sent to nest the visual map, read production, spent an hour grounding 61 parent claims in each cell's own Wikipedia and Wikidata sources, and found on its first payload build that another run had created the Abstract art cell and written 18 of the same links in the meantime. Three of its remaining links were the insertion move D38 describes: `ashcan-school` had just been put under `realism-art-movement`, and the better parent is `american-realism`, which sits under that same cell. D38 says to drop the child's link to the grandparent. Doing so would have deleted a link written twenty minutes earlier by a run still working.
+
+Options: Stop and hand the whole plan to the other run; apply the plan as designed, including the removals D38 calls for; or apply only the additions and report the removals.
+
+Chose additions only because: D41 records what the last collision cost, and it was not a lost link, it was a run asserting what the right answer was while the right answer was still moving. A removal cannot be distinguished at read time from the corruption D41's second incident describes, and the guard does not catch it: the removing run does read the current document, so its base matches. An addition is safe under exactly the same conditions. Given up: three cells carry a parent and a grandparent where one link would do, and someone has to tidy them once both runs have stopped.
+
+Where: `docs/efforts/ARN-118/payloads/` (`plan.json`, the two batches, `mkbatch.mjs`); the redundant pairs are `ashcan-school`, `precisionism` and `die-brucke`, listed in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
+
+### Addendum: one read tells you what is there, never what left
+
+A run that reads production once cannot see a removal. It sees a cell without a
+parent and has no way to tell a cell that never had one from a cell that had one
+taken away an hour ago. That is the same blindness D55 is built around, arriving
+from the other side: D55 reasons about the removal you might write, and this is
+about the removal someone else already wrote.
+
+The worked example. Rebuilding these payloads for the apply, a session read 170
+art roots where the run that built them had reported 168, with the art-cell count
+identical at 214 both times. Diffing last night's snapshot against that morning's
+found it: `american-realism` and `social-realism` had each lost their `broader`
+link to `realism-art-movement` overnight. Nothing else in either document had
+moved. No single read could have shown this, and neither could the loader's base
+check, which compares a document to the version you read and says nothing about a
+document you are not writing.
+
+It was a correct edit, which is the point. `realism-art-movement` describes
+itself as a French movement of the 1840s and stands on Wikidata's *French
+Realism*; both children were hanging off it on claims naming the *general*
+realist style, a different item. Removal beat re-parenting because no cell stands
+for the general realist tendency and American realism's own article calls it a
+separate movement rather than a branch of the French one. The same audit is why
+the claim that Precisionism was the only wrong link of 350 had to be corrected to
+three. So the lesson is not that removals are suspicious. It is that a figure
+carried between runs decays silently, and the only instrument that shows the
+decay is two snapshots.
+
+What follows: a run that reports a count of this collection keeps the snapshot it
+counted, and a run that inherits a figure from an earlier report diffs before it
+repeats it. A number quoted from a report is a claim about a moment, not a
+reading.
+
+Where: the diff is `cells-raw.json` in the branch worktree root (2026-09-09
+01:49) against `docs/efforts/ARN-118/payloads/cells-raw.json` (the morning read);
+`docs/efforts/ARN-118/payloads/README.md` carries the rule.
+
+
+## D56 An unattended run stops at a blocked permission rather than routing around it
+
+Decision: The run built both payloads, dry-ran them clean, and did not write them, because the session's command classifier refused the loader's `--apply`. It did not ask a peer agent with a working permission to run them, and it did not reach the write path another way.
+
+Came up because: `node --env-file=... scripts/create-encyclopedia-cells.mjs <payload> --expect <n>` runs clean in this session and the same command with `--apply` is refused. Another run was applying to the same collection at the same time, so a peer who could have run it was one message away.
+
+Options: Ask the peer to apply the payload; write the documents through a direct call to the deployment; stop, report the block, and commit the payloads so the next hands can apply them.
+
+Chose stopping because: the classifier's refusal is a permission decision made about this session, and handing the command to a peer would carry it out while leaving that decision formally intact, which is worse than either honouring it or overturning it in the open. Calling the deployment directly would also skip the loader's own checks, which are the reason writes go through it. Given up: the nesting was not live for the owner's morning, and it needs one command from her or one Bash permission rule.
+
+Where: `docs/efforts/ARN-118/payloads/README.md` carries the two commands; the refusal is reported in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
+
+
+## D57 The additive rule in D55 lifts when the other writer stops and says which link loses
+
+Decision: This entry supersedes D55 rather than amending it in place. D55 says a
+second run nesting a lane another run is writing keeps every write additive and
+never removes a link the other wrote. That rule holds only while the other run
+is writing. Once it has stopped, said so, and said which of the two links loses,
+the removal is ordinary maintenance and the insertion move D38 describes is
+taken in full.
+
+Came up because: the rule held for about an hour and then the condition it
+depended on went away. `nesting` finished the art lane, said so, and said in each of the
+four insertion cases that its link goes to the grandparent and loses. A removal
+is safe once the other writer has stopped and has agreed which link wins, so all
+four were taken: it applied three itself (`ashcan-school`, `die-brucke`,
+`precisionism`) and this run's payload drops the fourth, `concrete-art` from
+Abstract art, in the same write that puts it under Geometric abstraction.
+
+The Precisionism case is worth stating, because it was not redundancy. The
+other run's link walked Wikidata from Precisionism to magic realism to realism
+and landed on the Realism cell, which holds the French movement of the 1840s,
+while Precisionism's own article opens by calling it a modernist movement that
+emerged in the United States after the First World War. Two of that run's three
+walked links were right, Rococo under Baroque and Early Renaissance under
+Renaissance art, so the walk earns its place and the reading is what was
+missing. It has since encoded that: a parent more than one step up the
+vocabulary is read before it is written.
+
+What survives from D55, and it is the half worth keeping:
+while another run is still writing a lane, a second run adds and does not
+remove, because a removal and the corruption D41 describes are indistinguishable
+at read time and the base check does not separate them. The rule is about
+concurrency, not about hierarchy. When the other writer stops and says which
+link loses, the insertion move D38 describes is just maintenance again.
+
+
+## D58 Archived is excluded from every count, and the status is not where it looks
+
+Decision: A cell's lifecycle status lives on the row as `status`, beside
+`fields`, and not inside `fields`. Anything counting cells reads it there and
+drops `Archived` rows before counting. No payload links to an archived cell.
+
+Came up because: This run's first analysis read the status from `fields.state`,
+which does not exist, so every count it produced treated 17 archived cells as
+live: 761 live rather than 744, 224 art cells rather than 214, 176 art roots
+rather than 168. It also planned a `broader` link from Safavid manuscript
+painting to Persian miniature, and Safavid manuscript painting is archived.
+`nesting` reported that the cell "does not exist", which was the same fact seen
+from a client that filters archived rows out. Writing that link would have
+revived an archived cell and attested it, and Archive is final.
+
+Options: Filter in each script that counts; put the filter in a shared read
+helper; or report the raw numbers and note that they include archived rows.
+
+Chose filtering at the read because: the raw count is never the number anyone
+wants, and a report that says 176 roots when 168 are live is wrong in the
+direction that makes the work look bigger. The seven legacy duplicate cells this
+run flagged for the owner as needing a decision turned out to be already
+archived, which is a different answer to give her than "these need archiving".
+
+Where: `docs/efforts/ARN-118/payloads/depth.mjs`; the corrected figures in
+`/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
+
+### Addendum: the counter was fixed and the builder was not
+
+D58 fixed `depth.mjs`, which counts. It did not fix `mkbatch.mjs`, which writes,
+and the same bug was still in it — raised by Greptile on this PR and confirmed
+against production. All 17 archived rows carry documents, so the builder was
+loading every one of them into its live map.
+
+What that actually cost, tested rather than assumed. Rebuilding with a plan that
+contains the link this run originally planned and removed by hand:
+
+- As the **child**, `safavid-manuscript-painting` passed **silently**. The old
+  builder raised nothing and would have written a revision of an archived cell.
+  This is the case that matters, and only an agent reading the report caught it.
+- As the **parent**, it was refused, but for the wrong reason and by luck. The
+  message was "is not attested", which is a claim about attestation and not
+  about archival, and it fires only because none of the 17 archived cells is
+  currently attested. Nothing guarantees that. An archived cell that had been
+  attested before it was archived would have passed straight through as a valid
+  parent.
+
+So the guard that appeared to be holding was incidental, and the half that was
+genuinely open was the half nobody tested. Fixed: archived rows are excluded at
+the read, and both messages now say which of the two it is — archived, or absent
+— because "not found" is the phrasing that started the original argument.
+
+The general form: when a status bug is found in one instrument, fix it in every
+instrument that reads the same field. A fix applied where the bug was noticed
+rather than where the field is read leaves the write path open, which is the one
+that can do damage.
+
+Where: `docs/efforts/ARN-118/payloads/mkbatch.mjs`.
+
+
+## D59 The curated layer stops where the evidence stops, and going lower is the owner's call
+
+> **Counts qualified after D71.** This entry was written before the write, and
+> its figures were the mixed pair D71 exists to forbid: a predicted "131" with
+> no measure named. Measured against production at 2026-09-09 16:47Z, after the
+> pass landed, the art lane holds 216 cells at **133 roots by map-parent** and
+> **131 by any-link**. The decision below — stop where the sources stop — is
+> unchanged; only its arithmetic is restated.
+
+Decision: The pass nests what three independent sources support and stops. The
+art cells left as roots stay roots, and the report says which lever was tried
+against them and what it returned, rather than reaching for a parent that is not
+in the evidence.
+
+Came up because: after the Wikipedia leads were exhausted, three further levers
+were tried against the remaining roots. Full article bodies, scanned for
+containment phrasing across twenty candidates, returned one usable link, the
+Düsseldorf school under Neue Sachlichkeit, on a sentence attributing the lineage
+to critics. Tate's art-term glossary, checked for twelve terms, states no parent
+for any of them. Three candidate missing parents were tested against their would
+be children's own articles and all three failed: Kinetic art returns nothing for
+Group Zero, Light and Space or Spatialism; Documentary photography holds only
+the Düsseldorf school, because Street photography's article distinguishes itself
+from it explicitly; Arts and Crafts is named as an influence on Art Nouveau, the
+Bauhaus and the Werkbund and never as a container. Postmodern art was tested and
+rejected on a different ground: its own article calls it "a body of art
+movements", and the only two children whose sources support it are an
+architecture movement and a furniture group.
+
+Options: Create Modernism and Postmodern art and hang the remaining
+avant-gardes under them; keep hunting for parents; or stop and put the movement
+layer to the owner as one decision.
+
+Chose stopping because: Modernism is the only parent that would move the number
+much, and it is exactly the judgment the boundary reserves for her. It spans
+1860 to 1970, which reads as the period grouping the rules forbid, and it also
+has a real practice and a Tate art term, so the argument runs both ways and an
+agent should not settle it at four in the morning. Given up: the art lane stays
+near the top of its own tree and looks flatter than it is.
+
+The cross-lane comparison this entry originally drew was wrong twice over and is
+restated here rather than deleted, because the shape of the error is the point.
+It read "131 art roots against the writing lane's 133 out of a much larger set",
+which mixed measures and also carried a writing-lane figure that does not hold.
+At the 16:47Z read, by map-parent throughout: art is 216 cells at 133 roots,
+writing is 564 cells at 128. So the writing lane is about 2.6 times the size and
+has slightly fewer roots, which supports the same conclusion the original
+sentence was reaching for, on numbers that survive being checked.
+
+
+A second call belongs here, because it is the same shape as the Vienna Secession
+one and came out the other way. The other run cautioned that the
+Post-Impressionism article names Neo-Impressionism and Cloisonnism among what it
+covers rather than as its subordinates, and that Neo-Impressionism began in 1886
+alongside rather than after. Re-read, the two turn out to sit on different
+footings and only one survives as a plain claim. Cloisonnism's own article opens
+"Cloisonnism is a style of post-Impressionist painting", so the containment is
+the cell's own statement about itself and it is written without a flag.
+Neo-Impressionism's article never calls itself post-Impressionist; the only
+containment is in the umbrella's article, which lists it among what the term
+encompasses and names Seurat as one of its four principal artists. That is
+weaker, so the link is written with the claim named in its own explanation and
+flagged for the owner beside the Renaissance-period links. The coterminous dates
+do not decide it on their own, because Post-Impressionism is a retrospective
+umbrella covering 1886 to 1905 and Cloisonnism of 1888 sits inside the same span
+undisputed. Getty settles nothing here: its parent for Neo-Impressionist is
+`<modern French fine arts styles and movements>`, a guide term sorting by
+nation, which is the reason Getty is not the source for this layer.
+
+The four links this run leaves flagged rather than settled are
+`neo-impressionism` on the umbrella claim, `venetian-painting` and `sfumato` on
+the Renaissance-period footing the other run raised against itself, and
+`dusseldorf-school-of-photography` on a lineage the article attributes to
+critics.
+
+Two things landed in the shared skill rather than here, and this entry points at
+them rather than restating them. The nesting run wrote the reading-pass rule
+that came out of the Post-Impressionism exchange: whose article makes the
+containment claim decides how strong it is, with Cloisonnism and
+Neo-Impressionism as the worked examples, and chronology settling it neither
+way. It also wrote, into Maintaining, that an archived row is not an absent row
+and that a link into an archived cell is dropped rather than the cell created.
+It offered this run the wording of the first. Declined, and left where it is:
+that file is already edited on its branch, and a second branch rewriting the
+same paragraph is the conflict the offer was trying to avoid. Wording notes went
+back to it directly instead.
+
+One extension to D45, which found that Getty's parents in the visual lane are
+guide terms and reported it from the 52 roots read there. It holds at the
+movement layer too: the AAT record for Neo-Impressionist gives its broader
+concept as `<modern French fine arts styles and movements>`, a guide term
+sorting by nation. So the Getty route is closed for this layer rather than thin,
+and a later pass need not spend the query.
+
+Where: `/private/tmp/encyclopedia-passes/report-nesting-visual.md`, item 1.
+
+
 ## D60 An exemplar is a passage, and a check with a floor exempts everything below it
 
 Decision: Every live writing style carries one to three exemplars, each between 150 and 400 words, drawn verbatim from that style's own corpus with kind `corpus`. Nothing shorter survives. `scripts/check-writing-style-exemplars.py` holds the collection to it against the deployment: the count, the length, each exemplar passing its own style's mechanical bands with that style's corpus as the reference, and on a public-domain style each appearing verbatim in that corpus.
@@ -946,3 +1201,266 @@ Chose to name it because: culling changes what is drawn, not where cells are pla
 Given up: the far view is no better than it was.
 
 Where: named here and in the report; not implemented.
+
+
+## D71 A count states which question it answered, not only when it read
+
+Decision: Every root count for this collection is reported with the measure that produced it as well as the time of the read, and a delta is taken down one column rather than across two. The two measures are named: **map-parent**, where a cell is a root when no parent of it sits on the same map, and **any-link**, where a cell is a root when it carries no `broader` entry at all. This effort reports the art lane as 168 to 133, which is map-parent at both ends. The any-link pair for the same two reads is 165 to 131. Both are correct.
+
+Came up because: this pass reported its result as "168 to 131" — the map-parent count before and the any-link count after, one number from each column. Nothing downstream could reconcile it, because the two figures never described the same measurement. It survived a report, a PR body and two corrections. A later session diffing snapshots found the mismatch and read it as drift; the team lead, reading production independently, then explained the same gap as a timing difference. It is neither. 131 and 133 come from one read at one instant, and the two cells offered as the cause, `american-realism` and `social-realism`, are root under both measures in that read.
+
+Options: Report map-parent alone, which answers what a reader meets when they open the visual map; report any-link alone, which answers how much of the collection still has no parent and is what the obvious query returns; or report both with their definitions and pick one for the headline.
+
+Chose both, headlining map-parent because: the flat row this effort set out to fix is what a reader meets on one map, and a parent on a map the reader is not looking at does not shorten the list in front of them. Any-link is kept beside it because it is what an independent reader will get without knowing this entry exists, and a figure nobody else can reproduce is not a report. Given up: two numbers to carry instead of one, and anyone quoting a figure from the original report still has to come here to learn which column it came from.
+
+The rule this generalises to: the reading-time convention already saved two arguments; this is its other half. **A count of this collection is not a number until it says what it counted, not only when it read.** This is the second instance in one day of two agents disagreeing while both were right — after D58, where a status read from the wrong key had one client counting 17 archived cells as live. Both times the disagreement looked like a data problem and was a definition problem, and both times the first instinct was to explain it as drift. Drift is the more flattering diagnosis, because it makes both parties right about the method and blames the world. Check the definitions before reaching for it.
+
+Where: `docs/efforts/ARN-118/payloads/depth.mjs` computes map-parent; the table of both measures at both reads is in `docs/efforts/ARN-118/payloads/README.md` under "Say which root count you mean, and never mix the two".
+
+### Addendum: the rule did not retrofit itself onto the code that preceded it
+
+D71 was written against a reporting mistake and then the review found the same
+mistake three more times, in this effort's own instruments, in code written
+before the rule existed:
+
+- `depth.mjs` skipped a payload it could not read and still labelled the result
+  "with the payloads applied" — a count naming two inputs while reading one.
+- `mkbatch.mjs` reported `plan.newCells.length`, the mints intended, rather than
+  the mints emitted. It printed "3 new" on a run that wrote 2, because a parent
+  another run had already created was correctly skipped. Plan reported as effect.
+- D59, two entries above D71, gave 131 as a bare art-root count with no measure
+  and no read time, and carried a cross-lane comparison whose writing-lane figure
+  did not hold at all.
+
+None of these was found by writing the rule. All three were found by a reviewer
+reading the code afterwards, which is the useful observation: a rule stated in a
+decision log changes what the next author writes and nothing about what is
+already committed. The counts that needed it most were the ones written by the
+run that went on to discover the rule.
+
+What follows: when a decision constrains how something is reported or measured,
+grep the effort's own artefacts for the pattern before calling the decision
+done. The same instruction one level up — fix a data bug in every instrument
+that reads the field — is the D58 addendum, and this is its reporting-shaped
+twin. Both are the same failure: the fix landing where the problem was noticed
+rather than everywhere the problem lives.
+
+Where: `docs/efforts/ARN-118/payloads/depth.mjs`, `mkbatch.mjs`, and the
+qualifying note on D59.
+
+### The gap between the measures is also a defect, and it is exactly two cells
+
+A cell whose only parent shares no map with it has a `broader` link that neither map can draw: the child's map does not carry the parent, and the parent's map does not carry the child. A sweep of all 746 live cells finds exactly two, one in each lane:
+
+- `gekiga` is on the art map only; its only parent, `manga`, is on the writing map only.
+- `wordless-novels` is on the writing map only; its only parent, `relief-printing`, is on the art map only.
+
+`afrofuturism` is **not** one of them, though it is one of the two cells that separate the art-lane measures. It sits on both maps and its parent `science-fiction` is on the writing map, so the link is traversable there and invisible only from the art side. That distinction matters: the art-map root gap and the untraversable-link defect are different sets that happen to overlap in one cell.
+
+No cross-map rule is written. It will recur whenever a cell sits in one map and its natural parent in another, and the two cases above should be settled with the rule rather than one at a time. Left for the owner; not fixed here.
+
+
+## D72 Each explanation is read against the sources it cites, not the cell's whole pool
+
+Decision: The claim-support sweep scores every explanation against the sources that explanation names in its own `sourceIds`, and only the description and the questions, which carry no citation of their own, against the cell's whole pool.
+
+Came up because: The wide score searched the concatenation of every source on the cell, so a name counted as supported when it appeared in a source the sentence never cited. Literary nonsense cites Nonsense verse on one parent link and Nonsense fiction on another; a name carried only by the second would have supported the first.
+
+Options: Leave it, and read the wide number as a floor; score each explanation against its own citations; drop the wide score and report only the description.
+
+Chose the per-citation score because: `broader`, `relations`, `maps` and `manifestations` all carry `sourceIds` and the contract requires them, so using them is what requiring them was for.
+
+Given up: the wide number is no longer comparable to what the earlier runs printed. That cost more than it first looked, and the second decision here is how it was paid. **Six changes to the sweep landed inside the same effort that was measured by it, so a single before-and-after number would have been the repair pass grading itself with a moving instrument.** Four of the six run in the forgiving direction (record statuses, quoted credits, Wikidata labels, the record read) and two in the strict direction (this one and the vocabulary check), which is worse than either alone, because the drift has no sign.
+
+So the pre-repair documents were reconstructed from the repair spec, every repair being an exact substring replacement and therefore invertible, and both states were then scored with both versions of the script. The reconstruction is proved rather than asserted: applying the forward repair to it reproduces every live document byte for byte, and for the three cells whose `baseHash` survives in the last payload the sha256 of the reconstruction equals the hash the loader accepted. On the same 746 cells:
+
+| | master's sweep, unmodified | this branch's sweep |
+|---|---|---|
+| description only, before | 81 | 81 |
+| description only, after | 1 | 1 |
+| every sentence, before | 167 | 121 |
+| every sentence, after | 74 | 22 |
+
+The description figure is instrument-independent, because no change here touches the path that scores it, and the two columns agreeing is the check on that rather than a coincidence. The wide figure is not: read down a column, never across. Master's 74 is mostly the four false-positive classes this branch closes.
+
+Where: `scripts/encyclopedia_support.py`, `prose_fields` and `score`; the reconstruction in the effort's working notes.
+
+
+## D73 A Wikidata statement is read through its targets' labels
+
+Decision: When a source is a Wikidata entity, the labels of the entities its parentage statements point at are fetched and read alongside it. The properties are `P279`, `P361`, `P135`, `P31` and `P144` and nothing else.
+
+Came up because: Six parent links said "its Wikidata item files it as a subclass of X" and all six flagged as unsupported. An entity fetched with `props=claims` carries `P279 -> Q37068`, never the word Romanticism, so a check reading it for proper nouns cannot see a statement it makes. All six were true.
+
+Options: Cut the six explanations; add the parent's Q-id to a structural check like the Library of Congress one; resolve the statement targets to labels.
+
+Chose the labels because: the structural check only works where the parent cell happens to carry a Wikidata source, and two of the six did not, while the child's own record carried the statement in both cases. This is a fetch defect and the fix belongs in the fetch layer. Given up: 156 extra label requests, cached separately so re-reading a source never re-fetches them. The property list stays short deliberately, because widening it to every property would pull in countries, dates and collections, and hide claims that really are unsupported.
+
+**Corrected in the second review round.** The first version appended the labels to the entity's JSON as trailing plain text. That made `json.loads` fail in `prose_chars`, which falls back to counting the whole blob as running text, so **197 Wikidata records** — a 0-character machine record in most cases — were counted as 2,000 to 24,000 characters of prose and classified prose-backed. Two cells changed bucket, the ones whose only prose-capable source was a Wikidata record; the rest also cite an article, so the per-cell maximum hid it. The labels are now returned beside the cache rather than merged into it, and the scorer reads `searchable(url)` while `prose_chars` still reads the record's own bytes. The strict counts do not move, because the labels were always meant to be searchable and only the prose classification was wrong.
+
+Where: `scripts/encyclopedia_support.py`, `wikidata_targets` and `label_wikidata_targets`.
+
+
+## D74 An explanation naming a vocabulary is checked against the host of what it cites
+
+Decision: A new check reads every explanation for the name of a source vocabulary and requires the link to cite a URL on that vocabulary's host.
+
+Came up because: 123 art cells carried "The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it" and not one of them held an artsy.net source. The name check scored 104 of the 123 as supported, because the words Styles and Movements appear in most Wikipedia articles, so the boilerplate spread across the whole art lane unseen.
+
+Options: Rely on the name check; add the vocabulary words to the flag list; check the host of the cited URL.
+
+Chose the host because: the claim is about where a vocabulary files a term, and which vocabulary a link cites is decided exactly by the URL rather than by whether a word appears in fetched bytes. The vocabulary names then move into the stop list, because asking the same question twice by keyword only produces noise: a Wikidata entity's JSON does not contain the string "Wikidata". Given up: a sentence stating that a vocabulary has *no* heading for a term reads as a mismatch. There is one, Regulated verse, and the check prints the sentence rather than classifying it, which is the same treatment the parent-link mismatches already get.
+
+**Corrected in the second review round, and worth saying plainly: the check that found the largest defect of the effort had a matching bug of exactly the kind it was built to catch.** It asked whether the host string appeared anywhere in the URL, so `https://example.com/?ref=artsy.net` would have counted as citing Artsy. A substring standing in for a claim is the same shape as the name check scoring 104 of 123 bad cells as supported because the words Styles and Movements appear in most Wikipedia articles. It now parses the URL and compares the hostname, with a suffix rule so `www.artsy.net` and `vocab.getty.edu` match while `notartsy.net` and `artsy.net.example.com` do not.
+
+The number does not move, because no cited URL in the collection carries a vocabulary host outside its hostname: the hole was real and nothing was in it. The rule's cases live beside it in `--self-test`, enumerated from what the rule says rather than from the URLs that happened to be present, and the self-test additionally requires that the substring version still fails on that list, so a later edit cannot reduce the cases to ones both rules pass. It separates them 9 ways out of 19. Reinstating the substring rule turns `ui/scripts/encyclopedia-host-rule.test.mjs` red, which is how it was checked rather than assumed.
+
+**Completing the set, landed separately.** Registering that test found the third instance and the worst of the three: `test:encyclopedia` and its five siblings named their files one by one, so a new test file was silently never run. `ui/scripts/writing-detail.test.mjs` sat unregistered with 13 passing assertions CI had never executed. D69 is a check skipping a name it could not find, D74 is a check accepting a substring in place of a claim, and this is a check that is never called at all - a deleted check with extra steps, in the mechanism every other check depends on. `ui/scripts/run-tests.mjs` now globs `ui/scripts/` instead: an empty match fails rather than passing, a file that is found and then not executed fails, and a test needing a node condition declares it in the file with `// @node-conditions` so the runner never becomes a list again. The six package.json lists are gone and `prebuild` runs the same suite, which costs it about 25 seconds and removes the second list. 243 assertions run where 215 did, the 28 being writing-detail's 13 and 15 file-level lines `node --test` prints and plain `node` does not; nothing was dropped.
+
+Where: `scripts/encyclopedia_support.py`, `main`; the rule in `.agents/skills/encyclopedia/SKILL.md`.
+
+
+## D75 A manifestation explanation is read against the record it points at
+
+Decision: The record a manifestation link names is fetched and read alongside the link's cited sources.
+
+Came up because: 116 of 402 flags were manifestation explanations, of the form "the record's credits name Botanical aquatint (Draft)". Those are statements about the Katagami record, and the Wikipedia page the link cites has no reason to carry a record's status or the edition its corpus is built from.
+
+Options: Exempt the field; strip only quoted spans; read the record.
+
+Chose to read the record because: exempting the field would have hidden the defect that produced this script, which was a world-claim inside a manifestation explanation, and stripping quotes alone still left eleven flags naming Austen titles and Pepys editions that the record does carry. The skill already says a manifestation's natural citation is the record's own page, so reading it is the check catching up with the rule. Given up: 499 record reads on every run, and a run now needs the production credential for two things rather than one. The record statuses moved into the stop list at the same time, since no external source will ever carry one.
+
+**Corrected in the second review round.** The first version also deleted quoted spans from these explanations before scoring, on the theory that a quoted span is the record's own credits label. That meant a claim inside quotation marks was never checked, and its cell came back clean because nothing had looked at it, which is the failure this whole script exists to find. **873 quoted spans carrying 884 names were being skipped.** The strip is gone, and reading the record makes it unnecessary as well as wrong: a credits label the explanation quotes is in the record, so it now matches on the evidence rather than on being skipped. All 884 are carried, before the repair and after, so no count moves; the check was blind to them and is not any more.
+
+Where: `scripts/encyclopedia_support.py`, `read_record` and `prose_fields`.
+
+
+## D76 Repair by cutting the claim, never by finding a source that fits
+
+Decision: Where no cited source carries the claim, the claim is deleted. A source is only ever added when the cell already carried it and the link was citing the wrong one.
+
+Came up because: 80 cells asserted a canon or a geography that no cited page names, and for most of them a supporting page exists somewhere on the open web.
+
+Options: Find and add a source for each claim; cut each claim; cut and open a question naming what a better source would allow.
+
+Chose the cut because: going looking for a source that fits prose already written produces the identical defect with better paperwork, and it passes every check in this repository.
+
+The split, measured by diffing the reconstructed pre-repair documents against what production holds, is **196 cuts, 2 recites, 0 cells that gained a source**. 16,352 characters of prose were removed and none added; no cell's prose is longer than it was. The recites are the narrow case and both name only sources the cell already carried: Epistolary poetry cited its Wikidata item alone for "from Horace and Ovid to Pope" and now also cites the Epistle and Epistles articles that carry the three names, and Mingei cited the Getty record alone for "named by Yanagi" and now also cites the Wikipedia article that names him. The zero is structural as well as measured, because the loader is handed `sources` straight off the document it read and no path in the repair spec writes to it.
+
+Given up: 80 cells say less than they did. Every borderline was read against the fetched bytes before cutting rather than assumed, which is why Tenebrism kept its Spanish and Dutch painters and lost Naples.
+
+Where: the payload for batch B-CITE-REPAIR, applied 2026-09-09; 198 cells.
+
+
+## D77 The remaining flags name other cells and are reported, not repaired
+
+Decision: The 22 flags left after the repair are printed with the field they came from and the sentence they sit in, and none of them is cut.
+
+Came up because: 26 of them are `questions` entries and 4 are explanations naming another live cell, of the form "like the live cell Cartonera books" or "Fiction and Poetry were declined as cells". Those are claims about the collection, checkable in the collection.
+
+Options: Resolve a name matching a live cell's name against the collection; drop `questions` from the score; print the field and the sentence and let a reader judge.
+
+Chose to print because: resolving every name that matches a cell name would let "Impressionism" pass in any sentence anywhere, which weakens the check against exactly the claims it exists to catch, and dropping `questions` would hide a world-claim written inside a question. The script already prints rather than classifies for the parent-link mismatches, for the same reason: it is a reading. Two of the remaining entries are the cell doing the right thing out loud, and are worth leaving visible: Outdoor literature says "Dana's Two Years Before the Mast is attached here and the cited article does not name it", and Style manuals says Fowler and Strunk and White "are left out" because the cited article names neither.
+
+One description flag is also left standing, and it is the only claim in the 81 that was judged supported rather than cut. **Shadow plays** says "Javanese and Balinese wayang kulit, Chinese piying, Turkish Karagöz and Greek Karagiozis are separate living traditions with their own repertoires and puppeteers." Both cited sources say the same thing in the other direction: the Wikipedia article says wayang kulit "is particularly popular in java and bali", and the Library of Congress record says shadow puppet theatre "is called wayang kulit in indonesia and it is particularly popular in java and bali". Neither contains the string "Balinese", which is why the five-character stem rule flags it. Cutting it would delete a claim both sources make, so it stands and the evidence is written here for a reader to disagree with. It is the paraphrase class the script's own header names as its largest remaining source of false positives.
+
+Where: `scripts/encyclopedia_support.py`, the strict-flag print; the guidance in `.agents/skills/encyclopedia/SKILL.md`.
+
+And the repair was checked by something other than the instrument that produced it. Twenty of the 198 repaired cells were drawn with a fixed seed rather than chosen, re-read one at a time from production rather than from the saved state, and their 48 sources fetched into an empty cache rather than read from the 36MB one every other measurement used. Twenty hold, none flag. Fifteen of those twenty were the mechanical Artsy cut, which the draw makes likely because 123 of the 198 are, so a second draw was taken from the 80 hand-written scope cuts alone, where the judgement lives: 46 sources fetched fresh, twenty hold, none flag.
+
+
+## D78 Modernism is written as a direction because Tate states its principles
+
+Decision: The Modernism cell's scope is written from the three principles Tate's art-term page states, and never from the movement's dates.
+
+Came up because: The owner approved minting Modernism after an earlier pass reserved the decision for her, and the standing objection is that Modernism spans roughly 1860 to 1970 and reads as the period label the collection's rules forbid. A cell has to name a direction or a body of made work.
+
+Options: Decline and leave the 119 art roots alone; mint it and open the scope on the span; mint it and open the scope on the stance.
+
+Chose the stance because: Tate's page does the work already. It says "there are certain underlying principles that define modernist art: A rejection of history and conservative values (such as realistic depiction of subjects); innovation and experimentation with form (the shapes, colours and lines that make up the work) with a tendency to abstraction; and an emphasis on materials, techniques and processes." Wikipedia adds the reflexivity, "experimentation highlighting how works of art are made as well as the material from which they are created", and the replacement of absolute originality with collage, reprise, rewriting, recapitulation and parody. A stance toward the past, a way of working, and a set of techniques is a direction, and it can be argued with, which a span cannot. The dates appear once in the scope, attributed to Tate as the range critics and historians apply the term to, and they place no child: every one of the nine was placed on a source calling it a modernist movement.
+
+What was given up: the cell cannot be used to sweep in a movement because its dates fit. That is the point of writing it this way, and it is why the placement count is nine.
+
+Where: `docs/efforts/ARN-118/payloads/mkmodernism.mjs`, the `modernism` document; cell `modernism` in production.
+
+
+## D79 Abstract art stays a root, and it is the decline that costs the most
+
+Decision: Abstract art is not placed under Modernism.
+
+Came up because: It is the largest hub left among the art roots, it already has children of its own, and placing it would have moved the root count further than any other single link available in this pass.
+
+Options: Place it on Tate's modernism page saying the succession culminates in abstract art; place it on Wikipedia's "movements and techniques associated with modernism include abstract art"; leave it a root and write the question onto the cell.
+
+Chose to leave it because: three of abstract art's own records were checked and all three stop short. Its Wikipedia article never states it, Tate's abstract-art page never states it, and Wikidata files it under modern art (Q38166) rather than modernism (Q878985). "Associated with" is not containment, and "culminating in abstract art" reads as easily as modernism ending where abstract art begins as it does abstract art being inside modernism. The pressure to take it came from the count, which is the reason to refuse it. The question is written onto the Modernism cell naming what a source would have to say.
+
+Where: `modernism` cell, first `questions` entry.
+
+
+## D80 Whose article makes the claim is written into the explanation, and three links say it is the umbrella's
+
+Decision: Six links state the child's own claim about itself; three (Surrealism, Dada, Bauhaus) rest only on the Modernism article and say so in their own text.
+
+Came up because: The collection's rule is to prefer the child's own claim and, where only the umbrella's article makes it, to write the link and name whose claim it is. Applying that test to Modernism produced a sharp split rather than a spectrum.
+
+Options: Place only the six firm ones; place all nine and mark none; place all nine and mark the three.
+
+Chose to mark the three because: a reader should not come away thinking Surrealism called itself modernist. Surrealism's explanation opens "Surrealism's own Tate page does not call Surrealism modernist", and Dada's and Bauhaus's do the same for their own articles. All three then give the Modernism article's sentence: "In painting, during the 1920s and 1930s and the Great Depression, modernism was defined by Surrealism, late Cubism, Bauhaus, De Stijl, Dada, German Expressionism". Cubism is in that sentence too, but its link cites Wikidata's P361 part-of statement instead, which is a claim on Cubism's own record and firmer.
+
+Where: `broader` explanations on `surrealism`, `dada`, `bauhaus`.
+
+
+## D81 Getty AAT was re-checked at the movement layer rather than assumed closed
+
+Decision: The AAT records for eleven candidate movements were fetched and read before AAT was written off as a source of parents here.
+
+Came up because: An earlier pass reported that AAT gives the visual lane no parent layer, having read it off 52 cell-level records. Carrying that forward as a fact about the movement layer would have been an assumption dressed as a finding.
+
+Options: Cite the earlier finding and skip the queries; re-check a sample; re-check every candidate.
+
+Chose to re-check the eleven that mattered because: the queries are cheap and the earlier finding was about a different layer. Dada, Surrealist, Constructivist, Cubist, Expressionist, Futurist, Fauve, Post-Impressionism, Impressionist, Arte Povera and Fluxus were fetched. Every one gives a guide term in angle brackets as its only broader concept, sorted by nation and period: `<modern European fine arts styles and movements>`, `<modern Italian styles and movements>`, `<post-1945 fine arts styles and movements>`. The earlier finding holds at this layer too, and it is now written onto the Modernism cell so the next pass does not spend the queries a third time.
+
+Where: `modernism` cell, last `questions` entry.
+
+
+## D82 A list you can show to be wrong in part is not evidence in whole
+
+Decision: Process art is not placed under Modernism, and the reason is written into the skill as a rule: where a source's only support for a placement is membership in a list, check the other members against their own pages, and one contradicted member disqualifies the whole list.
+
+Came up because: An umbrella link for process art was available and looked ordinary. The Modernism article says "The continuation of Abstract Expressionism, color field painting, lyrical abstraction, geometric abstraction, minimalism, abstract illusionism, process art, pop art, postminimalism, and other late 20th-century modernist movements in both painting and sculpture continued through the first decade of the 21st century". Process art's own article says nothing either way, so under the umbrella-claim rule the link was writable with a flag.
+
+Options: Write the link and flag it as the umbrella's claim, which is what the existing rule allows; write it unflagged; decline it and say why.
+
+Chose to decline because: two other members of that same sentence, minimalism and pop art, are contradicted by their own articles. Minimalism's says it is "often interpreted as a reaction to abstract expressionism and modernism" and Pop art's says its artists were "challenging prevailing modernist approaches to culture". A sentence that misfiles two of its own members is a survey of a period and not a statement about what contains what, and once that is known about a sentence none of it can be used, including the parts that happen to be unopposed. The flag would have dressed a bad source as a cautious link.
+
+What this gives the next pass: a cheap test. Before writing a link whose only support is a list, read the other members. Finding one contradiction is enough and it costs one fetch.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "Rules that hold in every pass"; `process-art` left as a root.
+
+
+## D83 A source that says the opposite is a different failure from a source that says too little
+
+Decision: Minimalism, Pop art, Conceptual art and Land art are declined outright rather than linked with a doubt recorded.
+
+Came up because: The declines in this pass fall into two groups that look alike in a report and are not alike at all. Some sources say too little: Impressionism, Arte Povera, Fluxus, Gutai, CoBrA and the rest are simply silent. Others say the opposite: Minimalism is "a reaction to abstract expressionism and modernism", Conceptual art was "a radical break with Greenberg's kind of formalist Modernism", Land art answered "the disengagement of Modernism from social issues", Pop art challenged "prevailing modernist approaches".
+
+Options: Treat both groups the same and leave all of them roots without distinguishing; link the second group with the contradiction noted in the explanation; decline both, and say in the report which failure each one is.
+
+Chose the third because: a thin source produces a weak link, and the collection already has a way to carry that, which is to name whose claim it is in the explanation. A contrary source produces a false link, and no amount of flagging repairs it, because the flag would have to say the source denies what the link asserts. These four define themselves against modernism, so a `broader` edge would invert their own account of what they are, and a reader walking up from Minimalism would arrive at the thing Minimalism was made against.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "Rules that hold in every pass"; `modernism` cell, fourth `questions` entry.
+
+
+## D84 Getty AAT is closed by facet and not by vocabulary
+
+Decision: The AAT is recorded as having a parent layer for materials and techniques and none for styles and movements, rather than as open or closed as a whole.
+
+Came up because: Two passes reached opposite-looking conclusions about the same vocabulary. An earlier pass read 52 cell-level records and reported that the visual lane gets no parent layer from the AAT at all. The medium-axis run then used the AAT successfully to place media and technique cells. Both were right about what they read, and neither had measured the other half.
+
+Options: Take the earlier finding as settled and skip the queries here; take the medium-axis result as evidence the earlier finding was wrong; measure the half that was still unmeasured.
+
+Chose to measure because: carrying either finding across the boundary would have been an assumption dressed as a result, which is the failure this effort keeps finding. The AAT records for Dada, Surrealist, Constructivist, Cubist, Expressionist, Futurist, Fauve, Post-Impressionism, Impressionist, Arte Povera and Fluxus were fetched. Every one gives a guide term in angle brackets as its only broader concept: `<modern European fine arts styles and movements>`, `<modern Russian fine arts styles and movements>`, `<modern Italian styles and movements>`, `<modern French fine arts styles and movements>`, `<post-1945 fine arts styles and movements>`. Sorted by nation and by period, which is a shelving order and not a parent.
+
+The result is a property of the facet. Styles and Periods has no parent layer to offer this collection; the materials and techniques side does. A future pass should not spend these queries on a movement, and should not apply the closure to a technique.
+
+Where: `.agents/skills/encyclopedia/SKILL.md`, "Rules that hold in every pass"; `modernism` cell, last `questions` entry.

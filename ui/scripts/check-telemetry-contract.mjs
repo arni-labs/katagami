@@ -586,8 +586,16 @@ const required = [
     /trackServerEvent\("mcp_auth_challenge"/],
   ["all /mcp verbs go through the auth-challenge counter", mcp,
     /export \{ get as GET, trackedHandler as POST, trackedHandler as DELETE \}/],
+  // The rule is that this contract runs on every build, not that prebuild spells
+  // its filename. Naming the file was how the rule was written when prebuild held
+  // a hand-written list, and that list is what let an unregistered test file go
+  // unrun for months. prebuild now runs `scripts/run-tests.mjs`, which finds every
+  // `check-*.mjs` in this directory rather than being told which ones exist, fails
+  // on an empty match, and fails on a file it found and did not execute. So the
+  // chain that puts this check in every build is stronger than the name match it
+  // replaces, and `run-tests-registration.test.mjs` is what holds it.
   ["telemetry contract runs on every build (prebuild), not only npm test", pkg,
-    /"prebuild":[^\n]*check-telemetry-contract\.mjs/],
+    /"prebuild":\s*"node scripts\/run-tests\.mjs"/],
   // --- ARN-451: RUM ↔ account join ------------------------------------------
   ["/api/auth/me hands the browser the HASH, never a sub key", meRoute,
     /^(?![\s\S]*\bsub:)[\s\S]*user_hash: userHash/],

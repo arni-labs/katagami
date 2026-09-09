@@ -24,7 +24,7 @@ Enumerated from the code's registration points, not from the docs. Each row cite
 
 **Infra** - `infra/style-embed-service/` (FastAPI embedding service, its own Dockerfile), `infra/cloudflare/katagami-assets-worker/` (serves allow-listed R2 published prefixes at assets.katagami.ai), `infra/datadog/`.
 
-**Contract suites** - `ui/package.json` scripts (`test:gallery`, `test:shadcn-export`, `test:auth`, `test:tokens`, `test:contracts` covering 18 checks in `ui/scripts/`) and `katagami-curation/Makefile` `test-integration` (28 files in `katagami-curation/tests/`).
+**Contract suites** - `npm test` in `ui/`, which is `node scripts/run-tests.mjs`: it globs `ui/scripts/` and runs every `*.test.mjs` and every `check-*.mjs` it finds. There is no list to add a file to, and a new file is run because it exists. `katagami-curation/Makefile` `test-integration` covers 28 files in `katagami-curation/tests/`.
 
 ## Mapped
 

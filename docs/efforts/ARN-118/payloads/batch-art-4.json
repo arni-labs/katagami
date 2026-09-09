@@ -1,0 +1,74 @@
+{
+ "batch": "ART-4",
+ "approval": "The owner asked on 2026-09-09, reviewing the ART-3 report, for the archived `early-modernist-european-painting` row and the reason it was not reused to be named on the cell, so the next reader who finds it does not spend an hour on the same question.",
+ "allowedOperation": "Define private Draft EncyclopediaCell documents for batch ART-4 (Modernism questions), contract version 3: one added `questions` entry on an existing cell; no change of status, no links and no studies.",
+ "cells": [
+  {
+   "number": 1,
+   "name": "Modernism",
+   "id": "modernism",
+   "new": false,
+   "version": 3,
+   "baseHash": "30c69825492d1373a197c0fbec1efaf4afb779c5ce6511990d7c7458f04929ca",
+   "description": "Art that rejects the past as a model for the present. Tate names the principles: a rejection of history and of conservative values such as realistic depiction, innovation and experiment with form, tending to abstraction, and an emphasis on materials, techniques and processes. Modernist work draws attention to how it was made and what it was made from, and it gave up absolute originality for collage, reprise, rewriting, recapitulation and parody. Tate applies the term to a succession of movements that critics and historians have identified, from Courbet's realism to the abstraction of the 1960s, when Clement Greenberg's theory of modernist painting narrowed it and postmodernism formed against it.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "Tate defines modernism as a broad movement in Western art, architecture and design, and Wikipedia names the visual arts among its fields.",
+     "sourceIds": [
+      "tate-modernism",
+      "wp-modernism"
+     ]
+    },
+    {
+     "map": "writing",
+     "explanation": "Wikipedia's first sentence names literature among the fields the movement covers.",
+     "sourceIds": [
+      "wp-modernism"
+     ]
+    },
+    {
+     "map": "design",
+     "explanation": "Tate defines modernism as a broad movement in Western art, architecture and design.",
+     "sourceIds": [
+      "tate-modernism"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "tate-modernism",
+     "title": "Modernism — Tate art term",
+     "url": "https://www.tate.org.uk/art/art-terms/m/modernism"
+    },
+    {
+     "id": "wp-modernism",
+     "title": "Modernism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Modernism"
+    },
+    {
+     "id": "wd-q878985",
+     "title": "modernism (Q878985) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q878985"
+    }
+   ],
+   "broader": [],
+   "relations": [],
+   "questions": [
+    "Abstract art is a root and no source checked puts it here. Its own Wikipedia article, Tate's abstract art page and Wikidata all stop short of placing abstract art under modernism, and Wikidata files it under modern art instead. Tate's modernism page says only that the succession culminates in abstract art, which could mean that abstract art is inside modernism or that modernism ends where abstract art begins. Place it here once a source says abstract art is inside modernism.",
+    "Constructivism is a root because the only sentence in the sources checked says socialist realism began to oust modernism in the Soviet Union, which had previously endorsed Russian Futurism and Constructivism. That implies Constructivism is part of modernism without saying so.",
+    "This pass checked Impressionism, Post-Impressionism, Symbolism, Fluxus, Arte Povera, Gutai, CoBrA, Nouveau Réalisme and the School of Paris against their own pages, Tate, Wikidata and Getty AAT, and none of those sources places them under modernism. They stay roots.",
+    "Their own articles call Minimalism, Pop art, Conceptual art and Land art reactions against modernism, so none of them is a child here, even though the Modernism article lists Minimalism and Pop art among late twentieth-century modernist movements.",
+    "This cell is on the writing and design maps because its sources name literature, architecture and design, but the art pass placed every child so far. A writing pass and a design pass would each choose their own children.",
+    "Modernism is used both as a direction and as a name for a period of roughly 1860 to 1970. Which sense does a reader browsing this cell expect, and does the scope need to say which one it means?",
+    "Getty AAT has no concept for modernism as a parent. The records for Dada, Cubist, Surrealist, Constructivist, Expressionist, Futurist and Fauve each give a guide term in angle brackets as their only broader concept, a term that sorts by nation and period, so AAT contributes no children here.",
+    "An archived cell holds the id early-modernist-european-painting, and the encyclopedia skill's worked example still uses that id as Impressionism's parent. It was not reused here, because archive is final and an id may never be repointed at a different cell. This cell was minted at a fresh id."
+   ],
+   "manifestations": [],
+   "studies": []
+  }
+ ]
+}

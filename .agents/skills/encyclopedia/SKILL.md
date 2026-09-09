@@ -370,6 +370,17 @@ Rules that hold in every pass:
   linked to Realism through Wikidata's magic realism, where "realism" is the
   nineteenth-century movement rather than the modernist tendency Precisionism
   belongs to (D47).
+- **Getty AAT gives parents for techniques and not for movements, and the
+  difference is the facet.** The medium-axis pass found the AAT usable for
+  materials and techniques after an earlier pass had closed the whole vocabulary
+  on styles-facet evidence. Eleven movement records were then read, Dada,
+  Surrealist, Constructivist, Cubist, Expressionist, Futurist, Fauve,
+  Post-Impressionism, Impressionist, Arte Povera and Fluxus, and every one gives
+  a guide term in angle brackets as its only broader concept, sorted by nation
+  and period. Both halves are measured now: the styles-and-periods facet has no
+  parent layer to offer, and the materials-and-techniques facet does. Do not
+  spend the queries on a movement again, and do not apply the closure to
+  techniques (D84).
 - **Whose article makes the containment claim decides how strong it is.** A cell
   whose own page says what it belongs to is stating it about itself, and the link
   is firm: Cloisonnism opens "a style of post-Impressionist painting". A claim
@@ -379,6 +390,21 @@ Rules that hold in every pass:
   Neo-Impressionism never calls itself post-Impressionist. Chronology does not
   settle this either way, since a retrospective umbrella does not require its
   members to come after it. Found in the visual pass review.
+- **A list you can show to be wrong in part is not evidence in whole.** Where a
+  source's only support for a placement is membership in a list, check the other
+  members against their own pages. The Modernism article lists process art among
+  "late 20th-century modernist movements", and the same sentence lists minimalism
+  and pop art, whose own articles call them reactions against modernism. One
+  contradicted member is enough, because it shows the sentence is a survey of a
+  period and not a statement about what contains what, and once you know that
+  about a sentence you cannot use any of it. The check is cheap and it goes
+  before writing any link whose only support is a list (D82).
+- **A source that says the opposite is a different failure from a source that
+  says too little.** Minimalism, Pop art, Conceptual art and Land art each define
+  themselves against modernism on their own pages, so a `broader` link to
+  modernism would have inverted the claim instead of weakening it. A thin source
+  gives a weak link and the explanation can say so; a contrary source gives a
+  false one, and naming the doubt does not repair it (D83).
 - **A citation supports a claim only if the source makes it.** `cited` means the
   page carries the sentence, not that the page was fetched. Before you set
   `cited`, find the sentence in the fetched text and keep it; if you cannot find
@@ -390,6 +416,16 @@ Rules that hold in every pass:
   supports the claim. Three branches broke this in one night by three different
   routes, the sharpest being a cell that credited Faraday at the Royal
   Institution to a page containing none of those words.
+- **An explanation that names a vocabulary cites a source from that vocabulary.**
+  "The Artsy Art Genome lists it in its Styles and Movements family" is a claim
+  about Artsy, and citing a Wikipedia article for it cites nothing. This was
+  written on 123 art cells and not one of them carried an artsy.net source; the
+  words Styles and Movements appear in most Wikipedia articles, so the name check
+  scored 104 of the 123 as supported and the boilerplate spread unseen. The rule
+  is exact, because the vocabulary is the host of the URL, and the sweep now
+  checks it. An absence is the one legitimate exception and says so: Regulated
+  verse states that LCGFT has no heading for it and cites the page the name came
+  from instead.
 - Manifestations ride along: search `credits` across all record sets at every
   status and list what exists. Most new cells will have none on day one.
 
@@ -487,10 +523,30 @@ Autonomy is a change in when the human looks, never in what may be built.
   ```
 
   Reporting only, never a build gate. It prints its own false-positive rate and
-  what it does not check, which includes every explanation field: it reads the
-  description alone, so it would have missed the manifestation defect that
-  produced it. It also checks each parent link cited to a Library of Congress
-  record against that record's own broader authority, which is the crisper half.
+  what it does not check. It scores the description alone and then every sentence
+  a reader sees, each explanation against the sources that explanation itself
+  cites. It checks each parent link cited to a Library of Congress record against
+  that record's own broader authority, and each explanation naming a vocabulary
+  against the host of what it cites, which are the two exact halves.
+
+  Read the field a flag came from before repairing it. A `questions` entry carries
+  no citation and usually names another cell or a decision a pass made, which no
+  external page will ever carry; a `manifestations` explanation is mostly a
+  statement about the Katagami record, so the record is read alongside the cited
+  sources. Neither is exempt, because the defect that produced this script lived
+  in a manifestation explanation, but neither reads like a scope-text hit either.
+
+  Repair by cutting the claim. Looking for a source that fits prose already
+  written produces the same defect with better paperwork, and it passes every
+  check here. Where the cell would then say too little, leave a `questions` entry
+  naming what a better source would let it say.
+
+- **Placement**: which records no cell holds. `encyclopedia-integrity.mjs` reports
+  it per set, and per set is how to read it: the lanes are at different stages, so
+  a combined total describes none of them. On 2026-09-09 WritingStyles had 1
+  unplaced of 24 in scope and DesignLanguages had 784 of 881. Placed means a live
+  cell names the record; in scope excludes Archived, so retiring a record never
+  grows the number. `--unplaced` names every one.
 
 - **Gap watch**: maps with no cells, cells with no manifestations, recollected
   cells that could now be cited, clusters of made work with no cell over them,
@@ -534,6 +590,54 @@ Autonomy is a change in when the human looks, never in what may be built.
 - `error` records the last validation run, not the current document: a
   successful run sets it empty, a failed one fills it, and `Define` leaves it
   alone. Read it with the attestation pair.
+
+## Placing what Katagami makes
+
+Anything the commons gains — a writing style, an art style, a design language, a
+palette — belongs in the encyclopedia, and the encyclopedia is where a reader
+finds out what it is an instance of. A record nobody placed is a record nobody
+can reach except by knowing its name already.
+
+**Placement is a periodic pass, not a step in creation.** A run that mints a
+record does not have to stop and find it a home, and should not: finding the
+right cell is judgement work, and a maker in the middle of making is the worst
+person to do it quickly. The placement pass runs afterwards, over everything
+unplaced, on its own schedule.
+
+What the pass does, in order:
+
+1. Read every record in the four sets and every live cell. A record is placed
+   when some cell's `manifestations` names it, keyed on the entity set as well
+   as the id, since ids are only unique within a set.
+2. For each unplaced record, find the cell whose scope its credit actually
+   names. The rule is the same one that governs everything here: what the
+   record's own credit says, never what its name suggests.
+3. **Where no cell fits, mint one** — from a source, under the same discipline
+   as any other cell, cited and attested. Mint *from* a source; never go looking
+   for a source that would justify a placement you have already decided on. That
+   is the citation defect in another costume, and it passes every check here,
+   because the resulting cell is cited and the resulting link resolves. The
+   difference is a question you could have answered no to: *is this tradition
+   named in the literature* is research, and *find me something that supports
+   putting the record here* is not. A record that has no home is usually
+   telling you the collection is missing a direction rather than that the record
+   is wrong. Where the honest answer is that the record does not belong in the
+   encyclopedia at all, say so in the pass's report rather than forcing it.
+   And where a record cannot be placed, **write the question onto the cell a
+   reader would look at** rather than only into a report. A cell carrying a
+   `questions` entry that names the unplaced record, what its own credits claim,
+   and what a source would have to say to settle it, is how the gap survives the
+   run that found it. An ancestor is not a manifestation: a record that a cell's
+   own sources call a precursor expresses the thing that came after only if
+   something cited says so.
+4. Where the record's credit names something the collection deliberately
+   declined, leave it unplaced and record why. An unplaced record with a stated
+   reason is a finding; an unplaced record with no reason is a gap.
+
+The pass reports what it placed, what it minted, and what it left alone with the
+reason. Its count of unplaced records is the number to watch: it should fall
+after each population run and rise when one lands, and a run that leaves it
+unchanged has either placed nothing or measured nothing.
 
 ## Two runtime defects you must not trip over
 

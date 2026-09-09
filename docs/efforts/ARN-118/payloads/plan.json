@@ -1,0 +1,676 @@
+{
+  "newCells": [
+    {
+      "id": "abstract-art",
+      "name": "Abstract art",
+      "description": "Painting and sculpture that does not describe a visible subject, built from form, colour, line and material alone. It became a stated programme in Europe around 1910, when Kandinsky, Malevich and Mondrian each argued that a picture holds together with no thing in it. The argument has been reopened in every generation since, under a new name each time.",
+      "maps": [
+        {
+          "map": "art",
+          "explanation": "A direction in painting and sculpture, argued out in manifestos and exhibitions from about 1910.",
+          "sourceIds": [
+            "wp-abstract-art"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "wp-abstract-art",
+          "title": "Abstract art — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Abstract_art"
+        },
+        {
+          "id": "wd-q128115",
+          "title": "abstract art (Q128115) — Wikidata",
+          "url": "https://www.wikidata.org/wiki/Q128115"
+        }
+      ],
+      "questions": [
+        "Impressionism, Cubism, Futurism and Surrealism sit above this cell in most histories, under a Modernism cell that does not exist here. Whether to make one is the owner's call."
+      ]
+    },
+    {
+      "id": "performance-art",
+      "name": "Performance art",
+      "description": "Work in which the artist is present and what they do is the material, made in front of an audience or recorded for one. It gathered as a named practice in the 1960s, and its terms are time, space, the body, the artist's presence, and the relation to the public. Usually only a photograph or a film is left afterwards, and how much of the work that carries is argued about inside the practice.",
+      "maps": [
+        {
+          "map": "art",
+          "explanation": "A practice in the visual arts with its own literature, museums and canon since the 1960s.",
+          "sourceIds": [
+            "wp-performance-art"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "wp-performance-art",
+          "title": "Performance art — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Performance_art"
+        },
+        {
+          "id": "wd-q213156",
+          "title": "performance art (Q213156) — Wikidata",
+          "url": "https://www.wikidata.org/wiki/Q213156"
+        }
+      ],
+      "questions": [
+        "Fluxus, Gutai and Body Art are all made by doing something in front of people, and all three are left as roots or placed elsewhere; whether any of them sits under this cell needs a reading of their own sources."
+      ]
+    },
+    {
+      "id": "information-design",
+      "name": "Information design",
+      "description": "Drawing made to explain something: a quantity, a network, an assembly, a route. The work is in choosing what to leave out, what to hold constant, and what the reader is meant to compare, so the drawing answers a question. Otto Neurath's pictorial statistics and Harry Beck's diagram of the London Underground are the cases it is taught from.",
+      "maps": [
+        {
+          "map": "art",
+          "explanation": "A drawing practice with a canon and a taught method, holding the pictorial statistics and diagram cells.",
+          "sourceIds": [
+            "wp-information-design"
+          ]
+        },
+        {
+          "map": "design",
+          "explanation": "Taught inside graphic design and applied to signage, timetables and instructions.",
+          "sourceIds": [
+            "wp-information-design"
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "id": "wp-information-design",
+          "title": "Information design — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Information_design"
+        },
+        {
+          "id": "wp-data-visualization",
+          "title": "Data and information visualization — Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Data_and_information_visualization"
+        }
+      ],
+      "questions": [
+        "Technical illustration is placed here because it draws to explain, though its home discipline is engineering documentation. The owner may prefer it as a root."
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "child": "geometric-abstraction",
+      "parent": "abstract-art",
+      "explanation": "A form of abstract art based on geometric elements, usually in non-illusionistic space.",
+      "sourceIds": [
+        "wp-geometric-abstraction"
+      ]
+    },
+    {
+      "child": "art-informel",
+      "parent": "abstract-art",
+      "explanation": "Michel Tapié's label covers the abstract and gestural tendencies that developed in France and the rest of Europe during the war.",
+      "sourceIds": [
+        "wp-informalism"
+      ]
+    },
+    {
+      "child": "abstraction-creation",
+      "parent": "abstract-art",
+      "explanation": "Van Doesburg, Herbin, Hélion and Vantongerloo started the association to keep abstract art going after painting had turned back to representation in the 1920s.",
+      "sourceIds": [
+        "wp-abstraction-creation"
+      ]
+    },
+    {
+      "child": "dansaekhwa",
+      "parent": "abstract-art",
+      "explanation": "Korean criticism places the grouping inside its argument over how to write a history of abstract art there.",
+      "sourceIds": [
+        "wp-dansaekhwa"
+      ]
+    },
+    {
+      "child": "synchromism",
+      "parent": "abstract-art",
+      "explanation": "The synchromies were among the first abstract paintings made by American artists.",
+      "sourceIds": [
+        "wp-synchromism"
+      ]
+    },
+    {
+      "child": "abstract-expressionism",
+      "parent": "abstract-art",
+      "explanation": "Recorded on Wikidata as a kind of abstract art, and both its gestural and its field manner drop the described subject.",
+      "sourceIds": [
+        "wd-q177725"
+      ]
+    },
+    {
+      "child": "post-painterly-abstraction",
+      "parent": "abstract-art",
+      "explanation": "Greenberg's term names abstract painting that had dropped the loaded gesture for flat colour, so it names a strand inside abstraction.",
+      "sourceIds": [
+        "wp-post-painterly-abstraction"
+      ]
+    },
+    {
+      "child": "concrete-art",
+      "parent": "geometric-abstraction",
+      "explanation": "The movement rests on a strong emphasis on geometrical abstraction, in van Doesburg's formulation and in Max Bill's.",
+      "sourceIds": [
+        "wp-concrete-art"
+      ]
+    },
+    {
+      "child": "suprematism",
+      "parent": "geometric-abstraction",
+      "explanation": "Malevich built it from circles, squares and rectangles in a limited palette, which is the geometric case of abstraction.",
+      "sourceIds": [
+        "wp-suprematism"
+      ]
+    },
+    {
+      "child": "de-stijl",
+      "parent": "geometric-abstraction",
+      "explanation": "The group used only straight horizontal and vertical lines and rectangular forms, which is the route to abstraction its own account describes.",
+      "sourceIds": [
+        "wp-de-stijl"
+      ]
+    },
+    {
+      "child": "op-art",
+      "parent": "geometric-abstraction",
+      "explanation": "Its own article defines the term as a form of abstract art working through manipulated geometrical patterns.",
+      "sourceIds": [
+        "wp-op-art"
+      ]
+    },
+    {
+      "child": "neo-concrete-movement",
+      "parent": "concrete-art",
+      "explanation": "The Brazilian group split off from the Concrete art movement, rejecting its rationalism while keeping its vocabulary.",
+      "sourceIds": [
+        "wp-neo-concrete-movement"
+      ]
+    },
+    {
+      "child": "color-field-painting",
+      "parent": "abstract-expressionism",
+      "explanation": "Closely related to Abstract Expressionism, with many of the first proponents among the pioneering Abstract Expressionists.",
+      "sourceIds": [
+        "wp-color-field"
+      ]
+    },
+    {
+      "child": "washington-color-school",
+      "parent": "abstract-expressionism",
+      "explanation": "The movement was built of Abstract Expressionist artists, with Morris Louis and Kenneth Noland at its head.",
+      "sourceIds": [
+        "wp-washington-color-school"
+      ]
+    },
+    {
+      "child": "bay-area-figurative-movement",
+      "parent": "abstract-expressionism",
+      "explanation": "The painters trained in Abstract Expressionism and kept its handling when they returned to the figure, which is why the result is called a hybrid.",
+      "sourceIds": [
+        "wp-bay-area-figurative-movement"
+      ]
+    },
+    {
+      "child": "american-impressionism",
+      "parent": "impressionism",
+      "explanation": "Recorded on Wikidata as a kind of Impressionism, and described as related to the European movement and practised in the United States.",
+      "sourceIds": [
+        "wd-q2477787",
+        "wp-american-impressionism"
+      ]
+    },
+    {
+      "child": "neo-impressionism",
+      "parent": "post-impressionism",
+      "explanation": "The Post-Impressionism article lists Neo-Impressionism among what the term encompasses and names Seurat as one of its four principal artists. Neo-Impressionism's own article never calls itself post-Impressionist, so the claim is the umbrella's and not the movement's.",
+      "sourceIds": [
+        "wp-post-impressionism",
+        "wp-neo-impressionism"
+      ],
+      "flag": "umbrella-claim-only"
+    },
+    {
+      "child": "cloisonnism",
+      "parent": "post-impressionism",
+      "explanation": "Its own article opens \"Cloisonnism is a style of post-Impressionist painting with bold and flat forms separated by dark contours\", so the containment is the cell's own claim about itself.",
+      "sourceIds": [
+        "wp-cloisonnism"
+      ]
+    },
+    {
+      "child": "nabis",
+      "parent": "post-impressionism",
+      "explanation": "The account of Post-Impressionism names Les Nabis among the groups it covers.",
+      "sourceIds": [
+        "wp-post-impressionism"
+      ]
+    },
+    {
+      "child": "pointillism",
+      "parent": "neo-impressionism",
+      "explanation": "Recorded on Wikidata as a kind of Neo-Impressionism, and it is the dotted handling at the centre of that movement.",
+      "sourceIds": [
+        "wd-q200034",
+        "wp-pointillism"
+      ]
+    },
+    {
+      "child": "barbizon-school",
+      "parent": "realism-art-movement",
+      "explanation": "The painters are described as part of an art movement advancing Realism, working inside the Romanticism then dominant.",
+      "sourceIds": [
+        "wp-barbizon"
+      ]
+    },
+    {
+      "child": "ashcan-school",
+      "parent": "american-realism",
+      "explanation": "American realism's own account treats the Ashcan painters as its core group in painting and Robert Henri as an American realist.",
+      "sourceIds": [
+        "wp-american-realism"
+      ]
+    },
+    {
+      "child": "american-regionalism",
+      "parent": "american-realism",
+      "explanation": "Its own article opens by calling it an American realist modern art movement.",
+      "sourceIds": [
+        "wp-regionalism-art"
+      ]
+    },
+    {
+      "child": "mexican-muralism",
+      "parent": "social-realism",
+      "explanation": "Recorded on Wikidata as a kind of social realism, and social realism's own account treats the Mexican muralists as an important component of it.",
+      "sourceIds": [
+        "wd-q938864",
+        "wp-social-realism"
+      ]
+    },
+    {
+      "child": "early-renaissance",
+      "parent": "renaissance-art",
+      "explanation": "Italian Renaissance painting divides into the Proto-Renaissance, the Early Renaissance, the High Renaissance and Mannerism.",
+      "sourceIds": [
+        "wp-early-renaissance",
+        "wp-italian-renaissance-painting"
+      ]
+    },
+    {
+      "child": "high-renaissance",
+      "parent": "renaissance-art",
+      "explanation": "A short period of exceptional production within the Italian Renaissance.",
+      "sourceIds": [
+        "wp-high-renaissance"
+      ]
+    },
+    {
+      "child": "northern-renaissance",
+      "parent": "renaissance-art",
+      "explanation": "The Renaissance as it occurred north of the Alps.",
+      "sourceIds": [
+        "wp-northern-renaissance"
+      ]
+    },
+    {
+      "child": "mannerism",
+      "parent": "renaissance-art",
+      "explanation": "Counted as the last of the four periods of Italian Renaissance painting, emerging out of the High Renaissance around 1520.",
+      "sourceIds": [
+        "wp-mannerism",
+        "wp-italian-renaissance-painting"
+      ]
+    },
+    {
+      "child": "venetian-painting",
+      "parent": "renaissance-art",
+      "explanation": "The Venetian school is treated as a major force in Italian Renaissance painting.",
+      "sourceIds": [
+        "wp-venetian-painting"
+      ],
+      "flag": "renaissance-period-footing"
+    },
+    {
+      "child": "sfumato",
+      "parent": "renaissance-art",
+      "explanation": "One of the canonical painting modes of the Renaissance, one of four available to Italian High Renaissance painters.",
+      "sourceIds": [
+        "wp-sfumato"
+      ],
+      "flag": "renaissance-period-footing"
+    },
+    {
+      "child": "gothic-art",
+      "parent": "medieval-art",
+      "explanation": "A style of medieval art, developed out of Romanesque art in twelfth-century northern France.",
+      "sourceIds": [
+        "wp-gothic-art",
+        "wd-q46825"
+      ]
+    },
+    {
+      "child": "bestiaries",
+      "parent": "medieval-art",
+      "explanation": "The illuminated bestiary is a medieval book form, and its pictures are among the most copied images of the period in northern Europe.",
+      "sourceIds": [
+        "wp-bestiary"
+      ]
+    },
+    {
+      "child": "rococo",
+      "parent": "baroque",
+      "explanation": "The final expression of the Baroque movement, also called Late Baroque.",
+      "sourceIds": [
+        "wp-rococo"
+      ]
+    },
+    {
+      "child": "grand-manner",
+      "parent": "academic-art",
+      "explanation": "Reynolds set the doctrine out in the Discourses he delivered at the Royal Academy, so it is the academies' idealising manner in portraiture.",
+      "sourceIds": [
+        "wp-grand-manner"
+      ]
+    },
+    {
+      "child": "hudson-river-school",
+      "parent": "romanticism",
+      "explanation": "Recorded on Wikidata as a kind of Romanticism, and the painters' vision is described as influenced by it.",
+      "sourceIds": [
+        "wd-q943853",
+        "wp-hudson-river-school"
+      ]
+    },
+    {
+      "child": "neo-romanticism",
+      "parent": "romanticism",
+      "explanation": "The movements it covers came after Romanticism and took their material from it.",
+      "sourceIds": [
+        "wp-neo-romanticism"
+      ]
+    },
+    {
+      "child": "indianism",
+      "parent": "romanticism",
+      "explanation": "Recorded on Wikidata as a kind of Brazilian Romanticism, and it ran at the height of Romanticism in Brazil.",
+      "sourceIds": [
+        "wd-q2368408"
+      ]
+    },
+    {
+      "child": "luminism",
+      "parent": "hudson-river-school",
+      "explanation": "Recorded on Wikidata as part of the Hudson River School, whose second-generation painters worked in the manner.",
+      "sourceIds": [
+        "wd-q3272569"
+      ]
+    },
+    {
+      "child": "orphism-art",
+      "parent": "cubism",
+      "explanation": "An offshoot of Cubism, whose alternative name is Orphic Cubism.",
+      "sourceIds": [
+        "wp-orphism-art",
+        "wd-q519443"
+      ]
+    },
+    {
+      "child": "purism",
+      "parent": "cubism",
+      "explanation": "Recorded on Wikidata as part of Cubism, and Ozenfant and Jeanneret set out their doctrine in an essay called After Cubism.",
+      "sourceIds": [
+        "wd-q478774",
+        "wp-purism"
+      ]
+    },
+    {
+      "child": "neo-dada",
+      "parent": "dada",
+      "explanation": "The work shares method or intent with earlier Dada, taken up again after the documentary publications of the 1950s.",
+      "sourceIds": [
+        "wp-neo-dada"
+      ]
+    },
+    {
+      "child": "neo-expressionism",
+      "parent": "expressionism",
+      "explanation": "Overtly inspired by the German Expressionist painters whose manner it revives.",
+      "sourceIds": [
+        "wp-neo-expressionism"
+      ]
+    },
+    {
+      "child": "transavanguardia",
+      "parent": "neo-expressionism",
+      "explanation": "Its own article opens by calling it the Italian version of Neo-Expressionism.",
+      "sourceIds": [
+        "wp-transavantgarde"
+      ]
+    },
+    {
+      "child": "junge-wilde",
+      "parent": "neo-expressionism",
+      "explanation": "The account of Neo-Expressionism gives Junge Wilde as one of the names its painters were called.",
+      "sourceIds": [
+        "wp-neo-expressionism-parent"
+      ]
+    },
+    {
+      "child": "die-brucke",
+      "parent": "german-expressionism",
+      "explanation": "A group of German Expressionist artists formed in Dresden in 1905. The cell already links to Expressionism, and this places it with the German Expressionist painting it made.",
+      "sourceIds": [
+        "wp-die-brucke"
+      ]
+    },
+    {
+      "child": "der-blaue-reiter",
+      "parent": "german-expressionism",
+      "explanation": "The work of the affiliated artists is assigned to German Expressionism.",
+      "sourceIds": [
+        "wp-der-blaue-reiter"
+      ]
+    },
+    {
+      "child": "postminimalism",
+      "parent": "minimalism",
+      "explanation": "Pincus-Witten coined the term for work influenced by Minimalism, or attempting to develop and go beyond it.",
+      "sourceIds": [
+        "wp-postminimalism"
+      ]
+    },
+    {
+      "child": "body-art",
+      "parent": "conceptual-art",
+      "explanation": "It emerged from the context of Conceptual art during the 1970s.",
+      "sourceIds": [
+        "wp-body-art"
+      ]
+    },
+    {
+      "child": "group-material",
+      "parent": "conceptual-art",
+      "explanation": "A group of conceptual artists running an exhibition space on the Lower East Side.",
+      "sourceIds": [
+        "wp-group-material"
+      ]
+    },
+    {
+      "child": "happenings",
+      "parent": "performance-art",
+      "explanation": "A happening is a performance, event or situation, usually as performance art.",
+      "sourceIds": [
+        "wp-happening"
+      ]
+    },
+    {
+      "child": "viennese-actionism",
+      "parent": "performance-art",
+      "explanation": "Recorded on Wikidata as part of performance art, and placed among the 1960s efforts that developed performance, Fluxus, happening and body art.",
+      "sourceIds": [
+        "wd-q695830",
+        "wp-viennese-actionism"
+      ]
+    },
+    {
+      "child": "pixel-art",
+      "parent": "computer-art",
+      "explanation": "A form of digital art drawn with graphical software, where the artist places each pixel.",
+      "sourceIds": [
+        "wp-pixel-art"
+      ]
+    },
+    {
+      "child": "post-internet",
+      "parent": "net-art",
+      "explanation": "The movement grew out of earlier internet art.",
+      "sourceIds": [
+        "wp-post-internet"
+      ]
+    },
+    {
+      "child": "shunga",
+      "parent": "ukiyo-e",
+      "explanation": "A subset of ukiyo-e, made by nearly every major print artist of the Edo period.",
+      "sourceIds": [
+        "wp-shunga",
+        "wd-q1048478"
+      ]
+    },
+    {
+      "child": "shin-hanga",
+      "parent": "ukiyo-e",
+      "explanation": "The movement revived ukiyo-e and kept its division of labour between artist, carver, printer and publisher.",
+      "sourceIds": [
+        "wp-shin-hanga"
+      ]
+    },
+    {
+      "child": "isotype",
+      "parent": "information-design",
+      "explanation": "Neurath and Arntz built the picture language to show social and economic facts under a fixed grammar, which is what this practice does.",
+      "sourceIds": [
+        "wp-isotype"
+      ]
+    },
+    {
+      "child": "transit-map",
+      "parent": "information-design",
+      "explanation": "The diagram drops geography to preserve the order of stops and the interchanges, so it is drawn around the rider's question.",
+      "sourceIds": [
+        "wp-transit-map"
+      ]
+    },
+    {
+      "child": "technical-illustration",
+      "parent": "information-design",
+      "explanation": "The drawing is built so someone can assemble, service or understand the object, which is the explanatory purpose this practice is defined by.",
+      "sourceIds": [
+        "wp-technical-illustration"
+      ]
+    },
+    {
+      "child": "precisionism",
+      "parent": "american-modernism",
+      "explanation": "A modernist art movement that emerged in the United States after the First World War.",
+      "sourceIds": [
+        "wp-precisionism"
+      ]
+    },
+    {
+      "child": "chicanafuturism",
+      "parent": "latino-futurism",
+      "explanation": "Described as part of the larger genre of Latino futurisms.",
+      "sourceIds": [
+        "wp-chicanafuturism"
+      ]
+    },
+    {
+      "child": "dusseldorf-school-of-photography",
+      "parent": "neue-sachlichkeit",
+      "explanation": "Critics place the Bechers' approach in the lineage of the Neue Sachlichkeit movement of the 1920s, and their typologies are the model the class worked from.",
+      "sourceIds": [
+        "wp-dusseldorf-school-of-photography"
+      ],
+      "flag": "attributed-lineage"
+    }
+  ],
+  "addSources": {
+    "neo-impressionism": [
+      {
+        "id": "wp-post-impressionism",
+        "title": "Post-Impressionism — Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Post-Impressionism"
+      }
+    ],
+    "nabis": [
+      {
+        "id": "wp-post-impressionism",
+        "title": "Post-Impressionism — Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Post-Impressionism"
+      }
+    ],
+    "ashcan-school": [
+      {
+        "id": "wp-american-realism",
+        "title": "American realism — Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/American_realism"
+      }
+    ],
+    "mexican-muralism": [
+      {
+        "id": "wp-social-realism",
+        "title": "Social realism — Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Social_realism"
+      }
+    ],
+    "junge-wilde": [
+      {
+        "id": "wp-neo-expressionism-parent",
+        "title": "Neo-expressionism — Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Neo-expressionism"
+      }
+    ],
+    "early-renaissance": [
+      {
+        "id": "wp-italian-renaissance-painting",
+        "title": "Italian Renaissance painting — Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Italian_Renaissance_painting"
+      }
+    ],
+    "mannerism": [
+      {
+        "id": "wp-italian-renaissance-painting",
+        "title": "Italian Renaissance painting — Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Italian_Renaissance_painting"
+      }
+    ],
+    "post-painterly-abstraction": [
+      {
+        "id": "wp-post-painterly-abstraction",
+        "title": "Post-painterly abstraction — Wikipedia",
+        "url": "https://en.wikipedia.org/wiki/Post-painterly_abstraction"
+      }
+    ]
+  },
+  "drops": {
+    "die-brucke": [
+      "expressionism"
+    ],
+    "ashcan-school": [
+      "realism-art-movement"
+    ],
+    "concrete-art": [
+      "abstract-art"
+    ],
+    "precisionism": [
+      "realism-art-movement"
+    ]
+  }
+}

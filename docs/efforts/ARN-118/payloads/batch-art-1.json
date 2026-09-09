@@ -1,0 +1,642 @@
+{
+ "batch": "ART-1",
+ "approval": "Overnight run authorised by the owner on 2026-09-09 (OVERNIGHT.md, decision D40): nest the visual map on parents read from each cell own Wikipedia and Wikidata sources. Draft only; every mint numbered in the morning report.",
+ "allowedOperation": "Define private Draft EncyclopediaCell documents for batch ART-1 (visual-map nesting), contract version 3: broader links, the sources those links cite, and the new parent cells the links land on; no change of status and no studies.",
+ "cells": [
+  {
+   "number": 1,
+   "name": "Performance art",
+   "id": "performance-art",
+   "new": true,
+   "version": 3,
+   "description": "Work in which the artist is present and what they do is the material, made in front of an audience or recorded for one. It gathered as a named practice in the 1960s, and its terms are time, space, the body, the artist's presence, and the relation to the public. Usually only a photograph or a film is left afterwards, and how much of the work that carries is argued about inside the practice.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A practice in the visual arts with its own literature, museums and canon since the 1960s.",
+     "sourceIds": [
+      "wp-performance-art"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-performance-art",
+     "title": "Performance art — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Performance_art"
+    },
+    {
+     "id": "wd-q213156",
+     "title": "performance art (Q213156) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q213156"
+    }
+   ],
+   "broader": [],
+   "relations": [],
+   "questions": [
+    "Fluxus, Gutai and Body Art are all made by doing something in front of people, and all three are left as roots or placed elsewhere; whether any of them sits under this cell needs a reading of their own sources."
+   ],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 2,
+   "name": "Information design",
+   "id": "information-design",
+   "new": true,
+   "version": 3,
+   "description": "Drawing made to explain something: a quantity, a network, an assembly, a route. The work is in choosing what to leave out, what to hold constant, and what the reader is meant to compare, so the drawing answers a question. Otto Neurath's pictorial statistics and Harry Beck's diagram of the London Underground are the cases it is taught from.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A drawing practice with a canon and a taught method, holding the pictorial statistics and diagram cells.",
+     "sourceIds": [
+      "wp-information-design"
+     ]
+    },
+    {
+     "map": "design",
+     "explanation": "Taught inside graphic design and applied to signage, timetables and instructions.",
+     "sourceIds": [
+      "wp-information-design"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-information-design",
+     "title": "Information design — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Information_design"
+    },
+    {
+     "id": "wp-data-visualization",
+     "title": "Data and information visualization — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Data_and_information_visualization"
+    }
+   ],
+   "broader": [],
+   "relations": [],
+   "questions": [
+    "Technical illustration is placed here because it draws to explain, though its home discipline is engineering documentation. The owner may prefer it as a root."
+   ],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 3,
+   "name": "Happenings",
+   "id": "happenings",
+   "new": false,
+   "version": 3,
+   "baseHash": "7dc0100fee50c13e2f902e8c71ac9388b2ee2a37df471cc44598a6f0e5f2450c",
+   "description": "Loosely scored events performed for a small audience, often in a non-art space, mixing action, objects, sound and the audience's own movement. Allan Kaprow used the word in 1959 and made the form a proposition about art that cannot be collected. Their documentation is partial by nature, which is part of their history.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-happening",
+      "wd-q108874"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-happening",
+     "title": "Happening — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Happening"
+    },
+    {
+     "id": "wd-q108874",
+     "title": "happening (Q108874) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q108874"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "performance-art",
+     "explanation": "A happening is a performance, event or situation, usually as performance art.",
+     "sourceIds": [
+      "wp-happening"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 4,
+   "name": "Viennese Actionism",
+   "id": "viennese-actionism",
+   "new": false,
+   "version": 3,
+   "baseHash": "f614185531ca2b0893e3ee4b8db148b7aa3b48b469275e29d78454a9cab495c3",
+   "description": "A short-lived Austrian movement of the 1960s and early 1970s in which Nitsch, Brus, Mühl and Schwarzkogler staged violent ritual actions using blood, animal carcasses and their own bodies. It works alongside performance, Fluxus and body art, and it goes further into taboo than any of them. Several actions were prosecuted, and the confrontation with Austrian post-war respectability was the point.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts. The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it.",
+     "sourceIds": [
+      "wp-viennese-actionism",
+      "wd-q695830",
+      "aat-300047933"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-viennese-actionism",
+     "title": "Viennese Actionism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Viennese_Actionism"
+    },
+    {
+     "id": "wd-q695830",
+     "title": "Viennese Actionism (Q695830) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q695830"
+    },
+    {
+     "id": "aat-300047933",
+     "title": "Viennese Actionism — Getty Art & Architecture Thesaurus 300047933",
+     "url": "https://vocab.getty.edu/aat/300047933"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "performance-art",
+     "explanation": "Recorded on Wikidata as part of performance art, and placed among the 1960s efforts that developed performance, Fluxus, happening and body art.",
+     "sourceIds": [
+      "wd-q695830",
+      "wp-viennese-actionism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 5,
+   "name": "Isotype",
+   "id": "isotype",
+   "new": false,
+   "version": 3,
+   "baseHash": "5dc26581dbd6bae22f0b96f847fed1227d980d47825fe6635bbcff7448d3d3a8",
+   "description": "The picture language developed by Otto Neurath and Gerd Arntz from the 1920s for showing social and economic facts. Quantity is shown by repeating a countable pictogram rather than by scaling one, the symbols are cut to a fixed geometric grammar, and colour and layout are ruled by the comparison being made.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A designed symbol system with a documented body of published charts.",
+     "sourceIds": [
+      "wp-isotype",
+      "wd-isotype"
+     ]
+    },
+    {
+     "map": "design",
+     "explanation": "It is the origin of the modern pictogram set, and design languages take their symbol grammar from it.",
+     "sourceIds": [
+      "wp-isotype"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-isotype",
+     "title": "Isotype (picture language) — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Isotype_(picture_language)"
+    },
+    {
+     "id": "wd-isotype",
+     "title": "Isotype — Wikidata Q735209",
+     "url": "https://www.wikidata.org/wiki/Q735209"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "information-design",
+     "explanation": "Neurath and Arntz built the picture language to show social and economic facts under a fixed grammar, which is what this practice does.",
+     "sourceIds": [
+      "wp-isotype"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [
+    "Getty AAT has no concept for Isotype; the cell cites Wikipedia and Wikidata."
+   ],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ef7e3-c177-70d3-917c-012381db1aa5",
+     "explanation": "The record's credits name \"Isotype pictogram systems\" (Published).",
+     "sourceIds": [
+      "wp-isotype"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f9a3b-47f5-7143-bab1-b1c8804f139b",
+     "explanation": "The record's credits name \"Isotype picture-language\" (Draft).",
+     "sourceIds": [
+      "wp-isotype"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019efaad-7849-7591-98d4-f757047baf79",
+     "explanation": "The record's credits name \"Isotype (Otto Neurath, Gerd Arntz)\" (Published).",
+     "sourceIds": [
+      "wp-isotype"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f9a45-807c-7602-bc76-8925defbc842",
+     "explanation": "The record's credits name \"Isotype pictogram system\" (Draft).",
+     "sourceIds": [
+      "wp-isotype"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019f9a45-834f-77b2-9c0b-9b3608cbb8f5",
+     "explanation": "The record's credits name \"Isotype pictogram system\" (UnderReview).",
+     "sourceIds": [
+      "wp-isotype"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019f9a3b-4a30-72e0-8521-cb51f092e412",
+     "explanation": "The record's credits name \"Isotype picture-language\" (UnderReview).",
+     "sourceIds": [
+      "wp-isotype"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 6,
+   "name": "Transit map",
+   "id": "transit-map",
+   "new": false,
+   "version": 3,
+   "baseHash": "61824a716ab8975b75c2174b72d297f664d70d95b062957bfea317ce10b54689",
+   "description": "The diagram of a transport network drawn for a rider. Geography is abandoned, lines run at fixed angles, stations are spaced evenly, and interchanges get a symbol of their own, so the drawing preserves only the order of stops and where lines meet.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A diagrammatic tradition with a documented history and a large published body of work.",
+     "sourceIds": [
+      "wp-transit-map",
+      "wd-transit-map"
+     ]
+    },
+    {
+     "map": "design",
+     "explanation": "It is an information design practice, and design languages take its line grammar and node conventions from it.",
+     "sourceIds": [
+      "wp-transit-map"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-transit-map",
+     "title": "Transit map — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Transit_map"
+    },
+    {
+     "id": "wd-transit-map",
+     "title": "transit map — Wikidata Q1826720",
+     "url": "https://www.wikidata.org/wiki/Q1826720"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "information-design",
+     "explanation": "The diagram drops geography to preserve the order of stops and the interchanges, so it is drawn around the rider's question.",
+     "sourceIds": [
+      "wp-transit-map"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [
+    "Getty AAT has no concept for this; the cell cites Wikipedia and Wikidata."
+   ],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f9a45-807c-7602-bc76-8925defbc842",
+     "explanation": "The record's credits name \"Modernist transit cartography\" (Draft).",
+     "sourceIds": [
+      "wp-transit-map"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a03f5a-fb94-72c2-b4bb-f6983c03b605",
+     "explanation": "The record's credits name \"Diagrammatic transit cartography\" (Published).",
+     "sourceIds": [
+      "wp-transit-map"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019f9a45-834f-77b2-9c0b-9b3608cbb8f5",
+     "explanation": "The record's credits name \"Modernist transit cartography\" (UnderReview).",
+     "sourceIds": [
+      "wp-transit-map"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 7,
+   "name": "Technical illustration",
+   "id": "technical-illustration",
+   "new": false,
+   "version": 3,
+   "baseHash": "79d085ce98c2464d81db249dbd5e7c067305f1042888ca8b7a8153462ae23313",
+   "description": "Drawing a made object so that someone can build, service or understand it. Views are orthographic or axonometric, line weight shows the hierarchy, parts are pulled apart along their assembly axes, and callouts and section cuts label the parts and open the interior. Patent drawings, service manuals and cutaways are its published body of work.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "An illustrative tradition with conventions of its own and a large published body of work.",
+     "sourceIds": [
+      "wp-technical-illustration",
+      "aat-technical-illustration"
+     ]
+    },
+    {
+     "map": "design",
+     "explanation": "Design languages take its line hierarchy, callout grammar and drafting conventions from it.",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-technical-illustration",
+     "title": "Technical illustration — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Technical_illustration"
+    },
+    {
+     "id": "aat-technical-illustration",
+     "title": "technical illustration (process) — Getty AAT 300054207",
+     "url": "https://vocab.getty.edu/aat/300054207"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "information-design",
+     "explanation": "The drawing is built so someone can assemble, service or understand the object, which is the explanatory purpose this practice is defined by.",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ef9a2-46c5-7520-977d-f0c3607a1c4f",
+     "explanation": "The record's credits name \"Engineering service-plate graphics\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019efa6f-e618-7a52-9864-a51c9bfb51aa",
+     "explanation": "The record's credits name \"Orthographic engineering drafting\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019fe2a4-a9da-7fd2-a52a-065855824057",
+     "explanation": "The record's credits name \"Technical and patent illustration\" (Draft).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a03f5a-f9c6-73a2-bbf1-cfe8ac37d171",
+     "explanation": "The record's credits name \"Architectural elevation drafting\" (UnderReview).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019fe2a3-8659-78b0-8777-2d9beda4b469",
+     "explanation": "The record's credits name \"Patent and technical-manual drawing\" (Draft).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f9a3b-47f5-7143-bab1-b1c8804f139b",
+     "explanation": "The record's credits name \"Technical cutaway illustration\" (Draft).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ffc43-571e-7b80-aade-3cd46b55c989",
+     "explanation": "The record's credits name \"Engraved technical illustration\" (Draft).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ef8ac-0a88-7910-bc05-845eed0508fe",
+     "explanation": "The record's credits name \"Technical contour drafting\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f3ddb-2385-7371-b4bb-01f7922dff55",
+     "explanation": "The record's credits name \"Technical / engineering draughting and blueprint drawing\" (UnderReview).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019fe2a1-9415-74e2-822a-d6e75ddc4161",
+     "explanation": "The record's credits name \"Architectural and engineering drafting\" (Draft).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ef9f6-68ab-7080-949c-5b6e6bd350ae",
+     "explanation": "The record's credits name \"Cockpit inspection-plate graphics\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019efdd6-2d23-7a32-b698-fe3d18021f4a",
+     "explanation": "The record's credits name \"Exploded-view technical illustration\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019effae-f99c-77a0-869d-97fd975385aa",
+     "explanation": "The record's credits name \"Technical line illustration\" (UnderReview).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f9a32-914a-7b72-b0e4-3f70c5ecd8f2",
+     "explanation": "The record's credits name \"Screen-printed technical service manuals\" (Draft).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ef92d-4b06-7302-82fd-6407ab2d4c8f",
+     "explanation": "The record's credits name \"Technical CAD wireframe rendering\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ef9c9-a13f-7903-8313-fbec982a8c21",
+     "explanation": "The record's credits name \"Exploded technical diagrams\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a05fe2-983d-7531-9f98-a94bb685e9dc",
+     "explanation": "The record's credits name \"Technical and patent illustration\" (UnderReview).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019fe2a4-abcb-7182-8045-15da34ae24b1",
+     "explanation": "The record's credits name \"Technical and patent illustration\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019f9a3b-4a30-72e0-8521-cb51f092e412",
+     "explanation": "The record's credits name \"Technical cutaway illustration\" (UnderReview).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019fe2a3-df0e-7153-a66b-3c19e9de7af7",
+     "explanation": "The record's credits name \"Ligne claire technical cutaway illustration\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019f9a32-93c7-7640-a067-ceb7b82f423d",
+     "explanation": "The record's credits name \"NASA technical service manuals\" (UnderReview).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a05fe5-a59a-7cd0-8761-47e85c9293bb",
+     "explanation": "The record's credits name \"Technical and engineering drawing\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019fe2a1-966c-7042-93b6-6482c115790a",
+     "explanation": "The record's credits name \"Technical drafting and engineering drawing\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019fe2a3-8859-7463-8d4b-905c6ef67003",
+     "explanation": "The record's credits name \"Patent and technical-manual drawing\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019f157e-8f8e-7f70-8847-e6da360aa900",
+     "explanation": "The record's credits name \"Architectural elevation drafting\" (UnderReview).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019ffc43-5aca-7031-9e92-8948951b9d7c",
+     "explanation": "The record's credits name \"Engraved technical illustration\" (Published).",
+     "sourceIds": [
+      "wp-technical-illustration"
+     ]
+    }
+   ],
+   "studies": []
+  }
+ ]
+}
