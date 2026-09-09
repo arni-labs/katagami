@@ -213,7 +213,7 @@ class WritingLaneWiringContractTests(unittest.TestCase):
             "public_domain",
             "Verify actual PD status",
             "multi-author period blends",
-            "reference document, not a clone",
+            'never as "write like <author>"',  # the style is a reference document; a clone is what it must never be
             "katagami:voice-bands/v1",
             "DERIVED, not invented",
             "CompleteWritingStyleSynthesis",
