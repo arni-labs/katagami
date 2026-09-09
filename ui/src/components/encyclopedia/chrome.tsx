@@ -35,7 +35,7 @@ export function InkStamp({
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.14em] shadow-[var(--shadow-sticker)] ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-[3px] font-mono text-[8px] font-bold uppercase tracking-[0.14em] shadow-[var(--shadow-sticker)] ${className}`}
       style={{
         ...inkChipStyle(ink, 18),
         backgroundImage: "var(--grain-url)",
@@ -98,8 +98,8 @@ export function SearchBox({
   inputRef?: React.Ref<HTMLInputElement>;
 }) {
   return (
-    <label className={`flex h-10 items-center gap-2 bg-[var(--paper-sticker)] px-3 shadow-[var(--shadow-sticker)] focus-within:shadow-[var(--shadow-sticker-lift)] ${className}`}>
-      <Search size={15} className="shrink-0 text-muted-foreground" aria-hidden />
+    <label className={`flex h-8 items-center gap-2 bg-[var(--paper-sticker)] px-2.5 shadow-[var(--shadow-sticker)] focus-within:shadow-[var(--shadow-sticker-lift)] ${className}`}>
+      <Search size={13} className="shrink-0 text-muted-foreground" aria-hidden />
       <input
         ref={inputRef}
         type="search"
@@ -107,7 +107,7 @@ export function SearchBox({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="min-w-0 flex-1 bg-transparent font-sans text-[15px] text-foreground outline-none placeholder:text-muted-foreground/70"
+        className="min-w-0 flex-1 bg-transparent font-sans text-[12.5px] text-foreground outline-none placeholder:text-muted-foreground/70"
       />
       {value ? (
         <button type="button" onClick={() => onChange("")} aria-label="Clear search" className="grid h-6 w-6 place-items-center text-muted-foreground hover:text-foreground">

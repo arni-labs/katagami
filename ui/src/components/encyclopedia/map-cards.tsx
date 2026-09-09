@@ -37,7 +37,7 @@ function screenPx(px: number, ek: number, min: number, max: number): number {
 
 export function Eyebrow({ ink, children, className = "", style }: { ink: string; children: ReactNode; className?: string; style?: CSSProperties }) {
   return (
-    <span className={`block font-mono text-[9px] font-bold uppercase tracking-[0.14em] ${className}`} style={{ color: `color-mix(in oklch, ${ink} 78%, var(--foreground))`, ...style }}>
+    <span className={`block font-mono text-[7.5px] font-bold uppercase tracking-[0.14em] ${className}`} style={{ color: `color-mix(in oklch, ${ink} 78%, var(--foreground))`, ...style }}>
       {children}
     </span>
   );
@@ -51,12 +51,12 @@ export function PaperStrip({ text, className = "", lines = 8, style }: { text: s
       style={{
         background: "color-mix(in srgb, var(--yuzu) 7%, var(--washi))",
         boxShadow: "var(--shadow-sticker)",
-        backgroundImage: "repeating-linear-gradient(180deg, transparent 0 21px, color-mix(in srgb, var(--foreground) 6%, transparent) 21px 22px)",
+        backgroundImage: "repeating-linear-gradient(180deg, transparent 0 19px, color-mix(in srgb, var(--foreground) 6%, transparent) 19px 20px)",
         backgroundPosition: "0 8px",
         ...style,
       }}
     >
-      <p className="font-sans text-[13.5px] italic leading-[22px] text-foreground" style={{ display: "-webkit-box", WebkitLineClamp: lines, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+      <p className="font-sans text-[12px] italic leading-[20px] text-foreground" style={{ display: "-webkit-box", WebkitLineClamp: lines, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
         {text}
       </p>
     </div>
@@ -78,7 +78,7 @@ export function Swatches({ colors, className = "", style }: { colors: string[]; 
 function nameFitSize(name: string, ek: number, max = 30): number {
   const longest = Math.max(4, ...name.split(/\s+/).map((word) => word.length));
   const wordFits = (NAME_W - 26) / (longest * 0.56);
-  return Math.max(14, Math.min(max, wordFits, screenPx(13, ek, 14, max)));
+  return Math.max(12, Math.min(max, wordFits, screenPx(12, ek, 12, max)));
 }
 
 /** The face a cell is showing, and a way to step past one that will not load.
@@ -129,7 +129,7 @@ function FaceOrigin({ face, ek }: { face: CellFace; ek: number }) {
   return (
     <span
       className="absolute left-0 top-0 z-[1] block max-w-full truncate px-1.5 py-[3px] font-mono font-bold uppercase leading-none tracking-[0.12em]"
-      style={{ ...inkChipStyle(face.ink, record ? 30 : 22), fontSize: screenPx(8.5, ek, 8.5, 18) }}
+      style={{ ...inkChipStyle(face.ink, record ? 26 : 18), fontSize: screenPx(7.5, ek, 7.5, 16) }}
       title={face.caption}
     >
       {face.eyebrow}
@@ -173,7 +173,7 @@ function Face({ face, lod, ek, name, fill, onImageError }: { face: CellFace; lod
   return (
     <span className="flex h-full flex-col justify-center px-3 py-3 text-left" style={{ minHeight: 72 }}>
       {lod === "named" ? <Eyebrow ink={face.ink} style={{ fontSize: screenPx(8.5, ek, 9, 16) }}>{face.eyebrow}</Eyebrow> : null}
-      <span className={`${lod === "named" ? "mt-1" : ""} line-clamp-3 font-display font-bold leading-[1.04] tracking-[-0.02em] text-foreground`} style={{ fontSize: nameFitSize(name, ek) }}>
+      <span className={`${lod === "named" ? "mt-1" : ""} line-clamp-3 font-display font-semibold leading-[1.06] tracking-[-0.01em] text-foreground`} style={{ fontSize: nameFitSize(name, ek) }}>
         {name}
       </span>
     </span>
@@ -187,7 +187,7 @@ const CHIP = "pointer-events-auto inline-flex items-center gap-1 whitespace-nowr
  *  a cell and on a category node: expansion is one idea wherever it appears. */
 function ExpandChips({ id, total, open, hidden, ek, ink, onToggle, onMore, word }: { id: string; total: number; open: boolean; hidden: number; ek: number; ink: string; onToggle: (id: string) => void; onMore: (id: string) => void; word: string }) {
   if (!total) return null;
-  const size = screenPx(9.5, ek, 9.5, 20);
+  const size = screenPx(8, ek, 8, 16);
   const stop = (e: React.MouseEvent) => e.stopPropagation();
   return (
     <span className="flex flex-wrap items-center gap-1" onClick={stop}>
@@ -312,7 +312,7 @@ function PlateCard({
           aria-label={`Also on the ${MAP_LABEL[m]} map`}
           title={`Also on the ${MAP_LABEL[m]} map`}
           className="pointer-events-none absolute z-[5] flex items-center gap-1 font-mono font-bold uppercase leading-none tracking-[0.12em]"
-          style={{ right: -4, top: 8 + i * screenPx(14, ek, 14, 30), fontSize: screenPx(8, ek, 8, 18), padding: `${screenPx(2, ek, 2, 5)}px ${screenPx(5, ek, 5, 10)}px`, background: filtered === m ? MAP_INK[m] : `color-mix(in srgb, ${MAP_INK[m]} 22%, var(--washi))`, color: filtered === m ? "var(--washi)" : `color-mix(in oklch, ${MAP_INK[m]} 72%, var(--foreground))`, boxShadow: "var(--shadow-sticker)", transform: "rotate(1.5deg)" }}
+          style={{ right: -4, top: 8 + i * screenPx(13, ek, 13, 28), fontSize: screenPx(7, ek, 7, 16), padding: `${screenPx(2, ek, 2, 5)}px ${screenPx(5, ek, 5, 10)}px`, background: filtered === m ? MAP_INK[m] : `color-mix(in srgb, ${MAP_INK[m]} 22%, var(--washi))`, color: filtered === m ? "var(--washi)" : `color-mix(in oklch, ${MAP_INK[m]} 72%, var(--foreground))`, boxShadow: "var(--shadow-sticker)", transform: "rotate(1.5deg)" }}
         >
           {lod === "picture" ? "" : MAP_LABEL[m]}
           {lod === "picture" ? <span className="block" style={{ width: screenPx(6, ek, 6, 14), height: screenPx(6, ek, 6, 14) }} /> : null}
@@ -337,12 +337,12 @@ function PlateCard({
       >
         {reading ? (
           <span className="block shrink-0">
-            <span className="flex items-center gap-2 font-mono text-[8.5px] font-bold uppercase tracking-[0.14em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>
+            <span className="flex items-center gap-2 font-mono text-[7.5px] font-bold uppercase tracking-[0.14em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>
               {cell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}
               <span className="text-muted-foreground">· {cell.state === "Draft" ? "proposed" : cell.state.toLowerCase()}</span>
             </span>
-            <span className="mt-1 line-clamp-2 font-display text-[16px] font-bold leading-[1.05] tracking-[-0.02em] text-foreground">{cell.name}</span>
-            <span className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
+            <span className="mt-1 line-clamp-2 font-display text-[14px] font-semibold leading-[1.1] tracking-[-0.01em] text-foreground">{cell.name}</span>
+            <span className="mt-1 line-clamp-2 text-[10.5px] leading-snug text-muted-foreground">{cell.description || "A name and a scope."}</span>
           </span>
         ) : null}
         {/* The flexible middle: the picture and any study the cell carries
@@ -355,12 +355,12 @@ function PlateCard({
           </span>
         ) : null}
         {reading ? (
-          <span className="mt-1.5 block shrink-0 truncate font-mono text-[8px] uppercase leading-snug tracking-[0.1em] text-muted-foreground">{face.caption}</span>
+          <span className="mt-1.5 block shrink-0 truncate font-mono text-[7px] uppercase leading-snug tracking-[0.1em] text-muted-foreground">{face.caption}</span>
         ) : null}
         {lod !== "reading" && face.kind !== "name" ? (
           // The name under the picture, counter-scaled so it reads at every
           // zoom the card is drawn at. Far out this is what the field says.
-          <span className="mt-1 block shrink-0 truncate font-display font-bold leading-[1.05] tracking-[-0.02em] text-foreground" style={{ fontSize: nameFitSize(cell.name, ek, lod === "picture" ? 40 : 22) }}>{cell.name}</span>
+          <span className="mt-1 block shrink-0 truncate font-display font-semibold leading-[1.05] tracking-[-0.01em] text-foreground" style={{ fontSize: nameFitSize(cell.name, ek, lod === "picture" ? 34 : 18) }}>{cell.name}</span>
         ) : null}
         {reading && narrower ? <span className="block h-7 shrink-0" /> : null}
       </button>
@@ -429,8 +429,8 @@ function HubCard({
       <Tape ink={ink} className="-top-2 left-6 z-[5]" rotate={-4} width={64} />
       <div className="flex h-full w-full flex-col overflow-hidden p-3" style={{ background: PAPER, boxShadow: "var(--shadow-card)" }}>
         <button type="button" onClick={() => onFit(map)} className="block shrink-0 text-left" title={`Frame the ${title.toLowerCase()} map`}>
-          <span className="block font-mono text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: `color-mix(in oklch, ${ink} 78%, var(--foreground))` }}>Map · {count} cells</span>
-          <span className="mt-0.5 block font-display font-bold leading-[1] tracking-[-0.03em] text-foreground" style={{ fontSize: screenPx(19, k, 34, 120) }}>{title}</span>
+          <span className="block font-mono text-[8px] font-bold uppercase tracking-[0.16em]" style={{ color: `color-mix(in oklch, ${ink} 78%, var(--foreground))` }}>Map · {count} cells</span>
+          <span className="mt-0.5 block font-display font-semibold leading-[1] tracking-[-0.02em] text-foreground" style={{ fontSize: screenPx(17, k, 28, 100) }}>{title}</span>
         </button>
         <span className="mt-2 grid min-h-0 flex-1 grid-cols-2 gap-1.5">
           {faces.map((f) => (
@@ -441,7 +441,7 @@ function HubCard({
           {faces.length === 0 ? <span className="col-span-2 flex items-center justify-center font-sans text-[13px] text-muted-foreground">No cells on this map yet.</span> : null}
         </span>
         <span className="mt-2 flex shrink-0 flex-wrap items-center justify-between gap-1">
-          <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">{roots} at the top</span>
+          <span className="font-mono text-[8px] uppercase tracking-[0.12em] text-muted-foreground">{roots} at the top</span>
           <ExpandChips id={key} total={roots} open={open} hidden={hidden} ek={k} ink={ink} onToggle={onToggle} onMore={onMore} word="open" />
         </span>
       </div>
@@ -459,7 +459,7 @@ function HubTile({ face, name, ink }: { face: CellFace; name: string; ink: strin
   if (face.kind === "passage") return <PaperStrip text={face.text} lines={4} className="h-full !px-2 !py-1.5 [&_p]:text-[9px] [&_p]:leading-[13px]" />;
   return (
     <span className="flex h-full w-full items-end p-2" style={{ background: `color-mix(in srgb, ${ink} 10%, var(--washi))` }}>
-      <span className="line-clamp-2 font-display text-[14px] font-bold leading-[1.05] tracking-[-0.02em] text-foreground">{name}</span>
+      <span className="line-clamp-2 font-display text-[12px] font-semibold leading-[1.1] tracking-[-0.01em] text-foreground">{name}</span>
     </span>
   );
 }
@@ -524,7 +524,7 @@ function SatelliteNodeCard({
   // Type counter-scales against the camera and against the cell's own level,
   // so a label reads the same whatever level it belongs to.
   const effectiveK = k * scale;
-  const labelSize = screenPx(9, effectiveK, 9, 14);
+  const labelSize = screenPx(8, effectiveK, 8, 12);
 
   if (node.role === "more") {
     // The ring holds eight; the rest are real records, and this opens them onto
@@ -570,7 +570,7 @@ function SatelliteNodeCard({
         // few dozen pixels long once the satellite hugs its cell.
         <span className="mt-1 block w-[132px] -translate-x-[38px] text-center">
           <Eyebrow ink={ink} style={{ fontSize: screenPx(7.5, effectiveK, 8, 11) }}>{SET_EYEBROW[node.set]}</Eyebrow>
-          <span className="block truncate font-sans font-semibold leading-tight text-foreground" style={{ fontSize: labelSize }}>{name}</span>
+          <span className="block truncate font-sans font-medium leading-tight text-foreground" style={{ fontSize: labelSize }}>{name}</span>
         </span>
       ) : null}
     </a>

@@ -742,19 +742,19 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       {/* title block, on the paper — compact: this is a canvas, and the room
           is for exploring */}
       <div className="pointer-events-none absolute left-0 top-0 max-w-full bg-[var(--washi)] pb-2.5 pl-4 pr-6 pt-3 sm:pl-5 sm:pt-3.5" style={{ maskImage: "linear-gradient(90deg, black 92%, transparent)", WebkitMaskImage: "linear-gradient(90deg, black 92%, transparent)" }}>
-        <div className="font-mono text-[9.5px] font-bold uppercase tracking-[0.2em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>Encyclopedia</div>
-        <h1 className="mt-0.5 font-display text-[19px] font-bold leading-[1.05] tracking-[-0.03em] sm:text-[22px]">
+        <div className="font-mono text-[8px] font-bold uppercase tracking-[0.2em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>Encyclopedia</div>
+        <h1 className="mt-0.5 font-display text-[16px] font-semibold leading-[1.05] tracking-[-0.02em] sm:text-[18px]">
           The <Marker color="sakura">encyclopedia</Marker>
         </h1>
         <div className="pointer-events-auto mt-2 flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible" role="group" aria-label="Filter by map">
           {!desktop ? (
-            <button type="button" onClick={() => setPhoneView("browse")} className="inline-flex h-8 shrink-0 items-center gap-1.5 bg-foreground px-3 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-background shadow-[var(--shadow-sticker)]">
+            <button type="button" onClick={() => setPhoneView("browse")} className="inline-flex h-7 shrink-0 items-center gap-1.5 bg-foreground px-2.5 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-background shadow-[var(--shadow-sticker)]">
               <List size={14} aria-hidden /> Browse
             </button>
           ) : null}
-          <button type="button" aria-pressed={map === null} onClick={() => onFilter(null)} className="h-7 px-2.5 font-sans text-[12.5px] font-semibold shadow-[var(--shadow-sticker)]" style={map === null ? { background: "var(--yuzu)", color: "var(--sumi)" } : { background: "var(--washi)", color: "var(--foreground)" }}>All</button>
+          <button type="button" aria-pressed={map === null} onClick={() => onFilter(null)} className="h-6 px-2 font-sans text-[11px] font-medium shadow-[var(--shadow-sticker)]" style={map === null ? { background: "var(--yuzu)", color: "var(--sumi)" } : { background: "var(--washi)", color: "var(--foreground)" }}>All</button>
           {MAP_NAMES_ORDER.map((name) => (
-            <button key={name} type="button" aria-pressed={map === name} onClick={() => onFilter(map === name ? null : name)} disabled={!counts[name]} title={counts[name] ? `${counts[name]} cells` : "No cells on this map yet"} className="h-7 px-2.5 font-sans text-[12.5px] font-semibold shadow-[var(--shadow-sticker)] disabled:cursor-not-allowed disabled:opacity-45" style={map === name ? { background: "var(--yuzu)", color: "var(--sumi)" } : { background: "var(--washi)", color: "var(--foreground)" }}>
+            <button key={name} type="button" aria-pressed={map === name} onClick={() => onFilter(map === name ? null : name)} disabled={!counts[name]} title={counts[name] ? `${counts[name]} cells` : "No cells on this map yet"} className="h-6 px-2 font-sans text-[11px] font-medium shadow-[var(--shadow-sticker)] disabled:cursor-not-allowed disabled:opacity-45" style={map === name ? { background: "var(--yuzu)", color: "var(--sumi)" } : { background: "var(--washi)", color: "var(--foreground)" }}>
               {MAP_LABEL[name]}
             </button>
           ))}
@@ -763,17 +763,17 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
       {/* search, top right */}
       <div className="absolute right-3 top-3 hidden w-56 sm:block">
-        <SearchBox value={query} onChange={setQuery} placeholder="Find a cell" className="!h-8" />
+        <SearchBox value={query} onChange={setQuery} placeholder="Find a cell" />
         {query.trim() ? (
           <ul role="listbox" className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto bg-[var(--washi)] py-1 shadow-[var(--shadow-card-hover)]">
             {results.length ? results.map((cell) => (
               <li key={cell.id} role="option" aria-selected={false}>
                 <button type="button" onClick={() => { focus(cell.id); setQuery(""); }} className="flex w-full items-baseline gap-3 px-3 py-2 text-left hover:bg-[color-mix(in_srgb,var(--yuzu)_22%,transparent)]">
-                  <span className="font-display text-[14px] font-bold tracking-[-0.02em]">{cell.name}</span>
-                  <span className="ml-auto shrink-0 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">{cell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}</span>
+                  <span className="font-display text-[12.5px] font-medium tracking-[-0.01em]">{cell.name}</span>
+                  <span className="ml-auto shrink-0 font-mono text-[8px] uppercase tracking-[0.14em] text-muted-foreground">{cell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}</span>
                 </button>
               </li>
-            )) : <li className="px-3 py-2.5 text-[14px] text-muted-foreground">No cell matches.</li>}
+            )) : <li className="px-3 py-2 text-[12px] text-muted-foreground">No cell matches.</li>}
           </ul>
         ) : null}
       </div>
@@ -781,9 +781,9 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
       {/* zoom + minimap */}
       <div className={`absolute z-20 ${desktop ? "bottom-10 left-4 flex items-end gap-2" : "bottom-3 right-3"}`}>
         <div className="flex flex-col gap-1">
-          <button type="button" onClick={() => zoomStep(1)} aria-label="Zoom in" className="grid h-8 w-8 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"><Plus size={14} strokeWidth={2.2} /></button>
-          <button type="button" onClick={() => zoomStep(-1)} aria-label="Zoom out" className="grid h-8 w-8 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"><Minus size={14} strokeWidth={2.2} /></button>
-          <button type="button" onClick={() => fitAll()} aria-label="Fit what is open" title="Fit (0)" className="grid h-8 w-8 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"><Maximize2 size={13} strokeWidth={2.2} /></button>
+          <button type="button" onClick={() => zoomStep(1)} aria-label="Zoom in" className="grid h-7 w-7 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"><Plus size={13} strokeWidth={2.2} /></button>
+          <button type="button" onClick={() => zoomStep(-1)} aria-label="Zoom out" className="grid h-7 w-7 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"><Minus size={13} strokeWidth={2.2} /></button>
+          <button type="button" onClick={() => fitAll()} aria-label="Fit what is open" title="Fit (0)" className="grid h-7 w-7 place-items-center bg-[var(--washi)] shadow-[var(--shadow-sticker)]"><Maximize2 size={12} strokeWidth={2.2} /></button>
         </div>
         {desktop ? (
           <div className="bg-[var(--washi)] p-1.5 shadow-[var(--shadow-sticker)]">
@@ -793,7 +793,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
               {opened?.nodes.map((n) => <rect key={`mini-${n.id}`} x={mini.ox + n.x * mini.s - 1} y={mini.oy + n.y * mini.s - 1} width={2} height={2} fill="var(--ramune)" />)}
               <rect x={mini.ox + mini.view.x * mini.s} y={mini.oy + mini.view.y * mini.s} width={mini.view.w * mini.s} height={mini.view.h * mini.s} fill="none" stroke="var(--ramune)" strokeWidth={1.5} />
             </svg>
-            <div className="mt-1 flex items-center justify-between gap-3 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
+            <div className="mt-1 flex items-center justify-between gap-3 font-mono text-[8px] uppercase tracking-[0.12em] text-muted-foreground">
               <span className="tabular-nums">{Math.round(camera.k * 100)}%</span>
               <span>Drag · Scroll to zoom</span>
             </div>
@@ -803,17 +803,17 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
       {desktop ? (
         <div className="pointer-events-none absolute bottom-3 left-4 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="pointer-events-auto flex items-center gap-2 font-sans text-[13px]">
+          <span className="pointer-events-auto flex items-center gap-2 font-sans text-[11.5px]">
             <button type="button" onClick={() => { clearFocus(); fitAll(); }} className="text-foreground hover:underline">Encyclopedia</button>
             {focusCell ? (<><span className="text-muted-foreground">/</span><span className="font-semibold" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>{focusCell.name}</span></>) : null}
           </span>
-          <span className="ml-2 font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
+          <span className="ml-2 font-mono text-[8px] uppercase tracking-[0.14em] text-muted-foreground">
             <span style={{ color: "color-mix(in oklch, var(--sakura) 78%, var(--foreground))" }}>{visible.cells.size} of {graph.cells.length} cells open</span>
             {" · "}{shownRecords} records
             {graph.withheld ? <> · <span title="Not attested under the current contract, so not shown.">{graph.withheld} withheld</span></> : null}
             {" · distances are schematic"}
           </span>
-          <span className="ml-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
+          <span className="ml-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[8px] uppercase tracking-[0.14em] text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span aria-hidden className="inline-block h-[2px] w-5" style={{ backgroundImage: "repeating-linear-gradient(90deg, color-mix(in oklch, var(--foreground) 55%, transparent) 0 4px, transparent 4px 7px)" }} />
               narrower
@@ -837,7 +837,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     focusCell ? (
       <>
         <div className="mt-4"><SheetTitle cell={focusCell} /></div>
-        <p className="mt-2.5 text-[13.5px] leading-relaxed text-foreground">{focusCell.description || "A name and a scope. No description has been written for this cell yet."}</p>
+        <p className="mt-2 text-[12px] leading-relaxed text-foreground">{focusCell.description || "A name and a scope. No description has been written for this cell yet."}</p>
         <SheetBody cell={focusCell} index={index} tab={tab} onTab={setTab} onFocus={focus} expandKey={expandKey} expansion={sheetExpansion} />
         <OpenCellButton cell={focusCell} />
       </>
@@ -876,16 +876,16 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             <div className="min-w-0"><SheetTitle cell={focusCell} size="md" /></div>
             <button type="button" onClick={() => setSheetExpanded(true)} aria-label="Expand" className="grid h-9 w-9 shrink-0 place-items-center"><ChevronUp size={22} /></button>
           </div>
-          <p className="mt-1.5 truncate font-sans text-[13px] text-muted-foreground">{focusCell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}{focusCell.manifestations.length ? ` · ${focusCell.manifestations.length} made` : ""}{index.childrenOf(focusCell.id).length ? ` · ${index.childrenOf(focusCell.id).length} narrower` : ""}</p>
-          <button type="button" onClick={() => setSheetExpanded(true)} className="mt-3 flex h-11 w-full items-center justify-between bg-foreground px-5 font-mono text-[12px] font-bold uppercase tracking-[0.2em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)]">
+          <p className="mt-1.5 truncate font-sans text-[12px] text-muted-foreground">{focusCell.maps.map((m) => MAP_LABEL[m.map]).join(" · ")}{focusCell.manifestations.length ? ` · ${focusCell.manifestations.length} made` : ""}{index.childrenOf(focusCell.id).length ? ` · ${index.childrenOf(focusCell.id).length} narrower` : ""}</p>
+          <button type="button" onClick={() => setSheetExpanded(true)} className="mt-3 flex h-9 w-full items-center justify-between bg-foreground px-4 font-mono text-[9.5px] font-bold uppercase tracking-[0.2em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)]">
             View cell <ArrowUpRight size={18} aria-hidden />
           </button>
         </div>
       ) : (
         <button type="button" onClick={() => setSheetExpanded(true)} className="flex flex-1 items-center justify-between px-5 pb-4 pt-3 text-left">
           <span>
-            <span className="block font-display text-[17px] font-bold tracking-[-0.02em]">{visible.cells.size} of {graph.cells.length} cells open</span>
-            <span className="mt-0.5 block font-sans text-[13px] text-muted-foreground">Tap a cell on the map, or open the index.</span>
+            <span className="block font-display text-[15px] font-semibold tracking-[-0.01em]">{visible.cells.size} of {graph.cells.length} cells open</span>
+            <span className="mt-0.5 block font-sans text-[12px] text-muted-foreground">Tap a cell on the map, or open the index.</span>
           </span>
           <ChevronUp size={22} aria-hidden />
         </button>
@@ -921,7 +921,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
         />
       ) : null}
       {showMap ? (
-        <div className={`grid h-full ${desktop && sheetOpen ? "grid-cols-[minmax(0,1fr)_380px]" : "grid-cols-1"}`}>
+        <div className={`grid h-full ${desktop && sheetOpen ? "grid-cols-[minmax(0,1fr)_360px]" : "grid-cols-1"}`}>
           <div className="relative min-w-0">
             {mapViewport}
             {desktop && !sheetOpen ? (
