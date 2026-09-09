@@ -153,8 +153,41 @@ const NEVER_SERVED_BASENAMES = ["app.md", "repl_state.b64"] as const;
  * That is the behaviour that already exists — this change does not widen it —
  * but whether drafts should be public is a product decision, and separating
  * them needs the referencing entity's status, which a path cannot express.
+ *
+ * - `/katagami/writing-styles/` — the writing lane's corpora, VOICE.md files,
+ *   replica samples and thumbnails. Added on the owner's instruction after this
+ *   proxy was found serving them to anyone holding an id: a VOICE.md at 5,362
+ *   bytes and a Jane Austen corpus file at 4,591, unauthenticated, against
+ *   production. Nothing in that lane is published — all 16 live records are
+ *   `UnderReview` — so the tree is entirely unpublished work.
+ *
+ *   This is `/contrib` in reverse, and the difference is exactly what makes it
+ *   safe. `/contrib` mixes an under-review submission's artifacts with the
+ *   reference images the PUBLIC art-styles page renders, so no path can
+ *   separate them. Nothing under `/katagami/writing-styles/` is public: every
+ *   route that renders one of these files — `/writing`, `/writing/<id>`,
+ *   `/voice`, `/under-review`, `/encyclopedia` and `/voice/<id>/VOICE.md` —
+ *   already refuses everyone but the owner. So the owner keeps seeing every
+ *   file and nobody else loses anything that was ever meant for them.
+ *
+ *   Measured before adding it, not assumed. All 192 files the 27 WritingStyles
+ *   records reference — corpora, replicas, VOICE.md and thumbnails — resolve
+ *   under this prefix, so the gate is complete. And of the 4,990 distinct file
+ *   ids referenced across DesignLanguages, ArtStyles and PaletteSystems, zero
+ *   resolve under it, so no public lane can be reached by it.
+ *
+ *   THIS IS A LANE-SPECIFIC STOPGAP AND SHOULD NOT BE COPIED. It gates one tree
+ *   because that tree happens to hold only unpublished work today, which is a
+ *   fact about the current data rather than a property of the system. It does
+ *   NOT make unpublished records private in general, and it fails in the other
+ *   direction too: publish a writing style and its corpus stays owner-only,
+ *   because a path cannot see that the record's status changed. The design that
+ *   replaces it is a visibility field on the FILE, written by the same
+ *   transition that publishes the record and read by both this proxy and the
+ *   MCP so the two cannot disagree. That is a real change with a migration
+ *   behind it; when it lands, this entry comes out.
  */
-const OWNER_ONLY_PATH_PREFIXES = ["/iterate/", "/feedback/"] as const;
+const OWNER_ONLY_PATH_PREFIXES = ["/iterate/", "/feedback/", "/katagami/writing-styles/"] as const;
 
 export type FileVisibility = "public" | "owner" | "denied";
 

@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bookmark, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Bookmark, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { applyFilters, buildFacets, type FacetKey, type FacetSelection, type WritingStyleSpecimen } from "@/lib/writing-styles";
 import { SearchBox, Tape, CHIP, inkChipStyle } from "@/components/encyclopedia/chrome";
 import { useMounted, usePrefersReducedMotion } from "@/components/encyclopedia/use-pan-zoom";
@@ -65,10 +66,34 @@ function PassageCard({ specimen, shortlisted, onShortlist, onTag, activeTags, in
 
       <span aria-hidden className="sticker-perforation mt-5 block" />
 
-      <h3 className="mt-4 font-display text-[24px] font-bold leading-[1.1] tracking-[-0.02em]">{specimen.name}</h3>
+      <h3 className="mt-4 font-display text-[24px] font-bold leading-[1.1] tracking-[-0.02em]">
+        <Link href={`/writing/${specimen.id}`} className="underline decoration-transparent decoration-2 underline-offset-[5px] transition-colors hover:decoration-[var(--sakura)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ramune)]">
+          {specimen.name}
+        </Link>
+      </h3>
       {specimen.persona ? <p className="mt-1.5 text-[16px] leading-relaxed text-muted-foreground">{specimen.persona}</p> : null}
       <CreditLine specimen={specimen} className="mt-3" />
       <div className="mt-3"><TagChips tags={specimen.tags} onPick={onTag} active={activeTags} /></div>
+      {/* The way in. A whole-card overlay would have been one fewer thing to
+          click, and it would also have made the passage above unselectable —
+          the passage is the evidence, so it stays selectable and the card
+          carries an explicit opening instead. */}
+      <div className="mt-5">
+        <Link
+          href={`/writing/${specimen.id}`}
+          aria-label={`Open ${specimen.name}`}
+          className="inline-flex h-9 items-center gap-2 px-3.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.14em] shadow-[var(--shadow-sticker)] transition-transform hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)] motion-reduce:hover:translate-y-0"
+          style={{ background: "var(--foreground)", color: "var(--background)" }}
+        >
+          Open this style <ArrowRight size={13} aria-hidden />
+        </Link>
+        {/* An exemplar on its own reads as the whole basis of the style. It is
+            not: say here how much prose the contract was measured over. */}
+        <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          {specimen.corpusFiles ? `${specimen.corpusFiles} corpus ${specimen.corpusFiles === 1 ? "file" : "files"}` : "no corpus on the record"}
+          {specimen.corpusWords ? ` · ${specimen.corpusWords.toLocaleString()} words` : ""}
+        </p>
+      </div>
       <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-5">
         <CellLinks specimen={specimen} />
         <VoiceMdLink url={specimen.voiceMdUrl} />

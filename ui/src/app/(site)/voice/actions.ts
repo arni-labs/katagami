@@ -12,6 +12,12 @@ import { createEntity, dispatchAction, uploadFile } from "@/lib/odata-mutations"
 export async function publishWritingStyle(id: string): Promise<void> {
   const bearer = await assertCuratorBearer();
   await dispatchAction("WritingStyles", id, "Publish", {}, { bearer });
+  // The control that calls this now lives on `/writing/<id>`, so that is the
+  // page a curator is looking at when the status changes and the first one that
+  // must stop saying "under review". `/voice` keeps its entries — the catalog
+  // is still there, and `/voice/<id>` redirects into the page above.
+  revalidatePath("/writing");
+  revalidatePath(`/writing/${id}`);
   revalidatePath("/voice");
   revalidatePath(`/voice/${id}`);
   revalidatePath("/under-review");

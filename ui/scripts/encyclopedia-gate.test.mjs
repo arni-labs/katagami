@@ -13,12 +13,28 @@ const PAGES = {
   // Every owner-only route belongs here. A listing behind a door and a detail
   // page in front of one is the way this kind of gate is usually lost, so a new
   // route earns these assertions by being added to this map and nothing else.
+  "/writing/[id]": read("../src/app/(site)/writing/[id]/page.tsx"),
 };
 
 for (const [route, source] of Object.entries(PAGES)) {
   test(`${route} refuses anyone who is not the owner, before it reads anything`, () => {
     // Read the component body, not the file: an import names every reader at
     // the top, and matching those would only ever prove that imports come first.
+    //
+    // WHAT THIS DOES AND DOES NOT CATCH, because a green check here is easy to
+    // over-trust. It compares the TEXTUAL order of two strings, which is not
+    // execution order. Slicing to the body removes the false positives — a
+    // reader named above the component, an import or a helper, no longer trips
+    // a page that reads only after the gate. It does not remove the false
+    // NEGATIVES: a read inside a helper still passes, because what stands in
+    // the body is the helper's name and not the reader's. `readFiles` in
+    // `/writing/[id]` is exactly that shape — it wraps `getFileText`, it is
+    // called after the gate, and moving that call above the gate would not
+    // fail this test. Closing it needs the page driven against a stubbed
+    // backend with `recordReads()` (see `encyclopedia-reader.test.mjs`),
+    // asserting zero reads for a caller who is not the owner. Until then this
+    // catches the direct case, which is how the mistake is actually made, and
+    // nothing further.
     const body = source.slice(source.indexOf("export default"));
     const gate = body.indexOf("notFound()");
     assert.ok(gate > 0, "the page 404s rather than rendering for a stranger");
@@ -181,4 +197,17 @@ test("no section here is offered in the public navigation", () => {
     assert.ok(ownerLinks.includes(`"${route}"`), `${route} is an owner link`);
     assert.ok(!publicLinks.includes(`"${route}"`), `${route} must not be in the public navigation`);
   }
+});
+
+test("/voice/<id> sends its reader to the one detail page rather than keeping a second", () => {
+  // Two views of one record drifted apart the moment either gained something:
+  // the corpus and the handoff went to /writing/<id>, and a /voice link would
+  // have led to the poorer one. The old address keeps working.
+  const source = read("../src/app/(site)/voice/[id]/page.tsx");
+  assert.match(source, /permanentRedirect\(`\/writing\/\$\{encodeURIComponent\(id\)\}`\)/);
+  assert.doesNotMatch(source, /getFileText|getWritingStyle/, "the redirect must not read the record on its way");
+
+  // The portable artifact keeps its own address and its own gate.
+  const voiceMd = read("../src/app/(site)/voice/[id]/VOICE.md/route.ts");
+  assert.match(voiceMd, /if \(!\(await isOwner\(\)\)\) return plain\("writing style not found", 404\);/);
 });
