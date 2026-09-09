@@ -80,6 +80,10 @@ Decision: The white scrim behind an opened ring and the fade of non-neighbours a
 
 Came up because: Rita reported a foggy Cubism card and cells hard to see behind other content. Both were the fade and the scrim.
 
+Options: Keep the scrim and fade but lift the card in focus above them; fade less; remove both and rely on tape, outline and line weight for emphasis.
+
+Chose removal because: a card the reader has zoomed in on must read whatever else is in focus, and any fade strong enough to isolate a ring is strong enough to hide a neighbour. Given up: an opened ring of sixty records reads a little busier against its neighbours; the 0.35 step-back under the ring keeps it legible.
+
 Where: `encyclopedia-map.tsx` (`dimmedPlate`, `ringDim`, `dimTo`).
 
 ## D8 Records walk the card's box, not an ellipse
@@ -87,6 +91,10 @@ Where: `encyclopedia-map.tsx` (`dimmedPlate`, `ringDim`, `dimTo`).
 Decision: The eight records around a card are placed along the card's own box at a fixed clearance, the way an opened ring already was.
 
 Came up because: The new layout test found a record cutting into its own card at a corner. An ellipse through the same clearance clears the card on its axes and cuts inside at the corners; the old force settle had been hiding this by pushing the node out afterwards.
+
+Options: Keep the ellipse and add a separation pass for records; walk the card's box, which the opened ring already does.
+
+Chose the box walk because: it is the same geometry the opened ring uses and needs no second pass; the test then asserts the property instead of a sweep approximating it. Given up: nothing.
 
 Where: the records loop in `layoutVisible`; the test "no two open cards overlap" in `ui/scripts/encyclopedia-layout.test.mjs`.
 
@@ -115,6 +123,10 @@ Decision: Lines carry no text. The arrowhead says which end is narrower, the ink
 
 Came up because: Rita: "there should never be any text that just makes it busy."
 
+Options: Words on hover and focus only; words at reading zoom only; no words, with the tooltip and the sheet carrying them.
+
+Chose no words because: that is the instruction, and the arrow, the ink and the legend already say what a line is. Given up: a relation's own word is one hover away rather than on the paper.
+
 Where: the line SVG in `encyclopedia-map.tsx`.
 
 ## D11 A cell on two maps says so, and the filter frames it
@@ -123,13 +135,23 @@ Decision: A cell drawn in one map's cluster that also belongs to another map car
 
 Came up because: Rita asked whether art and writing were connected at all. Checked against production: 52 cells sit on both maps, 6 hierarchy links and 10 typed relations cross them, and the map showed none of this — a dual-map cell was placed in its first map's cluster with no mark, and the filter framed only that cluster.
 
+Options: Draw a dual-map cell in both clusters; mark it in the cluster it sits in and let the filter frame it; do nothing and leave the cross-links to the sheet.
+
+Chose the mark and the framing because: one cell drawn twice is the duplication D6 removes for records; a mark keeps one node per cell and still makes the second map visible on it. Given up: a filtered map's cells can be far apart on the paper, so the framed view can be wide.
+
 Where: `alsoOn` in `encyclopedia-map.tsx` and the mark in `PlateCard`; `fitRegion`.
 
 ## D12 The sheet is set small
 
-Decision: Sheet prose is 13.5px, headings 14.5px, titles 24px; the phone browser and the cards come down with it. The 17px body floor in the design contract is for pages; this is a working panel beside a dense canvas, and Rita asked for it (2026-09-09).
+Decision: Sheet prose is 12px, headings 12.5px, titles 20px semibold; card names 14px semibold; the phone browser and the chrome come down with it, and bold display weights become semibold. The 17px body floor in the design contract is for pages; this is a working panel beside a dense canvas, and Rita asked for it twice (2026-09-09).
 
-Where: `focus-sheet.tsx`, `browse.tsx`, `map-cards.tsx`.
+Came up because: Rita: the sidebar and everything on the canvas read as chunky; the reference is delicate and neat.
+
+Options: Keep the 17px floor and shrink only the mono metadata; one step down; two steps down with lighter weights.
+
+Chose two steps and lighter weights because: the first step was still called chunky, and the reference's lightness is weight as much as size. Given up: the contract's body floor on this one route, recorded here so a reviewer does not re-raise it.
+
+Where: `focus-sheet.tsx`, `browse.tsx`, `map-cards.tsx`, `chrome.tsx`, `encyclopedia-map.tsx`.
 
 ## D13 A record node opens into a card in place, and folds back
 
@@ -149,12 +171,18 @@ Decision: The open/fold and "+N more" chips are gone from cards and category nod
 
 Came up because: Rita: the chips duplicate information and make the canvas busy; the provenance tags likewise; show the children by clicking the card instead.
 
-Given up: a reader cannot focus a cell without also opening its first group. That is what a click means now.
+Options: Keep one small chip; move the controls to hover; make the click the control and put the count in the sheet.
+
+Chose the click because: it is the instruction, and a card that opens on click is the same move as a category node and a record node opening on click. Given up: a reader cannot focus a cell without also opening its first group. That is what a click means now.
 
 ## D15 A record node says what it is
 
 Decision: A record node always carries its set's word under it in the set's ink — art style, writing style, design language, palette — and a hairline of that ink along its bottom edge. Its name joins once the node prints at reading size, or when its cell is in focus.
 
 Came up because: Rita: an unopened record node was a square with nothing to say what it was.
+
+Options: A coloured frame only; the set's word always; the word only on hover.
+
+Chose the word always, with the hairline, because: a colour alone needs the legend and a hover is not a glance. Given up: eight words around a card at reading zoom; they are 7px mono and in the set's ink, so they read as labels, not text.
 
 Where: `SatelliteNodeCard` in `map-cards.tsx`.
