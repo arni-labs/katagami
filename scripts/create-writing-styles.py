@@ -157,6 +157,27 @@ def contract_problems(entry, corpus):
     return found, contract
 
 
+def in_parent_order(styles):
+    """A blend after the author voices it names, so its parents exist to point at.
+
+    A blend declares its parents by slug because the payload is written before
+    any of them has an identifier. The identifiers are filled in during the run
+    from the styles it has just created.
+    """
+    by_slug = {entry["slug"]: entry for entry in styles}
+    ordered, placed = [], set()
+    for entry in styles:
+        for parent in entry.get("parent_slugs", []):
+            assert parent in by_slug or parent, f"{entry['slug']} names an unknown parent {parent}"
+            if parent in by_slug and parent not in placed:
+                ordered.append(by_slug[parent])
+                placed.add(parent)
+        if entry["slug"] not in placed:
+            ordered.append(entry)
+            placed.add(entry["slug"])
+    return ordered
+
+
 def main():
     flags = sys.argv[1:]
     apply_writes = "--apply" in flags
@@ -170,6 +191,7 @@ def main():
         f"this script creates Drafts; the payload authorises: {payload.get('allowedOperation')}"
     slugs = [entry["slug"] for entry in styles]
     assert len(set(slugs)) == len(slugs), "the payload names one slug twice"
+    styles = in_parent_order(styles)
     print(f"Batch {payload['batch']}: {len(styles)} approved styles")
 
     deployment = Deployment()
@@ -204,7 +226,7 @@ def main():
         return
 
     in_use = deployment.slugs_in_use()
-    created = []
+    created, made = [], {}
     for entry in planned:
         label = f"{entry['number']} {entry['slug']}"
         if entry["slug"] in in_use:
@@ -215,6 +237,7 @@ def main():
         entity_id = json.loads(body)["entity_id"]
         created.append({"number": entry["number"], "slug": entry["slug"],
                         "name": entry["name"], "id": entity_id})
+        made[entry["slug"]] = entity_id
         file_ids = [deployment.write_file(c["file"], f"/katagami/writing-styles/{entry['slug']}/{c['file']}", c["text"])
                     for c in entry["corpus"]]
         corpus = [(c["file"], c["text"]) for c in entry["corpus"]]
@@ -252,8 +275,13 @@ def main():
                                                    "prompt_words": len(words_of(contract))}]})}),
             ("AddCuratorNotes", {"curator_notes": entry["curator_notes"]}),
         ]
-        if entry.get("parent_ids"):
-            steps.insert(1, ("SetLineage", {"parent_ids": entry["parent_ids"],
+        missing = [p for p in entry.get("parent_slugs", []) if p not in made]
+        if missing:
+            failures.append(f"{entry['slug']}: parent {', '.join(missing)} was not created")
+            continue
+        parent_ids = [made[slug] for slug in entry.get("parent_slugs", [])]
+        if parent_ids:
+            steps.insert(1, ("SetLineage", {"parent_ids": parent_ids,
                                             "lineage_type": entry["lineage_type"],
                                             "generation_number": entry["generation_number"]}))
         for name, params in steps:
