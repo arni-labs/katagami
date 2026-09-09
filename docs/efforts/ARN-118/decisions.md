@@ -742,6 +742,43 @@ Chose additions only because: D41 records what the last collision cost, and it w
 
 Where: `docs/efforts/ARN-118/payloads/` (`plan.json`, the two batches, `mkbatch.mjs`); the redundant pairs are `ashcan-school`, `precisionism` and `die-brucke`, listed in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
 
+### Addendum: one read tells you what is there, never what left
+
+A run that reads production once cannot see a removal. It sees a cell without a
+parent and has no way to tell a cell that never had one from a cell that had one
+taken away an hour ago. That is the same blindness D55 is built around, arriving
+from the other side: D55 reasons about the removal you might write, and this is
+about the removal someone else already wrote.
+
+The worked example. Rebuilding these payloads for the apply, a session read 170
+art roots where the run that built them had reported 168, with the art-cell count
+identical at 214 both times. Diffing last night's snapshot against that morning's
+found it: `american-realism` and `social-realism` had each lost their `broader`
+link to `realism-art-movement` overnight. Nothing else in either document had
+moved. No single read could have shown this, and neither could the loader's base
+check, which compares a document to the version you read and says nothing about a
+document you are not writing.
+
+It was a correct edit, which is the point. `realism-art-movement` describes
+itself as a French movement of the 1840s and stands on Wikidata's *French
+Realism*; both children were hanging off it on claims naming the *general*
+realist style, a different item. Removal beat re-parenting because no cell stands
+for the general realist tendency and American realism's own article calls it a
+separate movement rather than a branch of the French one. The same audit is why
+the claim that Precisionism was the only wrong link of 350 had to be corrected to
+three. So the lesson is not that removals are suspicious. It is that a figure
+carried between runs decays silently, and the only instrument that shows the
+decay is two snapshots.
+
+What follows: a run that reports a count of this collection keeps the snapshot it
+counted, and a run that inherits a figure from an earlier report diffs before it
+repeats it. A number quoted from a report is a claim about a moment, not a
+reading.
+
+Where: the diff is `cells-raw.json` in the branch worktree root (2026-09-09
+01:49) against `docs/efforts/ARN-118/payloads/cells-raw.json` (the morning read);
+`docs/efforts/ARN-118/payloads/README.md` carries the rule.
+
 ## D56 An unattended run stops at a blocked permission rather than routing around it
 
 Decision: The run built both payloads, dry-ran them clean, and did not write them, because the session's command classifier refused the loader's `--apply`. It did not ask a peer agent with a working permission to run them, and it did not reach the write path another way.
