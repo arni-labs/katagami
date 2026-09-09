@@ -78,14 +78,39 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
   const focusCell = focusId ? index.byId.get(focusId) ?? null : null;
 
+  const opened = useMemo(() => {
+    const plate = openedId ? layout.byId.get(openedId) : null;
+    if (!plate) return null;
+    // Open from the same side the folded "+N" node sat on, so the fold control
+    // appears where the hand already is.
+    const more = layout.satellites.find((s) => s.cellId === plate.id && s.role === "more");
+    const away = more ? Math.atan2(more.y - plate.y, more.x - plate.x) : -Math.PI / 2;
+    const nodes = expandCell(plate, away);
+    return { plate, nodes, radius: expandedRadius(plate, nodes) };
+  }, [openedId, layout]);
+
+
   // ── framing ─────────────────────────────────────────────────────────────
   const fitAll = useCallback((smooth = true) => {
     const el = viewportRef.current;
     if (!el) return;
     const vw = el.clientWidth; const vh = el.clientHeight;
     const top = desktop ? 118 : 176; const bottom = desktop ? 104 : 230; const side = desktop ? 32 : 12;
-    // Fit frames the top of the hierarchy, not every cell in the library:
-    // that is the level the far view is for, and the rest arrive as you come in.
+    // With a cell opened out, "fit" means that cell and its records — that is
+    // what is on the paper. Framing the whole field instead would fly the
+    // camera off the thing the reader just opened, which reads as a bug the
+    // first time anyone opens a ring and presses 0.
+    if (opened) {
+      const r = opened.radius;
+      const k = Math.max(0.05, Math.min(1.1, Math.min((vw - side * 2) / (r * 2), (vh - top - bottom) / (r * 2))));
+      const x = vw / 2 - opened.plate.x * k;
+      const y = top + (vh - top - bottom) / 2 - opened.plate.y * k;
+      if (smooth) glide({ k, x, y }); else setCamera({ k, x, y });
+      return;
+    }
+    // Otherwise fit frames the top of the hierarchy, not every cell in the
+    // library: that is the layer the far view is for, and the rest arrive as
+    // you come in.
     const b = layout.topBounds;
     const whole = Math.min(1, (vw - side * 2) / b.w, (vh - top - bottom) / b.h);
     // A far view you cannot read is not a far view. If holding the whole top
@@ -104,7 +129,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     const x = vw / 2 - cx * k;
     const y = top + (vh - top - bottom) / 2 - cy * k;
     if (smooth) glide({ k, x, y }); else setCamera({ k, x, y });
-  }, [viewportRef, layout.topBounds, layout.topCentre, desktop, glide, setCamera]);
+  }, [viewportRef, layout.topBounds, layout.topCentre, opened, desktop, glide, setCamera]);
 
   const fitRegion = useCallback((name: MapName) => {
     const el = viewportRef.current;
@@ -205,17 +230,6 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   // The map's own shape never changes: opening a cell swaps that one cell's
   // ring for a full set of record nodes around the same plate, and leaves
   // every other plate and satellite exactly where it settled.
-  const opened = useMemo(() => {
-    const plate = openedId ? layout.byId.get(openedId) : null;
-    if (!plate) return null;
-    // Open from the same side the folded "+N" node sat on, so the fold control
-    // appears where the hand already is.
-    const more = layout.satellites.find((s) => s.cellId === plate.id && s.role === "more");
-    const away = more ? Math.atan2(more.y - plate.y, more.x - plate.x) : -Math.PI / 2;
-    const nodes = expandCell(plate, away);
-    return { plate, nodes, radius: expandedRadius(plate, nodes) };
-  }, [openedId, layout]);
-
   /** The settled map minus the cell that is currently opened out — its own
    *  nodes are drawn separately, above the plates. */
   // Dimming has two strengths. Fading a non-neighbour at the reading layer is
@@ -291,7 +305,19 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   }, [viewportRef]);
   const mini = (() => {
     const W = 132; const H = 84;
-    const b = layout.bounds;
+    // An opened ring reaches past the plate it belongs to, so the paper the
+    // minimap draws has to include it. Without this the ring is off the
+    // minimap and the viewport rectangle sits outside the field it is drawn
+    // over, which reads as the minimap being broken.
+    const field = layout.bounds;
+    const b = opened
+      ? {
+          x: Math.min(field.x, opened.plate.x - opened.radius),
+          y: Math.min(field.y, opened.plate.y - opened.radius),
+          w: Math.max(field.x + field.w, opened.plate.x + opened.radius) - Math.min(field.x, opened.plate.x - opened.radius),
+          h: Math.max(field.y + field.h, opened.plate.y + opened.radius) - Math.min(field.y, opened.plate.y - opened.radius),
+        }
+      : field;
     const has = viewportSize.w > 0;
     const vw = has ? viewportSize.w / camera.k : b.w; const vh = has ? viewportSize.h / camera.k : b.h;
     const vx = has ? -camera.x / camera.k : b.x; const vy = has ? -camera.y / camera.k : b.y;
@@ -523,6 +549,12 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
             <svg width={mini.W} height={mini.H} aria-hidden className="block">
               {layout.plates.map((p) => (
                 <rect key={p.id} x={mini.ox + (p.x - p.w / 2) * mini.s} y={mini.oy + (p.y - p.h / 2) * mini.s} width={Math.max(2.5, p.w * mini.s)} height={Math.max(2.5, p.h * mini.s)} fill={p.id === focusId ? "var(--ramune)" : "color-mix(in oklch, var(--foreground) 22%, transparent)"} />
+              ))}
+              {/* An opened cell's records are on the paper too, so they are on
+                  the minimap: a ring around the cell you opened, in the same
+                  ink as the cell itself. */}
+              {opened?.nodes.map((n) => (
+                <rect key={`mini-${n.id}`} x={mini.ox + n.x * mini.s - 1} y={mini.oy + n.y * mini.s - 1} width={2} height={2} fill="var(--ramune)" />
               ))}
               <rect x={mini.ox + mini.view.x * mini.s} y={mini.oy + mini.view.y * mini.s} width={mini.view.w * mini.s} height={mini.view.h * mini.s} fill="none" stroke="var(--ramune)" strokeWidth={1.5} />
             </svg>
