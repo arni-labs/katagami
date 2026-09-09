@@ -73,7 +73,7 @@ function BrowseRow({
       <span className="min-w-0 flex-1">
         <Eyebrow ink={face.ink}>{eyebrow ?? on}</Eyebrow>
         <span className="mt-0.5 block truncate font-sans text-[17px] font-semibold leading-snug text-foreground">{cell.name}</span>
-        <span className="mt-0.5 block truncate font-sans text-[15px] leading-snug text-muted-foreground">
+        <span className="mt-0.5 block truncate font-sans text-[16px] leading-snug text-muted-foreground">
           {under ? `${under} narrower` : null}
           {under && made ? " · " : null}
           {made ? `${made} made` : null}
