@@ -418,3 +418,15 @@ Options: A host rule for id.loc.gov (rejected: special handling); cite the `.jso
 Chose the header because: It is what a well-behaved script says on every fetch, it changes nothing about the safety checks (same-host redirects, private-address refusal, 2xx only), and on Getty it is strictly stricter, turning a soft-404 HTML page into a real 404. Given up: nothing observed; Wikipedia and ordinary pages answer as before.
 
 Where: `scripts/create-encyclopedia-cells.mjs` (the fetch in the source check); PR #279.
+
+## D36 A direction that appears in prose and in verse gets a cell each, under a shared parent
+
+Decision: Where a technique or tradition exists in more than one literary form, each form's practice is its own cell and a parent cell over them carries the direction. Epistolary fiction and Epistolary poetry stand apart under an epistolary parent; the same for dialect, hypertext, and the Gothic.
+
+Came up because: Pass 2 proposed merging Gothic poetry into the live Gothic fiction cell and asked whether epistolary, dialect and hypertext poetry should merge into their fiction twins. The owner answered: "They can be separate cells with a parent. That's the point of this nested stuff."
+
+Options: One cell per direction across forms, with the forms described inside its scope; or a cell per form with a parent above them.
+
+Chose the cell per form because: each verse tradition has its own history, canon and conventions, and the nesting is what makes the collection explorable. Given up: a reader looking for the Gothic finds three entries rather than one, which the parent is there to answer.
+
+Where: this ledger's Gothic poetry row; the parent cells arrive in a later numbered batch. `.agents/skills/encyclopedia/sources/lcgft-literature.json`.
