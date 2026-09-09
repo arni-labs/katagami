@@ -1,0 +1,11 @@
+{
+  "source": "lcgft-literature",
+  "name": "Library of Congress Genre/Form Terms, Literature",
+  "url": "https://id.loc.gov/authorities/genreForms.html",
+  "licence": "public domain",
+  "use": "read-and-cite",
+  "total": 646,
+  "totalDerivedFrom": "terms under Literature in genreForms.madsrdf.nt.gz, parsed 2026-09-08 (writing-crossmodal-report.md)",
+  "lane": "writing",
+  "terms": []
+}

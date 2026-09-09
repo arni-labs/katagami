@@ -7,7 +7,7 @@
 # deterministic MechanicalBands (katagami:voice-bands/v1 — burstiness band,
 # banned phrases, punctuation rates, type-token ratio, function-word distance),
 # annotated Exemplars (the drafted-vs-sent ground truth), and the portable
-# VOICE.md projection published at /voice/<id>/VOICE.md.
+# VOICE.md projection served at /voice/<id>/VOICE.md (owner-only for now).
 #
 # The publish gate that makes this lane VERIFIED rather than described:
 # `bands_self_consistent` — every exemplar in the style's own corpus must pass
@@ -279,7 +279,7 @@ kind = "internal"
 from = ["Draft", "UnderReview", "Published"]
 effect = [{ type = "set_bool", var = "has_published_assets", value = "true" }]
 params = ["voice_md_asset_id", "voice_md_asset_url", "thumbnail_asset_id", "thumbnail_asset_url"]
-hint = "Attach immutable public artifact URLs from the generic Temper publish-artifact flow so /voice/<id>/VOICE.md serves without auth. PawFS file ids remain the governed source."
+hint = "Attach immutable artifact URLs from the generic Temper publish-artifact flow. /voice/<id>/VOICE.md is served by the site to the owner only until the writing lane's publication is decided; PawFS file ids remain the governed source."
 
 [[action]]
 name = "AttachTasteVector"

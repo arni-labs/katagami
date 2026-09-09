@@ -291,6 +291,70 @@ revision keeps the cell's id and history. Verify on a local fixture first: see
 `.agents/skills/verify-katagami/features/encyclopedia-cells.md` and
 `scripts/verify-encyclopedia.mjs`.
 
+## Sources and reading passes: how the collection grows
+
+The encyclopedia grows by **reading passes**, never by import. A pass takes a
+slice of one source (60 to 80 terms), reads every term, and decides one thing
+per term. The decisions are written down at the moment they are made, in the
+source's ledger, and the pass ends in a numbered proposal of 20 to 30 cells
+that the human approves item by item (above). The loader then writes it.
+
+| decision | meaning |
+|---|---|
+| `cell` | passes the cell test: a nameable style, movement or technique with a body of work. Goes into the proposal. Becomes `live` once the loader has written it (fill `cellId`). |
+| `merge` | already a cell under another name or a parent; the source page is added to that cell's sources. |
+| `declined` | fails the test (a period label with no practice, a cataloguing term, a mood word). One-line reason. |
+| `deferred` | plausible, but the body of work is unclear or no citable source was found yet. A missing manifestation is never a reason to defer: cells exist without manifestations. |
+
+Rules that hold in every pass:
+
+- **A cell is named by the source vocabulary**, never by an invented label. "Field
+  notes", "Epistolary fiction", "Impressionism" are names; a coined brand with one
+  writer's work under it is not a cell, it is a manifestation credited to that
+  writer and belongs under a cell.
+- **Scope text is ours and cites the page it was read from.** Nothing is copied:
+  share-alike (Aesthetics Wiki, Wikipedia) and attribution (Artsy, Getty) sources
+  are read, decided, and cited.
+- **One cell per direction across media.** A movement that spans art and writing
+  gains a second `maps` membership, explained and cited; it never becomes a second
+  cell.
+- Manifestations ride along: search `credits` across all record sets at every
+  status and list what exists. Most new cells will have none on day one.
+
+Per-source use, decided with the human on 2026-09-08:
+
+| source | use | how |
+|---|---|---|
+| LCGFT Literature (646, public domain) | read-and-cite | first writing lane: genre and form terms as technique-style cells |
+| Wikidata literary movements (416, CC0) | names-only | reading list for movement cells; it holds almost no edges |
+| Wikipedia Category:Literary movements (89, CC-BY-SA) | read-and-cite | read, decide, write our own text, cite the page |
+| Wikidata literary techniques (440, CC0) | with-care | many are figures of speech, expect a high decline rate |
+| Artsy Art Genome (521, CC-BY-4.0) | read-and-cite | first visual lane; gene page cited on every cell |
+| Getty AAT Styles and Periods (6,198, ODC-By) | backbone | never read end to end; every visual cell gains its AAT concept as a source when one exists |
+| Wikidata art-movement influence (205 edges, CC0) | edges | reading list for relationships, each checked and cited |
+| Aesthetics Wiki (1,241, CC-BY-SA) | read-never-copy | community coinage: a term with no dated body of work outside the wiki is declined or deferred |
+| CARI | human-read-cite-only | refuses scripts; a human reads it in a browser, cites the page, marks the source verified |
+| Britannica, Poetry Foundation, Princeton Encyclopedia, Oxford Dictionary of Literary Terms, Stanford Encyclopedia | cite-only | never opened by an agent; a human may cite and verify a page |
+
+Two ledgers are cleanup passes over what existed before the sources were read
+(`katagami-cells-2026-09`, `katagami-writing-styles-2026-09`); their decisions
+are `keep` / `revise` / `merge` / `archive` (and `live` once a revision has been
+written), made against the same sources. Cite-only sources have no ledger: they
+are never processed, only cited.
+
+**The tracker** is one file per source in `.agents/skills/encyclopedia/sources/`
+(`source`, `name`, `url`, `licence`, `use`, `total`, `totalDerivedFrom`, `lane`,
+`terms[]` with `term`, `ref`, `decision`, `batch`, `note`, optional `cellId`).
+Coverage of a source is terms decided over its total; for the Getty backbone a
+row is a cell that gained its AAT id, and the command reports the count. Render all of them with:
+
+```bash
+node scripts/encyclopedia-coverage.mjs
+```
+
+It validates every row and refuses a malformed ledger; `cd ui && npm test` runs
+the same check. Write a row when you decide, not when you report.
+
 ## Maintaining
 
 - **Integrity sweep**: every cell's attestation pair *and* that its document

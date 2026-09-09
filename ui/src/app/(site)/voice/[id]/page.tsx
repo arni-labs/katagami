@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getWritingStyle, getFileUrl, getFileText, parseJson } from "@/lib/odata";
+import { getWritingStyle, getFileText, parseJson } from "@/lib/odata";
 import { voiceComposition } from "@/lib/lane-items";
 import { isOwner } from "@/lib/owner";
 import { PageHero } from "@/components/page-hero";
@@ -146,9 +146,7 @@ export default async function VoiceDetailPage({
       }
     : undefined;
   const voiceMdBody = f.voice_md_file_id ? (await getFileText(f.voice_md_file_id)).trim() : "";
-  const voiceMdUrl =
-    (f.voice_md_asset_url ?? "").trim() ||
-    (f.voice_md_file_id ? getFileUrl(f.voice_md_file_id) : "");
+  const voiceMdUrl = `/voice/${id}/VOICE.md`;
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:py-10">

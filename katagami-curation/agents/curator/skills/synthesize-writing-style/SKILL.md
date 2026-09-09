@@ -44,8 +44,9 @@ WritingStyle to `Published`. Do NOT call `AttestConsent`,
 - **Credit openly, name independently.** Credits name the register/movement
   and, for PD corpora, the authors/works (`{name, kind (register|movement|
   tradition|writer|corpus), note}`); credit ALL influences. The STYLE is
-  named for its register quality (e.g. "Drawing-Room Irony"), never marketed
-  as "write like <author>" — a reference document, not a clone.
+  named by the source vocabulary (see "Names and where a style sits" below:
+  "Epistolary fiction", "Field notes"), never as "write like <author>" and
+  never with a coined name.
 - The personal-voice intake is the only place `basis: "opt_in"` originates;
   this lane never fabricates it.
 
@@ -53,7 +54,7 @@ WritingStyle to `Published`. Do NOT call `AttestConsent`,
 
 - Read `/system/knowledge/design-principles.md` and `/system/knowledge/quality-standards.md`.
 - `existing = temper.list('WritingStyles', '')` — your register must be distinct.
-- Naming: a real, ownable name; match the name's culture to the register; vary widely.
+- Naming: the source-vocabulary name (LCGFT term or movement name); see "Names and where a style sits".
 
 ## SPEC PHASE
 
@@ -173,6 +174,35 @@ Delta over 500 most-frequent words; bake-off champion over StyleDistance and
 Wegmann embeddings on the PD catalog). It is REPORT-ONLY: it appears in the
 verification record and never gates a publish.
 
+## VOICE.md format v3.3-lean (2026-09-08) — the current format: v3.2-lean plus the corpus
+
+Frontmatter `version: v3.3-lean`; sections `## Never`, `## Gold standard
+samples`, `## Signature vocabulary`, `## Measured fingerprint`, the bands JSON,
+then `## Corpus`. The finalizer (`verify_voice_md_body`) requires these
+headings, a `files:` list in the corpus front matter, a `## Corpus` section
+that links every listed file exactly once and nothing else, and refuses an
+empty sample slot.
+The passage count is authored, one per corpus item; the finalizer checks the
+links, the list, and the empty slot. Files that still
+declare `v3.2-lean` are checked by the v3.2 rules; new files declare v3.3.
+
+The handoff is the file. An agent given VOICE.md alone must be able to write in
+the voice, so the file carries the corpus, in two forms:
+
+- **Gold standard samples**: one passage per corpus item, each the longest
+  continuous excerpt that reads on its own (300 words or more where the source
+  allows), quoted verbatim and labeled with its source. Never a fixed count of
+  slots: write exactly as many entries as there are passages, and never an
+  empty or placeholder entry. An entry like `5. ""` fails verification.
+- **Corpus**: the existing `corpus:` mapping in the frontmatter (consent,
+  author, license, samples, provenance) gains a `files:` list with one entry
+  per corpus file: `- {file_id, source, words}`; and after the bands block a
+  `## Corpus` section links each file at `/api/file/<file_id>` with its source
+  line, so a reader can pull the full text.
+
+Regenerating an existing style's VOICE.md is content work: propose it, get the
+number approved, then `AttachVoiceMd` with the new file.
+
 ## Replication — the round-trip proof (required, 2026-07-06)
 
 Every writing style MUST attach replication before it can pass verification:
@@ -187,14 +217,21 @@ Every writing style MUST attach replication before it can pass verification:
    fails verification with missing_replication or voice_bands_violation.
 Replicas are displayed in the UI labeled as replicas — never as author text.
 
-## The two-level shape (curator decision, 2026-07-06)
+## Names and where a style sits (owner decision, 2026-09-08; replaces the two-level shape of 2026-07-06)
 
-- A single-PD-author style is an AUTHOR VOICE: named for what it is
-  ("Samuel Pepys — diary (1660s)"), parent_ids [], generation 0. Never an
-  invented brand name. Author voices are the adherence calibration set.
-- A blend is a LINEAGE CHILD: parent_ids name the author voices it mixes,
-  lineage_type "blend", generation >= 1, its own merged corpus and derived
-  bands. Plain register names ("Ship's log"), never cute compounds.
+- **A writing style is named by the source vocabulary** the encyclopedia reads
+  (Library of Congress Genre/Form Terms, the literary-movement lists): "Field
+  notes", "Ship's log", "Epistolary fiction", "Plain-language technical
+  writing". Never a coined name. "Plainhand" is the example of what is not
+  allowed.
+- **A record built from one writer's work is a manifestation, not a style.**
+  It keeps its honest name ("Samuel Pepys — diary (1660s)"), credits the
+  writer, and is attached under the encyclopedia cell for its genre or
+  movement (see `.agents/skills/encyclopedia/SKILL.md`). It is never presented
+  as a style of its own.
+- A blend keeps `parent_ids` naming the records it mixes, `lineage_type`
+  "blend", its own merged corpus and derived bands, and a source-vocabulary
+  name.
 - tone_scales stays "{}" — numeric dials are never authored. Tone lives in
   the persona prose, the exemplars, and the measured bands.
 

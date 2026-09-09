@@ -1,0 +1,11 @@
+{
+  "source": "artsy-genome",
+  "name": "Artsy Art Genome Project",
+  "url": "https://github.com/artsy/the-art-genome-project",
+  "licence": "CC-BY-4.0",
+  "use": "read-and-cite",
+  "total": 521,
+  "totalDerivedFrom": "genes.csv rows in styles/movements 251, media/techniques 175, design movements 26, cultural styles 69, counted 2026-09-08",
+  "lane": "visual",
+  "terms": []
+}

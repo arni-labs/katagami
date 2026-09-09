@@ -4713,7 +4713,14 @@ fn verify_voice_md_body(
     // Format v3.2-lean (E22-gated, 2026-07-08): sample-led lean contracts
     // declare themselves in frontmatter and carry a different required set.
     let v32 = lower.contains("version: v3.2-lean");
-    let required: &[&str] = if v32 {
+    // Format v3.3-lean (2026-09-08): the file is the handoff, so it carries
+    // its corpus. Same headings as v3.2 plus `## Corpus` with at least one
+    // corpus file link, a `files:` list in the front matter, and no empty
+    // sample slot. Files that declare v3.2 keep the v3.2 requirements.
+    let v33 = lower.contains("version: v3.3-lean");
+    let required: &[&str] = if v33 {
+        &["## Never", "## Gold standard samples", "## Signature vocabulary", "## Measured fingerprint", "## Corpus"]
+    } else if v32 {
         &["## Never", "## Gold standard samples", "## Signature vocabulary", "## Measured fingerprint"]
     } else {
         &["## Overview", "## Tone", "## Vocabulary", "## Moves", "## Register", "## Never"]
@@ -4721,6 +4728,46 @@ fn verify_voice_md_body(
     for heading in required {
         if !trimmed.contains(heading) {
             problems.push(format!("missing {heading}"));
+        }
+    }
+    if v33 {
+        if !lower.contains("\nfiles:") && !lower.contains("\n  files:") {
+            problems.push("front matter missing corpus files: list".to_string());
+        }
+        let id_after = |text: &str, marker: &str| -> Vec<String> {
+            text.match_indices(marker)
+                .map(|(at, _)| {
+                    text[at + marker.len()..]
+                        .chars()
+                        .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
+                        .collect::<String>()
+                })
+                .collect()
+        };
+        let listed = id_after(&lower, "file_id: fl-");
+        let linked = id_after(&lower, "/api/file/fl-");
+        let listed_set: std::collections::BTreeSet<&String> = listed.iter().collect();
+        let linked_set: std::collections::BTreeSet<&String> = linked.iter().collect();
+        if linked.is_empty() {
+            problems.push("## Corpus links no corpus file (/api/file/<file_id>)".to_string());
+        } else if listed_set != linked_set || linked.len() != linked_set.len() {
+            problems.push(
+                "## Corpus must link each listed corpus file exactly once, and only listed files".to_string(),
+            );
+        }
+        // A numbered sample line is `<digits>.` followed by the quote; a bare
+        // number inside prose ("1984") is not a slot.
+        let empty_sample = trimmed.lines().any(|line| {
+            let l = line.trim();
+            let digits: String = l.chars().take_while(|c| c.is_ascii_digit()).collect();
+            if digits.is_empty() || !l[digits.len()..].starts_with('.') {
+                return false;
+            }
+            let rest = l[digits.len() + 1..].trim();
+            matches!(rest, "\"\"" | "“”" | "''" | "")
+        });
+        if empty_sample {
+            problems.push("empty gold standard sample slot".to_string());
         }
     }
     if !trimmed.contains("katagami:voice-bands/v1") {
@@ -7189,6 +7236,31 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
         assert_eq!(verdict, "abstain");
         let thin: Vec<(String, String)> = vec![("corpus:0".to_string(), "tiny".to_string())];
         assert!(style_similarity_scores(&thin, &[]).is_none());
+    }
+
+    #[test]
+    fn voice_md_v33_lean_requires_the_corpus_and_no_empty_slot() {
+        let good = "---\nversion: v3.3-lean\nkind: voice\nname: T\ncorpus:\n  consent: public_domain\n  files:\n    - {file_id: fl-1, source: S, words: 900}\n---\n## Never\nx\n## Gold standard samples\n1. \"a long passage\"\n## Signature vocabulary\nwords\n## Measured fingerprint\nstats\n```json\n{\"schema\": \"katagami:voice-bands/v1\"}\n```\n## Corpus\n- [S](/api/file/fl-1)\n";
+        assert!(verify_voice_md_body("ws", "fl-v", good).is_ok());
+        let no_corpus = good.replace("## Corpus\n- [S](/api/file/fl-1)\n", "");
+        assert!(verify_voice_md_body("ws", "fl-v", &no_corpus).is_err());
+        let no_files = good.replace("  files:\n    - {file_id: fl-1, source: S, words: 900}\n", "");
+        assert!(verify_voice_md_body("ws", "fl-v", &no_files).is_err());
+        let empty_slot = good.replace("1. \"a long passage\"\n", "1. \"a long passage\"\n2. \"\"\n");
+        assert!(verify_voice_md_body("ws", "fl-v", &empty_slot).is_err());
+        let missing_link = good.replace("  files:\n    - {file_id: fl-1, source: S, words: 900}\n", "  files:\n    - {file_id: fl-1, source: S, words: 900}\n    - {file_id: fl-2, source: T, words: 700}\n");
+        assert!(verify_voice_md_body("ws", "fl-v", &missing_link).is_err());
+        let wrong_link = good.replace("- [S](/api/file/fl-1)", "- [S](/api/file/fl-9)");
+        assert!(verify_voice_md_body("ws", "fl-v", &wrong_link).is_err());
+        let doubled = missing_link.replace("- [S](/api/file/fl-1)\n", "- [S](/api/file/fl-1)\n- [S](/api/file/fl-1)\n");
+        assert!(verify_voice_md_body("ws", "fl-v", &doubled).is_err());
+        let two_files_two_links = missing_link.replace("- [S](/api/file/fl-1)\n", "- [S](/api/file/fl-1)\n- [T](/api/file/fl-2)\n");
+        assert!(verify_voice_md_body("ws", "fl-v", &two_files_two_links).is_ok());
+        let bare_number = good.replace("## Never\nx\n", "## Never\nx\n1984\n");
+        assert!(verify_voice_md_body("ws", "fl-v", &bare_number).is_ok());
+        // a v3.2 file is untouched by the v3.3 rules
+        let v32 = good.replace("version: v3.3-lean", "version: v3.2-lean").replace("## Corpus\n- [S](/api/file/fl-1)\n", "");
+        assert!(verify_voice_md_body("ws", "fl-v", &v32).is_ok());
     }
 
     #[test]

@@ -1,0 +1,11 @@
+{
+  "source": "katagami-writing-styles-2026-09",
+  "name": "The 19 WritingStyle records live before the reading passes began",
+  "url": "https://openpaw-production.up.railway.app/tdata/WritingStyles",
+  "licence": "internal",
+  "use": "cleanup",
+  "total": 19,
+  "totalDerivedFrom": "WritingStyles read back 2026-09-08: 17 UnderReview, 2 Archived",
+  "lane": "writing",
+  "terms": []
+}
