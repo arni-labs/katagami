@@ -884,12 +884,19 @@ that can do damage.
 
 Where: `docs/efforts/ARN-118/payloads/mkbatch.mjs`.
 
-## D59 The curated layer stops at 131 roots, and going lower is the owner's call
+## D59 The curated layer stops where the evidence stops, and going lower is the owner's call
+
+> **Counts qualified after D71.** This entry was written before the write, and
+> its figures were the mixed pair D71 exists to forbid: a predicted "131" with
+> no measure named. Measured against production at 2026-09-09 16:47Z, after the
+> pass landed, the art lane holds 216 cells at **133 roots by map-parent** and
+> **131 by any-link**. The decision below — stop where the sources stop — is
+> unchanged; only its arithmetic is restated.
 
 Decision: The pass nests what three independent sources support and stops. The
-131 art cells left as roots stay roots, and the report says which lever was
-tried against them and what it returned, rather than reaching for a parent that
-is not in the evidence.
+art cells left as roots stay roots, and the report says which lever was tried
+against them and what it returned, rather than reaching for a parent that is not
+in the evidence.
 
 Came up because: after the Wikipedia leads were exhausted, three further levers
 were tried against the remaining roots. Full article bodies, scanned for
@@ -915,8 +922,16 @@ much, and it is exactly the judgment the boundary reserves for her. It spans
 1860 to 1970, which reads as the period grouping the rules forbid, and it also
 has a real practice and a Tate art term, so the argument runs both ways and an
 agent should not settle it at four in the morning. Given up: the art lane stays
-at 131 roots against the writing lane's 133 out of a much larger set, and it
-looks flatter than it is.
+near the top of its own tree and looks flatter than it is.
+
+The cross-lane comparison this entry originally drew was wrong twice over and is
+restated here rather than deleted, because the shape of the error is the point.
+It read "131 art roots against the writing lane's 133 out of a much larger set",
+which mixed measures and also carried a writing-lane figure that does not hold.
+At the 16:47Z read, by map-parent throughout: art is 216 cells at 133 roots,
+writing is 564 cells at 128. So the writing lane is about 2.6 times the size and
+has slightly fewer roots, which supports the same conclusion the original
+sentence was reaching for, on numbers that survive being checked.
 
 
 A second call belongs here, because it is the same shape as the Vienna Secession
@@ -1197,6 +1212,37 @@ Chose both, headlining map-parent because: the flat row this effort set out to f
 The rule this generalises to: the reading-time convention already saved two arguments; this is its other half. **A count of this collection is not a number until it says what it counted, not only when it read.** This is the second instance in one day of two agents disagreeing while both were right — after D58, where a status read from the wrong key had one client counting 17 archived cells as live. Both times the disagreement looked like a data problem and was a definition problem, and both times the first instinct was to explain it as drift. Drift is the more flattering diagnosis, because it makes both parties right about the method and blames the world. Check the definitions before reaching for it.
 
 Where: `docs/efforts/ARN-118/payloads/depth.mjs` computes map-parent; the table of both measures at both reads is in `docs/efforts/ARN-118/payloads/README.md` under "Say which root count you mean, and never mix the two".
+
+### Addendum: the rule did not retrofit itself onto the code that preceded it
+
+D71 was written against a reporting mistake and then the review found the same
+mistake three more times, in this effort's own instruments, in code written
+before the rule existed:
+
+- `depth.mjs` skipped a payload it could not read and still labelled the result
+  "with the payloads applied" — a count naming two inputs while reading one.
+- `mkbatch.mjs` reported `plan.newCells.length`, the mints intended, rather than
+  the mints emitted. It printed "3 new" on a run that wrote 2, because a parent
+  another run had already created was correctly skipped. Plan reported as effect.
+- D59, two entries above D71, gave 131 as a bare art-root count with no measure
+  and no read time, and carried a cross-lane comparison whose writing-lane figure
+  did not hold at all.
+
+None of these was found by writing the rule. All three were found by a reviewer
+reading the code afterwards, which is the useful observation: a rule stated in a
+decision log changes what the next author writes and nothing about what is
+already committed. The counts that needed it most were the ones written by the
+run that went on to discover the rule.
+
+What follows: when a decision constrains how something is reported or measured,
+grep the effort's own artefacts for the pattern before calling the decision
+done. The same instruction one level up — fix a data bug in every instrument
+that reads the field — is the D58 addendum, and this is its reporting-shaped
+twin. Both are the same failure: the fix landing where the problem was noticed
+rather than everywhere the problem lives.
+
+Where: `docs/efforts/ARN-118/payloads/depth.mjs`, `mkbatch.mjs`, and the
+qualifying note on D59.
 
 ### The gap between the measures is also a defect, and it is exactly two cells
 

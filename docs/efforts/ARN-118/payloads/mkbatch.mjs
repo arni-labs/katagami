@@ -123,4 +123,13 @@ const emit = (path, batch, cells) => {
 };
 emit('./batch-art-1.json', 'ART-1', b1);
 emit('./batch-art-2.json', 'ART-2', b2);
-console.error(`total ${built.length} (${plan.newCells.length} new, ${built.length - plan.newCells.length} revised)`);
+// Count what was emitted, not what was planned. `plan.newCells.length` is the
+// intention; a parent another run had already created is skipped above, so the
+// plan figure overstated the mints every time that happened — it said 3 new
+// when 2 were written. Plan and effect are different numbers and only the
+// second one is a result.
+const newBuilt = built.filter((c) => c.new).length;
+console.error(`total ${built.length} written (${newBuilt} new, ${built.length - newBuilt} revised)`);
+if (newBuilt !== plan.newCells.length) {
+  console.error(`  ${plan.newCells.length - newBuilt} planned parent(s) already existed and were not re-created`);
+}

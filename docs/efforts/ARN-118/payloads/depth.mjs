@@ -46,12 +46,22 @@ function report(label, d) {
 report('production as read', docs);
 
 const after = new Map([...docs].map(([k, v]) => [k, JSON.parse(JSON.stringify(v))]));
-for (const f of ['batch-art-1.json', 'batch-art-2.json']) {
+const payloads = ['batch-art-1.json', 'batch-art-2.json'];
+let applied = 0;
+for (const f of payloads) {
+  // A payload that cannot be read used to be skipped in silence, and the line
+  // below still said "with the payloads applied". A count that names inputs it
+  // did not read is the failure this effort is about; say what went wrong and
+  // stop, rather than labelling a one-payload result as a two-payload one.
   let b;
-  try { b = JSON.parse(readFileSync(`./${f}`, 'utf8')); } catch { continue; }
+  try { b = JSON.parse(readFileSync(`./${f}`, 'utf8')); } catch (error) {
+    throw new Error(`cannot read payload ${f}, so the projected figures would cover only ${applied} of ${payloads.length} payloads: ${error.message}`);
+  }
+  if (!Array.isArray(b.cells)) throw new Error(`payload ${f} has no cells array`);
   for (const c of b.cells) {
     after.set(c.id, { version: 3, name: c.name, description: c.description, provenance: c.provenance, maps: c.maps, broader: c.broader, relations: c.relations, questions: c.questions, sources: c.sources, manifestations: c.manifestations, studies: c.studies });
   }
+  applied += 1;
 }
-const post = report('with the payloads applied', after);
+const post = report(`with ${applied} of ${payloads.length} payloads applied`, after);
 if (process.argv[2] === '--roots') console.log('\n' + post.roots.sort().join('\n'));
