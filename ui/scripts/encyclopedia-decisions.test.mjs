@@ -75,3 +75,18 @@ test("numbers are read from headings only, not from prose that mentions one", ()
   const markdown = "## D41 A title\n\nThis refers to D38 and to D99 in a sentence.\n\n## D47 Another\n";
   assert.deepEqual(decisionNumbers(markdown), [41, 47]);
 });
+
+// A conflict marker committed into the log is invisible to every check above,
+// because they all match on `## D<n>` headings and a marker is not one. Three
+// were committed to master in a merge resolution and found by a reader rather
+// than by a test: the resolution wrote its output without ever grepping it, and
+// nothing between there and master looked. A merge tool's own scratch filenames
+// end up in the marker, so match the shape rather than a literal.
+test("the committed decision log carries no conflict markers", () => {
+  const lines = readFileSync(LOG, "utf8").split("\n");
+  const markers = lines
+    .map((line, i) => [i + 1, line])
+    .filter(([, line]) => /^(<{7}|>{7}|={7})(\s|$)/.test(line))
+    .map(([n, line]) => `line ${n}: ${line}`);
+  assert.deepEqual(markers, []);
+});
