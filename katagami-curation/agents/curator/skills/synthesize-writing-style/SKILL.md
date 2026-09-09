@@ -244,12 +244,16 @@ that selection random. What she wants instead:
 
 A writing style contains two kinds of text and they are governed differently.
 
-**The specimen** — the corpus passages and the exemplars — is the style itself.
-For a public-domain basis it is a real human's text, quoted verbatim. For an
-`original` basis the pipeline writes it in-register, and it must stay in that
-register: do not rewrite it toward any other voice. It still must be free of the
-tells `unspeak` names, because a corpus carrying them teaches them, but its
-register is its own.
+**The example text is never edited by anyone.** The corpus passages and the
+exemplars quoted from them, which the VOICE.md carries under "Gold standard
+samples", are the style itself. On a public-domain basis they are a real human's
+sentences, copied character for character from the named edition; nothing alters
+them, not `unspeak`, not a curator, not a later pass. On an `original` basis the
+pipeline writes them in the target register at the moment of authoring, and from
+then on they are the specimen and are not rewritten toward any other voice.
+Write an original passage free of the tells `unspeak` names, because a corpus
+carrying them teaches them; that is a rule about how you write it, never a
+licence to edit it afterwards.
 
 **Everything else is product prose**: the persona, the register lines, the moves
 and refusals, the exemplar annotations, the curator notes, and every framing
@@ -259,7 +263,9 @@ workflow, not a glance at the word list. The owner's standing rule is that every
 user-facing sentence goes through unspeak; this is where a writing style's
 sentences are.
 
-The contrast frame "X, not Y" is banned in all of it, specimen included.
+The contrast frame "X, not Y" is banned in the product prose, and in an original
+passage at the moment you write it. A public-domain passage stands as its author
+wrote it whatever it contains.
 
 ## Names and where a style sits (owner decision, 2026-09-08; replaces the two-level shape of 2026-07-06)
 
