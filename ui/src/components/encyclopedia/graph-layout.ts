@@ -57,6 +57,27 @@ const RING_PAD = 18;
  *  Five hundred cells at one size is a mesh; five hundred over four layers is
  *  a field that reads at any zoom. */
 export const LEVEL_SHRINK = 0.5;
+
+/** Guards on the two settling loops, and the tests that normally end them
+ *  first. Both loops used to run a fixed number of passes whatever the field
+ *  was doing, which made the layout's cost a multiple of the library's size
+ *  with nothing to show for most of it: at five thousand cells the two spent
+ *  thirty seconds, and the request that triggered them waited for all of it. */
+const FORCE_ITERS = 260;
+/** Average movement per card, in paper pixels, below which a relaxation pass
+ *  has stopped changing anything a reader could see. */
+const FORCE_QUIET_PX = 0.1;
+const SEPARATE_ITERS = 900;
+/** Share of the remaining overlap a sweep must clear to count as progress.
+ *  Measured over the live library: the sweep clears three quarters of the
+ *  overlap in fifty passes, and everything after pass three hundred moved the
+ *  count from 252 overlapping pairs to 202 while the deepest overlap did not
+ *  improve at all. */
+const SEPARATE_QUIET_SHARE = 0.002;
+/** How many passes in a row must fail that test before a sweep gives up. The
+ *  measure is noisy pass to pass, so one quiet pass is not an answer. */
+const PATIENCE = 8;
+const SATELLITE_ITERS = 80;
 /** How many cells the first layer holds, and how much bigger each layer after
  *  it is. Geometric, so the layer count grows with the logarithm of the
  *  library: five hundred cells is four layers, five thousand is six. */
@@ -518,8 +539,13 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
 
   const fx = new Float64Array(count);
   const fy = new Float64Array(count);
-  for (let iter = 0; iter < 260; iter++) {
-    const t = 1 - iter / 260;
+  // The relaxation stops when it has stopped moving the field, not after a
+  // fixed number of passes. Over five thousand cells the fixed count spent ten
+  // seconds, most of it on passes that moved the average card a fraction of a
+  // pixel. `FORCE_ITERS` is the guard, not the expected exit.
+  let settleFrom = 0;
+  for (let iter = 0; iter < FORCE_ITERS; iter++) {
+    const t = 1 - iter / FORCE_ITERS;
     const step = 0.12 * t + 0.02;
     fx.fill(0); fy.fill(0);
     // Repulsion between plates (short range).
@@ -560,16 +586,39 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
       fx[i] += (gx[i] - px[i]) * 0.05;
       fy[i] += (gy[i] - py[i]) * 0.05;
     }
-    for (let i = 0; i < count; i++) { if (!pinned[i]) { px[i] += fx[i] * step; py[i] += fy[i] * step; } }
+    let travelled = 0;
+    for (let i = 0; i < count; i++) {
+      if (pinned[i]) continue;
+      const dx = fx[i] * step;
+      const dy = fy[i] * step;
+      px[i] += dx;
+      py[i] += dy;
+      travelled += Math.abs(dx) + Math.abs(dy);
+    }
+    // A pass that moves the average card less than a tenth of a pixel is not
+    // changing the field any reader could see. Two of them in a row and the
+    // relaxation is done.
+    if (travelled / count < FORCE_QUIET_PX) {
+      if (++settleFrom >= 2) break;
+    } else settleFrom = 0;
   }
 
   // ── separate footprints (plate + its ring of satellites) ─────────────
-  // Every pass is now cheap, so the sweep runs until nothing overlaps rather
-  // than stopping at a fixed count and leaving plates on top of each other.
-  // The cap is a guard against a configuration that cannot settle, not the
-  // expected exit: at a hundred cells this clears in a handful of passes, and
-  // a synthetic thousand clears well inside it.
-  for (let iter = 0; iter < 900; iter++) {
+  // The sweep pushes overlapping footprints apart. It cannot be run "until
+  // nothing overlaps": a field this dense never reaches that, because pushing
+  // one pair apart pushes each of them into another. Measured over the real
+  // library, it clears three quarters of the overlap in the first fifty passes
+  // and then grinds — pass one hundred to pass nine hundred took eighty-nine
+  // per cent of the time, halved the number of overlapping pairs and did not
+  // improve the deepest overlap by a single pixel.
+  //
+  // So the sweep stops when it stops helping, measured on the overlap it is
+  // there to remove. `moved` cannot express that: every push is at least a
+  // pixel, so something is always "moving" while anything overlaps at all.
+  let previousDepth = Infinity;
+  let grinding = 0;
+  for (let iter = 0; iter < SEPARATE_ITERS; iter++) {
+    let depth = 0;
     let moved = false;
     grid.rebuild(px, py);
     for (let a = 0; a < count; a++) {
@@ -583,6 +632,7 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
         const oy = (fh[a] + fh[b]) / 2 + room - Math.abs(dy);
         if (ox <= 0 || oy <= 0) continue;
         moved = true;
+        depth += Math.min(ox, oy);
         // Share the push by mass: the lighter card yields.
         const total = mass[a] + mass[b];
         // Two pinned cards would otherwise never come apart and the sweep
@@ -595,6 +645,14 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
       }
     }
     if (!moved) break;
+    // Improvement, as a share of the overlap there was. Below the threshold
+    // the sweep is polishing something the eye cannot see; a few such passes
+    // in a row and it is finished.
+    const gain = previousDepth === Infinity ? 1 : (previousDepth - depth) / Math.max(1, previousDepth);
+    previousDepth = depth;
+    if (gain < SEPARATE_QUIET_SHARE) {
+      if (++grinding >= PATIENCE) break;
+    } else grinding = 0;
   }
   for (let i = 0; i < count; i++) { nodes[i].x = px[i]; nodes[i].y = py[i]; }
 
@@ -649,7 +707,12 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
   plateGrid.rebuild(px, py);
   const satGrid = new PointGrid(Math.max(SAT_W, SAT_H) + 10, satCount);
   const nearSats = new Int32Array(Math.max(satCount, count));
-  for (let iter = 0; iter < 80; iter++) {
+  // The rings settle on the same terms as the plates did: stop when the sweep
+  // stops clearing overlap, rather than always running the guard out.
+  let satDepthBefore = Infinity;
+  let satGrinding = 0;
+  for (let iter = 0; iter < SATELLITE_ITERS; iter++) {
+    let depth = 0;
     let moved = false;
     for (let a = 0; a < satCount; a++) {
       const found = plateGrid.near(sx[a], sy[a], nearSats);
@@ -660,6 +723,7 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
         const oy = (p.h / 2 + (SAT_H / 2) * ss[a] + 16 * near) - Math.abs(sy[a] - p.y);
         if (ox <= 0 || oy <= 0) continue;
         moved = true;
+        depth += Math.min(ox, oy);
         if (ox < oy) sx[a] += (ox + 1) * (sx[a] >= p.x ? 1 : -1); else sy[a] += (oy + 1) * (sy[a] >= p.y ? 1 : -1);
       }
     }
@@ -674,11 +738,17 @@ export function layoutGraph(index: GraphIndex): GraphLayout {
         const ox = (SAT_W + 10) * room - Math.abs(dx); const oy = (SAT_H + 10) * room - Math.abs(dy);
         if (ox <= 0 || oy <= 0) continue;
         moved = true;
+        depth += Math.min(ox, oy);
         if (ox < oy) { const sh = (ox / 2 + 1) * (dx >= 0 ? 1 : -1); sx[a] -= sh; sx[b] += sh; }
         else { const sh = (oy / 2 + 1) * (dy >= 0 ? 1 : -1); sy[a] -= sh; sy[b] += sh; }
       }
     }
     if (!moved) break;
+    const gain = satDepthBefore === Infinity ? 1 : (satDepthBefore - depth) / Math.max(1, satDepthBefore);
+    satDepthBefore = depth;
+    if (gain < SEPARATE_QUIET_SHARE) {
+      if (++satGrinding >= PATIENCE) break;
+    } else satGrinding = 0;
   }
   satellites.forEach((s, i) => { s.x = sx[i]; s.y = sy[i]; });
   for (const s of satellites) { s.x = Math.round(s.x); s.y = Math.round(s.y); }

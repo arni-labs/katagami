@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { isOwner } from "@/lib/owner";
 import { labPreviewAllowed } from "@/lib/lab-preview";
-import { loadEncyclopedia } from "@/lib/encyclopedia";
+import { loadEncyclopediaCached } from "@/lib/encyclopedia-cache";
 import { EncyclopediaMap } from "@/components/encyclopedia/encyclopedia-map";
 import { settledLayout } from "@/lib/encyclopedia-layout";
 
@@ -21,19 +21,18 @@ export default async function EncyclopediaPage({ searchParams }: { searchParams:
   if (!(await isOwner()) && !labPreviewAllowed()) notFound();
   const { cell } = await searchParams;
   const initialCellId = typeof cell === "string" ? cell : null;
-  const graph = await loadEncyclopedia();
+  const graph = await loadEncyclopediaCached();
   // The field is settled here, not in the browser, and once per state of the
   // library rather than once per request. Running it during the client's first
   // render froze the page for about four seconds before anything appeared.
   const layout = settledLayout(graph);
   return (
     <>
+      {/* The withheld count is said inside the page rather than under it: on a
+          phone this paragraph sat below the fixed navigation bar and could not
+          be read at all. The map's status line carries it on a desktop and the
+          browser carries it on a phone. */}
       <EncyclopediaMap graph={graph} layout={layout} initialCellId={initialCellId} />
-      {graph.withheld ? (
-        <p className="mx-auto max-w-7xl px-4 py-3 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-          {graph.withheld} {graph.withheld === 1 ? "cell is" : "cells are"} withheld: not attested under the current contract.
-        </p>
-      ) : null}
     </>
   );
 }
