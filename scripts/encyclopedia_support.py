@@ -230,17 +230,49 @@ def fetch_sources(urls, cache, cache_path):
 LOC = re.compile(r"id\.loc\.gov/authorities/genreForms/(gf\d+)")
 
 
-def loc_id(sources):
-    for s in sources:
+def loc_source(sources, source_ids=None):
+    """The Library of Congress source a link actually cites, not the cell's first.
+
+    A cell may carry several LoC records and its parent links may cite different
+    ones. Literary nonsense cites Nonsense verse for its Humorous poetry parent
+    and Nonsense fiction for its Fiction parent, and taking the first record
+    compares the second link against the wrong authority and manufactures a
+    defect. Three cells carry more than one LoC source today and it will grow.
+    """
+    pool = [s for s in sources if source_ids is None or s["id"] in source_ids]
+    for s in pool:
         m = LOC.search(s.get("url", ""))
         if m:
-            return m.group(1)
-    return None
+            return m.group(1), s["url"]
+    return None, None
 
 
-def broader_ids(blob):
-    """The hasBroaderAuthority ids carried by a MADS/RDF record."""
-    return set(re.findall(r"genreForms/(gf\d+)", blob or ""))
+def broader_authorities(raw, gf):
+    """The objects of hasBroaderAuthority on the record's own subject.
+
+    Searching the flattened record for the parent id as a substring would pass a
+    link whose id appears under hasNarrowerAuthority, under a related term, or in
+    a change note, because it never asks which predicate the id sits under. That
+    is the same category error as searching a machine record for proper nouns:
+    the structured evidence is right there and a substring match throws it away.
+    """
+    try:
+        rec = json.loads(raw)
+    except Exception:  # noqa: BLE001 - a non-JSON record carries no predicates
+        return None
+    graph = rec if isinstance(rec, list) else rec.get("@graph", [rec])
+    out = set()
+    for node in graph:
+        if not isinstance(node, dict) or not str(node.get("@id", "")).endswith(gf):
+            continue
+        for k, v in node.items():
+            if not k.endswith("hasBroaderAuthority"):
+                continue
+            for x in (v if isinstance(v, list) else [v]):
+                ref = x.get("@id") if isinstance(x, dict) else x
+                if isinstance(ref, str):
+                    out.add(ref.rsplit("/", 1)[-1])
+    return out
 
 
 def main():
@@ -349,38 +381,41 @@ def main():
             print(f"  {n:4} chars  {url}\n            cited by {', '.join(cells_using)}")
 
     # ---- does a parent link match the record it is cited to
-    ok, mismatch, unknown = 0, [], 0
+    ok, mismatch, unknown, unparsed = 0, [], [], []
     for cid, d in sorted(docs.items()):
-        child = loc_id(d.get("sources", []))
-        if not child:
-            continue
         for link in d.get("broader", []):
-            if not any(LOC.search(s.get("url", "")) for s in d.get("sources", [])
-                       if s["id"] in link.get("sourceIds", [])):
+            child, child_url = loc_source(d.get("sources", []), set(link.get("sourceIds", [])))
+            if not child:
                 continue
             parent_doc = docs.get(link["cellId"])
-            parent = loc_id(parent_doc.get("sources", [])) if parent_doc else None
+            parent, _ = loc_source(parent_doc.get("sources", [])) if parent_doc else (None, None)
             if not parent:
-                unknown += 1
+                unknown.append((cid, link["cellId"]))
                 continue
-            blob = next((cache.get(s["url"], "") for s in d["sources"] if LOC.search(s.get("url", ""))), "")
-            if parent in broader_ids(blob) - {child}:
+            authorities = broader_authorities(cache.get(child_url, ""), child)
+            if authorities is None:
+                unparsed.append((cid, link["cellId"]))
+            elif parent in authorities:
                 ok += 1
             else:
-                mismatch.append((cid, link["cellId"], child, parent))
+                mismatch.append((cid, link["cellId"], child, parent, sorted(authorities)))
     print(f"\nPARENT LINKS CITED TO A LIBRARY OF CONGRESS RECORD: {ok} match the record,"
-          f" {len(mismatch)} do not, {unknown} not checkable")
+          f" {len(mismatch)} do not, {len(unknown)} not checkable, {len(unparsed)} unparsed")
+    print("  Not checkable is a different state from a disagreement: the parent cell")
+    print("  carries no Library of Congress id, so there is no pair to compare and the")
+    print("  link may well be right. Collapsing the two would overstate the repair list.")
     if mismatch:
-        print("  A mismatch is not automatically a defect. A cell may place a parent on a")
-        print("  judgement the Library of Congress does not make, and that is legitimate")
-        print("  when the explanation says so. The explanation is printed rather than")
-        print("  classified, because deciding whether a sentence discloses a divergence is")
-        print("  a reading and not a keyword test.")
-    for child_cell, parent_cell, child, parent in mismatch:
+        print("  A mismatch is not automatically a defect either. A cell may place a parent")
+        print("  on a judgement the Library of Congress does not make, and that is")
+        print("  legitimate when the explanation says so. The explanation is printed rather")
+        print("  than classified, because that is a reading and not a keyword test.")
+    for child_cell, parent_cell, child, parent, authorities in mismatch:
         expl = next((b["explanation"] for b in docs[child_cell]["broader"] if b["cellId"] == parent_cell), "")
         print(f"\n  {child_cell} -> {parent_cell}")
-        print(f"    {child}'s record does not carry {parent} as a broader authority")
+        print(f"    {child} has broader authority {authorities or '(none)'}, not {parent}")
         print(f"    the cell says: {expl}")
+    for cid, parent_cell in unknown:
+        print(f"  not checkable: {cid} -> {parent_cell}, the parent carries no Library of Congress id")
 
     if partial:
         print(f"\nnot scored, a cited source could not be retrieved ({len(partial)}):")
