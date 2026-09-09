@@ -2,7 +2,9 @@ name: tests
 
 # The suites nothing was running. A contract test asserting a marker in a skill
 # file broke in PR #277 and stayed broken through three later pull requests,
-# because no workflow ran it. Every job here is blocking. The UI jobs are green
+# because no workflow ran it. These jobs only block a merge once they are named
+# as required checks in branch protection, which is a repository setting, not
+# something this file can assert. The UI jobs are green
 # on master; the writing-style contract job is red on master today and turns
 # green when the pull request that adds this file merges, which is the point.
 #
@@ -20,6 +22,10 @@ on:
 concurrency:
   group: tests-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+# Read-only: these jobs run repository code and need nothing but the checkout.
+permissions:
+  contents: read
 
 jobs:
   ui:
