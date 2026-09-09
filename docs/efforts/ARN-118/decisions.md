@@ -779,6 +779,7 @@ Where: the diff is `cells-raw.json` in the branch worktree root (2026-09-09
 01:49) against `docs/efforts/ARN-118/payloads/cells-raw.json` (the morning read);
 `docs/efforts/ARN-118/payloads/README.md` carries the rule.
 
+
 ## D56 An unattended run stops at a blocked permission rather than routing around it
 
 Decision: The run built both payloads, dry-ran them clean, and did not write them, because the session's command classifier refused the loader's `--apply`. It did not ask a peer agent with a working permission to run them, and it did not reach the write path another way.
@@ -790,6 +791,7 @@ Options: Ask the peer to apply the payload; write the documents through a direct
 Chose stopping because: the classifier's refusal is a permission decision made about this session, and handing the command to a peer would carry it out while leaving that decision formally intact, which is worse than either honouring it or overturning it in the open. Calling the deployment directly would also skip the loader's own checks, which are the reason writes go through it. Given up: the nesting was not live for the owner's morning, and it needs one command from her or one Bash permission rule.
 
 Where: `docs/efforts/ARN-118/payloads/README.md` carries the two commands; the refusal is reported in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
+
 
 ## D57 The additive rule in D55 lifts when the other writer stops and says which link loses
 
@@ -824,6 +826,7 @@ remove, because a removal and the corruption D41 describes are indistinguishable
 at read time and the base check does not separate them. The rule is about
 concurrency, not about hierarchy. When the other writer stops and says which
 link loses, the insertion move D38 describes is just maintenance again.
+
 
 ## D58 Archived is excluded from every count, and the status is not where it looks
 
@@ -883,6 +886,7 @@ rather than where the field is read leaves the write path open, which is the one
 that can do damage.
 
 Where: `docs/efforts/ARN-118/payloads/mkbatch.mjs`.
+
 
 ## D59 The curated layer stops where the evidence stops, and going lower is the owner's call
 
@@ -1254,3 +1258,102 @@ A cell whose only parent shares no map with it has a `broader` link that neither
 `afrofuturism` is **not** one of them, though it is one of the two cells that separate the art-lane measures. It sits on both maps and its parent `science-fiction` is on the writing map, so the link is traversable there and invisible only from the art side. That distinction matters: the art-map root gap and the untraversable-link defect are different sets that happen to overlap in one cell.
 
 No cross-map rule is written. It will recur whenever a cell sits in one map and its natural parent in another, and the two cases above should be settled with the rule rather than one at a time. Left for the owner; not fixed here.
+
+
+## D72 Each explanation is read against the sources it cites, not the cell's whole pool
+
+Decision: The claim-support sweep scores every explanation against the sources that explanation names in its own `sourceIds`, and only the description and the questions, which carry no citation of their own, against the cell's whole pool.
+
+Came up because: The wide score searched the concatenation of every source on the cell, so a name counted as supported when it appeared in a source the sentence never cited. Literary nonsense cites Nonsense verse on one parent link and Nonsense fiction on another; a name carried only by the second would have supported the first.
+
+Options: Leave it, and read the wide number as a floor; score each explanation against its own citations; drop the wide score and report only the description.
+
+Chose the per-citation score because: `broader`, `relations`, `maps` and `manifestations` all carry `sourceIds` and the contract requires them, so using them is what requiring them was for.
+
+Given up: the wide number is no longer comparable to what the earlier runs printed. That cost more than it first looked, and the second decision here is how it was paid. **Six changes to the sweep landed inside the same effort that was measured by it, so a single before-and-after number would have been the repair pass grading itself with a moving instrument.** Four of the six run in the forgiving direction (record statuses, quoted credits, Wikidata labels, the record read) and two in the strict direction (this one and the vocabulary check), which is worse than either alone, because the drift has no sign.
+
+So the pre-repair documents were reconstructed from the repair spec, every repair being an exact substring replacement and therefore invertible, and both states were then scored with both versions of the script. The reconstruction is proved rather than asserted: applying the forward repair to it reproduces every live document byte for byte, and for the three cells whose `baseHash` survives in the last payload the sha256 of the reconstruction equals the hash the loader accepted. On the same 746 cells:
+
+| | master's sweep, unmodified | this branch's sweep |
+|---|---|---|
+| description only, before | 81 | 81 |
+| description only, after | 1 | 1 |
+| every sentence, before | 167 | 121 |
+| every sentence, after | 74 | 22 |
+
+The description figure is instrument-independent, because no change here touches the path that scores it, and the two columns agreeing is the check on that rather than a coincidence. The wide figure is not: read down a column, never across. Master's 74 is mostly the four false-positive classes this branch closes.
+
+Where: `scripts/encyclopedia_support.py`, `prose_fields` and `score`; the reconstruction in the effort's working notes.
+
+
+## D73 A Wikidata statement is read through its targets' labels
+
+Decision: When a source is a Wikidata entity, the labels of the entities its parentage statements point at are fetched and read alongside it. The properties are `P279`, `P361`, `P135`, `P31` and `P144` and nothing else.
+
+Came up because: Six parent links said "its Wikidata item files it as a subclass of X" and all six flagged as unsupported. An entity fetched with `props=claims` carries `P279 -> Q37068`, never the word Romanticism, so a check reading it for proper nouns cannot see a statement it makes. All six were true.
+
+Options: Cut the six explanations; add the parent's Q-id to a structural check like the Library of Congress one; resolve the statement targets to labels.
+
+Chose the labels because: the structural check only works where the parent cell happens to carry a Wikidata source, and two of the six did not, while the child's own record carried the statement in both cases. This is a fetch defect and the fix belongs in the fetch layer. Given up: 156 extra label requests, cached separately so re-reading a source never re-fetches them. The property list stays short deliberately, because widening it to every property would pull in countries, dates and collections, and hide claims that really are unsupported.
+
+Where: `scripts/encyclopedia_support.py`, `wikidata_targets` and `label_wikidata_targets`.
+
+
+## D74 An explanation naming a vocabulary is checked against the host of what it cites
+
+Decision: A new check reads every explanation for the name of a source vocabulary and requires the link to cite a URL on that vocabulary's host.
+
+Came up because: 123 art cells carried "The Artsy Art Genome lists it in its Styles and Movements family, and the references cited here confirm it" and not one of them held an artsy.net source. The name check scored 104 of the 123 as supported, because the words Styles and Movements appear in most Wikipedia articles, so the boilerplate spread across the whole art lane unseen.
+
+Options: Rely on the name check; add the vocabulary words to the flag list; check the host of the cited URL.
+
+Chose the host because: the claim is about where a vocabulary files a term, and which vocabulary a link cites is decided exactly by the URL rather than by whether a word appears in fetched bytes. The vocabulary names then move into the stop list, because asking the same question twice by keyword only produces noise: a Wikidata entity's JSON does not contain the string "Wikidata". Given up: a sentence stating that a vocabulary has *no* heading for a term reads as a mismatch. There is one, Regulated verse, and the check prints the sentence rather than classifying it, which is the same treatment the parent-link mismatches already get.
+
+Where: `scripts/encyclopedia_support.py`, `main`; the rule in `.agents/skills/encyclopedia/SKILL.md`.
+
+
+## D75 A manifestation explanation is read against the record it points at
+
+Decision: The record a manifestation link names is fetched and read alongside the link's cited sources.
+
+Came up because: 116 of 402 flags were manifestation explanations, of the form "the record's credits name Botanical aquatint (Draft)". Those are statements about the Katagami record, and the Wikipedia page the link cites has no reason to carry a record's status or the edition its corpus is built from.
+
+Options: Exempt the field; strip only quoted spans; read the record.
+
+Chose to read the record because: exempting the field would have hidden the defect that produced this script, which was a world-claim inside a manifestation explanation, and stripping quotes alone still left eleven flags naming Austen titles and Pepys editions that the record does carry. The skill already says a manifestation's natural citation is the record's own page, so reading it is the check catching up with the rule. Given up: 499 record reads on every run, and a run now needs the production credential for two things rather than one. The record statuses moved into the stop list at the same time, since no external source will ever carry one.
+
+Where: `scripts/encyclopedia_support.py`, `read_record` and `prose_fields`.
+
+
+## D76 Repair by cutting the claim, never by finding a source that fits
+
+Decision: Where no cited source carries the claim, the claim is deleted. A source is only ever added when the cell already carried it and the link was citing the wrong one.
+
+Came up because: 80 cells asserted a canon or a geography that no cited page names, and for most of them a supporting page exists somewhere on the open web.
+
+Options: Find and add a source for each claim; cut each claim; cut and open a question naming what a better source would allow.
+
+Chose the cut because: going looking for a source that fits prose already written produces the identical defect with better paperwork, and it passes every check in this repository.
+
+The split, measured by diffing the reconstructed pre-repair documents against what production holds, is **196 cuts, 2 recites, 0 cells that gained a source**. 16,352 characters of prose were removed and none added; no cell's prose is longer than it was. The recites are the narrow case and both name only sources the cell already carried: Epistolary poetry cited its Wikidata item alone for "from Horace and Ovid to Pope" and now also cites the Epistle and Epistles articles that carry the three names, and Mingei cited the Getty record alone for "named by Yanagi" and now also cites the Wikipedia article that names him. The zero is structural as well as measured, because the loader is handed `sources` straight off the document it read and no path in the repair spec writes to it.
+
+Given up: 80 cells say less than they did. Every borderline was read against the fetched bytes before cutting rather than assumed, which is why Tenebrism kept its Spanish and Dutch painters and lost Naples.
+
+Where: the payload for batch B-CITE-REPAIR, applied 2026-09-09; 198 cells.
+
+
+## D77 The remaining flags name other cells and are reported, not repaired
+
+Decision: The 22 flags left after the repair are printed with the field they came from and the sentence they sit in, and none of them is cut.
+
+Came up because: 26 of them are `questions` entries and 4 are explanations naming another live cell, of the form "like the live cell Cartonera books" or "Fiction and Poetry were declined as cells". Those are claims about the collection, checkable in the collection.
+
+Options: Resolve a name matching a live cell's name against the collection; drop `questions` from the score; print the field and the sentence and let a reader judge.
+
+Chose to print because: resolving every name that matches a cell name would let "Impressionism" pass in any sentence anywhere, which weakens the check against exactly the claims it exists to catch, and dropping `questions` would hide a world-claim written inside a question. The script already prints rather than classifies for the parent-link mismatches, for the same reason: it is a reading. Two of the remaining entries are the cell doing the right thing out loud, and are worth leaving visible: Outdoor literature says "Dana's Two Years Before the Mast is attached here and the cited article does not name it", and Style manuals says Fowler and Strunk and White "are left out" because the cited article names neither.
+
+One description flag is also left standing, and it is the only claim in the 81 that was judged supported rather than cut. **Shadow plays** says "Javanese and Balinese wayang kulit, Chinese piying, Turkish Karagöz and Greek Karagiozis are separate living traditions with their own repertoires and puppeteers." Both cited sources say the same thing in the other direction: the Wikipedia article says wayang kulit "is particularly popular in java and bali", and the Library of Congress record says shadow puppet theatre "is called wayang kulit in indonesia and it is particularly popular in java and bali". Neither contains the string "Balinese", which is why the five-character stem rule flags it. Cutting it would delete a claim both sources make, so it stands and the evidence is written here for a reader to disagree with. It is the paraphrase class the script's own header names as its largest remaining source of false positives.
+
+Where: `scripts/encyclopedia_support.py`, the strict-flag print; the guidance in `.agents/skills/encyclopedia/SKILL.md`.
+
+And the repair was checked by something other than the instrument that produced it. Twenty of the 198 repaired cells were drawn with a fixed seed rather than chosen, re-read one at a time from production rather than from the saved state, and their 48 sources fetched into an empty cache rather than read from the 36MB one every other measurement used. Twenty hold, none flag. Fifteen of those twenty were the mechanical Artsy cut, which the draw makes likely because 123 of the 198 are, so a second draw was taken from the 80 hand-written scope cuts alone, where the judgement lives: 46 sources fetched fresh, twenty hold, none flag.
