@@ -717,7 +717,7 @@
    "broader": [
     {
      "cellId": "post-impressionism",
-     "explanation": "The account of Post-Impressionism names Neo-Impressionism among the tendencies it covers, and Divisionism is called the avant-garde style of Post-Impressionism.",
+     "explanation": "The Post-Impressionism article lists Neo-Impressionism among what the term encompasses and names Seurat as one of its four principal artists. Neo-Impressionism's own article never calls itself post-Impressionist, so the claim is the umbrella's and not the movement's.",
      "sourceIds": [
       "wp-post-impressionism",
       "wp-neo-impressionism"
@@ -839,7 +839,7 @@
    "broader": [
     {
      "cellId": "post-impressionism",
-     "explanation": "Its own article opens by calling it a style of Post-Impressionist painting.",
+     "explanation": "Its own article opens \"Cloisonnism is a style of post-Impressionist painting with bold and flat forms separated by dark contours\", so the containment is the cell's own claim about itself.",
      "sourceIds": [
       "wp-cloisonnism"
      ]

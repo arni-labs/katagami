@@ -500,7 +500,7 @@ What is still open, and it is the reason the runtime fix matters: the loader's l
 
 Where: `scripts/encyclopedia-base.mjs`, `scripts/create-encyclopedia-cells.mjs`, `ui/scripts/encyclopedia-base.test.mjs`, and the "Revising a cell another run may also be revising" rule in `.agents/skills/encyclopedia/SKILL.md`.
 
-## D46 Two runs nesting one lane write additively, and neither removes the other's links
+## D55 Two runs nesting one lane write additively, and neither removes the other's links
 
 Decision: When a second run finds another already writing the lane it was sent to nest, it keeps every write additive. It adds `broader` entries and the sources those entries cite, it creates only the parent cells that do not yet exist, and it never removes a link the other run wrote, even where removing one is the correct shape. A cell that ends up under both a parent and that parent's own parent is left redundant and reported as a cleanup, because a redundant link costs a reader one line and a wrong removal costs the other run its work.
 
@@ -512,7 +512,7 @@ Chose additions only because: D41 records what the last collision cost, and it w
 
 Where: `docs/efforts/ARN-118/payloads/` (`plan.json`, the two batches, `mkbatch.mjs`); the redundant pairs are `ashcan-school`, `precisionism` and `die-brucke`, listed in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
 
-## D47 An unattended run stops at a blocked permission rather than routing around it
+## D56 An unattended run stops at a blocked permission rather than routing around it
 
 Decision: The run built both payloads, dry-ran them clean, and did not write them, because the session's command classifier refused the loader's `--apply`. It did not ask a peer agent with a working permission to run them, and it did not reach the write path another way.
 
@@ -524,9 +524,9 @@ Chose stopping because: the classifier's refusal is a permission decision made a
 
 Where: `docs/efforts/ARN-118/payloads/README.md` carries the two commands; the refusal is reported in `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
 
-## D46 amended: the other run stopped, so the redundant links were removed after all
+## D55 amended: the other run stopped, so the redundant links were removed after all
 
-The rule above held for about an hour and then the condition it depended on
+The rule in D55 held for about an hour and then the condition it depended on
 went away. `nesting` finished the art lane, said so, and said in each of the
 four insertion cases that its link goes to the grandparent and loses. A removal
 is safe once the other writer has stopped and has agreed which link wins, so all
@@ -534,14 +534,24 @@ four were taken: it applied three itself (`ashcan-school`, `die-brucke`,
 `precisionism`) and this run's payload drops the fourth, `concrete-art` from
 Abstract art, in the same write that puts it under Geometric abstraction.
 
-What survives from D46 is the narrower rule, and it is the one worth keeping:
+The Precisionism case is worth stating, because it was not redundancy. The
+other run's link walked Wikidata from Precisionism to magic realism to realism
+and landed on the Realism cell, which holds the French movement of the 1840s,
+while Precisionism's own article opens by calling it a modernist movement that
+emerged in the United States after the First World War. Two of that run's three
+walked links were right, Rococo under Baroque and Early Renaissance under
+Renaissance art, so the walk earns its place and the reading is what was
+missing. It has since encoded that: a parent more than one step up the
+vocabulary is read before it is written.
+
+What survives from D55 is the narrower rule, and it is the one worth keeping:
 while another run is still writing a lane, a second run adds and does not
 remove, because a removal and the corruption D41 describes are indistinguishable
 at read time and the base check does not separate them. The rule is about
 concurrency, not about hierarchy. When the other writer stops and says which
 link loses, the insertion move D38 describes is just maintenance again.
 
-## D48 Archived is excluded from every count, and the status is not where it looks
+## D57 Archived is excluded from every count, and the status is not where it looks
 
 Decision: A cell's lifecycle status lives on the row as `status`, beside
 `fields`, and not inside `fields`. Anything counting cells reads it there and
@@ -568,7 +578,7 @@ archived, which is a different answer to give her than "these need archiving".
 Where: `docs/efforts/ARN-118/payloads/depth.mjs`; the corrected figures in
 `/private/tmp/encyclopedia-passes/report-nesting-visual.md`.
 
-## D49 The curated layer stops at 131 roots, and going lower is the owner's call
+## D58 The curated layer stops at 131 roots, and going lower is the owner's call
 
 Decision: The pass nests what three independent sources support and stops. The
 131 art cells left as roots stay roots, and the report says which lever was
@@ -601,5 +611,31 @@ has a real practice and a Tate art term, so the argument runs both ways and an
 agent should not settle it at four in the morning. Given up: the art lane stays
 at 131 roots against the writing lane's 133 out of a much larger set, and it
 looks flatter than it is.
+
+
+A second call belongs here, because it is the same shape as the Vienna Secession
+one and came out the other way. The other run cautioned that the
+Post-Impressionism article names Neo-Impressionism and Cloisonnism among what it
+covers rather than as its subordinates, and that Neo-Impressionism began in 1886
+alongside rather than after. Re-read, the two turn out to sit on different
+footings and only one survives as a plain claim. Cloisonnism's own article opens
+"Cloisonnism is a style of post-Impressionist painting", so the containment is
+the cell's own statement about itself and it is written without a flag.
+Neo-Impressionism's article never calls itself post-Impressionist; the only
+containment is in the umbrella's article, which lists it among what the term
+encompasses and names Seurat as one of its four principal artists. That is
+weaker, so the link is written with the claim named in its own explanation and
+flagged for the owner beside the Renaissance-period links. The coterminous dates
+do not decide it on their own, because Post-Impressionism is a retrospective
+umbrella covering 1886 to 1905 and Cloisonnism of 1888 sits inside the same span
+undisputed. Getty settles nothing here: its parent for Neo-Impressionist is
+`<modern French fine arts styles and movements>`, a guide term sorting by
+nation, which is the reason Getty is not the source for this layer.
+
+The four links this run leaves flagged rather than settled are
+`neo-impressionism` on the umbrella claim, `venetian-painting` and `sfumato` on
+the Renaissance-period footing the other run raised against itself, and
+`dusseldorf-school-of-photography` on a lineage the article attributes to
+critics.
 
 Where: `/private/tmp/encyclopedia-passes/report-nesting-visual.md`, item 1.
