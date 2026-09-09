@@ -38,6 +38,11 @@ export const NODE_PITCH = SAT_W * Math.SQRT2 + RING_GAP;
 /** Clear paper between a card's edge and the ring of records around it. The
  *  records used to hug the card; Rita asked for them to stand off it. */
 const RING_PAD = 52;
+/** A record opened into a card on the canvas: its width at full scale. The
+ *  card grows outward from the node's spot and sits above its neighbours;
+ *  nothing else moves for it, because a reader who opens a record must not
+ *  have the map jump under them. */
+export const RECORD_CARD_W = 232;
 
 /** Each layer of the map draws at this fraction of the one above it. A cell's
  *  layer is its depth in the hierarchy, so a narrower cell is always smaller

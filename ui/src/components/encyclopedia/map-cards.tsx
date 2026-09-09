@@ -5,7 +5,8 @@ import type { CellManifestation, EncyclopediaCell, MapName } from "@/lib/encyclo
 import { MAP_INK, MAP_LABEL } from "@/lib/encyclopedia-graph";
 import { inkChipStyle, Tape } from "./chrome";
 import { cellFaces, cellMaterial, SET_EYEBROW, SET_INK, type CellFace } from "./material";
-import { HUB_H, HUB_W, NAME_W, plateBox, SAT_W, type SatelliteNode } from "./graph-layout";
+import { HUB_H, HUB_W, NAME_W, plateBox, RECORD_CARD_W, SAT_W, type SatelliteNode } from "./graph-layout";
+import { ArrowUpRight } from "lucide-react";
 
 // The nodes on the map. A plate is a cell. How much of it is drawn depends on
 // how big it prints on screen — its own size, not the camera's zoom alone, so
@@ -478,6 +479,8 @@ function SatelliteNodeCard({
   onToggle,
   onOpen,
   onDragStart,
+  detail,
+  onFocusCell,
 }: {
   node: SatelliteNode;
   manifestation: CellManifestation | null;
@@ -494,11 +497,15 @@ function SatelliteNodeCard({
   /** Open this cell's remaining records onto the map, or fold them away.
    *  Takes the cell id for the same reason `Plate.onFocus` does. */
   onToggle: (cellId: string) => void;
-  /** Open the record's card beside the node. The record's own page is a
-   *  button on that card, not the node itself. */
+  /** Open the node into its card, or fold it back to a node. The record's
+   *  own page is a button on the card, never the node itself. */
   onOpen: (node: SatelliteNode) => void;
   /** Pick the node up and move it on its own. */
   onDragStart: (id: string, event: React.PointerEvent) => void;
+  /** Present when the node is opened into its card: what the card says
+   *  beyond the record, and which way it grows — away from the cell. */
+  detail?: { cellName: string; explanation: string; alsoNamed: Array<{ id: string; name: string }>; grow: { x: 1 | -1; y: 1 | -1 } };
+  onFocusCell?: (id: string) => void;
 }) {
   const record = manifestation?.record ?? null;
   const ink = SET_INK[node.set];
@@ -556,6 +563,55 @@ function SatelliteNodeCard({
   // A read that failed is not an absent record: say which one happened.
   const name = record?.name ?? (manifestation?.unread ? "Record could not be read" : "Record not found");
   const title = also ? `${SET_EYEBROW[node.set]}: ${name}. Also named by ${also} other ${also === 1 ? "cell" : "cells"} on the map.` : `${SET_EYEBROW[node.set]}: ${name}.`;
+  if (detail) {
+    // The node opened into its card. It grows away from the cell from the
+    // node's own spot, so the corner nearest the cell stays where the node
+    // was and the dotted line still lands on it.
+    const w = RECORD_CARD_W;
+    const half = (size * scale) / 2;
+    // Anchored by the corner nearest the cell. Growing up means the card's
+    // bottom edge sits where the node's bottom edge was; the scaled layer
+    // has no height, so "bottom" is measured from y = 0.
+    const down = detail.grow.y > 0;
+    const left = detail.grow.x > 0 ? node.x - half : node.x + half - w * scale;
+    const anchor = down ? { top: node.y - half } : { bottom: -(node.y + half) };
+    return (
+      <div
+        className="absolute z-[6] flex flex-col bg-[var(--washi)] shadow-[var(--shadow-card-hover)]"
+        style={{ left, ...anchor, width: w, transform: `scale(${scale})`, transformOrigin: down ? "0 0" : "0 100%", opacity: dimmed ? dimTo : 1 }}
+        data-record-card={node.id}
+        onPointerDown={(e) => onDragStart(node.id, e)}
+        role="group"
+        aria-label={`${SET_EYEBROW[node.set]}: ${name}, opened`}
+      >
+        <span aria-hidden className="washi-tape pointer-events-none -top-1.5 left-4 z-[2]" style={{ ["--strip-ink" as string]: ink, transform: "rotate(-4deg)", width: 44 }} />
+        <button type="button" onClick={(e) => { e.stopPropagation(); onOpen(node); }} aria-label="Fold this record back to a node" title="Fold" className="absolute right-1 top-1 z-[2] grid h-6 w-6 place-items-center bg-[var(--washi)] font-mono text-[14px] font-bold text-foreground shadow-[var(--shadow-sticker)]">−</button>
+        {record ? <span className="block aspect-[4/3] w-full overflow-hidden">{thumb}</span> : null}
+        <span className="block px-3 pb-3 pt-2.5">
+          <span className="inline-block px-1.5 py-[3px] font-mono text-[7.5px] font-bold uppercase leading-none tracking-[0.14em]" style={inkChipStyle(ink, 24)}>{SET_EYEBROW[node.set]}{record ? ` · ${record.status === "UnderReview" ? "under review" : record.status.toLowerCase()}` : ""}</span>
+          <span className="mt-1.5 block font-display text-[14px] font-semibold leading-[1.15] tracking-[-0.01em] text-foreground">{name}</span>
+          {record?.line ? <span className="mt-1 block text-[10.5px] leading-snug text-muted-foreground">{record.line}</span> : null}
+          <span className="mt-2 block text-[10.5px] leading-snug text-foreground">
+            <span className="font-mono text-[7.5px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Why {detail.cellName} names it · </span>
+            {detail.explanation}
+          </span>
+          {detail.alsoNamed.length ? (
+            <span className="mt-1.5 block text-[10.5px] leading-snug text-muted-foreground">
+              Also named by{" "}
+              {detail.alsoNamed.map((c, j) => (
+                <span key={c.id}>{j > 0 ? ", " : ""}<button type="button" onClick={(e) => { e.stopPropagation(); onFocusCell?.(c.id); }} className="text-foreground underline decoration-[var(--yuzu)] decoration-2 underline-offset-[2px]">{c.name}</button></span>
+              ))}
+            </span>
+          ) : null}
+          {record ? (
+            <a href={record.href} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="mt-2.5 flex h-7 items-center justify-between bg-foreground px-2.5 font-mono text-[8px] font-bold uppercase tracking-[0.18em] text-background">
+              Open {SET_EYEBROW[node.set].toLowerCase()} page <ArrowUpRight size={12} aria-hidden />
+            </a>
+          ) : null}
+        </span>
+      </div>
+    );
+  }
   return (
     <button
       type="button"
