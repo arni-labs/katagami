@@ -45,3 +45,15 @@
 **Chose complete publication because:** It removes the incomplete startup state and lets a failed competing launch leave the winner untouched. Per-launch scratch paths avoid shared launcher-file writes. Linux start ticks avoid clock-step sensitivity; macOS uses its process start time with fixed locale/timezone. This extends the existing launcher and ownership file, not a separate registry or lifecycle.
 
 **Where:** scripts/run-local.sh write_launcher and scripts/lib/run-local-lib.sh gallery_process_identity/gallery_start; PR #307. Linux process start semantics: https://www.kernel.org/doc/html/latest/filesystems/proc.html. Formatted lstart conversion: https://gitlab.com/procps-ng/procps/-/raw/master/src/ps/output.c.
+
+### Bound the final preflight corrections
+
+**Decision:** Reject URL userinfo and include the environment loader in the existing dependency guard, with one regression for each.
+
+**Came up because:** The third review left these two preflight gaps open. The corrected arbiter recommended only these changes, and Rita authorized them with required confirmation before merge.
+
+**Options:** Defer both gaps because the configured bearer backend works, or close the two new preflight-contract gaps before merge.
+
+**Chose the two corrections because:** They prevent an unsupported credential-bearing URL from reaching downstream logging and preserve the promised installation remedy for a missing loader. The exact real stop-then-relaunch sequence passed, so no stop timing, ownership or timeout changes are included.
+
+**Where:** scripts/lib/run-local-lib.sh gallery_preflight and scripts/gallery-preview.test.sh; PR #307.

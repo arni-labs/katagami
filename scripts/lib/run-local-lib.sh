@@ -177,11 +177,11 @@ try {
       if (installed.version !== lock.packages?.["node_modules/" + name]?.version) throw Error("installed " + name + " differs from lockfile");
     }
   }
+  require("@next/env").loadEnvConfig(process.cwd(), true);
 } catch (error) {
   console.error("error: " + error.message + ". Run npm ci in " + process.cwd());
   process.exit(1);
 }
-require("@next/env").loadEnvConfig(process.cwd(), true);
 if (!(process.env.TEMPER_API_KEY || "").replace(/\\n/g, "").trim()) {
   console.error("error: set TEMPER_API_KEY in the selected Next development environment before launching.");
   process.exit(1);
@@ -189,10 +189,10 @@ if (!(process.env.TEMPER_API_KEY || "").replace(/\\n/g, "").trim()) {
 const raw = (process.env.NEXT_PUBLIC_TEMPER_API_URL || "").replace(/\\n/g, "").trim();
 try {
   const backend = new URL(raw);
-  if (!["https:", "http:"].includes(backend.protocol)) throw Error();
+  if (!["https:", "http:"].includes(backend.protocol) || backend.username || backend.password) throw Error();
   console.log("==> configured backend: " + backend.host);
 } catch {
-  console.error("error: set NEXT_PUBLIC_TEMPER_API_URL in the selected Next development environment before launching.");
+  console.error("error: set NEXT_PUBLIC_TEMPER_API_URL to an HTTP(S) backend URL without embedded credentials in the selected Next development environment.");
   process.exit(1);
 }
 JS

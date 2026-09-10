@@ -42,6 +42,38 @@ grep -q 'package.json and lockfile differ' "$tmp/out"
 cp "$ROOT/ui/package.json" "$tmp/ui/package.json"
 echo 'PASS: stale lockfile fails before launch'
 
+# Use a real incomplete dependency tree without changing the shared installation.
+mkdir -p "$tmp/missing-env-ui/node_modules"
+cp "$tmp/ui/package.json" "$tmp/ui/package-lock.json" "$tmp/ui/.env.local" "$tmp/missing-env-ui/"
+node - "$ROOT/ui" "$tmp/missing-env-ui" <<'JS'
+const fs = require("node:fs"), path = require("node:path");
+const [source, target] = process.argv.slice(2);
+const pkg = JSON.parse(fs.readFileSync(path.join(source, "package.json"), "utf8"));
+for (const name of Object.keys({...pkg.dependencies, ...pkg.devDependencies})) {
+  const link = path.join(target, "node_modules", name);
+  fs.mkdirSync(path.dirname(link), {recursive: true});
+  fs.symlinkSync(path.join(source, "node_modules", name), link);
+}
+JS
+if KATAGAMI_UI_DIR="$tmp/missing-env-ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1; then
+  echo 'FAIL: missing environment loader accepted'; exit 1
+fi
+grep -q 'npm ci' "$tmp/out" || { cat "$tmp/out"; echo 'FAIL: missing loader has no installation remedy'; exit 1; }
+if grep -q 'starting gallery' "$tmp/out"; then echo 'FAIL: detached without environment loader'; exit 1; fi
+echo 'PASS: missing environment loader gives installation remedy before detachment'
+
+if NEXT_PUBLIC_TEMPER_API_URL='https://example-user:example-password@example.com' bash -ec '
+  source "$1/scripts/lib/run-local-lib.sh"
+  UI_DIR="$2"
+  gallery_preflight
+' _ "$ROOT" "$tmp/ui" > "$tmp/out" 2>&1; then
+  echo 'FAIL: URL credentials accepted by preflight'; exit 1
+fi
+grep -q 'NEXT_PUBLIC_TEMPER_API_URL' "$tmp/out"
+if grep -Eq 'example-user|example-password' "$tmp/out"; then echo 'FAIL: URL credentials in diagnostic'; exit 1; fi
+echo 'PASS: URL credentials rejected without logging them'
+
+
 if TEMPER_API_KEY="" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1; then
   echo 'FAIL: missing bearer accepted'; exit 1
 fi
