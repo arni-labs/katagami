@@ -1,9 +1,17 @@
-// STANCE: Owners and curation-service agents author. System and the exact WASM runtime verify.
-permit(principal, action, resource is NarrativeStructure);
-
-forbid(
+// STANCE: Owners and curation-service agents author, and System and the exact WASM runtime verify.
+permit(
   principal,
   action in [
+    Action::"read",
+    Action::"list"
+  ],
+  resource is NarrativeStructure
+);
+
+permit(
+  principal,
+  action in [
+    Action::"create",
     Action::"Revise",
     Action::"Restore",
     Action::"SetEncyclopediaLinks",
@@ -12,41 +20,38 @@ forbid(
     Action::"SetInstruction",
     Action::"SetMovements",
     Action::"SetSources",
-    Action::"SubmitNarrativeStructure"
-  ],
-  resource is NarrativeStructure
-)
-unless { (principal is Agent && principal has agent_type && principal.agent_type == "curation-service") || (principal is Customer && principal has role && principal.role == "owner") };
-
-// Only System and the exact WASM runtime may record successful verification.
-forbid(
-  principal,
-  action == Action::"MarkStructureVerified",
-  resource is NarrativeStructure
-)
-unless { principal is System || principal == Agent::"service:wasm-runtime" };
-
-// Owners and curation-service agents request lifecycle changes. System and the
-// exact WASM runtime principal may execute them.
-forbid(
-  principal,
-  action in [
+    Action::"SubmitNarrativeStructure",
     Action::"Archive",
     Action::"Publish",
     Action::"SubmitForReview"
   ],
   resource is NarrativeStructure
-)
-unless { principal is System || principal == Agent::"service:wasm-runtime" || (principal is Agent && principal has agent_type && principal.agent_type == "curation-service") || (principal is Customer && principal has role && principal.role == "owner") };
+) when {
+  (principal is Agent &&
+    principal has agent_type &&
+    principal.agent_type == "curation-service") ||
+  (principal is Customer &&
+    principal has role &&
+    principal.role == "owner")
+};
 
-// This rule authorizes generic OData writes separately from named transitions.
-forbid(
+// Only System and the exact WASM runtime may execute lifecycle transitions or
+// mark a structure as verified.
+permit(
   principal,
   action in [
-    Action::"create",
-    Action::"update",
-    Action::"delete"
+    Action::"Archive",
+    Action::"MarkStructureVerified",
+    Action::"Publish",
+    Action::"SubmitForReview",
+    Action::"NarrativeStructurePublishedEvent",
+    Action::"NarrativeStructureArchivedEvent"
   ],
   resource is NarrativeStructure
-)
-unless { (principal is Agent && principal has agent_type && principal.agent_type == "curation-service") || (principal is Customer && principal has role && principal.role == "owner") };
+) when {
+  principal is System ||
+  principal == Agent::"service:wasm-runtime"
+};
+
+// Cedar permits create and named transitions but denies generic update and
+// delete requests.

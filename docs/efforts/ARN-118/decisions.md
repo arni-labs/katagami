@@ -1542,3 +1542,16 @@ Options: The alternatives were to retain the shared artifact exemption, to let a
 Chose split permissions because: Authoring stays with the two named writers, and the verifier flag stays with the finalizer. Generic operators and modules gain no write or lifecycle power. Given up: an admin or human curator must act through the owner or curation service.
 
 Where: `katagami-commons/policies/narrative_structure.cedar`, `katagami-commons/specs/policies/narrative_structure.cedar`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D91 Verifier-owned fields require named transitions
+
+Decision: Every principal must use named transitions after creating a `NarrativeStructure`; Cedar denies generic OData `update` and `delete` requests.
+
+Came up because: A current-head review found that generic `update` could bypass the named transitions. The local PATCH probe wrote separate capitalized fields without changing the automaton's lowercase verifier or instruction fields. Publication returned 409. Generic updates can write fields outside the named authoring contract.
+
+Options: The alternatives were to keep generic writes for the owner and curation service, to depend on field-aware policy data that the request does not provide, or to permit only record creation and named transitions.
+
+Chose explicit permits over generic OData writes because: Each named authoring transition clears `structure_verified`, and only `MarkStructureVerified` can set it. Owners and curation services can still create rows and set every author-owned field through those transitions. If field mapping changes later, generic `update` remains denied. Given up: maintenance clients lose direct row patches and deletes.
+
+Where: `katagami-commons/policies/narrative_structure.cedar`, `katagami-commons/specs/policies/narrative_structure.cedar`, and `katagami-curation/tests/test_narrative_structure_contract.py`.

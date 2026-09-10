@@ -21,7 +21,7 @@ The fixture contains 32 unique records. Each record has a stable slug identifier
 3. `Published`
 4. `Archived`
 
-Authoring transitions set the identity, instruction, movements, exemplars, sources, and encyclopedia links. Any authoring change clears `structure_verified`. The Cedar policy allows only an owner or a `curation-service` agent to author records, use generic OData writes, or request lifecycle changes. System and the exact `service:wasm-runtime` principal may execute lifecycle actions, and only those two internal principals may call `MarkStructureVerified`. Publication requires instruction, movements, exemplars, sources, and successful structure verification.
+Authoring transitions set the identity, instruction, movements, exemplars, sources, and encyclopedia links. Any authoring change clears `structure_verified`. The Cedar policy allows only an owner or a `curation-service` agent to create records, invoke authoring transitions, or request lifecycle changes. It denies generic OData `update` and `delete` requests, which would bypass those transitions. System and the exact `service:wasm-runtime` principal may execute lifecycle transitions, and only those two internal principals may call `MarkStructureVerified`. Publication requires instruction, movements, exemplars, sources, and successful structure verification.
 
 | Field | Purpose |
 | --- | --- |
@@ -119,5 +119,7 @@ The contract suite checks the lifecycle, verifier ownership, publication require
 
 - `.venv/bin/python3 -m unittest tests/test_narrative_structure_contract.py`: 16 passed.
 - `temper verify -s katagami-commons/specs`: passed all four verification levels for all 17 entity types. `NarrativeStructure` passed symbolic checks, a model check over 97 configurations, 301 simulated transitions, and 100 property-test cases.
+- An isolated local OData run used ports 3521 and 3522. The commons loader registered `NarrativeStructures`. `SubmitNarrativeStructure` stored the ring-composition fixture and set all four presence flags, `SubmitForReview` moved the record from `Draft` to `UnderReview`, and `Publish` returned 409 because `structure_verified` remained false. Evidence is in `/tmp/verify-katagami/2026-09-10/arn118`.
+- `ui/node_modules` is absent, so `next` could not start and the local gallery did not accept connections. ARN-118 modifies no UI code. After the API check, the launcher stopped its listeners on both ports.
 - `git diff --check`: passed.
 - `make test-integration`: ran 502 tests and returned 23 failures, 4 errors, and 4 skips. The clean `master` commit ran 486 tests with the same counts. The 16 added tests account for the difference and all pass.

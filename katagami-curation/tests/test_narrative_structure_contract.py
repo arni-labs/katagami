@@ -366,20 +366,16 @@ class NarrativeStructureRegistrationTests(unittest.TestCase):
             ("Customer", "owner", {"role": "owner"}),
             ("Agent", "curation", {"agent_type": "curation-service"}),
         ]:
-            for action in ["SetInstruction", "Publish", "update"]:
+            for action in ["SetInstruction", "Publish", "create"]:
                 assert (
                     decide(principal_type, principal_id, attributes, action)
                     == cedarpy.Decision.Allow
                 )
-            assert (
-                decide(
-                    principal_type,
-                    principal_id,
-                    attributes,
-                    "MarkStructureVerified",
+            for action in ["MarkStructureVerified", "update", "delete"]:
+                assert (
+                    decide(principal_type, principal_id, attributes, action)
+                    == cedarpy.Decision.Deny
                 )
-                == cedarpy.Decision.Deny
-            )
 
         for principal_type, principal_id in [
             ("System", "system"),
@@ -390,7 +386,7 @@ class NarrativeStructureRegistrationTests(unittest.TestCase):
                     decide(principal_type, principal_id, {}, action)
                     == cedarpy.Decision.Allow
                 )
-            for action in ["SetInstruction", "update"]:
+            for action in ["SetInstruction", "create", "update", "delete"]:
                 assert (
                     decide(principal_type, principal_id, {}, action)
                     == cedarpy.Decision.Deny
@@ -411,6 +407,10 @@ class NarrativeStructureRegistrationTests(unittest.TestCase):
             )
             assert (
                 decide(principal_type, principal_id, attributes, "Publish")
+                == cedarpy.Decision.Deny
+            )
+            assert (
+                decide(principal_type, principal_id, attributes, "create")
                 == cedarpy.Decision.Deny
             )
             assert (
