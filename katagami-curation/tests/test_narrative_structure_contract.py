@@ -363,28 +363,62 @@ class NarrativeStructureRegistrationTests(unittest.TestCase):
             return result.decision
 
         for principal_type, principal_id, attributes in [
-            ("System", "system", {}),
-            ("Admin", "admin", {}),
             ("Customer", "owner", {"role": "owner"}),
-            ("Customer", "curator", {"role": "curator"}),
             ("Agent", "curation", {"agent_type": "curation-service"}),
-            ("Agent", "wasm", {"agent_type": "service:wasm-runtime"}),
+        ]:
+            for action in ["SetInstruction", "Publish", "update"]:
+                assert (
+                    decide(principal_type, principal_id, attributes, action)
+                    == cedarpy.Decision.Allow
+                )
+            assert (
+                decide(
+                    principal_type,
+                    principal_id,
+                    attributes,
+                    "MarkStructureVerified",
+                )
+                == cedarpy.Decision.Deny
+            )
+
+        for principal_type, principal_id in [
+            ("System", "system"),
+            ("Agent", "service:wasm-runtime"),
+        ]:
+            for action in ["MarkStructureVerified", "Publish"]:
+                assert (
+                    decide(principal_type, principal_id, {}, action)
+                    == cedarpy.Decision.Allow
+                )
+            for action in ["SetInstruction", "update"]:
+                assert (
+                    decide(principal_type, principal_id, {}, action)
+                    == cedarpy.Decision.Deny
+                )
+
+        for principal_type, principal_id, attributes in [
+            ("Admin", "admin", {}),
+            ("Customer", "curator", {"role": "curator"}),
+            ("Customer", "member", {"role": "member"}),
+            ("Agent", "undeclared", {}),
+            ("Agent", "contributor", {"agent_type": "contributor"}),
+            ("Agent", "operator", {"agent_type": "operator"}),
+            ("Agent", "wasm", {"agent_type": "wasm-module"}),
         ]:
             assert (
                 decide(principal_type, principal_id, attributes, "SetInstruction")
-                == cedarpy.Decision.Allow
-            )
-            assert (
-                decide(principal_type, principal_id, attributes, "Publish")
-                == cedarpy.Decision.Allow
-            )
-
-        for attributes in [{}, {"agent_type": "contributor"}]:
-            assert (
-                decide("Agent", "contributor", attributes, "SetInstruction")
                 == cedarpy.Decision.Deny
             )
             assert (
-                decide("Agent", "contributor", attributes, "Publish")
+                decide(principal_type, principal_id, attributes, "Publish")
+                == cedarpy.Decision.Deny
+            )
+            assert (
+                decide(
+                    principal_type,
+                    principal_id,
+                    attributes,
+                    "MarkStructureVerified",
+                )
                 == cedarpy.Decision.Deny
             )

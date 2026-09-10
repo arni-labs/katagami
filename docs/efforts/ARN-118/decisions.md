@@ -1529,3 +1529,16 @@ Options: The alternatives were to require a future loader to serialize selected 
 Chose the serialized payload over loader-specific conversion because: An installer can dispatch each record without serializing individual fields first. Tests decode the five strings to inspect their contents. Given up: readers must also decode those fields.
 
 Where: `katagami-commons/fixtures/narrative-structures.json`, `katagami-curation/tests/test_narrative_structure_contract.py`, and `REPORT.md`.
+
+
+## D90 Mutation uses the task's narrow principal set
+
+Decision: The owner and curation-service agents author records and request lifecycle changes. Only the System principal and exact `service:wasm-runtime` finalizer can set `structure_verified`.
+
+Came up because: The first policy copied the broader artifact exemption and also admitted generic operators, generic WASM modules, admins, and human curators. The task authorizes only curation agents and the production owner, while its verifier rule also requires the finalizer.
+
+Options: The alternatives were to retain the shared artifact exemption, to let all four principals perform every mutation, or to split authoring, verification, and lifecycle permissions.
+
+Chose split permissions because: Authoring stays with the two named writers, and the verifier flag stays with the finalizer. Generic operators and modules gain no write or lifecycle power. Given up: an admin or human curator must act through the owner or curation service.
+
+Where: `katagami-commons/policies/narrative_structure.cedar`, `katagami-commons/specs/policies/narrative_structure.cedar`, and `katagami-curation/tests/test_narrative_structure_contract.py`.

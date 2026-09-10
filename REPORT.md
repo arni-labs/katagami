@@ -21,7 +21,17 @@ The fixture contains 32 unique records. Each record has a stable slug identifier
 3. `Published`
 4. `Archived`
 
-Authoring transitions set the identity, instruction, movements, exemplars, sources, and encyclopedia links. Any authoring change clears `structure_verified`. Only the internal `MarkStructureVerified` transition can set that flag. Publication requires instruction, movements, exemplars, sources, and successful structure verification.
+Authoring transitions set the identity, instruction, movements, exemplars, sources, and encyclopedia links. Any authoring change clears `structure_verified`. The Cedar policy allows only an owner or a `curation-service` agent to author records, use generic OData writes, or request lifecycle changes. System and the exact `service:wasm-runtime` principal may execute lifecycle actions, and only those two internal principals may call `MarkStructureVerified`. Publication requires instruction, movements, exemplars, sources, and successful structure verification.
+
+| Field | Purpose |
+| --- | --- |
+| `id`, `name`, `slug`, `aliases` | Give loaders, URLs, and readers stable identifiers and retain names used in other languages or traditions. |
+| `instruction` | Give an authoring agent one direction it can apply before drafting. |
+| `movements` | Give the agent an ordered outline contract. |
+| `exemplars` | Name the works used to establish that the arrangement recurs. The records contain names and creator credits, not copies. |
+| `sources` | Record the citation and whether the record uses public-domain material or a paraphrase of a copyrighted source. |
+| `encyclopedia_cell_ids` | Link a structure to existing genre or form records without treating those records as instructions. |
+| `structure_verified`, `verification_report`, `version` | Record the finalizer's result, the evidence it checked, and the published revision. |
 
 `movements` has two JSON forms:
 
@@ -32,7 +42,11 @@ Variable structures such as ring composition, hypertext narrative, and abstract 
 
 The repository registration includes the IOA spec, CSDL entity and entity set, Cedar policy, app documentation, fixture, and a contract test that checks agreement across those files.
 
+The publish check validates the authored values. It requires a non-empty instruction, one valid movement form with an ordered non-empty sequence, at least two named exemplars, at least one source with an allowed handling value, and resolvable encyclopedia links. The two exemplars establish that the arrangement applies beyond one reading of one work. The finalizer records the check and sets `structure_verified`; every later authoring change clears it.
+
 ## Deliberate omissions
+
+Unlike `WritingStyle`, this entity has no corpus, consent attestation, license check, mechanical bands, replication sample, portable document, thumbnail, or public asset requirement. Exemplars and sources hold names, citations, and paraphrased facts, so the entity does not distribute a writer's work.
 
 This change does not add curation jobs, session templates, finalizer code, UI, a production loader, or a production installation. It does not publish either Katagami app to Genesis and does not change production data. An authorized later installation can create each fixture row by its `id` and dispatch `SubmitNarrativeStructure` with the matching `params` object.
 
@@ -46,8 +60,8 @@ The source pass checked 30 unique URLs. This environment fetched 22 URLs directl
 | --- | --- | --- |
 | Linked-story cycle | Wiley DOI | HTTP 403 |
 | Diary form | Cambridge University Press excerpt | Connection timeout |
-| Branching narrative | Library of Congress authority | HTTP 403; the second cited source returned content |
-| Field three-act structure | CUNY teaching gloss | HTTP 403; Open Library returned content |
+| Branching narrative | Library of Congress authority | HTTP 403. The second cited source returned content. |
+| Field three-act structure | CUNY teaching gloss | HTTP 403. Open Library returned content. |
 | Eight-sequence structure | Bloomsbury book page | HTTP 403 |
 | Yorke five-act structure | John Yorke page | HTTP 403 |
 | Kishōtenketsu | University of California Press DOI | HTTP 403 |
@@ -80,15 +94,15 @@ The production `literary-technique` branch has 19 direct children. Under the tas
 | `anti-fairy-tale` | Not a structure | It distinguishes works by outcome and genre reversal, not by a reusable complete-work arrangement. |
 | `constrained-writing` | Not a `NarrativeStructure` | It is a compose-with constraint family. A writing-constraint entity would fit better than a narrative arrangement. |
 | `cut-ups-literature` | Not a `NarrativeStructure` | It describes a production procedure. The approved list also rejects the overlapping collage narrative pending a separate owner decision. |
-| `dialect-literature` | Not a structure | It governs language and voice. |
+| `dialect-literature` | Not a structure | It specifies language and voice. |
 | `encomium` | Structure candidate | Its record gives an opening, three ordered middle sections, and a conclusion for the complete work. |
 | `episodic-storytelling` | Structure candidate | It names whole-work organization by episodes. A later record should narrow the rule and cite its movements before migration. |
-| `euphuism` | Not a structure | It governs sentence style and diction. |
+| `euphuism` | Not a structure | It specifies sentence style and diction. |
 | `frame-stories` | Structure candidate | It supplies the enclosing and interior narrative order already represented by the approved frame-narrative record. |
 | `hypomnemata` | Not a structure | It is a notebook and excerpt-gathering practice without a required whole-work order. |
 | `irohauta` | Not a structure | It is a character-use constraint on a poem. |
-| `macaronic-verse` | Not a structure | It governs language mixture. |
-| `meter` | Not a structure | It governs verse measure below the complete-work level. |
+| `macaronic-verse` | Not a structure | It specifies how a work mixes languages. |
+| `meter` | Not a structure | It specifies verse measure below the complete-work level. |
 | `oneiric-vision` | Insufficient evidence | The production record labels it a genre and technique but does not establish a complete-work sequence. |
 | `parodies-literature` | Not a structure | It is a relation of imitation and exaggeration to another work or style. |
 | `pastiches-literature` | Not a structure | It is a mode of stylistic imitation or assembly without a required sequence. |
@@ -105,5 +119,5 @@ The contract suite checks the lifecycle, verifier ownership, publication require
 
 - `.venv/bin/python3 -m unittest tests/test_narrative_structure_contract.py`: 16 passed.
 - `temper verify -s katagami-commons/specs`: passed all four verification levels for all 17 entity types. `NarrativeStructure` passed symbolic checks, a model check over 97 configurations, 301 simulated transitions, and 100 property-test cases.
-- `git diff --cached --check`: passed.
+- `git diff --check`: passed.
 - `make test-integration`: ran 502 tests and returned 23 failures, 4 errors, and 4 skips. The clean `master` commit ran 486 tests with the same counts. The 16 added tests account for the difference and all pass.
