@@ -1620,3 +1620,16 @@ Options: Omit `has_identity` from OData, remove it from the publication requirem
 Chose the OData property because: API clients can now read the identity status used by the review and publication guards. Given up: none; the field already exists in the state machine.
 
 Where: `katagami-commons/specs/model.csdl.xml` and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D97 CSDL declares the OData field names
+
+Decision: The NarrativeStructure CSDL declares each property with the exact name returned by OData.
+
+Came up because: The review found that the prior PascalCase declarations did not match the runtime names for `instruction` and `has_identity`. After the corrected spec was reloaded, metadata declared `Status`, `instruction`, and `has_identity`, and `$select=Status,instruction,has_identity` returned `Published`, the fixture instruction, and `true`.
+
+Options: Keep the WritingStyle naming pattern, add duplicate aliases, change Temper in a separate repository, or declare the field names returned by the NarrativeStructure OData endpoint.
+
+Chose the OData field names because: Clients can request all three declared properties. Given up: Its CSDL naming differs from older PascalCase entity declarations.
+
+Where: local OData query on 2026-09-10, `katagami-commons/specs/model.csdl.xml`, and `katagami-curation/tests/test_narrative_structure_contract.py`.

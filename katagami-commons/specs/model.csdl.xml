@@ -447,27 +447,24 @@
           <PropertyRef Name="Id" />
         </Key>
         <Property Name="Id" Type="Edm.String" Nullable="false" />
-        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
-        <Property Name="Name" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="Slug" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="Aliases" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="Instruction" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="Movements" Type="Edm.String" Nullable="false" DefaultValue="{}" />
-        <Property Name="Exemplars" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="Sources" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="EncyclopediaCellIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="HasIdentity" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="HasInstruction" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="HasMovements" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="HasExemplars" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="HasSources" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="StructureVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="VerificationReport" Type="Edm.String" Nullable="false" DefaultValue="{}" />
-        <Property Name="Version" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
-        <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
-        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
-        <Property Name="PublishedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="Status" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
+        <Property Name="name" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="slug" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="aliases" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="instruction" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="movements" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="exemplars" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="sources" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="encyclopedia_cell_ids" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="has_identity" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="has_instruction" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="has_movements" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="has_exemplars" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="has_sources" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="structure_verified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="verification_report" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="version" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="curator_notes" Type="Edm.String" Nullable="false" DefaultValue="" />
       </EntityType>
 
       <!-- Remix: a saved cross-lane mix (DesignLanguage + PaletteSystem + ArtStyle + composition) -->
