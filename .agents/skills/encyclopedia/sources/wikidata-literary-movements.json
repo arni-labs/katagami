@@ -4,24 +4,2983 @@
   "url": "https://query.wikidata.org/",
   "licence": "CC0",
   "use": "names-only",
-  "total": 416,
-  "totalDerivedFrom": "SPARQL P31 Q3326717, 2026-09-08",
+  "total": 461,
+  "totalDerivedFrom": "Union of 416 direct P31 Q3326717 items read 2026-09-09 and 45 previously decided items from the 2026-09-08 tracker that no longer occur in that query; 461 distinct Wikidata records",
   "lane": "writing",
   "terms": [
+    {
+      "term": "Wanyue",
+      "ref": "https://www.wikidata.org/wiki/Q10100535",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Poetic realism",
+      "ref": "https://www.wikidata.org/wiki/Q1021184",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "嘗試派",
+      "ref": "https://www.wikidata.org/wiki/Q10264717",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "avant-garde",
+      "ref": "https://www.wikidata.org/wiki/Q102932",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a broad label for experimental work, not one literary movement with a boundary."
+    },
+    {
+      "term": "撒娇派",
+      "ref": "https://www.wikidata.org/wiki/Q10297291",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "整体主义",
+      "ref": "https://www.wikidata.org/wiki/Q10299567",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "新乡土诗派",
+      "ref": "https://www.wikidata.org/wiki/Q10303362",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "新现代主义诗群",
+      "ref": "https://www.wikidata.org/wiki/Q10306234",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "新边塞诗派",
+      "ref": "https://www.wikidata.org/wiki/Q10307329",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "neoclassicism",
+      "ref": "https://www.wikidata.org/wiki/Q10318954",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Tongcheng school",
+      "ref": "https://www.wikidata.org/wiki/Q10354305",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "pre-modernism",
+      "ref": "https://www.wikidata.org/wiki/Q10354795",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "民间写作",
+      "ref": "https://www.wikidata.org/wiki/Q10372688",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "江湖诗派",
+      "ref": "https://www.wikidata.org/wiki/Q10379023",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Fascismo ficción",
+      "ref": "https://www.wikidata.org/wiki/Q103813737",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "浙西词派",
+      "ref": "https://www.wikidata.org/wiki/Q10385122",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "神性写作",
+      "ref": "https://www.wikidata.org/wiki/Q10445259",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "竟陵派",
+      "ref": "https://www.wikidata.org/wiki/Q10454965",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "第三代诗群",
+      "ref": "https://www.wikidata.org/wiki/Q10458503",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "第三条道路写作",
+      "ref": "https://www.wikidata.org/wiki/Q10458691",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Djurskildring",
+      "ref": "https://www.wikidata.org/wiki/Q10474990",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "American literary nationalism",
+      "ref": "https://www.wikidata.org/wiki/Q104876226",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Huajian Faction",
+      "ref": "https://www.wikidata.org/wiki/Q10500385",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "absurdism",
+      "ref": "https://www.wikidata.org/wiki/Q10505360",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "莽汉主义",
+      "ref": "https://www.wikidata.org/wiki/Q10508657",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "genbun itchi",
+      "ref": "https://www.wikidata.org/wiki/Q10525224",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Servet-i Fünun Literature",
+      "ref": "https://www.wikidata.org/wiki/Q105300606",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "豪放派",
+      "ref": "https://www.wikidata.org/wiki/Q10533107",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "非非主义",
+      "ref": "https://www.wikidata.org/wiki/Q10566032",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Sacraïsme",
+      "ref": "https://www.wikidata.org/wiki/Q106969825",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "åttiotalet",
+      "ref": "https://www.wikidata.org/wiki/Q10726997",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Zhiqing literature",
+      "ref": "https://www.wikidata.org/wiki/Q107422949",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Neo-realistic fiction",
+      "ref": "https://www.wikidata.org/wiki/Q107424119",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "letteratura risorgimentale",
+      "ref": "https://www.wikidata.org/wiki/Q108837811",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Gong'an school",
+      "ref": "https://www.wikidata.org/wiki/Q10892861",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Tongguang Style Poetry",
+      "ref": "https://www.wikidata.org/wiki/Q10917517",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "垃圾派",
+      "ref": "https://www.wikidata.org/wiki/Q10929050",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Doğuş Bildirisi",
+      "ref": "https://www.wikidata.org/wiki/Q109383707",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "hermeticism",
+      "ref": "https://www.wikidata.org/wiki/Q1093903",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "姚贾诗派",
+      "ref": "https://www.wikidata.org/wiki/Q10943421",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "婁東詩派",
+      "ref": "https://www.wikidata.org/wiki/Q10943932",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Empathism",
+      "ref": "https://www.wikidata.org/wiki/Q110300574",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "existentialism",
+      "ref": "https://www.wikidata.org/wiki/Q110404737",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Shanyaotan School",
+      "ref": "https://www.wikidata.org/wiki/Q11046779",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "常州詞派",
+      "ref": "https://www.wikidata.org/wiki/Q11060366",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Strategie-der-Zeit-der-Streitenden-Reiche-Schule",
+      "ref": "https://www.wikidata.org/wiki/Q11075003",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Shinkankakuha",
+      "ref": "https://www.wikidata.org/wiki/Q11082779",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "shinkankakuha",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Jiangxi Poetry School",
+      "ref": "https://www.wikidata.org/wiki/Q11135438",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Literatura de la Onda",
+      "ref": "https://www.wikidata.org/wiki/Q11163885",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Kloaka movement",
+      "ref": "https://www.wikidata.org/wiki/Q111687922",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Catalan modernism",
+      "ref": "https://www.wikidata.org/wiki/Q1122677",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Generation of '98",
+      "ref": "https://www.wikidata.org/wiki/Q1126248",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "postmodern literature",
+      "ref": "https://www.wikidata.org/wiki/Q113013",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Old Comedy",
+      "ref": "https://www.wikidata.org/wiki/Q1132537",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Крестьянская литература",
+      "ref": "https://www.wikidata.org/wiki/Q113411711",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "mannerism",
+      "ref": "https://www.wikidata.org/wiki/Q113621287",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Costumbrismo",
+      "ref": "https://www.wikidata.org/wiki/Q1136545",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "costumbrismo",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Sentimentalismo",
+      "ref": "https://www.wikidata.org/wiki/Q113688250",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Kyōgoku school",
+      "ref": "https://www.wikidata.org/wiki/Q11374434",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "ningen tankyū-ha",
+      "ref": "https://www.wikidata.org/wiki/Q11376236",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "École patriotique",
+      "ref": "https://www.wikidata.org/wiki/Q113835319",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Reizei school",
+      "ref": "https://www.wikidata.org/wiki/Q11395348",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Précieuses",
+      "ref": "https://www.wikidata.org/wiki/Q1140487",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "anti-naturalism",
+      "ref": "https://www.wikidata.org/wiki/Q11410582",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "The Movement",
+      "ref": "https://www.wikidata.org/wiki/Q1141679",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Japan Romantic School",
+      "ref": "https://www.wikidata.org/wiki/Q11508468",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "surrealism",
+      "ref": "https://www.wikidata.org/wiki/Q115125070",
+      "decision": "merge",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "surrealism",
+      "note": "The item names the same movement as the existing writing-map cell; this pass adds the Wikidata item as a names-only source and changes no scope text."
+    },
+    {
+      "term": "Keien school",
+      "ref": "https://www.wikidata.org/wiki/Q11536621",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Shōfū haikai",
+      "ref": "https://www.wikidata.org/wiki/Q11545728",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "cosmicism",
+      "ref": "https://www.wikidata.org/wiki/Q1159897",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Teimon school",
+      "ref": "https://www.wikidata.org/wiki/Q11634550",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Félibrige",
+      "ref": "https://www.wikidata.org/wiki/Q1165363",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "felibrige",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "catastrophism",
+      "ref": "https://www.wikidata.org/wiki/Q11737250",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Klasycyzm warszawski",
+      "ref": "https://www.wikidata.org/wiki/Q11739686",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Byzantine literature of the Laskaris and Palaiologos periods",
+      "ref": "https://www.wikidata.org/wiki/Q11761891",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a historical period of Byzantine literature, not a shared practice."
+    },
+    {
+      "term": "Byzantine literature of the Justinian era",
+      "ref": "https://www.wikidata.org/wiki/Q11761892",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a historical period of Byzantine literature, not a shared practice."
+    },
+    {
+      "term": "Byzantine literature of the Heraclian dynasty",
+      "ref": "https://www.wikidata.org/wiki/Q11761894",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a historical period of Byzantine literature, not a shared practice."
+    },
+    {
+      "term": "Positivisme varsovien",
+      "ref": "https://www.wikidata.org/wiki/Q11761905",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Osjanism",
+      "ref": "https://www.wikidata.org/wiki/Q11800437",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "The Infra-Noir Group",
+      "ref": "https://www.wikidata.org/wiki/Q119256651",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "postsimbolismo",
+      "ref": "https://www.wikidata.org/wiki/Q11942501",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Spectrist hoax",
+      "ref": "https://www.wikidata.org/wiki/Q120070517",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a literary hoax, which is one event rather than a body of work."
+    },
+    {
+      "term": "Frézismus",
+      "ref": "https://www.wikidata.org/wiki/Q12017876",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "ruralismus",
+      "ref": "https://www.wikidata.org/wiki/Q12050365",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Génération de la ronde",
+      "ref": "https://www.wikidata.org/wiki/Q121070573",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Mouvement indigéniste haïtien",
+      "ref": "https://www.wikidata.org/wiki/Q121121040",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Spiralisme",
+      "ref": "https://www.wikidata.org/wiki/Q121324046",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Auteurs du Pays basque nord",
+      "ref": "https://www.wikidata.org/wiki/Q12259669",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a Wikimedia list article, not a movement."
+    },
+    {
+      "term": "Даскалска поезия",
+      "ref": "https://www.wikidata.org/wiki/Q12277686",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Диаболизъм",
+      "ref": "https://www.wikidata.org/wiki/Q12278053",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Софийска книжовна школа",
+      "ref": "https://www.wikidata.org/wiki/Q12294212",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Jutland Movement",
+      "ref": "https://www.wikidata.org/wiki/Q12311796",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "jutland-movement",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Skolelærerlitteratur",
+      "ref": "https://www.wikidata.org/wiki/Q12335751",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Cassette Generation",
+      "ref": "https://www.wikidata.org/wiki/Q12366568",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "surrealismo humanista",
+      "ref": "https://www.wikidata.org/wiki/Q12400822",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Z poetry",
+      "ref": "https://www.wikidata.org/wiki/Q124526505",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Yefremov School",
+      "ref": "https://www.wikidata.org/wiki/Q125885198",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Deprimism",
+      "ref": "https://www.wikidata.org/wiki/Q12726595",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a category of movements, not a movement."
+    },
+    {
+      "term": "Textualism",
+      "ref": "https://www.wikidata.org/wiki/Q12742167",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "nadrealismus",
+      "ref": "https://www.wikidata.org/wiki/Q12772276",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Hellenizing School",
+      "ref": "https://www.wikidata.org/wiki/Q13053802",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Thullal movement",
+      "ref": "https://www.wikidata.org/wiki/Q13112570",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Ravikiran Mandal",
+      "ref": "https://www.wikidata.org/wiki/Q13120426",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Chinese nature poetry",
+      "ref": "https://www.wikidata.org/wiki/Q1314918",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a subject category for Chinese poems about nature, not a movement."
+    },
+    {
+      "term": "Generación del 48",
+      "ref": "https://www.wikidata.org/wiki/Q131757536",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Transzközép irodalom",
+      "ref": "https://www.wikidata.org/wiki/Q1323623",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Proletarian literature in the Kingdom of Romania",
+      "ref": "https://www.wikidata.org/wiki/Q134723309",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Latino Futurism",
+      "ref": "https://www.wikidata.org/wiki/Q135180390",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "latino-futurism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Latín mmg todos",
+      "ref": "https://www.wikidata.org/wiki/Q1352538",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "latin-american-boom",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Poésie pour vivre",
+      "ref": "https://www.wikidata.org/wiki/Q135426540",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "New Chinese Northeast Writers Group",
+      "ref": "https://www.wikidata.org/wiki/Q135651454",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "expressionism",
+      "ref": "https://www.wikidata.org/wiki/Q1362030",
+      "decision": "merge",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "expressionism",
+      "note": "The item names the same movement as the existing writing-map cell; this pass adds the Wikidata item as a names-only source and changes no scope text."
+    },
+    {
+      "term": "Integralism",
+      "ref": "https://www.wikidata.org/wiki/Q136393838",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "shinpū waka",
+      "ref": "https://www.wikidata.org/wiki/Q136505034",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "wikism",
+      "ref": "https://www.wikidata.org/wiki/Q136618770",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Stridentism",
+      "ref": "https://www.wikidata.org/wiki/Q1370619",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "working-class literature",
+      "ref": "https://www.wikidata.org/wiki/Q137652582",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Esprit nouveau",
+      "ref": "https://www.wikidata.org/wiki/Q137808992",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Q137825782",
+      "ref": "https://www.wikidata.org/wiki/Q137825782",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Deferred because the current item has no readable label or description, so this names-only source does not establish a cell boundary."
+    },
+    {
+      "term": "Poetism",
+      "ref": "https://www.wikidata.org/wiki/Q1382662",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Sensory literature",
+      "ref": "https://www.wikidata.org/wiki/Q138657698",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Mandarin Ducks and Butterflies",
+      "ref": "https://www.wikidata.org/wiki/Q1393470",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Golden Age of Detective Fiction",
+      "ref": "https://www.wikidata.org/wiki/Q139376240",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a period of popularity for detective fiction, not a shared practice."
+    },
+    {
+      "term": "ZYMKòwcë",
+      "ref": "https://www.wikidata.org/wiki/Q141239088",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Trümmerliteratur",
+      "ref": "https://www.wikidata.org/wiki/Q1414953",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Saxon School of Poetry",
+      "ref": "https://www.wikidata.org/wiki/Q1417427",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Gruppo 63",
+      "ref": "https://www.wikidata.org/wiki/Q1419552",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "scar literature",
+      "ref": "https://www.wikidata.org/wiki/Q1423453",
+      "decision": "merge",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "scar-literature",
+      "note": "The item names the same movement as the existing writing-map cell; this pass adds the Wikidata item as a names-only source and changes no scope text."
+    },
+    {
+      "term": "Májovci",
+      "ref": "https://www.wikidata.org/wiki/Q1428981",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Baroque literature",
+      "ref": "https://www.wikidata.org/wiki/Q1431376",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "San Francisco Renaissance",
+      "ref": "https://www.wikidata.org/wiki/Q1431758",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Petrarchism",
+      "ref": "https://www.wikidata.org/wiki/Q1469679",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Siuru",
+      "ref": "https://www.wikidata.org/wiki/Q1471823",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Jena Romanticism",
+      "ref": "https://www.wikidata.org/wiki/Q1472238",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "impressionism",
+      "ref": "https://www.wikidata.org/wiki/Q1475680",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "impressionism-literature",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Sardinian Literary Spring",
+      "ref": "https://www.wikidata.org/wiki/Q14758079",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "sardinian-literary-spring",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Saudosismo",
+      "ref": "https://www.wikidata.org/wiki/Q1506874",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "symbolism (Q15673106)",
+      "ref": "https://www.wikidata.org/wiki/Q15673106",
+      "decision": "merge",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "symbolism",
+      "note": "The item names the same movement as the existing writing-map cell; this pass adds the Wikidata item as a names-only source and changes no scope text."
+    },
+    {
+      "term": "痞子文学",
+      "ref": "https://www.wikidata.org/wiki/Q15897953",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "反思文学",
+      "ref": "https://www.wikidata.org/wiki/Q15927729",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Beijing School",
+      "ref": "https://www.wikidata.org/wiki/Q15931612",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "甲寅派",
+      "ref": "https://www.wikidata.org/wiki/Q15940442",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Heimatkunst",
+      "ref": "https://www.wikidata.org/wiki/Q1595590",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "New Objectivity",
+      "ref": "https://www.wikidata.org/wiki/Q160218",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "neue-sachlichkeit",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Chinese Northeast Writers Group",
+      "ref": "https://www.wikidata.org/wiki/Q16078197",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "New Athenian School",
+      "ref": "https://www.wikidata.org/wiki/Q16329873",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "classicism literature",
+      "ref": "https://www.wikidata.org/wiki/Q16359946",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Symbolism (Q164800)",
+      "ref": "https://www.wikidata.org/wiki/Q164800",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "symbolism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Cour amoureuse",
+      "ref": "https://www.wikidata.org/wiki/Q16544712",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "New Puritans",
+      "ref": "https://www.wikidata.org/wiki/Q16956237",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Golden Age of Indiana Literature",
+      "ref": "https://www.wikidata.org/wiki/Q16982245",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a regional golden-age period, not a shared practice."
+    },
+    {
+      "term": "中国荒诞文学",
+      "ref": "https://www.wikidata.org/wiki/Q17002113",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "论语派",
+      "ref": "https://www.wikidata.org/wiki/Q17004391",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "心理分析派",
+      "ref": "https://www.wikidata.org/wiki/Q17009672",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Chinese exile literature",
+      "ref": "https://www.wikidata.org/wiki/Q17012333",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "荷花淀派",
+      "ref": "https://www.wikidata.org/wiki/Q17031861",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "虞山詩派",
+      "ref": "https://www.wikidata.org/wiki/Q17036621",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "白洋淀诗群",
+      "ref": "https://www.wikidata.org/wiki/Q17038744",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "湖畔诗派",
+      "ref": "https://www.wikidata.org/wiki/Q17038889",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "知识分子写作诗群",
+      "ref": "https://www.wikidata.org/wiki/Q17040928",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "西崑体",
+      "ref": "https://www.wikidata.org/wiki/Q17066994",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Young Germany",
+      "ref": "https://www.wikidata.org/wiki/Q1713406",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "里下河文学流派",
+      "ref": "https://www.wikidata.org/wiki/Q17164659",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Escuela mallorquina",
+      "ref": "https://www.wikidata.org/wiki/Q17300745",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Thirties Generation",
+      "ref": "https://www.wikidata.org/wiki/Q174988",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Gongorism",
+      "ref": "https://www.wikidata.org/wiki/Q1757166",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Conceptismo",
+      "ref": "https://www.wikidata.org/wiki/Q1759385",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Renaissance literature",
+      "ref": "https://www.wikidata.org/wiki/Q1781608",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "concretism",
+      "ref": "https://www.wikidata.org/wiki/Q1781785",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Barroquismo (barroco)",
+      "ref": "https://www.wikidata.org/wiki/Q1807353",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Heidelberg School",
+      "ref": "https://www.wikidata.org/wiki/Q181655",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Byzantine literature of the Komnenian and Angelid periods",
+      "ref": "https://www.wikidata.org/wiki/Q18431627",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Grobianism",
+      "ref": "https://www.wikidata.org/wiki/Q185728",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Literatur der Weimarer Republik",
+      "ref": "https://www.wikidata.org/wiki/Q1865108",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Zeitschriften der Romantik",
+      "ref": "https://www.wikidata.org/wiki/Q186837",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Scapigliatura",
+      "ref": "https://www.wikidata.org/wiki/Q1935489",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Neoavanguardia",
+      "ref": "https://www.wikidata.org/wiki/Q1977450",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "New Formalism",
+      "ref": "https://www.wikidata.org/wiki/Q1980139",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Xueheng School",
+      "ref": "https://www.wikidata.org/wiki/Q19854782",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "magical Idealism",
+      "ref": "https://www.wikidata.org/wiki/Q19860569",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Goldenes Zeitalter der russischen Literatur",
+      "ref": "https://www.wikidata.org/wiki/Q19909570",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Modern Breakthrough",
+      "ref": "https://www.wikidata.org/wiki/Q2012198",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "creacionismo",
+      "ref": "https://www.wikidata.org/wiki/Q2035672",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Village Prose",
+      "ref": "https://www.wikidata.org/wiki/Q2043724",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Armenian-French literature",
+      "ref": "https://www.wikidata.org/wiki/Q20514203",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a population-and-place category, not a shared practice."
+    },
+    {
+      "term": "regional literature",
+      "ref": "https://www.wikidata.org/wiki/Q20521441",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a geographic literature category, not a movement."
+    },
+    {
+      "term": "Latin translations of the 12th century",
+      "ref": "https://www.wikidata.org/wiki/Q2052959",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Escola da Tebra",
+      "ref": "https://www.wikidata.org/wiki/Q20542189",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "École Gwalarn",
+      "ref": "https://www.wikidata.org/wiki/Q20584349",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Experimentalist Punjabi Poetry",
+      "ref": "https://www.wikidata.org/wiki/Q20608461",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Swedish proletarian literature",
+      "ref": "https://www.wikidata.org/wiki/Q20645998",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Frans-classicisme",
+      "ref": "https://www.wikidata.org/wiki/Q2076484",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Sturm und Drang",
+      "ref": "https://www.wikidata.org/wiki/Q207741",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "New Haiku",
+      "ref": "https://www.wikidata.org/wiki/Q21015412",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Club des longues moustaches",
+      "ref": "https://www.wikidata.org/wiki/Q21177100",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Beat Generation",
+      "ref": "https://www.wikidata.org/wiki/Q213457",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Renouveau catholique",
+      "ref": "https://www.wikidata.org/wiki/Q2144241",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "verismo",
+      "ref": "https://www.wikidata.org/wiki/Q215198",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "verismo-literature",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Lieutenant prose",
+      "ref": "https://www.wikidata.org/wiki/Q21660465",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "créolité",
+      "ref": "https://www.wikidata.org/wiki/Q2196653",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "creolite",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Nederlandse nationaalsocialistische letterkunde",
+      "ref": "https://www.wikidata.org/wiki/Q2208015",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Zéńdzenié Młodëch Ùtwórców Kaszëbsczich",
+      "ref": "https://www.wikidata.org/wiki/Q22262508",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Pereval",
+      "ref": "https://www.wikidata.org/wiki/Q2299800",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Generation of '50",
+      "ref": "https://www.wikidata.org/wiki/Q2302005",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Generation of '36",
+      "ref": "https://www.wikidata.org/wiki/Q2309283",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Zweite Neue",
+      "ref": "https://www.wikidata.org/wiki/Q233298",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Russisch realisme",
+      "ref": "https://www.wikidata.org/wiki/Q2345152",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Amsterdam school",
+      "ref": "https://www.wikidata.org/wiki/Q2345170",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Unanimism",
+      "ref": "https://www.wikidata.org/wiki/Q2349325",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "unanimism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Literatura modernista catalana",
+      "ref": "https://www.wikidata.org/wiki/Q23597152",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "artistic indianism",
+      "ref": "https://www.wikidata.org/wiki/Q2368408",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "indianism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Poesía de la claridad",
+      "ref": "https://www.wikidata.org/wiki/Q23900696",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "miserabilism",
+      "ref": "https://www.wikidata.org/wiki/Q2407578",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Renaissance valencienne",
+      "ref": "https://www.wikidata.org/wiki/Q24188675",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "magic realism",
+      "ref": "https://www.wikidata.org/wiki/Q24205155",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Graveyard poets",
+      "ref": "https://www.wikidata.org/wiki/Q2423022",
+      "decision": "merge",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "graveyard-poetry",
+      "note": "The item names the Graveyard poets; their existing cell is filed under the work tradition Graveyard poetry, so this pass adds the item as a names-only source without treating the labels as identical."
+    },
+    {
+      "term": "Occitanism",
+      "ref": "https://www.wikidata.org/wiki/Q2427033",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is an ideological movement whose item does not identify a literary practice."
+    },
+    {
+      "term": "Galician-Portuguese lyric",
+      "ref": "https://www.wikidata.org/wiki/Q2457695",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Restoration literature",
+      "ref": "https://www.wikidata.org/wiki/Q2483499",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Bandaya movement",
+      "ref": "https://www.wikidata.org/wiki/Q24932114",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "nadaism",
+      "ref": "https://www.wikidata.org/wiki/Q2496232",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "nadaism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Literature of the Five Mountains",
+      "ref": "https://www.wikidata.org/wiki/Q2499142",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "De Vijftigers",
+      "ref": "https://www.wikidata.org/wiki/Q2502293",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "neorealism",
+      "ref": "https://www.wikidata.org/wiki/Q25408844",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Postmodernismo",
+      "ref": "https://www.wikidata.org/wiki/Q25413839",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "poesía socialista de verso libre",
+      "ref": "https://www.wikidata.org/wiki/Q25477126",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "dirty realism",
+      "ref": "https://www.wikidata.org/wiki/Q2568215",
+      "decision": "merge",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "dirty-realism",
+      "note": "The item names the same movement as the existing writing-map cell; this pass adds the Wikidata item as a names-only source and changes no scope text."
+    },
+    {
+      "term": "Aestheticism",
+      "ref": "https://www.wikidata.org/wiki/Q256922",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "aestheticism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "visual poetry",
+      "ref": "https://www.wikidata.org/wiki/Q2578278",
+      "decision": "merge",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "visual-poetry",
+      "note": "The item names the same movement as the existing writing-map cell; this pass adds the Wikidata item as a names-only source and changes no scope text."
+    },
+    {
+      "term": "Wuppertal poets' circle",
+      "ref": "https://www.wikidata.org/wiki/Q2595145",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Pre-romanticism",
+      "ref": "https://www.wikidata.org/wiki/Q2614483",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Spanish Baroque literature",
+      "ref": "https://www.wikidata.org/wiki/Q262080",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "vitalism",
+      "ref": "https://www.wikidata.org/wiki/Q2705414",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Neogarrettismo",
+      "ref": "https://www.wikidata.org/wiki/Q2782560",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Atomic bomb literature",
+      "ref": "https://www.wikidata.org/wiki/Q2790520",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Новый Метафизис",
+      "ref": "https://www.wikidata.org/wiki/Q28666907",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Settecentismo",
+      "ref": "https://www.wikidata.org/wiki/Q28872661",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Generación inexistente",
+      "ref": "https://www.wikidata.org/wiki/Q28916399",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Black Mountain poets",
+      "ref": "https://www.wikidata.org/wiki/Q2905420",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Colónida",
+      "ref": "https://www.wikidata.org/wiki/Q2917716",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Generatie Nix",
+      "ref": "https://www.wikidata.org/wiki/Q2924910",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "populisme",
+      "ref": "https://www.wikidata.org/wiki/Q3013000",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "המהלך החדש בספרות העברית",
+      "ref": "https://www.wikidata.org/wiki/Q30526734",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Catholic literary revival",
+      "ref": "https://www.wikidata.org/wiki/Q30693053",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "catholic-literary-revival",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Generación del 18",
+      "ref": "https://www.wikidata.org/wiki/Q30904833",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Military village literature",
+      "ref": "https://www.wikidata.org/wiki/Q30950388",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Jeune Force poétique française",
+      "ref": "https://www.wikidata.org/wiki/Q3177996",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Neo-experimentalism",
+      "ref": "https://www.wikidata.org/wiki/Q3238161",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Swabian poet school",
+      "ref": "https://www.wikidata.org/wiki/Q323948",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Littérature de la Différence",
+      "ref": "https://www.wikidata.org/wiki/Q3256780",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Rexurdimento",
+      "ref": "https://www.wikidata.org/wiki/Q3307647",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Kailyard school",
+      "ref": "https://www.wikidata.org/wiki/Q3326476",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "naturisme",
+      "ref": "https://www.wikidata.org/wiki/Q3337128",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "parnassianism",
+      "ref": "https://www.wikidata.org/wiki/Q335652",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "parnassianism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "neotrobadorismo",
+      "ref": "https://www.wikidata.org/wiki/Q3397865",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Native American Renaissance",
+      "ref": "https://www.wikidata.org/wiki/Q3424746",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Criollismo",
+      "ref": "https://www.wikidata.org/wiki/Q3445758",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Signalism",
+      "ref": "https://www.wikidata.org/wiki/Q3483628",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "signalism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "tremendismo",
+      "ref": "https://www.wikidata.org/wiki/Q3538424",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Garip",
+      "ref": "https://www.wikidata.org/wiki/Q357442",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Danrin school",
+      "ref": "https://www.wikidata.org/wiki/Q3577663",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "École de Brive",
+      "ref": "https://www.wikidata.org/wiki/Q3577782",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "École de Rochefort",
+      "ref": "https://www.wikidata.org/wiki/Q3577817",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "École fantaisiste",
+      "ref": "https://www.wikidata.org/wiki/Q3577993",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "École littéraire de Montréal",
+      "ref": "https://www.wikidata.org/wiki/Q3578031",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Nijō poetic school",
+      "ref": "https://www.wikidata.org/wiki/Q3578321",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Progressive Writers' Movement",
+      "ref": "https://www.wikidata.org/wiki/Q3631014",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Dalit Panther",
+      "ref": "https://www.wikidata.org/wiki/Q3633165",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a social organization whose item does not identify a literary practice."
+    },
+    {
+      "term": "Southern Agrarians",
+      "ref": "https://www.wikidata.org/wiki/Q3650950",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Cannibali",
+      "ref": "https://www.wikidata.org/wiki/Q3655418",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Middle Comedy",
+      "ref": "https://www.wikidata.org/wiki/Q3684594",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Romanticism",
+      "ref": "https://www.wikidata.org/wiki/Q37068",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "romanticism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Drishtantoism",
+      "ref": "https://www.wikidata.org/wiki/Q37346394",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a philosophy whose item does not identify a body of literature."
+    },
+    {
+      "term": "Génération de 60",
+      "ref": "https://www.wikidata.org/wiki/Q3759614",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Spanish mystics",
+      "ref": "https://www.wikidata.org/wiki/Q3813828",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "futurism",
+      "ref": "https://www.wikidata.org/wiki/Q3831119",
+      "decision": "merge",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "futurism",
+      "note": "The item names the same movement as the existing writing-map cell; this pass adds the Wikidata item as a names-only source and changes no scope text."
+    },
+    {
+      "term": "Lombard line",
+      "ref": "https://www.wikidata.org/wiki/Q3832700",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "lírica toscana",
+      "ref": "https://www.wikidata.org/wiki/Q3833332",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Zenitism",
+      "ref": "https://www.wikidata.org/wiki/Q3867190",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "zenitism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Positivismo letterario",
+      "ref": "https://www.wikidata.org/wiki/Q3909396",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Postism",
+      "ref": "https://www.wikidata.org/wiki/Q3909469",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Purismo (litterature)",
+      "ref": "https://www.wikidata.org/wiki/Q3925964",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Gaza School",
+      "ref": "https://www.wikidata.org/wiki/Q3953273",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Escuela gallego-castellana",
+      "ref": "https://www.wikidata.org/wiki/Q3953331",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "experimentalism (Q3966519)",
+      "ref": "https://www.wikidata.org/wiki/Q3966519",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Stracittà",
+      "ref": "https://www.wikidata.org/wiki/Q3974594",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Neo-romanticism",
+      "ref": "https://www.wikidata.org/wiki/Q397469",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "neo-romanticism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Toutism",
+      "ref": "https://www.wikidata.org/wiki/Q4127788",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Acmeist poetry",
+      "ref": "https://www.wikidata.org/wiki/Q420245",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "acmeism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Xungen movement",
+      "ref": "https://www.wikidata.org/wiki/Q430833",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "xungen-movement",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "natural school",
+      "ref": "https://www.wikidata.org/wiki/Q4314206",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "natural-school",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "New Peasant Poets",
+      "ref": "https://www.wikidata.org/wiki/Q4324287",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Note parisienne",
+      "ref": "https://www.wikidata.org/wiki/Q4345135",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "turborealism",
+      "ref": "https://www.wikidata.org/wiki/Q4465768",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Groninger School",
+      "ref": "https://www.wikidata.org/wiki/Q4502086",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Ego-Futurism",
+      "ref": "https://www.wikidata.org/wiki/Q4529788",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Kristiania Bohemians",
+      "ref": "https://www.wikidata.org/wiki/Q4587039",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Alliterative Revival",
+      "ref": "https://www.wikidata.org/wiki/Q4732875",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Angry Penguins",
+      "ref": "https://www.wikidata.org/wiki/Q4763941",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Augustan poetry",
+      "ref": "https://www.wikidata.org/wiki/Q4821017",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "British Poetry Revival",
+      "ref": "https://www.wikidata.org/wiki/Q4970618",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "british-poetry-revival",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Brutalists",
+      "ref": "https://www.wikidata.org/wiki/Q4979849",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Classical Prose Movement",
+      "ref": "https://www.wikidata.org/wiki/Q5128310",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "classical-prose-movement",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Cockney School",
+      "ref": "https://www.wikidata.org/wiki/Q5139648",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "New Latin-language poets",
+      "ref": "https://www.wikidata.org/wiki/Q51512904",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "condorism",
+      "ref": "https://www.wikidata.org/wiki/Q5159353",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "condorism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Crack Movement",
+      "ref": "https://www.wikidata.org/wiki/Q5180318",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "La Pléiade",
+      "ref": "https://www.wikidata.org/wiki/Q528648",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Spanish Golden Age",
+      "ref": "https://www.wikidata.org/wiki/Q530936",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a cultural period, not one literary practice."
+    },
+    {
+      "term": "Déprimisme",
+      "ref": "https://www.wikidata.org/wiki/Q5320252",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Dolce Stil Novo",
+      "ref": "https://www.wikidata.org/wiki/Q542036",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "dolce-stil-novo",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Fleshly School",
+      "ref": "https://www.wikidata.org/wiki/Q5458722",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Debate of the Romance of the Rose",
+      "ref": "https://www.wikidata.org/wiki/Q54854899",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is one historical literary debate, not a body of work."
+    },
+    {
+      "term": "Generación Comprometida",
+      "ref": "https://www.wikidata.org/wiki/Q5486021",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Ultraist movement",
+      "ref": "https://www.wikidata.org/wiki/Q554201",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "El Comité",
+      "ref": "https://www.wikidata.org/wiki/Q55455579",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Littérature interactive",
+      "ref": "https://www.wikidata.org/wiki/Q55619096",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "阳羡词派",
+      "ref": "https://www.wikidata.org/wiki/Q55696123",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "神韵派",
+      "ref": "https://www.wikidata.org/wiki/Q55707948",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Generation of '50 (Perú)",
+      "ref": "https://www.wikidata.org/wiki/Q5580124",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Generación del 70",
+      "ref": "https://www.wikidata.org/wiki/Q5581457",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "naturalism",
+      "ref": "https://www.wikidata.org/wiki/Q55996",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "naturalism-literature",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Modernismo",
+      "ref": "https://www.wikidata.org/wiki/Q5600643",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Indigenismo",
+      "ref": "https://www.wikidata.org/wiki/Q5602008",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Nouveau Roman",
+      "ref": "https://www.wikidata.org/wiki/Q570341",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Zestigers",
+      "ref": "https://www.wikidata.org/wiki/Q57342870",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Hussards",
+      "ref": "https://www.wikidata.org/wiki/Q57722",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "historical realism",
+      "ref": "https://www.wikidata.org/wiki/Q5774367",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Neopopularismo",
+      "ref": "https://www.wikidata.org/wiki/Q577683",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "literary Costumbrism",
+      "ref": "https://www.wikidata.org/wiki/Q5790162",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "costumbrismo",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Lovecraft Circle",
+      "ref": "https://www.wikidata.org/wiki/Q5796564",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Círculo de Mecenas",
+      "ref": "https://www.wikidata.org/wiki/Q5796567",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "crepuscolarism",
+      "ref": "https://www.wikidata.org/wiki/Q580462",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Polipoesía",
+      "ref": "https://www.wikidata.org/wiki/Q581757",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Finalismo",
+      "ref": "https://www.wikidata.org/wiki/Q5862155",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Generation of '38",
+      "ref": "https://www.wikidata.org/wiki/Q5876879",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "generation-of-38",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Generation of '68",
+      "ref": "https://www.wikidata.org/wiki/Q5876886",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "infrarealism",
+      "ref": "https://www.wikidata.org/wiki/Q5915909",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Literatura española contemporánea",
+      "ref": "https://www.wikidata.org/wiki/Q59393217",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Literatura cuántica",
+      "ref": "https://www.wikidata.org/wiki/Q5977089",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Romantic literature",
+      "ref": "https://www.wikidata.org/wiki/Q5977111",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "romanticism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Los Panidas",
+      "ref": "https://www.wikidata.org/wiki/Q5980133",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Dada",
+      "ref": "https://www.wikidata.org/wiki/Q6034",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "dada",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Семь факельщиков",
+      "ref": "https://www.wikidata.org/wiki/Q6040338",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "intimism",
+      "ref": "https://www.wikidata.org/wiki/Q6057681",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Stone and Sky",
+      "ref": "https://www.wikidata.org/wiki/Q6075317",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "stone-and-sky",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Türki-i basit",
+      "ref": "https://www.wikidata.org/wiki/Q6093853",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Поети-хеджисти",
+      "ref": "https://www.wikidata.org/wiki/Q6094409",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Fecr-i Ati",
+      "ref": "https://www.wikidata.org/wiki/Q6101945",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Victorian literature",
+      "ref": "https://www.wikidata.org/wiki/Q619593",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a reign-based period of literature, not one shared practice."
+    },
+    {
+      "term": "Jindyworobak Movement",
+      "ref": "https://www.wikidata.org/wiki/Q6202125",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "jindyworobak-movement",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "proletarian literature",
+      "ref": "https://www.wikidata.org/wiki/Q627187",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Neue Sachlichkeit (Literatur)",
+      "ref": "https://www.wikidata.org/wiki/Q62753037",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Arbujad",
+      "ref": "https://www.wikidata.org/wiki/Q630700",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Hungry generation",
+      "ref": "https://www.wikidata.org/wiki/Q632645",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Kallol",
+      "ref": "https://www.wikidata.org/wiki/Q6353914",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "New Comedy",
+      "ref": "https://www.wikidata.org/wiki/Q650175",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "literary realism",
+      "ref": "https://www.wikidata.org/wiki/Q667661",
+      "decision": "merge",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "literary-realism",
+      "note": "The item names the same movement as the existing writing-map cell; this pass adds the Wikidata item as a names-only source and changes no scope text."
+    },
+    {
+      "term": "Lower Body Poets",
+      "ref": "https://www.wikidata.org/wiki/Q6693335",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Montreal Group",
+      "ref": "https://www.wikidata.org/wiki/Q6906281",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Weimar Classicism",
+      "ref": "https://www.wikidata.org/wiki/Q694408",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Vormärz",
+      "ref": "https://www.wikidata.org/wiki/Q700923",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a period of German history, not a literary movement."
+    },
+    {
+      "term": "New Narrative",
+      "ref": "https://www.wikidata.org/wiki/Q7010556",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Mahjar",
+      "ref": "https://www.wikidata.org/wiki/Q7185455",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "mahjar",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Pink Decade",
+      "ref": "https://www.wikidata.org/wiki/Q7195987",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "pink-decade",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Positivism in Poland",
+      "ref": "https://www.wikidata.org/wiki/Q735828",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Sagebrush School",
+      "ref": "https://www.wikidata.org/wiki/Q7399167",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Satanic School",
+      "ref": "https://www.wikidata.org/wiki/Q7425919",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Ultra-Romanticism",
+      "ref": "https://www.wikidata.org/wiki/Q745673",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "ultra-romanticism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Imagism",
+      "ref": "https://www.wikidata.org/wiki/Q746727",
+      "decision": "merge",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "imagism",
+      "note": "The item names the same movement as the existing writing-map cell; this pass adds the Wikidata item as a names-only source and changes no scope text."
+    },
+    {
+      "term": "Atticism",
+      "ref": "https://www.wikidata.org/wiki/Q746783",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "atticism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Japonisme",
+      "ref": "https://www.wikidata.org/wiki/Q751880",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "japonisme",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "Sentimentalism",
+      "ref": "https://www.wikidata.org/wiki/Q754602",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "sentimentalism-literature",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "social poetry",
+      "ref": "https://www.wikidata.org/wiki/Q7551306",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Southern Renaissance",
+      "ref": "https://www.wikidata.org/wiki/Q7570398",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Spasmodic poets",
+      "ref": "https://www.wikidata.org/wiki/Q7573984",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Taiwanese literature movement",
+      "ref": "https://www.wikidata.org/wiki/Q7676615",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "McOndo",
+      "ref": "https://www.wikidata.org/wiki/Q782086",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Translation Movement",
+      "ref": "https://www.wikidata.org/wiki/Q7834525",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Abandonology",
+      "ref": "https://www.wikidata.org/wiki/Q78362346",
+      "decision": "declined",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "Declined because the item is a study attached to one named work, not a movement or body of work."
+    },
+    {
+      "term": "Tweede Asem",
+      "ref": "https://www.wikidata.org/wiki/Q7857485",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "ukiyozōshi",
+      "ref": "https://www.wikidata.org/wiki/Q82386",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Marinism",
+      "ref": "https://www.wikidata.org/wiki/Q8346360",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "euphuism",
+      "ref": "https://www.wikidata.org/wiki/Q8346457",
+      "decision": "live",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "The with-care techniques pass established a writing-map cell for this named language style; the shared Wikidata record is now live in both source ledgers.",
+      "cellId": "euphuism"
+    },
+    {
+      "term": "Decadent movement",
+      "ref": "https://www.wikidata.org/wiki/Q846094",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "decadent-movement",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "New Culture Movement",
+      "ref": "https://www.wikidata.org/wiki/Q852377",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Mulherio das Letras",
+      "ref": "https://www.wikidata.org/wiki/Q85875793",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Shinkō Geijutsu-ha",
+      "ref": "https://www.wikidata.org/wiki/Q85880619",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Conceptual writing",
+      "ref": "https://www.wikidata.org/wiki/Q85989623",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "antipetrarchism",
+      "ref": "https://www.wikidata.org/wiki/Q87267439",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "School of Lyon",
+      "ref": "https://www.wikidata.org/wiki/Q876031",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "École de Sare",
+      "ref": "https://www.wikidata.org/wiki/Q8778275",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Hilozoísmo (literatura)",
+      "ref": "https://www.wikidata.org/wiki/Q9003812",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "imaginism",
+      "ref": "https://www.wikidata.org/wiki/Q908365",
+      "decision": "live",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "cellId": "imaginism",
+      "note": "The production cell already cites this Wikidata item; this pass re-read the current P31 literary-movement result and confirmed the pointer."
+    },
+    {
+      "term": "vorticism",
+      "ref": "https://www.wikidata.org/wiki/Q915841",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "ero guro",
+      "ref": "https://www.wikidata.org/wiki/Q933272",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Turpismus",
+      "ref": "https://www.wikidata.org/wiki/Q9363034",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Wallenrodism",
+      "ref": "https://www.wikidata.org/wiki/Q9370621",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "七月派",
+      "ref": "https://www.wikidata.org/wiki/Q9378278",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "三十六体",
+      "ref": "https://www.wikidata.org/wiki/Q9379615",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Youngism",
+      "ref": "https://www.wikidata.org/wiki/Q9383552",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "丑石诗群",
+      "ref": "https://www.wikidata.org/wiki/Q9383957",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "中国新现实主义",
+      "ref": "https://www.wikidata.org/wiki/Q9384213",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "中国早期象征诗派",
+      "ref": "https://www.wikidata.org/wiki/Q9384215",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "中国现实主义",
+      "ref": "https://www.wikidata.org/wiki/Q9384232",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "中间代",
+      "ref": "https://www.wikidata.org/wiki/Q9384637",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Nine Leaves Poetry",
+      "ref": "https://www.wikidata.org/wiki/Q9384715",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "他们诗群",
+      "ref": "https://www.wikidata.org/wiki/Q9385154",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "信息主义",
+      "ref": "https://www.wikidata.org/wiki/Q9393117",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "唐宋派",
+      "ref": "https://www.wikidata.org/wiki/Q9651438",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Generación del 50",
+      "ref": "https://www.wikidata.org/wiki/Q96774802",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "圆明园诗派",
+      "ref": "https://www.wikidata.org/wiki/Q9682869",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "modernist literature",
+      "ref": "https://www.wikidata.org/wiki/Q971480",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "Mino school",
+      "ref": "https://www.wikidata.org/wiki/Q97278513",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "大学生诗派",
+      "ref": "https://www.wikidata.org/wiki/Q9888904",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
+    {
+      "term": "experimentalism (Q98923806)",
+      "ref": "https://www.wikidata.org/wiki/Q98923806",
+      "decision": "deferred",
+      "batch": "TASK2-WD-MOVEMENTS",
+      "note": "The item plausibly names a literary movement, but this source is names-only and supplies no citable account of its practice; defer until a read-and-cite source establishes the cell."
+    },
     {
       "term": "Abbaye de Créteil",
       "ref": "https://www.wikidata.org/wiki/Q2275355",
       "decision": "live",
       "batch": "B19-B20",
       "cellId": "abbaye-de-creteil",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Acmeist poetry",
-      "ref": "https://www.wikidata.org/wiki/Q420245",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "acmeism",
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
@@ -41,14 +3000,6 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "Atticism",
-      "ref": "https://www.wikidata.org/wiki/Q746783",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "atticism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Birmingham Group (authors)",
       "ref": "https://www.wikidata.org/wiki/Q4916708",
       "decision": "live",
@@ -65,14 +3016,6 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers. The merge target already existed, so the item was not on it until this repair added it. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "British Poetry Revival",
-      "ref": "https://www.wikidata.org/wiki/Q4970618",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "british-poetry-revival",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Cartonera",
       "ref": "https://www.wikidata.org/wiki/Q5047388",
       "decision": "merge",
@@ -81,27 +3024,11 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers. The merge target already existed, so the item was not on it until this repair added it. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "Catholic literary revival",
-      "ref": "https://www.wikidata.org/wiki/Q30693053",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "catholic-literary-revival",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Chicanafuturism",
       "ref": "https://www.wikidata.org/wiki/Q97359046",
       "decision": "live",
       "batch": "B19-B20",
       "cellId": "chicanafuturism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Classical Prose Movement",
-      "ref": "https://www.wikidata.org/wiki/Q5128310",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "classical-prose-movement",
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
@@ -113,27 +3040,11 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "Condorism",
-      "ref": "https://www.wikidata.org/wiki/Q5159353",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "condorism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Coppet group",
       "ref": "https://www.wikidata.org/wiki/Q3117678",
       "decision": "live",
       "batch": "B19-B20",
       "cellId": "coppet-group",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Costumbrismo",
-      "ref": "https://www.wikidata.org/wiki/Q1136545",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "costumbrismo",
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
@@ -145,43 +3056,11 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "Créolité",
-      "ref": "https://www.wikidata.org/wiki/Q2196653",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "creolite",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Decadent movement",
-      "ref": "https://www.wikidata.org/wiki/Q846094",
-      "decision": "merge",
-      "batch": "B19-B20",
-      "cellId": "decadent-movement",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers. The merge target already existed, so the item was not on it until this repair added it. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Deep image",
       "ref": "https://www.wikidata.org/wiki/Q3021141",
       "decision": "live",
       "batch": "B19-B20",
       "cellId": "deep-image",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Dolce Stil Novo",
-      "ref": "https://www.wikidata.org/wiki/Q542036",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "dolce-stil-novo",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Félibrige",
-      "ref": "https://www.wikidata.org/wiki/Q1165363",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "felibrige",
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
@@ -209,14 +3088,6 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "Generation of '38",
-      "ref": "https://www.wikidata.org/wiki/Q5876879",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "generation-of-38",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Grupo Taller de Estocolmo",
       "ref": "https://www.wikidata.org/wiki/Q2722218",
       "decision": "live",
@@ -230,30 +3101,6 @@
       "decision": "live",
       "batch": "B19-B20",
       "cellId": "halqa-e-arbab-e-zauq",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Imaginism",
-      "ref": "https://www.wikidata.org/wiki/Q908365",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "imaginism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Impressionism (literature)",
-      "ref": "https://www.wikidata.org/wiki/Q1475680",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "impressionism-literature",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Indianism (arts)",
-      "ref": "https://www.wikidata.org/wiki/Q2368408",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "indianism",
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
@@ -278,54 +3125,6 @@
       "decision": "live",
       "batch": "B19-B20",
       "cellId": "jadid",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Jindyworobak Movement",
-      "ref": "https://www.wikidata.org/wiki/Q6202125",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "jindyworobak-movement",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Jutland Movement",
-      "ref": "https://www.wikidata.org/wiki/Q12311796",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "jutland-movement",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Latin American Boom",
-      "ref": "https://www.wikidata.org/wiki/Q1352538",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "latin-american-boom",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Latino Futurism",
-      "ref": "https://www.wikidata.org/wiki/Q135180390",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "latino-futurism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Literary costumbrismo",
-      "ref": "https://www.wikidata.org/wiki/Q5790162",
-      "decision": "merge",
-      "batch": "B19-B20",
-      "cellId": "costumbrismo",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers. The merge target already existed, so the item was not on it until this repair added it. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Mahjar",
-      "ref": "https://www.wikidata.org/wiki/Q7185455",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "mahjar",
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
@@ -361,30 +3160,6 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "Nadaism",
-      "ref": "https://www.wikidata.org/wiki/Q2496232",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "nadaism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Natural school",
-      "ref": "https://www.wikidata.org/wiki/Q4314206",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "natural-school",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Naturalism (literature)",
-      "ref": "https://www.wikidata.org/wiki/Q55996",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "naturalism-literature",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Naturalism (theatre)",
       "ref": "https://www.wikidata.org/wiki/Q56001",
       "decision": "live",
@@ -406,14 +3181,6 @@
       "decision": "live",
       "batch": "B19-B20",
       "cellId": "neo-decadence",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Neo-romanticism",
-      "ref": "https://www.wikidata.org/wiki/Q397469",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "neo-romanticism",
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
@@ -457,22 +3224,6 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "Parnassianism",
-      "ref": "https://www.wikidata.org/wiki/Q335652",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "parnassianism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Pink Decade",
-      "ref": "https://www.wikidata.org/wiki/Q7195987",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "pink-decade",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Pyreneanism",
       "ref": "https://www.wikidata.org/wiki/Q3411437",
       "decision": "live",
@@ -505,30 +3256,6 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "Romantic literature",
-      "ref": "https://www.wikidata.org/wiki/Q5977111",
-      "decision": "merge",
-      "batch": "B19-B20",
-      "cellId": "romanticism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers. The merge target already existed, so the item was not on it until this repair added it. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Romanticism",
-      "ref": "https://www.wikidata.org/wiki/Q37068",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "romanticism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Sardinian Literary Spring",
-      "ref": "https://www.wikidata.org/wiki/Q14758079",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "sardinian-literary-spring",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Sastra wangi",
       "ref": "https://www.wikidata.org/wiki/Q7425812",
       "decision": "live",
@@ -545,51 +3272,11 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "Sentimentalism (literature)",
-      "ref": "https://www.wikidata.org/wiki/Q754602",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "sentimentalism-literature",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Serapion Brothers",
       "ref": "https://www.wikidata.org/wiki/Q1389156",
       "decision": "live",
       "batch": "B19-B20",
       "cellId": "serapion-brothers",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Shinkankakuha",
-      "ref": "https://www.wikidata.org/wiki/Q11082779",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "shinkankakuha",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Signalism",
-      "ref": "https://www.wikidata.org/wiki/Q3483628",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "signalism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Stone and Sky (movement)",
-      "ref": "https://www.wikidata.org/wiki/Q6075317",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "stone-and-sky",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Symbolism (movement)",
-      "ref": "https://www.wikidata.org/wiki/Q164800",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "symbolism",
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
@@ -617,30 +3304,6 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "Ultra-Romanticism",
-      "ref": "https://www.wikidata.org/wiki/Q745673",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "ultra-romanticism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Unanimism",
-      "ref": "https://www.wikidata.org/wiki/Q2349325",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "unanimism",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Verismo (literature)",
-      "ref": "https://www.wikidata.org/wiki/Q215198",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "verismo-literature",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Wellington Group",
       "ref": "https://www.wikidata.org/wiki/Q7981403",
       "decision": "live",
@@ -657,14 +3320,6 @@
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     },
     {
-      "term": "Xungen movement",
-      "ref": "https://www.wikidata.org/wiki/Q430833",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "xungen-movement",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
       "term": "Yiddishist movement",
       "ref": "https://www.wikidata.org/wiki/Q2919734",
       "decision": "live",
@@ -678,14 +3333,6 @@
       "decision": "live",
       "batch": "B19-B20",
       "cellId": "young-vienna",
-      "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
-    },
-    {
-      "term": "Zenitism",
-      "ref": "https://www.wikidata.org/wiki/Q3867190",
-      "decision": "live",
-      "batch": "B19-B20",
-      "cellId": "zenitism",
       "note": "Read as the second, independent reference for the Wikipedia movements pass: the item was opened for its label, description and authority identifiers, and is cited on the cell. Names-only use, so nothing was written from Wikidata's own text."
     }
   ]
