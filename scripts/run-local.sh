@@ -99,15 +99,42 @@ fi
 # command. Anything started through this survives the parent shell exiting.
 write_launcher() {
 cat > "$LAUNCH" <<'PY'
-import os, sys
+import os, sys, subprocess, tempfile
+from pathlib import Path
+
 log, pid_path = sys.argv[1], sys.argv[2]
-os.setsid()                                   # new session: not reaped with the parent
+command = sys.argv[3:]
+os.setsid()                                   # own session; survive the invoking shell
+pid = os.getpid()
+if command[0] == "--gallery-owner":
+    worktree, owner = command[1:3]
+    command = command[3:]
+    if sys.platform == "linux":
+        stat = Path(f"/proc/{pid}/stat").read_text()
+        boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
+        identity = boot + ":" + stat.rsplit(")", 1)[1].split()[19]  # field 22
+    else:
+        identity = subprocess.check_output(
+            ["ps", "-p", str(pid), "-o", "lstart="], text=True,
+            env=dict(os.environ, LC_ALL="C", TZ="UTC"),
+        ).rstrip("\n")
+    fd, staged = tempfile.mkstemp(prefix=".katagami-owner-", dir=os.path.dirname(owner))
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(f"{worktree}\n{pid}\n{identity}\n")
+        try:
+            os.link(staged, owner)             # exclusive, complete ownership before shared files
+        except FileExistsError:
+            raise SystemExit("error: another launch owns this UI port; select another UI_PORT")
+    finally:
+        os.unlink(staged)
 with open(pid_path, "w") as f:
-    f.write(str(os.getpid()))
+    f.write(str(pid))
 fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
 os.dup2(fd, 1); os.dup2(fd, 2)
 dn = os.open(os.devnull, os.O_RDONLY); os.dup2(dn, 0)
-os.execvp(sys.argv[3], sys.argv[3:])          # become the target command
+os.execvp(command[0], command)                 # become the target command
+
 PY
 }
 

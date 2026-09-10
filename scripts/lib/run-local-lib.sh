@@ -154,7 +154,7 @@ gallery_require_tools() {
 }
 
 gallery_preflight() {
-  gallery_require_tools node npm python3 curl lsof ps head sed rm mktemp grep sleep
+  gallery_require_tools node npm python3 curl lsof ps head sed rm mktemp grep sleep cat
   node -e 'const [a,b]=process.versions.node.split(".").map(Number); if(a<20||(a===20&&b<9)){console.error("error: Node >=20.9 is required; select a supported Node runtime on PATH.");process.exit(1)}'
   npm --version >/dev/null
   if [ ! -f "$UI_DIR/node_modules/next/package.json" ] || [ ! -f "$UI_DIR/package-lock.json" ]; then
@@ -182,7 +182,7 @@ try {
   process.exit(1);
 }
 require("@next/env").loadEnvConfig(process.cwd(), true);
-if (!(process.env.TEMPER_API_KEY || "").trim()) {
+if (!(process.env.TEMPER_API_KEY || "").replace(/\\n/g, "").trim()) {
   console.error("error: set TEMPER_API_KEY in the selected Next development environment before launching.");
   process.exit(1);
 }
@@ -203,6 +203,20 @@ JS
   )
 }
 
+# Linux start ticks do not depend on wall-clock steps; the boot ID rejects old-boot PIDs.
+gallery_process_identity() {
+  local pid="$1" stat boot
+  local -a fields
+  if [ -r "/proc/$pid/stat" ]; then
+    stat="$(< "/proc/$pid/stat")"
+    boot="$(< /proc/sys/kernel/random/boot_id)"
+    read -r -a fields <<< "${stat##*) }"
+    printf '%s:%s\n' "$boot" "${fields[19]}" # field 22, after PID and parenthesized comm
+  else
+    LC_ALL=C TZ=UTC ps -p "$pid" -o lstart=
+  fi
+}
+
 gallery_stop() {
   local owner="/tmp/katagami-ui-$UI_PORT.owner" pid recorded actual
   if [ ! -f "$owner" ]; then
@@ -217,10 +231,10 @@ gallery_stop() {
   pid="$(sed -n '2p' "$owner")"
   recorded="$(sed -n '3p' "$owner")"
   if ! [[ "$pid" =~ ^[0-9]+$ ]] || [ -z "$recorded" ]; then
-    echo "error: preview ownership is incomplete; retry stop after the launch finishes." >&2
+    echo "error: preview ownership is incomplete; inspect $owner before retrying." >&2
     return 1
   fi
-  actual="$(ps -p "$pid" -o lstart= 2>/dev/null || true)"
+  actual="$(gallery_process_identity "$pid" 2>/dev/null || true)"
   if [ -n "$actual" ] && [ "$actual" = "$recorded" ]; then
     # The existing launcher makes this PID the session/process-group leader.
     if ! kill -TERM -- "-$pid" 2>/dev/null; then
@@ -236,25 +250,22 @@ gallery_stop() {
 
 gallery_start() (
   gallery_preflight
-  local owner="/tmp/katagami-ui-$UI_PORT.owner" response pid
+  local owner="/tmp/katagami-ui-$UI_PORT.owner" scratch response pid=""
   if [ -e "$owner" ] || lsof -nP -iTCP:"$UI_PORT" -sTCP:LISTEN -t >/dev/null 2>&1; then
     echo "error: :$UI_PORT is occupied or has an owned preview. Stop that preview or select another UI_PORT." >&2
     return 1
   fi
-  # Reserve ownership atomically so simultaneous launches cannot share a PID file.
-  if ! (set -o noclobber; printf '%s\n' "$UI_DIR" > "$owner") 2>/dev/null; then
-    echo "error: another launch reserved :$UI_PORT; select another UI_PORT." >&2
+  scratch="$(mktemp -d)" || {
+    echo "error: cannot create preview temporary files; select a writable TMPDIR before retrying." >&2
     return 1
-  fi
-  response="$(mktemp)"
-  trap 'rm -f "$response"; gallery_stop >/dev/null' EXIT
-  LAUNCH="/tmp/katagami-launch-ui-$UI_PORT.py"
+  }
+  response="$scratch/response"
+  LAUNCH="$scratch/launch.py"
+  trap 'rm -rf "$scratch"; if [ -n "$pid" ] && [ "$(sed -n "2p" "$owner" 2>/dev/null)" = "$pid" ]; then gallery_stop >/dev/null; fi' EXIT
   write_launcher
   echo "==> starting gallery only on :$UI_PORT (detached)"
-  ( cd "$UI_DIR" && exec python3 "$LAUNCH" "$UI_LOG" "$UI_PID" npm run dev -- --port "$UI_PORT" ) &
+  ( cd "$UI_DIR" && exec python3 "$LAUNCH" "$UI_LOG" "$UI_PID" --gallery-owner "$UI_DIR" "$owner" npm run dev -- --port "$UI_PORT" ) &
   pid=$!
-  # Register ownership before waiting for the real route.
-  printf '%s\n%s\n%s\n' "$UI_DIR" "$pid" "$(ps -p "$pid" -o lstart=)" > "$owner"
   echo "    ui log: $UI_LOG"
   local deadline=$((SECONDS + 120))
   while [ "$SECONDS" -lt "$deadline" ]; do
@@ -262,10 +273,11 @@ gallery_start() (
       echo "error: UI exited before readiness; inspect $UI_LOG" >&2
       return 1
     fi
-    if curl --max-time 15 -sf "http://localhost:$UI_PORT/encyclopedia" > "$response" 2>/dev/null &&
+    if [ "$(sed -n '2p' "$owner" 2>/dev/null)" = "$pid" ] &&
+       curl --max-time 15 -sf "http://localhost:$UI_PORT/encyclopedia" > "$response" 2>/dev/null &&
        grep -q 'aria-label="Encyclopedia map' "$response" &&
        grep -Eq '>[1-9][0-9]* cells<' "$response"; then
-      rm -f "$response"
+      rm -rf "$scratch"
       trap - EXIT
       echo "==> ready (encyclopedia rendered with cells)"
       echo "    http://localhost:$UI_PORT/encyclopedia"

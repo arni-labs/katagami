@@ -49,6 +49,41 @@ grep -q 'set TEMPER_API_KEY' "$tmp/out"
 if grep -q 'starting gallery' "$tmp/out"; then echo 'FAIL: detached before credential failure'; exit 1; fi
 echo 'PASS: missing bearer fails before detachment'
 
+if TEMPER_API_KEY='\n' KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1; then
+  echo 'FAIL: escaped-newline bearer accepted'; exit 1
+fi
+grep -q 'set TEMPER_API_KEY' "$tmp/out"
+if grep -q 'starting gallery' "$tmp/out"; then echo 'FAIL: detached with an empty normalized bearer'; exit 1; fi
+echo 'PASS: escaped-newline bearer fails before detachment'
+
+failure_port="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1])')"
+mkdir "$tmp/no-temp"
+printf '#!/bin/sh\nexit 1\n' > "$tmp/no-temp/mktemp"
+chmod +x "$tmp/no-temp/mktemp"
+if PATH="$tmp/no-temp:$PATH" UI_PORT="$failure_port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1; then
+  echo 'FAIL: unusable temporary directory accepted'; exit 1
+fi
+if [ -e "/tmp/katagami-ui-$failure_port.owner" ]; then
+  rm -f "/tmp/katagami-ui-$failure_port.owner"
+  echo 'FAIL: temporary-file failure reserved ownership'; exit 1
+fi
+grep -q 'writable TMPDIR' "$tmp/out"
+echo 'PASS: temporary-file failure leaves no ownership'
+
+mkdir "$tmp/no-cat"
+for tool in dirname node npm python3 curl lsof ps head sed rm mktemp grep sleep; do
+  ln -s "$(command -v "$tool")" "$tmp/no-cat/$tool"
+done
+if PATH="$tmp/no-cat" UI_PORT="$failure_port" KATAGAMI_UI_DIR="$tmp/ui" /bin/bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1; then
+  echo 'FAIL: missing cat accepted'; exit 1
+fi
+if [ -e "/tmp/katagami-ui-$failure_port.owner" ]; then
+  rm -f "/tmp/katagami-ui-$failure_port.owner"
+  echo 'FAIL: missing cat reserved ownership'; exit 1
+fi
+grep -q "'cat' not found on PATH" "$tmp/out"
+echo 'PASS: missing launcher writer fails before reservation'
+
 # The lifecycle must reject an unavailable process inspector before launch or stop.
 mkdir "$tmp/no-ps"
 for tool in dirname cat node npm python3 curl lsof head sed rm mktemp grep sleep; do
@@ -83,7 +118,7 @@ cleanup_preview() {
   rm -rf "$tmp"
 }
 trap cleanup_preview EXIT
-PATH="$tmp/bin:$PATH" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1
+TZ=UTC PATH="$tmp/bin:$PATH" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1
 grep -q '==> ready' "$tmp/out"
 curl -sf "http://localhost:$port/encyclopedia" >/dev/null
 cmp "$tmp/before" "$tmp/ui/.env.local"
@@ -130,23 +165,36 @@ echo 'PASS: stale ownership never claims or signals a matching stop'
 backend_port="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1])')"
 PORT="$backend_port" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --stop
 test ! -e "$owner"
-PATH="$tmp/bin:$PATH" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1
+TZ=UTC PATH="$tmp/bin:$PATH" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1
 grep -q '==> ready' "$tmp/out"
 echo 'PASS: full-stack stop releases gallery ownership for relaunch'
 
-UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only --stop
+TZ=America/New_York UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only --stop
 sleep 1
 if curl -sf "http://localhost:$port/encyclopedia" >/dev/null 2>&1; then
   echo 'FAIL: owned stop left preview running'; exit 1
 fi
-echo 'PASS: owned stop releases preview'
+echo 'PASS: owned stop releases preview across timezones'
+
+# Both launches race for the same port; the loser must not touch the winner's files/process.
+TZ=UTC PATH="$tmp/bin:$PATH" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/race-one" 2>&1 &
+first=$!
+TZ=UTC PATH="$tmp/bin:$PATH" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/race-two" 2>&1 &
+second=$!
+successes=0
+if wait "$first"; then successes=$((successes + 1)); fi
+if wait "$second"; then successes=$((successes + 1)); fi
+[ "$successes" = 1 ] || { echo 'FAIL: racing launches did not produce one owner'; exit 1; }
+curl -sf "http://localhost:$port/encyclopedia" >/dev/null
+UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only --stop
+echo 'PASS: concurrent launches preserve exactly one live owner'
 
 # An unrelated listener remains running both when launch refuses its port and when stopped.
 "$node_bin" "$tmp/server.cjs" "$port" &
 unrelated=$!
 trap 'kill "$unrelated" 2>/dev/null || true; cleanup_preview' EXIT
 sleep 1
-if PATH="$tmp/bin:$PATH" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1; then
+if TZ=UTC PATH="$tmp/bin:$PATH" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1; then
   echo 'FAIL: occupied port accepted'; exit 1
 fi
 grep -q occupied "$tmp/out"
