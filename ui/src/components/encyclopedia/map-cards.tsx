@@ -365,7 +365,6 @@ function HubCard({
               <HubTile face={f.face} name={f.name} ink={ink} />
             </span>
           ))}
-          {faces.length === 0 ? <span className="col-span-2 flex items-center justify-center font-sans text-[13px] text-muted-foreground">No cells on this map yet.</span> : null}
         </span>
         <span className="mt-2 block shrink-0 font-mono text-[8px] uppercase tracking-[0.12em] text-muted-foreground">{roots - hidden} of {roots} open</span>
       </button>

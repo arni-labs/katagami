@@ -78,11 +78,12 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     animateTimer.current = window.setTimeout(() => setAnimate(false), 520);
   }, []);
 
-  /** Clamp a zoom. Given the zoom the camera is at now, the floor is the
-   *  lower of the floor and that zoom: the floor can rise above the camera
-   *  when the paper shrinks under it, and no gesture that asks to zoom out
-   *  may then zoom in. */
-  const clampK = useCallback((k: number, current?: number) => Math.min(maxZoom, Math.max(current === undefined ? minZoom : Math.min(minZoom, current), k)), [maxZoom, minZoom]);
+  /** The one clamp. Every path that sets a zoom goes through it, including
+   *  the map's own framing, so there is no second piece of arithmetic to keep
+   *  in step. `from` is where the camera is now: the floor never forces the
+   *  camera inward, so when the paper has shrunk under a camera already
+   *  further out, a zoom-out holds instead of jumping in. */
+  const clampK = useCallback((k: number, from: number) => Math.min(maxZoom, Math.max(Math.min(minZoom, from), k)), [maxZoom, minZoom]);
 
   const zoomAbout = useCallback((factor: number, sx: number, sy: number, smooth = false) => {
     setCamera((cam) => {
@@ -117,7 +118,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     const maxY = Math.max(...rects.map((r) => r.y + r.h));
     const w = Math.max(1, maxX - minX);
     const h = Math.max(1, maxY - minY);
-    const k = clampK(Math.min(maxK, (vw - padding * 2) / w, (vh - padding * 2) / h));
+    const k = clampK(Math.min(maxK, (vw - padding * 2) / w, (vh - padding * 2) / h), cameraNow.current.k);
     glide({ k, x: (vw - w * k) / 2 - minX * k, y: (vh - h * k) / 2 - minY * k });
   }, [glide, clampK]);
 
@@ -128,7 +129,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     const sx = screen?.x ?? el.clientWidth / 2;
     const sy = screen?.y ?? el.clientHeight / 2;
     setCamera((cam) => {
-      const kk = clampK(k ?? cam.k);
+      const kk = clampK(k ?? cam.k, cam.k);
       return { k: kk, x: sx - wx * kk, y: sy - wy * kk };
     });
     setAnimate(true);
@@ -254,5 +255,5 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     onPointerLeave: endPointer,
   }), [onWheel, onPointerDown, onPointerMove, endPointer]);
 
-  return { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld, guardWheel, claimPointer, pinching };
+  return { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld, guardWheel, claimPointer, pinching, clampK };
 }

@@ -1,7 +1,7 @@
 import type { EncyclopediaCell, MapName, ManifestationSet } from "@/lib/encyclopedia";
 import type { GraphIndex } from "../../lib/encyclopedia-graph.ts";
 import { cellFace } from "./material.ts";
-import { hubKey, type Visible } from "./expansion.ts";
+import { hubKey, isHubKey, type Visible } from "./expansion.ts";
 
 // The layout of what is open. Each map has a category node; the top-level
 // cells the reader has opened ring it; the narrower cells a cell has opened
@@ -67,7 +67,10 @@ export function levelScale(level: number): number {
   return LEVEL_SHRINK ** Math.min(MAX_LEVEL, level);
 }
 
-/** Which layer a cell belongs to: its depth in the containment hierarchy. */
+/** Which layer a cell belongs to: its depth in the containment hierarchy,
+ *  by the shallowest parent. The layout draws a cell at its depth as shown —
+ *  under the parent that reveals it — which `layoutVisible` works out from
+ *  the expansion state; this is the depth the graph alone can say. */
 export function levelOf(index: GraphIndex, id: string): number {
   return Math.min(MAX_LEVEL, index.depthOf(id));
 }
@@ -288,11 +291,24 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
   const radius = new Map<string, number>();
   const ringsOf = new Map<string, { rings: Ring[]; reach: number }>();
   const measuring = new Set<string>();
+  // A cell's layer is its depth as drawn: one below the node it is shown
+  // under, so a cell with a root and a deep cell for parents draws smaller
+  // than the deep cell when it hangs from it. Memoised; a cycle in `under`
+  // cannot happen because each cell is revealed once.
+  const shownLevel = new Map<string, number>();
+  const levelShown = (id: string): number => {
+    const known = shownLevel.get(id);
+    if (known !== undefined) return known;
+    const up = visible.under.get(id);
+    const level = up === undefined || isHubKey(up) ? 0 : Math.min(MAX_LEVEL, levelShown(up) + 1);
+    shownLevel.set(id, level);
+    return level;
+  };
   const radiusOf = (id: string): number => {
     const known = radius.get(id);
     if (known !== undefined) return known;
     const cell = index.byId.get(id)!;
-    const level = levelOf(index, id);
+    const level = levelShown(id);
     const scale = levelScale(level);
     const box = plateBox(cell, level);
     const inner = recordReach(cell, scale);
@@ -341,7 +357,7 @@ export function layoutVisible(index: GraphIndex, visible: Visible, maps: MapName
     if (placed.has(id)) return;
     placed.add(id);
     const cell = index.byId.get(id)!;
-    const level = levelOf(index, id);
+    const level = levelShown(id);
     const scale = levelScale(level);
     const box = plateBox(cell, level);
     const node: PlateNode = { kind: "plate", id, cell, x, y, w: box.w, h: box.h, level, scale, outward, cluster };

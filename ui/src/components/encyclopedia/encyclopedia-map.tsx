@@ -78,6 +78,18 @@ function contains(outer: Rect, inner: Rect): boolean {
 const plateRect = (p: PlateNode): Rect => ({ x: p.x - p.w / 2, y: p.y - p.h / 2, w: p.w, h: p.h });
 /** One shared empty list, so a card with no other map keeps a stable prop. */
 const NO_MAPS: MapName[] = [];
+
+/** The room the chrome leaves inside the viewport, in screen pixels: the
+ *  title block and the search at the top, the zoom controls and the status
+ *  line at the bottom, the bottom sheet on a phone. One definition, used by
+ *  every camera move that must not leave something under the chrome — the
+ *  zoom floor, framing, opening a ring, and bringing a record card clear. */
+function chromeRoom(v: { w: number; h: number }, desktop: boolean) {
+  const top = desktop ? 96 : 150;
+  const bottom = desktop ? 72 : 220;
+  const side = desktop ? 40 : 12;
+  return { x: side, y: top, w: Math.max(120, v.w - side * 2), h: Math.max(120, v.h - top - bottom) };
+}
 const hubRect = (hub: { x: number; y: number }): Rect => ({ x: hub.x - HUB_W / 2, y: hub.y - HUB_H / 2, w: HUB_W, h: HUB_H });
 
 export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaGraph; initialCellId?: string | null }) {
@@ -161,11 +173,11 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   // The floor zoom follows the paper: with enough open the whole open set
   // needs a zoom below the default floor, and a floor above what fit chose
   // made the next zoom-out zoom in.
-  // Never below a small positive zoom: a phone in landscape leaves the map
-  // shorter than the chrome it reserves, and a floor computed from that room
-  // went negative and mirrored the paper.
-  const minZoom = Math.max(0.02, Math.min(ZOOM_MIN, 0.9 * Math.min(Math.max(120, (viewportSizeRef.current.w || 1280) - 80) / Math.max(1, layout.bounds.w), Math.max(120, (viewportSizeRef.current.h || 800) - 370) / Math.max(1, layout.bounds.h))));
-  const { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, glide, centerOn, guardWheel, claimPointer, pinching } = usePanZoom({ x: 0, y: 0, k: 0.2 }, maxZoom, minZoom);
+  // How far out the camera may go: far enough to hold the whole open paper
+  // in the room the chrome leaves, and never further in than the default.
+  const floorRoom = chromeRoom(viewportSizeRef.current.w ? viewportSizeRef.current : { w: 1280, h: 800 }, desktop);
+  const minZoom = Math.min(ZOOM_MIN, 0.9 * Math.min(floorRoom.w / Math.max(1, layout.bounds.w), floorRoom.h / Math.max(1, layout.bounds.h)));
+  const { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, glide, centerOn, guardWheel, claimPointer, pinching, clampK } = usePanZoom({ x: 0, y: 0, k: 0.2 }, maxZoom, minZoom);
   // The camera, readable from a handler without being one of its
   // dependencies: a card's handlers keep one identity across every pan and
   // zoom, which is what lets the memoised cards skip the work.
@@ -298,16 +310,12 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     const el = viewportRef.current;
     const box = union(rects);
     if (!el || !box) return;
-    const vw = el.clientWidth; const vh = el.clientHeight;
-    const top = desktop ? 96 : 150; const bottom = desktop ? 72 : 220; const side = desktop ? 40 : 12;
-    // The room the chrome leaves, never less than a strip: a short viewport
-    // has less than the chrome reserves, and a negative room made a negative zoom.
-    const roomW = Math.max(120, vw - side * 2); const roomH = Math.max(120, vh - top - bottom);
-    const k = Math.max(minZoom, Math.min(maxK, maxZoom, roomW / box.w, roomH / box.h));
-    const x = vw / 2 - (box.x + box.w / 2) * k;
-    const y = top + (vh - top - bottom) / 2 - (box.y + box.h / 2) * k;
+    const room = chromeRoom({ w: el.clientWidth, h: el.clientHeight }, desktop);
+    const k = clampK(Math.min(maxK, room.w / box.w, room.h / box.h), cameraRef.current.k);
+    const x = room.x + room.w / 2 - (box.x + box.w / 2) * k;
+    const y = room.y + room.h / 2 - (box.y + box.h / 2) * k;
     if (smooth) glide({ k, x, y }); else setCamera({ k, x, y });
-  }, [viewportRef, desktop, maxZoom, minZoom, glide, setCamera]);
+  }, [viewportRef, desktop, clampK, glide, setCamera]);
 
   const fitAll = useCallback((smooth = true) => {
     const el = viewportRef.current;
@@ -400,8 +408,13 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     // branch fits at that size.
     const parentScale = hub ? 1 : (layout.byId.get(frameKey.key)?.scale ?? 1);
     const readingK = hub ? cameraRef.current.k : 0.8 / parentScale;
-    const room = cameraRect(cameraRef.current, { w: el.clientWidth, h: el.clientHeight });
-    if (rects.every((r) => contains(room, r)) && cameraRef.current.k >= readingK) return;
+    // In view means inside the room the chrome leaves, not the raw viewport:
+    // a branch that opens under the title block or the bottom sheet is not
+    // in view, whatever the viewport rectangle says.
+    const cam = cameraRef.current;
+    const screen = chromeRoom({ w: el.clientWidth, h: el.clientHeight }, desktop);
+    const room: Rect = { x: (screen.x - cam.x) / cam.k, y: (screen.y - cam.y) / cam.k, w: screen.w / cam.k, h: screen.h / cam.k };
+    if (rects.every((r) => contains(room, r)) && cam.k >= readingK) return;
     frameRects(rects, true, Math.max(cameraRef.current.k, readingK));
     // Framing belongs to the act of opening, not to every later change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -468,12 +481,18 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const clearFocus = useCallback(() => { setFocusId(null); setSheetExpanded(false); setOpenedId(null); }, []);
 
 
+  const manifestationsById = useMemo(() => new Map(graph.cells.map((c) => [c.id, c.manifestations])), [graph]);
+  const recordKeyOf = useCallback(
+    (sat: SatelliteNode) => { const m = manifestationsById.get(sat.cellId)?.[sat.index]; return m ? `${m.entitySet}:${m.entityId}` : sat.id; },
+    [manifestationsById],
+  );
   /** Open a record node into its card, or fold it back. */
   const openRecord = useCallback((node: SatelliteNode) => {
     if (draggedNode.current) return;
-    setOpenRecords((at) => { const next = new Set(at); if (next.has(node.id)) next.delete(node.id); else next.add(node.id); return next; });
+    const key = recordKeyOf(node);
+    setOpenRecords((at) => { const next = new Set(at); if (next.has(key)) next.delete(key); else next.add(key); return next; });
     setBringIn({ id: node.id, n: Date.now() });
-  }, []);
+  }, [recordKeyOf]);
   /** A record card just opened is brought into the unobstructed part of the
    *  viewport — panned, never zoomed in — so its fold control is never under
    *  the search box or the title block. The card grows from the node's spot,
@@ -484,14 +503,13 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     const el = viewportRef.current;
     if (!el) return;
     const node = opened?.nodes.find((s) => s.id === bringIn.id) ?? layout.satellites.find((s) => s.id === bringIn.id);
-    if (!node || !openRecords.has(node.id)) return;
+    if (!node || !openRecords.has(recordKeyOf(node))) return;
     const card = document.querySelector<HTMLElement>(`[data-record-card="${CSS.escape(node.id)}"]`);
     if (!card) return;
     const r = card.getBoundingClientRect();
     const v = el.getBoundingClientRect();
-    // The room the chrome leaves: the title block and search at the top, the
-    // zoom controls and status line at the bottom.
-    const top = v.top + (desktop ? 96 : 150); const bottom = v.bottom - (desktop ? 72 : 220); const left = v.left + 12; const right = v.right - 12;
+    const room = chromeRoom({ w: v.width, h: v.height }, desktop);
+    const top = v.top + room.y; const bottom = v.top + room.y + room.h; const left = v.left + room.x; const right = v.left + room.x + room.w;
     let dx = 0; let dy = 0;
     if (r.top < top) dy = top - r.top; else if (r.bottom > bottom) dy = Math.max(top - r.top, bottom - r.bottom);
     if (r.left < left) dx = left - r.left; else if (r.right > right) dx = Math.max(left - r.left, right - r.right);
@@ -513,22 +531,6 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  /** What an opened record's card says beyond the record, and which way it
-   *  grows: away from its cell, from the node's own spot. */
-  const recordDetail = useCallback((s: SatelliteNode) => {
-    if (!openRecords.has(s.id) || s.role !== "record") return undefined;
-    const cell = index.byId.get(s.cellId);
-    const plate = layout.byId.get(s.cellId);
-    const m = cell?.manifestations[s.index];
-    if (!cell || !plate || !m) return undefined;
-    return {
-      cellName: cell.name,
-      explanation: m.explanation,
-      alsoNamed: index.ownersOf(m.entitySet, m.entityId).filter((c) => c.id !== cell.id).map((c) => ({ id: c.id, name: c.name })),
-      grow: { x: (s.x >= plate.x ? 1 : -1) as 1 | -1, y: (s.y >= plate.y ? 1 : -1) as 1 | -1 },
-    };
-  }, [openRecords, index, layout.byId]);
-
   const onFilter = (next: MapName | null) => {
     setMap(next);
     if (next) fitRegion(next); else fitAll();
@@ -574,98 +576,110 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   const alsoOn = (p: PlateNode): MapName[] => alsoOnById.get(p.id) ?? NO_MAPS;
   const ringDim = (id: string) => Boolean(opened && id !== opened.plate.id);
   const dimTo = 0.35;
-  const manifestationsById = useMemo(() => new Map(graph.cells.map((c) => [c.id, c.manifestations])), [graph]);
 
   // ── the records around the open cells ───────────────────────────────────
-  // A record is on the paper once its cell prints big enough to be named, and
-  // a record named by several open cells is one node joined to all of them —
+  // A record is one thing on the map however many open cells name it —
   // Aquatint, Lithography and Ukiyo-e share a style, and three copies of its
-  // thumbnail read as three styles.
-  // Which record is the one node for a shared record is decided over every
-  // open cell in layout order, before the viewport is consulted: deciding it
-  // over the cells that happened to be on screen let a pan move a record from
-  // one cell to another. An opened ring's nodes take precedence, so a record
-  // in the ring is never drawn a second time beside another cell.
-  // Which node stands for a shared record is decided over every open cell,
-  // whatever the zoom: an opened ring's node first, then the node of the
-  // largest (shallowest) cell, then layout order. Zoom decides only whether
-  // a node is drawn — a cell's records appear once the cell prints big
-  // enough to be named — and a deeper cell is never larger than a shallower
-  // one, so the one node is drawn whenever any cell naming it is.
+  // thumbnail read as three styles — so it is drawn once, joined by a dotted
+  // line to each of them, and marked with how many.
+  //
+  // A record is identified by its own key, `ArtStyles:en-…`, never by the
+  // node that happens to draw it. Which node that is depends on what is open
+  // and can change under the reader; the key cannot. So an opened card is
+  // remembered by key, and nothing has to be migrated when the drawing node
+  // changes.
   const settledRecords = useMemo(() => {
+    /** One node per record: the opened ring's node if there is one, else the
+     *  node of the largest cell naming it, else layout order. Deterministic,
+     *  and independent of the camera. */
     const byRecord = new Map<string, SatelliteNode>();
-    const also = new Map<string, number>();
-    const shared: Array<{ plate: PlateNode; node: SatelliteNode }> = [];
-    const keyOf = (sat: SatelliteNode) => { const m = manifestationsById.get(sat.cellId)?.[sat.index]; return m ? `${m.entitySet}:${m.entityId}` : sat.id; };
-    if (opened) for (const sat of opened.nodes) if (sat.role === "record") byRecord.set(keyOf(sat), sat);
-    const sats = layout.satellites.filter((sat) => !(opened && sat.cellId === opened.plate.id));
-    // A node whose card is open keeps standing for its record ahead of a
-    // larger cell's node that arrives later: the reader is reading it.
-    const records = sats.filter((s) => s.role === "record").sort((a, b) => Number(openRecords.has(b.id)) - Number(openRecords.has(a.id)) || b.scale - a.scale);
-    const controls = sats.filter((s) => s.role !== "record");
-    const nodes: SatelliteNode[] = [];
-    for (const sat of records) {
-      const key = keyOf(sat);
-      if (!byRecord.has(key)) { byRecord.set(key, sat); nodes.push(sat); }
+    /** The other open cells naming each record. From the graph, not from the
+     *  nodes on the paper: a cell that names a record past its first eight
+     *  has no node of its own for it and still names it. */
+    const owners = new Map<string, PlateNode[]>();
+    const controls: SatelliteNode[] = [];
+    const loose = layout.satellites.filter((sat) => !(opened && sat.cellId === opened.plate.id));
+    if (opened) for (const sat of opened.nodes) if (sat.role === "record") byRecord.set(recordKeyOf(sat), sat);
+    for (const sat of loose) if (sat.role !== "record") controls.push(sat);
+    for (const sat of loose.filter((s) => s.role === "record").sort((a, b) => b.scale - a.scale)) {
+      const key = recordKeyOf(sat);
+      if (!byRecord.has(key)) byRecord.set(key, sat);
     }
-    // The other cells a record is joined to come from the graph, not from
-    // the nodes on the paper: a cell that names the record past its first
-    // eight has no node of its own for it, and still names it.
     for (const [key, node] of byRecord) {
       const m = manifestationsById.get(node.cellId)?.[node.index];
       if (!m) continue;
-      const owners = index.ownersOf(m.entitySet, m.entityId).filter((c) => c.id !== node.cellId && layout.byId.has(c.id));
-      if (!owners.length) continue;
-      also.set(node.id, owners.length);
-      for (const c of owners) shared.push({ plate: layout.byId.get(c.id)!, node });
-      void key;
+      const others = index.ownersOf(m.entitySet, m.entityId)
+        .filter((c) => c.id !== node.cellId)
+        .map((c) => layout.byId.get(c.id))
+        .filter((p): p is PlateNode => Boolean(p));
+      if (others.length) owners.set(key, others);
     }
-    return { nodes: nodes.concat(controls), also, shared, byRecord, keyOf };
-  }, [layout.satellites, layout.byId, opened, manifestationsById, openRecords, index]);
-  // Then only what prints big enough, and is near the viewport, is mounted.
-  const records = useMemo(() => {
-    const big = (cellId: string) => { const p = layout.byId.get(cellId); return Boolean(p) && camera.k * p!.scale >= RECORDS_FROM_EK; };
-    const near = measured ? new Set(satelliteIndex.query(view).map((b) => b.node.id)) : null;
-    const inView = (r: Rect) => !measured || (r.x + r.w >= view.x && r.x <= view.x + view.w && r.y + r.h >= view.y && r.y <= view.y + view.h);
-    const ringHas = (id: string) => opened !== null && opened.nodes.some((o) => o.id === id);
-    // A shared record's node is drawn whenever any cell that names it prints
-    // big enough — its own cell or another — so a card open on a smaller
-    // cell's node never leaves a hole beside a larger one at a zoom between.
-    const ownersBig = new Map<string, boolean>();
-    for (const { plate, node } of settledRecords.shared) if (big(plate.id)) ownersBig.set(node.id, true);
-    const drawn = (s: SatelliteNode) => big(s.cellId) || ownersBig.get(s.id) === true;
+    return { byRecord, owners, controls };
+  }, [layout.satellites, layout.byId, opened, manifestationsById, index, recordKeyOf]);
+
+  /** What an opened record's card says beyond the record, and which way it
+   *  grows: away from its cell, from the node's own spot. */
+  const recordDetail = useCallback((s: SatelliteNode) => {
+    if (s.role !== "record") return undefined;
+    const key = recordKeyOf(s);
+    // The card belongs to the record and is drawn on the node that stands
+    // for it, so two cells naming one record never open two cards.
+    if (!openRecords.has(key) || settledRecords.byRecord.get(key)?.id !== s.id) return undefined;
+    const cell = index.byId.get(s.cellId);
+    const plate = layout.byId.get(s.cellId);
+    const m = cell?.manifestations[s.index];
+    if (!cell || !plate || !m) return undefined;
     return {
-      nodes: settledRecords.nodes.filter((s) => drawn(s) && (near === null || near.has(s.id))),
-      also: settledRecords.also,
-      shared: settledRecords.shared.filter(({ plate, node }) => big(plate.id) && (ringHas(node.id) || drawn(node)) && (near === null || near.has(node.id) || inView(plateRect(plate)))),
+      cellName: cell.name,
+      explanation: m.explanation,
+      alsoNamed: index.ownersOf(m.entitySet, m.entityId).filter((c) => c.id !== cell.id).map((c) => ({ id: c.id, name: c.name })),
+      grow: { x: (s.x >= plate.x ? 1 : -1) as 1 | -1, y: (s.y >= plate.y ? 1 : -1) as 1 | -1 },
     };
-  }, [settledRecords, layout.byId, satelliteIndex, view, measured, opened, camera.k]);
+  }, [openRecords, index, layout.byId, recordKeyOf, settledRecords]);
+
+  // Then the camera: a record is drawn once any cell naming it prints big
+  // enough to be named, and only if it is near the viewport.
+  const records = useMemo(() => {
+    const big = (cellId: string) => { const p = layout.byId.get(cellId); return p !== undefined && camera.k * p.scale >= RECORDS_FROM_EK; };
+    const near = measured ? new Set(satelliteIndex.query(view).map((b) => b.node.id)) : null;
+    const onScreen = (id: string) => near === null || near.has(id);
+    const inView = (r: Rect) => !measured || (r.x + r.w >= view.x && r.x <= view.x + view.w && r.y + r.h >= view.y && r.y <= view.y + view.h);
+    const nodes: SatelliteNode[] = [];
+    const also = new Map<string, number>();
+    const shared: Array<{ plate: PlateNode; node: SatelliteNode }> = [];
+    for (const [key, node] of settledRecords.byRecord) {
+      const others = settledRecords.owners.get(key) ?? [];
+      if (!big(node.cellId) && !others.some((p) => big(p.id))) continue;
+      // A node of the opened ring is drawn by the ring, above the plates;
+      // it still stands for its record here, so its lines and its mark are
+      // drawn, but it is not mounted a second time.
+      const inRing = opened !== null && node.cellId === opened.plate.id;
+      if (!inRing && onScreen(node.id)) nodes.push(node);
+      if (others.length) also.set(node.id, others.length);
+      for (const plate of others) {
+        if (big(plate.id) && (onScreen(node.id) || inView(plateRect(plate)))) shared.push({ plate, node });
+      }
+    }
+    for (const c of settledRecords.controls) if (big(c.cellId) && onScreen(c.id)) nodes.push(c);
+    return { nodes, also, shared };
+  }, [settledRecords, layout.byId, satelliteIndex, view, measured, camera.k, opened]);
+
   // A cell's opened ring closes when the cell leaves the paper — its branch
   // folded above it — so Escape never spends a press on a ring nobody sees.
   useEffect(() => {
     if (openedId && !layout.byId.has(openedId)) setOpenedId(null);
   }, [openedId, layout.byId]);
 
-  // An open card follows its record. When the node that stands for the
-  // record changes — the cell's ring opened, so the ring's node stands for it
-  // now — the open id moves to the node that is drawn; when the record leaves
-  // the paper altogether, its card goes with it, so Escape never spends a
-  // press on nothing.
+  // An open card closes when its record leaves the paper. Nothing migrates:
+  // the card is remembered by the record's key, so a change of drawing node
+  // is invisible to it.
   useEffect(() => {
     setOpenRecords((at) => {
       if (!at.size) return at;
-      const drawn = new Set([...settledRecords.nodes.map((s) => s.id), ...(opened?.nodes.map((s) => s.id) ?? [])]);
-      const all = new Map([...layout.satellites, ...(opened?.nodes ?? [])].map((s) => [s.id, s]));
-      const next = new Set<string>();
-      for (const id of at) {
-        if (drawn.has(id)) { next.add(id); continue; }
-        const node = all.get(id);
-        const canonical = node ? settledRecords.byRecord.get(settledRecords.keyOf(node)) : undefined;
-        if (canonical && drawn.has(canonical.id)) next.add(canonical.id);
-      }
-      return next.size === at.size && [...next].every((id) => at.has(id)) ? at : next;
+      const kept = [...at].filter((key) => settledRecords.byRecord.has(key));
+      return kept.length === at.size ? at : new Set(kept);
     });
-  }, [settledRecords, layout.satellites, opened]);
+  }, [settledRecords]);
 
   const shownRecords = records.nodes.filter((s) => s.role === "record").length + (opened ? opened.nodes.filter((s) => s.role === "record").length : 0);
 
@@ -685,9 +699,9 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
   useEffect(() => {
     const el = viewportRef.current;
     if (!opened || !el) return;
-    const room = desktop ? 120 : 200;
-    const k = zoomForRing(opened.radius, { w: el.clientWidth - room, h: el.clientHeight - room }, SAT_W * opened.plate.scale);
-    centerOn(opened.plate.x, opened.plate.y, k, { x: el.clientWidth / 2, y: el.clientHeight / 2 });
+    const room = chromeRoom({ w: el.clientWidth, h: el.clientHeight }, desktop);
+    const k = zoomForRing(opened.radius, room, SAT_W * opened.plate.scale);
+    centerOn(opened.plate.x, opened.plate.y, k, { x: room.x + room.w / 2, y: room.y + room.h / 2 });
     // Framing belongs to the act of opening a cell, not to every camera move.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened?.plate.id]);
@@ -966,7 +980,7 @@ export function EncyclopediaMap({ graph, initialCellId }: { graph: EncyclopediaG
 
       {/* search, top right */}
       <div className="absolute right-3 top-3 hidden w-56 sm:block">
-        <SearchBox value={query} onChange={setQuery} placeholder="Find a cell" />
+        <SearchBox value={query} onChange={setQuery} placeholder="Find a cell" compact />
         {query.trim() ? (
           <ul role="listbox" className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto bg-[var(--washi)] py-1 shadow-[var(--shadow-card-hover)]">
             {results.length ? results.map((cell) => (

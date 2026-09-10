@@ -77,6 +77,9 @@ export interface Visible {
   shown: Map<string, EncyclopediaCell[]>;
   /** For each node on the paper, how many of its children are not shown. */
   hidden: Map<string, number>;
+  /** The node each cell is shown under — a cell id or a category key — so
+   *  its layer is its depth as drawn, under the parent that shows it. */
+  under: Map<string, string>;
 }
 
 /** Which cells the expansion state puts on the paper. Walks down from the
@@ -88,6 +91,7 @@ export function computeVisible(index: GraphIndex, maps: MapName[], state: Expans
   const cells = new Set<string>();
   const shown = new Map<string, EncyclopediaCell[]>();
   const hidden = new Map<string, number>();
+  const under = new Map<string, string>();
   const queue: string[] = [];
   const reveal = (key: string) => {
     const kids = childrenOf(index, key);
@@ -103,12 +107,13 @@ export function computeVisible(index: GraphIndex, maps: MapName[], state: Expans
     shown.set(key, list);
     for (const kid of list) {
       cells.add(kid.id);
+      under.set(kid.id, key);
       queue.push(kid.id);
     }
   };
   for (const map of maps) reveal(hubKey(map));
   while (queue.length) reveal(queue.shift()!);
-  return { cells, shown, hidden };
+  return { cells, shown, hidden, under };
 }
 
 /** Open whatever has to be open for a cell to be on the paper: its map's

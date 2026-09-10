@@ -338,7 +338,7 @@ export function SheetBody({ cell, index, tab, onTab, onFocus, expandKey = 0, exp
       {tab === "notes" ? (
         <div className="pt-4">
           <Heading>Provenance</Heading>
-          <div className="mt-2 flex flex-wrap items-center gap-2"><ProvenanceStamp basis={cell.provenance.basis} /><InkStamp ink="var(--graphite)" tilt={1}>{cell.state || "Draft"}</InkStamp></div>
+          <div className="mt-2 flex flex-wrap items-center gap-2"><ProvenanceStamp basis={cell.provenance.basis} compact /><InkStamp ink="var(--graphite)" tilt={1} compact>{cell.state || "Draft"}</InkStamp></div>
           {cell.provenance.note ? <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">{cell.provenance.note}</p> : null}
           <Divider />
           <Heading>Sources <span className="font-mono text-[9px] font-normal tracking-[0.14em] text-muted-foreground tabular-nums">{cell.sources.filter((s) => s.verifiedBy).length}/{cell.sources.length} verified</span></Heading>
@@ -378,7 +378,7 @@ export function SheetTitle({ cell, size = "lg" }: { cell: EncyclopediaCell; size
       </h2>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <span className="font-mono text-[8.5px] font-bold uppercase tracking-[0.16em]" style={{ color: "color-mix(in oklch, var(--ramune) 82%, var(--foreground))" }}>{STATE_LABEL[cell.state] ?? cell.state}</span>
-        <ProvenanceStamp basis={cell.provenance.basis} tilt={-1} />
+        <ProvenanceStamp basis={cell.provenance.basis} tilt={-1} compact />
       </div>
     </>
   );
