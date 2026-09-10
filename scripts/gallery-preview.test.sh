@@ -41,6 +41,24 @@ fi
 grep -q 'package.json and lockfile differ' "$tmp/out"
 cp "$ROOT/ui/package.json" "$tmp/ui/package.json"
 echo 'PASS: stale lockfile fails before launch'
+
+if TEMPER_API_KEY="" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1; then
+  echo 'FAIL: missing bearer accepted'; exit 1
+fi
+grep -q 'set TEMPER_API_KEY' "$tmp/out"
+if grep -q 'starting gallery' "$tmp/out"; then echo 'FAIL: detached before credential failure'; exit 1; fi
+echo 'PASS: missing bearer fails before detachment'
+
+# The lifecycle must reject an unavailable process inspector before launch or stop.
+mkdir "$tmp/no-ps"
+for tool in dirname cat node npm python3 curl lsof head sed rm mktemp grep sleep; do
+  ln -s "$(command -v "$tool")" "$tmp/no-ps/$tool"
+done
+if PATH="$tmp/no-ps" KATAGAMI_UI_DIR="$tmp/ui" /bin/bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1; then
+  echo 'FAIL: missing ps accepted'; exit 1
+fi
+grep -q "'ps' not found on PATH" "$tmp/out"
+echo 'PASS: missing process inspector fails before detachment'
 npm_bin="$(command -v npm)"
 node_bin="$(command -v node)"
 cat > "$tmp/server.cjs" <<'JS'
@@ -78,6 +96,43 @@ if UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/other" bash "$ROOT/scripts/run-local.sh
 fi
 curl -sf "http://localhost:$port/encyclopedia" >/dev/null
 echo 'PASS: other worktree cannot stop preview'
+
+owner="/tmp/katagami-ui-$port.owner"
+cp "$owner" "$tmp/owner-before"
+if PATH="$tmp/no-ps" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" /bin/bash "$ROOT/scripts/run-local.sh" --gallery-only --stop > "$tmp/out" 2>&1; then
+  echo 'FAIL: stop accepted missing ps'; exit 1
+fi
+grep -q "'ps' not found on PATH" "$tmp/out"
+cmp "$owner" "$tmp/owner-before"
+curl -sf "http://localhost:$port/encyclopedia" >/dev/null
+echo 'PASS: missing process inspector preserves ownership for retry'
+
+head -2 "$tmp/owner-before" > "$owner"
+if UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only --stop > "$tmp/out" 2>&1; then
+  echo 'FAIL: incomplete ownership reported stopped'; exit 1
+fi
+grep -q 'ownership is incomplete' "$tmp/out"
+test -f "$owner"
+curl -sf "http://localhost:$port/encyclopedia" >/dev/null
+cp "$tmp/owner-before" "$owner"
+echo 'PASS: incomplete startup ownership is retained without a false stop'
+
+cp "/tmp/katagami-ui-$port.pid" "$tmp/pid-before"
+{ head -2 "$tmp/owner-before"; echo 'different process start time'; } > "$owner"
+UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only --stop > "$tmp/out" 2>&1
+grep -q 'no matching process was stopped' "$tmp/out"
+if grep -q '^==> stopped gallery preview' "$tmp/out"; then echo 'FAIL: stale record claimed a stop'; exit 1; fi
+curl -sf "http://localhost:$port/encyclopedia" >/dev/null
+cp "$tmp/owner-before" "$owner"
+cp "$tmp/pid-before" "/tmp/katagami-ui-$port.pid"
+echo 'PASS: stale ownership never claims or signals a matching stop'
+
+backend_port="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1])')"
+PORT="$backend_port" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --stop
+test ! -e "$owner"
+PATH="$tmp/bin:$PATH" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only > "$tmp/out" 2>&1
+grep -q '==> ready' "$tmp/out"
+echo 'PASS: full-stack stop releases gallery ownership for relaunch'
 
 UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only --stop
 sleep 1

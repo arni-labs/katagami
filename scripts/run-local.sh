@@ -68,6 +68,7 @@ stop() {
   kill_pidfile "$UI_PID"
   kill_port_listeners "$PORT"
   kill_port_listeners "$UI_PORT"
+  rm -f "/tmp/katagami-ui-$UI_PORT.owner"
 }
 
 GALLERY_ONLY=0

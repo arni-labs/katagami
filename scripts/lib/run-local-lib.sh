@@ -143,14 +143,18 @@ maybe_write_shared_ui_env() {
 }
 
 # Gallery previews use Next's normal environment precedence and never write env.
-gallery_preflight() {
+gallery_require_tools() {
   local tool
-  for tool in node npm python3 curl lsof; do
+  for tool in "$@"; do
     if ! command -v "$tool" >/dev/null 2>&1; then
       echo "error: '$tool' not found on PATH. Install it or add its bin directory to PATH before retrying." >&2
       return 1
     fi
   done
+}
+
+gallery_preflight() {
+  gallery_require_tools node npm python3 curl lsof ps head sed rm mktemp grep sleep
   node -e 'const [a,b]=process.versions.node.split(".").map(Number); if(a<20||(a===20&&b<9)){console.error("error: Node >=20.9 is required; select a supported Node runtime on PATH.");process.exit(1)}'
   npm --version >/dev/null
   if [ ! -f "$UI_DIR/node_modules/next/package.json" ] || [ ! -f "$UI_DIR/package-lock.json" ]; then
@@ -178,6 +182,10 @@ try {
   process.exit(1);
 }
 require("@next/env").loadEnvConfig(process.cwd(), true);
+if (!(process.env.TEMPER_API_KEY || "").trim()) {
+  console.error("error: set TEMPER_API_KEY in the selected Next development environment before launching.");
+  process.exit(1);
+}
 const raw = (process.env.NEXT_PUBLIC_TEMPER_API_URL || "").replace(/\\n/g, "").trim();
 try {
   const backend = new URL(raw);
@@ -201,19 +209,29 @@ gallery_stop() {
     echo "==> no owned gallery preview on :$UI_PORT"
     return
   fi
+  gallery_require_tools ps head sed rm
   if [ "$(head -1 "$owner")" != "$UI_DIR" ]; then
     echo "error: :$UI_PORT belongs to a different worktree; run stop from that worktree." >&2
     return 1
   fi
   pid="$(sed -n '2p' "$owner")"
   recorded="$(sed -n '3p' "$owner")"
+  if ! [[ "$pid" =~ ^[0-9]+$ ]] || [ -z "$recorded" ]; then
+    echo "error: preview ownership is incomplete; retry stop after the launch finishes." >&2
+    return 1
+  fi
   actual="$(ps -p "$pid" -o lstart= 2>/dev/null || true)"
   if [ -n "$actual" ] && [ "$actual" = "$recorded" ]; then
     # The existing launcher makes this PID the session/process-group leader.
-    kill -TERM -- "-$pid" 2>/dev/null || true
+    if ! kill -TERM -- "-$pid" 2>/dev/null; then
+      echo "error: could not signal the preview; ownership retained so stop can be retried." >&2
+      return 1
+    fi
+    echo "==> stopped gallery preview on :$UI_PORT"
+  else
+    echo "==> cleared stale gallery ownership on :$UI_PORT; no matching process was stopped"
   fi
   rm -f "$UI_PID" "$owner"
-  echo "==> stopped gallery preview on :$UI_PORT"
 }
 
 gallery_start() (

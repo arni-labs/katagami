@@ -1,6 +1,6 @@
-## Preview process ownership
+### Preview process ownership
 
-**Decision:** Gallery-only stop requires a matching worktree and recorded process start time, and launch reserves the existing port-keyed process record exclusively.
+**Decision:** Gallery-only stop requires a matching worktree and recorded process start time, and launch reserves the existing port-keyed process record exclusively. The full-stack stop also clears gallery ownership for the UI port it stops.
 
 **Came up because:** The existing full-stack stop kills every listener on its selected ports; the accepted gallery-only contract requires unrelated previews and backends to survive.
 
@@ -10,7 +10,7 @@
 
 **Where:** scripts/lib/run-local-lib.sh, gallery_start and gallery_stop; PR #307.
 
-## Readiness and environment
+### Readiness and environment
 
 **Decision:** Use Next's existing development environment loading and require nonempty rendered encyclopedia content before readiness.
 
@@ -22,7 +22,7 @@
 
 **Where:** scripts/run-local.sh and scripts/lib/run-local-lib.sh; PR #307.
 
-## Executable CI tests
+### Executable CI tests
 
 **Decision:** Move the existing optional credential check into job environment before running the launcher tests in CI.
 
