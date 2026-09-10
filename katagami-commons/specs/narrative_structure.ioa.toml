@@ -1,0 +1,245 @@
+# NarrativeStructure I/O automaton specification
+#
+# A reusable instruction for arranging a complete work before drafting begins.
+# It records the instruction, alternate names, ordered movements, named works,
+# citations, and optional encyclopedia cell IDs. It stores citations and names,
+# not copies of the works.
+#
+# `movements` has two valid JSON forms. A fixed structure uses
+# {kind: "fixed", parts: [{position, name}]}. A variable structure uses
+# {kind: "rule", rule, example: [{position, name}]}. The distinction lets an
+# agent follow Freytag's five named parts and also follow ring composition or
+# hypertext without pretending those methods have one mandatory unit count.
+#
+# The publish condition is `structure_verified`. The finalizer sets it only
+# after parsing the movement form, confirming an ordered non-empty sequence,
+# confirming at least two named exemplars, confirming at least one cited source
+# with its handling recorded as public_domain or cited_and_paraphrased, and
+# resolving every encyclopedia cell ID. Ordered movements make the record usable
+# as an outline instruction. Two exemplars show that the arrangement describes a
+# body of work instead of one interpretation. The authoring agent cannot set the
+# condition, and every authored change clears it.
+#
+# NarrativeStructure has no corpus. Named works are evidence, not distributed
+# text, so this entity has no consent attestation, corpus license check,
+# mechanical bands, replication sample, portable document, thumbnail, or public
+# asset requirement.
+#
+# The lifecycle is Draft -> UnderReview -> Published -> Archived.
+#                         ^              |             |
+#                         +--------------+-------------+ (Revise/Restore)
+
+[automaton]
+name = "NarrativeStructure"
+states = ["Draft", "UnderReview", "Published", "Archived"]
+initial = "Draft"
+allow_indefinite_states = ["Draft", "UnderReview", "Published", "Archived"]
+
+[[state]]
+name = "has_instruction"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_movements"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_exemplars"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_sources"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "structure_verified"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "version"
+type = "counter"
+initial = 0
+
+# Authoring actions write source material but never assert verification.
+
+[[action]]
+name = "SetIdentity"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "structure_verified", value = "false" }]
+params = ["name", "slug", "aliases"]
+hint = "Set the canonical name, stable URL slug, and JSON list of alternate names. Aliases may use any script."
+
+[[action]]
+name = "SetInstruction"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [
+  { type = "set_bool", var = "has_instruction", value = "true" },
+  { type = "set_bool", var = "structure_verified", value = "false" }
+]
+params = ["instruction"]
+hint = "Set one compositional instruction that an agent can apply before the work exists."
+
+[[action]]
+name = "SetMovements"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [
+  { type = "set_bool", var = "has_movements", value = "true" },
+  { type = "set_bool", var = "structure_verified", value = "false" }
+]
+params = ["movements"]
+hint = "Set ordered movements as JSON. Use {kind:'fixed',parts:[{position,name}]} for mandatory named parts. Use {kind:'rule',rule,example:[{position,name}]} when the method permits a variable number of units. Positions start at 1 and remain consecutive."
+
+[[action]]
+name = "SetExemplars"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [
+  { type = "set_bool", var = "has_exemplars", value = "true" },
+  { type = "set_bool", var = "structure_verified", value = "false" }
+]
+params = ["exemplars"]
+hint = "Set a JSON list of named works as {work,creator?}. Store names only. The verifier requires at least two works."
+
+[[action]]
+name = "SetSources"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [
+  { type = "set_bool", var = "has_sources", value = "true" },
+  { type = "set_bool", var = "structure_verified", value = "false" }
+]
+params = ["sources"]
+hint = "Set a JSON list of citations as {title,url,handling}. handling is public_domain or cited_and_paraphrased. Store no copied source text."
+
+[[action]]
+name = "SetEncyclopediaLinks"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "structure_verified", value = "false" }]
+params = ["encyclopedia_cell_ids"]
+hint = "Set the JSON list of existing encyclopedia cell IDs for matching genre or form records. An empty list is valid. The verifier resolves every non-empty ID."
+
+[[action]]
+name = "SubmitNarrativeStructure"
+kind = "input"
+from = ["Draft"]
+effect = [
+  { type = "set_bool", var = "has_instruction", value = "true" },
+  { type = "set_bool", var = "has_movements", value = "true" },
+  { type = "set_bool", var = "has_exemplars", value = "true" },
+  { type = "set_bool", var = "has_sources", value = "true" },
+  { type = "set_bool", var = "structure_verified", value = "false" }
+]
+params = ["name", "slug", "aliases", "instruction", "movements", "exemplars", "sources", "encyclopedia_cell_ids"]
+hint = "Write one complete Draft record. This action sets the authored fields and their presence flags. It does not verify them or submit the record for review."
+
+# The finalizer owns the evidence check and records what it checked.
+
+[[action]]
+name = "MarkStructureVerified"
+kind = "internal"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "structure_verified", value = "true" }]
+params = ["verification_report"]
+hint = "Finalizer-only verification. Parse the closed movement union, require an ordered non-empty sequence, require at least two named exemplars, require at least one source with an allowed handling value, resolve every encyclopedia cell ID, then record the result and mark the contract verified."
+
+# Review lifecycle.
+
+[[action]]
+name = "SubmitForReview"
+kind = "internal"
+from = ["Draft"]
+to = "UnderReview"
+guard = [
+  { type = "is_true", var = "has_instruction" },
+  { type = "is_true", var = "has_movements" },
+  { type = "is_true", var = "has_exemplars" },
+  { type = "is_true", var = "has_sources" }
+]
+hint = "Submit a complete authored record for curator review. Verification may run before or during review, but the author cannot publish."
+
+[[action]]
+name = "Publish"
+kind = "internal"
+from = ["UnderReview"]
+to = "Published"
+guard = [
+  { type = "is_true", var = "has_instruction" },
+  { type = "is_true", var = "has_movements" },
+  { type = "is_true", var = "has_exemplars" },
+  { type = "is_true", var = "has_sources" },
+  { type = "is_true", var = "structure_verified" }
+]
+effect = [{ type = "increment", field = "version" }]
+hint = "Publish only after the finalizer verifies the movement model, named exemplars, citations, and encyclopedia links."
+
+[[action]]
+name = "Revise"
+kind = "input"
+from = ["Published"]
+to = "UnderReview"
+effect = [{ type = "set_bool", var = "structure_verified", value = "false" }]
+params = ["curator_notes"]
+hint = "Return a published record to review and require fresh verification."
+
+[[action]]
+name = "Archive"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+to = "Archived"
+params = ["curator_notes"]
+hint = "Archive a malformed, superseded, or retired record."
+
+[[action]]
+name = "Restore"
+kind = "input"
+from = ["Archived"]
+to = "UnderReview"
+effect = [{ type = "set_bool", var = "structure_verified", value = "false" }]
+params = ["curator_notes"]
+hint = "Restore an archived record to review and require fresh verification."
+
+[[action]]
+name = "NarrativeStructurePublishedEvent"
+kind = "output"
+hint = "Emitted when a narrative structure is published."
+
+[[action]]
+name = "NarrativeStructureArchivedEvent"
+kind = "output"
+hint = "Emitted when a narrative structure is archived."
+
+# Published rows retain the same requirements as the Publish guard.
+
+[[invariant]]
+name = "PublishedRequiresInstruction"
+when = ["Published"]
+assert = "has_instruction"
+
+[[invariant]]
+name = "PublishedRequiresMovements"
+when = ["Published"]
+assert = "has_movements"
+
+[[invariant]]
+name = "PublishedRequiresExemplars"
+when = ["Published"]
+assert = "has_exemplars"
+
+[[invariant]]
+name = "PublishedRequiresSources"
+when = ["Published"]
+assert = "has_sources"
+
+[[invariant]]
+name = "PublishedRequiresVerifiedStructure"
+when = ["Published"]
+assert = "structure_verified"

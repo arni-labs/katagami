@@ -1,8 +1,8 @@
 # katagami-commons
 
 Core data layer for the Katagami Design Language Commons. Stores design
-languages, palette systems, art styles, writing styles, design elements,
-design sources, taxonomy, and the element manifest.
+languages, palette systems, art styles, writing styles, narrative structures,
+design elements, design sources, taxonomy, and the element manifest.
 
 ## Entity Types
 
@@ -58,6 +58,20 @@ projection served at `/voice/<id>/VOICE.md`. Two verifier-owned publish gates
 make the lane verified rather than described: `ConsentAttested` (opt-in corpus
 with author + license) and `BandsSelfConsistent` (every exemplar passes the
 style's own bands).
+
+**States:** `Draft` -> `UnderReview` -> `Published` -> `Archived`
+
+### NarrativeStructure
+
+A reusable instruction for arranging a complete work. It stores alternate names,
+ordered movements, named exemplars, source citations, and optional links to
+encyclopedia cells for matching genres or forms. Fixed structures list their
+required parts. Variable structures record a rule and an ordered example.
+
+The finalizer verifies the movement record, at least two exemplars, at least one
+source, and every encyclopedia link before publication. The entity stores no
+corpus or copied text, so the WritingStyle consent, license, and replication
+requirements do not apply.
 
 **States:** `Draft` -> `UnderReview` -> `Published` -> `Archived`
 

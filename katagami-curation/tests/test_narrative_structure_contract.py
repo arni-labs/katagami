@@ -4,12 +4,15 @@ import tomllib
 import unittest
 import xml.etree.ElementTree as ET
 
+import cedarpy
+
 
 COMMONS = Path(__file__).resolve().parents[2] / "katagami-commons"
 SPEC_PATH = COMMONS / "specs" / "narrative_structure.ioa.toml"
 RECORDS_PATH = COMMONS / "fixtures" / "narrative-structures.json"
 CSDL_PATH = COMMONS / "specs" / "model.csdl.xml"
 POLICY_PATH = COMMONS / "specs" / "policies" / "narrative_structure.cedar"
+RUNTIME_POLICY_PATH = COMMONS / "policies" / "narrative_structure.cedar"
 
 APPROVED_CELL_LINKS = {
     "allegories",
@@ -20,11 +23,49 @@ APPROVED_CELL_LINKS = {
     "hypertext-fiction",
     "linked-stories",
 }
+APPROVED_IDS = {
+    "abstract-episodic-structure",
+    "alternating-parallel-narrative",
+    "anachronic-modular-narrative",
+    "aristotelian-complication-and-denouement",
+    "braided-essay",
+    "branching-narrative",
+    "circular-narrative",
+    "cumulative-narrative",
+    "diary-form",
+    "eight-sequence-structure",
+    "epistolary-form",
+    "field-three-act-structure",
+    "forking-path-narrative",
+    "frame-narrative",
+    "freytag-five-part-dramatic-structure",
+    "hypertext-narrative",
+    "in-medias-res",
+    "interlace-narrative",
+    "jo-ha-kyu",
+    "kishotenketsu",
+    "linked-story-cycle",
+    "mise-en-abyme",
+    "multiperspectival-narrative",
+    "narrative-anthology",
+    "nested-narrative",
+    "pancha-sandhi",
+    "reverse-chronology",
+    "ring-composition",
+    "split-screen-narrative",
+    "sustained-allegory",
+    "thompson-four-part-structure",
+    "yorke-five-act-structure",
+}
 REJECTED_IDS = {
     "collage-narrative",
     "picaresque-progression",
     "snyder-beat-sheet",
     "todorov-equilibrium-progression",
+}
+PUBLIC_DOMAIN_URLS = {
+    "https://www.briantriber.com/WritingSamples/Freytag_Drama/Freytag_11_Ch2_P2.html",
+    "https://www.gutenberg.org/files/1974/1974-h/1974-h.htm",
 }
 
 
@@ -116,7 +157,7 @@ class NarrativeStructureRecordTests(unittest.TestCase):
         assert self.payload["entity_set"] == "NarrativeStructures"
         assert self.payload["deployment"] == "not-deployed"
         assert len(self.records) == 32
-        assert len({record["id"] for record in self.records}) == 32
+        assert {record["id"] for record in self.records} == APPROVED_IDS
         assert REJECTED_IDS.isdisjoint(record["id"] for record in self.records)
         assert all(
             record["action"] == "SubmitNarrativeStructure" for record in self.records
@@ -177,6 +218,15 @@ class NarrativeStructureRecordTests(unittest.TestCase):
         assert "序破急" in aliases["jo-ha-kyu"]
         assert "पञ्चसन्धि" in aliases["pancha-sandhi"]
 
+    def test_only_public_domain_source_text_is_marked_for_reuse(self) -> None:
+        public_domain_urls = {
+            source["url"]
+            for record in self.records
+            for source in record["params"]["sources"]
+            if source["handling"] == "public_domain"
+        }
+        assert public_domain_urls == PUBLIC_DOMAIN_URLS
+
     def test_production_verified_cell_links_are_exact(self) -> None:
         actual = {
             cell_id
@@ -232,3 +282,71 @@ class NarrativeStructureRegistrationTests(unittest.TestCase):
         assert {
             name for name in mutating_actions if f'Action::"{name}"' not in policy
         } == set()
+
+    def test_runtime_policy_matches_the_spec_copy_and_declares_its_stance(self) -> None:
+        policy = POLICY_PATH.read_text(encoding="utf-8")
+        assert RUNTIME_POLICY_PATH.read_text(encoding="utf-8") == policy
+        assert policy.splitlines()[0].startswith("// STANCE:")
+
+    def test_policy_decisions_keep_mutation_with_owners_and_curation(self) -> None:
+        policy = POLICY_PATH.read_text(encoding="utf-8")
+
+        def decide(
+            principal_type: str,
+            principal_id: str,
+            attributes: dict[str, str],
+            action: str,
+        ) -> cedarpy.Decision:
+            entities = [
+                {
+                    "uid": {"type": principal_type, "id": principal_id},
+                    "attrs": {"id": principal_id, **attributes},
+                    "parents": [],
+                },
+                {
+                    "uid": {"type": "NarrativeStructure", "id": "ring-composition"},
+                    "attrs": {"id": "ring-composition"},
+                    "parents": [],
+                },
+            ]
+            result = cedarpy.is_authorized(
+                {
+                    "principal": {"type": principal_type, "id": principal_id},
+                    "action": {"type": "Action", "id": action},
+                    "resource": {
+                        "type": "NarrativeStructure",
+                        "id": "ring-composition",
+                    },
+                    "context": {},
+                },
+                policy,
+                entities,
+            )
+            return result.decision
+
+        for principal_type, principal_id, attributes in [
+            ("System", "system", {}),
+            ("Admin", "admin", {}),
+            ("Customer", "owner", {"role": "owner"}),
+            ("Customer", "curator", {"role": "curator"}),
+            ("Agent", "curation", {"agent_type": "curation-service"}),
+            ("Agent", "wasm", {"agent_type": "service:wasm-runtime"}),
+        ]:
+            assert (
+                decide(principal_type, principal_id, attributes, "SetInstruction")
+                == cedarpy.Decision.Allow
+            )
+            assert (
+                decide(principal_type, principal_id, attributes, "Publish")
+                == cedarpy.Decision.Allow
+            )
+
+        for attributes in [{}, {"agent_type": "contributor"}]:
+            assert (
+                decide("Agent", "contributor", attributes, "SetInstruction")
+                == cedarpy.Decision.Deny
+            )
+            assert (
+                decide("Agent", "contributor", attributes, "Publish")
+                == cedarpy.Decision.Deny
+            )

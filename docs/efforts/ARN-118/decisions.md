@@ -1502,4 +1502,17 @@ Options: The alternatives were to commit only the IOA file, to reproduce the ful
 
 Chose minimum registration over either incomplete or expanded work because: WritingStyle registers the same components. The CSDL exposes the entity over OData, the Cedar policy authorizes it, and the test verifies that the files agree. Given up: an authorized loader or curation lane must submit the prepared records later.
 
-Where: `katagami-commons/specs/narrative_structure.ioa.toml`, `katagami-commons/specs/model.csdl.xml`, `katagami-commons/specs/policies/narrative_structure.cedar`, `katagami-commons/APP.md`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
+Where: `katagami-commons/specs/narrative_structure.ioa.toml`, `katagami-commons/specs/model.csdl.xml`, `katagami-commons/policies/narrative_structure.cedar`, `katagami-commons/specs/policies/narrative_structure.cedar`, `katagami-commons/APP.md`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D88 Structure identifiers are stable slugs
+
+Decision: `NarrativeStructure.Id` is an OData string containing the approved slug.
+
+Came up because: The task supplies stable names but no GUIDs, and the prepared records need identifiers before the entity is installed.
+
+Options: The alternatives were to invent GUIDs now, to allocate identifiers during installation, or to use the approved slugs as identifiers.
+
+Chose slugs over generated identifiers because: Approved slugs give each prepared record a deterministic identifier that links and retries can reuse. Installation retains those identifiers. Given up: a later rename must preserve the original identifier or use a new record.
+
+Where: `katagami-commons/specs/model.csdl.xml` and `katagami-commons/fixtures/narrative-structures.json`.
