@@ -1464,3 +1464,42 @@ Chose to measure because: carrying either finding across the boundary would have
 The result is a property of the facet. Styles and Periods has no parent layer to offer this collection; the materials and techniques side does. A future pass should not spend these queries on a movement, and should not apply the closure to a technique.
 
 Where: `.agents/skills/encyclopedia/SKILL.md`, "Rules that hold in every pass"; `modernism` cell, last `questions` entry.
+
+
+## D85 Movements use two explicit variants
+
+Decision: `movements` is a discriminated JSON union with `fixed` and `rule` variants.
+
+Came up because: Some approved structures have fixed named parts. Ring composition, hypertext narrative, and the eight-sequence method permit a variable number of units. One list with optional fields would allow records that give neither a complete sequence nor a repeatable rule.
+
+Options: The alternatives were to store prose, to store one list plus optional count and variation fields, or to require fixed `parts` or a variable `rule` with an ordered `example`.
+
+Chose the two variants over one loose record because: A consumer can dispatch on `kind`, and the contract test rejects mixed or incomplete records. This preserves fixed named sequences and gives variable structures a general rule and a concrete outline example. Given up: consumers must handle two cases.
+
+Where: `katagami-commons/specs/narrative_structure.ioa.toml`, `katagami-commons/fixtures/narrative-structures.json`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D86 The seven named encyclopedia links are the approved set
+
+Decision: The prepared records use all seven explicit structure-to-cell links in the task and no additional related cells.
+
+Came up because: The task says six approved entries correspond to cells, then names seven: frame narrative, epistolary form, linked-story cycle, diary form, hypertext narrative, branching narrative, and sustained allegory. `CANDIDATES.md` also suggests adjacent or alternate-form cells that the task does not approve as constants.
+
+Options: The alternatives were to use six by dropping one, to include every related cell from the candidate notes, or to use the seven explicit pairs.
+
+Chose the seven pairs over the stated count because: The production read on 2026-09-10 returned all seven IDs as Draft cells, and the task names all seven pairs. Given up: related cells such as `epistolary-poetry` and `cumulative-tales` remain suggestions instead of stored links.
+
+Where: production `EncyclopediaCells` read on 2026-09-10, `katagami-commons/fixtures/narrative-structures.json`, and `REPORT.md`.
+
+
+## D87 Register the entity without adding a curation lane
+
+Decision: This change registers `NarrativeStructure` in the repository with its IOA spec, CSDL entity and entity set, Cedar policy, app documentation, fixture, and contract test.
+
+Came up because: The IOA file alone does not register an OData entity. The requested scope covers repository artifacts. It excludes curation jobs, finalizer code, UI, Genesis publishing, and production installation.
+
+Options: The alternatives were to commit only the IOA file, to reproduce the full WritingStyle lane, or to add the repository registration needed for a later authorized install.
+
+Chose minimum registration over either incomplete or expanded work because: WritingStyle registers the same components. The CSDL exposes the entity over OData, the Cedar policy authorizes it, and the test verifies that the files agree. Given up: an authorized loader or curation lane must submit the prepared records later.
+
+Where: `katagami-commons/specs/narrative_structure.ioa.toml`, `katagami-commons/specs/model.csdl.xml`, `katagami-commons/specs/policies/narrative_structure.cedar`, `katagami-commons/APP.md`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
