@@ -1,4 +1,4 @@
-// STANCE: Owners and curation-service agents author, and System and the exact WASM runtime verify.
+// STANCE: Owners and curation-service agents author and submit. System and the exact WASM runtime verify and publish.
 permit(
   principal,
   action in [
@@ -22,7 +22,6 @@ permit(
     Action::"SetSources",
     Action::"SubmitNarrativeStructure",
     Action::"Archive",
-    Action::"Publish",
     Action::"SubmitForReview"
   ],
   resource is NarrativeStructure
@@ -35,8 +34,8 @@ permit(
     principal.role == "owner")
 };
 
-// Only System and the exact WASM runtime may execute lifecycle transitions or
-// mark a structure as verified.
+// System and the exact WASM runtime may verify and publish. This permit also
+// covers review submission, archival, and lifecycle events.
 permit(
   principal,
   action in [

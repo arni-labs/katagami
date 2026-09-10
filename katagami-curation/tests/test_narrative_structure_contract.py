@@ -128,6 +128,7 @@ class NarrativeStructureSpecTests(unittest.TestCase):
             "SetSources",
             "SetEncyclopediaLinks",
             "SubmitNarrativeStructure",
+            "SubmitForReview",
         ]:
             assert _set_bool("structure_verified", "false") in self.actions[name].get(
                 "effect", []
@@ -168,6 +169,10 @@ class NarrativeStructureSpecTests(unittest.TestCase):
         assert {guard["var"] for guard in submit_guards} == required - {
             "structure_verified"
         }
+
+        assert self.actions["Publish"]["effect"] == [
+            {"type": "increment", "var": "version"}
+        ]
 
 
 class NarrativeStructureRecordTests(unittest.TestCase):
@@ -382,12 +387,12 @@ class NarrativeStructureRegistrationTests(unittest.TestCase):
             ("Customer", "owner", {"role": "owner"}),
             ("Agent", "curation", {"agent_type": "curation-service"}),
         ]:
-            for action in ["SetInstruction", "Publish", "create"]:
+            for action in ["SetInstruction", "SubmitForReview", "Archive", "create"]:
                 assert (
                     decide(principal_type, principal_id, attributes, action)
                     == cedarpy.Decision.Allow
                 )
-            for action in ["MarkStructureVerified", "update", "delete"]:
+            for action in ["MarkStructureVerified", "Publish", "update", "delete"]:
                 assert (
                     decide(principal_type, principal_id, attributes, action)
                     == cedarpy.Decision.Deny

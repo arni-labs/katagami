@@ -21,7 +21,7 @@ The fixture contains 32 unique records. Each record has a stable slug identifier
 3. `Published`
 4. `Archived`
 
-Authoring transitions set the identity, instruction, movements, exemplars, sources, and encyclopedia links. Any authoring change clears `structure_verified`. The Cedar policy allows only an owner or a `curation-service` agent to create records, invoke authoring transitions, or request lifecycle changes. It denies generic OData `update` and `delete` requests, which would bypass those transitions. System and the exact `service:wasm-runtime` principal may execute lifecycle transitions, and only those two internal principals may call `MarkStructureVerified`. Publication requires instruction, movements, exemplars, sources, and successful structure verification.
+Authoring transitions set the identity, instruction, movements, exemplars, sources, and encyclopedia links. Any authoring change clears `structure_verified`. The Cedar policy lets an owner or `curation-service` agent create and author records, submit them for review, and archive them. System and the exact `service:wasm-runtime` principal may also submit or archive records, and only those two principals may call `MarkStructureVerified` or `Publish`. It denies generic OData `update` and `delete` requests, which would bypass the named transitions.
 
 | Field | Purpose |
 | --- | --- |
@@ -42,7 +42,7 @@ Variable structures such as ring composition, hypertext narrative, and abstract 
 
 The repository registration includes the IOA spec, CSDL entity and entity set, Cedar policy, app documentation, fixture, and a contract test that checks agreement across those files.
 
-The publish check validates the authored values. It requires a non-empty name and slug, aliases encoded as a JSON array, a non-empty instruction, one valid movement form with an ordered non-empty sequence, at least two named exemplars, at least one source with `public_domain` or `cited_and_paraphrased` handling, and resolvable encyclopedia links. `SubmitForReview` and `Publish` also require the identity presence flag. The two exemplars establish that the arrangement applies beyond one reading of one work. The finalizer records the check and sets `structure_verified`, and every later authoring change clears it.
+`Publish` requires all five presence flags and `structure_verified`. The finalizer contract requires a non-empty name and slug, aliases encoded as a JSON array, a non-empty instruction, one valid movement form with an ordered non-empty sequence, at least two named exemplars, at least one source with `public_domain` or `cited_and_paraphrased` handling, and resolvable encyclopedia links before the finalizer sets `structure_verified`. `SubmitForReview` clears earlier verification, so the finalizer must check the stored `UnderReview` record before publishing it.
 
 ## Deliberate omissions
 
@@ -118,8 +118,8 @@ The production query did not move or change any cells. A later, separately autho
 The contract suite checks the lifecycle, verifier ownership, publication requirements, 32-record allowlist, movement union, required aliases, source handling, exact encyclopedia links, CSDL registration, mirrored policies, and Cedar decisions.
 
 - `.venv/bin/python3 -m unittest tests/test_narrative_structure_contract.py`: 17 passed.
-- `temper verify -s katagami-commons/specs`: passed all four verification levels for all 17 entity types. `NarrativeStructure` passed symbolic checks with seven inductive invariants, a model check over 193 configurations, 301 simulated transitions, and 100 property-test cases.
-- An isolated local OData run used ports 3523 and 3524. The commons loader registered `NarrativeStructures`. `SubmitNarrativeStructure` stored the ring-composition fixture and set all five presence flags, including `has_identity`. `SubmitForReview` moved the record from `Draft` to `UnderReview`, and `Publish` returned 409 because `structure_verified` remained false. Evidence is in `/tmp/verify-katagami/2026-09-10/arn118-final`.
-- `ui/node_modules` is absent, so `next` could not start and the local gallery did not accept connections. ARN-118 modifies no UI code. The launcher stop command ran after the API check, but the sandbox denied the final signals to the exact Temper listener PIDs on ports 3521 and 3523.
+- `temper verify -s katagami-commons/specs`: passed all four verification levels for all 17 entity types. `NarrativeStructure` passed symbolic checks with seven inductive invariants, a model check over 202 configurations, 301 simulated transitions, and 100 property-test cases.
+- An isolated local OData API ran on port 3523; the UI was configured for port 3524 but did not start. The commons loader registered `NarrativeStructures`. `SubmitNarrativeStructure` stored the ring-composition fixture and set all five presence flags, including `has_identity`. A `SubmitForReview` call with an undeclared empty instruction moved the record to `UnderReview`, persisted that instruction, and cleared prior verification. `Publish` then returned 409. After `SetInstruction` restored the reviewed value, the local proof dispatched `MarkStructureVerified`; `Publish` moved the record to `Published` and incremented `version` to 1. Evidence is in `/tmp/verify-katagami/2026-09-10/arn118-final`.
+- `ui/node_modules` is absent, so `next` could not start. ARN-118 modifies no UI code. The launcher stop command ran after the API check, but the sandbox denied `kill` for the Temper listener PIDs on ports 3521 and 3523.
 - `git diff --check`: passed.
 - `make test-integration`: ran 502 tests and returned 23 failures, 4 errors, and 4 skips. On clean `master`, the command ran 486 tests and returned 23 failures, 4 errors, and 4 skips. The identity regression test passes with the other 16 targeted tests.

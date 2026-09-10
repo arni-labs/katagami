@@ -1568,3 +1568,29 @@ Options: Rely on the finalizer alone, add only an identity presence flag, or req
 Chose both checks because: `SetIdentity` and `SubmitNarrativeStructure` set `has_identity`, and the finalizer separately checks the stored strings and JSON value. Given up: an unnamed draft cannot enter review even when its compositional fields are complete.
 
 Where: `katagami-commons/specs/narrative_structure.ioa.toml`, `katagami-curation/tests/test_narrative_structure_contract.py`, and `REPORT.md`.
+
+
+## D93 The finalizer publishes the reviewed version
+
+Decision: `SubmitForReview` clears `structure_verified`, and only System or the exact `service:wasm-runtime` principal may call `Publish`.
+
+Came up because: Temper currently persists undeclared string parameters supplied to a transition. An authorized writer could otherwise supply changed content in undeclared parameters to `SubmitForReview` or `Publish` after an earlier version had been verified.
+
+Options: Change Temper's handling of undeclared parameters in a separate effort, remove publication, or require verification after review submission and reserve publication for the finalizer.
+
+Chose verification after submission plus finalizer publication because: After submission, the finalizer checks the stored UnderReview record. Every subsequent authoring transition clears `structure_verified`, and Cedar allows only System or the exact runtime to publish. Given up: owners and curation services submit the record but cannot dispatch `Publish`.
+
+Where: `katagami-commons/specs/narrative_structure.ioa.toml`, `katagami-commons/policies/narrative_structure.cedar`, `katagami-commons/specs/policies/narrative_structure.cedar`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D94 Publish increments the version counter
+
+Decision: The `Publish` effect uses `var = "version"`, which Temper executes as a counter increment.
+
+Came up because: The prior effect used `field = "version"`, which Temper ignored, so publication left `version` unchanged.
+
+Options: Keep `field = "version"`, remove `version`, or change the effect to `var = "version"`.
+
+Chose `var = "version"` because: The live OData proof increments `version` to 1 on first publication, and the contract test checks the exact effect object. Given up: nothing because the old spelling did not execute the increment.
+
+Where: `katagami-commons/specs/narrative_structure.ioa.toml` and `katagami-curation/tests/test_narrative_structure_contract.py`.
