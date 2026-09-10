@@ -1516,3 +1516,16 @@ Options: The alternatives were to invent GUIDs now, to allocate identifiers duri
 Chose slugs over generated identifiers because: Approved slugs give each prepared record a deterministic identifier that links and retries can reuse. Installation retains those identifiers. Given up: a later rename must preserve the original identifier or use a new record.
 
 Where: `katagami-commons/specs/model.csdl.xml` and `katagami-commons/fixtures/narrative-structures.json`.
+
+
+## D89 Fixture parameters use the OData wire format
+
+Decision: The fixture serializes JSON-valued parameters as strings because the corresponding OData fields use `Edm.String`.
+
+Came up because: The OData entity defines aliases, movements, exemplars, sources, and encyclopedia links as `Edm.String`, but decoded JSON has array or object values. Dispatching those values without serializing them would violate the OData types.
+
+Options: The alternatives were to require a future loader to serialize selected fields, to keep separate display and transport records, or to store the exact wire payload.
+
+Chose the serialized payload over loader-specific conversion because: An installer can dispatch each record without serializing individual fields first. Tests decode the five strings to inspect their contents. Given up: readers must also decode those fields.
+
+Where: `katagami-commons/fixtures/narrative-structures.json`, `katagami-curation/tests/test_narrative_structure_contract.py`, and `REPORT.md`.

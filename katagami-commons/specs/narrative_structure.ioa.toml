@@ -12,8 +12,9 @@
 # hypertext without pretending those methods have one mandatory unit count.
 #
 # The publish condition is `structure_verified`. The finalizer sets it only
-# after parsing the movement form, confirming an ordered non-empty sequence,
-# confirming at least two named exemplars, confirming at least one cited source
+# after confirming a non-empty instruction, parsing the movement form,
+# confirming an ordered non-empty sequence, confirming at least two named
+# exemplars, confirming at least one cited source
 # with its handling recorded as public_domain or cited_and_paraphrased, and
 # resolving every encyclopedia cell ID. Ordered movements make the record usable
 # as an outline instruction. Two exemplars show that the arrangement describes a
@@ -149,7 +150,7 @@ kind = "internal"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "structure_verified", value = "true" }]
 params = ["verification_report"]
-hint = "Finalizer-only verification. Parse the closed movement union, require an ordered non-empty sequence, require at least two named exemplars, require at least one source with an allowed handling value, resolve every encyclopedia cell ID, then record the result and mark the contract verified."
+hint = "Finalizer-only verification. Require a non-empty instruction, parse the closed movement union, require an ordered non-empty sequence, require at least two named exemplars, require at least one source with an allowed handling value, resolve every encyclopedia cell ID, then record the result and mark the contract verified."
 
 # Review lifecycle.
 

@@ -79,6 +79,12 @@ def _set_bool(variable: str, value: str) -> dict[str, str]:
     return {"type": "set_bool", "var": variable, "value": value}
 
 
+def _json_param(params: dict[str, object], name: str) -> object:
+    encoded = params[name]
+    assert isinstance(encoded, str)
+    return json.loads(encoded)
+
+
 class NarrativeStructureSpecTests(unittest.TestCase):
     def setUp(self) -> None:
         self.spec = tomllib.loads(SPEC_PATH.read_text(encoding="utf-8"))
@@ -103,6 +109,7 @@ class NarrativeStructureSpecTests(unittest.TestCase):
         verifier = self.actions["MarkStructureVerified"]
         assert verifier["kind"] == "internal"
         assert _set_bool("structure_verified", "true") in verifier["effect"]
+        assert "non-empty instruction" in verifier["hint"]
 
         for name, action in self.actions.items():
             if name == "MarkStructureVerified":
@@ -163,21 +170,40 @@ class NarrativeStructureRecordTests(unittest.TestCase):
             record["action"] == "SubmitNarrativeStructure" for record in self.records
         )
 
+    def test_json_parameters_match_the_string_backed_odata_contract(self) -> None:
+        json_fields = {
+            "aliases",
+            "movements",
+            "exemplars",
+            "sources",
+            "encyclopedia_cell_ids",
+        }
+        for record in self.records:
+            params = record["params"]
+            for field in json_fields:
+                assert isinstance(params[field], str)
+                json.loads(params[field])
+
     def test_every_record_has_the_publish_evidence_fields(self) -> None:
         for record in self.records:
             params = record["params"]
             assert params["name"]
             assert params["slug"] == record["id"]
             assert params["instruction"]
-            assert params["aliases"]
-            assert len(params["exemplars"]) >= 2
-            assert params["sources"]
-            assert set(params["encyclopedia_cell_ids"]) <= APPROVED_CELL_LINKS
+            aliases = _json_param(params, "aliases")
+            exemplars = _json_param(params, "exemplars")
+            sources = _json_param(params, "sources")
+            encyclopedia_cell_ids = _json_param(params, "encyclopedia_cell_ids")
+            assert isinstance(aliases, list) and aliases
+            assert isinstance(exemplars, list) and len(exemplars) >= 2
+            assert isinstance(sources, list) and sources
+            assert isinstance(encyclopedia_cell_ids, list)
+            assert set(encyclopedia_cell_ids) <= APPROVED_CELL_LINKS
 
-            for exemplar in params["exemplars"]:
+            for exemplar in exemplars:
                 assert set(exemplar) <= {"work", "creator"}
                 assert exemplar["work"]
-            for source in params["sources"]:
+            for source in sources:
                 assert source["url"].startswith("https://")
                 assert source["handling"] in {
                     "public_domain",
@@ -187,7 +213,8 @@ class NarrativeStructureRecordTests(unittest.TestCase):
     def test_movements_are_a_closed_union(self) -> None:
         kinds: set[str] = set()
         for record in self.records:
-            movements = record["params"]["movements"]
+            movements = _json_param(record["params"], "movements")
+            assert isinstance(movements, dict)
             kind = movements["kind"]
             kinds.add(kind)
             if kind == "fixed":
@@ -209,9 +236,20 @@ class NarrativeStructureRecordTests(unittest.TestCase):
 
         assert kinds == {"fixed", "rule"}
 
+    def test_an_optional_epilogue_is_a_rule_not_a_fixed_required_part(self) -> None:
+        record = next(
+            item for item in self.records if item["id"] == "thompson-four-part-structure"
+        )
+        movements = _json_param(record["params"], "movements")
+        assert isinstance(movements, dict)
+        assert movements["kind"] == "rule"
+        rule = movements["rule"].lower()
+        assert "optional" in rule
+        assert "epilogue" in rule
+
     def test_task_required_non_latin_aliases_are_preserved(self) -> None:
         aliases = {
-            record["id"]: set(record["params"]["aliases"])
+            record["id"]: set(_json_param(record["params"], "aliases"))
             for record in self.records
         }
         assert "起承転結" in aliases["kishotenketsu"]
@@ -222,7 +260,7 @@ class NarrativeStructureRecordTests(unittest.TestCase):
         public_domain_urls = {
             source["url"]
             for record in self.records
-            for source in record["params"]["sources"]
+            for source in _json_param(record["params"], "sources")
             if source["handling"] == "public_domain"
         }
         assert public_domain_urls == PUBLIC_DOMAIN_URLS
@@ -231,7 +269,7 @@ class NarrativeStructureRecordTests(unittest.TestCase):
         actual = {
             cell_id
             for record in self.records
-            for cell_id in record["params"]["encyclopedia_cell_ids"]
+            for cell_id in _json_param(record["params"], "encyclopedia_cell_ids")
         }
         assert actual == APPROVED_CELL_LINKS
 

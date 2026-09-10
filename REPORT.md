@@ -8,9 +8,9 @@ Deployment status: not deployed
 
 ## Result
 
-The repository defines `NarrativeStructure` as a Temper entity and contains load-ready records for the 32 approved candidates in `CANDIDATES.md` entries 1 through 32. The four rejected candidates, entries 33 through 36, are absent.
+The repository defines `NarrativeStructure` as a Temper entity and contains load-ready records for all 32 approved candidates (entries 1 through 32). The four rejected candidates (entries 33 through 36) are absent.
 
-The fixture contains 32 unique records. Each record has a stable slug identifier, aliases, a whole-work instruction, movements, at least two exemplars, source citations, source-handling metadata, and approved encyclopedia cell IDs. The task-required aliases `起承転結`, `序破急`, and `पञ्चसन्धि` are present.
+The fixture contains 32 unique records. Each record has a stable slug identifier, aliases, a whole-work instruction, movements, at least two exemplars, source citations, source-handling metadata, and approved encyclopedia cell IDs. The fixture serializes JSON-valued parameters as strings because the corresponding OData fields use `Edm.String`. The task-required aliases `起承転結`, `序破急`, and `पञ्चसन्धि` are present.
 
 ## Entity contract
 
@@ -53,7 +53,7 @@ The source pass checked 30 unique URLs. This environment fetched 22 URLs directl
 | Kishōtenketsu | University of California Press DOI | HTTP 403 |
 | Pancha-sandhi | INFLIBNET chapter | HTTP 403 |
 
-`RESEARCH.md` contains the prior source audit for all eight. This run did not independently read the blocked pages again.
+The supplied research notes contain the prior source audit for all eight. This run did not independently read the blocked pages again.
 
 ## Production encyclopedia links
 
@@ -103,7 +103,7 @@ The production query did not move or change any cells. A later, separately autho
 
 The contract suite checks the lifecycle, verifier ownership, publication requirements, 32-record allowlist, movement union, required aliases, source handling, exact encyclopedia links, CSDL registration, mirrored policies, and Cedar decisions.
 
-- `.venv/bin/python3 -m unittest tests/test_narrative_structure_contract.py`: 14 passed.
+- `.venv/bin/python3 -m unittest tests/test_narrative_structure_contract.py`: 16 passed.
 - `temper verify -s katagami-commons/specs`: passed all four verification levels for all 17 entity types. `NarrativeStructure` passed symbolic checks, a model check over 97 configurations, 301 simulated transitions, and 100 property-test cases.
 - `git diff --cached --check`: passed.
-- `make test-integration`: ran 500 tests and returned 23 failures, 4 errors, and 4 skips. The clean `master` commit ran 486 tests with the same counts. The 14 added tests account for the difference and all pass.
+- `make test-integration`: ran 502 tests and returned 23 failures, 4 errors, and 4 skips. The clean `master` commit ran 486 tests with the same counts. The 16 added tests account for the difference and all pass.
