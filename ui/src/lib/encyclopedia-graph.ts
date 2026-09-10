@@ -1,4 +1,4 @@
-import type { EncyclopediaCell, EncyclopediaGraph, MapName } from "@/lib/encyclopedia";
+import type { EncyclopediaCell, EncyclopediaGraph, ManifestationSet, MapName } from "@/lib/encyclopedia";
 
 // Pure graph helpers for the encyclopedia map (client-safe).
 // The hierarchy is `broader` (parent → child). Lateral distance is `relations`.
@@ -89,6 +89,15 @@ export class GraphIndex {
     // A root is a cell none of whose broader cells is in the library. A broader
     // pointer to a cell that is not here is shown on the sheet, not hidden.
     this.roots = graph.cells.filter((cell) => !cell.broader.some((link) => this.byId.has(link.cellId)));
+    this.recordOwners = new Map();
+    for (const cell of graph.cells) {
+      for (const m of cell.manifestations) {
+        const key = `${m.entitySet}:${m.entityId}`;
+        const list = this.recordOwners.get(key) ?? [];
+        list.push(cell);
+        this.recordOwners.set(key, list);
+      }
+    }
     // Levels, breadth-first from the roots. Anything the walk never reaches —
     // a cell whose only parents are in a cycle among themselves — keeps level
     // 0, so every cell has a level and none of them is lost off the map.
@@ -104,11 +113,63 @@ export class GraphIndex {
         queue.push({ id: kid.id, depth: depth + 1 });
       }
     }
+    // A cell no root reaches — its parents form a cycle among themselves — has
+    // nothing above it that could ever be opened, so it opens from the top
+    // like a root does. Otherwise it would be on the map and unreachable.
+    this.orphans = graph.cells.filter((cell) => !settled.has(cell.id));
   }
+
+  private readonly orphans: EncyclopediaCell[];
 
   childrenOf(id: string): EncyclopediaCell[] {
     return this.children.get(id) ?? [];
   }
+
+  /** How much a cell has earned the reader's attention: what hangs under it,
+   *  what has been made for it, what it is connected to. One number, used
+   *  everywhere something has to be ordered by importance — which cells a
+   *  category opens first, which narrower cells a cell opens first, and where
+   *  the layout packs a cell relative to its siblings — so the map, the
+   *  sheet and the phone browser all agree on what comes first. */
+  prominence(id: string): number {
+    const cell = this.byId.get(id);
+    if (!cell) return 0;
+    return this.childrenOf(id).length * 1000 + cell.manifestations.length * 10 + cell.relations.length;
+  }
+
+  /** A cell's narrower cells, most prominent first. The order a cell opens
+   *  them in on the map, so the first group revealed is the group worth
+   *  seeing first. */
+  orderedChildren(id: string): EncyclopediaCell[] {
+    const cached = this.orderedKids.get(id);
+    if (cached) return cached;
+    const list = [...this.childrenOf(id)].sort((a, b) => this.prominence(b.id) - this.prominence(a.id) || a.name.localeCompare(b.name));
+    this.orderedKids.set(id, list);
+    return list;
+  }
+
+  /** The top-level cells that sit on a map — the ones its category node opens
+   *  — most prominent first. A root belongs to the map it names first. */
+  rootsOn(map: MapName): EncyclopediaCell[] {
+    const cached = this.orderedRoots.get(map);
+    if (cached) return cached;
+    const list = [...this.roots, ...this.orphans]
+      .filter((cell) => this.primaryMap(cell) === map)
+      .sort((a, b) => this.prominence(b.id) - this.prominence(a.id) || a.name.localeCompare(b.name));
+    this.orderedRoots.set(map, list);
+    return list;
+  }
+
+  /** Every cell that names a record as a manifestation, by record. A record
+   *  named by three cells is one thing on the map, joined to all three, not
+   *  three things that happen to share a picture. */
+  ownersOf(set: ManifestationSet, entityId: string): EncyclopediaCell[] {
+    return this.recordOwners.get(`${set}:${entityId}`) ?? [];
+  }
+
+  private readonly orderedKids = new Map<string, EncyclopediaCell[]>();
+  private readonly orderedRoots = new Map<MapName, EncyclopediaCell[]>();
+  private readonly recordOwners: Map<string, EncyclopediaCell[]>;
 
   /** How far down the containment hierarchy a cell sits: a root is 0, its
    *  narrower cells are 1, and so on. Breadth-first from every root, so a cell
@@ -226,7 +287,13 @@ export class GraphIndex {
     });
   }
 
-  /** The chain of parents from a root down to the cell (first parent each step). */
+  /** The chain of parents from the top down to the cell. Each step takes the
+   *  shallowest parent, which is the one the breadth-first levels came
+   *  through, so the chain always ends at a root or an orphan the category
+   *  node opens — never inside a cycle that a root also reaches. Taking the
+   *  first listed parent did that: a cell whose first parent was a cycle
+   *  member got a chain no category could open, and a search for it revealed
+   *  nothing. */
   ancestry(id: string): EncyclopediaCell[] {
     const chain: EncyclopediaCell[] = [];
     const seen = new Set<string>();
@@ -234,7 +301,9 @@ export class GraphIndex {
     while (cursor && !seen.has(cursor.id)) {
       seen.add(cursor.id);
       chain.unshift(cursor);
-      cursor = this.parentsOf(cursor.id)[0];
+      const depth = this.depthOf(cursor.id);
+      const parents = this.parentsOf(cursor.id).filter((p) => this.depthOf(p.id) < depth);
+      cursor = parents.sort((a, b) => this.depthOf(a.id) - this.depthOf(b.id))[0];
     }
     return chain;
   }

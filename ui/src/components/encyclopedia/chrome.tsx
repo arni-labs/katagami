@@ -25,17 +25,21 @@ export function InkStamp({
   tilt = -1.5,
   className = "",
   title,
+  compact = false,
 }: {
   ink: string;
   children: ReactNode;
   tilt?: number;
   className?: string;
   title?: string;
+  /** The encyclopedia's sheet sets its stamps small (D12); the writing pages
+   *  keep the shared size. */
+  compact?: boolean;
 }) {
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.14em] shadow-[var(--shadow-sticker)] ${className}`}
+      className={`inline-flex items-center gap-1.5 font-mono font-bold uppercase tracking-[0.14em] shadow-[var(--shadow-sticker)] ${compact ? "px-2 py-[3px] text-[8px]" : "px-2.5 py-1 text-[9.5px]"} ${className}`}
       style={{
         ...inkChipStyle(ink, 18),
         backgroundImage: "var(--grain-url)",
@@ -49,11 +53,11 @@ export function InkStamp({
   );
 }
 
-export function ProvenanceStamp({ basis, tilt }: { basis: "cited" | "recollected"; tilt?: number }) {
+export function ProvenanceStamp({ basis, tilt, compact }: { basis: "cited" | "recollected"; tilt?: number; compact?: boolean }) {
   return basis === "cited" ? (
-    <InkStamp ink="var(--ramune)" tilt={tilt} title="At least one source a reader can follow.">Cited</InkStamp>
+    <InkStamp ink="var(--ramune)" tilt={tilt} compact={compact} title="At least one source a reader can follow.">Cited</InkStamp>
   ) : (
-    <InkStamp ink="var(--sakura)" tilt={tilt} title="Written from model training data; no external reference was located.">From model training data</InkStamp>
+    <InkStamp ink="var(--sakura)" tilt={tilt} compact={compact} title="Written from model training data; no external reference was located.">From model training data</InkStamp>
   );
 }
 
@@ -90,16 +94,20 @@ export function SearchBox({
   placeholder = "Find a cell",
   className = "",
   inputRef,
+  compact = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
   inputRef?: React.Ref<HTMLInputElement>;
+  /** The map's search sits on a dense canvas and is set small (D12); the
+   *  writing pages keep the shared size. */
+  compact?: boolean;
 }) {
   return (
-    <label className={`flex h-10 items-center gap-2 bg-[var(--paper-sticker)] px-3 shadow-[var(--shadow-sticker)] focus-within:shadow-[var(--shadow-sticker-lift)] ${className}`}>
-      <Search size={15} className="shrink-0 text-muted-foreground" aria-hidden />
+    <label className={`flex items-center gap-2 bg-[var(--paper-sticker)] shadow-[var(--shadow-sticker)] focus-within:shadow-[var(--shadow-sticker-lift)] ${compact ? "h-8 px-2.5" : "h-10 px-3"} ${className}`}>
+      <Search size={compact ? 13 : 15} className="shrink-0 text-muted-foreground" aria-hidden />
       <input
         ref={inputRef}
         type="search"
@@ -107,7 +115,7 @@ export function SearchBox({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="min-w-0 flex-1 bg-transparent font-sans text-[15px] text-foreground outline-none placeholder:text-muted-foreground/70"
+        className={`min-w-0 flex-1 bg-transparent font-sans text-foreground outline-none placeholder:text-muted-foreground/70 ${compact ? "text-[12.5px]" : "text-[15px]"}`}
       />
       {value ? (
         <button type="button" onClick={() => onChange("")} aria-label="Clear search" className="grid h-6 w-6 place-items-center text-muted-foreground hover:text-foreground">
