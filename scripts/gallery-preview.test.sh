@@ -10,7 +10,7 @@ if KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scripts/run-local.sh" --gallery-only >"
   echo 'FAIL: missing dependencies accepted'; exit 1
 fi
 grep -q 'npm ci' "$tmp/out" || { cat "$tmp/out"; echo 'FAIL: no dependency remedy'; exit 1; }
-! grep -q '==> ready' "$tmp/out"
+if grep -q '==> ready' "$tmp/out"; then echo 'FAIL: false ready claim'; exit 1; fi
 cmp "$tmp/before" "$tmp/ui/.env.local"
 echo 'PASS: missing dependencies fail before launch and preserve environment'
 
@@ -21,7 +21,7 @@ if PATH="$tmp/bin" KATAGAMI_UI_DIR="$tmp/ui" /bin/bash "$ROOT/scripts/run-local.
   echo 'FAIL: missing Node accepted'; exit 1
 fi
 grep -q "'node' not found on PATH" "$tmp/out"
-! grep -q '==> ready' "$tmp/out"
+if grep -q '==> ready' "$tmp/out"; then echo 'FAIL: false ready claim'; exit 1; fi
 echo 'PASS: missing Node has a precise failure'
 ln -s "$(command -v node)" "$tmp/bin/node"
 if PATH="$tmp/bin" KATAGAMI_UI_DIR="$tmp/ui" /bin/bash "$ROOT/scripts/run-local.sh" --gallery-only >"$tmp/out" 2>&1; then
@@ -69,7 +69,7 @@ PATH="$tmp/bin:$PATH" UI_PORT="$port" KATAGAMI_UI_DIR="$tmp/ui" bash "$ROOT/scri
 grep -q '==> ready' "$tmp/out"
 curl -sf "http://localhost:$port/encyclopedia" >/dev/null
 cmp "$tmp/before" "$tmp/ui/.env.local"
-! grep -q secret "$tmp/out"
+if grep -q secret "$tmp/out"; then echo "FAIL: secret in output"; exit 1; fi
 echo 'PASS: detached route survives invoking shell and environment is unchanged'
 
 mkdir "$tmp/other"

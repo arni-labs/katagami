@@ -1,3 +1,6 @@
+# shellcheck shell=bash
+# UI_DIR and the port/log paths are supplied by run-local.sh.
+# shellcheck disable=SC2153
 # Shared helpers for scripts/run-local.sh. Sourced, not executed.
 # Keep this file free of side effects so the contract tests can source it.
 
@@ -155,7 +158,7 @@ gallery_preflight() {
     return 1
   fi
   (
-    cd "$UI_DIR"
+    cd "$UI_DIR" || exit
     node <<'JS'
 const fs = require("node:fs");
 const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));

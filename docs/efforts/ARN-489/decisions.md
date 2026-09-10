@@ -21,3 +21,15 @@
 **Chose preserving existing configuration because:** It avoids silently selecting a backend or persisting credentials in generated settings. The command reports only the effective host. The route's existing development-only preview flag remains explicit.
 
 **Where:** scripts/run-local.sh and scripts/lib/run-local-lib.sh; PR #307.
+
+## Executable CI tests
+
+**Decision:** Move the existing optional credential check into job environment before running the launcher tests in CI.
+
+**Came up because:** GitHub rejected tests.yml before creating jobs, and actionlint identified its secrets reference in a step condition as invalid.
+
+**Options:** Leave the workflow invalid and rely on local evidence, or correct that expression using the repository's existing verification-workflow pattern.
+
+**Chose the expression correction because:** The accepted launcher regressions must actually run in CI. The optional production credential check retains its behavior; no new secret or permission is added.
+
+**Where:** .github/workflows/tests.yml; PR #307.

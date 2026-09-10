@@ -31,6 +31,8 @@ permissions:
 jobs:
   ui:
     runs-on: ubuntu-latest
+    env:
+      HAS_TEMPER_API_KEY: ${{ secrets.TEMPER_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -57,7 +59,7 @@ jobs:
       # when the secret is absent: a check that cannot run must not read as a
       # check that passed.
       - name: Every ledger cellId names a cell that exists
-        if: ${{ secrets.TEMPER_API_KEY != '' }}
+        if: env.HAS_TEMPER_API_KEY == 'true'
         env:
           TEMPER_API_KEY: ${{ secrets.TEMPER_API_KEY }}
         run: node scripts/encyclopedia-cellids.mjs
