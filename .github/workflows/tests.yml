@@ -42,6 +42,11 @@ jobs:
         working-directory: ui
       - run: npm test
         working-directory: ui
+      - name: Preview launcher contracts
+        run: |
+          bash scripts/run-local-lib.test.sh
+          bash scripts/run-local.test.sh
+          bash scripts/gallery-preview.test.sh
       - run: npx tsc --noEmit
         working-directory: ui
       - name: Every source ledger validates

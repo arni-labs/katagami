@@ -70,9 +70,49 @@ stop() {
   kill_port_listeners "$UI_PORT"
 }
 
-if [ "${1:-}" = "--stop" ]; then
+GALLERY_ONLY=0
+STOP_ONLY=0
+for arg in "$@"; do
+  case "$arg" in
+    --gallery-only) GALLERY_ONLY=1 ;;
+    --stop) STOP_ONLY=1 ;;
+    *) echo "error: unknown option $arg; use --gallery-only and/or --stop" >&2; exit 1 ;;
+  esac
+done
+if ! [[ "$UI_PORT" =~ ^[0-9]+$ ]] || [ "$UI_PORT" -lt 1 ] || [ "$UI_PORT" -gt 65535 ]; then
+  echo "error: UI_PORT must be between 1 and 65535" >&2; exit 1
+fi
+if [ "$GALLERY_ONLY" = 1 ]; then UI_DIR="$(cd "$UI_DIR" && pwd -P)"; fi
+if [ "$GALLERY_ONLY" = 1 ] && [ "$STOP_ONLY" = 1 ]; then
+  gallery_stop
+  exit 0
+fi
+if [ "$STOP_ONLY" = 1 ]; then
   stop
   echo "==> stopped."
+  exit 0
+fi
+
+# A tiny launcher that detaches a process into its own session (macOS has no
+# `setsid`), redirects its output to a log, and replaces itself with the target
+# command. Anything started through this survives the parent shell exiting.
+write_launcher() {
+cat > "$LAUNCH" <<'PY'
+import os, sys
+log, pid_path = sys.argv[1], sys.argv[2]
+os.setsid()                                   # new session: not reaped with the parent
+with open(pid_path, "w") as f:
+    f.write(str(os.getpid()))
+fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+os.dup2(fd, 1); os.dup2(fd, 2)
+dn = os.open(os.devnull, os.O_RDONLY); os.dup2(dn, 0)
+os.execvp(sys.argv[3], sys.argv[3:])          # become the target command
+PY
+}
+
+
+if [ "$GALLERY_ONLY" = 1 ]; then
+  gallery_start
   exit 0
 fi
 
@@ -89,21 +129,8 @@ if [ ! -d "$FS_SPECS" ]; then
   exit 1
 fi
 
-# A tiny launcher that detaches a process into its own session (macOS has no
-# `setsid`), redirects its output to a log, and replaces itself with the target
-# command. Anything started through this survives the parent shell exiting.
-cat > "$LAUNCH" <<'PY'
-import os, sys
-log, pid_path = sys.argv[1], sys.argv[2]
-os.setsid()                                   # new session: not reaped with the parent
-with open(pid_path, "w") as f:
-    f.write(str(os.getpid()))
-fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
-os.dup2(fd, 1); os.dup2(fd, 2)
-dn = os.open(os.devnull, os.O_RDONLY); os.dup2(dn, 0)
-os.execvp(sys.argv[3], sys.argv[3:])          # become the target command
-PY
 
+write_launcher
 stop
 sleep 1
 rm -f "$DB" "$DB"-* 2>/dev/null || true
