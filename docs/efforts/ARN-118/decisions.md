@@ -1594,3 +1594,29 @@ Options: Keep `field = "version"`, remove `version`, or change the effect to `va
 Chose `var = "version"` because: The live OData proof increments `version` to 1 on first publication, and the contract test checks the exact effect object. Given up: nothing because the old spelling did not execute the increment.
 
 Where: `katagami-commons/specs/narrative_structure.ioa.toml` and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D95 Variable and conditional movements use rules
+
+Decision: The forking-path and Aristotelian records encode variable or conditional movements with the `rule` form.
+
+Came up because: Review of the current commit found that both records used `fixed` sequences even though a forking narrative can contain more than two paths and an Aristotelian plot need not contain recognition or reversal.
+
+Options: Keep every example movement mandatory, remove the conditional movements, or use a rule and retain the supplied outline as its example.
+
+Chose rules with examples because: The rule states which movements may vary, and the example retains the supplied outline. Given up: consumers must interpret the rule instead of treating every example movement as mandatory.
+
+Where: `katagami-commons/fixtures/narrative-structures.json` and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D96 OData exposes identity status
+
+Decision: The CSDL contract includes the `HasIdentity` property.
+
+Came up because: Review of the current commit found that the state machine records and checks `has_identity`, but the OData entity omitted the corresponding property.
+
+Options: Omit `has_identity` from OData, remove it from the publication requirements, or expose it with the other lifecycle presence flags.
+
+Chose the OData property because: API clients can now read the identity status used by the review and publication guards. Given up: none; the field already exists in the state machine.
+
+Where: `katagami-commons/specs/model.csdl.xml` and `katagami-curation/tests/test_narrative_structure_contract.py`.

@@ -456,6 +456,7 @@
         <Property Name="Exemplars" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="Sources" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="EncyclopediaCellIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasIdentity" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="HasInstruction" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="HasMovements" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="HasExemplars" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />

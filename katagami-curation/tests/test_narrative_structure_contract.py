@@ -268,6 +268,28 @@ class NarrativeStructureRecordTests(unittest.TestCase):
         assert "optional" in rule
         assert "epilogue" in rule
 
+    def test_variable_or_conditional_movements_use_rule_form(self) -> None:
+        records = {item["id"]: item for item in self.records}
+
+        for record_id in {
+            "aristotelian-complication-and-denouement",
+            "forking-path-narrative",
+        }:
+            movements = _json_param(records[record_id]["params"], "movements")
+            assert isinstance(movements, dict)
+            assert movements["kind"] == "rule"
+
+        forking_rule = _json_param(
+            records["forking-path-narrative"]["params"], "movements"
+        )["rule"].lower()
+        assert "two or more" in forking_rule
+
+        aristotelian_rule = _json_param(
+            records["aristotelian-complication-and-denouement"]["params"],
+            "movements",
+        )["rule"].lower()
+        assert "when present" in aristotelian_rule
+
     def test_task_required_non_latin_aliases_are_preserved(self) -> None:
         aliases = {
             record["id"]: set(_json_param(record["params"], "aliases"))
@@ -315,6 +337,7 @@ class NarrativeStructureRegistrationTests(unittest.TestCase):
             "Exemplars",
             "Sources",
             "EncyclopediaCellIds",
+            "HasIdentity",
             "HasInstruction",
             "HasMovements",
             "HasExemplars",

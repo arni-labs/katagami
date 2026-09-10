@@ -193,7 +193,7 @@
         "slug": "forking-path-narrative",
         "aliases": "[\"Alternate-path narrative\",\"multiple-future narrative\",\"possible-world narrative\"]",
         "instruction": "Repeat a common situation with a changed decision or circumstance, then follow mutually exclusive outcomes as parts of the authored work.",
-        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Common situation\"},{\"position\":2,\"name\":\"Divergence\"},{\"position\":3,\"name\":\"Outcome A\"},{\"position\":4,\"name\":\"Reset or return to divergence\"},{\"position\":5,\"name\":\"Outcome B\"},{\"position\":6,\"name\":\"Comparison or final selected outcome\"}]}",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Establish a common situation and divergence, follow two or more mutually exclusive outcome paths, returning to the common situation or divergence before each additional path, then compare the paths or select a final outcome.\",\"example\":[{\"position\":1,\"name\":\"Common situation\"},{\"position\":2,\"name\":\"Divergence\"},{\"position\":3,\"name\":\"Outcome A\"},{\"position\":4,\"name\":\"Reset or return to divergence\"},{\"position\":5,\"name\":\"Outcome B\"},{\"position\":6,\"name\":\"Comparison or final selected outcome\"}]}",
         "exemplars": "[{\"work\":\"Groundhog Day\"},{\"work\":\"Run Lola Run\"},{\"work\":\"Sliding Doors\"}]",
         "sources": "[{\"title\":\"Matthew Campora on Allan Cameron's taxonomy\",\"url\":\"https://www.sensesofcinema.com/2010/book-reviews/modular-narratives-in-contemporary-cinema-by-allan-cameron/\",\"handling\":\"cited_and_paraphrased\"}]",
         "encyclopedia_cell_ids": "[]"
@@ -221,7 +221,7 @@
         "slug": "aristotelian-complication-and-denouement",
         "aliases": "[\"Aristotelian dramatic structure\",\"complication-unravelling structure\"]",
         "instruction": "Develop one causally unified plot through complication, then turn through recognition or reversal into denouement.",
-        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Beginning\"},{\"position\":2,\"name\":\"Complication\"},{\"position\":3,\"name\":\"Reversal or recognition where the plot requires it\"},{\"position\":4,\"name\":\"Denouement\"},{\"position\":5,\"name\":\"End\"}]}",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Move from the beginning through complication, include recognition, reversal, or both when present, then proceed through the denouement to the end.\",\"example\":[{\"position\":1,\"name\":\"Beginning\"},{\"position\":2,\"name\":\"Complication\"},{\"position\":3,\"name\":\"Reversal or recognition when present\"},{\"position\":4,\"name\":\"Denouement\"},{\"position\":5,\"name\":\"End\"}]}",
         "exemplars": "[{\"work\":\"Oedipus Rex\",\"creator\":\"Sophocles\"},{\"work\":\"Iphigenia in Tauris\",\"creator\":\"Euripides\"},{\"work\":\"Odyssey\",\"creator\":\"Homer\"}]",
         "sources": "[{\"title\":\"Aristotle, Poetics\",\"url\":\"https://www.gutenberg.org/files/1974/1974-h/1974-h.htm\",\"handling\":\"public_domain\"}]",
         "encyclopedia_cell_ids": "[]"
