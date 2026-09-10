@@ -1,8 +1,9 @@
 # NarrativeStructure I/O automaton specification
 #
-# A reusable instruction for arranging a complete work before drafting begins.
-# It records the instruction, alternate names, ordered movements, named works,
-# citations, and optional encyclopedia cell IDs. It omits copies of the works.
+# NarrativeStructure records a reusable instruction for arranging a complete
+# work before drafting, together with alternate names, ordered movements, named
+# works, citations, and optional encyclopedia cell IDs. It omits copies of the
+# works.
 #
 # `movements` has two valid JSON forms. A fixed structure uses
 # {kind: "fixed", parts: [{position, name}]}. A variable structure uses
@@ -10,14 +11,17 @@
 # methods such as Freytag's five named parts. The rule form records methods with
 # variable unit counts, such as ring composition and hypertext.
 #
-# The publish condition is `structure_verified`. The finalizer sets it only
-# after confirming a non-empty instruction, parsing the movement form,
-# confirming an ordered non-empty sequence, confirming at least two named
-# exemplars, confirming at least one cited source
-# with its handling recorded as public_domain or cited_and_paraphrased, and
-# resolving every encyclopedia cell ID. Ordered movements make the record usable
-# as an outline instruction. Two exemplars show use across multiple works. Every
-# authored change clears the condition. Only the finalizer sets it.
+# The finalizer sets `structure_verified` after it checks:
+# - a non-empty name, slug, and instruction
+# - aliases encoded as a JSON array
+# - a valid movement form with an ordered non-empty sequence
+# - at least two named exemplars
+# - at least one cited source with public_domain or cited_and_paraphrased
+#   handling
+# - encyclopedia cell IDs that resolve
+# Ordered movements provide an outline instruction, and two exemplars show use
+# across multiple works. Every authored change clears `structure_verified`, and
+# only the finalizer sets it.
 #
 # NarrativeStructure records citations and named works. It excludes the
 # corpus-specific WritingStyle fields for consent attestation, license checks,
@@ -33,6 +37,11 @@ name = "NarrativeStructure"
 states = ["Draft", "UnderReview", "Published", "Archived"]
 initial = "Draft"
 allow_indefinite_states = ["Draft", "UnderReview", "Published", "Archived"]
+
+[[state]]
+name = "has_identity"
+type = "bool"
+initial = "false"
 
 [[state]]
 name = "has_instruction"
@@ -70,7 +79,10 @@ initial = 0
 name = "SetIdentity"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "structure_verified", value = "false" }]
+effect = [
+  { type = "set_bool", var = "has_identity", value = "true" },
+  { type = "set_bool", var = "structure_verified", value = "false" }
+]
 params = ["name", "slug", "aliases"]
 hint = "Set the canonical name, stable URL slug, and JSON list of alternate names. Aliases may use any script."
 
@@ -131,6 +143,7 @@ name = "SubmitNarrativeStructure"
 kind = "input"
 from = ["Draft"]
 effect = [
+  { type = "set_bool", var = "has_identity", value = "true" },
   { type = "set_bool", var = "has_instruction", value = "true" },
   { type = "set_bool", var = "has_movements", value = "true" },
   { type = "set_bool", var = "has_exemplars", value = "true" },
@@ -148,7 +161,7 @@ kind = "internal"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "structure_verified", value = "true" }]
 params = ["verification_report"]
-hint = "The finalizer checks a non-empty instruction, a valid closed movement union with an ordered non-empty sequence, at least two named exemplars, at least one source with an allowed handling value, and every encyclopedia cell ID. It records the result and marks the contract verified."
+hint = "The finalizer requires non-empty name, slug, and instruction, parses aliases as a JSON array, and validates the closed movement union with an ordered non-empty sequence. It also requires at least two named exemplars and at least one source with public_domain or cited_and_paraphrased handling, resolves every encyclopedia cell ID, records the verification report, and sets structure_verified."
 
 # Review lifecycle.
 
@@ -158,6 +171,7 @@ kind = "internal"
 from = ["Draft"]
 to = "UnderReview"
 guard = [
+  { type = "is_true", var = "has_identity" },
   { type = "is_true", var = "has_instruction" },
   { type = "is_true", var = "has_movements" },
   { type = "is_true", var = "has_exemplars" },
@@ -171,6 +185,7 @@ kind = "internal"
 from = ["UnderReview"]
 to = "Published"
 guard = [
+  { type = "is_true", var = "has_identity" },
   { type = "is_true", var = "has_instruction" },
   { type = "is_true", var = "has_movements" },
   { type = "is_true", var = "has_exemplars" },
@@ -217,6 +232,11 @@ kind = "output"
 hint = "The automaton emits this event when a narrative structure enters Archived."
 
 # Published rows retain the same requirements as the Publish guard.
+
+[[invariant]]
+name = "PublishedRequiresIdentity"
+when = ["Published"]
+assert = "has_identity"
 
 [[invariant]]
 name = "PublishedRequiresInstruction"

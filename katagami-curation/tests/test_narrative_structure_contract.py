@@ -109,7 +109,8 @@ class NarrativeStructureSpecTests(unittest.TestCase):
         verifier = self.actions["MarkStructureVerified"]
         assert verifier["kind"] == "internal"
         assert _set_bool("structure_verified", "true") in verifier["effect"]
-        assert "non-empty instruction" in verifier["hint"]
+        assert "non-empty name, slug, and instruction" in verifier["hint"]
+        assert "aliases" in verifier["hint"]
 
         for name, action in self.actions.items():
             if name == "MarkStructureVerified":
@@ -132,8 +133,17 @@ class NarrativeStructureSpecTests(unittest.TestCase):
                 "effect", []
             )
 
+    def test_only_identity_inputs_mark_identity_present(self) -> None:
+        for name, action in self.actions.items():
+            effects = action.get("effect", [])
+            if name in {"SetIdentity", "SubmitNarrativeStructure"}:
+                assert _set_bool("has_identity", "true") in effects
+            else:
+                assert _set_bool("has_identity", "true") not in effects
+
     def test_publish_requires_the_authored_contract_and_verification(self) -> None:
         required = {
+            "has_identity",
             "has_instruction",
             "has_movements",
             "has_exemplars",
@@ -144,6 +154,7 @@ class NarrativeStructureSpecTests(unittest.TestCase):
         assert {guard["var"] for guard in publish_guards} == required
 
         required_invariants = {
+            "PublishedRequiresIdentity",
             "PublishedRequiresInstruction",
             "PublishedRequiresMovements",
             "PublishedRequiresExemplars",
@@ -152,6 +163,11 @@ class NarrativeStructureSpecTests(unittest.TestCase):
         }
         assert set(self.invariants) == required_invariants
         assert all(item["when"] == ["Published"] for item in self.invariants.values())
+
+        submit_guards = self.actions["SubmitForReview"]["guard"]
+        assert {guard["var"] for guard in submit_guards} == required - {
+            "structure_verified"
+        }
 
 
 class NarrativeStructureRecordTests(unittest.TestCase):

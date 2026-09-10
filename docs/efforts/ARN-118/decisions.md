@@ -1555,3 +1555,16 @@ Options: The alternatives were to keep generic writes for the owner and curation
 Chose explicit permits over generic OData writes because: Each named authoring transition clears `structure_verified`, and only `MarkStructureVerified` can set it. Owners and curation services can still create rows and set every author-owned field through those transitions. If field mapping changes later, generic `update` remains denied. Given up: maintenance clients lose direct row patches and deletes.
 
 Where: `katagami-commons/policies/narrative_structure.cedar`, `katagami-commons/specs/policies/narrative_structure.cedar`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D92 Review and publication require identity
+
+Decision: `SubmitForReview` and `Publish` require `has_identity`, and the finalizer checks that name and slug are non-empty and aliases is a valid JSON array.
+
+Came up because: A current-head review found that the publish checks covered the compositional fields but allowed an empty name and slug.
+
+Options: Rely on the finalizer alone, add only an identity presence flag, or require both the presence flag and value checks.
+
+Chose both checks because: `SetIdentity` and `SubmitNarrativeStructure` set `has_identity`, and the finalizer separately checks the stored strings and JSON value. Given up: an unnamed draft cannot enter review even when its compositional fields are complete.
+
+Where: `katagami-commons/specs/narrative_structure.ioa.toml`, `katagami-curation/tests/test_narrative_structure_contract.py`, and `REPORT.md`.
