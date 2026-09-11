@@ -15,7 +15,37 @@ export function NarrativeMovementsView({
           {movements.rule}
         </p>
       ) : null}
-      <ol className={`${movements.kind === "rule" ? "mt-4" : ""} grid gap-2`}>
+      {/* On a phone the stacked timeline runs ~44px per movement, which put the
+          index page at 19,960px for 32 cards — about fifty screens. Below `sm`
+          the card shows the same sequence as a wrapping chain so the shapes
+          stay comparable while scanning; the timeline returns at `sm` and on
+          the detail page, which never uses compact. */}
+      {compact ? (
+        <ol
+          className={`${movements.kind === "rule" ? "mt-3" : ""} flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-[15px] leading-snug text-foreground sm:hidden`}
+        >
+          {items.map((movement, index) => (
+            <li key={`chain-${movement.position}-${movement.name}`} className="flex items-baseline gap-1.5">
+              <span>{movement.name}</span>
+              {index < items.length - 1 ? (
+                <span
+                  aria-hidden
+                  className="font-mono text-[13px]"
+                  style={{
+                    color:
+                      movements.kind === "fixed"
+                        ? "color-mix(in srgb, var(--ramune) 70%, var(--foreground))"
+                        : "color-mix(in srgb, var(--yuzu) 70%, var(--foreground))",
+                  }}
+                >
+                  /
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      <ol className={`${movements.kind === "rule" ? "mt-4" : ""} grid gap-2 ${compact ? "hidden sm:grid" : ""}`}>
         {items.map((movement, index) => (
           <li key={`${movement.position}-${movement.name}`} className="relative grid grid-cols-[2rem_1fr] items-start gap-3">
             <span
