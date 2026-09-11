@@ -14,6 +14,8 @@ const PAGES = {
   // page in front of one is the way this kind of gate is usually lost, so a new
   // route earns these assertions by being added to this map and nothing else.
   "/writing/[id]": read("../src/app/(site)/writing/[id]/page.tsx"),
+  "/structure": read("../src/app/(site)/structure/page.tsx"),
+  "/structure/[id]": read("../src/app/(site)/structure/[id]/page.tsx"),
 };
 
 for (const [route, source] of Object.entries(PAGES)) {
