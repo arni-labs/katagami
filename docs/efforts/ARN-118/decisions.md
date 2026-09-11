@@ -1464,3 +1464,48 @@ Chose to measure because: carrying either finding across the boundary would have
 The result is a property of the facet. Styles and Periods has no parent layer to offer this collection; the materials and techniques side does. A future pass should not spend these queries on a movement, and should not apply the closure to a technique.
 
 Where: `.agents/skills/encyclopedia/SKILL.md`, "Rules that hold in every pass"; `modernism` cell, last `questions` entry.
+
+
+## D98 Narrative structure pages prefer Temper and retain the approved fixture
+
+Decision: The pages read `NarrativeStructures` first and use the approved 32-record fixture when the entity set is unavailable or empty.
+
+Came up because: The owner is installing the entity while the UI is being built, and the task requires local browser verification without waiting for that installation.
+
+Options: Wait for the production install; render only the fixture; read Temper and use the fixture when the entity set cannot supply records.
+
+Chose the Temper read with a fixture fallback because: The pages can be verified now and will use stored records after installation without another UI change. The page labels which source supplied the records.
+
+Given up: A backend outage can display the approved fixture instead of an error, but the source label makes that fallback visible to the owner.
+
+Where: `ui/src/lib/narrative-structure-data.ts` and `ui/src/data/narrative-structures.json`.
+
+
+## D99 Cards show every movement
+
+Decision: Every catalog card prints the full fixed sequence or the rule plus its full example sequence.
+
+Came up because: A name and summary do not let a reader compare structures, and truncating the sequence can hide the turn or ending that distinguishes one structure from another.
+
+Options: Show only the name and instruction; show the first three movements; show the complete movement data in a compact ordered list.
+
+Chose the complete list because: A reader can compare all 32 structures without opening every detail page. Fixed and variable records also receive distinct labels and colors.
+
+Given up: Cards have different heights and the catalog is longer.
+
+Where: `ui/src/components/narrative-structure-card.tsx` and `ui/src/components/narrative-movements.tsx`.
+
+
+## D100 The agent handoff copies a complete instruction
+
+Decision: The detail page copies the instruction, movement rule, ordered outline, and exemplar names as one text block.
+
+Came up because: These pages are owner-only, so an agent cannot follow a link to read the record, and the owner asked for a copy operation an agent can use.
+
+Options: Copy the page URL; copy only the movement names; copy a complete instruction with a planning step before drafting.
+
+Chose the complete text because: It works from any agent interface that accepts pasted text and includes enough information to create the outline before drafting.
+
+Given up: The copied text does not update after it leaves the page.
+
+Where: `ui/src/lib/narrative-structures.ts` and `ui/src/components/structure-handoff.tsx`.

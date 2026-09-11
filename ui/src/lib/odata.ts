@@ -1102,6 +1102,8 @@ export async function getFileText(id: string): Promise<string> {
 export const listWritingStyles = (filter = "Status eq 'Published'") =>
   listLane("WritingStyles", filter);
 export const getWritingStyle = (id: string) => getLane("WritingStyles", id);
+export const listNarrativeStructures = () => listLane("NarrativeStructures");
+export const getNarrativeStructure = (id: string) => getLane("NarrativeStructures", id);
 export const listRemixes = (filter?: string) => listLane("Remixes", filter);
 export const getRemix = (id: string) => getLane("Remixes", id);
 
