@@ -1464,3 +1464,172 @@ Chose to measure because: carrying either finding across the boundary would have
 The result is a property of the facet. Styles and Periods has no parent layer to offer this collection; the materials and techniques side does. A future pass should not spend these queries on a movement, and should not apply the closure to a technique.
 
 Where: `.agents/skills/encyclopedia/SKILL.md`, "Rules that hold in every pass"; `modernism` cell, last `questions` entry.
+
+
+## D85 Movements use two explicit variants
+
+Decision: `movements` is a discriminated JSON union with `fixed` and `rule` variants.
+
+Came up because: Some approved structures have fixed named parts. Ring composition, hypertext narrative, and the eight-sequence method permit a variable number of units. One list with optional fields would allow records that give neither a complete sequence nor a repeatable rule.
+
+Options: The alternatives were to store prose, to store one list plus optional count and variation fields, or to require fixed `parts` or a variable `rule` with an ordered `example`.
+
+Chose the two variants over one loose record because: A consumer can dispatch on `kind`, and the contract test rejects mixed or incomplete records. This preserves fixed named sequences and gives variable structures a general rule and a concrete outline example. Given up: consumers must handle two cases.
+
+Where: `katagami-commons/specs/narrative_structure.ioa.toml`, `katagami-commons/fixtures/narrative-structures.json`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D86 The seven named encyclopedia links are the approved set
+
+Decision: The prepared records use all seven explicit structure-to-cell links in the task and no additional related cells.
+
+Came up because: The task says six approved entries correspond to cells, then names seven: frame narrative, epistolary form, linked-story cycle, diary form, hypertext narrative, branching narrative, and sustained allegory. `CANDIDATES.md` also suggests adjacent or alternate-form cells that the task does not approve as constants.
+
+Options: The alternatives were to use six by dropping one, to include every related cell from the candidate notes, or to use the seven explicit pairs.
+
+Chose the seven pairs over the stated count because: The production read on 2026-09-10 returned all seven IDs as Draft cells, and the task names all seven pairs. Given up: related cells such as `epistolary-poetry` and `cumulative-tales` remain suggestions instead of stored links.
+
+Where: production `EncyclopediaCells` read on 2026-09-10, `katagami-commons/fixtures/narrative-structures.json`, and `REPORT.md`.
+
+
+## D87 Register the entity without adding a curation lane
+
+Decision: This change registers `NarrativeStructure` in the repository with its IOA spec, CSDL entity and entity set, Cedar policy, app documentation, fixture, and contract test.
+
+Came up because: The IOA file alone does not register an OData entity. The requested scope covers repository artifacts. It excludes curation jobs, finalizer code, UI, Genesis publishing, and production installation.
+
+Options: The alternatives were to commit only the IOA file, to reproduce the full WritingStyle lane, or to add the repository registration needed for a later authorized install.
+
+Chose minimum registration over either incomplete or expanded work because: WritingStyle registers the same components. The CSDL exposes the entity over OData, the Cedar policy authorizes it, and the test verifies that the files agree. Given up: an authorized loader or curation lane must submit the prepared records later.
+
+Where: `katagami-commons/specs/narrative_structure.ioa.toml`, `katagami-commons/specs/model.csdl.xml`, `katagami-commons/policies/narrative_structure.cedar`, `katagami-commons/specs/policies/narrative_structure.cedar`, `katagami-commons/APP.md`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D88 Structure identifiers are stable slugs
+
+Decision: `NarrativeStructure.Id` is an OData string containing the approved slug.
+
+Came up because: The task supplies stable names but no GUIDs, and the prepared records need identifiers before the entity is installed.
+
+Options: The alternatives were to invent GUIDs now, to allocate identifiers during installation, or to use the approved slugs as identifiers.
+
+Chose slugs over generated identifiers because: Approved slugs give each prepared record a deterministic identifier that links and retries can reuse. Installation retains those identifiers. Given up: a later rename must preserve the original identifier or use a new record.
+
+Where: `katagami-commons/specs/model.csdl.xml` and `katagami-commons/fixtures/narrative-structures.json`.
+
+
+## D89 Fixture parameters use the OData wire format
+
+Decision: The fixture serializes JSON-valued parameters as strings because the corresponding OData fields use `Edm.String`.
+
+Came up because: The OData entity defines aliases, movements, exemplars, sources, and encyclopedia links as `Edm.String`, but decoded JSON has array or object values. Dispatching those values without serializing them would violate the OData types.
+
+Options: The alternatives were to require a future loader to serialize selected fields, to keep separate display and transport records, or to store the exact wire payload.
+
+Chose the serialized payload over loader-specific conversion because: An installer can dispatch each record without serializing individual fields first. Tests decode the five strings to inspect their contents. Given up: readers must also decode those fields.
+
+Where: `katagami-commons/fixtures/narrative-structures.json`, `katagami-curation/tests/test_narrative_structure_contract.py`, and `REPORT.md`.
+
+
+## D90 Mutation uses the task's narrow principal set
+
+Decision: The owner and curation-service agents author records and request lifecycle changes. Only the System principal and exact `service:wasm-runtime` finalizer can set `structure_verified`.
+
+Came up because: The first policy copied the broader artifact exemption and also admitted generic operators, generic WASM modules, admins, and human curators. The task authorizes only curation agents and the production owner, while its verifier rule also requires the finalizer.
+
+Options: The alternatives were to retain the shared artifact exemption, to let all four principals perform every mutation, or to split authoring, verification, and lifecycle permissions.
+
+Chose split permissions because: Authoring stays with the two named writers, and the verifier flag stays with the finalizer. Generic operators and modules gain no write or lifecycle power. Given up: an admin or human curator must act through the owner or curation service.
+
+Where: `katagami-commons/policies/narrative_structure.cedar`, `katagami-commons/specs/policies/narrative_structure.cedar`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D91 Verifier-owned fields require named transitions
+
+Decision: Every principal must use named transitions after creating a `NarrativeStructure`; Cedar denies generic OData `update` and `delete` requests.
+
+Came up because: A current-head review found that generic `update` could bypass the named transitions. The local PATCH probe wrote separate capitalized fields without changing the automaton's lowercase verifier or instruction fields. Publication returned 409. Generic updates can write fields outside the named authoring contract.
+
+Options: The alternatives were to keep generic writes for the owner and curation service, to depend on field-aware policy data that the request does not provide, or to permit only record creation and named transitions.
+
+Chose explicit permits over generic OData writes because: Each named authoring transition clears `structure_verified`, and only `MarkStructureVerified` can set it. Owners and curation services can still create rows and set every author-owned field through those transitions. If field mapping changes later, generic `update` remains denied. Given up: maintenance clients lose direct row patches and deletes.
+
+Where: `katagami-commons/policies/narrative_structure.cedar`, `katagami-commons/specs/policies/narrative_structure.cedar`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D92 Review and publication require identity
+
+Decision: `SubmitForReview` and `Publish` require `has_identity`, and the finalizer checks that name and slug are non-empty and aliases is a valid JSON array.
+
+Came up because: A current-head review found that the publish checks covered the compositional fields but allowed an empty name and slug.
+
+Options: Rely on the finalizer alone, add only an identity presence flag, or require both the presence flag and value checks.
+
+Chose both checks because: `SetIdentity` and `SubmitNarrativeStructure` set `has_identity`, and the finalizer separately checks the stored strings and JSON value. Given up: an unnamed draft cannot enter review even when its compositional fields are complete.
+
+Where: `katagami-commons/specs/narrative_structure.ioa.toml`, `katagami-curation/tests/test_narrative_structure_contract.py`, and `REPORT.md`.
+
+
+## D93 The finalizer publishes the reviewed version
+
+Decision: `SubmitForReview` clears `structure_verified`, and only System or the exact `service:wasm-runtime` principal may call `Publish`.
+
+Came up because: Temper currently persists undeclared string parameters supplied to a transition. An authorized writer could otherwise supply changed content in undeclared parameters to `SubmitForReview` or `Publish` after an earlier version had been verified.
+
+Options: Change Temper's handling of undeclared parameters in a separate effort, remove publication, or require verification after review submission and reserve publication for the finalizer.
+
+Chose verification after submission plus finalizer publication because: After submission, the finalizer checks the stored UnderReview record. Every subsequent authoring transition clears `structure_verified`, and Cedar allows only System or the exact runtime to publish. Given up: owners and curation services submit the record but cannot dispatch `Publish`.
+
+Where: `katagami-commons/specs/narrative_structure.ioa.toml`, `katagami-commons/policies/narrative_structure.cedar`, `katagami-commons/specs/policies/narrative_structure.cedar`, and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D94 Publish increments the version counter
+
+Decision: The `Publish` effect uses `var = "version"`, which Temper executes as a counter increment.
+
+Came up because: The prior effect used `field = "version"`, which Temper ignored, so publication left `version` unchanged.
+
+Options: Keep `field = "version"`, remove `version`, or change the effect to `var = "version"`.
+
+Chose `var = "version"` because: The live OData proof increments `version` to 1 on first publication, and the contract test checks the exact effect object. Given up: nothing because the old spelling did not execute the increment.
+
+Where: `katagami-commons/specs/narrative_structure.ioa.toml` and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D95 Variable and conditional movements use rules
+
+Decision: The forking-path and Aristotelian records encode variable or conditional movements with the `rule` form.
+
+Came up because: Review of the current commit found that both records used `fixed` sequences even though a forking narrative can contain more than two paths and an Aristotelian plot need not contain recognition or reversal.
+
+Options: Keep every example movement mandatory, remove the conditional movements, or use a rule and retain the supplied outline as its example.
+
+Chose rules with examples because: The rule states which movements may vary, and the example retains the supplied outline. Given up: consumers must interpret the rule instead of treating every example movement as mandatory.
+
+Where: `katagami-commons/fixtures/narrative-structures.json` and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D96 OData exposes identity status
+
+Decision: The CSDL contract includes the `HasIdentity` property.
+
+Came up because: Review of the current commit found that the state machine records and checks `has_identity`, but the OData entity omitted the corresponding property.
+
+Options: Omit `has_identity` from OData, remove it from the publication requirements, or expose it with the other lifecycle presence flags.
+
+Chose the OData property because: API clients can now read the identity status used by the review and publication guards. Given up: none; the field already exists in the state machine.
+
+Where: `katagami-commons/specs/model.csdl.xml` and `katagami-curation/tests/test_narrative_structure_contract.py`.
+
+
+## D97 CSDL declares the OData field names
+
+Decision: The NarrativeStructure CSDL declares each property with the exact name returned by OData.
+
+Came up because: The review found that the prior PascalCase declarations did not match the runtime names for `instruction` and `has_identity`. After the corrected spec was reloaded, metadata declared `Status`, `instruction`, and `has_identity`, and `$select=Status,instruction,has_identity` returned `Published`, the fixture instruction, and `true`.
+
+Options: Keep the WritingStyle naming pattern, add duplicate aliases, change Temper in a separate repository, or declare the field names returned by the NarrativeStructure OData endpoint.
+
+Chose the OData field names because: Clients can request all three declared properties. Given up: Its CSDL naming differs from older PascalCase entity declarations.
+
+Where: local OData query on 2026-09-10, `katagami-commons/specs/model.csdl.xml`, and `katagami-curation/tests/test_narrative_structure_contract.py`.

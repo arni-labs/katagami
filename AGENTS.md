@@ -1,78 +1,53 @@
-# Katagami - Project Guide
+# Katagami — Codex Project Guide
 
-> Project-specific rules only. Global rules come from the stack (`arni-labs/stack` AGENTS.md), which every harness loads separately, so nothing global is repeated here. `CLAUDE.md` is a symlink to this file.
+> Synchronized with `CLAUDE.md` (Claude Code) — identical rules. When you change one, mirror the other. Global rules live in `~/AGENTS.md` / `~/.claude/CLAUDE.md`; this file adds what is Katagami-specific.
 
-Katagami is the design commons: an agent-curated library of complete design languages, palette systems, art styles, and writing styles, each with philosophy, tokens, rules, layout, guidance, and a rendered embodiment. It is published at katagami.ai. The system is two Temper apps (`katagami-commons`, `katagami-curation`) plus a Next.js gallery in `ui/`, an MCP contribution server in `mcp/`, and a thin CLI in `cli/`.
+## What Katagami is
 
-## Commands
+Katagami is the **design commons**: an agent-managed library of design languages, each with tokens, embodiments, landing pages, and dashboards, produced by a curation pipeline and published at katagami.ai. It runs as OS apps on Temper (`katagami-commons`, `katagami-curation`).
 
-- `bash scripts/run-local.sh` - the whole local stack: a detached `temper serve`, the commons specs loaded, seed walked as far as Draft/`Published`, and the Next.js dev server. `PORT` (default 3467) and `UI_PORT` (default 3000) are overridable; each stack writes `ui/.env.$PORT.local` and binds Next to that URL. Seed's `SubmitForReview` 409 is a recorded platform break and does not fail launch. Needs `temper` on PATH and `TEMPER_REPO` pointing at a temper checkout for the temper-fs specs. Stop it with `PORT=... UI_PORT=... bash scripts/run-local.sh --stop` (listeners on those ports only; never `pkill` by name).
-- `cd ui && npm run dev` - gallery alone against whatever `ui/.env.local` points at (a convenience copy written when it would not retarget a live stack). Prefer `bash scripts/run-local.sh` when two PORT pairs are up. `npm test` runs the gallery, shadcn-export, auth, token, and contract checks; `npm run build` runs the gallery and contract checks first.
-- `cd katagami-curation && make test-integration` - the curation contract suite in a virtualenv, because `cedarpy` evaluates the real Cedar policies and the suite fails rather than skips without it.
-- `bash scripts/sync-genesis-katagami.sh pull|push` - move the two apps between this repo and Genesis.
-- Verification: `.agents/skills/verify-katagami/` - the verification skill and feature map.
-- Encyclopedia: `.agents/skills/encyclopedia/` - how any agent builds and maintains the encyclopedia cells.
-- Review passes for this repo: `REVIEW.md`.
+## Sources of truth & git topology
 
-## Sources of truth and git topology
+- **Genesis is the source of truth.** `katagami/katagami-commons` and `katagami/katagami-curation` live on the Genesis git server; GitHub (`arni-labs/katagami`) is a mirror. After merging on GitHub, **push to Genesis too** and verify both sides are in sync — sync is bidirectional, and on divergence **Genesis wins; preserve Genesis-side changes**.
+- Remote names mirror the project: `katagami-commons`, `katagami-curation` — never infrastructure names like `railway-*`.
+- When reporting git status, state branch AND remote host. Never assume `origin` = GitHub.
+- **Canonical taste rules live in the deployed Katagami app on Railway** — read all accepted taste rules from there before generating languages; the repo copy may lag.
 
-- **Genesis is the source of truth for the apps.** `katagami/katagami-commons` and `katagami/katagami-curation` live on the Genesis git server; GitHub (`arni-labs/katagami`) is a mirror and the default branch there is `master`, not `main`. After merging on GitHub, push to Genesis too and verify both sides agree. On divergence Genesis wins: preserve the Genesis-side change.
-- Remotes are named after the project (`katagami-commons`, `katagami-curation`), never after infrastructure. `origin` is GitHub; the other two are Genesis. Say which host you mean when you report git state.
-- **Canonical taste rules for language, palette, and art-style synthesis, quality review, and taste distillation** are the rulebook file, not `TasteRule` entities. QA replay of `build_session_message` `lib.rs:989-992` (f346383): those entities "are outdated and must not be loaded — the rulebook file is the single authority". `render_taste_rules_block` (`lib.rs:998-1036`) inlines `/knowledge/rules/design-language.md` (compiled fallback `TASTE_RULEBOOK_FALLBACK`) for `synthesize-language`, `synthesize-palette`, `synthesize-art-style`, `review-quality`, and `taste-distillation`. Those skills obey the inlined rulebook (`synthesize-language/SKILL.md:22`, `synthesize-palette/SKILL.md:29`, `synthesize-art-style/SKILL.md:37`, `review-quality/SKILL.md:16`, `taste-distillation/SKILL.md:10`) and do not load TasteRule entities. Distillation still creates Proposed TasteRules for human accept; that is output, not a gen-time read.
-- `ui/DESIGN.md` is the design language of katagami.ai itself, and it is separate from the languages the commons curates.
+## Working discipline
 
-## Katagami is Temper-native
+- Work in a **worktree branched from up-to-date `main`** (`codex/<short-task-name>`); never commit to `main` directly; never touch dirty checkouts. State which repo/worktree/branch you're on before mutating anything. Open a **draft PR as soon as changes begin**; one PR per repo per effort.
+- **DO NOT PUNT**; no band-aid or temporary fixes; fix classes of problems generically ("so this doesn't happen again"), not the instance in front of you.
+- **Definition of done**: run everything live locally end-to-end, seeded with real content, and verify in a real browser that pages render, links open, and images show — *before* handing over. **This gates every production deploy: start the server/app locally, execute the changed functionality against it, and confirm it behaves as expected BEFORE deploying — prod is never the testing ground, and green test suites do not substitute for the live local run.** Then merge, deploy, publish to Genesis, and verify the deployed system. Use **Datadog** for production diagnosis. Hand over PR links, deployment links, and live evidence. "The link doesn't open" is a failed task.
+- **Three independent fresh-context reviews before anything is "done".** Nothing counts as fully implemented until all three have reviewed it, each with NO prior context on the work: **Codex** (`codex exec --model gpt-5.6-sol -c model_reasoning_effort="high" --sandbox read-only`), **a second independent Codex Sol session**, and **an independent Fable** (a fresh Claude subagent, `model: fable`). Run **Greptile** on every PR too (`@greptile review` as a PR comment). Ask each for severity, `file:line`, and a concrete failure scenario, then fix everything they find — including findings that criticise your own fixes — and re-verify. They catch different classes: one finds bypass surface, one finds fail-open behaviour, one finds whether it actually runs. Two agreeing does not excuse skipping the third. **Two rounds is the cap** — after the second round on one PR, either merge or bring it to Rita; never start a third on your own judgement, and count rounds on the PR rather than on a head, or pushing defeats the cap. Read the sentence before this one and notice it tells you to re-review your own fixes forever: one Codex run took seven rounds on a 265-line spec doing exactly that. Scale the panel to the change — a data-only pass writes no PR and runs no panel at all.
+- **Test the production shape, not a convenient one.** A gate proven against a permissive or mock engine, and an end-to-end that only exercises the happy verb, are not proof — verify against the real policy/config set and probe the generic paths too (PATCH/PUT/DELETE, not only the named action).
 
-Katagami is built on Temper the same way TemperPaw is: all functionality is Temper apps - entity specs, WASM integrations, Cedar policies. There is no separate orchestration layer. If Temper does not support what you need, extend Temper rather than work around it.
+- Batch pipeline jobs run at most **10 concurrent**.
 
-- **Entity-first.** If state changes, it is an entity. If logic runs on a state change, it is a WASM integration. Define the state machine (`.ioa.toml`), wire WASM on the actions that need logic, use Cedar for authorization. Never write orchestration in imperative code (Rust, Python, background tasks). If Rust creates entities or dispatches actions in a loop, it belongs in a WASM integration instead.
-- **The trigger boundary.** External events enter through a trigger that creates ONE entity, dispatches ONE action, and returns. Everything after that first action is WASM reacting to state transitions. A new external event source is a config entity, not new imperative code.
-- **WASM integration rules.** Prefer declared transitions for new sequencing. A never-dispatch ban is false here: both declared modules POST. `build_session_message` POSTs `SessionSpawned` (`lib.rs:382-402`) and `Fail` (`lib.rs:495-516`). `finalize_spawned_session` POSTs `SubmitForReview` and `Publish` through `dispatch_action` (`lib.rs:5940-5960`) and `maybe_spawn_repair_job` creates a CurationJob then `Configure` + `Submit` (`lib.rs:315-476`). Do not "fix" those POSTs.
-- **A module not declared in `app.toml` is not uploaded at install**, and every trigger for it fails with "WASM module not found".
+## The design contract (the katagami way)
 
-## The two apps
+Every generated or styled artifact — embodiments, landing pages, dashboards, previews, seed content — follows these rules:
 
-`katagami-commons` is the data layer. Its specs (`katagami-commons/specs/*.ioa.toml`) carry the lifecycle state machines: `design_language` (Draft, UnderReview, Published, Archived), plus `palette_system`, `art_style`, `writing_style`, `design_source`, `design_element`, `element_manifest`, `taxonomy`, `remix`, `direction`, `member`, `agent_grant`, `oauth_client`, `feedback_response`. Cedar policies sit beside them in `policies/`.
-
-`katagami-curation` is the agent work layer: `curation_query` (the end-to-end pipeline tracker), `curation_direction` (one research direction), `curation_job` (Queued, Ready, Running, Finalizing, Completed), `curation_job_template` (job type to skill, template, and completion contract), plus the actor specs `curator_agent`, `review_agent`, `human_curator`, `taste_rule`, `trajectory_verdict`. Two WASM modules are declared in `app.toml` and both are app-required: `build_session_message` and `finalize_spawned_session`. A module that is not declared there is not uploaded at install, and every trigger for it fails with "WASM module not found".
-
-Job routing lives in `CurationJobTemplate` seed data, not in Rust. `build_session_message` reads the active template plus the skill and knowledge files from TemperFS at runtime, so prompt policy is a Katagami file rather than compiled source (ADR-0001). Source-search fan-out is modeled as `CurationDirection` records. Repair follow-ups are created inside `finalize_spawned_session` (`maybe_spawn_repair_job`), not only by Temper reactions.
-
-Curator skills live in `katagami-curation/agents/curator/skills/`: research-direction, synthesize-language, synthesize-palette, synthesize-art-style, synthesize-writing-style, review-quality, organize-taxonomy, taste-distillation, immersive-landing. Shared knowledge is in `katagami-curation/knowledge/`.
-
-Batch pipeline jobs run at most 10 concurrent.
-
-## The design contract the pipeline enforces
-
-These are the rules the **curation agents** apply to everything they generate - embodiments, landing pages, dashboards, previews, seed content. They are not styling rules for developing this repo; they are the product's output contract. For language, palette, and art-style generation, quality review, and taste distillation the canonical form is the inlined rulebook (`katagami-curation/knowledge/rules/design-language.md`), per `build_session_message` `lib.rs:989` and `synthesize-language` / `synthesize-palette` / `synthesize-art-style` / `review-quality` / `taste-distillation` — not TasteRule entities at gen time. The summary below is a quick reference and can lag that file. When you generate, review, or distill, obey the inlined rulebook; do not load TasteRule entities.
-
-- No borders wherever borders can be avoided, and never grey or heavy ones. No decorative sidelines.
-- No emoji on buttons. Clean, minimal, intentional.
-- Bright and clean, never muddy. No pastel background washes, no gradients; use blobs for organic color. Core neutrals are pure `#FFF` and `#000`.
-- At most three accent colors, used like highlighters. Palettes are signature-led. Semantic colors stay a small part of the palette and never read as primary.
-- Typography: high contrast, body 17px or larger, table rows 14.5px or larger, `-0.02em` letter-spacing on display text.
-- Border-radius for curated languages comes only from {0, 16, 24, 9999}. katagami.ai itself follows `ui/DESIGN.md`, where rectangular surfaces (cards, chips, buttons, inputs) are radius `0`; never put `16`, `24`, or `rounded-full` on a rectangle on the site.
-- Generous spacing, with padding above titles so a title is never stuck to a container top.
-- Landing pages get one large full-bleed hero image at the top.
-- Previews are embodiment-grade, never component galleries. Each language gets a bespoke embodiment, landing page, and dashboard under the same rules.
-- Diagrams are real architecture diagrams (C4-style levels, progressive disclosure) as inline SVG, placed inside their section with an explainer underneath.
-- Respect `prefers-reduced-motion`. Light mode is the default. Everything is responsive on desktop and mobile without compromising the diagrams.
-- Evolve the existing style rather than replacing it, and preserve the previous version in a separate file before restyling.
+- **No borders.** Avoid borders wherever possible, especially grey borders; never heavy borders. No decorative sidelines.
+- **No emoji on buttons.** Clean, minimalistic, intentional — look at the katagami.ai main page for reference.
+- **Bright and clean, never muddy.** No pastel background washes. No gradients — use blobs for organic color. Core neutrals are pure `#FFF` / `#000`.
+- **≤3 accent colors**, used like highlighters. Palettes are signature-led; semantic colors (error/warning) stay a small part of the palette, never visually primary.
+- **Typography**: high contrast (no dark-on-dark / light-on-light), body 17px+, table rows 14.5px+, `-0.02em` letter-spacing on display text.
+- **Border-radius** for *curated languages* only from {0, 16, 24, 9999}. **katagami.ai itself** follows `ui/DESIGN.md`: rectangular surfaces (cards, chips, buttons, inputs) are radius `0`. Never `16`/`24`/`rounded-full` on a rectangle on the site.
+- **Spacing**: generous; padding/margin above titles — titles never stuck to container tops.
+- **Hero**: landing pages get ONE large full-bleed hero image at top.
+- **Previews are embodiment-grade**, never component galleries. Each design language gets bespoke embodiment + landing + dashboard under the same taste rules.
+- **Diagrams**: real architecture diagrams (C4-style levels, progressive disclosure), inline SVG, inside their sections, each with an explainer underneath.
+- **Motion**: respect `prefers-reduced-motion`; light mode default; 100% responsive on desktop and mobile without compromising diagrams.
+- **Evolve the existing style, don't replace it.** Don't lose what works; preserve the previous version in a separate file before restyling.
 
 ## Pipeline quality
 
-- Encyclopedia examples are exempt from the house design contract above. Preserve their own colors, textures, typography, framing, and composition. Apply house styling only to the surrounding interface and explanations. Do not silently recolor examples, crop their inspection view, overlay grain, or limit a representative palette to three accents. This exception does not change the contract for ordinary curated-language synthesis.
-- Seed and demo content is produced by the same pipeline, contracts, and quality gates as real content. Hand-built stand-ins are not acceptable.
-- Design languages are referenced by URL (`https://katagami.ai/language/<id>/DESIGN.md`). When asked to apply one, honor its tokens exactly.
-- Published languages must generate a `DESIGN.md` projection that passes `katagami-design-md-contract` with zero errors and zero warnings. The native Katagami spec stays the source of truth; `DESIGN.md` is the portable export.
-- Embodiments are professional-grade. The failures worth checking before handoff are unstyled defaults, misalignment, and inconsistent typography.
+- Seed/demo content MUST be produced by the same pipeline, contracts, and quality gates as real production content — never hand-build lower-quality stand-ins.
+- Design languages are referenced by URL (`https://katagami.ai/language/<id>/DESIGN.md`); honor the linked language's tokens exactly when asked to apply one.
+- Embodiments must be professional-grade. Common failures to check before handoff: unstyled defaults, misalignment, inconsistent typography.
 
-## Verification specifics (extends the global Definition of Done)
+## Root cause & communication
 
-- Real browser, real seeded content: pages render, links open, images show. A link that does not open is a failed task.
-- Check the state machine moved, not just that a dispatch returned 200. Read the entity back over OData.
-- After merge: Vercel deploys `ui/` from `master`, and the apps go to Genesis. Verify the installed pinned ref (`owner/app@hash`) rather than assuming it moved.
-
-## Reference
-
-`README.md` (what the system is and how the pipeline runs) - `DEPLOYMENT.md` (Vercel, Cloudflare, Railway, env vars, roles) - `AGENT_INTEGRATION.md` (the OData read surface for outside agents) - `docs/adrs/` and `docs/rfcs/`.
+- When something "keeps happening" or "didn't use to happen": find **what changed** (read the code, read Datadog), fix the root cause, and explain the causal story. Never stack fixes on fixes.
+- Surface every error and policy denial to the human channel; silent failure is itself a bug.
+- Answer the question asked, concisely, showing the real artifact (open the page) rather than describing it.
