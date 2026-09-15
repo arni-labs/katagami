@@ -11,7 +11,7 @@ export function NarrativeMovementsView({
   return (
     <div>
       {movements.kind === "rule" ? (
-        <p className={`${compact ? "text-[15px]" : "text-[17px]"} leading-relaxed text-foreground`}>
+        <p className={`text-[17px] leading-relaxed text-foreground`}>
           {movements.rule}
         </p>
       ) : null}
@@ -22,7 +22,7 @@ export function NarrativeMovementsView({
           the detail page, which never uses compact. */}
       {compact ? (
         <ol
-          className={`${movements.kind === "rule" ? "mt-3" : ""} flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-[15px] leading-snug text-foreground sm:hidden`}
+          className={`${movements.kind === "rule" ? "mt-3" : ""} flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-[17px] leading-snug text-foreground sm:hidden`}
         >
           {items.map((movement, index) => (
             <li key={`chain-${movement.position}-${movement.name}`} className="flex items-baseline gap-1.5">
@@ -71,7 +71,7 @@ export function NarrativeMovementsView({
                 }}
               />
             ) : null}
-            <span className={`${compact ? "pt-1 text-[15px]" : "pt-0.5 text-[17px]"} leading-relaxed text-foreground`}>
+            <span className={`${compact ? "pt-1" : "pt-0.5"} text-[17px] leading-relaxed text-foreground`}>
               {movement.name}
             </span>
           </li>

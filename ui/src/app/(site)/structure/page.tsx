@@ -26,13 +26,19 @@ export default async function NarrativeStructuresPage() {
             Plan the <Marker color="ramune">whole work</Marker>
           </>
         }
-        description="A structure tells an agent how to arrange a complete work before the sentences exist. Fixed sequences name every required part; variable rules explain what repeats and how the units relate."
         rightSlot={<HeroStat value={structures.length} label="structures" accent="ramune" />}
       />
 
+      {/* The explanation sits in the page body rather than PageHero's description
+          slot, which renders at 15px. That slot is shared by every page on the
+          site, so raising it belongs to a site-wide pass; body prose here reads
+          at the 17px the design contract requires. */}
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
-          Every card includes the movements, so you can compare the order before opening the full record.
+          A structure tells an agent how to arrange a complete work before the sentences exist.
+          Fixed sequences name every required part; variable rules explain what repeats and how
+          the units relate. Every card shows the movements, so you can compare the order before
+          opening the full record.
         </p>
         <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
           {source === "fixture" ? "approved fixture" : "Temper records"}
