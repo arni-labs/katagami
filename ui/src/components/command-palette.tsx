@@ -196,7 +196,7 @@ export function CommandPalette() {
   const onInputKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setCursor((c) => Math.min(c + 1, results.length - 1));
+      setCursor((c) => Math.max(0, Math.min(c + 1, results.length - 1)));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setCursor((c) => Math.max(c - 1, 0));
@@ -261,11 +261,11 @@ export function CommandPalette() {
 
         <div ref={listRef} className="max-h-[58vh] overflow-y-auto px-2 py-2 sm:max-h-[46vh]">
           {loading ? (
-            <p role="status" className="px-3 py-8 text-center font-mono text-[12px] text-muted-foreground">
+            <p role="status" className="px-3 py-8 text-center text-[17px] text-muted-foreground">
               Loading search…
             </p>
           ) : loadError ? (
-            <div role="alert" className="px-3 py-8 text-center font-mono text-[12px]">
+            <div role="alert" className="px-3 py-8 text-center text-[17px]">
               Could not load search.
               <button className="ml-3 underline" onClick={() => {
                 setLoading(true);

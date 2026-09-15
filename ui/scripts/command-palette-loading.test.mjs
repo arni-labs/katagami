@@ -78,10 +78,11 @@ test("search endpoint determines access server-side and never publicly caches a 
 
 test("palette loads on demand, retries, aborts on close and discards late results", async () => {
   const calls = [];
+  const navigations = [];
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (url, options) => new Promise((resolve, reject) => calls.push({ url, options, resolve, reject }));
   const { CommandPalette } = load("src/components/command-palette.tsx", {
-    "next/navigation": { useRouter: () => ({ push() {} }) },
+    "next/navigation": { useRouter: () => ({ push(href) { navigations.push(href); } }) },
     "@/lib/analytics": { track() {}, trackLanguageClick() {}, trackSearch() {} },
     "@/lib/chrome-stamp": { CHROME_STAMP: "", CHROME_STAMP_LABEL: "" },
   });
@@ -109,11 +110,14 @@ test("palette loads on demand, retries, aborts on close and discards late result
     assert.equal(calls[1].options.signal.aborted, true);
     open();
     assert.equal(calls.length, 3, "reopening rechecks current server-side identity");
+    flush(() => host.querySelector("input").dispatchEvent(new window.KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })));
     await settle(() => {
       calls[1].resolve(Response.json([{ id: "old", name: "Stale private result", kind: "language", href: "/language/old" }]));
       calls[2].resolve(Response.json([{ id: "public", name: "Current result", kind: "language", href: "/language/public" }]));
     }, () => assert.match(host.textContent, /Current result/));
     assert.doesNotMatch(host.textContent, /Stale private result/);
+    flush(() => host.querySelector("input").dispatchEvent(new window.KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+    assert.deepEqual(navigations, ["/language/public"], "ArrowDown during loading must not strand keyboard selection");
   } finally {
     flush(() => root.unmount());
     host.remove();
