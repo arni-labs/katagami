@@ -53,18 +53,16 @@ export async function loadNarrativeStructure(
     row = await getNarrativeStructure(id);
   } catch (error) {
     if (!/OData 404\b/.test(String(error))) return fromFixture();
-    // A 404 on a keyed read is ambiguous: the record is gone, or the entity set
-    // is not installed and OData 404s either way. Round one collapsed the two,
-    // which meant an uninstalled set served 32 fixture cards on /structure whose
-    // every link then 404'd. Ask the collection which case this is: if it
-    // answers, the set exists and this record really is absent; if it also
-    // fails, Temper cannot serve the lane and the fixture is right.
-    try {
-      await listNarrativeStructures();
-    } catch {
-      return fromFixture();
-    }
-    return null;
+    // A 404 on a keyed read is ambiguous: the record is gone, or Temper is not
+    // serving this lane at all and OData 404s either way. Three review rounds
+    // each found a different variant of getting this wrong, because the detail
+    // loader kept reimplementing "is Temper serving the lane?" and drifting from
+    // the rule the listing uses — uninstalled, then empty. So ask the listing
+    // itself rather than guessing: whatever it decides to show, the detail page
+    // agrees with, and the two can no longer disagree. A fixture listing means
+    // fixture links; a Temper listing means this record really is absent.
+    const listing = await loadNarrativeStructures();
+    return listing.source === "fixture" ? fromFixture() : null;
   }
   try {
     return { structure: toNarrativeStructure(row), source: "temper" };
