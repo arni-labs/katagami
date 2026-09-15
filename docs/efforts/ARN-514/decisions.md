@@ -271,7 +271,10 @@ safeguard it looked like.
 different things, the flag wins until it is answered on its own terms. A
 placeholder id must never be a REAL id in someone else's namespace — the correct
 placeholder was a name that cannot collide, not a plausible number. The effort is
-now `ARN-514` and every reference moved with it.
+now `ARN-514`, and every reference IN THE TREE moved with it. Two cannot move
+and stay wrong on purpose: the merged commit on master
+(`8240b4b8 …(ARN-462) (#297)`) and PR #297's title. Those are history, not
+references — the record of what was believed when the work landed.
 
 **Where** — `docs/efforts/ARN-514/`, `ui/src/app/mcp/route.ts`,
 `ui/scripts/check-telemetry-contract.mjs`.
