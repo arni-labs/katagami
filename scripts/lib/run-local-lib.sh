@@ -1,3 +1,6 @@
+# shellcheck shell=bash
+# UI_DIR and the port/log paths are supplied by run-local.sh.
+# shellcheck disable=SC2153
 # Shared helpers for scripts/run-local.sh. Sourced, not executed.
 # Keep this file free of side effects so the contract tests can source it.
 
@@ -138,3 +141,151 @@ maybe_write_shared_ui_env() {
   fi
   write_ui_env_file "$dest" "$temper_port" "$tenant" "$key"
 }
+
+# Gallery previews use Next's normal environment precedence and never write env.
+gallery_require_tools() {
+  local tool
+  for tool in "$@"; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      echo "error: '$tool' not found on PATH. Install it or add its bin directory to PATH before retrying." >&2
+      return 1
+    fi
+  done
+}
+
+gallery_preflight() {
+  gallery_require_tools node npm python3 curl lsof ps head sed rm mktemp grep sleep cat
+  node -e 'const [a,b]=process.versions.node.split(".").map(Number); if(a<20||(a===20&&b<9)){console.error("error: Node >=20.9 is required; select a supported Node runtime on PATH.");process.exit(1)}'
+  npm --version >/dev/null
+  if [ ! -f "$UI_DIR/node_modules/next/package.json" ] || [ ! -f "$UI_DIR/package-lock.json" ]; then
+    echo "error: UI dependencies or package-lock.json are missing. Run: cd \"$UI_DIR\" && npm ci" >&2
+    return 1
+  fi
+  (
+    cd "$UI_DIR" || exit
+    node <<'JS'
+const fs = require("node:fs");
+const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+try {
+  for (const group of ["dependencies", "devDependencies"]) {
+    const wanted = pkg[group] || {};
+    const recorded = lock.packages?.[""]?.[group] || {};
+    if (JSON.stringify(Object.entries(wanted).sort()) !== JSON.stringify(Object.entries(recorded).sort())) throw Error("package.json and lockfile differ");
+    for (const name of Object.keys(wanted)) {
+      const installed = JSON.parse(fs.readFileSync("node_modules/" + name + "/package.json", "utf8"));
+      if (installed.version !== lock.packages?.["node_modules/" + name]?.version) throw Error("installed " + name + " differs from lockfile");
+    }
+  }
+  require("@next/env").loadEnvConfig(process.cwd(), true);
+} catch (error) {
+  console.error("error: " + error.message + ". Run npm ci in " + process.cwd());
+  process.exit(1);
+}
+if (!(process.env.TEMPER_API_KEY || "").replace(/\\n/g, "").trim()) {
+  console.error("error: set TEMPER_API_KEY in the selected Next development environment before launching.");
+  process.exit(1);
+}
+const raw = (process.env.NEXT_PUBLIC_TEMPER_API_URL || "").replace(/\\n/g, "").trim();
+try {
+  const backend = new URL(raw);
+  if (!["https:", "http:"].includes(backend.protocol) || backend.username || backend.password) throw Error();
+  console.log("==> configured backend: " + backend.host);
+} catch {
+  console.error("error: set NEXT_PUBLIC_TEMPER_API_URL to an HTTP(S) backend URL without embedded credentials in the selected Next development environment.");
+  process.exit(1);
+}
+JS
+    npm ls --depth=0 >/dev/null 2>&1 || {
+      echo "error: UI dependency tree is incomplete or invalid. Run: cd \"$UI_DIR\" && npm ci" >&2
+      return 1
+    }
+  )
+}
+
+# Linux start ticks do not depend on wall-clock steps; the boot ID rejects old-boot PIDs.
+gallery_process_identity() {
+  local pid="$1" stat boot
+  local -a fields
+  if [ -r "/proc/$pid/stat" ]; then
+    stat="$(< "/proc/$pid/stat")"
+    boot="$(< /proc/sys/kernel/random/boot_id)"
+    read -r -a fields <<< "${stat##*) }"
+    printf '%s:%s\n' "$boot" "${fields[19]}" # field 22, after PID and parenthesized comm
+  else
+    LC_ALL=C TZ=UTC ps -p "$pid" -o lstart=
+  fi
+}
+
+gallery_stop() {
+  local owner="/tmp/katagami-ui-$UI_PORT.owner" pid recorded actual
+  if [ ! -f "$owner" ]; then
+    echo "==> no owned gallery preview on :$UI_PORT"
+    return
+  fi
+  gallery_require_tools ps head sed rm
+  if [ "$(head -1 "$owner")" != "$UI_DIR" ]; then
+    echo "error: :$UI_PORT belongs to a different worktree; run stop from that worktree." >&2
+    return 1
+  fi
+  pid="$(sed -n '2p' "$owner")"
+  recorded="$(sed -n '3p' "$owner")"
+  if ! [[ "$pid" =~ ^[0-9]+$ ]] || [ -z "$recorded" ]; then
+    echo "error: preview ownership is incomplete; inspect $owner before retrying." >&2
+    return 1
+  fi
+  actual="$(gallery_process_identity "$pid" 2>/dev/null || true)"
+  if [ -n "$actual" ] && [ "$actual" = "$recorded" ]; then
+    # The existing launcher makes this PID the session/process-group leader.
+    if ! kill -TERM -- "-$pid" 2>/dev/null; then
+      echo "error: could not signal the preview; ownership retained so stop can be retried." >&2
+      return 1
+    fi
+    echo "==> stopped gallery preview on :$UI_PORT"
+  else
+    echo "==> cleared stale gallery ownership on :$UI_PORT; no matching process was stopped"
+  fi
+  rm -f "$UI_PID" "$owner"
+}
+
+gallery_start() (
+  gallery_preflight
+  local owner="/tmp/katagami-ui-$UI_PORT.owner" scratch response pid=""
+  if [ -e "$owner" ] || lsof -nP -iTCP:"$UI_PORT" -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo "error: :$UI_PORT is occupied or has an owned preview. Stop that preview or select another UI_PORT." >&2
+    return 1
+  fi
+  scratch="$(mktemp -d)" || {
+    echo "error: cannot create preview temporary files; select a writable TMPDIR before retrying." >&2
+    return 1
+  }
+  response="$scratch/response"
+  LAUNCH="$scratch/launch.py"
+  trap 'rm -rf "$scratch"; if [ -n "$pid" ] && [ "$(sed -n "2p" "$owner" 2>/dev/null)" = "$pid" ]; then gallery_stop >/dev/null; fi' EXIT
+  write_launcher
+  echo "==> starting gallery only on :$UI_PORT (detached)"
+  ( cd "$UI_DIR" && exec python3 "$LAUNCH" "$UI_LOG" "$UI_PID" --gallery-owner "$UI_DIR" "$owner" npm run dev -- --port "$UI_PORT" ) &
+  pid=$!
+  echo "    ui log: $UI_LOG"
+  local deadline=$((SECONDS + 120))
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "error: UI exited before readiness; inspect $UI_LOG" >&2
+      return 1
+    fi
+    if [ "$(sed -n '2p' "$owner" 2>/dev/null)" = "$pid" ] &&
+       curl --max-time 15 -sf "http://localhost:$UI_PORT/encyclopedia" > "$response" 2>/dev/null &&
+       grep -q 'aria-label="Encyclopedia map' "$response" &&
+       grep -Eq '>[1-9][0-9]* cells<' "$response"; then
+      rm -rf "$scratch"
+      trap - EXIT
+      echo "==> ready (encyclopedia rendered with cells)"
+      echo "    http://localhost:$UI_PORT/encyclopedia"
+      echo "    stop: UI_PORT=$UI_PORT bash scripts/run-local.sh --gallery-only --stop"
+      return
+    fi
+    sleep 1
+  done
+  echo "error: /encyclopedia did not render nonempty content; inspect $UI_LOG and the selected backend credentials. For local owner preview set KATAGAMI_LAB_PREVIEW=1." >&2
+  return 1
+)
