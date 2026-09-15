@@ -4,8 +4,3087 @@
   "url": "https://query.wikidata.org/",
   "licence": "CC0",
   "use": "with-care",
-  "total": 440,
-  "totalDerivedFrom": "P31 counts 338 + 60 + 42, 2026-09-08",
+  "total": 438,
+  "totalDerivedFrom": "SPARQL direct P31 Q182545, Q560311, Q10428845, read 2026-09-09; 440 class memberships, 438 distinct items after metalepsis and metaphor duplicates",
   "lane": "writing",
-  "terms": []
+  "terms": [
+    {
+      "term": "Halbreim",
+      "ref": "https://www.wikidata.org/wiki/Q1004743",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "love–hate relationship",
+      "ref": "https://www.wikidata.org/wiki/Q1030284",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "captatio benevolentiae",
+      "ref": "https://www.wikidata.org/wiki/Q1035164",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "法鼓",
+      "ref": "https://www.wikidata.org/wiki/Q10379851",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "anticlimax",
+      "ref": "https://www.wikidata.org/wiki/Q10413463",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "figurative language (Q10429564)",
+      "ref": "https://www.wikidata.org/wiki/Q10429564",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "Divisio",
+      "ref": "https://www.wikidata.org/wiki/Q10474635",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Floskel",
+      "ref": "https://www.wikidata.org/wiki/Q10496955",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "dieresis",
+      "ref": "https://www.wikidata.org/wiki/Q1049939",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "metalepsis (Q1054465)",
+      "ref": "https://www.wikidata.org/wiki/Q1054465",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "enumeratio",
+      "ref": "https://www.wikidata.org/wiki/Q1054589",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "herhaling",
+      "ref": "https://www.wikidata.org/wiki/Q105765787",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "malapropism",
+      "ref": "https://www.wikidata.org/wiki/Q1057682",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Emendatio",
+      "ref": "https://www.wikidata.org/wiki/Q106028574",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Antistasis",
+      "ref": "https://www.wikidata.org/wiki/Q106299949",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Complexio",
+      "ref": "https://www.wikidata.org/wiki/Q106380093",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "contractie",
+      "ref": "https://www.wikidata.org/wiki/Q106398104",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Descriptio",
+      "ref": "https://www.wikidata.org/wiki/Q106425432",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "effictio",
+      "ref": "https://www.wikidata.org/wiki/Q106471763",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "deinosis",
+      "ref": "https://www.wikidata.org/wiki/Q106504964",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "thought rhyme",
+      "ref": "https://www.wikidata.org/wiki/Q106504966",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "epiclasis",
+      "ref": "https://www.wikidata.org/wiki/Q106541941",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "enargeia",
+      "ref": "https://www.wikidata.org/wiki/Q106563981",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "mesodiplosis",
+      "ref": "https://www.wikidata.org/wiki/Q106703408",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "optatie",
+      "ref": "https://www.wikidata.org/wiki/Q106860857",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Chiffre",
+      "ref": "https://www.wikidata.org/wiki/Q1072524",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "solennel",
+      "ref": "https://www.wikidata.org/wiki/Q108032658",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "rhetorical answer",
+      "ref": "https://www.wikidata.org/wiki/Q108679213",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "antapodose",
+      "ref": "https://www.wikidata.org/wiki/Q109016839",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Quranic counter-discourse",
+      "ref": "https://www.wikidata.org/wiki/Q109019128",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "ellipsis",
+      "ref": "https://www.wikidata.org/wiki/Q10927865",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "circumlocution",
+      "ref": "https://www.wikidata.org/wiki/Q1095194",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "literary trope",
+      "ref": "https://www.wikidata.org/wiki/Q110248179",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Figurenrede",
+      "ref": "https://www.wikidata.org/wiki/Q110483814",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "效果字",
+      "ref": "https://www.wikidata.org/wiki/Q11079056",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "enfasi",
+      "ref": "https://www.wikidata.org/wiki/Q1114124",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Janus Parallelism",
+      "ref": "https://www.wikidata.org/wiki/Q111436951",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "comic relief",
+      "ref": "https://www.wikidata.org/wiki/Q1114403",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "apocope",
+      "ref": "https://www.wikidata.org/wiki/Q112154",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "climax",
+      "ref": "https://www.wikidata.org/wiki/Q1122956",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "parallelism",
+      "ref": "https://www.wikidata.org/wiki/Q1123776",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Concessio",
+      "ref": "https://www.wikidata.org/wiki/Q1123930",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Leitwortstil",
+      "ref": "https://www.wikidata.org/wiki/Q112624863",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "epanorthosis",
+      "ref": "https://www.wikidata.org/wiki/Q1135275",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "ambiguity",
+      "ref": "https://www.wikidata.org/wiki/Q1140419",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "national personification",
+      "ref": "https://www.wikidata.org/wiki/Q1142281",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Bureaucratic monster",
+      "ref": "https://www.wikidata.org/wiki/Q114335483",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "The Castiglioni Method",
+      "ref": "https://www.wikidata.org/wiki/Q115154832",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "朦朧法",
+      "ref": "https://www.wikidata.org/wiki/Q11517885",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "wind personification",
+      "ref": "https://www.wikidata.org/wiki/Q116234608",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "storm personification",
+      "ref": "https://www.wikidata.org/wiki/Q116234630",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "national animalisation",
+      "ref": "https://www.wikidata.org/wiki/Q116235768",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Delayed identifications",
+      "ref": "https://www.wikidata.org/wiki/Q116443695",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "métataxe",
+      "ref": "https://www.wikidata.org/wiki/Q1176297",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "procatalepsis",
+      "ref": "https://www.wikidata.org/wiki/Q1190629",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "codolada",
+      "ref": "https://www.wikidata.org/wiki/Q11914410",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "visual rhyme",
+      "ref": "https://www.wikidata.org/wiki/Q11945656",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "takid",
+      "ref": "https://www.wikidata.org/wiki/Q12203489",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Anapaistos",
+      "ref": "https://www.wikidata.org/wiki/Q122224986",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "tushery",
+      "ref": "https://www.wikidata.org/wiki/Q122616796",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "Мезофора",
+      "ref": "https://www.wikidata.org/wiki/Q12286420",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Преразказ",
+      "ref": "https://www.wikidata.org/wiki/Q12291379",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Agatha Christies fortælleteknik",
+      "ref": "https://www.wikidata.org/wiki/Q12300691",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Epínome",
+      "ref": "https://www.wikidata.org/wiki/Q12387910",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "anthorism",
+      "ref": "https://www.wikidata.org/wiki/Q124877532",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Technologieoffenheit",
+      "ref": "https://www.wikidata.org/wiki/Q124956930",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "brevitas",
+      "ref": "https://www.wikidata.org/wiki/Q1253840",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "writing under constraint",
+      "ref": "https://www.wikidata.org/wiki/Q125421542",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item may name a whole form or established practice, but its current description does not make that boundary clear enough for a cell."
+    },
+    {
+      "term": "dual narrative",
+      "ref": "https://www.wikidata.org/wiki/Q1262621",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "syllepsis",
+      "ref": "https://www.wikidata.org/wiki/Q1269323",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "repetition",
+      "ref": "https://www.wikidata.org/wiki/Q1274479",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Epanados",
+      "ref": "https://www.wikidata.org/wiki/Q12765402",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "hors-champ",
+      "ref": "https://www.wikidata.org/wiki/Q1282346",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Majnun",
+      "ref": "https://www.wikidata.org/wiki/Q12826514",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Taʼdid",
+      "ref": "https://www.wikidata.org/wiki/Q12831300",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "callback",
+      "ref": "https://www.wikidata.org/wiki/Q129849691",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "story within a story",
+      "ref": "https://www.wikidata.org/wiki/Q1306994",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Prifodl",
+      "ref": "https://www.wikidata.org/wiki/Q13130863",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Sangiad",
+      "ref": "https://www.wikidata.org/wiki/Q13131199",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "irony",
+      "ref": "https://www.wikidata.org/wiki/Q131361",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Harbinger",
+      "ref": "https://www.wikidata.org/wiki/Q131584217",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Diapora",
+      "ref": "https://www.wikidata.org/wiki/Q13199147",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Q13199916",
+      "ref": "https://www.wikidata.org/wiki/Q13199916",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item has no readable label or description, so its cell boundary cannot be judged."
+    },
+    {
+      "term": "merism",
+      "ref": "https://www.wikidata.org/wiki/Q1337731",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "prosopopoeia",
+      "ref": "https://www.wikidata.org/wiki/Q13409844",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Avadhani",
+      "ref": "https://www.wikidata.org/wiki/Q134613982",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "Epanadiplosis",
+      "ref": "https://www.wikidata.org/wiki/Q1346372",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "palilogy",
+      "ref": "https://www.wikidata.org/wiki/Q1346391",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "épichérème",
+      "ref": "https://www.wikidata.org/wiki/Q1346938",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Epiphrase",
+      "ref": "https://www.wikidata.org/wiki/Q1347223",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "parafemie",
+      "ref": "https://www.wikidata.org/wiki/Q136277201",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "apophasis",
+      "ref": "https://www.wikidata.org/wiki/Q1376885",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "興象",
+      "ref": "https://www.wikidata.org/wiki/Q138652548",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Q140756803",
+      "ref": "https://www.wikidata.org/wiki/Q140756803",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item has no readable label or description, so its cell boundary cannot be judged."
+    },
+    {
+      "term": "Q140756827",
+      "ref": "https://www.wikidata.org/wiki/Q140756827",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item has no readable label or description, so its cell boundary cannot be judged."
+    },
+    {
+      "term": "Granville-Sharp-Regel",
+      "ref": "https://www.wikidata.org/wiki/Q141000350",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "thought-terminating cliché",
+      "ref": "https://www.wikidata.org/wiki/Q1413396",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "praesens historicum",
+      "ref": "https://www.wikidata.org/wiki/Q14163017",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "metalepsis (Q1428348)",
+      "ref": "https://www.wikidata.org/wiki/Q1428348",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "hendiadys",
+      "ref": "https://www.wikidata.org/wiki/Q1456360",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Dionysian imitatio",
+      "ref": "https://www.wikidata.org/wiki/Q1467464",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "multi",
+      "ref": "https://www.wikidata.org/wiki/Q14906579",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "cataphora",
+      "ref": "https://www.wikidata.org/wiki/Q15042690",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "frame story",
+      "ref": "https://www.wikidata.org/wiki/Q1505819",
+      "decision": "merge",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "cellId": "frame-stories",
+      "note": "The item names the same form or practice as the existing cell, so this pass adds it as a source and creates no second cell."
+    },
+    {
+      "term": "literary topos",
+      "ref": "https://www.wikidata.org/wiki/Q15177520",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "vulgar",
+      "ref": "https://www.wikidata.org/wiki/Q1521634",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "gnome",
+      "ref": "https://www.wikidata.org/wiki/Q1533260",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item may name a whole form or established practice, but its current description does not make that boundary clear enough for a cell."
+    },
+    {
+      "term": "macaronic language",
+      "ref": "https://www.wikidata.org/wiki/Q154247",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item may name a whole form or established practice, but its current description does not make that boundary clear enough for a cell."
+    },
+    {
+      "term": "Greguería",
+      "ref": "https://www.wikidata.org/wiki/Q1545462",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item may name a whole form or established practice, but its current description does not make that boundary clear enough for a cell."
+    },
+    {
+      "term": "cliché",
+      "ref": "https://www.wikidata.org/wiki/Q156351",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "hypallage",
+      "ref": "https://www.wikidata.org/wiki/Q1573624",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "استعاره مکنیه",
+      "ref": "https://www.wikidata.org/wiki/Q16048610",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "اسلوب معادله",
+      "ref": "https://www.wikidata.org/wiki/Q16048830",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "سیاقه‌الاعداد",
+      "ref": "https://www.wikidata.org/wiki/Q16051920",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "iham",
+      "ref": "https://www.wikidata.org/wiki/Q16126162",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "midrash shem",
+      "ref": "https://www.wikidata.org/wiki/Q16130165",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "paronomasia",
+      "ref": "https://www.wikidata.org/wiki/Q1637961",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Hypotyposis",
+      "ref": "https://www.wikidata.org/wiki/Q1641487",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Tautology (Q16441793)",
+      "ref": "https://www.wikidata.org/wiki/Q16441793",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "aphorism",
+      "ref": "https://www.wikidata.org/wiki/Q165740",
+      "decision": "merge",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "cellId": "aphorism",
+      "note": "The item names the same form or practice as the existing cell, so this pass adds it as a source and creates no second cell."
+    },
+    {
+      "term": "Inquit-Formel",
+      "ref": "https://www.wikidata.org/wiki/Q1664342",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Personnification des États",
+      "ref": "https://www.wikidata.org/wiki/Q16669547",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Invocatio Dei",
+      "ref": "https://www.wikidata.org/wiki/Q1671816",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "brachyology",
+      "ref": "https://www.wikidata.org/wiki/Q16869117",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Parenthesis (rhetoric)",
+      "ref": "https://www.wikidata.org/wiki/Q16912820",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Hypozeuxis",
+      "ref": "https://www.wikidata.org/wiki/Q16938453",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "oxymoron",
+      "ref": "https://www.wikidata.org/wiki/Q169429",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "onomatopoeia",
+      "ref": "https://www.wikidata.org/wiki/Q170239",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "systole",
+      "ref": "https://www.wikidata.org/wiki/Q1702915",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "antiptosis",
+      "ref": "https://www.wikidata.org/wiki/Q17049634",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "catalectic",
+      "ref": "https://www.wikidata.org/wiki/Q1735576",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "tmesis",
+      "ref": "https://www.wikidata.org/wiki/Q1755948",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Extended metaphor",
+      "ref": "https://www.wikidata.org/wiki/Q1763329",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Paradoxisme",
+      "ref": "https://www.wikidata.org/wiki/Q17636333",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Leixaprén",
+      "ref": "https://www.wikidata.org/wiki/Q1779206",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Saj'",
+      "ref": "https://www.wikidata.org/wiki/Q1779981",
+      "decision": "live",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Wikidata identifies a whole form of rhymed prose in Arabic literature. Written and attested 2026-09-09.",
+      "cellId": "saj"
+    },
+    {
+      "term": "non-sequitur",
+      "ref": "https://www.wikidata.org/wiki/Q1780448",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "kyklos",
+      "ref": "https://www.wikidata.org/wiki/Q1795022",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "lalia",
+      "ref": "https://www.wikidata.org/wiki/Q1801235",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "hyperbole",
+      "ref": "https://www.wikidata.org/wiki/Q181036",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Episodic storytelling",
+      "ref": "https://www.wikidata.org/wiki/Q18206858",
+      "decision": "live",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "The item explicitly identifies a narrative genre. Written and attested 2026-09-09.",
+      "cellId": "episodic-storytelling"
+    },
+    {
+      "term": "pauzerijm",
+      "ref": "https://www.wikidata.org/wiki/Q1841718",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "soliloquy",
+      "ref": "https://www.wikidata.org/wiki/Q184528",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "metaphor",
+      "ref": "https://www.wikidata.org/wiki/Q18534",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "real-time fiction",
+      "ref": "https://www.wikidata.org/wiki/Q185890",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item may name a whole form or established practice, but its current description does not make that boundary clear enough for a cell."
+    },
+    {
+      "term": "time loop",
+      "ref": "https://www.wikidata.org/wiki/Q186610",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "pleonasm",
+      "ref": "https://www.wikidata.org/wiki/Q188741",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "adjectio",
+      "ref": "https://www.wikidata.org/wiki/Q1895283",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "synecdoche",
+      "ref": "https://www.wikidata.org/wiki/Q190068",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "sarcasm",
+      "ref": "https://www.wikidata.org/wiki/Q191035",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Mattsetzungsmotiv",
+      "ref": "https://www.wikidata.org/wiki/Q1910726",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "assonance",
+      "ref": "https://www.wikidata.org/wiki/Q191092",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "parenthesis",
+      "ref": "https://www.wikidata.org/wiki/Q1930668",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "enallage",
+      "ref": "https://www.wikidata.org/wiki/Q1967110",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "zeugma",
+      "ref": "https://www.wikidata.org/wiki/Q196984",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "simile",
+      "ref": "https://www.wikidata.org/wiki/Q199714",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "synalepha",
+      "ref": "https://www.wikidata.org/wiki/Q200854",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Epitrope",
+      "ref": "https://www.wikidata.org/wiki/Q2029266",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "hyperbaton",
+      "ref": "https://www.wikidata.org/wiki/Q20450",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "paromoiosis",
+      "ref": "https://www.wikidata.org/wiki/Q2053901",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "personification",
+      "ref": "https://www.wikidata.org/wiki/Q207174",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "epithet",
+      "ref": "https://www.wikidata.org/wiki/Q207869",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "ложная рифма",
+      "ref": "https://www.wikidata.org/wiki/Q21045555",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "animalisation",
+      "ref": "https://www.wikidata.org/wiki/Q2135501",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "conduplicatio",
+      "ref": "https://www.wikidata.org/wiki/Q21482961",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Epanalepsis",
+      "ref": "https://www.wikidata.org/wiki/Q2167367",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Homeric simile",
+      "ref": "https://www.wikidata.org/wiki/Q2180696",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "floating timeline",
+      "ref": "https://www.wikidata.org/wiki/Q2181904",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "exclamatio",
+      "ref": "https://www.wikidata.org/wiki/Q220054",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Metasemema",
+      "ref": "https://www.wikidata.org/wiki/Q220929",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "inversion (Q2274405)",
+      "ref": "https://www.wikidata.org/wiki/Q2274405",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "tongue-twister",
+      "ref": "https://www.wikidata.org/wiki/Q230052",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "inversion (Q23010680)",
+      "ref": "https://www.wikidata.org/wiki/Q23010680",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "sphragis",
+      "ref": "https://www.wikidata.org/wiki/Q2309646",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "épiphonème",
+      "ref": "https://www.wikidata.org/wiki/Q2311336",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "digression",
+      "ref": "https://www.wikidata.org/wiki/Q2383053",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "teaser",
+      "ref": "https://www.wikidata.org/wiki/Q2422553",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Distributio",
+      "ref": "https://www.wikidata.org/wiki/Q2435814",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "chiastic structure",
+      "ref": "https://www.wikidata.org/wiki/Q2450873",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "caesura",
+      "ref": "https://www.wikidata.org/wiki/Q247417",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "prothusteron",
+      "ref": "https://www.wikidata.org/wiki/Q2482807",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "anti-fairy tale",
+      "ref": "https://www.wikidata.org/wiki/Q24944707",
+      "decision": "live",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "The item defines a fairy-tale form by its tragic ending. Written and attested 2026-09-09.",
+      "cellId": "anti-fairy-tale"
+    },
+    {
+      "term": "variatio",
+      "ref": "https://www.wikidata.org/wiki/Q2510771",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "cut-up technique",
+      "ref": "https://www.wikidata.org/wiki/Q252299",
+      "decision": "merge",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "cellId": "cut-ups-literature",
+      "note": "The item names the same form or practice as the existing cell, so this pass adds it as a source and creates no second cell."
+    },
+    {
+      "term": "antiphrasis",
+      "ref": "https://www.wikidata.org/wiki/Q253147",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "flashforward",
+      "ref": "https://www.wikidata.org/wiki/Q2533706",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Metatesi",
+      "ref": "https://www.wikidata.org/wiki/Q25410943",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Zaum",
+      "ref": "https://www.wikidata.org/wiki/Q2543744",
+      "decision": "live",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "The item identifies an established experimental practice in sound symbolism and language creation. Written and attested 2026-09-09.",
+      "cellId": "zaum"
+    },
+    {
+      "term": "paraphrase",
+      "ref": "https://www.wikidata.org/wiki/Q255189",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "wine, women and song",
+      "ref": "https://www.wikidata.org/wiki/Q2555752",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Occupatio",
+      "ref": "https://www.wikidata.org/wiki/Q2574358",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "story arc",
+      "ref": "https://www.wikidata.org/wiki/Q2620972",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "pun",
+      "ref": "https://www.wikidata.org/wiki/Q263668",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "exposition",
+      "ref": "https://www.wikidata.org/wiki/Q2642214",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Dubitatio",
+      "ref": "https://www.wikidata.org/wiki/Q264288",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "vignette",
+      "ref": "https://www.wikidata.org/wiki/Q2656062",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "offscreen",
+      "ref": "https://www.wikidata.org/wiki/Q2657215",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "средняя рифма",
+      "ref": "https://www.wikidata.org/wiki/Q2680046",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Sprechhund-techniek",
+      "ref": "https://www.wikidata.org/wiki/Q2683240",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Jack of all trades, master of none",
+      "ref": "https://www.wikidata.org/wiki/Q268689",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "multiperspectivity",
+      "ref": "https://www.wikidata.org/wiki/Q26929413",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "storyline",
+      "ref": "https://www.wikidata.org/wiki/Q2716481",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "acryologie",
+      "ref": "https://www.wikidata.org/wiki/Q2731985",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "percontatio",
+      "ref": "https://www.wikidata.org/wiki/Q2743112",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "oneiric vision",
+      "ref": "https://www.wikidata.org/wiki/Q2744605",
+      "decision": "live",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "The item explicitly identifies a literary genre and technique. Written and attested 2026-09-09.",
+      "cellId": "oneiric-vision"
+    },
+    {
+      "term": "poetic justice",
+      "ref": "https://www.wikidata.org/wiki/Q2754989",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Epifonema",
+      "ref": "https://www.wikidata.org/wiki/Q2755758",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "in medias res",
+      "ref": "https://www.wikidata.org/wiki/Q277720",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "amphigouri",
+      "ref": "https://www.wikidata.org/wiki/Q2844256",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Scene and sequel",
+      "ref": "https://www.wikidata.org/wiki/Q28456889",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "adnomination",
+      "ref": "https://www.wikidata.org/wiki/Q2851750",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "anticatastasis",
+      "ref": "https://www.wikidata.org/wiki/Q2853147",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "antiparastase",
+      "ref": "https://www.wikidata.org/wiki/Q2853303",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "antépiphore",
+      "ref": "https://www.wikidata.org/wiki/Q2857711",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Totum pro parte",
+      "ref": "https://www.wikidata.org/wiki/Q286394",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Asteism",
+      "ref": "https://www.wikidata.org/wiki/Q2868641",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "autocatégorème",
+      "ref": "https://www.wikidata.org/wiki/Q2872535",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "autocorrection",
+      "ref": "https://www.wikidata.org/wiki/Q2872544",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "auxesis",
+      "ref": "https://www.wikidata.org/wiki/Q2873202",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "despectivo",
+      "ref": "https://www.wikidata.org/wiki/Q2878755",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "dramatic irony",
+      "ref": "https://www.wikidata.org/wiki/Q2898620",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "reverse chronology",
+      "ref": "https://www.wikidata.org/wiki/Q2967297",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "prosonomasie",
+      "ref": "https://www.wikidata.org/wiki/Q2972210",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "circonlocution",
+      "ref": "https://www.wikidata.org/wiki/Q2973338",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "conglobation",
+      "ref": "https://www.wikidata.org/wiki/Q2992980",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "contre-assonance",
+      "ref": "https://www.wikidata.org/wiki/Q2995862",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "constrained writing",
+      "ref": "https://www.wikidata.org/wiki/Q2999042",
+      "decision": "live",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "The item identifies composition with constraints as a whole-work practice. Written and attested 2026-09-09.",
+      "cellId": "constrained-writing"
+    },
+    {
+      "term": "dialyse",
+      "ref": "https://www.wikidata.org/wiki/Q3026040",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "diaphore",
+      "ref": "https://www.wikidata.org/wiki/Q3026311",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "disjonction",
+      "ref": "https://www.wikidata.org/wiki/Q3030259",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "dorica castra",
+      "ref": "https://www.wikidata.org/wiki/Q3037030",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "dramatization",
+      "ref": "https://www.wikidata.org/wiki/Q3038928",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "expolition",
+      "ref": "https://www.wikidata.org/wiki/Q3062199",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "figure dérivative",
+      "ref": "https://www.wikidata.org/wiki/Q3071697",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "eschrophemism",
+      "ref": "https://www.wikidata.org/wiki/Q30893824",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "literal language",
+      "ref": "https://www.wikidata.org/wiki/Q31180880",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "ab ovo",
+      "ref": "https://www.wikidata.org/wiki/Q31184781",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "gūgen",
+      "ref": "https://www.wikidata.org/wiki/Q3124640",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "homéoptote",
+      "ref": "https://www.wikidata.org/wiki/Q3139911",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "hyperchleuasme",
+      "ref": "https://www.wikidata.org/wiki/Q3144116",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "hyperhypotaxe",
+      "ref": "https://www.wikidata.org/wiki/Q3144137",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "isocolie",
+      "ref": "https://www.wikidata.org/wiki/Q3155487",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "isocolon",
+      "ref": "https://www.wikidata.org/wiki/Q3155492",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "rhetorical question",
+      "ref": "https://www.wikidata.org/wiki/Q316694",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "gender flip",
+      "ref": "https://www.wikidata.org/wiki/Q31890052",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "kakemphaton",
+      "ref": "https://www.wikidata.org/wiki/Q3192042",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "litotes",
+      "ref": "https://www.wikidata.org/wiki/Q324939",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "mitate",
+      "ref": "https://www.wikidata.org/wiki/Q3317047",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "métabole",
+      "ref": "https://www.wikidata.org/wiki/Q3333405",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "métalogisme",
+      "ref": "https://www.wikidata.org/wiki/Q3333458",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "orthopia",
+      "ref": "https://www.wikidata.org/wiki/Q3356794",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "parembole",
+      "ref": "https://www.wikidata.org/wiki/Q3364992",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Parechesis",
+      "ref": "https://www.wikidata.org/wiki/Q3367116",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "phébus",
+      "ref": "https://www.wikidata.org/wiki/Q3382095",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "juxtaposition",
+      "ref": "https://www.wikidata.org/wiki/Q3393049",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Accumulatio",
+      "ref": "https://www.wikidata.org/wiki/Q339718",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "hypostasis",
+      "ref": "https://www.wikidata.org/wiki/Q3399807",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "pronomination",
+      "ref": "https://www.wikidata.org/wiki/Q3407462",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "paradox",
+      "ref": "https://www.wikidata.org/wiki/Q3410189",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "périssologie",
+      "ref": "https://www.wikidata.org/wiki/Q3412002",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "rimshot",
+      "ref": "https://www.wikidata.org/wiki/Q3432134",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "régression",
+      "ref": "https://www.wikidata.org/wiki/Q3455869",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "réversion",
+      "ref": "https://www.wikidata.org/wiki/Q3458234",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Suspension",
+      "ref": "https://www.wikidata.org/wiki/Q3505716",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "synecdoque et métonymie",
+      "ref": "https://www.wikidata.org/wiki/Q3508808",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "tapinose",
+      "ref": "https://www.wikidata.org/wiki/Q3515458",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "tremendismo",
+      "ref": "https://www.wikidata.org/wiki/Q3538424",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item may name a whole form or established practice, but its current description does not make that boundary clear enough for a cell."
+    },
+    {
+      "term": "wikinovel",
+      "ref": "https://www.wikidata.org/wiki/Q3568068",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item may name a whole form or established practice, but its current description does not make that boundary clear enough for a cell."
+    },
+    {
+      "term": "écho",
+      "ref": "https://www.wikidata.org/wiki/Q3577484",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "enumeration",
+      "ref": "https://www.wikidata.org/wiki/Q3589010",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "épanaphore",
+      "ref": "https://www.wikidata.org/wiki/Q3589041",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "épanode",
+      "ref": "https://www.wikidata.org/wiki/Q3589049",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "epithetism",
+      "ref": "https://www.wikidata.org/wiki/Q3589311",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "épitrochasme",
+      "ref": "https://www.wikidata.org/wiki/Q3589312",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Ethopoeia",
+      "ref": "https://www.wikidata.org/wiki/Q3591979",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "analogia",
+      "ref": "https://www.wikidata.org/wiki/Q3615019",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Apallage",
+      "ref": "https://www.wikidata.org/wiki/Q3620566",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Barytonesis",
+      "ref": "https://www.wikidata.org/wiki/Q3635014",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Cacofemismo",
+      "ref": "https://www.wikidata.org/wiki/Q3649400",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "chleuasmos",
+      "ref": "https://www.wikidata.org/wiki/Q3680574",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "comedy of errors",
+      "ref": "https://www.wikidata.org/wiki/Q3684590",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Concinnitas",
+      "ref": "https://www.wikidata.org/wiki/Q3686261",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "diafora",
+      "ref": "https://www.wikidata.org/wiki/Q3706496",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Dialefe",
+      "ref": "https://www.wikidata.org/wiki/Q3706529",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Dialisi",
+      "ref": "https://www.wikidata.org/wiki/Q3706663",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Diallage",
+      "ref": "https://www.wikidata.org/wiki/Q3706670",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "diastole",
+      "ref": "https://www.wikidata.org/wiki/Q3706837",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Dilogia",
+      "ref": "https://www.wikidata.org/wiki/Q3707692",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "dittologia",
+      "ref": "https://www.wikidata.org/wiki/Q3711904",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "engo",
+      "ref": "https://www.wikidata.org/wiki/Q3725378",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "epanodo",
+      "ref": "https://www.wikidata.org/wiki/Q3726752",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "epanortosi",
+      "ref": "https://www.wikidata.org/wiki/Q3726753",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Figura di stile",
+      "ref": "https://www.wikidata.org/wiki/Q3744869",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Figures of sound",
+      "ref": "https://www.wikidata.org/wiki/Q3744879",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "metasemantics",
+      "ref": "https://www.wikidata.org/wiki/Q3855531",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "Nemesi storica",
+      "ref": "https://www.wikidata.org/wiki/Q3874567",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "omeoarco",
+      "ref": "https://www.wikidata.org/wiki/Q3882148",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Homeoptoton",
+      "ref": "https://www.wikidata.org/wiki/Q3882153",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "para-hypotaxis",
+      "ref": "https://www.wikidata.org/wiki/Q3895136",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Paromeosi",
+      "ref": "https://www.wikidata.org/wiki/Q3896373",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Premunizione",
+      "ref": "https://www.wikidata.org/wiki/Q3910778",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "scarto semantico",
+      "ref": "https://www.wikidata.org/wiki/Q3951719",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Senhal",
+      "ref": "https://www.wikidata.org/wiki/Q3955303",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "sinafía",
+      "ref": "https://www.wikidata.org/wiki/Q3961351",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "synchysis",
+      "ref": "https://www.wikidata.org/wiki/Q3961434",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Síncopa",
+      "ref": "https://www.wikidata.org/wiki/Q3961440",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "synaesthesia",
+      "ref": "https://www.wikidata.org/wiki/Q3961725",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Hüsn-i Talil",
+      "ref": "https://www.wikidata.org/wiki/Q4118820",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "звукопись",
+      "ref": "https://www.wikidata.org/wiki/Q4189737",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "metonymy",
+      "ref": "https://www.wikidata.org/wiki/Q41966",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "action quotient",
+      "ref": "https://www.wikidata.org/wiki/Q422677",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "мушакаля",
+      "ref": "https://www.wikidata.org/wiki/Q42332129",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "homophony",
+      "ref": "https://www.wikidata.org/wiki/Q42728571",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "city personification",
+      "ref": "https://www.wikidata.org/wiki/Q4295739",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Chekhov's gun",
+      "ref": "https://www.wikidata.org/wiki/Q4352783",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "retardierendes Moment",
+      "ref": "https://www.wikidata.org/wiki/Q4393677",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "T",
+      "ref": "https://www.wikidata.org/wiki/Q44152373",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Priamel",
+      "ref": "https://www.wikidata.org/wiki/Q452721",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "ectasis",
+      "ref": "https://www.wikidata.org/wiki/Q4530706",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "эмфаза",
+      "ref": "https://www.wikidata.org/wiki/Q4531737",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Īhām",
+      "ref": "https://www.wikidata.org/wiki/Q456020",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "interior monologue",
+      "ref": "https://www.wikidata.org/wiki/Q466163",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "accismus",
+      "ref": "https://www.wikidata.org/wiki/Q4672645",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "flashback",
+      "ref": "https://www.wikidata.org/wiki/Q473432",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "anatopism",
+      "ref": "https://www.wikidata.org/wiki/Q4752312",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "imagery",
+      "ref": "https://www.wikidata.org/wiki/Q4817665",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "author surrogate",
+      "ref": "https://www.wikidata.org/wiki/Q4825923",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "anadiplosis",
+      "ref": "https://www.wikidata.org/wiki/Q483690",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "anagnorisis",
+      "ref": "https://www.wikidata.org/wiki/Q483998",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "anacoluthon",
+      "ref": "https://www.wikidata.org/wiki/Q484456",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "analogy",
+      "ref": "https://www.wikidata.org/wiki/Q484989",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "anaphora",
+      "ref": "https://www.wikidata.org/wiki/Q486050",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "clausula",
+      "ref": "https://www.wikidata.org/wiki/Q48792270",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "mise en abyme",
+      "ref": "https://www.wikidata.org/wiki/Q48815051",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "allusion",
+      "ref": "https://www.wikidata.org/wiki/Q506667",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "character arc",
+      "ref": "https://www.wikidata.org/wiki/Q5073730",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Christ figure",
+      "ref": "https://www.wikidata.org/wiki/Q5108947",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "code word",
+      "ref": "https://www.wikidata.org/wiki/Q5140114",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "pathetic fallacy",
+      "ref": "https://www.wikidata.org/wiki/Q5157281",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "retroactive continuity",
+      "ref": "https://www.wikidata.org/wiki/Q517361",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "diacope",
+      "ref": "https://www.wikidata.org/wiki/Q5270242",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "chiasmus",
+      "ref": "https://www.wikidata.org/wiki/Q528728",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Geminatio",
+      "ref": "https://www.wikidata.org/wiki/Q536869",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "basaltwoord",
+      "ref": "https://www.wikidata.org/wiki/Q54082921",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "false protagonist",
+      "ref": "https://www.wikidata.org/wiki/Q5432731",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "Foregrounding",
+      "ref": "https://www.wikidata.org/wiki/Q5468194",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Sermocinatio",
+      "ref": "https://www.wikidata.org/wiki/Q56296840",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Prothèse",
+      "ref": "https://www.wikidata.org/wiki/Q56315377",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "anachrony",
+      "ref": "https://www.wikidata.org/wiki/Q5674254",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "صدر (شعر)",
+      "ref": "https://www.wikidata.org/wiki/Q5685390",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "عروض (شعر)",
+      "ref": "https://www.wikidata.org/wiki/Q5685570",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "ابتدا",
+      "ref": "https://www.wikidata.org/wiki/Q5685716",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "عجز",
+      "ref": "https://www.wikidata.org/wiki/Q5686794",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "تضاد",
+      "ref": "https://www.wikidata.org/wiki/Q5703099",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "حشو",
+      "ref": "https://www.wikidata.org/wiki/Q5720704",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "antilabe",
+      "ref": "https://www.wikidata.org/wiki/Q576853",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "antilogy",
+      "ref": "https://www.wikidata.org/wiki/Q577567",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "cohabitación",
+      "ref": "https://www.wikidata.org/wiki/Q5776461",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "antimetabole",
+      "ref": "https://www.wikidata.org/wiki/Q577968",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "anastrophe",
+      "ref": "https://www.wikidata.org/wiki/Q582293",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "catachresis",
+      "ref": "https://www.wikidata.org/wiki/Q582726",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "مراعات نظیر",
+      "ref": "https://www.wikidata.org/wiki/Q5852013",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "honkadori",
+      "ref": "https://www.wikidata.org/wiki/Q5896363",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "hysteron proteron",
+      "ref": "https://www.wikidata.org/wiki/Q591227",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "tadmin",
+      "ref": "https://www.wikidata.org/wiki/Q5938209",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "لف ونشر",
+      "ref": "https://www.wikidata.org/wiki/Q5951406",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "idiot plot",
+      "ref": "https://www.wikidata.org/wiki/Q5988980",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Tekrir",
+      "ref": "https://www.wikidata.org/wiki/Q6027820",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Tanosub",
+      "ref": "https://www.wikidata.org/wiki/Q6032659",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Akis (edebiyat)",
+      "ref": "https://www.wikidata.org/wiki/Q6033457",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "telmih",
+      "ref": "https://www.wikidata.org/wiki/Q6054075",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "براعة استهلال",
+      "ref": "https://www.wikidata.org/wiki/Q6056424",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "antonomasia",
+      "ref": "https://www.wikidata.org/wiki/Q607096",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "encomium",
+      "ref": "https://www.wikidata.org/wiki/Q61102190",
+      "decision": "live",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "The item identifies a rhetorical and literary genre with a five-part structure. Written and attested 2026-09-09.",
+      "cellId": "encomium"
+    },
+    {
+      "term": "Synonymia",
+      "ref": "https://www.wikidata.org/wiki/Q6151873",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "apagoge",
+      "ref": "https://www.wikidata.org/wiki/Q617302",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "aposiopesis",
+      "ref": "https://www.wikidata.org/wiki/Q619760",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "apostrophe",
+      "ref": "https://www.wikidata.org/wiki/Q620510",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Aprosdoketon",
+      "ref": "https://www.wikidata.org/wiki/Q622134",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "universal translator",
+      "ref": "https://www.wikidata.org/wiki/Q622217",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "peripeteia",
+      "ref": "https://www.wikidata.org/wiki/Q623928",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "brachylogy",
+      "ref": "https://www.wikidata.org/wiki/Q640423",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "backstory",
+      "ref": "https://www.wikidata.org/wiki/Q6453156",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "tadbidj",
+      "ref": "https://www.wikidata.org/wiki/Q64744591",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "anamnesis",
+      "ref": "https://www.wikidata.org/wiki/Q64922873",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "elision",
+      "ref": "https://www.wikidata.org/wiki/Q650250",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "foreshadowing",
+      "ref": "https://www.wikidata.org/wiki/Q657429",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "dislocation",
+      "ref": "https://www.wikidata.org/wiki/Q657495",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Symploce",
+      "ref": "https://www.wikidata.org/wiki/Q660149",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "sibilance",
+      "ref": "https://www.wikidata.org/wiki/Q66380874",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "cliffhanger",
+      "ref": "https://www.wikidata.org/wiki/Q665478",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "punch line",
+      "ref": "https://www.wikidata.org/wiki/Q671054",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "afterword",
+      "ref": "https://www.wikidata.org/wiki/Q677297",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "parabasis",
+      "ref": "https://www.wikidata.org/wiki/Q680663",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Spoudaiogeloion",
+      "ref": "https://www.wikidata.org/wiki/Q683004",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item may name a whole form or established practice, but its current description does not make that boundary clear enough for a cell."
+    },
+    {
+      "term": "narrative hook",
+      "ref": "https://www.wikidata.org/wiki/Q6966210",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "paraprosdokian",
+      "ref": "https://www.wikidata.org/wiki/Q7135771",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "personification in the Bible",
+      "ref": "https://www.wikidata.org/wiki/Q7170676",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "product displacement",
+      "ref": "https://www.wikidata.org/wiki/Q7247758",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "prophetic perfect tense",
+      "ref": "https://www.wikidata.org/wiki/Q7250300",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "Ratiocinatio",
+      "ref": "https://www.wikidata.org/wiki/Q7295741",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "recusatio",
+      "ref": "https://www.wikidata.org/wiki/Q7303360",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "The record allows either a whole poem or a passage within one; that ambiguity fails this pass's whole-form criterion."
+    },
+    {
+      "term": "pars pro toto",
+      "ref": "https://www.wikidata.org/wiki/Q736444",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "rule of three",
+      "ref": "https://www.wikidata.org/wiki/Q7378982",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Sangam landscape",
+      "ref": "https://www.wikidata.org/wiki/Q7417802",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "show, don't tell",
+      "ref": "https://www.wikidata.org/wiki/Q743138",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "sentence arrangement",
+      "ref": "https://www.wikidata.org/wiki/Q7451189",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "Synesthesia in literature",
+      "ref": "https://www.wikidata.org/wiki/Q7662421",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Prägnanz",
+      "ref": "https://www.wikidata.org/wiki/Q771173",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "distancing effect",
+      "ref": "https://www.wikidata.org/wiki/Q777300",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "titular line",
+      "ref": "https://www.wikidata.org/wiki/Q7810271",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "ecphonesis",
+      "ref": "https://www.wikidata.org/wiki/Q788419",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "animal epithet",
+      "ref": "https://www.wikidata.org/wiki/Q8074208",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "bathos",
+      "ref": "https://www.wikidata.org/wiki/Q810799",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "eucatastrophe",
+      "ref": "https://www.wikidata.org/wiki/Q81718",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    },
+    {
+      "term": "Annominatio",
+      "ref": "https://www.wikidata.org/wiki/Q8200318",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "euphemism",
+      "ref": "https://www.wikidata.org/wiki/Q83464",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "euphuism",
+      "ref": "https://www.wikidata.org/wiki/Q8346457",
+      "decision": "live",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "The item identifies a named style of language and classifies it as a literary technique. Written and attested 2026-09-09.",
+      "cellId": "euphuism"
+    },
+    {
+      "term": "chronographia",
+      "ref": "https://www.wikidata.org/wiki/Q8351871",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Deprecación",
+      "ref": "https://www.wikidata.org/wiki/Q8354899",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "lipogram",
+      "ref": "https://www.wikidata.org/wiki/Q836165",
+      "decision": "live",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "The item describes constrained writing across paragraphs or longer works and files it under constrained writing. Written and attested 2026-09-09.",
+      "cellId": "lipogram"
+    },
+    {
+      "term": "tautology (Q841606)",
+      "ref": "https://www.wikidata.org/wiki/Q841606",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "dysphemism",
+      "ref": "https://www.wikidata.org/wiki/Q844782",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "makurakotoba",
+      "ref": "https://www.wikidata.org/wiki/Q845474",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "language of flowers",
+      "ref": "https://www.wikidata.org/wiki/Q862550",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item may name a whole form or established practice, but its current description does not make that boundary clear enough for a cell."
+    },
+    {
+      "term": "energeia",
+      "ref": "https://www.wikidata.org/wiki/Q8775869",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "tricolon",
+      "ref": "https://www.wikidata.org/wiki/Q897398",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Adiunctio",
+      "ref": "https://www.wikidata.org/wiki/Q9140884",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Figura etymologica",
+      "ref": "https://www.wikidata.org/wiki/Q923311",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Emphasis",
+      "ref": "https://www.wikidata.org/wiki/Q9253425",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "homeoteleuton",
+      "ref": "https://www.wikidata.org/wiki/Q932406",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Synkrisis",
+      "ref": "https://www.wikidata.org/wiki/Q9350355",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "kakekotoba",
+      "ref": "https://www.wikidata.org/wiki/Q939895",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Compositional operation used inside works and excluded by the whole-form criterion."
+    },
+    {
+      "term": "epistrophe",
+      "ref": "https://www.wikidata.org/wiki/Q963102",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Simplismo",
+      "ref": "https://www.wikidata.org/wiki/Q97359248",
+      "decision": "deferred",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Deferred because the item may name a whole form or established practice, but its current description does not make that boundary clear enough for a cell."
+    },
+    {
+      "term": "Figurative Language (Q97481590)",
+      "ref": "https://www.wikidata.org/wiki/Q97481590",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "Epizeuxis",
+      "ref": "https://www.wikidata.org/wiki/Q993201",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Rhetorical, lexical, grammatical, or sound device excluded by the whole-form criterion."
+    },
+    {
+      "term": "dream sequence",
+      "ref": "https://www.wikidata.org/wiki/Q998854",
+      "decision": "declined",
+      "batch": "TASK2-WD-TECHNIQUES",
+      "note": "Narrative device, plot element, or writing maxim excluded by the whole-form criterion."
+    }
+  ]
 }
