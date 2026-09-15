@@ -79,7 +79,7 @@ export function StructureHandoff({ text, id, name }: { text: string; id: string;
         </span>
       </div>
       {shown ? (
-        <pre className="mt-5 max-h-[420px] overflow-auto whitespace-pre-wrap bg-[var(--paper-sticker)] p-4 font-mono text-[13px] leading-relaxed text-foreground shadow-[var(--shadow-sticker)]">
+        <pre className="mt-5 max-h-[420px] overflow-auto whitespace-pre-wrap bg-[var(--paper-sticker)] p-4 font-mono text-[17px] leading-relaxed text-foreground shadow-[var(--shadow-sticker)]">
           {text}
         </pre>
       ) : null}

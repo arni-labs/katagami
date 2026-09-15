@@ -303,7 +303,7 @@
       "params": {
         "name": "Kishōtenketsu",
         "slug": "kishotenketsu",
-        "aliases": "[\"Kishōtenketsu\",\"qǐ-chéng-zhuǎn-hé\",\"gi-seung-jeon-gyeol\",\"four-part composition\",\"起承転結\"]",
+        "aliases": "[\"qǐ-chéng-zhuǎn-hé\", \"gi-seung-jeon-gyeol\", \"four-part composition\", \"起承転結\"]",
         "instruction": "Introduce and develop a subject, bring in a third-part turn that changes its relation, then connect all parts in the conclusion.",
         "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Ki, introduction\"},{\"position\":2,\"name\":\"Shō, development\"},{\"position\":3,\"name\":\"Ten, turn or disjunction\"},{\"position\":4,\"name\":\"Ketsu, connection and conclusion\"}]}",
         "exemplars": "[{\"work\":\"Final Fantasy VII\"},{\"work\":\"The Key\",\"creator\":\"Jun'ichirō Tanizaki\"},{\"work\":\"The Castle of Cagliostro\",\"creator\":\"Hayao Miyazaki\"}]",

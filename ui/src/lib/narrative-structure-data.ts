@@ -44,17 +44,27 @@ export async function loadNarrativeStructures(): Promise<NarrativeStructureColle
 export async function loadNarrativeStructure(
   id: string,
 ): Promise<{ structure: NarrativeStructure; source: NarrativeStructureDataSource } | null> {
+  const fromFixture = () => {
+    const structure = narrativeStructureFixture.find((candidate) => candidate.id === id);
+    return structure ? { structure, source: "fixture" as const } : null;
+  };
   let row;
   try {
     row = await getNarrativeStructure(id);
   } catch (error) {
-    // A 404 means Temper answered and this record is not there, which is a real
-    // absence: serving the fixture for it resurrects a structure the owner
-    // deleted. The fixture is only for Temper being unreachable, so a
-    // record-level 404 returns null and the route 404s.
-    if (/OData 404\b/.test(String(error))) return null;
-    const structure = narrativeStructureFixture.find((candidate) => candidate.id === id);
-    return structure ? { structure, source: "fixture" } : null;
+    if (!/OData 404\b/.test(String(error))) return fromFixture();
+    // A 404 on a keyed read is ambiguous: the record is gone, or the entity set
+    // is not installed and OData 404s either way. Round one collapsed the two,
+    // which meant an uninstalled set served 32 fixture cards on /structure whose
+    // every link then 404'd. Ask the collection which case this is: if it
+    // answers, the set exists and this record really is absent; if it also
+    // fails, Temper cannot serve the lane and the fixture is right.
+    try {
+      await listNarrativeStructures();
+    } catch {
+      return fromFixture();
+    }
+    return null;
   }
   try {
     return { structure: toNarrativeStructure(row), source: "temper" };
