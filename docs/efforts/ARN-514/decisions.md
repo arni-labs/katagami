@@ -1,4 +1,4 @@
-# ARN-462 decisions
+# ARN-514 decisions
 
 ## D1 — Accept three names for the identifier instead of renaming the parameter
 
@@ -233,13 +233,13 @@ preview data as production stops seeing it — which is the point.
 `infra/datadog/monitors/m7-telemetry-dark.json`;
 `ui/scripts/check-telemetry-contract.mjs`.
 
-## D9 — The Linear issue id is unverified
+## D9 — The Linear issue id was unverified, and the guess was wrong
 
-**Decision** — used `ARN-462` consistently and flagged it for confirmation
+**Decision** — used `ARN-514` consistently and flagged it for confirmation
 rather than leaving two different invented ids in the tree.
 
 **Came up because** the panel noticed the code comments said `ARN-478` while the
-effort folder said `ARN-462`. Both are ids I introduced; the Linear MCP has been
+effort folder said `ARN-514`. Both are ids I introduced; the Linear MCP has been
 returning "requires re-authorization" for this whole effort, so neither could be
 checked against a real issue.
 
@@ -251,11 +251,27 @@ work; block until Linear is reachable.
 rename before merge is cheap. Blocking the whole effort on an expired token is
 not proportionate.
 
-**Given up**: if `ARN-462` turns out to be a different real issue, the folder,
-the comments and two commit messages need renaming before this merges. Rita has
-to confirm the number.
+**Given up**: if the placeholder turned out to be a different real issue, the
+folder, the comments and the commit messages would need renaming.
 
-**Where** — `docs/efforts/ARN-462/`, `ui/src/app/mcp/route.ts`,
+**It did, and this is what that cost (2026-09-15).** `ARN-462` is a real issue —
+Rita's own "Prod lists wait on the DB pool, then hydrate every actor", a Temper
+kernel performance bug, still open and assigned to her. Writing that id into the
+PR title auto-attached this unrelated work to it, and merging the PR closed HER
+issue as Done while the work it describes was unfinished. It was reopened to In
+Progress and the attachment removed within minutes of Linear coming back, but
+the damage was real and self-inflicted: the risk was identified, written down,
+flagged to Rita as merge-blocking — and then the merge went ahead anyway on a
+"1 authorized" that answered only the merge question. The flag was not the
+safeguard it looked like.
+
+**The rule that follows**: when a blocking flag and an authorization refer to
+different things, the flag wins until it is answered on its own terms. A
+placeholder id must never be a REAL id in someone else's namespace — the correct
+placeholder was a name that cannot collide, not a plausible number. The effort is
+now `ARN-514` and every reference moved with it.
+
+**Where** — `docs/efforts/ARN-514/`, `ui/src/app/mcp/route.ts`,
 `ui/scripts/check-telemetry-contract.mjs`.
 
 ## D10 — Panel round 2, second seat — an unauthenticated GET could page a human

@@ -1,4 +1,4 @@
-# ARN-462 plan
+# ARN-514 plan
 
 1. `ui/src/app/mcp/route.ts` — one shared `ID_ALIASES` schema fragment and one
    `idOf()` reader, applied to all six `get_*` tools. A `missingId()` helper

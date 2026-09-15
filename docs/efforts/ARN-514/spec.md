@@ -1,4 +1,4 @@
-# ARN-462 spec — accept the identifier agents already have, and alert on the ones we turn away
+# ARN-514 spec — accept the identifier agents already have, and alert on the ones we turn away
 
 ## Contract
 

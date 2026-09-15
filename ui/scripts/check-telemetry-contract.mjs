@@ -529,7 +529,7 @@ const required = [
   ["MCP emit stamps @tier:full (dashboard filters match)", telemetry, /tier: "full"/],
   ["telemetry no-ops without credentials", telemetry, /if \(!intake\) return/],
   ["intake fetch is aborted on hang", telemetry, /signal: intakeAbortSignal\(/],
-  // Friction visibility (ARN-462): a rejected call must say WHICH argument
+  // Friction visibility (ARN-514): a rejected call must say WHICH argument
   // names the caller sent, and the get_* tools must accept the name search
   // actually hands back.
   [
