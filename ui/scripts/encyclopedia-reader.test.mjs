@@ -3,7 +3,11 @@
 // CALLED. These run the reader itself against a stub of the deployment, over
 // real HTTP, so the call sites are what is under test rather than a helper.
 //
-// Run with --conditions=react-server so `server-only` resolves the way it does
+// @node-conditions react-server
+//
+// The runner reads that line, so this file carries its own requirement instead of
+// a package.json entry carrying it. Run with --conditions=react-server so
+// `server-only` resolves the way it does
 // inside a server component, and with the alias hooks so "@/…" resolves the way
 // the bundler resolves it. Outside that condition `server-only` still throws,
 // which is the guard doing its job.

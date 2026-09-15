@@ -50,8 +50,15 @@ const representationSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
+// The record sets a cell may point at. Exported because two scripts used to
+// carry their own copy of this list, and a list copied is a list that rots: the
+// integrity sweep would have read three sets and reported a clean placement
+// count for a fourth it never opened. One enum, read by the schema and by
+// whoever needs to enumerate the sets.
+export const MANIFESTATION_ENTITY_SETS = ["DesignLanguages", "ArtStyles", "WritingStyles", "PaletteSystems"] as const;
+
 const manifestationSchema = z.strictObject({
-  entitySet: z.enum(["DesignLanguages", "ArtStyles", "WritingStyles", "PaletteSystems"]),
+  entitySet: z.enum(MANIFESTATION_ENTITY_SETS),
   entityId: id,
   explanation: text,
   sourceIds,

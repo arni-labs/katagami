@@ -11,34 +11,30 @@
     {
       "term": "Abbreviation dictionaries",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2025026126",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Abbreviation dictionaries are a reference-writing form organized around abbreviations, distinct from acronym dictionaries in the source hierarchy.",
-      "cellId": "abbreviation-dictionaries"
+      "decision": "cell",
+      "batch": "R-NF-01",
+      "note": "Abbreviation dictionaries are a reference-writing form organized around abbreviations, distinct from acronym dictionaries in the source hierarchy."
     },
     {
       "term": "Abstracts",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026038",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Abstracts as a condensed scholarly form whose composition and use differ from the works they summarize.",
-      "cellId": "abstracts"
+      "decision": "cell",
+      "batch": "R-NF-01",
+      "note": "LCGFT defines Abstracts as a condensed scholarly form whose composition and use differ from the works they summarize."
     },
     {
       "term": "Academic theses",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026039",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Academic theses record identifies a sustained academic form with a recognizable argument, apparatus and institutional history.",
-      "cellId": "academic-theses"
+      "decision": "cell",
+      "batch": "R-NF-01",
+      "note": "The Academic theses record identifies a sustained academic form with a recognizable argument, apparatus and institutional history."
     },
     {
       "term": "Accident reports",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2024026078",
-      "decision": "live",
-      "batch": "TASK2-PRODUCTION-RECONCILIATION",
-      "note": "Production already held an attested writing-map cell citing this exact LCGFT record; the completed ledger now preserves that fact.",
-      "cellId": "accident-reports"
+      "decision": "declined",
+      "batch": "R-NF-01",
+      "note": "For Accident reports, the source gives a subject- or institution-defined informational record without a distinct writing tradition."
     },
     {
       "term": "Account books",
@@ -115,7 +111,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026173",
       "decision": "declined",
       "batch": "R-NF-01",
-      "note": "This Albums record describes an administrative, legal or archival record type classified by its function."
+      "note": "The Albums (Books) record describes an administrative, legal or archival record type classified by its function."
     },
     {
       "term": "Allegories",
@@ -163,10 +159,9 @@
     {
       "term": "Annals and chronicles",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026045",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Annals and chronicles as a chronological narrative form that the record distinguishes from bare lists of dated events.",
-      "cellId": "annals-and-chronicles"
+      "decision": "cell",
+      "batch": "R-NF-01",
+      "note": "LCGFT defines Annals and chronicles as a chronological narrative form that the record distinguishes from bare lists of dated events."
     },
     {
       "term": "Annotated bibliographies",
@@ -185,10 +180,9 @@
     {
       "term": "Apologetic writings",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026027",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "This pass proposes Apologetic writings because the source identifies a religious argumentative tradition that explains and defends a faith against external criticism.",
-      "cellId": "apologetic-writings"
+      "decision": "cell",
+      "batch": "R-NF-01",
+      "note": "This pass proposes Apologetic writings because the source identifies a religious argumentative tradition that explains and defends a faith against external criticism."
     },
     {
       "term": "Archaeological surveys",
@@ -207,10 +201,9 @@
     {
       "term": "Art criticism",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026112",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Art criticism record identifies a critical writing practice with a body of work across periods and schools.",
-      "cellId": "art-criticism"
+      "decision": "cell",
+      "batch": "R-NF-01",
+      "note": "The Art criticism record identifies a critical writing practice with a body of work across periods and schools."
     },
     {
       "term": "Artist files",
@@ -222,24 +215,23 @@
     {
       "term": "Artists' statements",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2021026026",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "This pass proposes Artists' statements because the source identifies a first-person explanatory form in which artists describe their work or its ideas.",
-      "cellId": "artists-statements"
+      "decision": "cell",
+      "batch": "R-NF-01",
+      "note": "This pass proposes Artists' statements because the source identifies a first-person explanatory form in which artists describe their work or its ideas."
     },
     {
       "term": "Ascension Day sermons",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026010",
       "decision": "declined",
       "batch": "R-NF-01",
-      "note": "The source defines Ascension Day sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "Ascension Day sermons are defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Ash Wednesday sermons",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026009",
       "decision": "declined",
       "batch": "R-NF-01",
-      "note": "LCGFT defines Ash Wednesday sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "LCGFT classifies Ash Wednesday sermons as defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Astronautical charts",
@@ -332,7 +324,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026047",
       "decision": "live",
       "batch": "B10",
-      "note": "form: a self-written account of a whole life, with examples from Augustine to the present. Proposal B10 #3. Written and attested 2026-09-09.",
+      "note": "form: a self-written account of a whole life, running from Augustine to the present. Proposal B10 #3. Written and attested 2026-09-09.",
       "cellId": "autobiographies"
     },
     {
@@ -377,7 +369,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026106",
       "decision": "declined",
       "batch": "R-NF-01",
-      "note": "The source defines Bar mitzvah sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "The Bar mitzvah sermons record describes defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Bathymetric maps",
@@ -397,10 +389,9 @@
     {
       "term": "Bibliographies",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026048",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Bibliographies, the source establishes a reference form with established selection, description and ordering practices.",
-      "cellId": "bibliographies"
+      "decision": "cell",
+      "batch": "R-NF-01",
+      "note": "For Bibliographies, the source establishes a reference form with established selection, description and ordering practices."
     },
     {
       "term": "Bills of sale",
@@ -427,10 +418,9 @@
     {
       "term": "Biographical dictionaries",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2025026020",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Biographical dictionaries record identifies a reference form that composes many short lives as entries, without a continuous biographical narrative.",
-      "cellId": "biographical-dictionaries"
+      "decision": "cell",
+      "batch": "R-NF-01",
+      "note": "The Biographical dictionaries record identifies a reference form that composes many short lives as entries, without a continuous biographical narrative."
     },
     {
       "term": "Biographical drama",
@@ -457,10 +447,9 @@
     {
       "term": "Biographies",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026049",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as the Library of Congress filing node between Autobiographies and Creative nonfiction.",
-      "cellId": "biographies"
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "This form has a real body of work and its own conventions. It sits between Autobiographies and Creative nonfiction at LC and was not read in this pass."
     },
     {
       "term": "Biostatistics",
@@ -508,10 +497,9 @@
     {
       "term": "Book reviews",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026052",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Book reviews, the source establishes a critical form that evaluates a book for readers in a periodical or other publication.",
-      "cellId": "book-reviews"
+      "decision": "cell",
+      "batch": "R-NF-01",
+      "note": "For Book reviews, the source establishes a critical form that evaluates a book for readers in a periodical or other publication."
     },
     {
       "term": "Botanical surveys",
@@ -607,10 +595,9 @@
     {
       "term": "Captivity narratives",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026056",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Captivity narratives record identifies a historical first-person narrative tradition about colonial captivity.",
-      "cellId": "captivity-narratives"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "The Captivity narratives record identifies a historical first-person narrative tradition about colonial captivity."
     },
     {
       "term": "Cartographic materials for people with visual disabilities",
@@ -622,41 +609,37 @@
     {
       "term": "Case studies",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026140",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "This pass proposes Case studies because the source identifies an analytical form organized around close treatment of one case or a small group of cases.",
-      "cellId": "case-studies"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "This pass proposes Case studies because the source identifies an analytical form organized around close treatment of one case or a small group of cases."
     },
     {
       "term": "Casebooks (Law)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026115",
       "decision": "declined",
       "batch": "R-NF-02",
-      "note": "LCGFT classifies this Casebooks record as an administrative, legal or archival record type classified by its function."
+      "note": "LCGFT classifies Casebooks (Law) as an administrative, legal or archival record type classified by its function."
     },
     {
       "term": "Catalogs",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026057",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as the Library of Congress filing node needed to preserve the source hierarchy for catalogs and catalogues raisonnés.",
-      "cellId": "catalogs"
+      "decision": "declined",
+      "batch": "R-NF-02",
+      "note": "The Catalogs record describes a cataloguing or retrieval arrangement without a separate writing practice."
     },
     {
       "term": "Catalogues raisonnés",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026058",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Catalogues raisonnés record identifies a scholarly catalogue form that documents and annotates a maker's complete work.",
-      "cellId": "catalogues-raisonnes"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "The Catalogues raisonnés record identifies a scholarly catalogue form that documents and annotates a maker's complete work."
     },
     {
       "term": "Catechisms",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026029",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Catechisms, the source establishes an instructional religious form commonly organized as questions and answers.",
-      "cellId": "catechisms"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "For Catechisms, the source establishes an instructional religious form commonly organized as questions and answers."
     },
     {
       "term": "Celestial charts",
@@ -712,22 +695,21 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026030",
       "decision": "declined",
       "batch": "R-NF-02",
-      "note": "This Chirographa record is an LCGFT document or media category that does not establish a direction, movement, tradition or compositional form."
+      "note": "Chirographa (Personal correspondence) is an LCGFT document or media category whose record does not establish a direction, movement, tradition or compositional form."
     },
     {
       "term": "Christmas sermons",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026084",
       "decision": "declined",
       "batch": "R-NF-02",
-      "note": "The source defines Christmas sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "LCGFT classifies Christmas sermons as defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Chronologies",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026062",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Chronologies, the source establishes a reference form that arranges events by date or time and is distinct from narrative chronicles.",
-      "cellId": "chronologies"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "For Chronologies, the source establishes a reference form that arranges events by date or time and is distinct from narrative chronicles."
     },
     {
       "term": "Church covenants",
@@ -790,14 +772,14 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026142",
       "decision": "declined",
       "batch": "R-NF-02",
-      "note": "Reading the Codes record found an administrative, legal or archival record type classified by its function."
+      "note": "Reading Codes (Jewish law) found an administrative, legal or archival record type classified by its function."
     },
     {
       "term": "Codices (Law)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026143",
       "decision": "declined",
       "batch": "R-NF-02",
-      "note": "The Codices record is an administrative, legal or archival record type classified by its function."
+      "note": "Codices (Law) are an administrative, legal or archival record type classified by its function."
     },
     {
       "term": "Collection catalogs",
@@ -816,18 +798,16 @@
     {
       "term": "Comics criticism",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026025",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Comics criticism as a critical practice that studies comics as both literary and visual work.",
-      "cellId": "comics-criticism"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "LCGFT defines Comics criticism as a critical practice that studies comics as both literary and visual work."
     },
     {
       "term": "Commentaries",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2025026014",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Commentaries record identifies an explanatory form written alongside or about another text.",
-      "cellId": "commentaries"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "The Commentaries record identifies an explanatory form written alongside or about another text."
     },
     {
       "term": "Commercial arbitration agreements",
@@ -853,10 +833,9 @@
     {
       "term": "Community cookbooks",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026154",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Community cookbooks as a collective cookbook tradition combining contributed recipes with local history and recollection.",
-      "cellId": "community-cookbooks"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "LCGFT defines Community cookbooks as a collective cookbook tradition combining contributed recipes with local history and recollection."
     },
     {
       "term": "Community newspapers",
@@ -889,10 +868,9 @@
     {
       "term": "Concordances",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026066",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Concordances as a reference form that indexes a work's words with their locations and context.",
-      "cellId": "concordances"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "LCGFT defines Concordances as a reference form that indexes a work's words with their locations and context."
     },
     {
       "term": "Concordats",
@@ -926,10 +904,9 @@
     {
       "term": "Consilia",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026164",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Consilia as a historical legal-opinion genre written by Roman- or canon-law scholars for litigation.",
-      "cellId": "consilia"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "LCGFT defines Consilia as a historical legal-opinion genre written by Roman- or canon-law scholars for litigation."
     },
     {
       "term": "Constitutional amendments",
@@ -991,18 +968,16 @@
     {
       "term": "Correspondence",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2025026080",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Correspondence is a broad epistolary form with sustained personal, public and literary practices.",
-      "cellId": "correspondence"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "Correspondence is a broad epistolary form with sustained personal, public and literary practices."
     },
     {
       "term": "Counterfactual histories",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026072",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Counterfactual histories as a nonfiction narrative form that works through alternative outcomes of historical events.",
-      "cellId": "counterfactual-histories"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "LCGFT defines Counterfactual histories as a nonfiction narrative form that works through alternative outcomes of historical events."
     },
     {
       "term": "Course catalogs",
@@ -1035,10 +1010,9 @@
     {
       "term": "Coutumes",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026175",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Coutumes as a medieval French legal compilation tradition recording customary law.",
-      "cellId": "coutumes"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "LCGFT defines Coutumes as a medieval French legal compilation tradition recording customary law."
     },
     {
       "term": "Creative nonfiction",
@@ -1075,23 +1049,21 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2021026020",
       "decision": "declined",
       "batch": "R-NF-02",
-      "note": "This Cue sheets record describes a broadcast, performed or recorded-media form, outside the writing map."
+      "note": "The Cue sheets (Music) record describes a broadcast, performed or recorded-media form, outside the writing map."
     },
     {
       "term": "Customary laws",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026179",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as the Library of Congress filing node between Custumals and Law materials.",
-      "cellId": "customary-laws"
+      "decision": "declined",
+      "batch": "R-NF-02",
+      "note": "For Customary laws, the source gives an administrative, legal or archival record type classified by its function."
     },
     {
       "term": "Custumals",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026180",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Custumals, the source establishes a medieval English documentary form recording manorial custom and obligations.",
-      "cellId": "custumals"
+      "decision": "cell",
+      "batch": "R-NF-02",
+      "note": "For Custumals, the source establishes a medieval English documentary form recording manorial custom and obligations."
     },
     {
       "term": "Cycling maps",
@@ -1117,10 +1089,9 @@
     {
       "term": "Dance reviews",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026079",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Dance reviews record identifies a critical form that evaluates dance performance for readers.",
-      "cellId": "dance-reviews"
+      "decision": "cell",
+      "batch": "R-NF-03",
+      "note": "The Dance reviews record identifies a critical form that evaluates dance performance for readers."
     },
     {
       "term": "Dance scores",
@@ -1160,10 +1131,9 @@
     {
       "term": "Debates",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026083",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Debates, the source establishes an adversarial discursive form preserved through recording or transcription.",
-      "cellId": "debates"
+      "decision": "cell",
+      "batch": "R-NF-03",
+      "note": "For Debates, the source establishes an adversarial discursive form preserved through recording or transcription."
     },
     {
       "term": "Deeds",
@@ -1204,10 +1174,9 @@
     {
       "term": "Dictionaries",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026086",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "This pass proposes Dictionaries because the source identifies a reference form with established practices for defining and arranging entries.",
-      "cellId": "dictionaries"
+      "decision": "cell",
+      "batch": "R-NF-03",
+      "note": "This pass proposes Dictionaries because the source identifies a reference form with established practices for defining and arranging entries."
     },
     {
       "term": "Didactic drama",
@@ -1222,14 +1191,14 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026288",
       "decision": "declined",
       "batch": "R-NF-03",
-      "note": "LCGFT defines Didactic fiction by its purpose of instruction, so the Literature slice declined it."
+      "note": "Didactic fiction keeps the Literature-slice declined decision because a purpose label (meant to instruct)."
     },
     {
       "term": "Didactic poetry",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026289",
       "decision": "declined",
       "batch": "R-NF-03",
-      "note": "Because LCGFT defines Didactic poetry by its purpose of instruction, the Literature slice declined it. Its child Georgics remains deferred for separate reading."
+      "note": "Didactic poetry keeps the Literature-slice declined decision because a purpose label (meant to instruct), its LCGFT child Georgics will stand on its own when its slice is read."
     },
     {
       "term": "Digital elevation models",
@@ -1262,10 +1231,9 @@
     {
       "term": "Discursive works",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026089",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as a Library of Congress filing node for narrower discursive writing forms.",
-      "cellId": "discursive-works"
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a cataloguing parent above Editorials, Speeches and Interviews, with no practice of its own"
     },
     {
       "term": "Dockets",
@@ -1293,7 +1261,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026105",
       "decision": "declined",
       "batch": "R-NF-03",
-      "note": "The source defines Easter sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "The Easter sermons record describes defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Editorials",
@@ -1308,7 +1276,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026305",
       "decision": "declined",
       "batch": "R-NF-03",
-      "note": "The Literature slice declined Educational comics because LCGFT defines them by their purpose of imparting knowledge, consistent with its decision on Didactic fiction."
+      "note": "Educational comics keeps the Literature-slice declined decision because a purpose label (comics meant to impart knowledge), as pass 1 declined Didactic fiction."
     },
     {
       "term": "Educational films",
@@ -1341,10 +1309,9 @@
     {
       "term": "Encyclopedias",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026092",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Encyclopedias, the source establishes a reference-writing form that organizes explanatory entries across a field or many fields.",
-      "cellId": "encyclopedias"
+      "decision": "cell",
+      "batch": "R-NF-03",
+      "note": "For Encyclopedias, the source establishes a reference-writing form that organizes explanatory entries across a field or many fields."
     },
     {
       "term": "Entertainment news programs",
@@ -1421,10 +1388,9 @@
     {
       "term": "Ethnographies",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026013",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "This pass proposes Ethnographies because the source identifies an anthropological writing tradition based on the study and description of people and culture.",
-      "cellId": "ethnographies"
+      "decision": "cell",
+      "batch": "R-NF-03",
+      "note": "This pass proposes Ethnographies because the source identifies an anthropological writing tradition based on the study and description of people and culture."
     },
     {
       "term": "Etymological dictionaries",
@@ -1436,10 +1402,9 @@
     {
       "term": "Eulogies",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026095",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Eulogies as a commemorative speech form written to account for and praise a life.",
-      "cellId": "eulogies"
+      "decision": "cell",
+      "batch": "R-NF-03",
+      "note": "LCGFT defines Eulogies as a commemorative speech form written to account for and praise a life."
     },
     {
       "term": "Examinations",
@@ -1480,10 +1445,9 @@
     {
       "term": "FAQs",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026101",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The FAQs record identifies a question-and-answer reference form built from recurring reader needs.",
-      "cellId": "faqs"
+      "decision": "cell",
+      "batch": "R-NF-03",
+      "note": "The FAQs record identifies a question-and-answer reference form built from recurring reader needs."
     },
     {
       "term": "Fables",
@@ -1496,10 +1460,9 @@
     {
       "term": "Family histories",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026100",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "This pass proposes Family histories because the source identifies a narrative historical form that traces a family's lineage and events.",
-      "cellId": "family-histories"
+      "decision": "cell",
+      "batch": "R-NF-03",
+      "note": "This pass proposes Family histories because the source identifies a narrative historical form that traces a family's lineage and events."
     },
     {
       "term": "Farewell speeches",
@@ -1518,10 +1481,9 @@
     {
       "term": "Field guides",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026099",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Field guides record identifies an illustrated reference form written for identification outside the library or classroom.",
-      "cellId": "field-guides"
+      "decision": "cell",
+      "batch": "R-NF-03",
+      "note": "The Field guides record identifies an illustrated reference form written for identification outside the library or classroom."
     },
     {
       "term": "Field notes",
@@ -1534,10 +1496,9 @@
     {
       "term": "Film criticism",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2021026007",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "This pass proposes Film criticism because the source identifies a critical writing practice devoted to the study and evaluation of film.",
-      "cellId": "film-criticism"
+      "decision": "cell",
+      "batch": "R-NF-03",
+      "note": "This pass proposes Film criticism because the source identifies a critical writing practice devoted to the study and evaluation of film."
     },
     {
       "term": "Film posters",
@@ -1591,10 +1552,9 @@
     {
       "term": "Flash nonfiction",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2025026006",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Flash nonfiction record identifies a very short nonfiction form within creative nonfiction.",
-      "cellId": "flash-nonfiction"
+      "decision": "cell",
+      "batch": "R-NF-03",
+      "note": "The Flash nonfiction record identifies a very short nonfiction form within creative nonfiction."
     },
     {
       "term": "Flip charts",
@@ -1629,7 +1589,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026068",
       "decision": "declined",
       "batch": "R-NF-03",
-      "note": "This Formularies record is a reference or consultation category whose arrangement does not establish a separate writing practice."
+      "note": "Formularies (Medicine) are a reference or consultation category whose arrangement does not establish a separate writing practice."
     },
     {
       "term": "Full-text databases",
@@ -1643,7 +1603,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026085",
       "decision": "declined",
       "batch": "R-NF-03",
-      "note": "The source defines Funeral sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "The Funeral sermons record describes defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Gazetteers",
@@ -1706,7 +1666,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026070",
       "decision": "deferred",
       "batch": "R-NF-04",
-      "note": "The Literature slice deferred Georgics. Georgics is the didactic poem of husbandry after Virgil, but the Wikipedia article named Georgics covers Virgil's poem and offers no treatment of the genre. Reconsider it when a source describes the genre."
+      "note": "Georgics keeps the Literature-slice deferred decision because Georgics as a genre, the didactic poem of husbandry after Virgil, is real, but the only Wikipedia article of that name is Virgil's poem and does not cover the genre. Pass 2 expected this term to stand on its own, it returns when a source treats the genre."
     },
     {
       "term": "Geospatial data",
@@ -1768,18 +1728,16 @@
     {
       "term": "Grimoires",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026089",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Grimoires record identifies a handbook tradition that records magical rites, instructions and formulae.",
-      "cellId": "grimoires"
+      "decision": "cell",
+      "batch": "R-NF-04",
+      "note": "The Grimoires record identifies a handbook tradition that records magical rites, instructions and formulae."
     },
     {
       "term": "Guidebooks",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026108",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Guidebooks, the source establishes a practical travel-reference form combining description, selection and instruction.",
-      "cellId": "guidebooks"
+      "decision": "cell",
+      "batch": "R-NF-04",
+      "note": "For Guidebooks, the source establishes a practical travel-reference form combining description, selection and instruction."
     },
     {
       "term": "Haggadot (Liturgical books)",
@@ -1791,10 +1749,9 @@
     {
       "term": "Hagiographies",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026032",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Hagiographies are a biographical religious tradition that tells lives as examples of faith.",
-      "cellId": "hagiographies"
+      "decision": "cell",
+      "batch": "R-NF-04",
+      "note": "Hagiographies are a biographical religious tradition that tells lives as examples of faith."
     },
     {
       "term": "Handbooks and manuals",
@@ -1807,10 +1764,9 @@
     {
       "term": "Harmonies (Reference works)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026034",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Harmonies (Reference works) record identifies a comparative reference form that places parallel passages together to show agreement.",
-      "cellId": "harmonies-reference-works"
+      "decision": "cell",
+      "batch": "R-NF-04",
+      "note": "The Harmonies (Reference works) record identifies a comparative reference form that places parallel passages together to show agreement."
     },
     {
       "term": "Health surveys",
@@ -1843,10 +1799,9 @@
     {
       "term": "Hornbooks (Law)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026320",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Hornbooks (Law) record identifies a legal instructional genre that explains a field through settled principles and leading cases.",
-      "cellId": "hornbooks-law"
+      "decision": "cell",
+      "batch": "R-NF-04",
+      "note": "The Hornbooks (Law) record identifies a legal instructional genre that explains a field through settled principles and leading cases."
     },
     {
       "term": "Hornbooks (Primers)",
@@ -1900,10 +1855,9 @@
     {
       "term": "Indexes",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026112",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as the Library of Congress filing node between Indexes (Publications) and Reference works.",
-      "cellId": "indexes"
+      "decision": "declined",
+      "batch": "R-NF-04",
+      "note": "The Indexes record describes a cataloguing or retrieval arrangement without a separate writing practice."
     },
     {
       "term": "Indulgences (Canon law)",
@@ -1943,10 +1897,9 @@
     {
       "term": "Informational works",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026113",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as a Library of Congress filing node for narrower informational writing forms.",
-      "cellId": "informational-works"
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a broad cataloguing category for anything whose purpose is to convey fact, the same reason Fiction and Poetry were declined"
     },
     {
       "term": "Installation guides (Exhibition documentation)",
@@ -1965,17 +1918,16 @@
     {
       "term": "Instructional and educational works",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026114",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as a Library of Congress filing node for narrower instructional and educational writing forms.",
-      "cellId": "instructional-and-educational-works"
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a cataloguing parent above Handbooks and manuals, Recipes and Textbooks, with no practice of its own"
     },
     {
       "term": "Instructional comics",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026385",
       "decision": "declined",
       "batch": "R-NF-04",
-      "note": "The Literature slice declined Instructional comics because LCGFT defines them by purpose (comics that teach or train), consistent with its decision on Educational comics."
+      "note": "Instructional comics keeps the Literature-slice declined decision because a purpose label (comics that teach or train), with Educational comics."
     },
     {
       "term": "Instructional films",
@@ -2008,10 +1960,9 @@
     {
       "term": "Interviews",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026115",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Interviews are a question-and-answer discursive form shaped by exchange between interviewer and subject.",
-      "cellId": "interviews"
+      "decision": "cell",
+      "batch": "R-NF-04",
+      "note": "Interviews are a question-and-answer discursive form shaped by exchange between interviewer and subject."
     },
     {
       "term": "Introductory works",
@@ -2079,10 +2030,9 @@
     {
       "term": "Law commentaries",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026150",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Law commentaries are a legal expository form that interprets a document section by section.",
-      "cellId": "law-commentaries"
+      "decision": "cell",
+      "batch": "R-NF-04",
+      "note": "Law commentaries are a legal expository form that interprets a document section by section."
     },
     {
       "term": "Law digests",
@@ -2122,10 +2072,9 @@
     {
       "term": "Legal maxims",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026356",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Legal maxims as a concise legal form that states established principles for reuse and interpretation.",
-      "cellId": "legal-maxims"
+      "decision": "cell",
+      "batch": "R-NF-04",
+      "note": "LCGFT defines Legal maxims as a concise legal form that states established principles for reuse and interpretation."
     },
     {
       "term": "Legal memorandums",
@@ -2174,7 +2123,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026104",
       "decision": "declined",
       "batch": "R-NF-04",
-      "note": "The source defines Lenten sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "This pass declines Lenten sermons because the source identifies defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Lesson plans",
@@ -2186,10 +2135,9 @@
     {
       "term": "Letters to the editor",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026142",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Letters to the editor is a public epistolary form written in response to a periodical's coverage or argument.",
-      "cellId": "letters-to-the-editor"
+      "decision": "cell",
+      "batch": "R-NF-05",
+      "note": "Letters to the editor is a public epistolary form written in response to a periodical's coverage or argument."
     },
     {
       "term": "Library catalogs",
@@ -2229,10 +2177,9 @@
     {
       "term": "Literary criticism",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026126",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as the Library of Congress filing node for narrower criticism and review forms.",
-      "cellId": "literary-criticism"
+      "decision": "deferred",
+      "batch": "B10",
+      "note": "This is a real practice with its own registers. No leaf under it was needed for the writing collection this pass serves."
     },
     {
       "term": "Literary readings",
@@ -2246,7 +2193,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2024026022",
       "decision": "deferred",
       "batch": "B10",
-      "note": "LC lists Little magazines alongside Zines and Newsletters. The Zines cell records the open question of whether these need one cell or three."
+      "note": "This sits beside Zines and Newsletters. Whether the three are one cell or three remains open on the Zines cell."
     },
     {
       "term": "Liturgical books",
@@ -2300,10 +2247,9 @@
     {
       "term": "Love letters",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026090",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Love letters as an epistolary form with a long literary and private tradition.",
-      "cellId": "love-letters"
+      "decision": "cell",
+      "batch": "R-NF-05",
+      "note": "LCGFT defines Love letters as an epistolary form with a long literary and private tradition."
     },
     {
       "term": "Magazine format radio programs",
@@ -2329,10 +2275,9 @@
     {
       "term": "Manifestos",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017027243",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Manifestos are a declarative form that states a person or group's aims, opinions and policies.",
-      "cellId": "manifestos"
+      "decision": "cell",
+      "batch": "R-NF-05",
+      "note": "Manifestos are a declarative form that states a person or group's aims, opinions and policies."
     },
     {
       "term": "Manipulatives (Education)",
@@ -2365,10 +2310,9 @@
     {
       "term": "Marginalia",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2023026017",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Marginalia are a writing practice in which readers annotate and answer a text in its margins.",
-      "cellId": "marginalia"
+      "decision": "cell",
+      "batch": "R-NF-05",
+      "note": "Marginalia are a writing practice in which readers annotate and answer a text in its margins."
     },
     {
       "term": "Martyrologies",
@@ -2586,10 +2530,9 @@
     {
       "term": "Music criticism and reviews",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026130",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Music criticism and reviews as a critical writing practice devoted to the study and evaluation of music.",
-      "cellId": "music-criticism-and-reviews"
+      "decision": "cell",
+      "batch": "R-NF-05",
+      "note": "LCGFT defines Music criticism and reviews as a critical writing practice devoted to the study and evaluation of music."
     },
     {
       "term": "Music posters",
@@ -2624,7 +2567,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026131",
       "decision": "live",
       "batch": "B10",
-      "note": "form: writing sent to a subscriber list on a schedule, in a register closer to a letter than an article. The Blogs cell records the same open question about whether this is a medium or a direction. Proposal B10 #10. Written and attested 2026-09-09.",
+      "note": "form: writing sent to a subscriber list on a schedule, in a register closer to a letter than an article. It carries the same medium-or-direction question as Blogs. Proposal B10 #10. Written and attested 2026-09-09.",
       "cellId": "newsletters"
     },
     {
@@ -2682,15 +2625,14 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026107",
       "decision": "declined",
       "batch": "R-NF-05",
-      "note": "The source defines Occasional sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "For Occasional sermons, the source gives defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Occasional speeches",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026113",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as the Library of Congress filing node between Commemorative speeches and Speeches.",
-      "cellId": "occasional-speeches"
+      "decision": "declined",
+      "batch": "R-NF-05",
+      "note": "This pass declines Occasional speeches because the source identifies an LCGFT document or media category whose record does not establish a direction, movement, tradition or compositional form."
     },
     {
       "term": "Official gazettes",
@@ -2704,7 +2646,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026103",
       "decision": "deferred",
       "batch": "R-NF-05",
-      "note": "Online discussion forums are a documented conversational writing form, but the record also covers mailing lists and archives, so the cell boundary is unclear."
+      "note": "Online discussion forums are a documented conversational writing form, but the record also covers mailing lists and archives, leaving the cell boundary unclear."
     },
     {
       "term": "Online news",
@@ -2730,10 +2672,9 @@
     {
       "term": "Oral histories",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026431",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Oral histories as an interview-based historical form that preserves first-person testimony.",
-      "cellId": "oral-histories"
+      "decision": "cell",
+      "batch": "R-NF-06",
+      "note": "LCGFT defines Oral histories as an interview-based historical form that preserves first-person testimony."
     },
     {
       "term": "Order-books",
@@ -2826,7 +2767,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026012",
       "decision": "declined",
       "batch": "R-NF-06",
-      "note": "The source defines Passover sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "Reading Passover sermons found defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Pastoral letters and charges",
@@ -2859,10 +2800,9 @@
     {
       "term": "Periodicals",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026139",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as the Library of Congress filing node between Underground periodicals and Serial publications.",
-      "cellId": "periodicals"
+      "decision": "deferred",
+      "batch": "R-NF-06",
+      "note": "Periodicals are a major publication form, but the record supplies only their placement under serial publications and no distinct writing practice."
     },
     {
       "term": "Perpetual calendars",
@@ -2874,10 +2814,9 @@
     {
       "term": "Personal correspondence",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026141",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as the Library of Congress filing node between Open letters and Records (Documents).",
-      "cellId": "personal-correspondence"
+      "decision": "declined",
+      "batch": "R-NF-06",
+      "note": "Personal correspondence is an LCGFT document or media category whose record does not establish a direction, movement, tradition or compositional form."
     },
     {
       "term": "Personal narratives",
@@ -2924,10 +2863,9 @@
     {
       "term": "Phrase books",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026145",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Phrase books, the source establishes a practical bilingual or multilingual reference form organized around reusable expressions.",
-      "cellId": "phrase-books"
+      "decision": "cell",
+      "batch": "R-NF-06",
+      "note": "For Phrase books, the source establishes a practical bilingual or multilingual reference form organized around reusable expressions."
     },
     {
       "term": "Physical maps",
@@ -2953,10 +2891,9 @@
     {
       "term": "Pilgrimage guides",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026048",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Pilgrimage guides record identifies a devotional travel-guide tradition describing sites, objects and practices.",
-      "cellId": "pilgrimage-guides"
+      "decision": "cell",
+      "batch": "R-NF-06",
+      "note": "The Pilgrimage guides record identifies a devotional travel-guide tradition describing sites, objects and practices."
     },
     {
       "term": "Pilot guides",
@@ -2968,10 +2905,9 @@
     {
       "term": "Pirate captivity narratives",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026011",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "This pass proposes Pirate captivity narratives because the source identifies a captivity-narrative tradition centered on seizure by pirates.",
-      "cellId": "pirate-captivity-narratives"
+      "decision": "cell",
+      "batch": "R-NF-06",
+      "note": "This pass proposes Pirate captivity narratives because the source identifies a captivity-narrative tradition centered on seizure by pirates."
     },
     {
       "term": "Platforms (Politics)",
@@ -3011,18 +2947,16 @@
     {
       "term": "Polemics",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2026026027",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Polemics are an argumentative form written to oppose a position or party.",
-      "cellId": "polemics"
+      "decision": "cell",
+      "batch": "R-NF-06",
+      "note": "Polemics are an argumentative form written to oppose a position or party."
     },
     {
       "term": "Policy briefs",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2024026070",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Policy briefs as a concise professional form that explains evidence and recommends a policy choice.",
-      "cellId": "policy-briefs"
+      "decision": "cell",
+      "batch": "R-NF-06",
+      "note": "LCGFT defines Policy briefs as a concise professional form that explains evidence and recommends a policy choice."
     },
     {
       "term": "Political posters",
@@ -3070,10 +3004,9 @@
     {
       "term": "Prefatory works",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2024026049",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Prefatory works, the source establishes a paratextual form that introduces, frames or accounts for another work.",
-      "cellId": "prefatory-works"
+      "decision": "cell",
+      "batch": "R-NF-06",
+      "note": "For Prefatory works, the source establishes a paratextual form that introduces, frames or accounts for another work."
     },
     {
       "term": "Press conferences",
@@ -3085,10 +3018,9 @@
     {
       "term": "Press releases",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026153",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Press releases are a concise institutional announcement form written for public and press reuse.",
-      "cellId": "press-releases"
+      "decision": "cell",
+      "batch": "R-NF-06",
+      "note": "Press releases are a concise institutional announcement form written for public and press reuse."
     },
     {
       "term": "Priamels",
@@ -3452,26 +3384,24 @@
     {
       "term": "Rechtsbücher",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026523",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Rechtsbücher record identifies a medieval German prose tradition compiling and commenting on civil, criminal, procedural and feudal law.",
-      "cellId": "rechtsbucher"
+      "decision": "cell",
+      "batch": "R-NF-07",
+      "note": "The Rechtsbücher record identifies a medieval German prose tradition compiling and commenting on civil, criminal, procedural and feudal law."
     },
     {
       "term": "Recipes",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026162",
       "decision": "merge",
-      "batch": "TASK2-LCGFT-PLACEMENT",
+      "batch": "B11",
       "note": "the same practice as Cookbooks, which LC separates only by whether the instructions are collected into a book",
       "cellId": "cookbooks"
     },
     {
       "term": "Records (Documents)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026163",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as a Library of Congress filing node for narrower record and correspondence forms.",
-      "cellId": "records-documents"
+      "decision": "declined",
+      "batch": "B10",
+      "note": "This is a cataloguing category for kept records. Diaries is decided on its own."
     },
     {
       "term": "Records and briefs",
@@ -3490,10 +3420,9 @@
     {
       "term": "Reference works",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026165",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as a Library of Congress filing node for narrower reference-writing forms.",
-      "cellId": "reference-works"
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a cataloguing category for works consulted selectively, not read through"
     },
     {
       "term": "Regimental histories",
@@ -3519,10 +3448,9 @@
     {
       "term": "Religious commentaries",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2025026002",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Religious commentaries as an exegetical form that explains the meaning of a religious text.",
-      "cellId": "religious-commentaries"
+      "decision": "cell",
+      "batch": "R-NF-07",
+      "note": "LCGFT defines Religious commentaries as an exegetical form that explains the meaning of a religious text."
     },
     {
       "term": "Religious inventories",
@@ -3569,10 +3497,9 @@
     {
       "term": "Responsa (Jewish law)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026533",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Responsa (Jewish law), the source establishes a question-and-answer legal tradition preserving rabbinic decisions.",
-      "cellId": "responsa-jewish-law"
+      "decision": "cell",
+      "batch": "R-NF-07",
+      "note": "For Responsa (Jewish law), the source establishes a question-and-answer legal tradition preserving rabbinic decisions."
     },
     {
       "term": "Reverse dictionaries",
@@ -3584,10 +3511,9 @@
     {
       "term": "Reviews",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026168",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Reviews are a broad critical form that evaluates made work for an audience.",
-      "cellId": "reviews"
+      "decision": "cell",
+      "batch": "R-NF-07",
+      "note": "Reviews are a broad critical form that evaluates made work for an audience."
     },
     {
       "term": "Road maps",
@@ -3615,7 +3541,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026085",
       "decision": "declined",
       "batch": "R-NF-07",
-      "note": "The source defines Rosh ha-Shanah sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "LCGFT classifies Rosh ha-Shanah sermons as defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Royal ordinances",
@@ -3677,10 +3603,9 @@
     {
       "term": "Scholia",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026072",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Scholia, the source establishes a classical commentary tradition of explanatory notes written on or beside a text.",
-      "cellId": "scholia"
+      "decision": "cell",
+      "batch": "R-NF-07",
+      "note": "For Scholia, the source establishes a classical commentary tradition of explanatory notes written on or beside a text."
     },
     {
       "term": "School yearbooks",
@@ -3741,18 +3666,16 @@
     {
       "term": "Serial publications",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026174",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Live as the Library of Congress filing node between Periodicals and Informational works.",
-      "cellId": "serial-publications"
+      "decision": "declined",
+      "batch": "B10",
+      "note": "a publication schedule, not a direction"
     },
     {
       "term": "Sermons",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026051",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Sermons, the source establishes a religious discursive form composed for oral delivery and preserved as writing.",
-      "cellId": "sermons"
+      "decision": "cell",
+      "batch": "R-NF-07",
+      "note": "For Sermons, the source establishes a religious discursive form composed for oral delivery and preserved as writing."
     },
     {
       "term": "Session laws",
@@ -3778,10 +3701,9 @@
     {
       "term": "Slave narratives",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026176",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Slave narratives record identifies a first-person autobiographical tradition written or orally related by formerly enslaved people.",
-      "cellId": "slave-narratives"
+      "decision": "cell",
+      "batch": "R-NF-07",
+      "note": "The Slave narratives record identifies a first-person autobiographical tradition written or orally related by formerly enslaved people."
     },
     {
       "term": "Social guidance films",
@@ -3856,18 +3778,16 @@
     {
       "term": "Speeches",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2011026363",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For Speeches, the source establishes a broad rhetorical form composed for public delivery.",
-      "cellId": "speeches"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "For Speeches, the source establishes a broad rhetorical form composed for public delivery."
     },
     {
       "term": "Spirit writings",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026052",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "This pass proposes Spirit writings because the source identifies an automatic-writing practice attributed by its makers to spirits.",
-      "cellId": "spirit-writings"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "This pass proposes Spirit writings because the source identifies an automatic-writing practice attributed by its makers to spirits."
     },
     {
       "term": "Sports posters",
@@ -3886,10 +3806,9 @@
     {
       "term": "Sports writing",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2017026121",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Sports writing record identifies a nonfiction tradition that reports, narrates and interprets sport.",
-      "cellId": "sports-writing"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "The Sports writing record identifies a nonfiction tradition that reports, narrates and interprets sport."
     },
     {
       "term": "Spurious works",
@@ -3957,10 +3876,9 @@
     {
       "term": "Study guides",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026182",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Study guides record identifies an instructional form organized to prepare a reader for an examination or course.",
-      "cellId": "study-guides"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "The Study guides record identifies an instructional form organized to prepare a reader for an examination or course."
     },
     {
       "term": "Style manuals",
@@ -4022,10 +3940,9 @@
     {
       "term": "Technical reports",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026093",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Technical reports as a professional expository form used to record methods, findings and recommendations.",
-      "cellId": "technical-reports"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "LCGFT defines Technical reports as a professional expository form used to record methods, findings and recommendations."
     },
     {
       "term": "Telephone directories",
@@ -4051,10 +3968,9 @@
     {
       "term": "Television criticism and reviews",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2021026032",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Television criticism and reviews are a critical writing practice devoted to the study and evaluation of television.",
-      "cellId": "television-criticism-and-reviews"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "Television criticism and reviews are a critical writing practice devoted to the study and evaluation of television."
     },
     {
       "term": "Television news programs",
@@ -4066,10 +3982,9 @@
     {
       "term": "Television program reviews",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026190",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Television program reviews record identifies a review form that evaluates individual television programs for readers.",
-      "cellId": "television-program-reviews"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "The Television program reviews record identifies a review form that evaluates individual television programs for readers."
     },
     {
       "term": "Television public service announcements",
@@ -4095,17 +4010,16 @@
     {
       "term": "Textbooks",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026191",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Textbooks as an instructional book form organized to teach a field in sequence.",
-      "cellId": "textbooks"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "LCGFT defines Textbooks as an instructional book form organized to teach a field in sequence."
     },
     {
       "term": "Thanksgiving Day sermons",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026086",
       "decision": "declined",
       "batch": "R-NF-08",
-      "note": "The source defines Thanksgiving Day sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "For Thanksgiving Day sermons, the source gives defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Theater announcements (Motion pictures)",
@@ -4131,10 +4045,9 @@
     {
       "term": "Theater reviews",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026194",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "LCGFT defines Theater reviews as a critical form that evaluates stage productions for readers.",
-      "cellId": "theater-reviews"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "LCGFT defines Theater reviews as a critical form that evaluates stage productions for readers."
     },
     {
       "term": "Thematic catalogs (Music)",
@@ -4209,10 +4122,9 @@
     {
       "term": "Tracts (Ephemera)",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2015026053",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The Tracts (Ephemera) record identifies a short persuasive pamphlet tradition used for religious or political argument.",
-      "cellId": "tracts-ephemera"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "The Tracts (Ephemera) record identifies a short persuasive pamphlet tradition used for religious or political argument."
     },
     {
       "term": "Trade catalogs",
@@ -4268,7 +4180,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026200",
       "decision": "live",
       "batch": "B10",
-      "note": "tradition: prose about travel in which the writer describes and interprets what they observe. Proposal B10 #6. Written and attested 2026-09-09.",
+      "note": "tradition: prose about travel in which the writer's noticing carries the piece. Proposal B10 #6. Written and attested 2026-09-09.",
       "cellId": "travel-writing"
     },
     {
@@ -4316,26 +4228,23 @@
     {
       "term": "True adventure stories",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026202",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "The True adventure stories record identifies a creative-nonfiction form narrating dangerous or exceptional pursuits as fact.",
-      "cellId": "true-adventure-stories"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "The True adventure stories record identifies a creative-nonfiction form narrating dangerous or exceptional pursuits as fact."
     },
     {
       "term": "True crime stories",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2014026203",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "For True crime stories, the source establishes a nonfiction crime-narrative tradition written in a novelistic manner for general readers.",
-      "cellId": "true-crime-stories"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "For True crime stories, the source establishes a nonfiction crime-narrative tradition written in a novelistic manner for general readers."
     },
     {
       "term": "Underground periodicals",
       "ref": "http://id.loc.gov/authorities/genreForms/gf2022026008",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "This pass proposes Underground periodicals because the source identifies a countercultural periodical tradition published by radical and anti-establishment groups.",
-      "cellId": "underground-periodicals"
+      "decision": "cell",
+      "batch": "R-NF-08",
+      "note": "This pass proposes Underground periodicals because the source identifies a countercultural periodical tradition published by radical and anti-establishment groups."
     },
     {
       "term": "Uniform laws",
@@ -4434,7 +4343,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2018026108",
       "decision": "declined",
       "batch": "R-NF-09",
-      "note": "The source defines Wedding sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "LCGFT classifies Wedding sermons as defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Wheel charts",
@@ -4553,7 +4462,7 @@
       "ref": "http://id.loc.gov/authorities/genreForms/gf2019026111",
       "decision": "declined",
       "batch": "R-NF-09",
-      "note": "The source defines Yom Kippur sermons by a religious or civic occasion. Sermons is the broader writing form."
+      "note": "Yom Kippur sermons are defined by a religious or civic occasion, the broader Sermons form is the writing practice."
     },
     {
       "term": "Zines",
@@ -4576,78 +4485,6 @@
       "decision": "declined",
       "batch": "R-NF-09",
       "note": "For Zoological surveys, the source gives a data or research-record format without an authored manner."
-    },
-    {
-      "term": "Derivative works",
-      "ref": "https://id.loc.gov/authorities/genreForms/gf2014026084",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Minted as a source-derived filing node above adaptations; it is outside this ledger's counted nonfiction slice.",
-      "cellId": "derivative-works",
-      "namedFrom": "https://id.loc.gov/authorities/genreForms/gf2014026084"
-    },
-    {
-      "term": "Religious materials",
-      "ref": "https://id.loc.gov/authorities/genreForms/gf2015026026",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Minted as a source-derived filing node above confessions; it is outside this ledger's counted nonfiction slice.",
-      "cellId": "religious-materials",
-      "namedFrom": "https://id.loc.gov/authorities/genreForms/gf2015026026"
-    },
-    {
-      "term": "Law materials",
-      "ref": "https://id.loc.gov/authorities/genreForms/gf2011026351",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Minted as a source-derived filing node above customary laws and legal maxims; it is outside this ledger's counted nonfiction slice.",
-      "cellId": "law-materials",
-      "namedFrom": "https://id.loc.gov/authorities/genreForms/gf2011026351"
-    },
-    {
-      "term": "Commemorative works",
-      "ref": "https://id.loc.gov/authorities/genreForms/gf2014026064",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Minted as a source-derived filing node above occasional speeches; it is outside this ledger's counted nonfiction slice.",
-      "cellId": "commemorative-works",
-      "namedFrom": "https://id.loc.gov/authorities/genreForms/gf2014026064"
-    },
-    {
-      "term": "Illustrated works",
-      "ref": "https://id.loc.gov/authorities/genreForms/gf2014026111",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Minted as a source-derived filing node above illustrated diaries; it is outside this ledger's counted nonfiction slice.",
-      "cellId": "illustrated-works",
-      "namedFrom": "https://id.loc.gov/authorities/genreForms/gf2014026111"
-    },
-    {
-      "term": "Visual works",
-      "ref": "https://id.loc.gov/authorities/genreForms/gf2017027266",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Minted as a source-derived filing node above illustrated works; it is outside this ledger's counted nonfiction slice.",
-      "cellId": "visual-works",
-      "namedFrom": "https://id.loc.gov/authorities/genreForms/gf2017027266"
-    },
-    {
-      "term": "Ephemera",
-      "ref": "https://id.loc.gov/authorities/genreForms/gf2014026093",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Minted as a source-derived filing node above pamphlets and tracts; it is outside this ledger's counted nonfiction slice.",
-      "cellId": "ephemera",
-      "namedFrom": "https://id.loc.gov/authorities/genreForms/gf2014026093"
-    },
-    {
-      "term": "Pamphlets",
-      "ref": "https://id.loc.gov/authorities/genreForms/gf2025026118",
-      "decision": "live",
-      "batch": "TASK2-LCGFT-PLACEMENT",
-      "note": "Minted as a source-derived filing node between tracts and ephemera; it is outside this ledger's counted nonfiction slice.",
-      "cellId": "pamphlets",
-      "namedFrom": "https://id.loc.gov/authorities/genreForms/gf2025026118"
     }
   ]
 }

@@ -1,0 +1,1140 @@
+{
+ "batch": "ART-3",
+ "approval": "The owner approved minting a Modernism cell for the art lane on 2026-09-09, after an earlier pass reserved the decision for her (report-nesting-visual.md, item 1). Draft only; every mint and every link numbered in the report.",
+ "allowedOperation": "Define private Draft EncyclopediaCell documents for batch ART-3 (Modernism), contract version 3: one new parent cell, nine broader links onto it, and the sources those links cite; no change of status and no studies.",
+ "cells": [
+  {
+   "number": 1,
+   "name": "Modernism",
+   "id": "modernism",
+   "new": true,
+   "version": 3,
+   "description": "Art that rejects the past as a model for the present. Tate names the principles: a rejection of history and of conservative values such as realistic depiction, innovation and experiment with form, tending to abstraction, and an emphasis on materials, techniques and processes. Modernist work draws attention to how it was made and what it was made from, and it gave up absolute originality for collage, reprise, rewriting, recapitulation and parody. Tate applies the term to a succession of movements that critics and historians have identified, from Courbet's realism to the abstraction of the 1960s, when Clement Greenberg's theory of modernist painting narrowed it and postmodernism formed against it.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "Tate defines modernism as a broad movement in Western art, architecture and design, and Wikipedia names the visual arts among its fields.",
+     "sourceIds": [
+      "tate-modernism",
+      "wp-modernism"
+     ]
+    },
+    {
+     "map": "writing",
+     "explanation": "Wikipedia's first sentence names literature among the fields the movement covers.",
+     "sourceIds": [
+      "wp-modernism"
+     ]
+    },
+    {
+     "map": "design",
+     "explanation": "Tate defines modernism as a broad movement in Western art, architecture and design.",
+     "sourceIds": [
+      "tate-modernism"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "tate-modernism",
+     "title": "Modernism — Tate art term",
+     "url": "https://www.tate.org.uk/art/art-terms/m/modernism"
+    },
+    {
+     "id": "wp-modernism",
+     "title": "Modernism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Modernism"
+    },
+    {
+     "id": "wd-q878985",
+     "title": "modernism (Q878985) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q878985"
+    }
+   ],
+   "broader": [],
+   "relations": [],
+   "questions": [
+    "Abstract art is a root and no source checked puts it here. Its own Wikipedia article, Tate's abstract art page and Wikidata all stop short of placing abstract art under modernism, and Wikidata files it under modern art instead. Tate's modernism page says only that the succession culminates in abstract art, which could mean that abstract art is inside modernism or that modernism ends where abstract art begins. Place it here once a source says abstract art is inside modernism.",
+    "Constructivism is a root because the only sentence in the sources checked says socialist realism began to oust modernism in the Soviet Union, which had previously endorsed Russian Futurism and Constructivism. That implies Constructivism is part of modernism without saying so.",
+    "This pass checked Impressionism, Post-Impressionism, Symbolism, Fluxus, Arte Povera, Gutai, CoBrA, Nouveau Réalisme and the School of Paris against their own pages, Tate, Wikidata and Getty AAT, and none of those sources places them under modernism. They stay roots.",
+    "Their own articles call Minimalism, Pop art, Conceptual art and Land art reactions against modernism, so none of them is a child here, even though the Modernism article lists Minimalism and Pop art among late twentieth-century modernist movements.",
+    "This cell is on the writing and design maps because its sources name literature, architecture and design, but the art pass placed every child so far. A writing pass and a design pass would each choose their own children.",
+    "Modernism is used both as a direction and as a name for a period of roughly 1860 to 1970. Which sense does a reader browsing this cell expect, and does the scope need to say which one it means?",
+    "Getty AAT has no concept for modernism as a parent. The records for Dada, Cubist, Surrealist, Constructivist, Expressionist, Futurist and Fauve each give a guide term in angle brackets as their only broader concept, a term that sorts by nation and period, so AAT contributes no children here."
+   ],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 2,
+   "name": "Expressionism",
+   "id": "expressionism",
+   "new": false,
+   "version": 3,
+   "baseHash": "0978e3441832d73a46227abb1bd0e15947dd1f6c1ebbaee4d82540cd0ad4d0d2",
+   "description": "A modernist movement that began in northern Europe around 1900 and shows the world entirely from a subjective position, distorting it for emotional effect. It runs across painting, poetry, drama, film and architecture, with Die Brücke and Der Blaue Reiter as its German painting groups. The distortion is a claim about what is real.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts.",
+     "sourceIds": [
+      "wp-expressionism",
+      "wd-q80113",
+      "aat-300021502"
+     ]
+    },
+    {
+     "map": "writing",
+     "explanation": "The movement worked in writing as well as in the visual arts. One cell covers both, and this is its second map membership.",
+     "sourceIds": [
+      "wp-expressionism",
+      "wd-q80113",
+      "aat-300021502"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-expressionism",
+     "title": "Expressionism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Expressionism"
+    },
+    {
+     "id": "wd-q80113",
+     "title": "Expressionism (Q80113) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q80113"
+    },
+    {
+     "id": "aat-300021502",
+     "title": "Expressionism — Getty Art & Architecture Thesaurus 300021502",
+     "url": "https://vocab.getty.edu/aat/300021502"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "modernism",
+     "explanation": "Its own article opens by calling Expressionism a modernist movement in poetry and painting, beginning in northern Europe around 1900.",
+     "sourceIds": [
+      "wp-expressionism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 3,
+   "name": "Fauvism",
+   "id": "fauvism",
+   "new": false,
+   "version": 3,
+   "baseHash": "4649c95eeda9610c1fa75f198949cb3cc161ea4b5c77e4bf2ef17761024a6427",
+   "description": "The short-lived French movement of about 1905 to 1908 in which colour was freed from description. Paint is laid in unmixed saturated areas, drawing is summary, and the colour of a shadow or a face is chosen for the picture rather than for the subject. Matisse, Derain and Vlaminck worked it out at Collioure and L'Estaque.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A movement in painting with a named body of work.",
+     "sourceIds": [
+      "wp-fauvism",
+      "aat-fauvism"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-fauvism",
+     "title": "Fauvism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Fauvism"
+    },
+    {
+     "id": "aat-fauvism",
+     "title": "Fauve — Getty AAT 300021300",
+     "url": "https://vocab.getty.edu/aat/300021300"
+    },
+    {
+     "id": "tate-fauvism",
+     "title": "Fauvism — Tate art term",
+     "url": "https://www.tate.org.uk/art/art-terms/f/fauvism"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "modernism",
+     "explanation": "Tate's page for Fauvism calls it one of the first avant-garde modernist movements of the twentieth century.",
+     "sourceIds": [
+      "tate-fauvism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068d1-50f7-7fb0-8a4c-56ceb87446af",
+     "explanation": "The record's credits name \"Fauvism\" (UnderReview).",
+     "sourceIds": [
+      "wp-fauvism"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068ca-7622-7371-be57-8c273374ca90",
+     "explanation": "The record's credits name \"Fauvism\" (UnderReview).",
+     "sourceIds": [
+      "wp-fauvism"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068ce-ad69-77c2-ba5a-8fdd23a34275",
+     "explanation": "The record's credits name \"Fauvism\" (UnderReview).",
+     "sourceIds": [
+      "wp-fauvism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068ce-af45-7cc2-9179-37c42d068ad2",
+     "explanation": "The record's credits name \"Fauvism\" (Published).",
+     "sourceIds": [
+      "wp-fauvism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068cb-9655-76b3-a2cb-9d752073f751",
+     "explanation": "The record's credits name \"Fauvism\" (Published).",
+     "sourceIds": [
+      "wp-fauvism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068d1-52b0-7793-9e78-d86120f68e7b",
+     "explanation": "The record's credits name \"Fauvism\" (Published).",
+     "sourceIds": [
+      "wp-fauvism"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 4,
+   "name": "Futurism",
+   "id": "futurism",
+   "new": false,
+   "version": 3,
+   "baseHash": "0a5597df046de966462e8b5e2208a3502333501d844c53d938f3f57f81442caf",
+   "description": "An Italian movement launched by Marinetti's manifesto of 1909, which glorified speed, machinery, youth and violence and demanded that the past be swept away. Boccioni, Balla, Severini and Carrà worked out a painting and sculpture of simultaneous motion, and the movement extended into poetry, typography, music, clothing and cooking. Its politics turned towards Fascism, which is part of its record.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts.",
+     "sourceIds": [
+      "wp-futurism",
+      "wd-q131221",
+      "aat-300021374"
+     ]
+    },
+    {
+     "map": "writing",
+     "explanation": "The movement worked in writing as well as in the visual arts. One cell covers both, and this is its second map membership.",
+     "sourceIds": [
+      "wp-futurism",
+      "wd-q131221",
+      "aat-300021374"
+     ]
+    },
+    {
+     "map": "design",
+     "explanation": "The movement worked in design as well as in the visual arts. One cell covers both, and this is its second map membership.",
+     "sourceIds": [
+      "wp-futurism",
+      "wd-q131221",
+      "aat-300021374"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-futurism",
+     "title": "Futurism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Futurism"
+    },
+    {
+     "id": "wd-q131221",
+     "title": "Futurism (Q131221) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q131221"
+    },
+    {
+     "id": "aat-300021374",
+     "title": "Futurism — Getty Art & Architecture Thesaurus 300021374",
+     "url": "https://vocab.getty.edu/aat/300021374"
+    },
+    {
+     "id": "tate-futurism",
+     "title": "Futurism — Tate art term",
+     "url": "https://www.tate.org.uk/art/art-terms/f/futurism"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "modernism",
+     "explanation": "Tate counts Futurism among modernist movements, and says it was exceptionally vehement in denouncing the past.",
+     "sourceIds": [
+      "tate-futurism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 5,
+   "name": "Cubism",
+   "id": "cubism",
+   "new": false,
+   "version": 3,
+   "baseHash": "9f95dadd2c233e9e63f9017d5479ab36836d1cb4262d7cc22a6800f73c10516d",
+   "description": "Painting and sculpture from about 1908, begun by Braque and Picasso, that shows several sides of an object at once on a flat picture plane. Its analytic phase fractures form; its synthetic phase from 1912 builds with collage and added materials.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A movement in painting and sculpture.",
+     "sourceIds": [
+      "tate-cubism",
+      "aat-cubist"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "tate-cubism",
+     "title": "Cubism — Tate art term",
+     "url": "https://www.tate.org.uk/art/art-terms/c/cubism"
+    },
+    {
+     "id": "aat-cubist",
+     "title": "Cubist — Getty AAT 300021495",
+     "url": "https://vocab.getty.edu/aat/300021495"
+    },
+    {
+     "id": "wp-der-blaue-reiter",
+     "title": "Der Blaue Reiter — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Der_Blaue_Reiter"
+    },
+    {
+     "id": "wd-q42934",
+     "title": "cubism (Q42934) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q42934"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "modernism",
+     "explanation": "Neither Tate's page for Cubism nor the Wikipedia article calls Cubism modernist. Wikidata files cubism as part of modernism.",
+     "sourceIds": [
+      "wd-q42934"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "german-expressionism",
+     "label": "engaged with",
+     "explanation": "Der Blaue Reiter exhibited and discussed Cubist work; the two avant-gardes read each other closely before 1914.",
+     "sourceIds": [
+      "wp-der-blaue-reiter"
+     ]
+    }
+   ],
+   "questions": [],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f9a43-6c82-7d71-97ae-8de5a501fbee",
+     "explanation": "The record's credits name \"Papier collé\" (Draft).",
+     "sourceIds": [
+      "tate-cubism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019f9a43-6edb-77e1-8999-d447cdae3a15",
+     "explanation": "The record's credits name \"Papier collé\" (Published).",
+     "sourceIds": [
+      "tate-cubism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019fe2a2-6611-7923-bc68-0549219c7d1e",
+     "explanation": "The record's credits name \"Papier colle\" (Published).",
+     "sourceIds": [
+      "tate-cubism"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 6,
+   "name": "American Modernism",
+   "id": "american-modernism",
+   "new": false,
+   "version": 3,
+   "baseHash": "54a496cdb76b20fe8bb33316214fa95f210fabfc778a66bd54b3bfd9233bc218",
+   "description": "The American turn to modernist form from about 1900 through the mid-century, across painting, photography, writing and architecture. The 1913 Armory Show and Stieglitz's 291 gallery brought European modernism into the argument, and O'Keeffe, Dove, Demuth and Hartley made an American version of it. Its recurring question is what an American modern art would owe Europe.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts.",
+     "sourceIds": [
+      "wp-american-modernism",
+      "wd-q4745501"
+     ]
+    },
+    {
+     "map": "writing",
+     "explanation": "The movement worked in writing as well as in the visual arts. One cell covers both, and this is its second map membership.",
+     "sourceIds": [
+      "wp-american-modernism",
+      "wd-q4745501"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-american-modernism",
+     "title": "American modernism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/American_modernism"
+    },
+    {
+     "id": "wd-q4745501",
+     "title": "American modernism (Q4745501) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q4745501"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "modernism",
+     "explanation": "Wikidata files American modernism as a subclass of modernism.",
+     "sourceIds": [
+      "wd-q4745501"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 7,
+   "name": "International Typographic Style",
+   "id": "international-typographic-style",
+   "new": false,
+   "version": 3,
+   "baseHash": "9c55753c09cfe9cb6262e138de037f023330afcf7fe75ddd644662509d7a5afa",
+   "description": "The Swiss graphic design of the 1950s onward: an underlying grid, asymmetric layout, sans-serif type set flush left and ragged right, objective photography, and information organised so the structure is visible. It was taught in Basel and Zurich and became standard for signage, timetables and corporate systems.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A movement in graphic design with a named body of work and a teaching lineage.",
+     "sourceIds": [
+      "wp-its",
+      "wd-its"
+     ]
+    },
+    {
+     "map": "design",
+     "explanation": "Design languages take the grid, the type discipline and the restrained signal colour from it.",
+     "sourceIds": [
+      "wp-its"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-its",
+     "title": "International Typographic Style — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/International_Typographic_Style"
+    },
+    {
+     "id": "wd-its",
+     "title": "International Typographic Style — Wikidata Q2140911",
+     "url": "https://www.wikidata.org/wiki/Q2140911"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "modernism",
+     "explanation": "Its own article calls the style a modernist graphic movement, and places it within the modernist movement.",
+     "sourceIds": [
+      "wp-its"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [
+    "Getty AAT Styles and Periods has no concept for this movement, so the cell cites Wikipedia and Wikidata instead. Revisit if an AAT term is added."
+   ],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f709e-091e-7501-8e91-06c203c356ab",
+     "explanation": "The record's credits name \"Swiss / International Typographic Style\" (UnderReview).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f7096-ba0d-7330-b1fd-69c9c7330b28",
+     "explanation": "The record's credits name \"Swiss / International Typographic editorial illustration\" (UnderReview).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019efde2-c73e-7093-a859-44ced72830f5",
+     "explanation": "The record's credits name \"Swiss International Style\" (UnderReview).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019efd15-506e-7f00-8f7c-077ce87c6849",
+     "explanation": "The record's credits name \"Swiss / International Typographic poster tradition\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ef872-8241-7b92-892e-2b60e64a34a2",
+     "explanation": "The record's credits name \"Swiss International Style\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019efbfe-6d3e-7f90-8c93-5c7b2f32a2cd",
+     "explanation": "The record's credits name \"International Typographic Style (Swiss Style) poster tradition\" (Archived).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f012f-9809-7a00-859a-0a9b854320c8",
+     "explanation": "The record's credits name \"Swiss International Style\" (UnderReview).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019efbff-194e-79c1-8146-fe1a2c95f480",
+     "explanation": "The record's credits name \"International Typographic Style (Swiss Style) poster tradition\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f7079-68f1-74f3-acfc-040bccfd6cd2",
+     "explanation": "The record's credits name \"Swiss International Typographic Style\" (UnderReview).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019ffc42-54d8-7973-9df1-3276335bb669",
+     "explanation": "The record's credits name \"Swiss typographic instrumentation and laboratory notation\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a03f5a-fb94-72c2-b4bb-f6983c03b605",
+     "explanation": "The record's credits name \"Swiss typographic wayfinding signage\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019ffc42-dc12-7223-b9f1-0fd37af7ae96",
+     "explanation": "The record's credits name \"Swiss transport signage\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a03f5a-09d3-7232-9e53-76e7c797d4d6",
+     "explanation": "The record's credits name \"Swiss editorial typography\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a03f5a-8427-7920-b500-fbfadccd1d2c",
+     "explanation": "The record's credits name \"Swiss product-interface typography\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019f9a30-26c8-76a1-9107-b81e376322e3",
+     "explanation": "The record's credits name \"Swiss / international-style editorial typography\" (UnderReview).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a03f5c-e9e2-7ad1-b894-0d001afa93d1",
+     "explanation": "The record's credits name \"Swiss objective typography\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a05fe0-643a-7db2-83ee-a9f3671a796e",
+     "explanation": "The record's credits name \"Swiss editorial typography\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019efe8a-354c-7e72-8458-c0fe3e913e1d",
+     "explanation": "The record's credits name \"Swiss editorial typography\" (Archived).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a05fe0-f91a-7ac0-9487-f3e614166313",
+     "explanation": "The record's credits name \"Swiss / Basel typographic grid\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019ffc42-96c7-7e00-999e-2c6475924f74",
+     "explanation": "The record's credits name \"Swiss product graphics\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a03f5d-6a7f-76c0-b0e7-7c70a378db2d",
+     "explanation": "The record's credits name \"Swiss transport information design\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a05fe4-7d0a-72d1-a726-0b7634134557",
+     "explanation": "The record's credits name \"Swiss typographic instrument documentation\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019f8fc0-56ed-7fe2-9d6d-3439d4bf5b3b",
+     "explanation": "The record's credits name \"Swiss International Typographic Style\" (UnderReview).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a05fe3-2df2-7dc1-bcad-80ac2677e185",
+     "explanation": "The record's credits name \"Swiss editorial typography\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019efd5b-cb01-7732-af35-b6cf65bed82c",
+     "explanation": "The record's credits name \"Swiss International Typographic Style\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a05fe1-84be-7ff3-8b74-77bae207bdd7",
+     "explanation": "The record's credits name \"Swiss data typography\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a03f5e-0284-77c0-830d-6367b3193737",
+     "explanation": "The record's credits name \"Swiss typographic tradition\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-019fe2a1-966c-7042-93b6-6482c115790a",
+     "explanation": "The record's credits name \"Swiss International Typographic Style\" (Published).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "PaletteSystems",
+     "entityId": "en-019f709e-0a95-7a00-b98a-269cf095622b",
+     "explanation": "The record's credits name \"Swiss / International Typographic Style\" (UnderReview).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "PaletteSystems",
+     "entityId": "en-019f7097-c4e0-7162-b70b-edef1d3b5482",
+     "explanation": "The record's credits name \"Swiss editorial red-black-white\" (UnderReview).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "PaletteSystems",
+     "entityId": "en-019f9703-8891-7ab2-a111-36248b419175",
+     "explanation": "The record's credits name \"Swiss scientific and instrument typography\" (UnderReview).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    },
+    {
+     "entitySet": "PaletteSystems",
+     "entityId": "en-019efde3-637a-7e80-8b6f-ddb9b8dcacba",
+     "explanation": "The record's credits name \"Swiss International Style\" (UnderReview).",
+     "sourceIds": [
+      "wp-its"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 8,
+   "name": "Surrealism",
+   "id": "surrealism",
+   "new": false,
+   "version": 3,
+   "baseHash": "77d08508c0feba976015cfdcc1e5c985024948439ae204017d2327c9f7d03bdc",
+   "description": "A movement of poets and artists centred on Paris from the 1920s to the 1940s, defined by André Breton's 1924 manifesto as psychic automatism. Automatic writing and drawing, dream imagery, and ordinary objects placed in impossible relationships are its working methods, in text and in image alike.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A movement in painting, object and film.",
+     "sourceIds": [
+      "tate-surrealism",
+      "aat-surrealist"
+     ]
+    },
+    {
+     "map": "writing",
+     "explanation": "Founded by a poet with a literary manifesto; Surrealist prose and poetry are the movement's own.",
+     "sourceIds": [
+      "tate-surrealism"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "tate-surrealism",
+     "title": "Surrealism — Tate art term",
+     "url": "https://www.tate.org.uk/art/art-terms/s/surrealism"
+    },
+    {
+     "id": "aat-surrealist",
+     "title": "Surrealist — Getty AAT 300021512",
+     "url": "https://vocab.getty.edu/aat/300021512"
+    },
+    {
+     "id": "wp-anthology-black-humor",
+     "title": "Anthology of Black Humor — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Anthology_of_Black_Humor"
+    },
+    {
+     "id": "wp-modernism",
+     "title": "Modernism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Modernism"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "modernism",
+     "explanation": "Surrealism's own Tate page does not call Surrealism modernist. The Modernism article says that in the painting of the 1920s and 1930s Surrealism was among the movements that defined modernism, and that the public came to regard Surrealism as the most extreme form of modernism.",
+     "sourceIds": [
+      "wp-modernism"
+     ]
+    }
+   ],
+   "relations": [
+    {
+     "cellId": "literary-nonsense",
+     "label": "anticipated by",
+     "explanation": "Breton's Anthology of Black Humour (1940) includes Lewis Carroll, claiming nonsense for Surrealism's prehistory.",
+     "sourceIds": [
+      "wp-anthology-black-humor"
+     ]
+    }
+   ],
+   "questions": [],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068cf-50b6-7622-bcf6-8f7f34974f89",
+     "explanation": "The record's credits name \"Veristic surrealism\" (UnderReview).",
+     "sourceIds": [
+      "tate-surrealism"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068ca-d8ed-71f0-9cd3-d588a253af9b",
+     "explanation": "The record's credits name \"Belgian Surrealism\" (UnderReview).",
+     "sourceIds": [
+      "tate-surrealism"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-01a068cf-e9cc-7bf3-b567-c293e550e410",
+     "explanation": "The record's credits name \"Veristic Surrealism\" (UnderReview).",
+     "sourceIds": [
+      "tate-surrealism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068ca-dab5-7080-a495-a616e07eba77",
+     "explanation": "The record's credits name \"Belgian Surrealism\" (Published).",
+     "sourceIds": [
+      "tate-surrealism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068cf-52f7-7bf1-9dde-2c82011c3585",
+     "explanation": "The record's credits name \"Veristic surrealism\" (Published).",
+     "sourceIds": [
+      "tate-surrealism"
+     ]
+    },
+    {
+     "entitySet": "DesignLanguages",
+     "entityId": "en-01a068cf-ebd9-7ad3-942d-09172ab69209",
+     "explanation": "The record's credits name \"Veristic Surrealism\" (Published).",
+     "sourceIds": [
+      "tate-surrealism"
+     ]
+    }
+   ],
+   "studies": []
+  },
+  {
+   "number": 9,
+   "name": "Dada",
+   "id": "dada",
+   "new": false,
+   "version": 3,
+   "baseHash": "78db5f31fcc836a13acfe7ab5d5cb44c19997a7f79d5dd78579f7474e35dbaa4",
+   "description": "An international movement begun in Zurich in 1916 as a response to the war and to the society that produced it, rejecting art's existing forms in favour of an anti-art of chance, collage, nonsense and provocation. It spread to Berlin, Hanover, Cologne, Paris and New York, each centre taking it differently. Its refusals became the working methods of most of what followed.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A named style or movement in the visual arts.",
+     "sourceIds": [
+      "wp-dada",
+      "wd-q6034",
+      "aat-300021500"
+     ]
+    },
+    {
+     "map": "writing",
+     "explanation": "The movement worked in writing as well as in the visual arts. One cell covers both, and this is its second map membership.",
+     "sourceIds": [
+      "wp-dada",
+      "wd-q6034",
+      "aat-300021500"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-dada",
+     "title": "Dada — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Dada"
+    },
+    {
+     "id": "wd-q6034",
+     "title": "Dada (Q6034) — Wikidata",
+     "url": "https://www.wikidata.org/wiki/Q6034"
+    },
+    {
+     "id": "aat-300021500",
+     "title": "Dada — Getty Art & Architecture Thesaurus 300021500",
+     "url": "https://vocab.getty.edu/aat/300021500"
+    },
+    {
+     "id": "wp-modernism",
+     "title": "Modernism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Modernism"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "modernism",
+     "explanation": "Dada's own article does not call Dada modernist. The Modernism article names Dada among the movements that defined modernism in the painting of the 1920s and 1930s.",
+     "sourceIds": [
+      "wp-modernism"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [],
+   "studies": []
+  },
+  {
+   "number": 10,
+   "name": "Bauhaus",
+   "id": "bauhaus",
+   "new": false,
+   "version": 3,
+   "baseHash": "e8e4727be5ee8c9f40486f50137e9300a79b0aa9ad73d5513c347d026ed92f88",
+   "description": "The German school of 1919 to 1933 and the work that came out of it. A preliminary course in material and colour, workshops that joined craft to industrial production, geometric form, primary colour and sans-serif type. Its output covers weaving, furniture, photography, typography and light studies.",
+   "provenance": {
+    "basis": "cited"
+   },
+   "maps": [
+    {
+     "map": "art",
+     "explanation": "A school and a movement with a large documented body of work.",
+     "sourceIds": [
+      "wp-bauhaus",
+      "aat-bauhaus"
+     ]
+    },
+    {
+     "map": "design",
+     "explanation": "Its workshops produced design for manufacture, and design languages take their geometry and colour discipline from it.",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    }
+   ],
+   "sources": [
+    {
+     "id": "wp-bauhaus",
+     "title": "Bauhaus — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Bauhaus"
+    },
+    {
+     "id": "aat-bauhaus",
+     "title": "Bauhaus — Getty AAT 300021432",
+     "url": "https://vocab.getty.edu/aat/300021432"
+    },
+    {
+     "id": "wp-modernism",
+     "title": "Modernism — Wikipedia",
+     "url": "https://en.wikipedia.org/wiki/Modernism"
+    }
+   ],
+   "broader": [
+    {
+     "cellId": "modernism",
+     "explanation": "Bauhaus's own article goes no further than calling the Bauhaus style one of the most influential currents in modernist architecture. The Modernism article names it among the movements that defined modernism in the painting of the 1920s and 1930s.",
+     "sourceIds": [
+      "wp-modernism",
+      "wp-bauhaus"
+     ]
+    }
+   ],
+   "relations": [],
+   "questions": [],
+   "manifestations": [
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f709e-091e-7501-8e91-06c203c356ab",
+     "explanation": "The record's credits name \"Bauhaus\" (UnderReview).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f1f5f-cb74-7191-869a-bdb222cdf0b0",
+     "explanation": "The record's credits name \"Bauhaus light experiments\" (UnderReview).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019efb69-75a3-7a90-a491-a6ef827711ed",
+     "explanation": "The record's credits name \"Bauhaus\" (Published).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019effaa-b605-7981-ad26-a8bef60611eb",
+     "explanation": "The record's credits name \"Bauhaus industrial design\" (UnderReview).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ef872-8241-7b92-892e-2b60e64a34a2",
+     "explanation": "The record's credits name \"Bauhaus geometric abstraction\" (Published).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f00cf-25db-7270-8623-2732f2ccf02c",
+     "explanation": "The record's credits name \"Bauhaus light and transparency studies\" (UnderReview).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019f012f-9809-7a00-859a-0a9b854320c8",
+     "explanation": "The record's credits name \"Bauhaus Vorkurs\" (UnderReview).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019efffa-5cd0-7c82-b03d-f89a02b2241b",
+     "explanation": "The record's credits name \"Bauhaus print workshop\" (UnderReview).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019efaac-8f59-78d1-bea0-f2050e9b44ec",
+     "explanation": "The record's credits name \"Bauhaus typographic and wayfinding tradition\" (Published).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "ArtStyles",
+     "entityId": "en-019ef92c-50a1-7e02-a1a0-4ae3aa4e3fe6",
+     "explanation": "The record's credits name \"Bauhaus geometric abstraction\" (Published).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "PaletteSystems",
+     "entityId": "en-019f012f-99f1-7bc1-8d54-80664a439700",
+     "explanation": "The record's credits name \"Bauhaus Vorkurs\" (UnderReview).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "PaletteSystems",
+     "entityId": "en-019efd16-7e76-7c20-abed-76c7d74c8f03",
+     "explanation": "The record's credits name \"Bauhaus colour theory\" (UnderReview).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "PaletteSystems",
+     "entityId": "en-019f4959-3b5b-7230-b3e1-38f93336dce7",
+     "explanation": "The record's credits name \"Bauhaus print workshops\" (UnderReview).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "PaletteSystems",
+     "entityId": "en-019efffa-d978-71d0-bb3c-81c2bec0c814",
+     "explanation": "The record's credits name \"Bauhaus color theory\" (UnderReview).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    },
+    {
+     "entitySet": "PaletteSystems",
+     "entityId": "en-019efdef-7045-7670-aa5e-6c114dc07405",
+     "explanation": "The record's credits name \"Bauhaus weaving workshop\" (UnderReview).",
+     "sourceIds": [
+      "wp-bauhaus"
+     ]
+    }
+   ],
+   "studies": []
+  }
+ ]
+}

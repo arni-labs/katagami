@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
-import { breadthTell, checkCollection, creditOf, descendantsOf, reconcileRead, RULES } from "../../scripts/encyclopedia-integrity.mjs";
+import { breadthTell, checkCollection, creditOf, descendantsOf, placement, placementSummary, reconcileRead, RULES } from "../../scripts/encyclopedia-integrity.mjs";
 
 const sha256 = (text) => createHash("sha256").update(text).digest("hex");
 
@@ -358,4 +358,113 @@ test("creditOf takes the quoted credit, and falls back to the whole sentence", (
 test("descendantsOf walks the whole subtree and tolerates a cycle", () => {
   const children = new Map([["a", ["b"]], ["b", ["c"]], ["c", ["a"]]]);
   assert.deepEqual([...descendantsOf("a", children)].sort(), ["a", "b", "c"]);
+});
+
+
+// ---- the placement pass: which records no cell holds
+//
+// Written from the two definitions the function states rather than from the
+// collection as it stands today, because the collection is the thing being
+// measured and a fixture copied from it can only agree with it.
+
+// `parsed` as checkCollection builds it: live cells only, already JSON.
+const parsedWith = (entries) => new Map(entries.map(([id, manifestations]) => [id, { manifestations }]));
+
+test("a record no live cell names is unplaced, and one a cell names is placed", () => {
+  const parsed = parsedWith([["chiaroscuro", [manifestation("held", "x")]]]);
+  const records = new Map([["ArtStyles:held", "Draft"], ["ArtStyles:lonely", "Draft"]]);
+  const { placed, unplaced } = placement(parsed, records);
+  assert.deepEqual(placed.map((row) => row.entityId), ["held"]);
+  assert.deepEqual(unplaced.map((row) => row.entityId), ["lonely"]);
+});
+
+test("an archived record is out of scope, so retiring one never grows the unplaced count", () => {
+  const records = new Map([["ArtStyles:retired", "Archived"], ["ArtStyles:live", "Draft"]]);
+  const before = placement(parsedWith([]), new Map([["ArtStyles:retired", "Draft"], ["ArtStyles:live", "Draft"]]));
+  const after = placement(parsedWith([]), records);
+  assert.equal(before.unplaced.length, 2);
+  assert.equal(after.unplaced.length, 1, "archiving a record moved it out of scope rather than into the unplaced list");
+});
+
+test("an archived record a cell still names is reported on its own, not folded into either count", () => {
+  const parsed = parsedWith([["cell", [manifestation("retired", "the record (Archived)")]]]);
+  const { placed, unplaced, archivedButPlaced } = placement(parsed, new Map([["ArtStyles:retired", "Archived"]]));
+  assert.deepEqual(placed, []);
+  assert.deepEqual(unplaced, []);
+  assert.deepEqual(archivedButPlaced.map((row) => row.entityId), ["retired"]);
+});
+
+test("a record is placed by a LIVE cell only, because a reader never reaches an unattested one", () => {
+  // checkCollection drops unattested and non-Draft cells before `parsed`, so the
+  // fixture is what it would hand over: the dead cell simply is not there.
+  const records = new Map([["ArtStyles:orphan", "Draft"]]);
+  assert.deepEqual(placement(parsedWith([]), records).unplaced.map((row) => row.entityId), ["orphan"]);
+});
+
+test("the same id in two sets is two records, so one being held does not place the other", () => {
+  const parsed = parsedWith([["cell", [{ entitySet: "ArtStyles", entityId: "shared", explanation: "x", sourceIds: ["s1"] }]]]);
+  const records = new Map([["ArtStyles:shared", "Draft"], ["WritingStyles:shared", "Draft"]]);
+  const { placed, unplaced } = placement(parsed, records);
+  assert.deepEqual(placed.map((row) => row.set), ["ArtStyles"]);
+  assert.deepEqual(unplaced.map((row) => row.set), ["WritingStyles"]);
+});
+
+test("a record named by a cell but present in no set is reported as dangling, not as placed", () => {
+  const parsed = parsedWith([["cell", [manifestation("ghost", "x")]]]);
+  const { placed, unplaced, danglingIds } = placement(parsed, new Map([["ArtStyles:real", "Draft"]]));
+  assert.deepEqual(placed, []);
+  assert.deepEqual(unplaced.map((row) => row.entityId), ["real"]);
+  assert.deepEqual(danglingIds, ["ArtStyles:ghost"]);
+});
+
+test("a record held by two cells is placed once and names both", () => {
+  const parsed = parsedWith([["a", [manifestation("both", "x")]], ["b", [manifestation("both", "y")]]]);
+  const { placed } = placement(parsed, new Map([["ArtStyles:both", "Draft"]]));
+  assert.equal(placed.length, 1);
+  assert.deepEqual(placed[0].cells, ["a", "b"]);
+});
+
+test("names are carried when supplied so the report can say which record is unplaced", () => {
+  const names = new Map([["WritingStyles:w1", "Sherwood Anderson - Winesburg, Ohio (1919)"]]);
+  const { unplaced } = placement(parsedWith([]), new Map([["WritingStyles:w1", "Draft"]]), names);
+  assert.equal(unplaced[0].name, "Sherwood Anderson - Winesburg, Ohio (1919)");
+});
+
+test("no names supplied is not a crash and not a wrong name", () => {
+  const { unplaced } = placement(parsedWith([]), new Map([["ArtStyles:a1", "Draft"]]));
+  assert.equal(unplaced[0].name, null);
+});
+
+test("every entity set the schema allows is a set placement can report on", async () => {
+  // The set list lived in two scripts as a copied array. A copied list rots: the
+  // sweep would read three sets and report a clean placement count for a fourth
+  // it never opened. This asserts the enum is the single source, by using it.
+  const { MANIFESTATION_ENTITY_SETS } = await import("../src/lib/encyclopedia-schema.ts");
+  assert.ok(MANIFESTATION_ENTITY_SETS.length >= 4);
+  const records = new Map(MANIFESTATION_ENTITY_SETS.map((set) => [`${set}:x`, "Draft"]));
+  const { unplaced } = placement(parsedWith([]), records);
+  assert.deepEqual(new Set(unplaced.map((row) => row.set)), new Set(MANIFESTATION_ENTITY_SETS));
+});
+
+test("the summary the two output paths share reports per set, because one total describes no lane", () => {
+  // The lanes are at completely different stages: on 2026-09-09 the writing lane
+  // had one unplaced record and design languages had 784. A caller handed only
+  // the combined 1287 cannot tell those apart, so both paths read `bySet`.
+  const parsed = parsedWith([["cell", [{ entitySet: "WritingStyles", entityId: "w1", explanation: "x", sourceIds: ["s1"] }]]]);
+  const records = new Map([
+    ["WritingStyles:w1", "Draft"], ["WritingStyles:w2", "Draft"],
+    ["DesignLanguages:d1", "Draft"], ["DesignLanguages:d2", "Draft"], ["DesignLanguages:d3", "Draft"],
+  ]);
+  const summary = placementSummary(placement(parsed, records));
+  assert.deepEqual(summary.bySet, {
+    DesignLanguages: { placed: 0, unplaced: 3 },
+    WritingStyles: { placed: 1, unplaced: 1 },
+  });
+  assert.equal(summary.placed, 1);
+  assert.equal(summary.unplaced, 4);
+});
+
+test("a set with no records at all does not appear as a lane with nothing in it", () => {
+  const summary = placementSummary(placement(parsedWith([]), new Map([["ArtStyles:a", "Draft"]])));
+  assert.deepEqual(Object.keys(summary.bySet), ["ArtStyles"]);
 });

@@ -6,6 +6,7 @@
 //   node scripts/encyclopedia-integrity.mjs                                        # against production
 //   node scripts/encyclopedia-integrity.mjs --allow-count-mismatch=DesignLanguages  # what works today
 //   node scripts/encyclopedia-integrity.mjs --json                                  # machine-readable
+//   node scripts/encyclopedia-integrity.mjs --unplaced                              # name every unplaced record
 //
 // Exit codes: 0 clean, 1 violations found, 2 the read did not account for every
 // row, 3 the run was degraded by an allowed mismatch. A degraded run gets its
@@ -27,6 +28,15 @@
 // that is fixed, a clean run needs --allow-count-mismatch, which reports over
 // what was read and prints the mismatch at the top and in the summary line.
 //
+// It answers both directions. Everything the violation rules do walks cells and
+// asks what they point at; the placement section walks records and asks which of
+// them nothing points at. That second half is what the skill's placement rule
+// needs and what nobody could run: the rule was written and its first case
+// documented by hand, but the count was something someone had to remember to
+// work out. Read it per set. The lanes are at different stages, and on
+// 2026-09-09 the writing lane had one unplaced record while design languages had
+// 784, so the combined 1,287 is true of neither.
+//
 // The checking is a pure function over rows so the invariants are covered by
 // fixtures in ui/scripts/encyclopedia-integrity.test.mjs rather than only by a
 // production run that passes on the day it is written.
@@ -41,6 +51,7 @@
 // That narrower test is what `misplaced-record` implements, and the broad count
 // is reported as context rather than as a violation.
 import { createHash } from "node:crypto";
+import { MANIFESTATION_ENTITY_SETS } from "../ui/src/lib/encyclopedia-schema.ts";
 
 export const RULES = {
   "unattested": "a Draft cell whose document_validated is false, or whose stored document does not hash to document_hash",
@@ -200,7 +211,7 @@ export function checkCollection(rows, records = null) {
     }
   }
 
-  return { violations, context: breadthTell(parsed, childrenById, records) };
+  return { violations, parsed, context: breadthTell(parsed, childrenById, records) };
 }
 
 // The tell, never a finding. Counting a cell's children looked like it could be
@@ -286,6 +297,73 @@ export function breadthTell(parsed, childrenById, records = null) {
 // `--allow-count-mismatch=A,B` names the sets whose mismatch may be waved
 // through. The bare flag names nothing and is refused, because the whole point
 // is that it cannot cover the set under test by accident.
+// ---- the placement pass: which records no cell holds
+//
+// The other direction. Everything above walks cells and asks what they point at;
+// this walks records and asks which of them nothing points at. That is the half
+// the skill's placement rule needs and the half nobody could run: the rule was
+// written, its first case was documented by hand, and the count was something
+// someone had to remember to work out.
+//
+// Two definitions decide the number, and both are stated because a count without
+// its measure is what two runs disagree over:
+//
+//   PLACED  - at least one live cell names the record in `manifestations`. A cell
+//             that is archived or unattested holds nothing, because a reader
+//             never reaches it.
+//   IN SCOPE - the record is not Archived. An archived record does not need a
+//             home, so counting it unplaced would make the number grow every time
+//             something is correctly retired.
+//
+// Archived-but-placed is reported separately rather than folded in. It is legal:
+// a cell link must point at a live Draft, a manifestation may name a row in any
+// status, and the collection attaches archived records with "(Archived)" in the
+// explanation. Folding it into either count would hide a deliberate practice.
+export function placement(parsed, records, names = new Map()) {
+  const held = new Map();
+  for (const [cellId, doc] of parsed) {
+    for (const entry of doc.manifestations ?? []) {
+      if (!entry || typeof entry !== "object") continue;
+      const id = `${entry.entitySet}:${entry.entityId}`;
+      if (!held.has(id)) held.set(id, []);
+      held.get(id).push(cellId);
+    }
+  }
+  const rows = [];
+  for (const [id, record] of records) {
+    const [set, entityId] = [id.slice(0, id.indexOf(":")), id.slice(id.indexOf(":") + 1)];
+    rows.push({ set, entityId, name: names.get(id) ?? null, status: record, cells: held.get(id) ?? [] });
+  }
+  rows.sort((a, b) => (a.set + (a.name ?? a.entityId)).localeCompare(b.set + (b.name ?? b.entityId)));
+  const inScope = rows.filter((row) => row.status !== "Archived");
+  return {
+    rows,
+    unplaced: inScope.filter((row) => row.cells.length === 0),
+    placed: inScope.filter((row) => row.cells.length > 0),
+    archivedButPlaced: rows.filter((row) => row.status === "Archived" && row.cells.length > 0),
+    // A record named by a cell that does not exist among the records read. The
+    // cell side already fails on this; counted here so the two halves of one run
+    // cannot report different totals without saying so.
+    danglingIds: [...held.keys()].filter((id) => !records.has(id)),
+  };
+}
+
+// The same numbers the human report leads with. One function, so the two paths
+// cannot disagree about what was measured.
+export function placementSummary(place) {
+  const sets = [...new Set(place.rows.map((row) => row.set))].sort();
+  return {
+    bySet: Object.fromEntries(sets.map((set) => [set, {
+      placed: place.placed.filter((row) => row.set === set).length,
+      unplaced: place.unplaced.filter((row) => row.set === set).length,
+    }])),
+    placed: place.placed.length,
+    unplaced: place.unplaced.length,
+    archivedButPlaced: place.archivedButPlaced.length,
+    danglingIds: place.danglingIds,
+  };
+}
+
 export function allowedSets(argv) {
   const sets = new Set();
   for (const argument of argv) {
@@ -339,18 +417,26 @@ async function main() {
   };
   const cells = await readAll("EncyclopediaCells");
   const records = new Map();
-  for (const set of ["DesignLanguages", "ArtStyles", "PaletteSystems", "WritingStyles"]) {
-    for (const row of await readAll(set)) records.set(`${set}:${row.entity_id}`, row.status);
+  const recordNames = new Map();
+  for (const set of MANIFESTATION_ENTITY_SETS) {
+    for (const row of await readAll(set)) {
+      records.set(`${set}:${row.entity_id}`, row.status);
+      recordNames.set(`${set}:${row.entity_id}`, row.fields?.name ?? null);
+    }
   }
   // A watch that goes green without seeing the data is worse than no watch, so a
   // read that does not account for every row fails the run rather than reporting
   // a clean result. Found by the verifier on 2026-09-09: with paging stopped
   // early the sweep reported zero while a broken cell sat unread on page two.
-  const { violations, context } = checkCollection(cells, records);
+  const { violations, parsed, context } = checkCollection(cells, records);
   const allowed = allowedSets(process.argv);
   const waved = shortReads.filter((line) => allowed.has(line.set));
   const fatal = shortReads.filter((line) => !allowed.has(line.set));
   const asJson = process.argv.includes("--json");
+  // Computed before the --json branch, not after it. The comment below records
+  // that --json once returned before the exit-code logic ran and drifted from the
+  // human path; adding a section after that return would repeat it exactly.
+  const place = placement(parsed, records, recordNames);
 
   // One place decides the code, so the machine-readable path cannot drift from
   // the human one. It did: --json returned before any of this ran, so a caller
@@ -370,7 +456,7 @@ async function main() {
     console.log(JSON.stringify(fatal.length > 0
       ? { exitCode: status, read, violations: null, context: null,
           note: "the read did not account for every row, so nothing is reported about the collection" }
-      : { exitCode: status, read, violations, context }, null, 2));
+      : { exitCode: status, read, violations, context, placement: placementSummary(place) }, null, 2));
     process.exitCode = status;
     return;
   }
@@ -411,6 +497,48 @@ async function main() {
   console.log(`a cell has something below it. The zero above is honest and narrower than it reads.`);
   console.log(`  cells the rule is structurally active on: ${context.depthRuleActiveOn} of ${context.cells}`);
   console.log(`  credits that literally contain even their own cell's name: ${context.creditsNamingTheirOwnCell} of ${context.creditsTotal}`);
+
+  const setsSeen = [...new Set(place.rows.map((row) => row.set))].sort();
+  const summary = placementSummary(place);
+  console.log(`\nPLACEMENT. Which records no cell holds, which is the other direction from`);
+  console.log(`everything above. Placed means at least one LIVE cell names the record in its`);
+  console.log(`manifestations, because a reader never reaches an archived or unattested cell.`);
+  console.log(`In scope means the record is not Archived: a retired record does not need a`);
+  console.log(`home, and counting it unplaced would grow this number every time something is`);
+  console.log(`correctly retired.`);
+  console.log(``);
+  console.log(`  PER SET, and read it per set. The lanes are at completely different stages of`);
+  console.log(`  the placement work, so one combined number describes none of them:`);
+  console.log(`  on 2026-09-09 the writing lane had one unplaced record and design languages`);
+  console.log(`  had 784, and "1287 unplaced" is true of neither.`);
+  console.log(`    ${"set".padEnd(18)} ${"placed".padStart(7)} ${"unplaced".padStart(9)} ${"in scope".padStart(9)}`);
+  for (const set of setsSeen) {
+    const { placed: placedIn, unplaced: unplacedIn } = summary.bySet[set];
+    console.log(`    ${set.padEnd(18)} ${String(placedIn).padStart(7)} ${String(unplacedIn).padStart(9)} ${String(placedIn + unplacedIn).padStart(9)}`);
+  }
+  console.log(`    ${"all".padEnd(18)} ${String(summary.placed).padStart(7)} ${String(summary.unplaced).padStart(9)} ${String(summary.placed + summary.unplaced).padStart(9)}`);
+
+  // A report nobody runs twice is a report that does not exist. Listing 1,287
+  // records is 65KB of wall, so the default names a few per set and says how
+  // many it withheld; --unplaced prints all of them.
+  const listAll = process.argv.includes("--unplaced");
+  const SHOWN = 8;
+  for (const set of setsSeen) {
+    const rows = place.unplaced.filter((row) => row.set === set);
+    if (rows.length === 0) continue;
+    console.log(`\n  unplaced ${set} (${rows.length}):`);
+    for (const row of listAll ? rows : rows.slice(0, SHOWN)) {
+      console.log(`      ${row.name ?? row.entityId}  [${row.status}]`);
+    }
+    if (!listAll && rows.length > SHOWN) console.log(`      ... and ${rows.length - SHOWN} more; pass --unplaced to list every one`);
+  }
+  console.log(`\n  archived records a cell still names: ${place.archivedButPlaced.length} (legal: a cell link`);
+  console.log(`    must point at a live Draft, a manifestation may name a row in any status, and`);
+  console.log(`    these say "(Archived)" in their explanation)`);
+  if (place.danglingIds.length) {
+    console.log(`  named by a cell but absent from every record set: ${place.danglingIds.length} ${place.danglingIds.join(", ")}`);
+    console.log(`    (the dangling-manifestation rule above counts these too; if the two disagree, say so rather than picking one)`);
+  }
   process.exitCode = status;
 }
 
