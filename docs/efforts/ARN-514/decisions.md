@@ -235,21 +235,23 @@ preview data as production stops seeing it — which is the point.
 
 ## D9 — The Linear issue id was unverified, and the guess was wrong
 
-**Decision** — used `ARN-514` consistently and flagged it for confirmation
-rather than leaving two different invented ids in the tree.
+**Decision** — at the time, used `ARN-462` consistently and flagged it for
+confirmation rather than leaving two different invented ids in the tree. (The
+effort is now `ARN-514`; this entry keeps the original ids because the whole
+point of it is which id was chosen and why.)
 
 **Came up because** the panel noticed the code comments said `ARN-478` while the
-effort folder said `ARN-514`. Both are ids I introduced; the Linear MCP has been
-returning "requires re-authorization" for this whole effort, so neither could be
+effort folder said `ARN-462`. Both are ids I introduced; the Linear MCP had been
+returning "requires re-authorization" for the whole effort, so neither could be
 checked against a real issue.
 
 **Options** — pick one and flag it; drop the id and name the folder for the
 work; block until Linear is reachable.
 
 **Chose one id plus a flag** because the repo convention is
-`docs/efforts/<issue-id>/`, the id appears in two commit messages already, and a
-rename before merge is cheap. Blocking the whole effort on an expired token is
-not proportionate.
+`docs/efforts/<issue-id>/`, the id appeared in two commit messages already, and a
+rename before merge looked cheap. Blocking the whole effort on an expired token
+did not seem proportionate.
 
 **Given up**: if the placeholder turned out to be a different real issue, the
 folder, the comments and the commit messages would need renaming.
