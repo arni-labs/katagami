@@ -129,8 +129,12 @@ export function trackMcpToolCall(d: {
   durationMs: number;
   sub?: string;
   errorKind?: string;
+  /** Argument KEY NAMES the caller sent on a rejected call, clamped to a known
+   *  vocabulary at the call site. Never values. Turns "invalid_arguments" into
+   *  a diagnosis of WHICH parameter shape an agent reached for. */
+  argKeys?: string;
 }): void {
-  const { tool, outcome, durationMs, sub, errorKind } = d;
+  const { tool, outcome, durationMs, sub, errorKind, argKeys } = d;
   const eventAt = new Date(); // request-path time — the post-response task may cross midnight
   runAfter(async () => {
     let userHash: string | undefined;
@@ -162,6 +166,7 @@ export function trackMcpToolCall(d: {
         duration_ms: durationMs,
         user_hash: userHash,
         error_kind: errorKind,
+        arg_keys: argKeys,
       },
       outcome === "success" ? "info" : "error",
     );
