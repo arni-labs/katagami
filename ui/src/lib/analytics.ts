@@ -39,7 +39,7 @@ function readEnv() {
     clientToken: process.env.NEXT_PUBLIC_DD_RUM_CLIENT_TOKEN,
     site: process.env.NEXT_PUBLIC_DD_RUM_SITE || "datadoghq.com",
     service: process.env.NEXT_PUBLIC_DD_RUM_SERVICE || "katagami-web",
-    env: process.env.NEXT_PUBLIC_DD_RUM_ENV || "production",
+    env: process.env.NEXT_PUBLIC_DD_RUM_ENV || undefined,
     version: process.env.NEXT_PUBLIC_DD_RUM_VERSION || undefined,
     sampleRate: Number(process.env.NEXT_PUBLIC_DD_RUM_SAMPLE_RATE ?? "100"),
     // Session replay records the actual screen (DOM) of a % of sessions. Off by
@@ -55,9 +55,44 @@ export function rumEnabled(): boolean {
   return Boolean(e.applicationId && e.clientToken);
 }
 
+/** A page served from a developer's own machine — no RUM at all. A dev session
+ *  is not usage and does not belong in the numbers. */
+export function isLocalHost(hostname: string): boolean {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "[::1]" ||
+    hostname === "::1" ||
+    hostname.endsWith(".localhost")
+  );
+}
+
+/** Where the browser is actually running, decided by hostname rather than by a
+ *  build-time variable.
+ *
+ *  The env tag is baked into the bundle at build time, so a local or preview
+ *  build inherits whatever `NEXT_PUBLIC_DD_RUM_ENV` was set to — and
+ *  `vercel env pull` hands a developer the production value. Defaulting to
+ *  "production" meant a phone testing against `192.168.1.20:3000`, a tunnel, or
+ *  any preview deployment tagged its browser errors `env:production` and could
+ *  page a human through the site-errors monitor.
+ *
+ *  Only katagami.ai is production. Everything else keeps sending RUM — the data
+ *  is still useful — but under a tag that cannot page anyone. An explicit
+ *  `NEXT_PUBLIC_DD_RUM_ENV` still wins, so a deliberate setting is never
+ *  overridden; it just no longer decides production by default. */
+export function rumEnvFor(hostname: string, configured?: string): string {
+  if (configured) return configured;
+  if (hostname === "katagami.ai" || hostname.endsWith(".katagami.ai")) {
+    return "production";
+  }
+  return "preview";
+}
+
 /** Initialize the RUM SDK once, in the browser. Safe to call repeatedly. */
 export async function initRum(): Promise<void> {
   if (initialized || typeof window === "undefined") return;
+  if (isLocalHost(window.location.hostname)) return;
   if (starting) return starting;
   const e = readEnv();
   const applicationId = e.applicationId;
@@ -83,7 +118,7 @@ export async function initRum(): Promise<void> {
         clientToken,
         site: e.site,
         service: e.service,
-        env: e.env,
+        env: rumEnvFor(window.location.hostname, e.env),
         version: e.version,
         sessionSampleRate: Number.isFinite(e.sampleRate) ? e.sampleRate : 100,
         sessionReplaySampleRate: Number.isFinite(e.replaySampleRate)

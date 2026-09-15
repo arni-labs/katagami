@@ -1,0 +1,19 @@
+{
+  "name": "[Katagami] Temper is unreachable \u2014 real users are locked out",
+  "type": "log alert",
+  "query": "logs(\"service:katagami-server env:production @evt:mcp_auth_challenge @reason:backend_unavailable\").index(\"*\").rollup(\"count\").last(\"15m\") >= 3",
+  "message": "Valid bearers are being rejected because the liveness checks behind them cannot run \u2014 Temper is unreachable, not the caller's fault. Every authenticated MCP user is locked out while this lasts.\n\nWithout this reason these would sit in the same bucket as garbage tokens and read as a probing spike, so treat it as an outage and not as abuse.\n\nCheck the Railway openpaw service first.\n\nLogs: https://app.datadoghq.com/logs?query=service%3Akatagami-server%20env%3Aproduction%20%40reason%3Abackend_unavailable\n\n@rita.mirai@gmail.com",
+  "tags": [
+    "katagami",
+    "reliability",
+    "outage"
+  ],
+  "options": {
+    "notify_no_data": false,
+    "renotify_interval": 60,
+    "thresholds": {
+      "critical": 3
+    },
+    "include_tags": true
+  }
+}
