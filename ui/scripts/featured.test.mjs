@@ -120,7 +120,7 @@ console.log(
 
 const catalog = read("src/lib/catalog.ts");
 const odata = read("src/lib/odata.ts");
-const layout = read("src/app/(site)/layout.tsx");
+const searchIndex = read("src/lib/command-palette-index.ts");
 const membership = read("src/lib/catalog-membership.mjs");
 
 const required = [
@@ -134,12 +134,12 @@ const required = [
   [
     // ⌘K's anonymous (sample-tier) gate reads the visitor allowlist too.
     "⌘K sample index uses the shared isShownToVisitorsRecord (not fields-only)",
-    layout,
+    searchIndex,
     /isShownToVisitorsRecord/,
   ],
   [
     "⌘K no longer has a fields-only isSearchFeatured helper",
-    layout,
+    searchIndex,
     /^(?![\s\S]*isSearchFeatured)[\s\S]*$/,
   ],
   [
