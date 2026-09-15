@@ -20,10 +20,18 @@ function load(file, stubs) {
 }
 
 const { React, createRoot, flush } = createFlush();
-const settle = async (respond) => {
-  const run = async () => { respond(); await new Promise((resolve) => setTimeout(resolve, 0)); };
+const settle = async (respond, check) => {
+  const run = async () => { respond(); };
   if (typeof React.act === "function") await React.act(run);
-  else { await run(); flush(() => {}); }
+  else await run();
+  // Production React schedules promise-driven updates outside flushSync.
+  // Wait for the asserted DOM state, not one assumed event-loop turn.
+  const deadline = performance.now() + 2_000;
+  while (true) {
+    try { check(); return; }
+    catch (error) { if (performance.now() >= deadline) throw error; }
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
 };
 
 test("the site renders its gallery even when catalog and identity reads never resolve", () => {
@@ -91,8 +99,10 @@ test("palette loads on demand, retries, aborts on close and discards late result
     assert.equal(calls[0].options.cache, "no-store");
     assert.match(host.textContent, /Loading search/);
     assert.doesNotMatch(host.textContent, /no matches/);
-    await settle(() => calls[0].resolve(new Response("unavailable", { status: 503 })));
-    assert.match(host.textContent, /Could not load search/);
+    await settle(
+      () => calls[0].resolve(new Response("unavailable", { status: 503 })),
+      () => assert.match(host.textContent, /Could not load search/),
+    );
     flush(() => [...host.querySelectorAll("button")].find((b) => b.textContent === "Try again").click());
     assert.equal(calls.length, 2);
     close();
@@ -100,10 +110,9 @@ test("palette loads on demand, retries, aborts on close and discards late result
     open();
     assert.equal(calls.length, 3, "reopening rechecks current server-side identity");
     await settle(() => {
-    calls[1].resolve(Response.json([{ id: "old", name: "Stale private result", kind: "language", href: "/language/old" }]));
-    calls[2].resolve(Response.json([{ id: "public", name: "Current result", kind: "language", href: "/language/public" }]));
-    });
-    assert.match(host.textContent, /Current result/);
+      calls[1].resolve(Response.json([{ id: "old", name: "Stale private result", kind: "language", href: "/language/old" }]));
+      calls[2].resolve(Response.json([{ id: "public", name: "Current result", kind: "language", href: "/language/public" }]));
+    }, () => assert.match(host.textContent, /Current result/));
     assert.doesNotMatch(host.textContent, /Stale private result/);
   } finally {
     flush(() => root.unmount());

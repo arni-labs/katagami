@@ -1,10 +1,53 @@
 # Decisions
 
-- Existing gallery-preview effort ARN-489 / PR #307 is separate; do not duplicate launcher work.
-- Home layout currently awaits a tier-specific cached search index; on a cache miss it reads full language, palette, and art-style catalogs serially before rendering children. Remove this dependency rather than shortening authentication checks.
-- Vercel app connection returned UNAUTHORIZED / oauth_token_invalid_grant (reauthentication required). Do not retry it. GitHub and Temper work; public production remains reachable.
-- No signed-in website session is present. User asked about an existing approved session; do not forge production login or weaken its gate for verification.
+### Load optional search only when requested
 
-## PR identity
+**Decision:** Remove command-palette index construction from the shared layout and request it from a server endpoint when the visitor opens search.
+
+**Came up because:** The layout awaited full-catalog index construction before returning the gallery, including on a cold signed-in visit.
+
+**Options:** Stream the index behind a Suspense boundary on every page visit, or fetch it only when the search dialog opens.
+
+**Chose on-demand loading because:** It removes full-catalog reads and index serialization from gallery loading entirely. The tradeoff is that the first search opening can show a loading state.
+
+**Where:** ui/src/app/(site)/layout.tsx; ui/src/components/command-palette.tsx; ui/src/app/api/command-palette/route.ts.
+
+### Keep visibility enforcement on the server
+
+**Decision:** Determine the visitor tier on every endpoint request and use private, no-store HTTP responses; retain the existing internal index cache keyed by tier.
+
+**Came up because:** The index includes catalog entries that anonymous visitors must not receive, and layouts can survive client navigation.
+
+**Options:** Let the browser choose a tier or reuse its prior index, or authorize each request on the server.
+
+**Chose server authorization because:** It preserves the existing anonymous shelf boundary and rechecks identity whenever search reopens. The tradeoff is a request on each opening, amortized by the existing derived-index cache.
+
+**Where:** ui/src/app/api/command-palette/route.ts; ui/src/lib/command-palette-index.ts; ui/scripts/command-palette-loading.test.mjs.
+
+### PR identity
 
 Decision: use GH-311, the actual GitHub pull-request/issue number, for CI artifact discovery. Came up because the PR body mentioned an unrelated credential-recovery issue and the checker selected it. Options: reuse that unrelated issue or identify the gallery effort explicitly. Chose GH-311 because it keeps the scopes separate and satisfies the repository's existing issue-key convention without changing the checker. Where: PR title/body and docs/efforts/GH-311.
+
+### Synchronize asynchronous production React tests
+
+**Decision:** Wait for the asserted rendered state with a bounded deadline in the new asynchronous palette test.
+
+**Came up because:** Node 24 reproduced the Vercel failure: the test asserted after one timer turn while production React still displayed the loading state.
+
+**Options:** Increase a fixed sleep, or wait for the expected state while preserving a failing timeout.
+
+**Chose state-based waiting because:** It verifies the actual render without assuming scheduler timing. A missing error or result still fails within two seconds.
+
+**Where:** ui/scripts/command-palette-loading.test.mjs.
+
+### Restore the existing test workflow
+
+**Decision:** Apply the same two-line GitHub expression correction already proposed in PR #307.
+
+**Came up because:** GitHub rejects `secrets` in a step condition, so the existing workflow cannot run this PR's UI tests. Workflow write access is now restored.
+
+**Options:** Wait for the independent launcher PR to merge, or reuse its minimal correction here.
+
+**Chose the existing correction because:** It enables the required tests without incorporating launcher changes or adding a diagnostic workflow. The optional credential-dependent ledger check keeps the same condition.
+
+**Where:** .github/workflows/tests.yml.
