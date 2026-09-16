@@ -9,6 +9,7 @@ forbid(
   action in [
     Action::"AddCuratorNotes",
     Action::"Archive",
+    Action::"AttachArtStyleReview",
     Action::"AttachComputedFacets",
     Action::"AttachPublishedAssets",
     Action::"AttachTasteVector",
@@ -25,6 +26,7 @@ forbid(
     Action::"SetFeatured",
     Action::"SetTaxonomy",
     Action::"SetVisitorVisibility",
+    Action::"SubmitForReview",
     Action::"UpdateQuality"
   ],
   resource is ArtStyle

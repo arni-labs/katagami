@@ -414,8 +414,7 @@ def run_art_style_case(
     })
     print(f"  CompleteArtStyleSynthesis -> HTTP {st}")
 
-    time.sleep(2)
-    job = get_entity("CurationJobs", job_id)
+    job = wait_finalized_job(job_id)
     art = get_entity("ArtStyles", art_id)
     job_status, art_status = entity_status(job), entity_status(art)
     err = (job.get("ErrorMessage") or (job.get("fields") or {}).get("error_message") or "")[:200]
@@ -472,8 +471,7 @@ def run_palette_case(label, tokens_payload, expect_published):
     })
     print(f"  CompletePaletteSynthesis -> HTTP {st}")
 
-    time.sleep(2)
-    job = get_entity("CurationJobs", job_id)
+    job = wait_finalized_job(job_id)
     pal = get_entity("PaletteSystems", pal_id)
     job_status, pal_status = entity_status(job), entity_status(pal)
     err = (job.get("ErrorMessage") or (job.get("fields") or {}).get("error_message") or "")[:200]
@@ -487,18 +485,41 @@ def run_palette_case(label, tokens_payload, expect_published):
         report(f"palette/{label}: palette NOT published", pal_status != "Published", f"palette={pal_status}")
 
 
+def wait_finalized_job(job_id):
+    deadline = time.monotonic() + 60
+    while True:
+        job = get_entity("CurationJobs", job_id)
+        if entity_status(job) in ("Completed", "Failed") or time.monotonic() >= deadline:
+            return job
+        time.sleep(0.5)
+
+
 def verify_non_system_cannot_forge_attestation(art_id):
-    st, body = act("ArtStyles", art_id, "AttachArtStyleReview", {
-        "source_basis": json.dumps({"verdict": "forged"}),
-        "prompt_review": json.dumps({"verdict": "forged"}),
-        "portability_report": json.dumps({"verdict": "forged"}),
-    })
-    detail = json.dumps(body)[:300]
-    report(
-        "art_style/security: non-system principal cannot forge review attestation",
-        st in (401, 403),
-        f"http={st} body={detail}",
-    )
+    # Identity comes from a registered credential, never self-declared headers.
+    token = os.environ.get("E2E_CONTRIBUTOR_TOKEN")
+    assert token, "Set E2E_CONTRIBUTOR_TOKEN to a registered local contributor credential"
+    previous_headers = dict(HDRS)
+    HDRS.clear()
+    HDRS.update({"X-Tenant-Id": TENANT, "Authorization": f"Bearer {token}"})
+    try:
+        st, _ = req("GET", f"/tdata/ArtStyles('{art_id}')")
+        assert st == 200, f"Contributor credential cannot read the test style: HTTP {st}"
+        for action in ("AttachArtStyleReview", "SubmitForReview"):
+            st, body = act("ArtStyles", art_id, action, {
+                "source_basis": json.dumps({"verdict": "forged"}),
+                "prompt_review": json.dumps({"verdict": "forged"}),
+                "portability_report": json.dumps({"verdict": "forged"}),
+            })
+            report(f"art_style/security: contributor cannot {action}",
+                   st == 403, f"http={st} body={json.dumps(body)[:300]}")
+        for method in ("PATCH", "PUT", "DELETE"):
+            st, body = req(method, f"/tdata/ArtStyles('{art_id}')",
+                           {"quality_review_passed": True} if method != "DELETE" else None)
+            report(f"art_style/security: contributor cannot {method} style",
+                   st in (403, 405), f"http={st} body={json.dumps(body)[:300]}")
+    finally:
+        HDRS.clear()
+        HDRS.update(previous_headers)
 
 
 def main():
