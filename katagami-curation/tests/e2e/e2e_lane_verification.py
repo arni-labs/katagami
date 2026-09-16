@@ -5,7 +5,7 @@ Drives the REAL production flow against a locally served Temper with paw-fs +
 katagami-commons + katagami-curation installed and the actual
 finalize_spawned_session WASM registered:
 
-  four Locked contributor-source Files + eight recorded proof Files
+  one or two Locked source Files + two or four recorded proof Files
   -> ArtStyle (SubmitArtStyle, no references)
   -> CurationJob Start -> CompleteArtStyleSynthesis (fires the finalizer WASM)
   -> assert ArtStyle Published (happy) / job Failed + style unpublished
@@ -228,6 +228,7 @@ def run_art_style_case(
     fake_proof_index=None,
     mismatched_hash_index=None,
     expected_error_code="lane_file_not_image",
+    source_count=2,
 ):
     """Exercise reference-free publication with optional proof/consent failures."""
     jpg = jpeg_bytes()
@@ -255,7 +256,7 @@ def run_art_style_case(
         "signature_details": "slight ink spread and irregular hand pressure",
         "exclusions": "Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry",
     }
-    source_payloads = [jpg, sizable_png, jpg, sizable_png]
+    source_payloads = [jpg, sizable_png][:source_count]
     source_records = []
     for index, (case, payload) in enumerate(zip(PROOF_CASES, source_payloads)):
         extension = "png" if index in (1, 3) else "jpg"
@@ -274,7 +275,7 @@ def run_art_style_case(
     proof_specs = [
         (model, case_index)
         for model in EDIT_ENDPOINTS
-        for case_index in range(len(PROOF_CASES))
+        for case_index in range(source_count)
     ]
     proof_ids = []
     proof_records = []
@@ -512,6 +513,9 @@ def main():
 
     print("== stage 1: art style happy path (no reference images) ==")
     _, good_art_id = run_art_style_case("good", expect_published=True)
+
+    print("== stage 1a: one-source cross-model comparison ==")
+    run_art_style_case("one-source", expect_published=True, source_count=1)
 
     print("== stage 1b: forged attestation is denied to non-system principals ==")
     verify_non_system_cannot_forge_attestation(good_art_id)

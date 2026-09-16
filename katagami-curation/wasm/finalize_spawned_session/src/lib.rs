@@ -3417,11 +3417,13 @@ fn verify_art_style_proof_record_files(
             "proof_output",
         )?;
     }
-    if verified_sources.len() != 4 || verified_outputs.len() != 8 {
+    if !(1..=2).contains(&verified_sources.len())
+        || verified_outputs.len() != verified_sources.len() * 2
+    {
         return Err(VerificationError::new(
             "art_style_proof_file_matrix_incomplete",
             format!(
-                "ArtStyle '{owner_id}' proof records must resolve to four immutable sources and eight unique outputs"
+                "ArtStyle '{owner_id}' proof records must resolve to one or two immutable sources and exactly two unique outputs per source"
             ),
         )
         .entity("ArtStyle", owner_id)

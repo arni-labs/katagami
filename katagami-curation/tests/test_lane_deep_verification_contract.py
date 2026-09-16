@@ -160,7 +160,8 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn("source_basis", submit)
         self.assertIn("prompt_review", submit)
         self.assertIn("portability_report", submit)
-        self.assertIn(".length(8)", submit)
+        self.assertIn("items.length === 2 || items.length === 4", submit)
+        self.assertNotIn(".length(8)", submit)
         self.assertNotIn("generate_art_style_proof_matrix", MCP_TOOLS)
         self.assertIn("import_art_style_proof_image", MCP_TOOLS)
         self.assertIn("image_base64", MCP_TOOLS)
@@ -221,7 +222,7 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertNotIn("rights_evidence", MCP_TOOLS)
         self.assertIn("artStyleProofInput", MCP_TOOLS)
         self.assertIn(
-            "thumbnail_file_id must identify one of the eight verified proof shots",
+            "thumbnail_file_id must identify one of the verified proof shots",
             MCP_TOOLS,
         )
         self.assertNotIn("art_style_proof_receipt_key", CURATION_JOB_SPEC)

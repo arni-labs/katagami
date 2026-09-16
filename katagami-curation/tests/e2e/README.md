@@ -10,11 +10,12 @@ typed error and leaves the entity unpublished.
 This is the check the contract tests cannot do: it proves the feature works
 end to end the way production uses it, before anything deploys.
 
-## What it proves (14 assertions)
+## What it proves
 
 | Case | Expected |
 |---|---|
-| Art style with eight Locked raster portability proofs, two distinct models using the same four Locked contributor sources with matching generation records, and no reference images | job `Completed`, style `Published`, asset URLs + search blob attached |
+| Art style with four Locked raster portability proofs, two distinct models using the same two Locked contributor sources with matching generation records, and no reference images | job `Completed`, style `Published`, asset URLs + search blob attached |
+| Art style with two Locked raster portability proofs, two distinct models using the same single Locked contributor source | job `Completed`, style `Published` |
 | Art style with HTML posing as a portability proof image | job `Failed` with `lane_file_not_image`, style stays `Draft` |
 | Art style whose edit matrix records a digest that does not match the Locked output | job `Failed` with `art_style_proof_file_hash_mismatch`, style stays unpublished |
 | Palette with real tokens export + thumbnail | job `Completed`, palette `Published` |

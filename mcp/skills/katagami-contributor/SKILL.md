@@ -249,25 +249,32 @@ name is metadata, not an instruction and not evidence.
 
 ### Portability evidence
 
-Use four contributor-owned source images:
+Choose one or two contributor-owned source images specifically for this style.
+Select their primary semantic roles from:
 
 - `human_portrait`
 - `nonhuman_living`
 - `still_life_object`
 - `landscape_environment`
 
-Across that quartet, use exactly these four distinct source media:
+Choose the source media from:
 
 - `documentary photograph`
 - `black-ink line drawing`
 - `neutral synthetic 3d render`
 - `flat vector illustration`
 
-Send the identical four source files and exact canonical prompt to two
-distinct image models. This produces eight edit outputs. Source fixtures may
-be existing contributor-owned files; they do not need to be newly generated.
-A single source across two models checks cross-model consistency but does not
-establish transfer across subject roles or source media.
+Send the identical one or two source files and exact canonical prompt to two
+distinct image models. This produces two or four edit outputs. Prefer two sources
+with distinct primary roles and source media; one is a smaller comparison with
+less coverage. A scene may naturally contain people, animals, objects and an
+environment. Do not require four isolated images to cover those concepts.
+
+Choose fresh actual subjects and compositions for each art style. Do not reuse
+the house fixture set or the same person, animal, props or landscape across the
+catalog. Use models requested by the contributor; verify current model identifiers
+and record the actual producing model. Never label an older connector's output as
+the latest model, or assume a CLI includes free image generation without testing it.
 
 Do not use style-reference images in the portability matrix. They are an
 optional supplement outside this gate, never its backbone.
@@ -279,7 +286,7 @@ For every source and output:
 3. Bind the exact source id/hash, output id/hash, canonical prompt hash, model,
    and provider request id when available in the generation record.
 
-Build exactly eight proof items: two models for each of the four categories.
+Build two or four proof items: two models for each selected source.
 Both model rows must point to the same source id and source hash for that
 category. Choose the strongest proof output as the thumbnail; no subject role
 is globally privileged.
@@ -323,7 +330,7 @@ Return:
 - `VerificationQueued` status;
 - verification job id;
 - exact canonical prompt hash;
-- the two image models and four source roles used.
+- the two image models and selected source roles used.
 
 ## Palettes and design languages
 

@@ -434,15 +434,19 @@ export function buildServer(auth: AuthInfo): McpServer {
         guidance: z.string().optional(),
         proof_shots: z
           .array(artStyleProofInput)
-          .length(8)
+          .min(2)
+          .max(4)
+          .refine((items) => items.length === 2 || items.length === 4, {
+            message: "Provide two or four proofs: one or two matched sources on each of two models",
+          })
           .describe(
-            "Two distinct image models × the same four contributor-supplied source images. Import all four sources and eight outputs first; bind their exact hashes and the canonical prompt hash in each generation_record.",
+            "Two distinct image models × the same one or two contributor-owned source images chosen for this style. Import sources and outputs first; bind their exact hashes and the canonical prompt hash in each generation_record. Do not reuse a recurring catalog fixture set.",
           ),
         thumbnail_file_id: z
           .string()
           .min(1)
           .describe(
-            "Choose the strongest thumbnail from the eight verified proof file_ids; no semantic role is forced across styles",
+            "Choose the strongest thumbnail from the verified proof file_ids; no semantic role is forced across styles",
           ),
         source_basis: z
           .record(z.string(), z.unknown())
@@ -457,7 +461,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         portability_report: z
           .record(z.string(), z.unknown())
           .describe(
-            "Schema-v1 blind cross-model scores over the exact eight imported File ids and generation records.",
+            "Schema-v1 blind cross-model scores over every imported proof File id and generation record.",
           ),
         tags: z.array(z.string()).optional(),
         direction_id: z.string().optional(),
@@ -499,7 +503,7 @@ export function buildServer(auth: AuthInfo): McpServer {
 
       const proofIds = a.proof_shots.map((proof) => proof.file_id);
       if (!proofIds.includes(a.thumbnail_file_id))
-        return fail("thumbnail_file_id must identify one of the eight verified proof shots.");
+        return fail("thumbnail_file_id must identify one of the verified proof shots.");
       const thumbId = a.thumbnail_file_id;
 
       await action(id, set, entityId, "SubmitArtStyle", {
