@@ -5,15 +5,15 @@
   "licence": "CC-BY-4.0",
   "use": "read-and-cite",
   "total": 1031,
-  "totalDerivedFrom": "genes.csv at f9221a64bc2495bbd548217f6bc356956c0c111a: 1,031 data rows across 17 gene-family values; sha256 351298e48326e1db8a5e86b81490f450d17a1a2fa18ff3b8af54844786a47350; counted 2026-09-15",
+  "totalDerivedFrom": "All 1,031 data rows in genes.csv at f9221a64bc2495bbd548217f6bc356956c0c111a, parsed and reconciled by source row on 2026-09-15",
   "lane": "visual",
   "terms": [
     {
       "term": "'85 New Wave",
       "ref": "https://www.artsy.net/gene/85-new-wave",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "A named wave in Chinese art of the mid-1980s, but no independent reference answered under any title tried, and the Artsy gene page refuses scripts. Revisit when a source can be opened."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "\"Bad Painting\"",
@@ -48,9 +48,9 @@
     {
       "term": "19th Century German Realism",
       "ref": "https://www.artsy.net/gene/19th-century-german-realism",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "Re-read after the decline reason was found wrong: it was grouped with the photography period labels and is nothing of the kind. The gene describes German painters of roughly 1850 to 1900 who broke with Romanticism for a dispassionate realism, Menzel and Liebermann among them. Deferred rather than kept, because the gene itself says German Realism was not a coherent movement but a broad array of individual styles, and no independent reference treats it as a school: Wikipedia has no article for it and names Menzel a German Realist only in his own biography. It returns as a cell if a source treats the school."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "20th Century Art",
@@ -318,9 +318,9 @@
     {
       "term": "Capitalist Realism",
       "ref": "https://www.artsy.net/gene/capitalist-realism",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "The Richter, Polke and Lueg coinage of 1963, but no independent reference answered under a title that could be confirmed as the art movement rather than Mark Fisher's book."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Chicago Imagists",
@@ -341,9 +341,9 @@
     {
       "term": "Cluj School",
       "ref": "https://www.artsy.net/gene/cluj-school",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "The Cluj painters around Adrian Ghenie and Victor Man are a documented formation, but the only article of that name is the Romanian city."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "CoBrA",
@@ -792,9 +792,9 @@
     {
       "term": "Documentary Film",
       "ref": "https://www.artsy.net/gene/documentary-film",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "A real form with its own history, but it belongs to a moving-image map this collection does not yet have. Revisit when the maps are extended."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Documentary Travel Photography",
@@ -837,9 +837,9 @@
     {
       "term": "East Village Art",
       "ref": "https://www.artsy.net/gene/east-village-art",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "The 1980s New York East Village gallery scene is documented, but the only article of that name is the neighbourhood."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Emerging Art",
@@ -874,9 +874,9 @@
     {
       "term": "Faux Naïf",
       "ref": "https://www.artsy.net/gene/faux-naif",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "Deliberate naivety is a real manner, but no reference treats it as a body of work distinct from naive art itself."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Feminist Art",
@@ -1062,9 +1062,9 @@
     {
       "term": "Hyperrealism and Photorealism",
       "ref": "https://www.artsy.net/gene/hyperrealism-and-photorealism",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "Two real directions combined into one Artsy facet. Each deserves a cell under its own name; deferred until they are read from a vocabulary that keeps them apart."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Iconic Works of Art History",
@@ -1222,9 +1222,9 @@
     {
       "term": "Modern Photography",
       "ref": "https://www.artsy.net/gene/modern-photography",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "Artsy's name for straight photography and its modernist period; deferred until read under a name a source uses."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Mono-ha",
@@ -1276,9 +1276,9 @@
     {
       "term": "Neo-Geo",
       "ref": "https://www.artsy.net/gene/neo-geo",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "A real late-1980s New York tendency, but the only Wikipedia article of that name is a video game console. Revisit when a source for the art movement is found."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Neo-Impressionism",
@@ -1393,9 +1393,9 @@
     {
       "term": "Nul Group",
       "ref": "https://www.artsy.net/gene/nul-group",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "The Dutch counterpart of Group Zero, but no independent reference answered under any title tried."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Old Master Drawings and Prints",
@@ -1492,9 +1492,9 @@
     {
       "term": "Political Pop",
       "ref": "https://www.artsy.net/gene/political-pop",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "A named Chinese movement of the 1990s beside Cynical Realism, but no independent reference answered. Revisit when a source can be opened."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Pop and Contemporary Pop",
@@ -1515,9 +1515,9 @@
     {
       "term": "Post-'70s Ego Generation",
       "ref": "https://www.artsy.net/gene/post-70s-ego-generation",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "An Artsy coinage with no independent reference; deferred rather than declined because the Chinese generation it points at is real."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Post-Impressionism",
@@ -1560,9 +1560,9 @@
     {
       "term": "Post-World War I European Classicism",
       "ref": "https://www.artsy.net/gene/post-world-war-i-european-classicism",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "Artsy's name for what criticism calls the return to order. Deferred until the direction can be read under a name a source uses."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Post-World War II School of Paris",
@@ -1820,9 +1820,9 @@
     {
       "term": "The Stars Art Group (Xing Xing)",
       "ref": "https://www.artsy.net/gene/the-stars-art-group-xing-xing",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "The 1979 Beijing group is well documented, but no independent reference answered under any title tried."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Traditional Arts of Africa, Oceania, and the Americas",
@@ -1889,9 +1889,9 @@
     {
       "term": "Works Progress Administration (WPA)",
       "ref": "https://www.artsy.net/gene/works-progress-administration-wpa",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "A federal employment programme rather than a direction; the art it funded is held by American Regionalism and Social Realism. Deferred rather than declined because the Federal Art Project's own body of work may deserve a cell."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Yale University School of Art",
@@ -1911,9 +1911,9 @@
     {
       "term": "Zaire School of Popular Painting",
       "ref": "https://www.artsy.net/gene/zaire-school-of-popular-painting",
-      "decision": "deferred",
-      "batch": "B21-B23",
-      "note": "A documented Congolese urban painting tradition, but no independent reference answered under any title tried."
+      "decision": "declined",
+      "batch": "B27-close",
+      "note": "Declined after five Artsy batches produced no source-backed case for a live cell."
     },
     {
       "term": "Byzantine Art",
@@ -2650,7 +2650,7 @@
       "cellId": "generative-art"
     },
     {
-      "term": "Artists' Books",
+      "term": "Artists’ Books",
       "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L691",
       "batch": "B25",
       "decision": "live",
@@ -2842,7 +2842,7 @@
       "cellId": "net-art"
     },
     {
-      "term": "Trompe l'oeil",
+      "term": "Trompe l’oeil",
       "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L548",
       "batch": "B25",
       "decision": "merge",
@@ -3796,6 +3796,3858 @@
       "batch": "B25",
       "decision": "declined",
       "note": "Different intentions and practices joined by resemblance to prior work."
+    },
+    {
+      "term": "Glass as Material",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L26",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "glass-as-material"
+    },
+    {
+      "term": "Assemblage",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L138",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "assemblage"
+    },
+    {
+      "term": "Found Objects",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L450",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "found-objects"
+    },
+    {
+      "term": "Bronze",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L726",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "bronze"
+    },
+    {
+      "term": "Wood",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L727",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "wood"
+    },
+    {
+      "term": "Silver",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L785",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "silver"
+    },
+    {
+      "term": "Aluminum",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L787",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "aluminum"
+    },
+    {
+      "term": "Ceramic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L788",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "ceramic"
+    },
+    {
+      "term": "Enamel",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L791",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "enamel"
+    },
+    {
+      "term": "Gold",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L797",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "gold"
+    },
+    {
+      "term": "Stone",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L804",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "stone"
+    },
+    {
+      "term": "Concrete",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L810",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "concrete"
+    },
+    {
+      "term": "Steel",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L815",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "steel"
+    },
+    {
+      "term": "Plastic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L816",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "plastic"
+    },
+    {
+      "term": "Marble",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L818",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "marble"
+    },
+    {
+      "term": "Metal",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L822",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "metal"
+    },
+    {
+      "term": "Natural Fibers",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L828",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "natural-fibers"
+    },
+    {
+      "term": "Porcelain",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L833",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "porcelain"
+    },
+    {
+      "term": "Ivory",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L842",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "ivory"
+    },
+    {
+      "term": "Gemstone",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L847",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "gemstone"
+    },
+    {
+      "term": "Inlay",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L850",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "inlay"
+    },
+    {
+      "term": "Resin",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L857",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "resin"
+    },
+    {
+      "term": "Bone",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L880",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "bone"
+    },
+    {
+      "term": "Chalk",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L899",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "chalk"
+    },
+    {
+      "term": "Cardboard",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L945",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "cardboard"
+    },
+    {
+      "term": "Terracotta",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L985",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "terracotta"
+    },
+    {
+      "term": "Leather/Hide",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1162",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "leather-hide"
+    },
+    {
+      "term": "Taxidermy",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1260",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "taxidermy"
+    },
+    {
+      "term": "Plaster",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1268",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "plaster"
+    },
+    {
+      "term": "Neon and Fluorescent Light",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1271",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "neon-and-fluorescent-light"
+    },
+    {
+      "term": "Use of Paper",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1298",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "use-of-paper"
+    },
+    {
+      "term": "Brass",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1359",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "brass"
+    },
+    {
+      "term": "Mosaics",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L80",
+      "batch": "B26",
+      "decision": "merge",
+      "note": "Owner accepted the merge into mosaic. The Artsy row was added as a source and attested in production on 2026-09-15.",
+      "cellId": "mosaic"
+    },
+    {
+      "term": "Stained Glass",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1173",
+      "batch": "B26",
+      "decision": "merge",
+      "note": "Owner accepted the merge into stained-glass. The Artsy row was added as a source and attested in production on 2026-09-15.",
+      "cellId": "stained-glass"
+    },
+    {
+      "term": "Use of Ephemeral Materials",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L244",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Catalogue umbrella. It groups work by how long its material lasts across many materials and practices."
+    },
+    {
+      "term": "Use of Common Materials",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L412",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Catalogue umbrella. It groups many unrelated materials by availability and price."
+    },
+    {
+      "term": "Chrome-Plated",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L771",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Visible finish. It names a chromium finish applied to many kinds of objects."
+    },
+    {
+      "term": "Use of Vintage Imagery",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1062",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Visible attribute. It groups work by the apparent age of borrowed imagery."
+    },
+    {
+      "term": "Use of Precious Materials",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1254",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Catalogue umbrella. It groups gold, silver, ivory and gemstones by value. Those materials receive their own cells."
+    },
+    {
+      "term": "Floor Lamp",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L701",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Lighting",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L713",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Ceiling Light",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L722",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Storage",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L728",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Table Lamp",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L730",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Chair",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L735",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Bed",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L736",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Table",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L741",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Armchair",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L742",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Dining Table",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L743",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Chaise Lounge",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L745",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Furniture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L751",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Side Chair",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L752",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Side Table",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L753",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Mirror",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L806",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Upholstered Furniture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L812",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Sofa",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L813",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Bench",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L829",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Desk",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L844",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Stool",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L953",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Seating",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L967",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Chandelier",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1340",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Shelving",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1342",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Console",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1344",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Sconce",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1349",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Sideboard",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1369",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Coffee Table",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1370",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Religious Building",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L826",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Sustainable Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L875",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Handcrafted Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L954",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Children's Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L986",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Non-Functional Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L995",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "CAD (Computer Aided Design)",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1016",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Timber Frame Construction",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1034",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Masonry Construction",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1035",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Steel/Iron Frame Construction",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1055",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Reinforced Concrete Construction",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1060",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Industrial and Product Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1205",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Modular Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1338",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Whimsical Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L852",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Visible attribute. It groups work by a viewer's impression of playfulness."
+    },
+    {
+      "term": "Engineering/Construction and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L943",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Catalogue umbrella. It combines several engineering and construction practices already represented more precisely."
+    },
+    {
+      "term": "Focus on Joints/Connections",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1028",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Visible attribute. It groups work by the prominence of one construction detail."
+    },
+    {
+      "term": "Restrained Forms",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1041",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Visible attribute. It groups work by a broad visual impression."
+    },
+    {
+      "term": "Emerging Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1223",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Catalogue umbrella. It groups recent work without naming a practice or period boundary."
+    },
+    {
+      "term": "Jewelry by Painters and Sculptors",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1307",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Catalogue umbrella. It groups jewelry by the maker's other occupation."
+    },
+    {
+      "term": "Design by Architects",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1347",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Catalogue umbrella. It groups design by the maker's profession."
+    },
+    {
+      "term": "Women Designers",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1354",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Catalogue umbrella. It groups design by maker identity across many design practices."
+    },
+    {
+      "term": "Design by Artists",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1365",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Catalogue umbrella. It groups design by the maker's other occupation."
+    },
+    {
+      "term": "Iconic Works of Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1373",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Visible attribute. It depends on a changing judgment of fame."
+    },
+    {
+      "term": "1918–1939 (Interwar)",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L873",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "1918-1939-interwar"
+    },
+    {
+      "term": "1990s",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L902",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "1990s"
+    },
+    {
+      "term": "1980s",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L910",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "1980s"
+    },
+    {
+      "term": "Prehistoric Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L937",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "prehistoric-art"
+    },
+    {
+      "term": "1970s",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L987",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "1970s"
+    },
+    {
+      "term": "Ancient Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1219",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "ancient-art"
+    },
+    {
+      "term": "1970–present",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L69",
+      "batch": "B26",
+      "decision": "merge",
+      "note": "Owner accepted the merge into art-since-1970. The Artsy row was added as a source and attested in production on 2026-09-15.",
+      "cellId": "art-since-1970"
+    },
+    {
+      "term": "1960s",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L867",
+      "batch": "B26",
+      "decision": "merge",
+      "note": "Owner accepted the merge into 1960s-art. The Artsy row was added as a source and attested in production on 2026-09-15.",
+      "cellId": "1960s-art"
+    },
+    {
+      "term": "1940s–1950s",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L988",
+      "batch": "B26",
+      "decision": "merge",
+      "note": "Owner accepted the merge into 1940s-and-1950s-art. The Artsy row was added as a source and attested in production on 2026-09-15.",
+      "cellId": "1940s-and-1950s-art"
+    },
+    {
+      "term": "Late 19th Century",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L894",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Bare date filter. It is a date range applied across regions and practices."
+    },
+    {
+      "term": "19th Century",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L895",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Bare date filter. It is a global century filter spanning unrelated historical practices."
+    },
+    {
+      "term": "18th Century",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L897",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Bare date filter. It is a global century filter spanning unrelated historical practices."
+    },
+    {
+      "term": "17th Century",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L928",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Bare date filter. It is a global century filter spanning unrelated historical practices."
+    },
+    {
+      "term": "1000–1400 CE",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L930",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Bare date filter. It combines unrelated regional histories within a date span."
+    },
+    {
+      "term": "21st Century",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L948",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Bare date filter. It is an open global century filter with no settled endpoint."
+    },
+    {
+      "term": "1900–1917",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L968",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Bare date filter. It is a date span. The cited museum survey begins in 1910 and does not establish the full range."
+    },
+    {
+      "term": "15th Century",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L969",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Bare date filter. It is a global century filter spanning unrelated historical practices."
+    },
+    {
+      "term": "16th Century",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L979",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Bare date filter. It is a global century filter spanning unrelated historical practices."
+    },
+    {
+      "term": "500–1000 CE",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L990",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Bare date filter. It combines unrelated regional histories within a date span."
+    },
+    {
+      "term": "1860–1969",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1313",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Bare date filter. It spans a century of unrelated practices and duplicates narrower period cells."
+    },
+    {
+      "term": "Vase",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L703",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Flatware",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L723",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Bowl",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L746",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Tray",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L754",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Vessel",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L769",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Wallpaper",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L772",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Tool",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L782",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Tableware",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L800",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Clock",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L809",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Door",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L811",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Objets de Vertu",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L824",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Household Objects",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1201",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Glass Objects",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1215",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Container",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1216",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Plate",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1357",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Frame",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1360",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Artist Merchandise and Multiples",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1363",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L198",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Architecture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L512",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Jewelry",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L764",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Fashion Design and Wearable Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1114",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Graphic Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1152",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Music",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1258",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Written Word",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1292",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Ceremonial Object",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L719",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "ceremonial-object"
+    },
+    {
+      "term": "Arms and Armor",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L817",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "arms-and-armor"
+    },
+    {
+      "term": "Funerary/Commemorative Object",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L836",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "funerary-commemorative-object"
+    },
+    {
+      "term": "Tablet/Stele",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L846",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "tablet-stele"
+    },
+    {
+      "term": "Mask",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1275",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "mask"
+    },
+    {
+      "term": "Reliquary",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1282",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "reliquary"
+    },
+    {
+      "term": "Musical Instrument",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1346",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "musical-instrument"
+    },
+    {
+      "term": "Costume Accessory",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1269",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Brooches",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1305",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Earrings",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1306",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Watches",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1316",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Bracelets",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1317",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Necklaces",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1319",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Rings",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1331",
+      "batch": "B26",
+      "decision": "declined",
+      "note": "Owner declined: product categories and top-level discipline labels are not directions."
+    },
+    {
+      "term": "Rug",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L712",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "rug"
+    },
+    {
+      "term": "Tapestry and Wall Hanging",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L763",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "tapestry-and-wall-hanging"
+    },
+    {
+      "term": "Textile Arts",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L848",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "textile-arts"
+    },
+    {
+      "term": "Use of Fabric",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1074",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "use-of-fabric"
+    },
+    {
+      "term": "Knitted and Crocheted",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1144",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "knitted-and-crocheted"
+    },
+    {
+      "term": "Embroidery",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1315",
+      "batch": "B26",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "embroidery"
+    },
+    {
+      "term": "Arts and Crafts Movement",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L73",
+      "decision": "live",
+      "batch": "B24",
+      "note": "A documented British movement with a shared program across architecture and decorative arts, supported by V&A and Getty. Written and attested 2026-09-15.",
+      "cellId": "arts-and-crafts-movement"
+    },
+    {
+      "term": "Wiener Werkstätte",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L92",
+      "decision": "live",
+      "batch": "B24",
+      "note": "A formal Vienna workshop with a shared program and sustained production, supported by V&A and its Vienna Secession history. Written and attested 2026-09-15.",
+      "cellId": "wiener-werkstatte"
+    },
+    {
+      "term": "Brutalism",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L682",
+      "decision": "live",
+      "batch": "B24",
+      "note": "A documented postwar architectural movement, supported by MoMA and Getty with Modernism as its parent. Written and attested 2026-09-15.",
+      "cellId": "brutalism"
+    },
+    {
+      "term": "American Mid-Century Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L720",
+      "decision": "live",
+      "batch": "B24",
+      "note": "A bounded postwar American design history with common institutions, production methods and makers, supported by LACMA and Cooper Hewitt. Written and attested 2026-09-15.",
+      "cellId": "american-mid-century-design"
+    },
+    {
+      "term": "American Studio Craft Movement",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L734",
+      "decision": "live",
+      "batch": "B24",
+      "note": "A postwar American maker movement with institutions and work across several craft media, supported by the Smithsonian. Written and attested 2026-09-15.",
+      "cellId": "american-studio-craft-movement"
+    },
+    {
+      "term": "Postmodern Architecture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L783",
+      "decision": "live",
+      "batch": "B24",
+      "note": "A documented movement across art, architecture and design from about 1970 to 1990, supported by V&A and Getty. Written and attested 2026-09-15.",
+      "cellId": "postmodern-architecture-and-design"
+    },
+    {
+      "term": "International Style",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L796",
+      "decision": "live",
+      "batch": "B24",
+      "note": "A named modern architectural movement with a coherent program and extensive body of buildings, supported by MoMA and Getty. Written and attested 2026-09-15.",
+      "cellId": "international-style"
+    },
+    {
+      "term": "Union des Artistes Modernes",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L825",
+      "decision": "live",
+      "batch": "B24",
+      "note": "A formal French association whose members exhibited and produced work across disciplines, supported by Centre Pompidou. Written and attested 2026-09-15.",
+      "cellId": "union-des-artistes-modernes"
+    },
+    {
+      "term": "Post-War French Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L843",
+      "decision": "live",
+      "batch": "B24",
+      "note": "A bounded French design history from 1945 to 1975 with shared production conditions and institutions, supported by the Musée des Arts Décoratifs. Written and attested 2026-09-15.",
+      "cellId": "post-war-french-design"
+    },
+    {
+      "term": "Scandinavian Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L927",
+      "decision": "live",
+      "batch": "B24",
+      "note": "Nationalmuseum and Getty support a mid-century regional design category and its marketing history. Written as Scandinavian Modern and attested 2026-09-15.",
+      "cellId": "scandinavian-modern"
+    },
+    {
+      "term": "Italian Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L952",
+      "decision": "live",
+      "batch": "B24",
+      "note": "Triennale Milano supports a bounded postwar Italian design history, so the cell narrows the open-ended country label to Post-War Italian Design. Written and attested 2026-09-15.",
+      "cellId": "post-war-italian-design"
+    },
+    {
+      "term": "Mid-Century Modern Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1368",
+      "decision": "live",
+      "batch": "B24",
+      "note": "V&A and Getty support a bounded international design category, including its retrospective name and commercial revival. Written and attested 2026-09-15.",
+      "cellId": "mid-century-modern-design"
+    },
+    {
+      "term": "Modern Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1333",
+      "decision": "merge",
+      "batch": "B24",
+      "note": "Modern Design duplicates the existing Modernism cell, and its genes.csv listing was added as a second source before the document was attested 2026-09-15.",
+      "cellId": "modernism"
+    },
+    {
+      "term": "Memphis Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1358",
+      "decision": "merge",
+      "batch": "B24",
+      "note": "Memphis Design names the same group and years as the existing Memphis Group cell, and its genes.csv listing was added as a second source before the document was attested 2026-09-15.",
+      "cellId": "memphis-group"
+    },
+    {
+      "term": "Art Deco Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1364",
+      "decision": "merge",
+      "batch": "B24",
+      "note": "The production Art Deco cell already covers art and design, so its genes.csv listing was added as a second source before the document was attested 2026-09-15.",
+      "cellId": "art-deco"
+    },
+    {
+      "term": "Danish Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1367",
+      "decision": "merge",
+      "batch": "B24",
+      "note": "Getty lists Danish Modern as an alternate term for Scandinavian Modern, and the genes.csv listing was included in the new Scandinavian Modern cell attested 2026-09-15.",
+      "cellId": "scandinavian-modern"
+    },
+    {
+      "term": "Art Nouveau Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1371",
+      "decision": "merge",
+      "batch": "B24",
+      "note": "Art Nouveau Furniture and Design is a design view of the existing movement, so its genes.csv listing and a V&A-backed design map membership were added before the document was attested 2026-09-15.",
+      "cellId": "art-nouveau"
+    },
+    {
+      "term": "Contemporary Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L878",
+      "decision": "declined",
+      "batch": "B24",
+      "note": "Contemporary is a date filter, and the row combines practices with conflicting aims without naming a community or shared program."
+    },
+    {
+      "term": "20th Century Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L966",
+      "decision": "declined",
+      "batch": "B24",
+      "note": "A century and medium grouping contains many movements but is not one movement."
+    },
+    {
+      "term": "French Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1100",
+      "decision": "declined",
+      "batch": "B24",
+      "note": "French Furniture and Design spans centuries and several documented movements, and Post-War French Design is the defensible narrower proposal."
+    },
+    {
+      "term": "Modern and Contemporary Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1166",
+      "decision": "declined",
+      "batch": "B24",
+      "note": "The label joins two large periods and gives no common practice, community or body of work."
+    },
+    {
+      "term": "Modern and Contemporary Fashion Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1274",
+      "decision": "declined",
+      "batch": "B24",
+      "note": "The label supplies a medium and two periods without identifying a common direction among its designers."
+    },
+    {
+      "term": "British Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1361",
+      "decision": "declined",
+      "batch": "B24",
+      "note": "National origin across four centuries is a catalog filter containing several movements and production systems."
+    },
+    {
+      "term": "Dutch Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1362",
+      "decision": "declined",
+      "batch": "B24",
+      "note": "Dutch Furniture and Design combines De Stijl-era work, a loose 1990s federation and unrelated current studios, and does not describe one movement."
+    },
+    {
+      "term": "Brazilian Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1372",
+      "decision": "declined",
+      "batch": "B24",
+      "note": "Brazilian Furniture and Design combines Brazilian modernism with a later conceptual studio and gives no shared organization or program across the full span."
+    },
+    {
+      "term": "American Furniture and Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/9ff9f6b2167e8ec14eb10d98d946834dcd680488/genes.csv#L1375",
+      "decision": "declined",
+      "batch": "B24",
+      "note": "American Furniture and Design spans several centuries and incompatible practices, while the mid-century and studio craft rows provide narrower histories."
+    },
+    {
+      "term": "Documents and Documentation",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L931",
+      "batch": "B26-close",
+      "decision": "declined",
+      "note": "Owner declined: a catalogue umbrella, not a direction."
+    },
+    {
+      "term": "Arabian Peninsula",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L941",
+      "batch": "B26-close",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Downloadable Images",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1176",
+      "batch": "B26-close",
+      "decision": "declined",
+      "note": "Owner declined: an access filter, not a direction."
+    },
+    {
+      "term": "Contemporary Jewelry",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1321",
+      "batch": "B26-close",
+      "decision": "declined",
+      "note": "Owner declined: a product category, not a direction."
+    },
+    {
+      "term": "Institutional Critique",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L66",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "institutional-critique"
+    },
+    {
+      "term": "Waterscapes",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L82",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Human Figure",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L84",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Landscapes",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L85",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "landscapes"
+    },
+    {
+      "term": "Metallic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L88",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Portrait",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L89",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "portraiture"
+    },
+    {
+      "term": "Cityscapes",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L90",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "cityscapes"
+    },
+    {
+      "term": "Anthropomorphism",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L91",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Isolation/Alienation",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L96",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Nude",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L100",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined Nudes in the final approval. No source-based reason applies."
+    },
+    {
+      "term": "The Artist's Studio",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L103",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Rural Life",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L104",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Dynamism",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L106",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Rough",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L109",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Still Life",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L110",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "still-lifes"
+    },
+    {
+      "term": "Caribbean",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L113",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Americana",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L114",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Humor",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L115",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Representations of Architecture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L117",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Melanesia, Micronesia and Polynesia",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L119",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Suburbia",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L120",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Calligraphic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L121",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Conflict",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L123",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Popular Culture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L145",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Self-Portrait",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L146",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "self-portraits"
+    },
+    {
+      "term": "Interiors",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L150",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Flora",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L151",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Animals",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L156",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Related to Fashion",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L159",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Digital Culture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L162",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Political",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L165",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Gender",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L173",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Glamour",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L175",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Kitsch",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L176",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Mortality",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L178",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Medical/Health",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L180",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Biomorphic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L181",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Food",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L182",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Grotesque",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L185",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Psychedelic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L190",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Symmetrical",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L195",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Haze",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L196",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Related to Literature",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L205",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Nostalgia",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L207",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Nature",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L216",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Sparse",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L224",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Color Gradient",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L225",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Decay",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L230",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Time",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L233",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Crime",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L235",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Erotic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L236",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Narrative",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L239",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Primary Abstraction",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L245",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Racial and Ethnic Identity",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L246",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Creased Crinkled Wrinkled",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L247",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Sports/Athletics",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L251",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Love",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L255",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Angular",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L266",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Highly Detailed",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L267",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Primary Colors",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L269",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Bright and Vivid Colors",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L270",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Shiny/Glossy",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L272",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Smooth Surface",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L273",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Dotted",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L274",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Related to Music",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L275",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Urbanization",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L277",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Russia",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L280",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Australia and New Zealand",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L281",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Japan",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L282",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Line, Form, and Color",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L283",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Circus/Carnival",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L285",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Cuba",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L288",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Italy",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L289",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "War and Military",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L290",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Patterns",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L294",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "City Scenes",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L296",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Northern Africa",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L302",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "United States",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L303",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Striped",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L305",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Performing Arts",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L312",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Representations of Everyday Objects",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L314",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Diaristic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L317",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Pixelated",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L323",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Mythology and Religion",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L324",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Bedrooms and Bathrooms",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L327",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Glittery",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L331",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Movement",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L332",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Individual Portrait",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L333",
+      "batch": "B27",
+      "decision": "merge",
+      "note": "Owner approved the merge into portraiture; the Artsy row was added as a cited source.",
+      "cellId": "portraiture"
+    },
+    {
+      "term": "France",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L338",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Spain",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L339",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Self as Subject",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L341",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Group Portrait",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L343",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "group-portraits"
+    },
+    {
+      "term": "Text",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L344",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Blurred",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L345",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Infographics and Diagrams",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L347",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Disaster",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L351",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Cultural Commentary",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L352",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Unsettling",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L353",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "India",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L356",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Canada",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L357",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "The Netherlands",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L358",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Language",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L359",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "The Environment",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L361",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Transparent/Translucent Medium",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L363",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Sharp/Prickly",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L364",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "The Fantastic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L366",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "China",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L368",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Single Object",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L369",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Personal Histories",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L370",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Switzerland",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L372",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Southeast Asia",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L373",
+      "batch": "B27",
+      "decision": "merge",
+      "note": "Owner approved the merge into southeast-asian; the Artsy row was added as a cited source.",
+      "cellId": "southeast-asian"
+    },
+    {
+      "term": "Provocative",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L374",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Related to Film",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L378",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Scattered Composition",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L381",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Bulbous",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L382",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Related to Toys",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L383",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "United Kingdom and Ireland",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L384",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Hard-Edged",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L385",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "hard-edge"
+    },
+    {
+      "term": "Molecular",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L386",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Latin America and the Caribbean",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L388",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Eastern Europe",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L389",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Layered Images",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L390",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Dense Composition",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L394",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Grid",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L395",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Stolen Moments",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L396",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Group of Portraits",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L397",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Portraits without a Face",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L398",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Surveillance",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L401",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Collective History",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L403",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "The Body",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L404",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Maps/Networks",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L407",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Scenes of Everyday Life",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L409",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "genre-pictures"
+    },
+    {
+      "term": "Scandinavia",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L410",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Engagement with Mass Media",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L419",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Reflections",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L420",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Travel/Tourism",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L421",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Middle East and North Africa",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L424",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Cross-Cultural Dialogue",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L425",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Tangled Forms",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L430",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Outer Space",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L431",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Consumerism",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L433",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Psychoanalysis",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L434",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Obsolescence",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L449",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Failure",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L451",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Flatness",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L462",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Globalization",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L465",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Visual Perception",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L472",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Light as Subject",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L484",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Modes of Transportation",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L487",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Advertising and Brands",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L493",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Piles/Stacks",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L495",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Artist as Ethnographer",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L496",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Industry",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L497",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Machines",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L498",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Group of Objects",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L501",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Violence",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L511",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Animal Portrait",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L513",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Science",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L514",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Irregular Linear Forms",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L519",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Shadows",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L523",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Korea",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L525",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "South Asia",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L529",
+      "batch": "B27",
+      "decision": "merge",
+      "note": "Owner approved the merge into south-asian; the Artsy row was added as a cited source.",
+      "cellId": "south-asian"
+    },
+    {
+      "term": "Leisure",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L533",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Related to Games",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L536",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Figures of the Art World",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L542",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Central Asia",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L547",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Focus on the Social Margins",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L551",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Curvilinear Forms",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L561",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Stained Glass Effect",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L562",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Irregular Curvilinear Forms",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L567",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "The Abject",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L569",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "abject-art"
+    },
+    {
+      "term": "Extreme Angle",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L573",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Math",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L576",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Viscous Forms",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L587",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Fragmented Geometry",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L588",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Spaces of the Art World",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L589",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "The Art Market",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L596",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Technology",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L603",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Mutated Bodies",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L605",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Mirrored",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L608",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "References to Art History",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L612",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Royalty and Aristocracy",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L620",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Mexico",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L630",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Greece",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L631",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Iran",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L638",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Royal/Court Commission",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L652",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Water",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L656",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Belgium",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L657",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "California Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L662",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "Abstract Landscape",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L668",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Turkey",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L671",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Portugal",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L687",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Antiquity as Subject",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L700",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Parties and Celebrations",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L702",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "The Afterlife",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L707",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Classical Mythology",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L716",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Caucasus",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L718",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Israel",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L721",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Southeast Europe",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L732",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Caricatures and Parody",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L747",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Related to Religion",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L761",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Patinated and Oxidized",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L773",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Linear Forms",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L775",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Iridescence/Opalescence",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L807",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Marbleized",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L814",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Work and Workers",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L841",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "People at Home",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L851",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Radiating Lines",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L856",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Figure Studies",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L859",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "figure-studies"
+    },
+    {
+      "term": "The Seasons",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L865",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Emphasis on Linear Perspective",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L866",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "linear-perspective"
+    },
+    {
+      "term": "Classical Figure",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L868",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Eastern Africa",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L871",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Flanders and Luxembourg",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L872",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Taiwan",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L874",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Slumped/Draped",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L876",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Andes Region (Bolivia, Colombia, Ecuador, Peru, Venezuela)",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L877",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "South Africa",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L881",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Lebanon, Syria, Jordan and Palestine",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L882",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Bathers",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L885",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Body Parts",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L886",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Saints",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L887",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Geometric",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L890",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Brazil",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L891",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Austria",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L892",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Germany",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L893",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Seduction and Courtship",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L898",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Attenuated Figure",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L900",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "French Guiana, Guyana and Suriname",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L901",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Asymmetrical",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L906",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Slender",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L907",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Traces, Indexes, and Implied Presence",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L908",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Family",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L909",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Central America",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L911",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Eye Contact",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L912",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Crowds",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L914",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Southern Cone (Argentina, Chile, Paraguay, Uruguay)",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L915",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Pakistan",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L916",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Face",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L917",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Hybrids and Imaginary Creatures",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L919",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Interlaced Bodies",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L921",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Brooklyn Artists",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L925",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "Iraq",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L933",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Atmospheric Landscapes",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L934",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Pastel Colors",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L935",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Black and White",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L936",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Political Events",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L939",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Arabesque/Scroll",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L940",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Western Africa",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L947",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Bible Story",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L949",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Dark Colors",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L951",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Middle Africa",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L961",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Eastern Mediterranean",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L965",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: an imposed geographic grouping, not a direction."
+    },
+    {
+      "term": "Figures in Nature",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L970",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Hugs and Kisses",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L971",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Equestrian",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L973",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "equestrian-portraits"
+    },
+    {
+      "term": "Egypt",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L978",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Woven/Perforated",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L980",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Berlin Artists",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L981",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "Madonna and Child",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L982",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "madonna-and-child"
+    },
+    {
+      "term": "Times of Day",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L994",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Highly Ornamented",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L997",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Fertility/Pregnancy/Birth",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L998",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Mourning and Commemoration",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1000",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Intersectionality",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1004",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Childhood",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1006",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Sexual Identity",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1009",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Arrivals/Departures",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1014",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Contrapposto",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1015",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Political Figures",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1020",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Architecture's Effects",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1021",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Trauma and Struggle",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1023",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Nautical",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1025",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "marine-paintings"
+    },
+    {
+      "term": "Migration",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1036",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Censorship",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1038",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Related to Hip-Hop",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1040",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Skyscapes",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1042",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Fractal-like / Kaleidoscopic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1049",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Utopia",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1050",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Kawaii",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1054",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Related to Punk",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1056",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Southern Gothic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1064",
+      "batch": "B27",
+      "decision": "merge",
+      "note": "Owner approved the merge into southern-gothic; the Artsy row was added as a cited source.",
+      "cellId": "southern-gothic"
+    },
+    {
+      "term": "Vacant and Vacated Spaces",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1068",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Celebrity",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1071",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Dreams / Altered States of Consciousness",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1078",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Earth Tones",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1079",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "New York Artists",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1083",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "Allegory",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1084",
+      "batch": "B27",
+      "decision": "merge",
+      "note": "Owner approved the merge into allegories; the Artsy row was added as a cited source.",
+      "cellId": "allegories"
+    },
+    {
+      "term": "San Francisco Artists",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1089",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "Tokyo Artists",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1090",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "London Artists",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1093",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "Mimicking Ruined Materials",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1094",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Engaged with Traditional Japanese Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1097",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Mysticism, Shamanism, and the Occult",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1099",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Virtue and Vice",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1103",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Allover Composition",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1104",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Columns and Totems",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1107",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Deep Time",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1117",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Hong Kong",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1118",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Beijing Artists",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1119",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "Personal Writing Systems",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1123",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Adolescence",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1124",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Personification",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1125",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Engaged with Traditional Chinese Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1129",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Los Angeles Artists",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1132",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "Implied Narrative",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1135",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "The Mundane",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1140",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Symbolic Composition",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1142",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "East Germany",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1147",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Paris Artists",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1148",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "Raw versus Finished",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1149",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "The American West",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1154",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Engaged with Traditional Korean Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1155",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Blown-Off-Roof Perspective",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1156",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "fukinuki-yatai"
+    },
+    {
+      "term": "Masculinity",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1160",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Engaged with Communist Visual Culture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1165",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Wrapped",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1167",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Asian Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1169",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "Latin American Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1180",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a residency, market or survey label, not a direction."
+    },
+    {
+      "term": "Femininity",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1182",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Anatomy",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1183",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Science Fiction",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1185",
+      "batch": "B27",
+      "decision": "merge",
+      "note": "Owner approved the merge into science-fiction; the Artsy row was added as a cited source.",
+      "cellId": "science-fiction"
+    },
+    {
+      "term": "Engaged with Traditional Islamic Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1187",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Manga",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1190",
+      "batch": "B27",
+      "decision": "merge",
+      "note": "Owner approved the merge into manga; the Artsy row was added as a cited source.",
+      "cellId": "manga"
+    },
+    {
+      "term": "Delegated Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1196",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "delegated-performance"
+    },
+    {
+      "term": "The Elements",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1199",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Silhouettes",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1204",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Contour Line",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1206",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
+    },
+    {
+      "term": "Abstract Illusionism",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1209",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "abstract-illusionism"
+    },
+    {
+      "term": "The Sublime",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1228",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "The Senses",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1231",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Divisionist",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1233",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "divisionism"
+    },
+    {
+      "term": "African Diaspora",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1237",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Alter Egos and Avatars",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1238",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Improbable Physics",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1241",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Deities and Holy Figures",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1248",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Sex",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1251",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "Zoomorphism",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1256",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "The City",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1259",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Natural History",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1262",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Engaged with Traditional African Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1266",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Talismanic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1273",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These can organize an exhibition or describe a work, but makers did not work within shared lineages or conventions under these labels."
+    },
+    {
+      "term": "The Domestic and Domesticity",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1277",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Tibet",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1284",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a political territory, not a direction."
+    },
+    {
+      "term": "Engaged with European Old Masters",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1291",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Landscape and Nature Photography",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1311",
+      "batch": "B27",
+      "decision": "live",
+      "note": "Owner accepted. Written and attested in production on 2026-09-15.",
+      "cellId": "landscape-photography"
+    },
+    {
+      "term": "Cracked",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1314",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible color, light, texture or finish attribute, not a direction."
+    },
+    {
+      "term": "Balance",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1318",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a compositional or arrangement device, not a direction."
+    },
+    {
+      "term": "Engaged with Pre-Columbian Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1322",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Engaged with Byzantine and Medieval Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1326",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These say what a work cites, comments on, or circulates around. They do not identify a shared genre or practice."
+    },
+    {
+      "term": "Figure from the Back (Rückenfigur)",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1328",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Bars and Restaurants",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1339",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These are content tags. The passing genre rows have documented conventions and literature. These rows do not."
+    },
+    {
+      "term": "Cityscapes and City Scenes",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1345",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "These combine unlike things, describe a search format, or duplicate a narrower proposal without naming one practice."
+    },
+    {
+      "term": "Crystalline and Geological Forms",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1355",
+      "batch": "B27",
+      "decision": "declined",
+      "note": "Owner declined: a visible line, form or appearance attribute, not a direction."
     }
   ],
   "familyCounts": {
