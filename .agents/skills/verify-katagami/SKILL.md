@@ -7,7 +7,11 @@ description: Drive and prove Katagami the way a visitor or contributor does - br
 
 Katagami's user-facing surface is the gallery at katagami.ai (a Next.js app in `ui/`) reading two Temper apps, `katagami-commons` and `katagami-curation`, over OData. Contributors reach the same data through the MCP server in `mcp/` and the `katagami` CLI. This skill proves behavior on a locally running stack. Production verification (Vercel, Railway, Genesis pinned refs, Datadog) is the Definition of Done's separate step.
 
-## Launch
+## Gallery-only review
+
+For frontend changes against existing production data, follow AGENTS.md's gallery-only command. Preserve the selected frontend environment, run `npm ci` in `ui/`, and launch `UI_PORT=3501 KATAGAMI_LAB_PREVIEW=1 bash scripts/run-local.sh --gallery-only`. Open the returned `/encyclopedia` route in a real browser, open a cell with material, and verify it remains usable several minutes after the invoking shell exits. Compare environment-file hashes before/after. Stop with `UI_PORT=3501 bash scripts/run-local.sh --gallery-only --stop` from the same worktree and verify unrelated listeners survive. In Foundry use the session Computer's existing Heartbeat while feedback is active. A sleeping VM cannot serve the page. This mode neither seeds nor starts a local backend.
+
+## Complete local-stack launch
 
 One command brings up the whole stack:
 
