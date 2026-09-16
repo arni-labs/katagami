@@ -4,8 +4,8 @@
   "url": "https://github.com/artsy/the-art-genome-project",
   "licence": "CC-BY-4.0",
   "use": "read-and-cite",
-  "total": 521,
-  "totalDerivedFrom": "genes.csv rows in styles/movements 251, media/techniques 175, design movements 26, cultural styles 69, counted 2026-09-08",
+  "total": 1031,
+  "totalDerivedFrom": "genes.csv at f9221a64bc2495bbd548217f6bc356956c0c111a: 1,031 data rows across 17 gene-family values; sha256 351298e48326e1db8a5e86b81490f450d17a1a2fa18ff3b8af54844786a47350; counted 2026-09-15",
   "lane": "visual",
   "terms": [
     {
@@ -1914,6 +1914,1907 @@
       "decision": "deferred",
       "batch": "B21-B23",
       "note": "A documented Congolese urban painting tradition, but no independent reference answered under any title tried."
+    },
+    {
+      "term": "Byzantine Art",
+      "ref": "https://www.artsy.net/gene/byzantine-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Byzantine appears in Getty AAT as an Early Christian and Byzantine cultural style associated with the Eastern Roman Empire.",
+      "cellId": "byzantine-art"
+    },
+    {
+      "term": "Romanesque Art",
+      "ref": "https://www.artsy.net/gene/romanesque-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Western European church building and image making of the eleventh and twelfth centuries, including carved portals, capitals, vaults, and devotional sculpture.",
+      "cellId": "romanesque-art"
+    },
+    {
+      "term": "Early Medieval Art",
+      "ref": "https://www.artsy.net/gene/early-medieval-art",
+      "batch": "B24",
+      "decision": "merge",
+      "note": "Early Medieval art is a chronological subdivision of Medieval art. Getty AAT and the Artsy row are retained as a second source on the existing cell.",
+      "cellId": "medieval-art"
+    },
+    {
+      "term": "Aboriginal Art",
+      "ref": "https://www.artsy.net/gene/aboriginal-art",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Too broad. Hundreds of distinct Australian First Nations, including Papunya Tula, Yolŋu, and Tiwi practices."
+    },
+    {
+      "term": "Christian Art and Architecture",
+      "ref": "https://www.artsy.net/gene/christian-art-and-architecture",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Too broad. Nearly two millennia from Early Christian and Byzantine work through Renaissance, Baroque, Rodin, and Le Corbusier."
+    },
+    {
+      "term": "Greek Art and Architecture",
+      "ref": "https://www.artsy.net/gene/greek-art-and-architecture",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Ancient Greek art and architecture appears in Getty AAT as a Mediterranean cultural style.",
+      "cellId": "ancient-greek-art"
+    },
+    {
+      "term": "Bamileke Art",
+      "ref": "https://www.artsy.net/gene/bamileke-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Bamileke appears in Getty AAT as an African cultural style.",
+      "cellId": "bamileke-art"
+    },
+    {
+      "term": "Indonesian Art",
+      "ref": "https://www.artsy.net/gene/indonesian-art",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Too broad. Balinese, Javanese, Batak, Toraja, Dayak, and other histories across the archipelago."
+    },
+    {
+      "term": "Asante Art",
+      "ref": "https://www.artsy.net/gene/asante-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Asante appears in Getty AAT as an African cultural style.",
+      "cellId": "asante-art"
+    },
+    {
+      "term": "Mughal Art",
+      "ref": "https://www.artsy.net/gene/mughal-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Mughal court ateliers and architectural workshops supported manuscript painting, calligraphy, textiles, and imperial building.",
+      "cellId": "mughal-art"
+    },
+    {
+      "term": "Hellenistic Art",
+      "ref": "https://www.artsy.net/gene/hellenistic-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Art made in the Hellenistic kingdoms after Alexander, across court centers, civic monuments, sculpture, painting, and luxury work.",
+      "cellId": "hellenistic-art"
+    },
+    {
+      "term": "Edo Art",
+      "ref": "https://www.artsy.net/gene/edo-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Edo-period art appears within Getty AAT's hierarchy of Japanese styles and periods.",
+      "cellId": "edo-period-art"
+    },
+    {
+      "term": "Art of the Ivory Coast",
+      "ref": "https://www.artsy.net/gene/art-of-the-ivory-coast",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Imposed label. A 1960 national border across Baule, Senufo, Dan, Guro, and other distinct traditions."
+    },
+    {
+      "term": "Roman Art and Architecture",
+      "ref": "https://www.artsy.net/gene/roman-art-and-architecture",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Imperial and provincial Roman workshops produced architecture, sculpture, wall painting, mosaics, and portable objects through late antiquity.",
+      "cellId": "roman-art-and-architecture"
+    },
+    {
+      "term": "Mayan Art and Architecture",
+      "ref": "https://www.artsy.net/gene/mayan-art-and-architecture",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Maya art and architecture appears in Getty AAT as a cultural style of the Americas.",
+      "cellId": "maya-art-and-architecture"
+    },
+    {
+      "term": "Ancient Egypt",
+      "ref": "https://www.artsy.net/gene/ancient-egypt",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Ancient Egyptian art appears in Getty AAT as an African cultural style.",
+      "cellId": "ancient-egyptian-art"
+    },
+    {
+      "term": "Phoenician Art",
+      "ref": "https://www.artsy.net/gene/phoenician-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Phoenician coastal-city workshops produced metalwork, ivory, glass, and architecture through Mediterranean trade.",
+      "cellId": "phoenician-art"
+    },
+    {
+      "term": "Yoruba Art",
+      "ref": "https://www.artsy.net/gene/yoruba-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Yoruba appears in Getty AAT as an African cultural style.",
+      "cellId": "yoruba-art"
+    },
+    {
+      "term": "Etruscan Art",
+      "ref": "https://www.artsy.net/gene/etruscan-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Etruscan workshops in central Italy produced tomb painting, terracotta sculpture, metalwork, and temple decoration.",
+      "cellId": "etruscan-art"
+    },
+    {
+      "term": "Art of Burma",
+      "ref": "https://www.artsy.net/gene/art-of-burma",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Imposed label. A colonial country name across Bamar, Shan, Mon, Karen, Rakhine, and other traditions and periods."
+    },
+    {
+      "term": "Aztec Art",
+      "ref": "https://www.artsy.net/gene/aztec-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Aztec appears in Getty AAT as a cultural style of the Americas.",
+      "cellId": "aztec-art"
+    },
+    {
+      "term": "Islamic Art and Architecture",
+      "ref": "https://www.artsy.net/gene/islamic-art-and-architecture",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Too broad. Sacred and secular work across dynasties, regions, workshops, media, and architecture from Spain to China and India."
+    },
+    {
+      "term": "Benin Art",
+      "ref": "https://www.artsy.net/gene/benin-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Court art of the Kingdom of Benin, made through royal commissions and specialist brass, ivory, and wood guilds.",
+      "cellId": "benin-art"
+    },
+    {
+      "term": "Mende Art",
+      "ref": "https://www.artsy.net/gene/mende-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Mende appears in Getty AAT as an African cultural style.",
+      "cellId": "mende-art"
+    },
+    {
+      "term": "Yombe Art",
+      "ref": "https://www.artsy.net/gene/yombe-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Yombe appears in Getty AAT as an African cultural style.",
+      "cellId": "yombe-kongo-art"
+    },
+    {
+      "term": "Oku Art",
+      "ref": "https://www.artsy.net/gene/oku-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Oku appears in Getty AAT as an African cultural style.",
+      "cellId": "oku-art"
+    },
+    {
+      "term": "Iban Art",
+      "ref": "https://www.artsy.net/gene/iban-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Iban appears in Getty AAT as a Southeast Asian cultural style.",
+      "cellId": "iban-textile-and-carving-traditions"
+    },
+    {
+      "term": "Hopi Art",
+      "ref": "https://www.artsy.net/gene/hopi-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Hopi appears in Getty AAT as a cultural style of the Americas.",
+      "cellId": "hopi-art"
+    },
+    {
+      "term": "Ottoman Art",
+      "ref": "https://www.artsy.net/gene/ottoman-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Ottoman court ateliers, architectural offices, tile workshops, and calligraphers worked within a dynastic system.",
+      "cellId": "ottoman-art"
+    },
+    {
+      "term": "Papua New Guinea Art",
+      "ref": "https://www.artsy.net/gene/papua-new-guinea-art",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Imposed label. A modern national border across more than 800 languages and distinct Massim, Trobriand, Wahgi, and other practices."
+    },
+    {
+      "term": "Yaka Art",
+      "ref": "https://www.artsy.net/gene/yaka-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Yaka appears in Getty AAT as an African cultural style.",
+      "cellId": "yaka-art"
+    },
+    {
+      "term": "Buddhist Art and Architecture",
+      "ref": "https://www.artsy.net/gene/buddhist-art-and-architecture",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Buddhist art includes images, reliquaries, manuscripts, and architecture made for monastic, court, pilgrimage, and lay settings across Asia.",
+      "cellId": "buddhist-art"
+    },
+    {
+      "term": "Guatemalan Art",
+      "ref": "https://www.artsy.net/gene/guatemalan-art",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Imposed label. A modern republic across living Maya nations, colonial workshops, and contemporary practices."
+    },
+    {
+      "term": "Mbole Art",
+      "ref": "https://www.artsy.net/gene/mbole-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Mbole appears in Getty AAT as an African cultural style.",
+      "cellId": "mbole-art"
+    },
+    {
+      "term": "Western Zhou Dynasty",
+      "ref": "https://www.artsy.net/gene/western-zhou-dynasty",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Western Zhou bronze foundries produced inscribed ritual sets and bells for elite patrons.",
+      "cellId": "western-zhou-art"
+    },
+    {
+      "term": "Song Dynasty",
+      "ref": "https://www.artsy.net/gene/song-dynasty",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Song court academies, scholar-painters, ceramic kilns, and print workshops produced distinct bodies of work.",
+      "cellId": "song-dynasty-art"
+    },
+    {
+      "term": "Maranao Art",
+      "ref": "https://www.artsy.net/gene/maranao-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Maranao okir is a carving and ornament system used in torogan architecture, panolong beam ends, textiles, and metalwork.",
+      "cellId": "maranao-okir"
+    },
+    {
+      "term": "Mycenaean Art",
+      "ref": "https://www.artsy.net/gene/mycenaean-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Mycenaean palace workshops and elite commissions produced masonry, frescoes, pottery, and metalwork.",
+      "cellId": "mycenaean-art"
+    },
+    {
+      "term": "Kushan Empire",
+      "ref": "https://www.artsy.net/gene/kushan-empire",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Workshops in Gandhara and Mathura worked under Kushan patrons, producing distinct sculpture, coins, and architecture.",
+      "cellId": "kushan-art"
+    },
+    {
+      "term": "Minoan Art",
+      "ref": "https://www.artsy.net/gene/minoan-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Minoan palatial workshops produced frescoes, ritual objects, stone carving, metalwork, and ceramic sequences.",
+      "cellId": "minoan-art"
+    },
+    {
+      "term": "Yuan Dynasty",
+      "ref": "https://www.artsy.net/gene/yuan-dynasty",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Yuan court patronage, trans-Eurasian exchange, and scholar-painter networks affected painting, ceramics, textiles, and metalwork.",
+      "cellId": "yuan-dynasty-art"
+    },
+    {
+      "term": "Art of Tonga",
+      "ref": "https://www.artsy.net/gene/art-of-tonga",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Te Papa documents Tongan ngatu, carving, adornment, and ceremonial objects through named works and makers.",
+      "cellId": "tongan-art"
+    },
+    {
+      "term": "Moche Art",
+      "ref": "https://www.artsy.net/gene/moche-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Moche appears in Getty AAT as a cultural style of the Americas.",
+      "cellId": "moche-art"
+    },
+    {
+      "term": "Sui Dynasty",
+      "ref": "https://www.artsy.net/gene/sui-dynasty",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Sui-period workshops produced Buddhist sculpture and other court and religious work during the reunification before Tang rule.",
+      "cellId": "sui-dynasty-art"
+    },
+    {
+      "term": "Qing Dynasty",
+      "ref": "https://www.artsy.net/gene/qing-dynasty",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Qing court workshops, scholar-painters, professional artists, and foreign commissions produced an internally varied body of work.",
+      "cellId": "qing-dynasty-art"
+    },
+    {
+      "term": "Art of the Congo",
+      "ref": "https://www.artsy.net/gene/art-of-the-congo",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Imposed label. Congo can mean a river basin, two modern states, or the Kongo kingdom, flattening Yombe, Yaka, Mbole, Kuba, Luba, and other systems."
+    },
+    {
+      "term": "Eastern Zhou Dynasty",
+      "ref": "https://www.artsy.net/gene/eastern-zhou-dynasty",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Eastern Zhou regional foundries and elite patrons changed bronze ritual sets, inlay, carving, and burial work.",
+      "cellId": "eastern-zhou-art"
+    },
+    {
+      "term": "Ming Dynasty",
+      "ref": "https://www.artsy.net/gene/ming-dynasty",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Ming court workshops, literati circles, kilns, and urban markets supported painting, ceramics, textiles, and decorative arts.",
+      "cellId": "ming-dynasty-art"
+    },
+    {
+      "term": "Art of the Upper Paleolithic",
+      "ref": "https://www.artsy.net/gene/art-of-the-upper-paleolithic",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Too broad. A vast archaeological timespan and geography across unrelated sites and techniques."
+    },
+    {
+      "term": "Cambodian Art",
+      "ref": "https://www.artsy.net/gene/cambodian-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Khmer sculpture is represented here through the Cleveland Museum of Art's documented seventh-century image from Phnom Da.",
+      "cellId": "khmer-art"
+    },
+    {
+      "term": "Celtic Art",
+      "ref": "https://www.artsy.net/gene/celtic-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. The National Museum of Ireland documents La Tène as a European Iron Age art style found in metalwork and decorated objects.",
+      "cellId": "la-tene-art"
+    },
+    {
+      "term": "Hindu Art and Architecture",
+      "ref": "https://www.artsy.net/gene/hindu-art-and-architecture",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Hindu art includes temple architecture and sacred images made for worship and meditation in South and Southeast Asia.",
+      "cellId": "hindu-art"
+    },
+    {
+      "term": "Mesopotamian Art",
+      "ref": "https://www.artsy.net/gene/mesopotamian-art",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Too broad. Sumerian, Akkadian, Babylonian, Assyrian, and other traditions across millennia."
+    },
+    {
+      "term": "Tang Dynasty",
+      "ref": "https://www.artsy.net/gene/tang-dynasty",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Tang court ateliers, tomb workshops, painters, and potters worked amid Silk Road exchange.",
+      "cellId": "tang-dynasty-art"
+    },
+    {
+      "term": "Thai Art",
+      "ref": "https://www.artsy.net/gene/thai-art",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Too broad. Dvaravati, Sukhothai, Ayutthaya, Rattanakosin, regional, and living workshop traditions."
+    },
+    {
+      "term": "Meiji Art",
+      "ref": "https://www.artsy.net/gene/meiji-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Meiji government commissions, exhibition systems, export workshops, print studios, and painters worked between 1868 and 1912.",
+      "cellId": "meiji-period-art"
+    },
+    {
+      "term": "Shang Dynasty",
+      "ref": "https://www.artsy.net/gene/shang-dynasty",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Shang foundries and royal ritual commissions produced bronze, jade, bone, and ceramic work.",
+      "cellId": "shang-dynasty-art"
+    },
+    {
+      "term": "Igbo (Ibo) Art",
+      "ref": "https://www.artsy.net/gene/igbo-ibo-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. The Cleveland Museum of Art documents an Igbo shrine figure made for a man's personal shrine and social standing.",
+      "cellId": "igbo-art"
+    },
+    {
+      "term": "Heian Period",
+      "ref": "https://www.artsy.net/gene/heian-period",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Heian court ateliers and temple workshops produced calligraphy, painting, sculpture, architecture, and decorated manuscripts from 794 to 1185.",
+      "cellId": "heian-period-art"
+    },
+    {
+      "term": "Pre-Columbian Art",
+      "ref": "https://www.artsy.net/gene/pre-columbian-art",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Imposed label. A European arrival date across Maya, Mexica, Moche, Inca, and many other traditions."
+    },
+    {
+      "term": "Himalayan Art",
+      "ref": "https://www.artsy.net/gene/himalayan-art",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Too broad. Tibetan, Nepalese, Kashmiri, Bhutanese, and other lineages with different workshops, patrons, religions, and dates."
+    },
+    {
+      "term": "Greek and Roman Art and Architecture",
+      "ref": "https://www.artsy.net/gene/greek-and-roman-art-and-architecture",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Duplicate. This term combines the Ancient Greek art and Roman art and architecture cells retained from two more precise Artsy rows."
+    },
+    {
+      "term": "Cheyenne Art",
+      "ref": "https://www.artsy.net/gene/cheyenne-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Cheyenne appears in Getty AAT as a cultural style of the Americas.",
+      "cellId": "cheyenne-art"
+    },
+    {
+      "term": "Yup'ik Art",
+      "ref": "https://www.artsy.net/gene/yupik-art",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Yup'ik appears in Getty AAT as a cultural style of the Americas.",
+      "cellId": "yupik-art"
+    },
+    {
+      "term": "Native American, First Nations, and Alaska Native Art",
+      "ref": "https://www.artsy.net/gene/native-american-first-nations-and-alaska-native-art",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Too broad. More than 1,200 Indigenous cultures across North America, including Hopi, Cheyenne, Yup'ik, Tlingit, and many others."
+    },
+    {
+      "term": "Traditional African Art",
+      "ref": "https://www.artsy.net/gene/traditional-african-art",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Imposed label. A museum and collecting category across hundreds of unrelated maker systems, including Benin guilds, Yoruba masquerade, and Asante court art."
+    },
+    {
+      "term": "Han Dynasty",
+      "ref": "https://www.artsy.net/gene/han-dynasty",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Han imperial patronage and tomb workshops supported lacquer, bronze, ceramics, textiles, and stone carving.",
+      "cellId": "han-dynasty-art"
+    },
+    {
+      "term": "Northern and Southern Dynasties",
+      "ref": "https://www.artsy.net/gene/northern-and-southern-dynasties",
+      "batch": "B24",
+      "decision": "live",
+      "note": "Practice. Northern and Southern Dynasties appears within Getty AAT's hierarchy of Chinese styles and periods.",
+      "cellId": "northern-and-southern-dynasties-art"
+    },
+    {
+      "term": "Traditional Oceanic Art",
+      "ref": "https://www.artsy.net/gene/traditional-oceanic-art",
+      "batch": "B24",
+      "decision": "declined",
+      "note": "Imposed label. A museum geography across Melanesia, Micronesia, Polynesia, Australia, and New Zealand, while the word traditional freezes ongoing practices in the past."
+    },
+    {
+      "term": "Sculpture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L7",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. an ancient, materially diverse three-dimensional practice.",
+      "cellId": "sculpture"
+    },
+    {
+      "term": "Kinetic Sculpture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L23",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Sculpture whose parts move, from Duchamp through Constructivism and the Bauhaus.",
+      "cellId": "kinetic-sculpture"
+    },
+    {
+      "term": "Installation",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L40",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. A three-dimensional work that changes a viewer's experience of a place.",
+      "cellId": "installation"
+    },
+    {
+      "term": "Collage",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L45",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Two-dimensional work assembled from different materials, with roots in Cubism and Dada.",
+      "cellId": "collage"
+    },
+    {
+      "term": "Automatism",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L99",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Surrealists adapted automatic writing and drawing to bypass conscious control.",
+      "cellId": "automatism"
+    },
+    {
+      "term": "En plein air",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L105",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Painting completed outdoors, championed by the Impressionists.",
+      "cellId": "en-plein-air"
+    },
+    {
+      "term": "Woodcut and Linocut",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L118",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Relief-printing practices that cut away a block before inking it.",
+      "cellId": "woodcut-and-linocut"
+    },
+    {
+      "term": "Documentary Photography",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L124",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Photography intended to chronicle actual events, places, and lives.",
+      "cellId": "documentary-photography"
+    },
+    {
+      "term": "Photojournalism",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L130",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. News made and distributed through photographs.",
+      "cellId": "photojournalism"
+    },
+    {
+      "term": "Appropriation",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L189",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Borrowed images are re-presented, sometimes with little alteration.",
+      "cellId": "appropriation"
+    },
+    {
+      "term": "Animation",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L192",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. A moving-image practice spanning early optical devices, drawn film, studios, and independent work.",
+      "cellId": "animation"
+    },
+    {
+      "term": "Illustration",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L252",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. work between commissioned illustration and fine art.",
+      "cellId": "illustration"
+    },
+    {
+      "term": "Sound Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L287",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Modern and contemporary work that gives sound priority, with roots in experimental music and kinetic sculpture.",
+      "cellId": "sound-art"
+    },
+    {
+      "term": "Chance",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L320",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Dada, Surrealism, and Fluxus artists used accident and random procedures as creative rules.",
+      "cellId": "chance"
+    },
+    {
+      "term": "Monochrome Painting",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L413",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Twentieth-century painters made the restriction to one hue a sustained abstract practice.",
+      "cellId": "monochrome-painting"
+    },
+    {
+      "term": "Film/Video",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L416",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Artists adopted television, portable video, film, and installation from the 1950s onward.",
+      "cellId": "film-video"
+    },
+    {
+      "term": "Black-and-White Photography",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L439",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. monochrome photography as the medium's dominant historical practice through the mid-twentieth century.",
+      "cellId": "black-and-white-photography"
+    },
+    {
+      "term": "Hyperrealism",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L442",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Extreme realism developed into a named late-twentieth-century practice across painting and sculpture.",
+      "cellId": "hyperrealism"
+    },
+    {
+      "term": "Manipulated Photography",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L443",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Photographers alter negatives, prints, or digital files as part of image-making.",
+      "cellId": "manipulated-photography"
+    },
+    {
+      "term": "Light Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L457",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Artists use electric or natural light as the work's primary medium.",
+      "cellId": "light-art"
+    },
+    {
+      "term": "Staged Photography",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L464",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Scenes are built and performed for the photograph.",
+      "cellId": "staged-photography"
+    },
+    {
+      "term": "Site-Specific Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L488",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. The work's identity depends on its physical location and context.",
+      "cellId": "site-specific-art"
+    },
+    {
+      "term": "Typologies",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L504",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Systematic photographic series classify recurring human or industrial types.",
+      "cellId": "typologies"
+    },
+    {
+      "term": "Photomontage",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L535",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Printed photographs are cut and recombined, with a lineage through Dada, Constructivism, and political graphics.",
+      "cellId": "photomontage"
+    },
+    {
+      "term": "Generative Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L610",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Rules, systems, or software generate all or part of the work.",
+      "cellId": "generative-art"
+    },
+    {
+      "term": "Artists' Books",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L691",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Artists use the book itself as the work, with strong Fluxus and Conceptual lineages.",
+      "cellId": "artists-books"
+    },
+    {
+      "term": "East Asian Calligraphy",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L738",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Chinese, Korean, and Japanese brush-writing traditions and their modern descendants.",
+      "cellId": "east-asian-calligraphy"
+    },
+    {
+      "term": "Arabic/Farsi Calligraphy",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L739",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Arabic- and Persian-script calligraphic art across historical and contemporary work.",
+      "cellId": "arabic-farsi-calligraphy"
+    },
+    {
+      "term": "History Painting",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L799",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. A ranked painting genre for consequential historical, religious, mythical, or literary scenes.",
+      "cellId": "history-painting"
+    },
+    {
+      "term": "Color Photography",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L802",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. the long technical development and the 1970s acceptance of color as art photography.",
+      "cellId": "color-photography"
+    },
+    {
+      "term": "Monotype/Monoprint",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L838",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Planographic printmaking that produces a unique impression instead of an edition.",
+      "cellId": "monotype-monoprint"
+    },
+    {
+      "term": "Mail Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L962",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. A networked practice uses postal systems to distribute work and test circulation and exchange.",
+      "cellId": "mail-art"
+    },
+    {
+      "term": "Caravaggesque",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L983",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. painting in Caravaggio's dramatic, naturalistic, high-contrast manner.",
+      "cellId": "caravaggism"
+    },
+    {
+      "term": "Body Casts/Body Prints",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1080",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Artists use the body as mold, stamp, tool, and subject, from casting to Body Art.",
+      "cellId": "body-casts-body-prints"
+    },
+    {
+      "term": "Endurance Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1131",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Long performances test physical or emotional stamina, with a lineage through 1970s Body Art.",
+      "cellId": "endurance-art"
+    },
+    {
+      "term": "Soft Sculpture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1218",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Soft and yielding materials overturn the hard, durable conventions of sculpture.",
+      "cellId": "soft-sculpture"
+    },
+    {
+      "term": "Fresco",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1286",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Pigment applied to wet lime plaster forms a durable wall-painting practice dating to antiquity.",
+      "cellId": "fresco"
+    },
+    {
+      "term": "Dance",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1341",
+      "batch": "B25",
+      "decision": "live",
+      "note": "Approved Artsy Medium and Techniques cell. Bauhaus stage work, Butoh, modern dance, and postmodern Judson practice.",
+      "cellId": "dance"
+    },
+    {
+      "term": "Painting",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L3",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live practice.",
+      "cellId": "painting"
+    },
+    {
+      "term": "Photography",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L10",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live practice.",
+      "cellId": "photography"
+    },
+    {
+      "term": "Performance Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L29",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live practice.",
+      "cellId": "performance-art"
+    },
+    {
+      "term": "Chiaroscuro",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L143",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live technique.",
+      "cellId": "chiaroscuro"
+    },
+    {
+      "term": "Process-Oriented",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L209",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "The live cell uses the established practice name; Artsy uses an adjective.",
+      "cellId": "process-art"
+    },
+    {
+      "term": "Long Exposure",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L319",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live photographic technique.",
+      "cellId": "long-exposure-photography"
+    },
+    {
+      "term": "Topographic Photography",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L387",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "The row's named lineage is the live movement.",
+      "cellId": "new-topographics"
+    },
+    {
+      "term": "Encaustic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L391",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live practice.",
+      "cellId": "encaustic-painting"
+    },
+    {
+      "term": "East Asian Ink-and-Wash Painting",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L411",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live practice; the cell already has regional descendants.",
+      "cellId": "ink-wash-painting"
+    },
+    {
+      "term": "Drawing",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L479",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live practice.",
+      "cellId": "drawing"
+    },
+    {
+      "term": "Website",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L517",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "The live cell names the established art practice; the Artsy term names its carrier.",
+      "cellId": "net-art"
+    },
+    {
+      "term": "Trompe l'oeil",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L548",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live practice.",
+      "cellId": "trompe-loeil-painting"
+    },
+    {
+      "term": "Watercolor",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L579",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live practice; retain the live spelling.",
+      "cellId": "watercolour-painting"
+    },
+    {
+      "term": "Photogram",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L590",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live practice.",
+      "cellId": "photogram"
+    },
+    {
+      "term": "Prints",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L665",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "The Artsy plural names the products of the live practice.",
+      "cellId": "printmaking"
+    },
+    {
+      "term": "Etching/Engraving",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L774",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "The live parent already contains line engraving and related intaglio descendants.",
+      "cellId": "intaglio-printmaking"
+    },
+    {
+      "term": "Intaglio",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L820",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live practice.",
+      "cellId": "intaglio-printmaking"
+    },
+    {
+      "term": "Sfumato",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L889",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact live technique.",
+      "cellId": "sfumato"
+    },
+    {
+      "term": "Paper Cut-Outs",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1137",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "The live cell is the same paper-cutting practice.",
+      "cellId": "cut-paper-collage"
+    },
+    {
+      "term": "Digital Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1278",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Artsy's own synonym points to the live cell.",
+      "cellId": "computer-art"
+    },
+    {
+      "term": "Digital Painting and Drawing",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1289",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "It is a narrower computer-art method, not a separate lineage in this row.",
+      "cellId": "computer-art"
+    },
+    {
+      "term": "Silkscreen",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1304",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Exact synonym for the live practice.",
+      "cellId": "screen-printing"
+    },
+    {
+      "term": "Lithograph",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1312",
+      "batch": "B25",
+      "decision": "merge",
+      "note": "Product noun maps to the exact live process.",
+      "cellId": "lithography"
+    },
+    {
+      "term": "Comic/Cartoon",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L77",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Live `comics-graphic-works`, `comic-format`, `nonfiction-comics`, and `ligne-claire-illustration` already cover the useful concepts; the slash label adds no coherent practice."
+    },
+    {
+      "term": "Ephemera",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1356",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "The live ID `ephemera` is an LCGFT writing/publication-form cell with a different sense. Reusing its ID would corrupt that cell, and this row is an object class, not a practice."
+    },
+    {
+      "term": "Work on Paper",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L36",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object class filed through Getty AAT's hierarchy.",
+      "cellId": "work-on-paper"
+    },
+    {
+      "term": "Maquette",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L226",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object type filed through Getty AAT's hierarchy.",
+      "cellId": "maquette"
+    },
+    {
+      "term": "Organic Material",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L254",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A material class filed through Getty AAT's hierarchy.",
+      "cellId": "organic-material"
+    },
+    {
+      "term": "Photographic Source",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L292",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A source concept filed through Getty AAT's hierarchy.",
+      "cellId": "photographic-source"
+    },
+    {
+      "term": "Camera Obscura",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L365",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An optical device filed through Getty AAT's hierarchy.",
+      "cellId": "camera-obscura"
+    },
+    {
+      "term": "Printed Matter",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L539",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object class filed through Getty AAT's hierarchy.",
+      "cellId": "printed-matter"
+    },
+    {
+      "term": "Oil Painting",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L625",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A painting technique filed through Getty AAT's hierarchy.",
+      "cellId": "oil-painting"
+    },
+    {
+      "term": "Manuscript",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L651",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A document type filed through Getty AAT's hierarchy.",
+      "cellId": "manuscript"
+    },
+    {
+      "term": "Pastel",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L694",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A material filed through Getty AAT's hierarchy.",
+      "cellId": "pastel"
+    },
+    {
+      "term": "Poster",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L770",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An information-object type filed through Getty AAT's hierarchy.",
+      "cellId": "poster"
+    },
+    {
+      "term": "Design/Architecture Study",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L805",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A preparatory object type filed through Getty AAT's hierarchy.",
+      "cellId": "design-architecture-study"
+    },
+    {
+      "term": "Digital Print",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L835",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A print type filed through Getty AAT's hierarchy.",
+      "cellId": "digital-print"
+    },
+    {
+      "term": "Computer-Aided Manufacturing",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L858",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A manufacturing process filed through Getty AAT's hierarchy.",
+      "cellId": "computer-aided-manufacturing"
+    },
+    {
+      "term": "Gold Leaf and Gilding",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L879",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A material-and-process category filed through Getty AAT's hierarchy.",
+      "cellId": "gold-leaf-and-gilding"
+    },
+    {
+      "term": "Spray Paint",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L883",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A material filed through Getty AAT's hierarchy.",
+      "cellId": "spray-paint"
+    },
+    {
+      "term": "Extruded Design",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L944",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A forming process filed through Getty AAT's hierarchy.",
+      "cellId": "extruded-design"
+    },
+    {
+      "term": "Oil on Copper",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L950",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A medium-and-support technique filed through Getty AAT's hierarchy.",
+      "cellId": "oil-on-copper"
+    },
+    {
+      "term": "Oil on Panel",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L959",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A medium-and-support technique filed through Getty AAT's hierarchy.",
+      "cellId": "oil-on-panel"
+    },
+    {
+      "term": "Tondo",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L974",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object format filed through Getty AAT's hierarchy.",
+      "cellId": "tondo"
+    },
+    {
+      "term": "Tempera",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L975",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A material filed through Getty AAT's hierarchy.",
+      "cellId": "tempera"
+    },
+    {
+      "term": "Altarpiece",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L984",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object type filed through Getty AAT's hierarchy.",
+      "cellId": "altarpiece"
+    },
+    {
+      "term": "Relief",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L581",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A sculptural object form filed through Getty AAT's hierarchy.",
+      "cellId": "relief"
+    },
+    {
+      "term": "Panorama",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1008",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An image format filed through Getty AAT's hierarchy.",
+      "cellId": "panorama"
+    },
+    {
+      "term": "Lightbox",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1011",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A display device filed through Getty AAT's hierarchy.",
+      "cellId": "lightbox"
+    },
+    {
+      "term": "Photograph as Material",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1024",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A material-use category filed through Getty AAT's hierarchy.",
+      "cellId": "photograph-as-material"
+    },
+    {
+      "term": "Bentwood",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1058",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A material form filed through Getty AAT's hierarchy.",
+      "cellId": "bentwood"
+    },
+    {
+      "term": "Glass and Ceramics",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1091",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A material category filed through Getty AAT's hierarchy.",
+      "cellId": "glass-and-ceramics"
+    },
+    {
+      "term": "Album, Folio and Fan Formats",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1121",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object-format category filed through Getty AAT's hierarchy.",
+      "cellId": "album-folio-and-fan-formats"
+    },
+    {
+      "term": "Hanging Scroll",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1138",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object and display format filed through Getty AAT's hierarchy.",
+      "cellId": "hanging-scroll"
+    },
+    {
+      "term": "Screen Format",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1139",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object-format category filed through Getty AAT's hierarchy.",
+      "cellId": "screen-format"
+    },
+    {
+      "term": "Handscroll",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1150",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object and viewing format filed through Getty AAT's hierarchy.",
+      "cellId": "handscroll"
+    },
+    {
+      "term": "Artist's Frame",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1163",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object component filed through Getty AAT's hierarchy.",
+      "cellId": "artists-frame"
+    },
+    {
+      "term": "Polychrome Sculpture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1172",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A coloring process filed through Getty AAT's hierarchy.",
+      "cellId": "polychrome-sculpture"
+    },
+    {
+      "term": "Study",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1244",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A preparatory object type filed through Getty AAT's hierarchy.",
+      "cellId": "study"
+    },
+    {
+      "term": "Delicate Materials",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1245",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A material-property category filed through Getty AAT's hierarchy.",
+      "cellId": "delicate-materials"
+    },
+    {
+      "term": "Archaeological Object",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1247",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object class filed through Getty AAT's hierarchy.",
+      "cellId": "archaeological-object"
+    },
+    {
+      "term": "Divinatory Objects, Talismans, and Amulets",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1279",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A functional object category filed through Getty AAT's hierarchy.",
+      "cellId": "divinatory-objects-talismans-and-amulets"
+    },
+    {
+      "term": "Embossed Paper",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1287",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A print type filed through Getty AAT's hierarchy.",
+      "cellId": "embossed-paper"
+    },
+    {
+      "term": "Painting and Writing Tools",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1293",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A tool category filed through Getty AAT's hierarchy.",
+      "cellId": "painting-and-writing-tools"
+    },
+    {
+      "term": "Books and Portfolios",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1294",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An object-grouping category filed through Getty AAT's hierarchy.",
+      "cellId": "books-and-portfolios"
+    },
+    {
+      "term": "Reduced-Scale Architecture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1296",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A model type filed through Getty AAT's hierarchy.",
+      "cellId": "reduced-scale-architecture"
+    },
+    {
+      "term": "Projection",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1343",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A display technology and visual-work type filed through Getty AAT's hierarchy.",
+      "cellId": "projection"
+    },
+    {
+      "term": "Virtual and Augmented Reality",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1366",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A technology concept filed through Getty AAT's hierarchy.",
+      "cellId": "virtual-and-augmented-reality"
+    },
+    {
+      "term": "Photorealistic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L61",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Adjective for appearance. Proposed `hyperrealism` holds the historical practice."
+    },
+    {
+      "term": "Gestural",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L223",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Mark-making quality shared by unrelated practices."
+    },
+    {
+      "term": "Immersive",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L279",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Experience attribute already available within installation and media practices."
+    },
+    {
+      "term": "Art That Plays With Scale",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L286",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Comparative size effect."
+    },
+    {
+      "term": "Large-Scale Sculpture",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L293",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Size band inside sculpture."
+    },
+    {
+      "term": "Typography",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L309",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "The Artsy row tags type appearance or subject; it does not describe typographic practice."
+    },
+    {
+      "term": "Large-Scale Photography",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L311",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Output size."
+    },
+    {
+      "term": "Cinematic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L325",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Look or mood."
+    },
+    {
+      "term": "Suspended/Hanging",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L349",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Installation method."
+    },
+    {
+      "term": "Interactive",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L399",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Interaction property across performance, sculpture, web, and installation."
+    },
+    {
+      "term": "Multiple Screens",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L400",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Display arrangement within film/video."
+    },
+    {
+      "term": "Close-Up",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L405",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Framing choice."
+    },
+    {
+      "term": "Intentionally Exposed Canvas",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L408",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Finish condition."
+    },
+    {
+      "term": "Multiple Styles",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L422",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Counted visual condition."
+    },
+    {
+      "term": "Sculpture-Based Photography",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L499",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Cross-medium relationship, not a stable practice name."
+    },
+    {
+      "term": "Open Form",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L506",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Getty identifies the operative idea as composition, not a practice."
+    },
+    {
+      "term": "Photographs of Surfaces",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L520",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Subject/framing tag."
+    },
+    {
+      "term": "Snapshot Aesthetic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L530",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Aesthetic effect, not the act of snapshot photography."
+    },
+    {
+      "term": "Shallow Depth of Field",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L554",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Optical setting and visual effect."
+    },
+    {
+      "term": "Aerial View",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L559",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Vantage point."
+    },
+    {
+      "term": "Negative Image",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L583",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Image polarity."
+    },
+    {
+      "term": "Glitch Aesthetic",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L586",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Appearance category broader than any community or process."
+    },
+    {
+      "term": "Altered and Substituted Canvases",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L776",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Support treatment across unrelated practices."
+    },
+    {
+      "term": "Rembrandtesque",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L926",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Artist-likeness adjective; live `chiaroscuro` covers the named technique."
+    },
+    {
+      "term": "Miniature and Small-Scale Paintings",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L972",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Size category combining distinct traditions."
+    },
+    {
+      "term": "Imitated Material",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L991",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Material illusion effect."
+    },
+    {
+      "term": "Intricately Sculpted",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L993",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Degree of detail."
+    },
+    {
+      "term": "Folded Planes",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L996",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Formal construction feature."
+    },
+    {
+      "term": "Erased and Obscured",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1005",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Visible treatment shared by unrelated practices."
+    },
+    {
+      "term": "Sculptural Use of Paint",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1120",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Cross-medium appearance with no lineage claim."
+    },
+    {
+      "term": "Mediated View",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1170",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Compositional device."
+    },
+    {
+      "term": "Long Distance and Deep Distance",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1212",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Perspective scheme within painting."
+    },
+    {
+      "term": "Wall Sculpture and Installation",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1227",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Location and display tag joining separate practices."
+    },
+    {
+      "term": "Frontal Perspective",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1270",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Viewpoint and composition."
+    },
+    {
+      "term": "Picassoesque",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1297",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Artist-likeness adjective; Cubism already supplies the historical practice."
+    },
+    {
+      "term": "Densely Textured or Haptic Surface",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1280",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Tactile quality."
+    },
+    {
+      "term": "Large-Scale Painting",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1327",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Size band inside painting."
+    },
+    {
+      "term": "Impasto",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L116",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A painting technique filed through Getty AAT's hierarchy.",
+      "cellId": "impasto"
+    },
+    {
+      "term": "Color Theory",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L259",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A theoretical concept filed through Getty AAT's hierarchy.",
+      "cellId": "color-theory"
+    },
+    {
+      "term": "Repetition",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L263",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A compositional process filed through Getty AAT's hierarchy.",
+      "cellId": "repetition"
+    },
+    {
+      "term": "Hatching",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L268",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A shading technique filed through Getty AAT's hierarchy.",
+      "cellId": "hatching"
+    },
+    {
+      "term": "Burned/Charred",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L313",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A material-changing process filed through Getty AAT's hierarchy.",
+      "cellId": "burned-charred"
+    },
+    {
+      "term": "Large Brushstrokes/Loose Brushwork",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L346",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A mark-making technique filed through Getty AAT's hierarchy.",
+      "cellId": "large-brushstrokes-loose-brushwork"
+    },
+    {
+      "term": "Stains/Washes",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L348",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An application technique filed through Getty AAT's hierarchy.",
+      "cellId": "stains-washes"
+    },
+    {
+      "term": "Multiple Exposure",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L380",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A photographic technique filed through Getty AAT's hierarchy.",
+      "cellId": "multiple-exposure"
+    },
+    {
+      "term": "Splattered/Dripped",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L423",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A painting technique filed through Getty AAT's hierarchy.",
+      "cellId": "splattered-dripped"
+    },
+    {
+      "term": "Cut/Ripped",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L427",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A subtractive process filed through Getty AAT's hierarchy.",
+      "cellId": "cut-ripped"
+    },
+    {
+      "term": "Time-Lapse Photography and Film",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L478",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A capture technique filed through Getty AAT's hierarchy.",
+      "cellId": "time-lapse-photography-and-film"
+    },
+    {
+      "term": "Pulled, Scraped, and Scratched",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L568",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A subtractive process filed through Getty AAT's hierarchy.",
+      "cellId": "pulled-scraped-and-scratched"
+    },
+    {
+      "term": "Transfer",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L780",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A transferring technique filed through Getty AAT's hierarchy.",
+      "cellId": "transfer"
+    },
+    {
+      "term": "Carving",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L977",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A subtractive technique filed through Getty AAT's hierarchy.",
+      "cellId": "carving"
+    },
+    {
+      "term": "Recycled",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1092",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A material-sourcing category filed through Getty AAT's hierarchy.",
+      "cellId": "recycled"
+    },
+    {
+      "term": "Poured",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1127",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. An application process filed through Getty AAT's hierarchy.",
+      "cellId": "poured"
+    },
+    {
+      "term": "Passage",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1264",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A brushwork technique filed through Getty AAT's hierarchy.",
+      "cellId": "passage"
+    },
+    {
+      "term": "Restored and Repurposed",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1290",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A restoration-and-reuse process filed through Getty AAT's hierarchy.",
+      "cellId": "restored-and-repurposed"
+    },
+    {
+      "term": "Digitally Manipulated",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1300",
+      "batch": "B25",
+      "decision": "live",
+      "note": "The owner overturned the earlier decline and approved this as useful. A digital image-making technique filed through Getty AAT's hierarchy.",
+      "cellId": "digitally-manipulated"
+    },
+    {
+      "term": "Mixed-Media",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L38",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Material-count umbrella."
+    },
+    {
+      "term": "Outdoor Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L128",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Location filter spanning monuments, sculpture, land art, murals, and installation."
+    },
+    {
+      "term": "Use of Traditional Techniques",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L169",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "\"Traditional\" supplies no shared lineage across the included practices."
+    },
+    {
+      "term": "Traditional Scroll Painting",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L188",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Regional and format bundle; live ink-wash and literati cells preserve specific practices."
+    },
+    {
+      "term": "Focus on Materials",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L291",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "General curatorial theme."
+    },
+    {
+      "term": "Collecting and Modes of Display",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L471",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Theme joining different methods and media."
+    },
+    {
+      "term": "Digital as Manual",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1067",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Loose cross-medium tendency, not a named community."
+    },
+    {
+      "term": "Traditional Photographic Techniques",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1077",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Era bundle; live cyanotype, photogram, and other process cells retain the specific practices."
+    },
+    {
+      "term": "Research as Art",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1145",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "The Artsy account concedes that research is common to nearly all art-making."
+    },
+    {
+      "term": "Murals and Wall Drawings",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1175",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Two distinct practices bundled by location."
+    },
+    {
+      "term": "Found Footage and Found Video",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1200",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Bundled source materials with no Artsy lineage or community claim."
+    },
+    {
+      "term": "Analogue Filmmaking",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1229",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Technology-era label with no Artsy account of a distinct practice."
+    },
+    {
+      "term": "Copies and Emulations",
+      "ref": "https://github.com/artsy/the-art-genome-project/blob/f9221a64bc2495bbd548217f6bc356956c0c111a/genes.csv#L1272",
+      "batch": "B25",
+      "decision": "declined",
+      "note": "Different intentions and practices joined by resemblance to prior work."
     }
-  ]
+  ],
+  "familyCounts": {
+    "(blank)": 4,
+    "Antiquities, Artifacts, and Religious Objects": 7,
+    "Artistic Disciplines": 7,
+    "Cultural and Religious Styles": 69,
+    "Design Concepts and Techniques": 22,
+    "Design Movements": 26,
+    "Furniture and Lighting": 27,
+    "Geographic Regions": 67,
+    "Jewelry and Fashion Object Types": 7,
+    "Materials": 39,
+    "Medium and Techniques": 175,
+    "Styles and Movements": 251,
+    "Subject Matter": 213,
+    "Tableware, Vessels, and Objects": 17,
+    "Textiles": 6,
+    "Time Periods": 20,
+    "Visual Qualities": 74
+  }
 }
