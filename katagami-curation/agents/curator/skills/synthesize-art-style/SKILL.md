@@ -175,7 +175,7 @@ Choose the primary semantic roles from:
 Choose fresh concrete subjects and compositions for the style under review.
 Never reuse the catalog's house fixtures, including a recurring person or animal.
 These roles guide subject selection; they do not require four separate images.
-A scene may naturally include several roles. Prefer two sources with distinct
+A scene may naturally include several roles. When using two sources, require distinct
 primary roles and distinct media selected from `documentary photograph`,
 `black-ink line drawing`, `neutral synthetic 3d render`, and `flat vector
 illustration`. One source is a smaller comparison with less coverage.

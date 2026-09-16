@@ -265,9 +265,8 @@ Choose the source media from:
 - `flat vector illustration`
 
 Send the identical one or two source files and exact canonical prompt to two
-distinct image models. This produces two or four edit outputs. Prefer two sources
-with distinct primary roles and source media; one is a smaller comparison with
-less coverage. A scene may naturally contain people, animals, objects and an
+distinct image models. This produces two or four edit outputs. When using two sources, their primary roles must differ and their source
+media must differ. One source is a smaller comparison with less coverage. A scene may naturally contain people, animals, objects and an
 environment. Do not require four isolated images to cover those concepts.
 
 Choose fresh actual subjects and compositions for each art style. Do not reuse
@@ -294,7 +293,12 @@ is globally privileged.
 ### Independent prompt and visual review
 
 The prompt review quotes substantive, non-overlapping evidence for the eight
-dimensions above and attests `source_medium_independent=true`.
+dimensions above in canonical order. Include `schema_version="1"`, the exact
+`prompt`, reviewer provider/model distinct from the author, `verdict="pass"`,
+and true attestations for `reference_independent`, `subject_independent`,
+`source_medium_independent`, `model_agnostic`, and `style_name_independent`.
+Include `contradictions=[]` and actual `revision_count` (0 or 1). Revise once
+and re-review if needed; never invent passing attestations.
 
 The blind portability review scores each anonymous output on:
 
