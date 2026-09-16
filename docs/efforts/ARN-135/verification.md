@@ -2,6 +2,13 @@
 
 - Finalizer: 96 Rust tests pass, including one/two matched sources per model
   and rejection of unsupported counts, asymmetric matrices and mismatched hashes.
+- Public worker: seven route tests pass; the three new-namespace checks returned
+  404 against the previous worker and 200 after the allowlist repair. Existing
+  asset prefixes still serve; unrelated storage remains inaccessible.
+- Cloudflare local runtime (Wrangler 4.133.0): GET and HEAD on the new art-style
+  prefix return 200/image/png; bytes match the pipeline fixture exactly.
+- Thumbnail contract: nine pass, one pre-existing synthesize-language skill-text
+  assertion fails. The changed publication-namespace assertion now passes.
 - MCP typecheck passes. Release WASM builds for wasm32-unknown-unknown.
 - The user authorized disposable local bootstrap after the spec-upload denial.
   The production policy snapshot remains installed, with the application repair

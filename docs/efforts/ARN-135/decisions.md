@@ -42,3 +42,14 @@ Chose the restrictions because accepting contributor-supplied attestations as
 verified contradicts the existing publication contract. The existing trusted
 principal definitions and the remaining application policies are unchanged.
 Where: katagami-commons/policies/art_style.cedar.
+
+## Preserve old asset URLs while serving new namespaces
+
+Decision: Add the three single-segment publication prefixes to the public asset
+worker while retaining its existing prefixes.
+Came up because: All three independent reviewers found that the API namespace
+repair would create object keys the public worker rejects with 404.
+Options: Revert to invalid API namespaces; accept both old and new public prefixes.
+Chose both because new publication must satisfy the API and existing immutable
+asset links must keep working. The worker still rejects unrelated storage paths.
+Where: infra/cloudflare/katagami-assets-worker/src/index.js and index.test.mjs.

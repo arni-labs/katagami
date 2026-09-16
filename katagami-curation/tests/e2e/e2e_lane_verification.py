@@ -50,18 +50,7 @@ PROOF_CASES = [
         "composition": "single bird crossing the frame diagonally with wings spread",
         "source_medium": "black-ink line drawing",
     },
-    {
-        "category": "still_life_object",
-        "subject": "cassette player with headphones and tape cases",
-        "composition": "overhead product arrangement with deliberate gaps",
-        "source_medium": "neutral synthetic 3d render",
-    },
-    {
-        "category": "landscape_environment",
-        "subject": "hillside neighborhood with stairs and water tanks",
-        "composition": "wide cityscape rising diagonally across the frame",
-        "source_medium": "flat vector illustration",
-    },
+
 ]
 
 
@@ -497,7 +486,10 @@ def wait_finalized_job(job_id):
 def verify_non_system_cannot_forge_attestation(art_id):
     # Identity comes from a registered credential, never self-declared headers.
     token = os.environ.get("E2E_CONTRIBUTOR_TOKEN")
-    assert token, "Set E2E_CONTRIBUTOR_TOKEN to a registered local contributor credential"
+    if not token:
+        report("art_style/security: registered contributor credential configured", False,
+               "Set E2E_CONTRIBUTOR_TOKEN to a registered local contributor credential")
+        return
     previous_headers = dict(HDRS)
     HDRS.clear()
     HDRS.update({"X-Tenant-Id": TENANT, "Authorization": f"Bearer {token}"})

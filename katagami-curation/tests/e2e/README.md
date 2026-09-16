@@ -34,8 +34,9 @@ git clone --depth 1 https://github.com/nerdsane/temper.git /tmp/temper-main
 # 3. Boot the disposable server (merged single tenant `katagami`, isolated state):
 TEMPER_BIN=/tmp/temper-main/target/debug/temper ./serve_local.sh
 
-# 4. In another shell, drive the flow (uploads the WASM modules + secrets itself):
-python3 e2e_lane_verification.py
+# 4. Register a disposable contributor credential in the local runtime,
+# linked to an Active AgentType named contributor. Supply its bearer token:
+E2E_CONTRIBUTOR_TOKEN=<local-contributor-token> python3 e2e_lane_verification.py
 ```
 
 Requires: python3 + Pillow, a paw-fs checkout for specs and the prebuilt
@@ -52,9 +53,15 @@ locations), and the `wasm32-unknown-unknown` toolchain for step 2.
   passing them to `Complete*Synthesis` — the finalizer re-reads job fields
   through the query projection, which can lag the just-dispatched action on a
   fresh local server.
-- Everything is disposable: state lives under `.e2e-state/` (gitignored) and
-  the tenant is local-only with a permit-all Cedar policy. Never point this at
-  a real environment.
+- Everything is disposable. Never point this harness at a real environment.
+  A permit-all diagnostic boot is not publication proof: release verification
+  must load the production policy set and the application policy delta.
+- The security stage requires a real registered contributor bearer credential
+  (`E2E_CONTRIBUTOR_TOKEN`); caller-supplied identity headers are not evidence.
+  A missing token is reported as a failed check and the other cases still run.
+- Verify the public worker namespace contract separately with
+  `node --test infra/cloudflare/katagami-assets-worker/src/index.test.mjs` from
+  the repository root. The object-store sink does not exercise the public CDN.
 
 ## WritingStyle lifecycle e2e
 
