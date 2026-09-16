@@ -4,8 +4,921 @@
   "url": "https://aesthetics.fandom.com/wiki/Aesthetics_Wiki",
   "licence": "CC-BY-SA (text); images separately licensed",
   "use": "read-never-copy",
-  "total": 1241,
-  "totalDerivedFrom": "Fandom API article count, 2026-09-08",
+  "total": 1249,
+  "totalDerivedFrom": "Fandom API namespace-0 non-redirect count (list=allpages, apfilterredir=nonredirects), matching siteinfo statistics.articles; counted 2026-09-15",
   "lane": "visual",
-  "terms": []
+  "terms": [
+    {
+      "term": "2000s Modern Baroque",
+      "ref": "https://aesthetics.fandom.com/wiki/2000s_Modern_Baroque",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Possible design direction; no independent source found for the bounded term. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "2000s-modern-baroque"
+    },
+    {
+      "term": "2000s Preppy",
+      "ref": "https://aesthetics.fandom.com/wiki/2000s_Preppy",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Consumer-fashion category, not a maker-led direction."
+    },
+    {
+      "term": "2000s Tuscan Mom",
+      "ref": "https://aesthetics.fandom.com/wiki/2000s_Tuscan_Mom",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Retrospective lifestyle and product bundle."
+    },
+    {
+      "term": "2000s Yoga Mom",
+      "ref": "https://aesthetics.fandom.com/wiki/2000s_Yoga_Mom",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Retrospective lifestyle and product bundle."
+    },
+    {
+      "term": "2010s Bright Kawaii",
+      "ref": "https://aesthetics.fandom.com/wiki/2010s_Bright_Kawaii",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Wiki-created catalogue label without a bounded maker community."
+    },
+    {
+      "term": "2010s Dark Fandom",
+      "ref": "https://aesthetics.fandom.com/wiki/2010s_Dark_Fandom",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Possible editing practice; no independent history found for the exact category. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "2010s-dark-fandom"
+    },
+    {
+      "term": "2010s Meme Maximalism",
+      "ref": "https://aesthetics.fandom.com/wiki/2010s_Meme_Maximalism",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Related collage practice exists, but the exact term and corpus remain uncorroborated. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "2010s-meme-maximalism"
+    },
+    {
+      "term": "2010s Soft Kawaii",
+      "ref": "https://aesthetics.fandom.com/wiki/2010s_Soft_Kawaii",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Attribute-defined catalogue variant without documented makers or works."
+    },
+    {
+      "term": "2010s Summer Nostalgia",
+      "ref": "https://aesthetics.fandom.com/wiki/2010s_Summer_Nostalgia",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Bare mood and period memory."
+    },
+    {
+      "term": "2014 Girly",
+      "ref": "https://aesthetics.fandom.com/wiki/2014_Girly",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Consumer moodboard rather than a bounded making practice."
+    },
+    {
+      "term": "2014 Tumblr",
+      "ref": "https://aesthetics.fandom.com/wiki/2014_Tumblr",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Period umbrella spanning unrelated scenes and media."
+    },
+    {
+      "term": "2020 Alt",
+      "ref": "https://aesthetics.fandom.com/wiki/2020_Alt",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented TikTok youth scene with music, dress, makeup, and video work. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "2020-alt"
+    },
+    {
+      "term": "2020s Preppy",
+      "ref": "https://aesthetics.fandom.com/wiki/2020s_Preppy",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Product and status-consumption category."
+    },
+    {
+      "term": "2 Tone",
+      "ref": "https://aesthetics.fandom.com/wiki/2_Tone",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Label-led music and graphic movement with named bands and work. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "2-tone"
+    },
+    {
+      "term": "50s Suburbia",
+      "ref": "https://aesthetics.fandom.com/wiki/50s_Suburbia",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Period setting and product bundle, not one direction."
+    },
+    {
+      "term": "8-Bit",
+      "ref": "https://aesthetics.fandom.com/wiki/8-Bit",
+      "decision": "merge",
+      "cellId": "pixel-art",
+      "batch": "AW-B1",
+      "note": "The article's subject is the existing Pixel art cell."
+    },
+    {
+      "term": "80s-90s Afrocentrism",
+      "ref": "https://aesthetics.fandom.com/wiki/80s-90s_Afrocentrism",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "The wider history is real; no source found for this exact cross-medium period label. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "80s-90s-afrocentrism"
+    },
+    {
+      "term": "80s Workout",
+      "ref": "https://aesthetics.fandom.com/wiki/80s_Workout",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Fitness activity and clothing category."
+    },
+    {
+      "term": "90s Cool",
+      "ref": "https://aesthetics.fandom.com/wiki/90s_Cool",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Real works, but no independent source found for the retrospective grouping. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "90s-cool"
+    },
+    {
+      "term": "92i",
+      "ref": "https://aesthetics.fandom.com/wiki/92i",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Short-lived beauty and consumption trend."
+    },
+    {
+      "term": "Abstract Tech",
+      "ref": "https://aesthetics.fandom.com/wiki/Abstract_Tech",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Visible attribute set without shared history or makers."
+    },
+    {
+      "term": "Academia",
+      "ref": "https://aesthetics.fandom.com/wiki/Academia",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Catalogue umbrella for separate study-themed labels."
+    },
+    {
+      "term": "Acid Design",
+      "ref": "https://aesthetics.fandom.com/wiki/Acid_Design",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented graphic-design direction with named designers and work. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "acid-design"
+    },
+    {
+      "term": "Acid House",
+      "ref": "https://aesthetics.fandom.com/wiki/Acid_House",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented music genre and scene with originators and recordings. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "acid-house"
+    },
+    {
+      "term": "Acubi",
+      "ref": "https://aesthetics.fandom.com/wiki/Acubi",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Retail and outfit category without a maker-led movement."
+    },
+    {
+      "term": "Adventure Pulp",
+      "ref": "https://aesthetics.fandom.com/wiki/Adventure_Pulp",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Pulp history is documented; the exact subcategory was not corroborated. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "adventure-pulp"
+    },
+    {
+      "term": "Adventurecore",
+      "ref": "https://aesthetics.fandom.com/wiki/Adventurecore",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Bare mood and lifestyle activity list."
+    },
+    {
+      "term": "Aesthetic Rap",
+      "ref": "https://aesthetics.fandom.com/wiki/Aesthetic_Rap",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Named artists exist, but no independent source found for the genre. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "aesthetic-rap"
+    },
+    {
+      "term": "Aesthetic Visual Index",
+      "ref": "https://aesthetics.fandom.com/wiki/Aesthetic_Visual_Index",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Wiki navigation and catalogue infrastructure."
+    },
+    {
+      "term": "Aestheticism",
+      "ref": "https://aesthetics.fandom.com/wiki/Aestheticism",
+      "decision": "merge",
+      "cellId": "aestheticism",
+      "batch": "AW-B1",
+      "note": "Exact existing cell."
+    },
+    {
+      "term": "Aesthetics 101",
+      "ref": "https://aesthetics.fandom.com/wiki/Aesthetics_101",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Wiki meta documentation."
+    },
+    {
+      "term": "Aesthetics Wiki",
+      "ref": "https://aesthetics.fandom.com/wiki/Aesthetics_Wiki",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Source home page, not a cell subject."
+    },
+    {
+      "term": "Aetherpunk",
+      "ref": "https://aesthetics.fandom.com/wiki/Aetherpunk",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Works fit the label, but no independent genre history was found. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "aetherpunk"
+    },
+    {
+      "term": "Afrofuturism",
+      "ref": "https://aesthetics.fandom.com/wiki/Afrofuturism",
+      "decision": "merge",
+      "cellId": "afrofuturism",
+      "batch": "AW-B1",
+      "note": "Exact existing cell."
+    },
+    {
+      "term": "Afropunk",
+      "ref": "https://aesthetics.fandom.com/wiki/Afropunk",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented Black punk movement with film, bands, community, and festival. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "afropunk"
+    },
+    {
+      "term": "After Hours",
+      "ref": "https://aesthetics.fandom.com/wiki/After_Hours",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Bare mood and viewing condition."
+    },
+    {
+      "term": "Agejo",
+      "ref": "https://aesthetics.fandom.com/wiki/Agejo",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Magazine-led Japanese fashion and beauty style with dated work. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "agejo"
+    },
+    {
+      "term": "Aggrotech",
+      "ref": "https://aesthetics.fandom.com/wiki/Aggrotech",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Named genre and artists, but no qualifying second source found. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "aggrotech"
+    },
+    {
+      "term": "Ah Beng",
+      "ref": "https://aesthetics.fandom.com/wiki/Ah_Beng",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Identity stereotype rather than a creative practice."
+    },
+    {
+      "term": "Airbrush Surrealism",
+      "ref": "https://aesthetics.fandom.com/wiki/Airbrush_Surrealism",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Possible illustration direction; no usable independent citation found. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "airbrush-surrealism"
+    },
+    {
+      "term": "Akibapop",
+      "ref": "https://aesthetics.fandom.com/wiki/Akibapop",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Artists and recordings exist; the bounded genre name was not corroborated. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "akibapop"
+    },
+    {
+      "term": "Alay",
+      "ref": "https://aesthetics.fandom.com/wiki/Alay",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Identity stereotype rather than a made-work corpus."
+    },
+    {
+      "term": "Aliencore",
+      "ref": "https://aesthetics.fandom.com/wiki/Aliencore",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Visible subject and icon bundle."
+    },
+    {
+      "term": "Aliyahcore",
+      "ref": "https://aesthetics.fandom.com/wiki/Aliyahcore",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Named maker, coined term, imitated outfits, and documented online direction. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "aliyahcore"
+    },
+    {
+      "term": "Alt-Country Occult",
+      "ref": "https://aesthetics.fandom.com/wiki/Alt-Country_Occult",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Possible cross-medium direction; no second source found for the exact name. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "alt-country-occult"
+    },
+    {
+      "term": "Alternative",
+      "ref": "https://aesthetics.fandom.com/wiki/Alternative",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Open-ended catalogue umbrella."
+    },
+    {
+      "term": "Alté",
+      "ref": "https://aesthetics.fandom.com/wiki/Alt%C3%A9",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented Lagos scene spanning music, fashion, film, and visual culture. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "alte"
+    },
+    {
+      "term": "Amekaji",
+      "ref": "https://aesthetics.fandom.com/wiki/Amekaji",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Plausible Japanese fashion practice; exact history not independently sourced. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "amekaji"
+    },
+    {
+      "term": "American Kitsch",
+      "ref": "https://aesthetics.fandom.com/wiki/American_Kitsch",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Named illustrators exist; no source found for the bounded movement term. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "american-kitsch"
+    },
+    {
+      "term": "American Pioneers",
+      "ref": "https://aesthetics.fandom.com/wiki/American_Pioneers",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Historical subject and lifestyle fantasy."
+    },
+    {
+      "term": "American Thanksgiving",
+      "ref": "https://aesthetics.fandom.com/wiki/American_Thanksgiving",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Holiday occasion and subject."
+    },
+    {
+      "term": "Americana",
+      "ref": "https://aesthetics.fandom.com/wiki/Americana",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Catalogue umbrella and content tag; matches the prior Artsy decision."
+    },
+    {
+      "term": "Analog Horror",
+      "ref": "https://aesthetics.fandom.com/wiki/Analog_Horror",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented web horror genre with creators, series, dates, and conventions. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "analog-horror"
+    },
+    {
+      "term": "Anarcho-Punk",
+      "ref": "https://aesthetics.fandom.com/wiki/Anarcho-Punk",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented music, print, and graphic movement. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "anarcho-punk"
+    },
+    {
+      "term": "Ancient Egypt",
+      "ref": "https://aesthetics.fandom.com/wiki/Ancient_Egypt",
+      "decision": "merge",
+      "cellId": "ancient-egyptian-art",
+      "batch": "AW-B1",
+      "note": "Place-period label for the existing Ancient Egyptian art corpus."
+    },
+    {
+      "term": "Angelcore",
+      "ref": "https://aesthetics.fandom.com/wiki/Angelcore",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Mood and icon set without a bounded history."
+    },
+    {
+      "term": "Anglo Gothic",
+      "ref": "https://aesthetics.fandom.com/wiki/Anglo_Gothic",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Possible regional corpus; no independent source found for the label. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "anglo-gothic"
+    },
+    {
+      "term": "Angura Kei",
+      "ref": "https://aesthetics.fandom.com/wiki/Angura_Kei",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Angura theatre is sourced, but the article's cross-medium kei category is not. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "angura-kei"
+    },
+    {
+      "term": "Animecore",
+      "ref": "https://aesthetics.fandom.com/wiki/Animecore",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Plausible archival fandom practice; no independent direction history found. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "animecore"
+    },
+    {
+      "term": "Anti-Fashion",
+      "ref": "https://aesthetics.fandom.com/wiki/Anti-Fashion",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Critical stance and catalogue umbrella across unrelated movements."
+    },
+    {
+      "term": "Antique",
+      "ref": "https://aesthetics.fandom.com/wiki/Antique",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Age-based product category."
+    },
+    {
+      "term": "Antwerp Six",
+      "ref": "https://aesthetics.fandom.com/wiki/Antwerp_Six",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Bounded designer cohort with a documented 1986 breakthrough and bodies of work. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "antwerp-six"
+    },
+    {
+      "term": "Appalachian Gothic",
+      "ref": "https://aesthetics.fandom.com/wiki/Appalachian_Gothic",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented literary subgenre with a sustained corpus. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "appalachian-gothic"
+    },
+    {
+      "term": "Après-ski",
+      "ref": "https://aesthetics.fandom.com/wiki/Apr%C3%A8s-ski",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Leisure activity and product category."
+    },
+    {
+      "term": "Arabfunny",
+      "ref": "https://aesthetics.fandom.com/wiki/Arabfunny",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Dated online meme genre with founder, community, conventions, and works. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "arabfunny"
+    },
+    {
+      "term": "Arabian Driftcore",
+      "ref": "https://aesthetics.fandom.com/wiki/Arabian_Driftcore",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Named maker and images exist; no independent genre source found. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "arabian-driftcore"
+    },
+    {
+      "term": "Arabian Nights",
+      "ref": "https://aesthetics.fandom.com/wiki/Arabian_Nights",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Short social-video transition format and trend."
+    },
+    {
+      "term": "Arcadecore",
+      "ref": "https://aesthetics.fandom.com/wiki/Arcadecore",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Place mood and product setting."
+    },
+    {
+      "term": "Archive Fashion",
+      "ref": "https://aesthetics.fandom.com/wiki/Archive_Fashion",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Collecting and styling practice lacks a corroborated bounded direction. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "archive-fashion"
+    },
+    {
+      "term": "Aristocrat",
+      "ref": "https://aesthetics.fandom.com/wiki/Aristocrat",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Brands and garments exist; the term's scope and history were not independently fixed. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "aristocrat"
+    },
+    {
+      "term": "Art Academia",
+      "ref": "https://aesthetics.fandom.com/wiki/Art_Academia",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Lifestyle mood and activity."
+    },
+    {
+      "term": "Art Deco",
+      "ref": "https://aesthetics.fandom.com/wiki/Art_Deco",
+      "decision": "merge",
+      "cellId": "art-deco",
+      "batch": "AW-B1",
+      "note": "Exact existing cell."
+    },
+    {
+      "term": "Art Hoe",
+      "ref": "https://aesthetics.fandom.com/wiki/Art_Hoe",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Named founders and a documented social-media art movement. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "art-hoe"
+    },
+    {
+      "term": "Art Nouveau",
+      "ref": "https://aesthetics.fandom.com/wiki/Art_Nouveau",
+      "decision": "merge",
+      "cellId": "art-nouveau",
+      "batch": "AW-B1",
+      "note": "Exact existing cell."
+    },
+    {
+      "term": "Art Singulier",
+      "ref": "https://aesthetics.fandom.com/wiki/Art_Singulier",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Museum-documented French outsider-art current with a 1978 exhibition and artists. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "art-singulier"
+    },
+    {
+      "term": "Artcore",
+      "ref": "https://aesthetics.fandom.com/wiki/Artcore",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Research-supported electronic music genre with a rhythm-game corpus. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "artcore"
+    },
+    {
+      "term": "Arte Povera",
+      "ref": "https://aesthetics.fandom.com/wiki/Arte_Povera",
+      "decision": "merge",
+      "cellId": "arte-povera",
+      "batch": "AW-B1",
+      "note": "Exact existing cell."
+    },
+    {
+      "term": "Arts and Crafts",
+      "ref": "https://aesthetics.fandom.com/wiki/Arts_and_Crafts",
+      "decision": "merge",
+      "cellId": "arts-and-crafts-movement",
+      "batch": "AW-B1",
+      "note": "Synonym for the existing Arts and Crafts Movement cell."
+    },
+    {
+      "term": "Asian Baby Girl",
+      "ref": "https://aesthetics.fandom.com/wiki/Asian_Baby_Girl",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Academic work documents both the place-based subculture and online aesthetic. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "asian-baby-girl"
+    },
+    {
+      "term": "Athleisure",
+      "ref": "https://aesthetics.fandom.com/wiki/Athleisure",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Product and market category."
+    },
+    {
+      "term": "Atomic Age",
+      "ref": "https://aesthetics.fandom.com/wiki/Atomic_Age",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented postwar design direction with objects, interiors, graphics, and buildings. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "atomic-age"
+    },
+    {
+      "term": "Atompunk",
+      "ref": "https://aesthetics.fandom.com/wiki/Atompunk",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Works fit the label, but no independent genre history was found. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "atompunk"
+    },
+    {
+      "term": "Atzen",
+      "ref": "https://aesthetics.fandom.com/wiki/Atzen",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Artists and recordings exist; no qualifying scene history found. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "atzen"
+    },
+    {
+      "term": "Australian Gothic",
+      "ref": "https://aesthetics.fandom.com/wiki/Australian_Gothic",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented regional Gothic mode across film and literature. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "australian-gothic"
+    },
+    {
+      "term": "Australiana",
+      "ref": "https://aesthetics.fandom.com/wiki/Australiana",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Named designers and four decades of documented Australian fashion work. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "australiana"
+    },
+    {
+      "term": "Austurbane",
+      "ref": "https://aesthetics.fandom.com/wiki/Austurbane",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Promising Australian design corpus; exact label lacks usable corroboration. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "austurbane"
+    },
+    {
+      "term": "Autumn Aesthetic",
+      "ref": "https://aesthetics.fandom.com/wiki/Autumn_Aesthetic",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Seasonal mood."
+    },
+    {
+      "term": "Avant-garde",
+      "ref": "https://aesthetics.fandom.com/wiki/Avant-garde",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Catalogue umbrella; matches the prior Artsy decision."
+    },
+    {
+      "term": "Avant Apocalypse",
+      "ref": "https://aesthetics.fandom.com/wiki/Avant_Apocalypse",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Dated online fashion direction with named critic, designers, and runway work. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "avant-apocalypse"
+    },
+    {
+      "term": "Avant Basic",
+      "ref": "https://aesthetics.fandom.com/wiki/Avant_Basic",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Visible retail trend and attribute bundle."
+    },
+    {
+      "term": "Avantropop",
+      "ref": "https://aesthetics.fandom.com/wiki/Avantropop",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Archive taxonomy term without an independent history. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "avantropop"
+    },
+    {
+      "term": "B-Boy",
+      "ref": "https://aesthetics.fandom.com/wiki/B-Boy",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented hip-hop dance form with crews, battles, moves, and performances. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "b-boy"
+    },
+    {
+      "term": "B-Movie Horror",
+      "ref": "https://aesthetics.fandom.com/wiki/B-Movie_Horror",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "B-film production is documented, but no qualifying source found for B-Movie Horror as the article's bounded direction. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "b-movie-horror"
+    },
+    {
+      "term": "Babycore",
+      "ref": "https://aesthetics.fandom.com/wiki/Babycore",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Subject and mood; one project does not establish a wider direction."
+    },
+    {
+      "term": "Babygirl",
+      "ref": "https://aesthetics.fandom.com/wiki/Babygirl",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Character mood and identity label."
+    },
+    {
+      "term": "Baddie",
+      "ref": "https://aesthetics.fandom.com/wiki/Baddie",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Consumer style and social stereotype."
+    },
+    {
+      "term": "Bakala",
+      "ref": "https://aesthetics.fandom.com/wiki/Bakala",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Museum-documented Valencia club scene and graphic-design movement. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "bakala"
+    },
+    {
+      "term": "Balearic Aesthetic",
+      "ref": "https://aesthetics.fandom.com/wiki/Balearic_Aesthetic",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Balearic Beat is documented, but no qualifying source found for the article's wider aesthetic category. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "balearic-aesthetic"
+    },
+    {
+      "term": "Ballet",
+      "ref": "https://aesthetics.fandom.com/wiki/Ballet",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Codified theatrical dance form with centuries of made work. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "ballet"
+    },
+    {
+      "term": "Balletcore",
+      "ref": "https://aesthetics.fandom.com/wiki/Balletcore",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Consumer fashion trend borrowing from ballet."
+    },
+    {
+      "term": "Ballroom Culture",
+      "ref": "https://aesthetics.fandom.com/wiki/Ballroom_Culture",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented artform and community with houses, events, dress, and dance. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "ballroom-culture"
+    },
+    {
+      "term": "Bankara",
+      "ref": "https://aesthetics.fandom.com/wiki/Bankara",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Museum- and scholarship-documented student dress and performance culture. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "bankara"
+    },
+    {
+      "term": "Barber Beats",
+      "ref": "https://aesthetics.fandom.com/wiki/Barber_Beats",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Visible online recordings and labels; no qualifying independent genre history found. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "barber-beats"
+    },
+    {
+      "term": "Barbiecore",
+      "ref": "https://aesthetics.fandom.com/wiki/Barbiecore",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Brand-led product aesthetic."
+    },
+    {
+      "term": "Bardcore",
+      "ref": "https://aesthetics.fandom.com/wiki/Bardcore",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Dated online music genre with originators and derivative recordings. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "bardcore"
+    },
+    {
+      "term": "Baroque",
+      "ref": "https://aesthetics.fandom.com/wiki/Baroque",
+      "decision": "merge",
+      "cellId": "baroque",
+      "batch": "AW-B1",
+      "note": "Exact existing cell."
+    },
+    {
+      "term": "Basic Girl",
+      "ref": "https://aesthetics.fandom.com/wiki/Basic_Girl",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Consumer stereotype rather than a creative direction."
+    },
+    {
+      "term": "Basque Radical Rock",
+      "ref": "https://aesthetics.fandom.com/wiki/Basque_Radical_Rock",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented 1980s music and countercultural movement. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "basque-radical-rock"
+    },
+    {
+      "term": "Bastardcore",
+      "ref": "https://aesthetics.fandom.com/wiki/Bastardcore",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Possible online image practice; name, community, and chronology lack corroboration. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "bastardcore"
+    },
+    {
+      "term": "Bauhaus",
+      "ref": "https://aesthetics.fandom.com/wiki/Bauhaus",
+      "decision": "merge",
+      "cellId": "bauhaus",
+      "batch": "AW-B1",
+      "note": "Exact existing cell."
+    },
+    {
+      "term": "Beach Day",
+      "ref": "https://aesthetics.fandom.com/wiki/Beach_Day",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Activity and setting."
+    },
+    {
+      "term": "Beach Goth",
+      "ref": "https://aesthetics.fandom.com/wiki/Beach_Goth",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Single-band and event label without an independent maker community."
+    },
+    {
+      "term": "Beatnik",
+      "ref": "https://aesthetics.fandom.com/wiki/Beatnik",
+      "decision": "merge",
+      "cellId": "beat-generation",
+      "batch": "AW-B1",
+      "note": "Public label for the existing Beat Generation movement and its reception."
+    },
+    {
+      "term": "Belgian Popcorn",
+      "ref": "https://aesthetics.fandom.com/wiki/Belgian_Popcorn",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented Belgian DJ, dance, and record-collecting scene. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "belgian-popcorn"
+    },
+    {
+      "term": "Berlin Techno Fashion",
+      "ref": "https://aesthetics.fandom.com/wiki/Berlin_Techno_Fashion",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Uncodified umbrella for several club dress practices."
+    },
+    {
+      "term": "Biedermeier",
+      "ref": "https://aesthetics.fandom.com/wiki/Biedermeier",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Established Central European style across art, furniture, interiors, and literature. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "biedermeier"
+    },
+    {
+      "term": "Big Pop",
+      "ref": "https://aesthetics.fandom.com/wiki/Big_Pop",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Archive taxonomy and image-board term without an independent movement history. The owner approved a single-source cell on 2026-09-15; its document names Aesthetics Wiki as the only evidence for the bounded name and history and records the missing independent corroboration.",
+      "cellId": "big-pop"
+    },
+    {
+      "term": "Biker",
+      "ref": "https://aesthetics.fandom.com/wiki/Biker",
+      "decision": "declined",
+      "batch": "AW-B1",
+      "note": "Lifestyle, product, and identity category."
+    },
+    {
+      "term": "Bikiniarze",
+      "ref": "https://aesthetics.fandom.com/wiki/Bikiniarze",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented postwar Polish youth subculture with dress, music, and print history. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "bikiniarze"
+    },
+    {
+      "term": "Bills (Congolese subculture)",
+      "ref": "https://aesthetics.fandom.com/wiki/Bills_(Congolese_subculture)",
+      "decision": "live",
+      "batch": "AW-B1",
+      "note": "Documented Kinshasa street culture with dress, slang, performance, and named influences. Written as a private attested Draft after the owner approved AW-B1 on 2026-09-15.",
+      "cellId": "bills-congolese-subculture"
+    }
+  ]
 }
