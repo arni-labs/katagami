@@ -75,3 +75,15 @@ Decision: use GH-311, the actual GitHub pull-request/issue number, for CI artifa
 **Chose master's workflow because:** It retains the other session's launcher tests and removes this PR's redundant workflow change without changing the gallery implementation.
 
 **Where:** .github/workflows/tests.yml; merge of master at 3c58768.
+
+### One independent review for this release
+
+**Decision:** Accept one independent Codex sub-agent review for PR #311, with Grok and Claude explicitly recorded as unavailable.
+
+**Came up because:** The owner explicitly authorized one sub-agent review after Claude account authorization remained unavailable in the sandbox.
+
+**Options:** Continue waiting for a second model login, lower the repository-wide requirement, or use the validator's supported reviewer floor only for PR #311.
+
+**Chose the PR-specific exception because:** It implements the owner's release decision without relaxing other PRs, suppressing findings, inventing reviewers, or removing the review gate. The current final diff receives the independent review requested by the owner, including this exception. This also authorizes that release review after the two earlier rounds.
+
+**Where:** .github/workflows/sdlc-review.yml validation environment; user approval in the gallery session.

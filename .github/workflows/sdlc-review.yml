@@ -118,6 +118,8 @@ jobs:
         id: validate
         env:
           PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          # Owner-approved exception for this gallery release; all other PRs keep the default floor.
+          SDLC_MIN_MODEL_REVIEWERS: ${{ github.event.pull_request.number == 311 && '1' || '' }}
         run: python3 /tmp/stack/review/validate.py .review/review.json --require-commit "$PR_HEAD"
       - name: Route on the panel's risk judgment
         env:
