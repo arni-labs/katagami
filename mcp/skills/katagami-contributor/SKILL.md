@@ -293,7 +293,10 @@ is globally privileged.
 ### Independent prompt and visual review
 
 The prompt review quotes substantive, non-overlapping evidence for the eight
-dimensions above in canonical order. Include `schema_version="1"`, the exact
+dimensions above in canonical order. Store the quote strings inside
+`prompt_review.observable_dimensions`, keyed by `medium_material`, `marks_edges`,
+`depiction_grammar`, `tonal_shading`, `color_roles`, `composition`,
+`signature_details`, and `exclusions`. Include `schema_version="1"`, the exact
 `prompt`, reviewer provider/model distinct from the author, `verdict="pass"`,
 and true attestations for `reference_independent`, `subject_independent`,
 `source_medium_independent`, `model_agnostic`, and `style_name_independent`.
