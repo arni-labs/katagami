@@ -1,4 +1,4 @@
-# ARN-462 — Agents get rejected by the Katagami MCP, and nobody finds out
+# ARN-514 — Agents get rejected by the Katagami MCP, and nobody finds out
 
 Rita, 2026-09-08: "I want you to fix it so agents and their people don't struggle
 with this. I also want you to improve the visibility that we have in this and I

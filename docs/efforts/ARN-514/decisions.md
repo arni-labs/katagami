@@ -1,4 +1,4 @@
-# ARN-462 decisions
+# ARN-514 decisions
 
 ## D1 — Accept three names for the identifier instead of renaming the parameter
 
@@ -233,29 +233,50 @@ preview data as production stops seeing it — which is the point.
 `infra/datadog/monitors/m7-telemetry-dark.json`;
 `ui/scripts/check-telemetry-contract.mjs`.
 
-## D9 — The Linear issue id is unverified
+## D9 — The Linear issue id was unverified, and the guess was wrong
 
-**Decision** — used `ARN-462` consistently and flagged it for confirmation
-rather than leaving two different invented ids in the tree.
+**Decision** — at the time, used `ARN-462` consistently and flagged it for
+confirmation rather than leaving two different invented ids in the tree. (The
+effort is now `ARN-514`; this entry keeps the original ids because the whole
+point of it is which id was chosen and why.)
 
 **Came up because** the panel noticed the code comments said `ARN-478` while the
-effort folder said `ARN-462`. Both are ids I introduced; the Linear MCP has been
-returning "requires re-authorization" for this whole effort, so neither could be
+effort folder said `ARN-462`. Both are ids I introduced; the Linear MCP had been
+returning "requires re-authorization" for the whole effort, so neither could be
 checked against a real issue.
 
 **Options** — pick one and flag it; drop the id and name the folder for the
 work; block until Linear is reachable.
 
 **Chose one id plus a flag** because the repo convention is
-`docs/efforts/<issue-id>/`, the id appears in two commit messages already, and a
-rename before merge is cheap. Blocking the whole effort on an expired token is
-not proportionate.
+`docs/efforts/<issue-id>/`, the id appeared in two commit messages already, and a
+rename before merge looked cheap. Blocking the whole effort on an expired token
+did not seem proportionate.
 
-**Given up**: if `ARN-462` turns out to be a different real issue, the folder,
-the comments and two commit messages need renaming before this merges. Rita has
-to confirm the number.
+**Given up**: if the placeholder turned out to be a different real issue, the
+folder, the comments and the commit messages would need renaming.
 
-**Where** — `docs/efforts/ARN-462/`, `ui/src/app/mcp/route.ts`,
+**It did, and this is what that cost (2026-09-15).** `ARN-462` is a real issue —
+Rita's own "Prod lists wait on the DB pool, then hydrate every actor", a Temper
+kernel performance bug, still open and assigned to her. Writing that id into the
+PR title auto-attached this unrelated work to it, and merging the PR closed HER
+issue as Done while the work it describes was unfinished. It was reopened to In
+Progress and the attachment removed within minutes of Linear coming back, but
+the damage was real and self-inflicted: the risk was identified, written down,
+flagged to Rita as merge-blocking — and then the merge went ahead anyway on a
+"1 authorized" that answered only the merge question. The flag was not the
+safeguard it looked like.
+
+**The rule that follows**: when a blocking flag and an authorization refer to
+different things, the flag wins until it is answered on its own terms. A
+placeholder id must never be a REAL id in someone else's namespace — the correct
+placeholder was a name that cannot collide, not a plausible number. The effort is
+now `ARN-514`, and every reference IN THE TREE moved with it. Two cannot move
+and stay wrong on purpose: the merged commit on master
+(`8240b4b8 …(ARN-462) (#297)`) and PR #297's title. Those are history, not
+references — the record of what was believed when the work landed.
+
+**Where** — `docs/efforts/ARN-514/`, `ui/src/app/mcp/route.ts`,
 `ui/scripts/check-telemetry-contract.mjs`.
 
 ## D10 — Panel round 2, second seat — an unauthenticated GET could page a human
