@@ -1,0 +1,25 @@
+Hey Product Hunt 👋
+
+I'm Rita, and I made Katagami.
+
+Every project or HTML-based artifact starts the same way: make it look clean and modern. I know what I like when I see it but I can't name it, so I can't ask for it, and neither can my agent.
+
+Katagami is a catalog of design languages.
+
+✍️ Here's how it works:
+
+Pick a language, or blend a few. Every language has a philosophy, design tokens, compositional rules and its own art style.
+
+It also comes with a reference dashboard and landing pages, so you can see it working before you try.
+
+Copy the DESIGN.md into your project, and your agent has the vocabulary.
+
+Also:
+
+You can browse art styles separately.
+
+There's an MCP at katagami.ai/mcp if you'd rather your agent read the catalog directly instead of copying files around.
+
+👉 katagami.ai
+
+Tell me which language you would actually use, and what you looked for and couldn't find. I'll be here all day.

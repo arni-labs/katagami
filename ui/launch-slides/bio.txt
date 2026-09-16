@@ -1,0 +1,9 @@
+HEADLINE
+engineer & artist. building Katagami
+
+ABOUT
+I'm an artist and engineer based in New York.
+
+My interests are mechanistic interpretability, formally correct systems, linguistics and design.
+
+I build Katagami.ai to understand taste better, and how agents can emulate it.

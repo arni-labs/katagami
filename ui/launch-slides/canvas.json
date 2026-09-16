@@ -1,0 +1,35 @@
+{
+ "artboards": [
+  {
+   "file": "Cover.dc.html",
+   "x": 0,
+   "y": 0,
+   "w": 1270,
+   "h": 760
+  },
+  {
+   "file": "Main.dc.html",
+   "x": 1390,
+   "y": 0,
+   "w": 1270,
+   "h": 760
+  },
+  {
+   "file": "ArtStyles.dc.html",
+   "x": 2780,
+   "y": 0,
+   "w": 1270,
+   "h": 760
+  },
+  {
+   "file": "Mcp.dc.html",
+   "x": 4170,
+   "y": 0,
+   "w": 1270,
+   "h": 760
+  }
+ ],
+ "launch": {
+  "view": "canvas"
+ }
+}

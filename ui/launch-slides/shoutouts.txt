@@ -1,0 +1,23 @@
+Claude Code
+I build Katagami in it, and the agents that research and write the design languages run through it too. The part I lean on hardest is review: a fresh agent with no context catches what I stopped being able to see.
+
+Poster
+Every diagram and poster for Katagami is a tsx file rendered with Poster. One file in, a PNG out, same result every time. It is the first asset workflow I have not wanted to do by hand.
+
+Railway
+TemperPaw, the runtime behind Katagami's curation pipeline, is deployed on Railway. Deploys are boring in the good way.
+
+Datadog
+A batch of Katagami jobs started timing out and the logs only said dispatch timeout. Datadog got me to the actual cause: under concurrent load the shared actor registry was contended enough that retries ran out of attempts before the call got through.
+
+Vercel
+katagami.ai and its MCP both run on Vercel. Preview deploys are how I check that a new design language really renders before anyone else sees it.
+
+Linear
+Every Katagami effort starts as a Linear issue and does not close until the commits, the PR and the proof are attached to it.
+
+fal
+The art style imagery across Katagami is generated through fal.
+
+OpenRouter
+I ran a bake-off of the popular open models through OpenRouter to pick a generator for Katagami. Same brief to every model, end to end, then I compared what came back.

@@ -1,0 +1,5 @@
+MCP
+Your agent can read the catalog itself.
+Point it at katagami.ai/mcp and it can search the languages, open one and pull the tokens, without you copying files around.
+The MCP
+katagami.ai/mcp

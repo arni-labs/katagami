@@ -1,0 +1,5 @@
+Katagami is on Product Hunt today. It also has an MCP now.
+
+1. Give your agent https://katagami.ai/mcp
+2. Ask it for a design language that fits what you're making
+3. It pulls the DESIGN.md and the tokens itself, instead of you copying files around
