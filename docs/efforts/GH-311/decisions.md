@@ -51,3 +51,27 @@ Decision: use GH-311, the actual GitHub pull-request/issue number, for CI artifa
 **Chose the existing correction because:** It enables the required tests without incorporating launcher changes or adding a diagnostic workflow. The optional credential-dependent ledger check keeps the same condition.
 
 **Where:** .github/workflows/tests.yml.
+
+### One-time production sign-in verification
+
+**Decision:** With the owner's explicit approval, defer the real Google sign-in check to katagami.ai for this release instead of registering the branch preview callback.
+
+**Came up because:** The owner requested a recognizable staging environment for future releases and declined the temporary preview OAuth setup for this release.
+
+**Options:** Register the branch callback, build staging before this fix, or retain the completed local and preview checks and verify real sign-in immediately after release.
+
+**Chose production sign-in verification because:** The owner approved this specific exception. It accepts the remaining uncertainty in the real post-login flow; it does not waive model review or claim that the missing sign-in proof passed. Stable staging remains follow-up work.
+
+**Where:** PR #311 release verification; owner instruction in the gallery-loading session.
+
+### Preserve the merged gallery-preview workflow
+
+**Decision:** Resolve the workflow conflict using the exact workflow now on master after PR #307 merged.
+
+**Came up because:** Both branches corrected the same secret-dependent test condition, and master also added preview launcher checks.
+
+**Options:** Preserve our equivalent expression spelling, or accept master's workflow intact.
+
+**Chose master's workflow because:** It retains the other session's launcher tests and removes this PR's redundant workflow change without changing the gallery implementation.
+
+**Where:** .github/workflows/tests.yml; merge of master at 3c58768.
