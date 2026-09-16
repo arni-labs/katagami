@@ -50,7 +50,11 @@ function score(item: PaletteIndexItem, q: string): number {
 
 /** ⌘K palette searching every lane of the library at once — built for the
  *  day the catalog holds thousands of entries, useful at any size. */
-export function CommandPalette({ items }: { items: PaletteIndexItem[] }) {
+export function CommandPalette() {
+  const [items, setItems] = useState<PaletteIndexItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -61,10 +65,43 @@ export function CommandPalette({ items }: { items: PaletteIndexItem[] }) {
 
   const openPalette = useCallback(() => {
     restoreFocus.current = document.activeElement as HTMLElement | null;
+    setItems([]);
+    setLoading(true);
+    setLoadError(false);
     setOpen(true);
     setQuery("");
     setCursor(0);
   }, []);
+
+  // Fetch afresh each time the palette opens so a retained layout cannot
+  // reuse a signed-in index after sign-out/revocation in another tab.
+  useEffect(() => {
+    if (!open) return;
+    const controller = new AbortController();
+    let active = true;
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    void fetch("/api/command-palette", {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Search unavailable");
+        const data: PaletteIndexItem[] = await res.json();
+        if (!Array.isArray(data)) throw new Error("Invalid search response");
+        if (active) setItems(data);
+      })
+      .catch(() => { if (active) setLoadError(true); })
+      .finally(() => {
+        clearTimeout(timeout);
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [open, attempt]);
 
   const closePalette = useCallback(() => {
     setOpen(false);
@@ -149,17 +186,17 @@ export function CommandPalette({ items }: { items: PaletteIndexItem[] }) {
   // returns anything. Query text is truncated inside trackSearch.
   useEffect(() => {
     const q = query.trim();
-    if (!q) return;
+    if (!q || loading || loadError) return;
     const timer = setTimeout(() => {
       trackSearch({ query: q, resultsCount: results.length });
     }, 600);
     return () => clearTimeout(timer);
-  }, [query, results.length]);
+  }, [query, results.length, loading, loadError]);
 
   const onInputKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setCursor((c) => Math.min(c + 1, results.length - 1));
+      setCursor((c) => Math.max(0, Math.min(c + 1, results.length - 1)));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setCursor((c) => Math.max(c - 1, 0));
@@ -223,7 +260,22 @@ export function CommandPalette({ items }: { items: PaletteIndexItem[] }) {
         <div className="sticker-perforation mx-4 mt-3" />
 
         <div ref={listRef} className="max-h-[58vh] overflow-y-auto px-2 py-2 sm:max-h-[46vh]">
-          {results.length === 0 ? (
+          {loading ? (
+            <p role="status" className="px-3 py-8 text-center text-[17px] text-muted-foreground">
+              Loading search…
+            </p>
+          ) : loadError ? (
+            <div role="alert" className="px-3 py-8 text-center text-[17px]">
+              Could not load search.
+              <button className="ml-3 underline" onClick={() => {
+                setLoading(true);
+                setLoadError(false);
+                setAttempt((n) => n + 1);
+              }}>
+                Try again
+              </button>
+            </div>
+          ) : results.length === 0 ? (
             <div className="px-3 py-8 text-center font-mono text-[12px] text-muted-foreground">
               no matches for &ldquo;{query}&rdquo;
             </div>
@@ -287,6 +339,7 @@ export function CommandPalette({ items }: { items: PaletteIndexItem[] }) {
         <div className="flex items-center justify-between px-4 py-3">
           <button
             onClick={surprise}
+            disabled={loading || loadError || items.length === 0}
             className="ink-stamp transition-transform hover:-translate-y-[1px] hover:rotate-[-2deg]"
             style={{ ["--ink" as string]: "var(--sakura)" }}
           >
