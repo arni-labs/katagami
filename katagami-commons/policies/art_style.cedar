@@ -72,5 +72,4 @@ unless { action == Action::"read" || action == Action::"ArtStylePublishedEvent" 
 // Contributor ownership is bound to the verified JWT at creation and retained
 // for every authoring action. SetCreator stays curator-only above.
 forbid(principal, action, resource is ArtStyle)
-when { principal has agent_type && principal.agent_type == "contributor" }
-unless { action == Action::"read" || (context has actingFor && context.actingFor != "" && context has creator_sub && context.creator_sub == context.actingFor) };
+unless { !(principal has agent_type && principal.agent_type == "contributor") || action == Action::"read" || (context has actingFor && context.actingFor != "" && context has creator_sub && context.creator_sub == context.actingFor) };
