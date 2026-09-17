@@ -126,3 +126,16 @@ existing location until explicit logout.
 Chose retention because it preserves working logins without copying credentials
 or adding a migration lifecycle. New logins use the configured XDG directory.
 Where: cli/src/cli.ts credential path selection and logout.
+
+## Release the applications through their existing routes
+
+Decision: Publish the Genesis applications and deploy the existing MCP, UI, and
+asset-worker services without an unrelated Temper kernel-image replacement.
+Came up because: The deployed Effort ConfigureDeploy/Merge path only accepts
+a kernel image, while this effort changes application packages and services.
+Options: Replace an unrelated kernel image; expand the factory platform; use
+the existing application deployment routes with the owner's explicit exception.
+Chose the existing routes because Rita explicitly approved them on 2026-09-16,
+and they release the verified change without expanding the task or kernel risk.
+Where: Genesis app publication/install, Railway MCP, Vercel UI, Cloudflare asset
+worker; Effort keeps the review and verification evidence without a fake image pin.
