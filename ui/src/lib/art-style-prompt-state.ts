@@ -17,8 +17,7 @@ export function artStyleGallerySources({
     promptVerified || status === "Published" ? proofUrls : [];
   const hero =
     referenceUrls[0] || thumbnailUrl || visibleProofs[0] || "";
-  const gallery = (
-    visibleProofs.length ? visibleProofs : referenceUrls.slice(1)
-  ).filter((src) => src && src !== hero);
+  const gallery = [...new Set([...referenceUrls, ...visibleProofs])]
+    .filter((src) => src && src !== hero);
   return { hero, gallery };
 }

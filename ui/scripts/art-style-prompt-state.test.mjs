@@ -73,3 +73,11 @@ assert.equal(
 );
 
 console.log("art-style prompt presentation states: pass");
+
+const sixImageGallery = artStyleGallerySources({
+  status: "Published", promptVerified: true,
+  referenceUrls: ["landscape", "person", "objects", "gpt-crane"],
+  proofUrls: ["google-crane", "grok-crane"], thumbnailUrl: "google-crane",
+});
+assert.deepEqual(sixImageGallery, {hero: "landscape", gallery: ["person", "objects", "gpt-crane", "google-crane", "grok-crane"]});
+assert.equal(new Set([sixImageGallery.hero, ...sixImageGallery.gallery]).size, 6);

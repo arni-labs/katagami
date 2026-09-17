@@ -442,6 +442,15 @@ export function buildServer(auth: AuthInfo): McpServer {
           ),
         slot_recipes: z.record(z.string(), z.unknown()).describe("Per-slot prompt recipes"),
         guidance: z.string().optional(),
+        example_images: z.array(z.object({
+          file_id: z.string().min(1),
+          category: z.enum(ART_STYLE_PROOF_CATEGORIES),
+          subject: z.string().min(1),
+          model: z.object({ provider: z.string().min(1), model: z.string().min(1) }),
+          generation_record: z.record(z.string(), z.unknown()),
+        })).max(4).default([]).describe(
+          "Optional contributor-generated gallery examples. For a six-image gallery supply four GPT examples covering landscape, person, objects, and animal, plus the two comparison proof_shots. Source drawings belong only in proof generation records.",
+        ),
         proof_shots: z
           .array(artStyleProofInput)
           .min(2)
@@ -528,8 +537,8 @@ export function buildServer(auth: AuthInfo): McpServer {
         prompt_template: a.prompt_template,
         slot_recipes: asJsonString(a.slot_recipes),
         guidance: a.guidance ?? "",
-        reference_image_file_ids: [],
-        reference_manifest: asJsonString({ items: [] }),
+        reference_image_file_ids: a.example_images.map((image) => image.file_id),
+        reference_manifest: asJsonString({ schema_version: "1", items: a.example_images }),
         proof_shots_file_ids: proofIds,
         proof_shots_manifest: asJsonString({
           schema_version: "3",
