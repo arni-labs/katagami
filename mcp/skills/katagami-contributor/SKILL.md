@@ -295,6 +295,18 @@ Both model rows must point to the same source id and source hash for that
 category. Choose the strongest proof output as the thumbnail; no subject role
 is globally privileged.
 
+### Six-image gallery
+
+When the contributor requests the full six-image format, generate four GPT
+examples: landscape, person, objects, and animal. Import them and submit them
+as `example_images`, recording each subject, category, actual model and
+generation record. Keep the two other-model outputs in `proof_shots`, using
+the same source and canonical prompt for their comparison. One GPT example
+uses that same subject. This produces six gallery images; the source input
+is evidence and is not an additional gallery image. Do not count a thumbnail
+twice. For an already published style, use the supported evolution/remix
+operation to create its revised Draft, then submit the complete version.
+
 ### Independent prompt and visual review
 
 The prompt review quotes substantive, non-overlapping evidence for the eight

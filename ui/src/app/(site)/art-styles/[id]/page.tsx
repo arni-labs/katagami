@@ -96,6 +96,16 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
     thumbnailUrl: thumb,
   });
 
+  const imageLabels = new Map<string, string>();
+  for (const [manifestField, urls] of [
+    [f.reference_manifest, refs], [f.proof_shots_manifest, proofs],
+  ] as const) {
+    const manifest = parseJson<{ items?: Array<{ subject?: string; model?: { provider?: string; model?: string } }> }>(manifestField);
+    (manifest?.items ?? []).forEach((item, index) => {
+      if (urls[index]) imageLabels.set(urls[index], [item.subject, item.model?.provider, item.model?.model].filter(Boolean).join(" · "));
+    });
+  }
+
   const recipe =
     `${name} — Katagami art-style recipe (${medium})\n\n` +
     `PROMPT TEMPLATE\n${promptTemplate}\n\n` +
@@ -157,24 +167,28 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
 
       {/* hero + proof gallery */}
       <StickyNote tint="sakura" className="p-3">
-        <div className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "16/9" }}>
+        <div className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "3/2" }}>
           {hero ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={hero} alt={`${name} hero`} className="h-full w-full object-cover" />
           ) : null}
         </div>
+        {imageLabels.get(hero) ? <p className="mt-2 text-sm text-muted-foreground">{imageLabels.get(hero)}</p> : null}
         {gallery.length > 0 ? (
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {gallery.map((src, i) => (
-              <div key={i} className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "1/1" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`${name} proof ${i + 1}`} className="h-full w-full object-cover" />
-              </div>
+              <figure key={src}>
+                <div className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "3/2" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt={imageLabels.get(src) || `${name} image ${i + 1}`} className="h-full w-full object-contain" />
+                </div>
+                {imageLabels.get(src) ? <figcaption className="mt-2 text-sm text-muted-foreground">{imageLabels.get(src)}</figcaption> : null}
+              </figure>
             ))}
           </div>
         ) : null}
         <div className="mt-2 px-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground/70">
-          1 hero · {gallery.length} proof{gallery.length === 1 ? "" : "s"}
+          {(hero ? 1 : 0) + gallery.length} images
         </div>
       </StickyNote>
 

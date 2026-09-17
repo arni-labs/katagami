@@ -155,3 +155,16 @@ Came up because: The live signed MCP art-style search returned 403; collection a
 Options: Weaken authoring protection; special-case search credentials; recognize list as a read operation in the shared policy.
 Chose the policy correction because ownership checks still protect every authoring action. A Cedar regression failed for both contributor principal kinds before the change and passes afterward.
 Where: katagami-commons/policies/art_style.cedar, its specs copy, and katagami-curation/tests/test_commons_authz_conformance.py.
+
+
+## Six-image gallery examples
+
+**Decision:** Carry four subject examples separately from the two model-comparison proofs.
+
+**Came up because:** Rita specified six images: four GPT images covering landscape, person, objects and animal, plus one Google and one Grok output of the same subject. The existing MCP dropped optional examples and the gallery discarded all but the first reference when proofs existed.
+
+**Options:** Expand the portability matrix to six entries; retain its two-model evidence contract and expose the existing optional example-image fields.
+
+**Chose the existing example fields over a larger proof matrix because:** Generated subject examples and matched-source portability tests establish different facts. The finalizer already validates and publishes example files. Keeping those roles separate preserves truthful provenance and avoids extra model calls. Published versions use the supported evolution/remix flow.
+
+**Where:** `mcp/src/tools.ts`, `ui/src/lib/art-style-prompt-state.ts`, and the art-style detail page.
