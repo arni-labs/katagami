@@ -11,7 +11,6 @@ import { identityFromAuth } from "./auth.js";
 import {
   action,
   createEntity,
-  curationAction,
   getEntity,
   ingestImage,
   ingestImageBytesWithDigest,
@@ -21,6 +20,7 @@ import {
   temperAction,
   TemperError,
   uploadFile,
+  waitForFileState,
   type EntityRow,
   type Identity,
 } from "./temper.js";
@@ -186,6 +186,16 @@ async function setCreator(id: Identity, set: string, entityId: string): Promise<
   });
 }
 
+// Cedar compares creator_sub with the JWT's actingFor claim at creation.
+// SetCreator remains curator-only; contributors cannot rewrite attribution.
+async function createArtStyleDraft(id: Identity): Promise<string> {
+  return createEntity(id, KINDS.art_style.set, {
+    creator_sub: id.sub,
+    creator_email: id.email,
+    creator_name: "",
+  });
+}
+
 export function buildServer(auth: AuthInfo): McpServer {
   const id = identityFromAuth(auth);
   const server = new McpServer({ name: "katagami", version: "0.1.0" });
@@ -332,14 +342,16 @@ export function buildServer(auth: AuthInfo): McpServer {
       const parent = await requireParent(id, kind as Kind, parent_id);
       const parentGen = Number(parent.fields?.generation_number ?? 0);
       const set = KINDS[kind as Kind].set;
-      const draftId = await createEntity(id, set);
+      const draftId = kind === "art_style"
+        ? await createArtStyleDraft(id)
+        : await createEntity(id, set);
       await action(id, set, draftId, "SetName", { name, slug });
       await action(id, set, draftId, "SetLineage", {
         parent_ids: [parent_id],
         lineage_type: lineage_type ?? "remix",
         generation_number: parentGen + 1,
       });
-      await setCreator(id, set, draftId);
+      if (kind !== "art_style") await setCreator(id, set, draftId);
       return ok({
         entity_id: draftId,
         status: "Draft",
@@ -395,9 +407,7 @@ export function buildServer(auth: AuthInfo): McpServer {
           );
         }
         await temperAction(id, "Files", imported.fileId, "Lock");
-        const file = await getEntity(id, "Files", imported.fileId);
-        if (file?.status !== "Locked")
-          throw new TemperError(`Imported File('${imported.fileId}') did not become Locked`, 502);
+        await waitForFileState(id, imported.fileId, ["Locked"]);
         return ok({
           file_id: imported.fileId,
           sha256: imported.sha256,
@@ -434,15 +444,19 @@ export function buildServer(auth: AuthInfo): McpServer {
         guidance: z.string().optional(),
         proof_shots: z
           .array(artStyleProofInput)
-          .length(8)
+          .min(2)
+          .max(4)
+          .refine((items) => items.length === 2 || items.length === 4, {
+            message: "Provide two or four proofs: one or two matched sources on each of two models",
+          })
           .describe(
-            "Two distinct image models × the same four contributor-supplied source images. Import all four sources and eight outputs first; bind their exact hashes and the canonical prompt hash in each generation_record.",
+            "Two distinct image models × the same one or two contributor-owned source images chosen for this style. Import sources and outputs first; bind their exact hashes and the canonical prompt hash in each generation_record. Do not reuse a recurring catalog fixture set.",
           ),
         thumbnail_file_id: z
           .string()
           .min(1)
           .describe(
-            "Choose the strongest thumbnail from the eight verified proof file_ids; no semantic role is forced across styles",
+            "Choose the strongest thumbnail from the verified proof file_ids; no semantic role is forced across styles",
           ),
         source_basis: z
           .record(z.string(), z.unknown())
@@ -457,7 +471,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         portability_report: z
           .record(z.string(), z.unknown())
           .describe(
-            "Schema-v1 blind cross-model scores over the exact eight imported File ids and generation records.",
+            "Schema-v1 blind cross-model scores over every imported proof File id and generation record.",
           ),
         tags: z.array(z.string()).optional(),
         direction_id: z.string().optional(),
@@ -493,14 +507,19 @@ export function buildServer(auth: AuthInfo): McpServer {
     },
     async (a) => {
       const set = KINDS.art_style.set;
-      if (a.entity_id && !(await getEntity(id, set, a.entity_id)))
-        return fail(`Draft '${a.entity_id}' does not exist.`);
-      const entityId = a.entity_id ?? (await createEntity(id, set));
-
       const proofIds = a.proof_shots.map((proof) => proof.file_id);
       if (!proofIds.includes(a.thumbnail_file_id))
-        return fail("thumbnail_file_id must identify one of the eight verified proof shots.");
+        return fail("thumbnail_file_id must identify one of the verified proof shots.");
       const thumbId = a.thumbnail_file_id;
+      if (a.entity_id) {
+        const draft = await getEntity(id, set, a.entity_id);
+        if (!draft) return fail(`Draft '${a.entity_id}' does not exist.`);
+        if (draft.status !== "Draft" || draft.fields?.creator_sub !== id.sub)
+          return fail("Only your own attributed Draft can be submitted.");
+      }
+      const entityId = a.entity_id ?? (await createArtStyleDraft(id));
+
+      const previousJobId = (await getEntity(id, set, entityId))?.fields?.verification_job_id;
 
       await action(id, set, entityId, "SubmitArtStyle", {
         name: a.name,
@@ -529,31 +548,20 @@ export function buildServer(auth: AuthInfo): McpServer {
         direction_id: a.direction_id ?? "",
         curator_notes: a.curator_notes ?? "",
       });
-      await setCreator(id, set, entityId);
-      const verificationJobId = await createEntity(id, "CurationJobs");
-      await curationAction(id, "CurationJobs", verificationJobId, "Configure", {
-        job_type: "synthesize_art_style",
-        input: asJsonString({
-          submission_source: "katagami-mcp",
-          contributor_principal: principalId(id),
-          art_style_ids: [entityId],
-        }),
-        completion_contract: "typed-v1",
-      });
-      await curationAction(id, "CurationJobs", verificationJobId, "Start", {});
-      await curationAction(
-        id,
-        "CurationJobs",
-        verificationJobId,
-        "CompleteArtStyleSynthesis",
-        {
-          art_style_ids: asJsonString([entityId]),
-          output: asJsonString({
-            submission_source: "katagami-mcp",
-            art_style_ids: [entityId],
-          }),
-        },
-      );
+      // SubmitArtStyle queues its finalizer through an engine-owned trigger.
+      // Keep forwarding the contributor JWT; never create privileged jobs here.
+      let verificationJobId: string | undefined;
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const style = await getEntity(id, set, entityId);
+        const recorded = style?.fields?.verification_job_id;
+        if (typeof recorded === "string" && recorded && recorded !== previousJobId) {
+          verificationJobId = recorded;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+      if (!verificationJobId)
+        throw new TemperError(`ArtStyle '${entityId}' was saved, but its verification job did not appear.`, 504);
       return ok({
         entity_id: entityId,
         status: "VerificationQueued",
@@ -770,9 +778,18 @@ export function buildServer(auth: AuthInfo): McpServer {
       const row = await getEntity(id, KINDS[kind as Kind].set, entityId);
       if (!row) return fail(`No ${kind} with id '${entityId}'.`);
       const f = row.fields ?? {};
+      const verificationJobId = kind === "art_style" && typeof f.verification_job_id === "string"
+        ? f.verification_job_id : "";
+      const verificationJob = verificationJobId
+        ? await getEntity(id, "CurationJobs", verificationJobId) : null;
       return ok({
         ...summarize(row),
         review_status: (f.review_status as string) ?? "",
+        ...(kind === "art_style" ? {
+          verification_job_id: verificationJobId,
+          verification_status: verificationJob?.status ?? "NotQueued",
+          verification_error: verificationJob?.fields?.error_message ?? "",
+        } : {}),
         curator_notes: (f.curator_notes as string) ?? "",
         url: galleryUrl(kind as Kind, entityId),
       });

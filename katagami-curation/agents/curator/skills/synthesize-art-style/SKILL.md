@@ -164,21 +164,25 @@ Allowed `source_basis.sources[].kind` values are `tradition`, `movement`,
 ## 4. Cross-model behavioral proof
 
 Text review cannot prove image behavior. Test the exact prompt on two distinct
-edit models using a style-specific 2×4 matrix. Every style needs these
-four semantic roles:
+edit models using one or two matched sources per model (two or four outputs).
+Choose the primary semantic roles from:
 
 1. `human_portrait`
 2. `nonhuman_living`
 3. `still_life_object`
 4. `landscape_environment`
 
-Choose the concrete subject and composition deliberately for the style under
-review. Do not reuse a house list of props or one recurring composition. The
-role is fixed for comparable coverage; the thing depicted is not. Across the
-four roles, rotate exactly one each of `documentary photograph`, `black-ink
-line drawing`, `neutral synthetic 3d render`, and `flat vector illustration`,
-so portrait never implicitly means photograph and landscape never implicitly
-means one stock horizon.
+Choose fresh concrete subjects and compositions for the style under review.
+Never reuse the catalog's house fixtures, including a recurring person or animal.
+These roles guide subject selection; they do not require four separate images.
+A scene may naturally include several roles. When using two sources, require distinct
+primary roles and distinct media selected from `documentary photograph`,
+`black-ink line drawing`, `neutral synthetic 3d render`, and `flat vector
+illustration`. One source is a smaller comparison with less coverage.
+
+Use the contributor's requested image models. Verify their current identifiers
+and record actual producing models; do not treat an old connector as the latest
+model. Test a CLI's image-generation access before claiming it is included or free.
 
 The contributor owns image generation. If this contributor is a TemperPaw
 agent, use PawMedia (`temper.image_generate` for neutral sources and
@@ -188,8 +192,8 @@ outside contributor.
 
 For either path:
 
-- prepare four style-neutral, contributor-owned sources;
-- send the same four sources and the byte-for-byte canonical aesthetic prompt
+- prepare one or two style-neutral, contributor-owned sources for this style;
+- send the same selected sources and the byte-for-byte canonical aesthetic prompt
   to two distinct edit models;
 - supply no style reference and add no model-specific aesthetic wording;
 - import each source and output with `import_art_style_proof_image`, which locks
@@ -198,9 +202,9 @@ For either path:
   file/hash, canonical prompt hash, and provider request id when available.
 
 The finalizer does not trust a provider name or contributor claim by itself. It
-streams all four Locked sources and eight Locked outputs, checks every SHA-256,
-requires the same source quartet for both models, and independently evaluates
-the complete 2×4 matrix. Provider-specific fields such as seeds are optional;
+streams every Locked source and output, checks every SHA-256,
+requires the same selected sources for both models, and independently evaluates
+the complete comparison. Provider-specific fields such as seeds are optional;
 the portable contract is exact files + exact prompt + distinct model identity.
 
 Blind-review each output on a 0/1/2 scale for the eight observable dimensions.
@@ -246,10 +250,10 @@ portability_report = {
                         "exclusions": 1,
                     },
                 },
-                # the other three semantic roles, each using a distinct source medium
+                # optionally a second source, with a distinct role and source medium
             ],
         },
-        # the second distinct model with the exact same four source chains
+        # the second distinct model with the exact same selected source chains
     ],
 }
 ```
@@ -260,10 +264,10 @@ prompt and rerun the failed model; never add a per-model prompt.
 ## 5. Write files and submit once
 
 Import every contributor-supplied source and proof image.
-`proof_shots_manifest.items` must mirror the eight proof records exactly,
+`proof_shots_manifest.items` must mirror all two or four proof records exactly,
 including category, subject, composition, source medium, mode, model/provider,
 `style_reference_used: false`, and the unmodified `generation_record`. Choose
-the strongest of those exact eight verified proof Files as the thumbnail; do
+the strongest of those exact verified proof Files as the thumbnail; do
 not force the same role across styles and do not upload a separate or cropped
 thumbnail through this workflow.
 Optional example references use

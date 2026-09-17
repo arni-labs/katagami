@@ -1531,7 +1531,7 @@ fn publish_file_artifact(
         "label": label,
         "owner_ref_type": "DesignLanguage",
         "owner_ref_id": language_id,
-        "namespace": "katagami/design-languages",
+        "namespace": "katagami-design-languages",
     });
     let resp = http_call(
         ctx,
@@ -2883,7 +2883,7 @@ fn verify_synthesized_palettes(
                 api_url,
                 headers,
                 "PaletteSystem",
-                "katagami/palettes",
+                "katagami-palettes",
                 id,
                 &thumbnail_file_id,
                 "thumbnail",
@@ -2893,7 +2893,7 @@ fn verify_synthesized_palettes(
                 api_url,
                 headers,
                 "PaletteSystem",
-                "katagami/palettes",
+                "katagami-palettes",
                 id,
                 &tokens_export_file_id,
                 "tokens_export",
@@ -3040,7 +3040,7 @@ fn verify_synthesized_art_styles(
                 api_url,
                 headers,
                 "ArtStyle",
-                "katagami/art-styles",
+                "katagami-art-styles",
                 id,
                 &thumbnail_file_id,
                 "thumbnail",
@@ -3052,7 +3052,7 @@ fn verify_synthesized_art_styles(
                     api_url,
                     headers,
                     "ArtStyle",
-                    "katagami/art-styles",
+                    "katagami-art-styles",
                     id,
                     file_id,
                     "reference",
@@ -3417,11 +3417,13 @@ fn verify_art_style_proof_record_files(
             "proof_output",
         )?;
     }
-    if verified_sources.len() != 4 || verified_outputs.len() != 8 {
+    if !(1..=2).contains(&verified_sources.len())
+        || verified_outputs.len() != verified_sources.len() * 2
+    {
         return Err(VerificationError::new(
             "art_style_proof_file_matrix_incomplete",
             format!(
-                "ArtStyle '{owner_id}' proof records must resolve to four immutable sources and eight unique outputs"
+                "ArtStyle '{owner_id}' proof records must resolve to one or two immutable sources and exactly two unique outputs per source"
             ),
         )
         .entity("ArtStyle", owner_id)

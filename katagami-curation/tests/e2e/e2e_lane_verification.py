@@ -5,9 +5,9 @@ Drives the REAL production flow against a locally served Temper with paw-fs +
 katagami-commons + katagami-curation installed and the actual
 finalize_spawned_session WASM registered:
 
-  four Locked contributor-source Files + eight recorded proof Files
+  one or two Locked source Files + two or four recorded proof Files
   -> ArtStyle (SubmitArtStyle, no references)
-  -> CurationJob Start -> CompleteArtStyleSynthesis (fires the finalizer WASM)
+  -> engine-created CurationJob VerifyArtStyleSubmission (fires the finalizer WASM)
   -> assert ArtStyle Published (happy) / job Failed + style unpublished
      (HTML posing as one proof; recorded hash mismatch)
 
@@ -22,6 +22,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import quote
 
 BASE = os.environ.get("E2E_BASE", "http://127.0.0.1:3901")
 TENANT = os.environ.get("E2E_TENANT", "katagami")
@@ -49,18 +50,6 @@ PROOF_CASES = [
         "subject": "urban pigeon lifting into flight",
         "composition": "single bird crossing the frame diagonally with wings spread",
         "source_medium": "black-ink line drawing",
-    },
-    {
-        "category": "still_life_object",
-        "subject": "cassette player with headphones and tape cases",
-        "composition": "overhead product arrangement with deliberate gaps",
-        "source_medium": "neutral synthetic 3d render",
-    },
-    {
-        "category": "landscape_environment",
-        "subject": "hillside neighborhood with stairs and water tanks",
-        "composition": "wide cityscape rising diagonally across the frame",
-        "source_medium": "flat vector illustration",
     },
 ]
 
@@ -228,6 +217,7 @@ def run_art_style_case(
     fake_proof_index=None,
     mismatched_hash_index=None,
     expected_error_code="lane_file_not_image",
+    source_count=2,
 ):
     """Exercise reference-free publication with optional proof/consent failures."""
     jpg = jpeg_bytes()
@@ -255,7 +245,7 @@ def run_art_style_case(
         "signature_details": "slight ink spread and irregular hand pressure",
         "exclusions": "Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry",
     }
-    source_payloads = [jpg, sizable_png, jpg, sizable_png]
+    source_payloads = [jpg, sizable_png][:source_count]
     source_records = []
     for index, (case, payload) in enumerate(zip(PROOF_CASES, source_payloads)):
         extension = "png" if index in (1, 3) else "jpg"
@@ -274,7 +264,7 @@ def run_art_style_case(
     proof_specs = [
         (model, case_index)
         for model in EDIT_ENDPOINTS
-        for case_index in range(len(PROOF_CASES))
+        for case_index in range(source_count)
     ]
     proof_ids = []
     proof_records = []
@@ -404,17 +394,21 @@ def run_art_style_case(
 
     wait_fields("ArtStyles", art_id, ["prompt_template", "thumbnail_file_id", "credits"])
 
-    job_id = create_entity("CurationJobs", {"ArtStyleIds": json.dumps([art_id])})
-    must_act("CurationJobs", job_id, "Configure", {"job_type": "synthesize_art_style", "completion_contract": "typed-v1"})
-    must_act("CurationJobs", job_id, "Start", {})
-    st, body = act("CurationJobs", job_id, "CompleteArtStyleSynthesis", {
-        "art_style_ids": json.dumps([art_id]),
-        "output": json.dumps({"art_style_ids": [art_id]}),
-    })
-    print(f"  CompleteArtStyleSynthesis -> HTTP {st}")
+    # Publication must come from the artifact's engine-owned verification trigger.
+    # A second operator-created job would mask a broken contribution handoff.
+    job_id = None
+    for _ in range(30):
+        status, result = req("GET", "/tdata/CurationJobs?$filter=" + quote(f"art_style_ids eq '{art_id}'"))
+        assert status == 200, (status, result)
+        jobs = result.get("value", [])
+        if jobs:
+            assert len(jobs) == 1, jobs
+            job_id = entity_id_of(jobs[0])
+            break
+        time.sleep(1)
+    assert job_id, f"SubmitArtStyle did not queue verification for {art_id}"
 
-    time.sleep(2)
-    job = get_entity("CurationJobs", job_id)
+    job = wait_finalized_job(job_id)
     art = get_entity("ArtStyles", art_id)
     job_status, art_status = entity_status(job), entity_status(art)
     err = (job.get("ErrorMessage") or (job.get("fields") or {}).get("error_message") or "")[:200]
@@ -471,8 +465,7 @@ def run_palette_case(label, tokens_payload, expect_published):
     })
     print(f"  CompletePaletteSynthesis -> HTTP {st}")
 
-    time.sleep(2)
-    job = get_entity("CurationJobs", job_id)
+    job = wait_finalized_job(job_id)
     pal = get_entity("PaletteSystems", pal_id)
     job_status, pal_status = entity_status(job), entity_status(pal)
     err = (job.get("ErrorMessage") or (job.get("fields") or {}).get("error_message") or "")[:200]
@@ -486,18 +479,44 @@ def run_palette_case(label, tokens_payload, expect_published):
         report(f"palette/{label}: palette NOT published", pal_status != "Published", f"palette={pal_status}")
 
 
+def wait_finalized_job(job_id):
+    deadline = time.monotonic() + 60
+    while True:
+        job = get_entity("CurationJobs", job_id)
+        if entity_status(job) in ("Completed", "Failed") or time.monotonic() >= deadline:
+            return job
+        time.sleep(0.5)
+
+
 def verify_non_system_cannot_forge_attestation(art_id):
-    st, body = act("ArtStyles", art_id, "AttachArtStyleReview", {
-        "source_basis": json.dumps({"verdict": "forged"}),
-        "prompt_review": json.dumps({"verdict": "forged"}),
-        "portability_report": json.dumps({"verdict": "forged"}),
-    })
-    detail = json.dumps(body)[:300]
-    report(
-        "art_style/security: non-system principal cannot forge review attestation",
-        st in (401, 403),
-        f"http={st} body={detail}",
-    )
+    # Identity comes from a registered credential, never self-declared headers.
+    token = os.environ.get("E2E_CONTRIBUTOR_TOKEN")
+    if not token:
+        report("art_style/security: registered contributor credential configured", False,
+               "Set E2E_CONTRIBUTOR_TOKEN to a registered local contributor credential")
+        return
+    previous_headers = dict(HDRS)
+    HDRS.clear()
+    HDRS.update({"X-Tenant-Id": TENANT, "Authorization": f"Bearer {token}"})
+    try:
+        st, _ = req("GET", f"/tdata/ArtStyles('{art_id}')")
+        assert st == 200, f"Contributor credential cannot read the test style: HTTP {st}"
+        for action in ("AttachArtStyleReview", "SubmitForReview"):
+            st, body = act("ArtStyles", art_id, action, {
+                "source_basis": json.dumps({"verdict": "forged"}),
+                "prompt_review": json.dumps({"verdict": "forged"}),
+                "portability_report": json.dumps({"verdict": "forged"}),
+            })
+            report(f"art_style/security: contributor cannot {action}",
+                   st == 403, f"http={st} body={json.dumps(body)[:300]}")
+        for method in ("PATCH", "PUT", "DELETE"):
+            st, body = req(method, f"/tdata/ArtStyles('{art_id}')",
+                           {"quality_review_passed": True} if method != "DELETE" else None)
+            report(f"art_style/security: contributor cannot {method} style",
+                   st in (403, 405), f"http={st} body={json.dumps(body)[:300]}")
+    finally:
+        HDRS.clear()
+        HDRS.update(previous_headers)
 
 
 def main():
@@ -512,6 +531,9 @@ def main():
 
     print("== stage 1: art style happy path (no reference images) ==")
     _, good_art_id = run_art_style_case("good", expect_published=True)
+
+    print("== stage 1a: one-source cross-model comparison ==")
+    run_art_style_case("one-source", expect_published=True, source_count=1)
 
     print("== stage 1b: forged attestation is denied to non-system principals ==")
     verify_non_system_cannot_forge_attestation(good_art_id)

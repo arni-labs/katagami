@@ -160,7 +160,8 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn("source_basis", submit)
         self.assertIn("prompt_review", submit)
         self.assertIn("portability_report", submit)
-        self.assertIn(".length(8)", submit)
+        self.assertIn("items.length === 2 || items.length === 4", submit)
+        self.assertNotIn(".length(8)", submit)
         self.assertNotIn("generate_art_style_proof_matrix", MCP_TOOLS)
         self.assertIn("import_art_style_proof_image", MCP_TOOLS)
         self.assertIn("image_base64", MCP_TOOLS)
@@ -172,8 +173,18 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn(".array(", images)
         self.assertIn(".length(2)", images)
         self.assertNotIn('action(id, set, entityId, "SubmitForReview"', submit)
-        self.assertIn('createEntity(id, "CurationJobs")', submit)
-        self.assertIn('"CompleteArtStyleSynthesis"', submit)
+        self.assertNotIn('createEntity(id, "CurationJobs")', submit)
+        self.assertNotIn('curationAction(', submit)
+        trigger = self._by_name(self.art, "action")["SubmitArtStyle"]["triggers"][0]
+        self.assertEqual(trigger["principal"], "curation-service")
+        self.assertEqual(trigger["target_entity"], "CurationJob")
+        self.assertEqual(trigger["target_action"], "VerifyArtStyleSubmission")
+        self.assertEqual(trigger["params_from"], {"art_style_ids": "Id"})
+        self.assertEqual(trigger["params"]["job_type"], "synthesize_art_style")
+        job = self._by_name(tomllib.loads(CURATION_JOB_SPEC), "action")["VerifyArtStyleSubmission"]
+        self.assertEqual(job["from"], ["Queued"])
+        self.assertEqual(job["to"], "Finalizing")
+        self.assertEqual(job["triggers"][0]["module"], "finalize_spawned_session")
         self.assertIn('"VerificationQueued"', submit)
 
     def test_reference_images_are_optional_but_proof_is_required(self):
@@ -221,7 +232,7 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertNotIn("rights_evidence", MCP_TOOLS)
         self.assertIn("artStyleProofInput", MCP_TOOLS)
         self.assertIn(
-            "thumbnail_file_id must identify one of the eight verified proof shots",
+            "thumbnail_file_id must identify one of the verified proof shots",
             MCP_TOOLS,
         )
         self.assertNotIn("art_style_proof_receipt_key", CURATION_JOB_SPEC)
