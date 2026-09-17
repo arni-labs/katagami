@@ -2,10 +2,8 @@
 
 The alerting set that tells us a person or an agent is stuck, before they tell us.
 Seven monitors, each named for what a human loses rather than for the metric it
-watches. Six are live in Datadog; these files are the reviewable copy.
-
-**m1, m5 and m6 carry query or message edits that are not applied live yet, and
-m7 has never been created.** Applying them needs a Datadog application key.
+watches. All seven are live in Datadog and match these files as of 2026-09-16;
+these files are the reviewable copy.
 
 | File | Monitor ID | Fires on |
 | --- | --- | --- |
@@ -15,7 +13,7 @@ m7 has never been created.** Applying them needs a Datadog application key.
 | `m4-backend-outage.json` | 320492987 | Temper is unreachable, so signed-in callers are locked out |
 | `m5-site-errors.json` | 320492995 | Browser errors on katagami.ai, 10+ in an hour |
 | `m6-signin-failures.json` | 320493005 | Sign-in failures excluding ordinary consent declines, 5+ in an hour |
-| `m7-telemetry-dark.json` | not created yet | No production server event in 4 hours — the condition under which none of the six above can fire |
+| `m7-telemetry-dark.json` | 322582314 | No production server event in 4 hours — the condition under which none of the six above can fire |
 
 To change one, edit the file and PUT it:
 
