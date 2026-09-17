@@ -6,10 +6,10 @@ import unittest
 CURATION_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = CURATION_ROOT.parent
 CURRENT_GENESIS_DEPS = {
-    "temperpaw/paw-fs": "bff862b415505f5a563998265a2f6ac29472f899",
-    "temperpaw/paw-agent": "81d8beb78923dc22aeda850828f510f3c6eab510",
-    "temperpaw/paw-research": "910d01612b2632362fb5f537c4357a5fb6c7bcdd",
-    "katagami/katagami-commons": "7c158eef96be6a326ca9c83b7908ee4975a8b4c7",
+    "temperpaw/paw-fs": "737c0ac23d95b8d412cb4f632c2926b720835eef",
+    "temperpaw/paw-agent": "c832c1cd0a8bd492436ca2fb93ae86f870eb8209",
+    "temperpaw/paw-research": "3a35ee25aa4f97430fe09c956412d6a31e15d6bf",
+    "katagami/katagami-commons": "a06df6b4b0a0dc95c73a38a2c971be44754426ec",
 }
 
 
