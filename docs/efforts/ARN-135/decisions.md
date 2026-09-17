@@ -139,3 +139,19 @@ Chose the existing routes because Rita explicitly approved them on 2026-09-16,
 and they release the verified change without expanding the task or kernel risk.
 Where: Genesis app publication/install, Railway MCP, Vercel UI, Cloudflare asset
 worker; Effort keeps the review and verification evidence without a fake image pin.
+
+## Preserve canonical app contents and pin every dependency
+
+Decision: Reconcile both app folders with Genesis and pin the complete dependency graph.
+Came up because: Genesis already contained NarrativeStructure while GitHub carried newer verification files, and the installer rejected transitive dependencies resolving different paw-fs versions through stale registry aliases.
+Options: Replace either source wholesale; change the kernel resolver; preserve both sets of changes and pin canonical revisions.
+Chose reconciliation and explicit pins because this preserves existing features and produces a reproducible install through the supported application route. Registry alias promotion remains a separate operation.
+Where: katagami-commons and katagami-curation app folders; TemperPaw PR 533 dependency manifests.
+
+## Keep art-style collection reads public
+
+Decision: Exempt both read and list from the contributor ownership and customer authoring forbids.
+Came up because: The live signed MCP art-style search returned 403; collection authorization uses list, which the existing read-only exception did not include.
+Options: Weaken authoring protection; special-case search credentials; recognize list as a read operation in the shared policy.
+Chose the policy correction because ownership checks still protect every authoring action. A Cedar regression failed for both contributor principal kinds before the change and passes afterward.
+Where: katagami-commons/policies/art_style.cedar, its specs copy, and katagami-curation/tests/test_commons_authz_conformance.py.
