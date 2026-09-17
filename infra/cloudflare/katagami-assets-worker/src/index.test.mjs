@@ -5,7 +5,9 @@ import worker from './index.js';
 
 const finalizer = await readFile(new URL('../../../../katagami-curation/wasm/finalize_spawned_session/src/lib.rs', import.meta.url), 'utf8');
 const namespaces = [...new Set([...finalizer.matchAll(/"(katagami-(?:design-languages|palettes|art-styles))"/g)].map(match => match[1]))];
-assert.equal(namespaces.length, 3);
+test('finalizer declares all three published asset namespaces', () => {
+  assert.equal(namespaces.length, 3);
+});
 
 for (const namespace of [...namespaces, 'katagami/art-styles', 'katagami/palettes', 'katagami/design-languages']) {
   test(`serves immutable assets under ${namespace}`, async () => {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { mcpResource } from "@/lib/oauth-as";
 
 // OpenAPI description of Katagami's open read surface. Writes go through
 // the MCP server (see /llms.txt and /.well-known/integrations.json) — this
@@ -148,7 +149,7 @@ const SPEC = {
 };
 
 export function GET() {
-  return NextResponse.json(SPEC, {
+  return NextResponse.json({ ...SPEC, info: { ...SPEC.info, description: SPEC.info.description.replace("https://mcp.katagami.ai", mcpResource().replace(/\/$/, "")) } }, {
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": "public, max-age=3600",

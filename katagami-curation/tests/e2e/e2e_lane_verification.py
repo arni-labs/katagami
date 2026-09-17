@@ -22,6 +22,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import quote
 
 BASE = os.environ.get("E2E_BASE", "http://127.0.0.1:3901")
 TENANT = os.environ.get("E2E_TENANT", "katagami")
@@ -50,7 +51,6 @@ PROOF_CASES = [
         "composition": "single bird crossing the frame diagonally with wings spread",
         "source_medium": "black-ink line drawing",
     },
-
 ]
 
 
@@ -396,7 +396,6 @@ def run_art_style_case(
 
     # Publication must come from the artifact's engine-owned verification trigger.
     # A second operator-created job would mask a broken contribution handoff.
-    from urllib.parse import quote
     job_id = None
     for _ in range(30):
         status, result = req("GET", "/tdata/CurationJobs?$filter=" + quote(f"art_style_ids eq '{art_id}'"))

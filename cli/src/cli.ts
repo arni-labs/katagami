@@ -10,13 +10,18 @@
 import { createHash, randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
 
 const DEFAULT_SERVER = process.env.KATAGAMI_MCP_URL ?? "https://katagami-mcp-production-eb81.up.railway.app";
-const CONFIG_DIR = join(process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config"), "katagami");
+const LEGACY_CONFIG_DIR = join(homedir(), ".config", "katagami");
+const PREFERRED_CONFIG_DIR = join(process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config"), "katagami");
+// Keep existing logins usable when upgrading from the CLI that ignored XDG.
+const CONFIG_DIR = !existsSync(join(PREFERRED_CONFIG_DIR, "credentials.json"))
+  && existsSync(join(LEGACY_CONFIG_DIR, "credentials.json"))
+  ? LEGACY_CONFIG_DIR : PREFERRED_CONFIG_DIR;
 const CRED_PATH = join(CONFIG_DIR, "credentials.json");
 
 type Credentials = {
@@ -274,7 +279,9 @@ async function main(): Promise<void> {
       await login(server);
       return;
     case "logout":
-      rmSync(CRED_PATH, { force: true });
+      for (const dir of new Set([LEGACY_CONFIG_DIR, PREFERRED_CONFIG_DIR])) {
+        rmSync(join(dir, "credentials.json"), { force: true });
+      }
       console.log("Signed out.");
       return;
     case "whoami":

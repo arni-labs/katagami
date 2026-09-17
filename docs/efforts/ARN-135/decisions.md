@@ -114,3 +114,15 @@ Where: CLI, MCP defaults, OAuth resource default, and contribution discovery rou
 **Chose the request correction because:** It preserves the existing file visibility boundary and prevents new uploads from losing their metadata. The local storage test sink also now preserves bytes instead of returning a false success for discarded content.
 
 **Where:** mcp/src/temper.ts, katagami-curation/tests/e2e/blob_sink.py; PR 317.
+
+## Retain existing CLI credential locations
+
+Decision: Prefer an existing XDG credential file, retain an existing legacy login
+when the XDG file is absent, and clear both locations on logout.
+Came up because: Honoring XDG without checking the previous location stranded
+users who had signed in with the earlier CLI.
+Options: Force a fresh login; migrate credentials on every read; retain the
+existing location until explicit logout.
+Chose retention because it preserves working logins without copying credentials
+or adding a migration lifecycle. New logins use the configured XDG directory.
+Where: cli/src/cli.ts credential path selection and logout.

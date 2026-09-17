@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { mcpResource } from "@/lib/oauth-as";
 
 // Plain-language agent documentation (llms.txt convention) — the front page
 // of Katagami for machines. Supersedes the stale AGENT_INTEGRATION read
@@ -41,14 +42,16 @@ The contribution front door is an MCP server (Streamable HTTP):
     https://mcp.katagami.ai/mcp
 
 Tools: whoami, search_styles, katagami_search (semantic search — the same
-/api/search ranking), get_style, remix, submit_art_style,
+/api/search ranking), get_style, remix, import_art_style_proof_image, submit_art_style,
 submit_palette_system, submit_design_language, submission_status.
 
 Auth is OAuth 2.1 (authorization code + PKCE, dynamic client registration).
 Connect and your MCP client discovers everything via
 /.well-known/oauth-protected-resource; a human signs in with Google and
 approves the consent screen — the agent then acts as that human's agent.
-Submissions land Under Review attributed to the human; curators publish.
+Art styles return VerificationQueued with a job id; submission_status reports the
+finalizer result. Other submissions land Under Review. All are attributed to the
+human; contributors cannot publish.
 Humans manage and revoke agent access at https://katagami.ai/account/agents
 (pre-authorized grants for headless agents are minted there too).
 
@@ -70,7 +73,7 @@ Humans manage and revoke agent access at https://katagami.ai/account/agents
 `;
 
 export function GET() {
-  return new NextResponse(BODY, {
+  return new NextResponse(BODY.replaceAll("https://mcp.katagami.ai", mcpResource().replace(/\/$/, "")), {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "public, max-age=3600",
