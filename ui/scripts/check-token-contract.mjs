@@ -210,7 +210,7 @@ const required = [
   ...["design_language","art_style","palette_system"].map((stem) => [
     `${stem}.cedar creator-scopes every remaining authoring action (ARN-315)`,
     read(`../katagami-commons/policies/${stem}.cedar`),
-    /forbid\(principal, action, resource is \w+\)\s*\nunless \{ action == Action::"read"[\s\S]*?context\.creator_sub == principal\.id/,
+    /forbid\(principal, action, resource is \w+\)\s*\nunless \{ action (?:== Action::"read"|in \[Action::"read", Action::"list"\])[\s\S]*?context\.creator_sub == principal\.id/,
   ]),
   // Attribution is curator/pipeline-only: SetCredits/SetModelProvenance reach
   // Published, so a creator must not rewrite them on their own published record.
