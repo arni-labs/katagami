@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // katagami — contribute to the Katagami design commons from a terminal.
 //
-// A thin client over the Katagami MCP server (mcp.katagami.ai): one set of
+// A thin client over the Katagami contribution MCP server: one set of
 // tools, one validation path, whether you arrive via an agent harness or
 // this CLI. Auth is the same OAuth flow agents use — `katagami login` opens
 // the consent screen; a headless refresh token from the Agents & access
@@ -15,8 +15,8 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
 
-const DEFAULT_SERVER = process.env.KATAGAMI_MCP_URL ?? "https://mcp.katagami.ai";
-const CONFIG_DIR = join(homedir(), ".config", "katagami");
+const DEFAULT_SERVER = process.env.KATAGAMI_MCP_URL ?? "https://katagami-mcp-production-eb81.up.railway.app";
+const CONFIG_DIR = join(process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config"), "katagami");
 const CRED_PATH = join(CONFIG_DIR, "credentials.json");
 
 type Credentials = {
@@ -245,10 +245,11 @@ Usage:
   katagami pull <kind> <id>            Fetch one style's full spec
   katagami remix <kind> <parent-id> --name NAME --slug SLUG [--lineage evolution|remix]
   katagami submit <kind> --file payload.json [--id DRAFT_ID]
+  katagami import-image --file image.png --label short-name --mime image/png
   katagami status <kind> <id>          Lifecycle + review status
 
 Kinds: language | palette | art_style
-Submissions always land UnderReview, attributed to your account; curators publish.
+Art styles queue verification; languages and palettes land UnderReview. Curators publish.
 Headless (CI): set KATAGAMI_REFRESH_TOKEN from katagami.ai/account/agents.`);
   process.exit(0);
 }
@@ -279,6 +280,18 @@ async function main(): Promise<void> {
     case "whoami":
       console.log(await callTool(server, "whoami", {}));
       return;
+    case "import-image": {
+      const file = flag(rest, "file");
+      const label = flag(rest, "label");
+      const mime = flag(rest, "mime");
+      if (!file || !label || !mime) usage();
+      console.log(await callTool(server, "import_art_style_proof_image", {
+        image_base64: (await readFile(file)).toString("base64"),
+        mime_type: mime,
+        label,
+      }));
+      return;
+    }
     case "search": {
       const [kind, ...q] = rest.filter((a) => !a.startsWith("--"));
       if (!kind) usage();

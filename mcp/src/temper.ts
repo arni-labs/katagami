@@ -110,18 +110,38 @@ export async function listEntities(id: Identity, set: string, filter?: string): 
   return out;
 }
 
-export async function createEntity(id: Identity, set: string): Promise<string> {
+export async function createEntity(
+  id: Identity,
+  set: string,
+  fields: Record<string, unknown> = {},
+): Promise<string> {
   const res = await check(
     await fetch(`${config.temperUrl}/tdata/${set}`, {
       method: "POST",
       headers: headers(id),
-      body: JSON.stringify({}),
+      body: JSON.stringify(fields),
     }),
     `Create ${set}`,
   );
   const created = (await res.json()) as { entity_id?: string };
   if (!created.entity_id) throw new TemperError(`Create ${set} returned no entity_id`, 500);
   return created.entity_id;
+}
+
+/** Wait for the projection of an accepted File transition, without redispatching it. */
+export async function waitForFileState(
+  id: Identity,
+  fileId: string,
+  statuses: string[],
+): Promise<void> {
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const row = await getEntity(id, "Files", fileId);
+    if (row && statuses.includes(row.status ?? "")) return;
+    if (row?.status === "Failed" || row?.status === "Deleted")
+      throw new TemperError(`File('${fileId}') reached ${row.status}`, 502);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  throw new TemperError(`File('${fileId}') never became ${statuses.join(" or ")}`, 504);
 }
 
 export async function action(
@@ -189,7 +209,9 @@ export async function uploadFile(
       method: "POST",
       headers: headers(id),
       body: JSON.stringify({
-        fields: { Name: name, Path: `katagami-contrib/${name}`, MimeType: mimeType },
+        Name: name,
+        Path: `/contrib/${name}`,
+        MimeType: mimeType,
       }),
     }),
     "Create File",
@@ -207,13 +229,8 @@ export async function uploadFile(
     `Upload File('${fileId}')`,
   );
 
-  for (let i = 0; i < 30; i++) {
-    const row = await getEntity(id, "Files", fileId);
-    const s = row?.status ?? "";
-    if (s === "Ready" || s === "Locked") return fileId;
-    await new Promise((r) => setTimeout(r, 1000));
-  }
-  throw new TemperError(`File('${fileId}') never became Ready`, 504);
+  await waitForFileState(id, fileId, ["Ready", "Locked"]);
+  return fileId;
 }
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;

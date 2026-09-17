@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { mcpResource } from "@/lib/oauth-as";
 
 // integrations.sh discovery manifest (version 3): the machine-readable map
 // of every surface Katagami exposes and how agents get credentials for the
@@ -6,6 +7,7 @@ import { NextResponse } from "next/server";
 // listing — the registry crawls it (ARN-155).
 
 export function GET() {
+  const contributionOrigin = mcpResource().replace(/\/$/, "");
   return NextResponse.json(
     {
       version: 3,
@@ -25,11 +27,11 @@ export function GET() {
         mcp: [
           {
             name: "katagami",
-            url: "https://mcp.katagami.ai/mcp",
+            url: `${contributionOrigin}/mcp`,
             transport: "streamable-http",
             server_card: "https://katagami.ai/.well-known/mcp/server-card.json",
             protected_resource_metadata:
-              "https://mcp.katagami.ai/.well-known/oauth-protected-resource",
+              `${contributionOrigin}/.well-known/oauth-protected-resource`,
             credentials: "katagami-oauth",
             description:
               "Contribution front door: search, pull, remix (lineage-tracked), submit for review, submission status.",

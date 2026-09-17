@@ -15,7 +15,7 @@ function req(name: string, fallback?: string): string {
 export const config = {
   port: Number(process.env.PORT ?? 8787),
   /** Public URL of this MCP server — the OAuth resource identifier (aud). */
-  resourceUrl: req("MCP_RESOURCE_URL", "https://mcp.katagami.ai"),
+  resourceUrl: req("MCP_RESOURCE_URL", "https://katagami-mcp-production-eb81.up.railway.app"),
   /** The authorization server (katagami.ai). */
   issuer: req("KATAGAMI_AS_ISSUER", "https://katagami.ai"),
   /** Temper backend. */

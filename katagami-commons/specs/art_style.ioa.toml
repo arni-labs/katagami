@@ -31,6 +31,11 @@ allow_indefinite_states = ["Draft", "UnderReview", "Published", "Archived"]
 # --- State Variables ---
 
 [[state]]
+name = "verification_job_id"
+type = "string"
+initial = ""
+
+[[state]]
 name = "has_medium"
 type = "bool"
 initial = "false"
@@ -196,6 +201,34 @@ effect = [
 ]
 params = ["name", "slug", "medium", "prompt_template", "slot_recipes", "guidance", "reference_image_file_ids", "reference_manifest", "proof_shots_file_ids", "proof_shots_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "source_basis", "prompt_review", "portability_report", "tags", "direction_id", "curator_notes"]
 hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/one paste-ready observable prompt/slot_recipes/guidance + optional example references + contributor-supplied multi-model proof shots made without style references + thumbnail + lineage + model provenance + credits + source_basis + independent prompt_review + portability_report + direction_id. Katagami does not generate submission images. Leaves the entity in Draft. The finalizer validates the reports, files, and hashes, internally attests them, and alone may mark quality/publish. Files must already be Locked."
+
+
+# The engine binds verification to this submitted entity. Contributors do not
+# receive job creation or publication authority.
+[[action.triggers]]
+name = "submission_queues_art_style_verification"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationJob"
+target_action = "VerifyArtStyleSubmission"
+
+[action.triggers.params]
+job_type = "synthesize_art_style"
+completion_contract = "typed-v1"
+
+[action.triggers.params_from]
+art_style_ids = "Id"
+
+[action.triggers.resolve_target]
+type = "create"
+
+
+[[action]]
+name = "RecordVerificationJob"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published", "Archived"]
+params = ["verification_job_id"]
+hint = "Record the engine-created verification job for contributor-visible submission tracking."
 
 
 [[action]]

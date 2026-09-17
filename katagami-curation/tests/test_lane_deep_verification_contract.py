@@ -173,8 +173,18 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn(".array(", images)
         self.assertIn(".length(2)", images)
         self.assertNotIn('action(id, set, entityId, "SubmitForReview"', submit)
-        self.assertIn('createEntity(id, "CurationJobs")', submit)
-        self.assertIn('"CompleteArtStyleSynthesis"', submit)
+        self.assertNotIn('createEntity(id, "CurationJobs")', submit)
+        self.assertNotIn('curationAction(', submit)
+        trigger = self._by_name(self.art, "action")["SubmitArtStyle"]["triggers"][0]
+        self.assertEqual(trigger["principal"], "curation-service")
+        self.assertEqual(trigger["target_entity"], "CurationJob")
+        self.assertEqual(trigger["target_action"], "VerifyArtStyleSubmission")
+        self.assertEqual(trigger["params_from"], {"art_style_ids": "Id"})
+        self.assertEqual(trigger["params"]["job_type"], "synthesize_art_style")
+        job = self._by_name(tomllib.loads(CURATION_JOB_SPEC), "action")["VerifyArtStyleSubmission"]
+        self.assertEqual(job["from"], ["Queued"])
+        self.assertEqual(job["to"], "Finalizing")
+        self.assertEqual(job["triggers"][0]["module"], "finalize_spawned_session")
         self.assertIn('"VerificationQueued"', submit)
 
     def test_reference_images_are_optional_but_proof_is_required(self):

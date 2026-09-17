@@ -354,6 +354,7 @@
         <Property Name="PublishedAt" Type="Edm.DateTimeOffset" />
         <!-- Precomputed lowercase search blob for case-insensitive catalog search. -->
         <Property Name="SearchBlob" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="VerificationJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
       </EntityType>
 
       <!-- WritingStyle: a named, verifiable, consent-clean voice contract (RFC-0002 §5-6) — the prose sibling of a DesignLanguage -->

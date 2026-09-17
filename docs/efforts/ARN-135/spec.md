@@ -18,3 +18,16 @@ manifest equality and immutable-file verification checks remain enforced.
 Verify valid one- and two-case submissions plus malformed counts, asymmetric sets,
 duplicate models/files/sources, changed prompts/hashes, and below-threshold images.
 Exercise the real local submission/finalization path before production deployment.
+
+The authenticated contribution path must work under the deployed contributor
+policy. New ArtStyle records bind creator identity to the verified human at
+creation. Imports wait for Locked before returning their immutable hashes.
+SubmitArtStyle authors the Draft and triggers an engine-owned CurationJob;
+contributors cannot create jobs, read the internal queue, attest reviews, or
+publish. The job records its own ID on the source ArtStyle through a curator-only
+action. The MCP reports VerificationQueued only after that ID appears. Rejection
+and publication still belong to the existing finalizer's evidence checks.
+
+The CLI and discovery documents advertise the deployed contribution service.
+Agents can import local images, submit one complete JSON payload, and inspect
+submission status without constructing Temper calls or supplying operator keys.

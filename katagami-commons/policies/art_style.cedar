@@ -19,6 +19,7 @@ forbid(
     Action::"MarkQualityPassed",
     Action::"Publish",
     Action::"Restore",
+    Action::"RecordVerificationJob",
     Action::"Revise",
     Action::"SetCreator",
     Action::"SetCredits",
@@ -67,3 +68,9 @@ unless { principal is System || principal is Admin || (principal has agent_type 
 // as before — and reads plus the system-emitted lifecycle events stay open.
 forbid(principal, action, resource is ArtStyle)
 unless { action == Action::"read" || action == Action::"ArtStylePublishedEvent" || action == Action::"ArtStyleArchivedEvent" || !(principal is Customer) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) || (principal is Customer && action != Action::"create" && context has creator_sub && context.creator_sub == principal.id) };
+
+// Contributor ownership is bound to the verified JWT at creation and retained
+// for every authoring action. SetCreator stays curator-only above.
+forbid(principal, action, resource is ArtStyle)
+when { principal has agent_type && principal.agent_type == "contributor" }
+unless { action == Action::"read" || (context has actingFor && context.actingFor != "" && context has creator_sub && context.creator_sub == context.actingFor) };

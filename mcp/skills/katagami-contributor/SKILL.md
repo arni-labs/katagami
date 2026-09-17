@@ -5,6 +5,11 @@ description: Contribute governed design languages, palettes, and art styles to K
 
 # Katagami contributor
 
+Discover the current contribution endpoint at
+`https://katagami.ai/.well-known/mcp/server-card.json`; the gallery endpoint
+`https://katagami.ai/mcp` is read-only. The CLI supports `login`, `import-image`,
+`submit art_style --file payload.json`, and `status art_style <id>`.
+
 Use the authenticated Katagami MCP as the contribution boundary for the **work
 itself**. Its current tool schemas are the source of truth for payload
 mechanics, and no artifact — design language, palette, art style, writing style

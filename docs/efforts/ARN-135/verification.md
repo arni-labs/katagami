@@ -33,3 +33,33 @@
   Google visual outputs are not accepted as style-quality proof. No cross-model
   visual approval, application merge, deployment or public style verification
   is claimed yet. The existing style remains Draft.
+
+## Authenticated contribution follow-up
+
+The first full contributor-MCP run failed on File lock propagation, unattributed
+creation, and an unauthorized attempt to create a CurationJob. Those failures
+remain in the evidence. The repaired flow creates an attributed Draft, waits for
+Locked files, and queues the existing finalizer through engine-owned triggers.
+An independent run now publishes valid one-source/two-output submissions and
+rejects altered hashes and invalid reports. Direct contributor job creation,
+verification actions, and RecordVerificationJob remain forbidden.
+
+The built CLI independently imports three files, submits, and reports
+Published/Completed for valid evidence; invalid hashes report Draft/Failed with
+the precise verification error. Discovery JSON points to the existing Railway
+contribution MCP and advertises the image import tool. MCP and CLI builds pass;
+twenty routing, resolver and Genesis contract checks pass.
+
+The local image sink previously discarded uploaded bytes, a separate verification
+weakness. The contributor-specific 404 was traced to the nested File creation
+wrapper dropping Path; this is corrected at the upload boundary. Separately, the test sink now persists
+and serves exact bytes with image MIME types and HEAD.
+A fresh pipeline run completed and published; the browser loaded all three fixture
+images (64, 720 and 64 pixels wide) through the local gallery's file route. These
+are engineering fixtures, not semantic approval of the Vermilion artwork. The
+public CDN worker is verified separately against its real local R2 binding.
+
+The final authenticated CLI run publishes en-01a0acaf-364c-78d2-bb7c-628fd935c783.
+Both gallery images load in the browser with naturalWidth 1536, and independent
+HTTP checks match the imported SHA-256 values. The real MCP upload regression
+runs with one pass and zero skips. These remain engineering fixtures.

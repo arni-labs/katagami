@@ -7,7 +7,7 @@ finalize_spawned_session WASM registered:
 
   one or two Locked source Files + two or four recorded proof Files
   -> ArtStyle (SubmitArtStyle, no references)
-  -> CurationJob Start -> CompleteArtStyleSynthesis (fires the finalizer WASM)
+  -> engine-created CurationJob VerifyArtStyleSubmission (fires the finalizer WASM)
   -> assert ArtStyle Published (happy) / job Failed + style unpublished
      (HTML posing as one proof; recorded hash mismatch)
 
@@ -394,14 +394,20 @@ def run_art_style_case(
 
     wait_fields("ArtStyles", art_id, ["prompt_template", "thumbnail_file_id", "credits"])
 
-    job_id = create_entity("CurationJobs", {"ArtStyleIds": json.dumps([art_id])})
-    must_act("CurationJobs", job_id, "Configure", {"job_type": "synthesize_art_style", "completion_contract": "typed-v1"})
-    must_act("CurationJobs", job_id, "Start", {})
-    st, body = act("CurationJobs", job_id, "CompleteArtStyleSynthesis", {
-        "art_style_ids": json.dumps([art_id]),
-        "output": json.dumps({"art_style_ids": [art_id]}),
-    })
-    print(f"  CompleteArtStyleSynthesis -> HTTP {st}")
+    # Publication must come from the artifact's engine-owned verification trigger.
+    # A second operator-created job would mask a broken contribution handoff.
+    from urllib.parse import quote
+    job_id = None
+    for _ in range(30):
+        status, result = req("GET", "/tdata/CurationJobs?$filter=" + quote(f"art_style_ids eq '{art_id}'"))
+        assert status == 200, (status, result)
+        jobs = result.get("value", [])
+        if jobs:
+            assert len(jobs) == 1, jobs
+            job_id = entity_id_of(jobs[0])
+            break
+        time.sleep(1)
+    assert job_id, f"SubmitArtStyle did not queue verification for {art_id}"
 
     job = wait_finalized_job(job_id)
     art = get_entity("ArtStyles", art_id)
