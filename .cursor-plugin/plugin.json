@@ -1,0 +1,12 @@
+{
+  "name": "katagami",
+  "version": "0.1.0",
+  "description": "The Katagami design commons — design languages, palettes, and art styles — over MCP.",
+  "author": {
+    "name": "arni-labs / Rita"
+  },
+  "homepage": "https://katagami.ai",
+  "repository": "https://github.com/arni-labs/katagami",
+  "license": "MIT",
+  "logo": "assets/logo.svg"
+}
