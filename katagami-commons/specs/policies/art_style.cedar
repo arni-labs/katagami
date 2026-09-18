@@ -22,8 +22,6 @@ forbid(
     Action::"RecordVerificationJob",
     Action::"Revise",
     Action::"SetCreator",
-    Action::"SetCredits",
-    Action::"SetModelProvenance",
     Action::"SetFeatured",
     Action::"SetTaxonomy",
     Action::"SetVisitorVisibility",
@@ -33,6 +31,16 @@ forbid(
   resource is ArtStyle
 )
 unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
+
+// Attribution is contributor-authored before publication. The state machine
+// invalidates the affected reviews on these edits. Keep unknown/missing status
+// and published records closed; creator/actingFor checks below still apply.
+forbid(
+  principal,
+  action in [Action::"SetCredits", Action::"SetModelProvenance"],
+  resource is ArtStyle
+)
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) || (context has status && ["Draft", "UnderReview"].contains(context.status)) };
 
 // Generic OData writes bypass the action ladder: PATCH and DELETE authorize
 // as `update`/`delete` and match no named list above. `create` stays open —

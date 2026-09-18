@@ -6,3 +6,4 @@
 # policies are EVALUATED rather than grepped, and it fails loudly when the
 # bindings are missing instead of skipping.
 cedarpy>=3.4.1
+pytest>=8,<10
