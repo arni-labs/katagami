@@ -231,10 +231,9 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertNotIn("ART_STYLE_PROOF_RECEIPT_KEY", MCP_CONFIG)
         self.assertNotIn("rights_evidence", MCP_TOOLS)
         self.assertIn("artStyleProofInput", MCP_TOOLS)
-        self.assertIn(
-            "thumbnail_file_id must identify one of the verified proof shots",
-            MCP_TOOLS,
-        )
+        self.assertIn("gallerySubmissionFields(", MCP_TOOLS)
+        gallery = (Path(__file__).resolve().parents[2] / "mcp" / "src" / "art-style-gallery.ts").read_text()
+        self.assertIn("thumbnail_file_id must identify the first gallery image", gallery)
         self.assertNotIn("art_style_proof_receipt_key", CURATION_JOB_SPEC)
 
     def test_audit_matrix_balances_roles_media_and_style_specific_subjects(self):

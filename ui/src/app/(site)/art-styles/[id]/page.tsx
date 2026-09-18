@@ -145,7 +145,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             />
           </span>
         }
-        description="An engine-agnostic style recipe: a wide hero, proof shots across subjects, and a portable prompt."
+        description="An engine-agnostic style recipe: a wide hero, examples across subjects, and a portable prompt."
         rightSlot={<Stamp color="sakura">{medium}</Stamp>}
       />
 
@@ -168,13 +168,13 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             {gallery.map((src, i) => (
               <div key={i} className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "1/1" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`${name} proof ${i + 1}`} className="h-full w-full object-cover" />
+                <img src={src} alt={`${name} example ${i + 1}`} className="h-full w-full object-cover" />
               </div>
             ))}
           </div>
         ) : null}
         <div className="mt-2 px-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground/70">
-          1 hero · {gallery.length} proof{gallery.length === 1 ? "" : "s"}
+          1 hero · {gallery.length} example{gallery.length === 1 ? "" : "s"}
         </div>
       </StickyNote>
 
