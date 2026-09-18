@@ -4,4 +4,4 @@ Rita wants every art-style contribution to include the requested GPT Image 2.5, 
 
 Make the contributor contract, generating-agent instructions, finalizer validation and rendered gallery agree. Preserve independent portability evidence, real model identifiers and file provenance. Do not substitute another model or manufacture successful generations. Apply the publication requirement to new and revised submissions; do not withdraw existing published styles.
 
-The requested total count and allocation are being clarified before the permanent validator rule is written. Gallery rendering can be repaired independently. Fal currently reports account_locked for two requested generations; preserve completed outputs and do not bypass that restriction.
+Rita confirmed six total: four GPT Image 2.5, one Grok Image and one Nano Banana. Fal currently reports account_locked for two requested generations; preserve completed outputs and do not bypass that restriction.

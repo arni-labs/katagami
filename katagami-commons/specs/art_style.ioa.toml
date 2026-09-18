@@ -200,7 +200,7 @@ effect = [
   { type = "set_bool", var = "has_portability_evidence", value = "false" }
 ]
 params = ["name", "slug", "medium", "prompt_template", "slot_recipes", "guidance", "reference_image_file_ids", "reference_manifest", "proof_shots_file_ids", "proof_shots_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "source_basis", "prompt_review", "portability_report", "tags", "direction_id", "curator_notes"]
-hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/one paste-ready observable prompt/slot_recipes/guidance + optional example references + contributor-supplied multi-model proof shots made without style references + thumbnail + lineage + model provenance + credits + source_basis + independent prompt_review + portability_report + direction_id. Katagami does not generate submission images. Leaves the entity in Draft. The finalizer validates the reports, files, and hashes, internally attests them, and alone may mark quality/publish. Files must already be Locked."
+hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/one paste-ready observable prompt/slot_recipes/guidance + six gallery outputs (four GPT Image 2.5, one Grok Image, one Nano Banana) in reference_manifest schema version 2 + contributor-supplied multi-model proof shots made without style references + thumbnail + lineage + model provenance + credits + source_basis + independent prompt_review + portability_report + direction_id. Katagami does not generate submission images. Leaves the entity in Draft. The finalizer validates the reports, files, and hashes, internally attests them, and alone may mark quality/publish. Files must already be Locked."
 
 
 # The engine binds verification to this submitted entity. Contributors do not
@@ -263,7 +263,7 @@ effect = [{ type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["guidance"]
 hint = "Set usage guidance (do's, don'ts, what subjects suit this style, when to avoid it)."
 
-# --- Actions: Optional Reference Images (examples only) ---
+# --- Actions: Display Gallery Images (not style-reference inputs) ---
 
 [[action]]
 name = "AttachReferenceImages"
@@ -271,7 +271,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_reference_images", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "has_source_basis_review", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["reference_image_file_ids", "reference_manifest"]
-hint = "Attach optional example-image file ids plus a manifest describing each. Examples may illustrate the look but are never required by the prompt, generation, review, or remix flow. Record producing model/provider per item. Published styles must Revise first."
+hint = "Attach six ordered gallery File ids plus reference_manifest schema version 2: four GPT Image 2.5, one Grok Image, one Nano Banana, with distinct Locked file bytes, exact model IDs, prompt hashes and real provider request IDs. The first gallery File is the thumbnail. These are display outputs, not required style-reference inputs. Portability proof remains separate. Published styles must Revise first, only when the complete replacement is ready."
 
 # --- Actions: Proof Shots (canonical subjects rendered in-style) ---
 
