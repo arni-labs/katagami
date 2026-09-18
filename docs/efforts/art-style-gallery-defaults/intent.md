@@ -1,7 +1,3 @@
 # Art-style gallery defaults
 
-Rita wants every art-style contribution to include the requested GPT Image 2.5, Grok Image and Nano Banana gallery automatically, without repeating the instruction. Morrow Ink currently renders an incomplete image set even though approved examples are attached.
-
-Make the contributor contract, generating-agent instructions, finalizer validation and rendered gallery agree. Preserve independent portability evidence, real model identifiers and file provenance. Do not substitute another model or manufacture successful generations. Apply the publication requirement to new and revised submissions; do not withdraw existing published styles.
-
-Rita confirmed six total: four GPT Image 2.5, one Grok Image and one Nano Banana. Fal currently reports account_locked for two requested generations; preserve completed outputs and do not bypass that restriction.
+The canonical intent is [intent.md](../GH-323/intent.md). This link preserves the already-recorded Temper Effort reference; GH-323 identifies Katagami pull request 323, not a Linear issue.
