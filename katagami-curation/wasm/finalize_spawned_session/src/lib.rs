@@ -395,9 +395,7 @@ fn maybe_spawn_repair_job(
         format!("THE DESIGN BRIEF (this is the job — everything you produce serves it): {original_brief} ")
     };
     let repair_input = json!({
-        "task": format!(
-            "REPAIR RUN {next_attempt}/{MAX_REPAIR_ATTEMPTS} for DesignLanguage '{language_id}'. {brief_line}You are a designer finishing this language to the standard of the best pages in the Katagami library: dense bespoke CSS, real designed content in every section, the hero image actually visible. A previous {job_type} session failed finalizer verification: {payload}. Load the existing language with temper.get and fix it by DESIGNING, never by padding — systematic filler of any kind is detected by compression analysis and fails composition_padded; near-identical pages fail composition_duplicate. The finalizer reports only the FIRST failing gate, so after fixing it, audit EVERY artifact before completing: landing, dashboard, and embodiment are three genuinely different pages using var(--...) tokens; the landing's --hero-image references a real generated image and renders; design_md_format_version and a clean design_md_lint_result are set; the shadcn export has registry:theme, cssVars, and componentManifest; every slot points at its OWN Ready file. Render each page and LOOK at the screenshots before attaching. Fix everything that fails in THIS run, keep already-valid artifacts untouched, then complete via the typed completion action referencing this same language."
-        ),
+        "task": repair_task_prompt(next_attempt, &language_id, &brief_line, job_type, &payload),
         "repair_attempt": next_attempt,
         "repaired_job_id": job_id,
         "existing_language_id": language_id,
@@ -2458,56 +2456,115 @@ fn verify_file_body(
             }
         }
         "design_md" => {
-            if !trimmed.contains("version:") || !trimmed.contains("components") {
+            if !front_matter_has_keys(trimmed, &["version", "components"]) {
                 return artifact_error(
                     language_id,
                     file_id,
                     artifact_kind,
                     "design_md_invalid",
-                    "DESIGN.md file is missing required front matter",
+                    "DESIGN.md must open with YAML front matter carrying top-level version: and components: keys",
                 );
             }
         }
         "shadcn_export" => {
-            if !trimmed.contains("\"registry:theme\"")
-                || !trimmed.contains("\"cssVars\"")
-                || !trimmed.contains("\"componentManifest\"")
-            {
+            if !is_shadcn_registry_theme(trimmed) {
                 return artifact_error(
                     language_id,
                     file_id,
                     artifact_kind,
                     "shadcn_export_invalid",
-                    "shadcn registry theme is missing registry:theme, cssVars, or componentManifest",
+                    "shadcn export must be JSON with type \"registry:theme\", a non-empty cssVars scope, and a non-empty componentManifest (top level or under meta)",
                 );
             }
         }
         "shadcn_component_spec" => {
-            for required in [
+            let sections = [
                 "shadcn/ui Components",
                 "ShadSync visual profile",
                 "Signature component recipes",
                 "Preview shots",
-                "button",
-                "card",
-                "input",
-                "tabs",
-            ] {
-                if !trimmed.contains(required) {
-                    return artifact_error(
-                        language_id,
-                        file_id,
-                        artifact_kind,
-                        "shadcn_component_spec_invalid",
-                        "shadcn component spec is missing required recipe sections",
-                    );
-                }
+            ];
+            let components = ["button", "card", "input", "tabs"];
+            if !sections.iter().all(|title| markdown_has_heading(trimmed, title))
+                || !components.iter().all(|name| has_whole_token(trimmed, name))
+            {
+                return artifact_error(
+                    language_id,
+                    file_id,
+                    artifact_kind,
+                    "shadcn_component_spec_invalid",
+                    "shadcn component spec needs headings for shadcn/ui Components, ShadSync visual profile, Signature component recipes and Preview shots, and recipes naming button, card, input and tabs",
+                );
             }
         }
         "shadcn_preview_shots" => verify_preview_shots_body(language_id, file_id, trimmed)?,
         _ => {}
     }
     Ok(())
+}
+
+/// True when `body` opens with a `---` YAML front-matter block that closes and
+/// declares every key at the top level (column 0) of that block.
+fn front_matter_has_keys(body: &str, keys: &[&str]) -> bool {
+    let mut lines = body.lines();
+    if lines.next().map(str::trim_end) != Some("---") {
+        return false;
+    }
+    let mut found = vec![false; keys.len()];
+    for line in lines {
+        if line.trim_end() == "---" {
+            return found.iter().all(|seen| *seen);
+        }
+        for (seen, key) in found.iter_mut().zip(keys) {
+            *seen |= line
+                .strip_prefix(key)
+                .is_some_and(|rest| rest.starts_with(':'));
+        }
+    }
+    false
+}
+
+fn is_shadcn_registry_theme(body: &str) -> bool {
+    let Ok(theme) = serde_json::from_str::<serde_json::Value>(body) else {
+        return false;
+    };
+    let non_empty_object =
+        |value: &serde_json::Value| value.as_object().is_some_and(|map| !map.is_empty());
+    let has_scope = theme
+        .get("cssVars")
+        .and_then(|vars| vars.as_object())
+        .is_some_and(|scopes| scopes.values().any(non_empty_object));
+    let manifest = theme
+        .get("componentManifest")
+        .or_else(|| theme.pointer("/meta/componentManifest"));
+    theme.get("type").and_then(|v| v.as_str()) == Some("registry:theme")
+        && has_scope
+        && manifest
+            .and_then(|v| v.as_array())
+            .is_some_and(|items| !items.is_empty())
+}
+
+/// A markdown ATX heading whose text contains `title`, outside code fences.
+fn markdown_has_heading(body: &str, title: &str) -> bool {
+    let mut in_fence = false;
+    body.lines().any(|line| {
+        let line = line.trim_start();
+        if line.starts_with("```") || line.starts_with("~~~") {
+            in_fence = !in_fence;
+            return false;
+        }
+        !in_fence && line.starts_with('#') && line.trim_start_matches('#').contains(title)
+    })
+}
+
+/// `token` appears delimited by non-identifier characters ("card", not "discard").
+fn has_whole_token(body: &str, token: &str) -> bool {
+    let is_ident = |c: char| c.is_ascii_alphanumeric() || c == '-' || c == '_';
+    body.match_indices(token).any(|(start, _)| {
+        let before = body[..start].chars().next_back();
+        let after = body[start + token.len()..].chars().next();
+        !before.is_some_and(is_ident) && !after.is_some_and(is_ident)
+    })
 }
 
 fn artifact_error<T>(
@@ -2855,6 +2912,7 @@ fn verify_synthesized_palettes(
         verify_palette_signature(id, &lane_fields)?;
         verify_palette_role_map(id, &lane_fields, "neutrals")?;
         verify_palette_role_map(id, &lane_fields, "semantic")?;
+        verify_palette_contrast(id, &lane_fields)?;
 
         let tokens_body = read_lane_file_value(
             ctx,
@@ -3890,6 +3948,21 @@ fn lane_payload_has_supported_raster_magic(body: &[u8]) -> bool {
             ))
 }
 
+/// The task handed to a repair session. `payload` already lists every failed
+/// language gate (see `verify_complete_language_artifacts`); each gate still stops at
+/// its own first problem, which is why the prompt asks for a full audit.
+fn repair_task_prompt(
+    next_attempt: i64,
+    language_id: &str,
+    brief_line: &str,
+    job_type: &str,
+    payload: &serde_json::Value,
+) -> String {
+    format!(
+        "REPAIR RUN {next_attempt}/{MAX_REPAIR_ATTEMPTS} for DesignLanguage '{language_id}'. {brief_line}You are a designer finishing this language to the standard of the best pages in the Katagami library: dense bespoke CSS, real designed content in every section, the hero image actually visible. A previous {job_type} session failed finalizer verification: {payload}. Load the existing language with temper.get and fix it by DESIGNING, never by padding — systematic filler of any kind is detected by compression analysis and fails composition_padded; near-identical pages fail composition_duplicate. That error lists every gate that failed, but each gate stops at its first problem, so after fixing them audit EVERY artifact before completing: landing, dashboard, and embodiment are three genuinely different pages using var(--...) tokens; the landing's --hero-image references a real generated image and renders; design_md_format_version and a clean design_md_lint_result are set; the shadcn export has registry:theme, cssVars, and componentManifest; every slot points at its OWN Ready file. Render each page and LOOK at the screenshots before attaching. Fix everything that fails in THIS run, keep already-valid artifacts untouched, then complete via the typed completion action referencing this same language."
+    )
+}
+
 fn is_hex_color(value: &str) -> bool {
     let v = value.trim();
     if !matches!(v.len(), 4 | 7 | 9) {
@@ -3985,6 +4058,121 @@ fn verify_palette_role_map(
             .entity("PaletteSystem", owner_id)
             .field(field_name));
         }
+    }
+    Ok(())
+}
+
+/// `#RGB`, `#RRGGBB`, or `#RRGGBBAA` with full alpha → linear-light sRGB.
+/// A translucent colour has no contrast ratio of its own, so it is not accepted
+/// for the roles the contrast gate measures.
+fn parse_opaque_hex(value: &str) -> Option<[f64; 3]> {
+    let v = value.trim();
+    if !is_hex_color(v) {
+        return None;
+    }
+    let digits = &v[1..];
+    let expanded: String = match digits.len() {
+        3 => digits.chars().flat_map(|c| [c, c]).collect(),
+        8 if digits[6..].eq_ignore_ascii_case("ff") => digits[..6].to_string(),
+        6 => digits.to_string(),
+        _ => return None,
+    };
+    let mut rgb = [0.0; 3];
+    for (i, channel) in rgb.iter_mut().enumerate() {
+        let byte = u8::from_str_radix(&expanded[i * 2..i * 2 + 2], 16).ok()?;
+        let c = f64::from(byte) / 255.0;
+        *channel = if c <= 0.04045 {
+            c / 12.92
+        } else {
+            ((c + 0.055) / 1.055).powf(2.4)
+        };
+    }
+    Some(rgb)
+}
+
+/// WCAG 2.x contrast ratio between two linear-light colours, 1.0..=21.0.
+fn contrast_ratio(a: [f64; 3], b: [f64; 3]) -> f64 {
+    let luminance = |c: [f64; 3]| 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    let (la, lb) = (luminance(a), luminance(b));
+    (la.max(lb) + 0.05) / (la.min(lb) + 0.05)
+}
+
+const TEXT_CONTRAST_FLOOR: f64 = 4.5;
+const ACCENT_CONTRAST_FLOOR: f64 = 3.0;
+
+/// The contrast contract synthesize-palette/SKILL.md states to the agent:
+/// - `text` reads on `surface` (4.5:1).
+/// - `bg` carries content: `text` or the `surface` colour reads on it (4.5:1).
+///   Dark boards under light paper never put text on the board itself.
+/// - the primary accent is visible on `surface` (3:1), or `text` reads on the
+///   accent (4.5:1) — a highlighter fill behind text.
+fn verify_palette_contrast(
+    owner_id: &str,
+    fields: &serde_json::Value,
+) -> Result<(), VerificationError> {
+    let neutrals = require_lane_json_object(owner_id, "PaletteSystem", fields, "neutrals")?;
+    let mut ground = [[0.0; 3]; 3];
+    for (slot, role) in ground.iter_mut().zip(["bg", "surface", "text"]) {
+        *slot = neutrals
+            .get(role)
+            .and_then(|value| value.as_str())
+            .and_then(parse_opaque_hex)
+            .ok_or_else(|| {
+                VerificationError::new(
+                    "palette_role_missing",
+                    format!(
+                        "PaletteSystem '{owner_id}' neutrals.{role} must be an opaque hex color; neutrals needs bg, surface and text"
+                    ),
+                )
+                .entity("PaletteSystem", owner_id)
+                .field("neutrals")
+            })?;
+    }
+    let [bg, surface, text] = ground;
+    let signature = require_lane_json_array(owner_id, "PaletteSystem", fields, "signature")?;
+    let accent = signature
+        .first()
+        .and_then(|item| item.get("hex"))
+        .and_then(|value| value.as_str())
+        .and_then(parse_opaque_hex)
+        .ok_or_else(|| {
+            VerificationError::new(
+                "palette_role_missing",
+                format!("PaletteSystem '{owner_id}' signature[0].hex must be an opaque hex color; it is the primary accent"),
+            )
+            .entity("PaletteSystem", owner_id)
+            .field("signature")
+        })?;
+
+    let insufficient = |field: &'static str, detail: String| {
+        Err(VerificationError::new(
+            "palette_contrast_insufficient",
+            format!("PaletteSystem '{owner_id}' {detail}"),
+        )
+        .entity("PaletteSystem", owner_id)
+        .field(field))
+    };
+    let text_on_surface = contrast_ratio(text, surface);
+    if text_on_surface < TEXT_CONTRAST_FLOOR {
+        return insufficient(
+            "neutrals",
+            format!("text on surface is {text_on_surface:.2}:1; it must reach {TEXT_CONTRAST_FLOOR}:1"),
+        );
+    }
+    let (text_on_bg, surface_on_bg) = (contrast_ratio(text, bg), contrast_ratio(surface, bg));
+    if text_on_bg < TEXT_CONTRAST_FLOOR && surface_on_bg < TEXT_CONTRAST_FLOOR {
+        return insufficient(
+            "neutrals",
+            format!("nothing reads on bg: text is {text_on_bg:.2}:1 and the surface color is {surface_on_bg:.2}:1; one must reach {TEXT_CONTRAST_FLOOR}:1"),
+        );
+    }
+    let (accent_on_surface, text_on_accent) =
+        (contrast_ratio(accent, surface), contrast_ratio(text, accent));
+    if accent_on_surface < ACCENT_CONTRAST_FLOOR && text_on_accent < TEXT_CONTRAST_FLOOR {
+        return insufficient(
+            "signature",
+            format!("primary accent is {accent_on_surface:.2}:1 on surface and text on the accent is {text_on_accent:.2}:1; it must reach {ACCENT_CONTRAST_FLOOR}:1 on surface or carry text at {TEXT_CONTRAST_FLOOR}:1"),
+        );
     }
     Ok(())
 }
@@ -5512,16 +5700,22 @@ fn check_voice_bands_against(
                 .collect()
         })
         .unwrap_or_default();
+    // Patterns are authored by the model; one that does not compile must fail
+    // the gate, or the voice ships with its banned-pattern check quietly empty.
     let banned_patterns: Vec<regex_lite::Regex> = bands
         .get("banned_patterns")
         .and_then(|v| v.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|v| v.as_str())
-                .filter_map(|s| regex_lite::Regex::new(&format!("(?i){s}")).ok())
-                .collect()
+        .map(Vec::as_slice)
+        .unwrap_or_default()
+        .iter()
+        .map(|v| {
+            let source = v
+                .as_str()
+                .ok_or_else(|| format!("banned_patterns entry {v} is not a string"))?;
+            regex_lite::Regex::new(&format!("(?i){source}"))
+                .map_err(|e| format!("banned_patterns entry '{source}' is not a valid regex: {e}"))
         })
-        .unwrap_or_default();
+        .collect::<Result<_, String>>()?;
 
     // The corpus aggregate is the reference for self-consistency: function
     // words and character trigrams both compare each text against the whole.
@@ -7425,5 +7619,159 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
         assert!(verify_voice_md_body("ws-1", "f1", good).is_ok());
         let err = verify_voice_md_body("ws-1", "f1", "just some text with TODO left in").unwrap_err();
         assert_eq!(err.code, "voice_md_invalid");
+    }
+}
+
+#[cfg(test)]
+mod real_gate_tests {
+    use super::*;
+
+    fn palette(neutrals: serde_json::Value, accent: &str) -> serde_json::Value {
+        json!({ "neutrals": neutrals, "signature": [{"hex": accent, "name": "accent"}] })
+    }
+
+    #[test]
+    fn contrast_ratio_matches_wcag_reference_values() {
+        let white = parse_opaque_hex("#FFFFFF").unwrap();
+        let black = parse_opaque_hex("#000").unwrap();
+        assert!((contrast_ratio(white, black) - 21.0).abs() < 0.01);
+        // #767676 on white is the canonical AA boundary grey (4.54:1).
+        let grey = parse_opaque_hex("#767676ff").unwrap();
+        assert!((contrast_ratio(grey, white) - 4.54).abs() < 0.01);
+        assert!(parse_opaque_hex("#76767680").is_none(), "translucent is not opaque");
+        assert!(parse_opaque_hex("ochre").is_none());
+    }
+
+    #[test]
+    fn palette_contrast_accepts_the_skill_example() {
+        let fields = palette(
+            json!({"bg": "#f4f1ea", "surface": "#fbfaf6", "text": "#2b2a26"}),
+            "#7c6f57",
+        );
+        verify_palette_contrast("ps-1", &fields).unwrap();
+    }
+
+    #[test]
+    fn palette_contrast_requires_the_ground_roles() {
+        let fields = palette(json!({"bg": "#faf7f0", "surface": "#ffffff", "ink": "#1c1a16"}), "#7c6f57");
+        let err = verify_palette_contrast("ps-1", &fields).unwrap_err();
+        assert_eq!(err.code, "palette_role_missing");
+        assert!(err.message.contains("text"), "{}", err.message);
+    }
+
+    #[test]
+    fn palette_contrast_rejects_unreadable_text_and_names_the_ratio() {
+        let fields = palette(
+            json!({"bg": "#ffffff", "surface": "#ffffff", "text": "#9a9a9a"}),
+            "#1d4ed8",
+        );
+        let err = verify_palette_contrast("ps-1", &fields).unwrap_err();
+        assert_eq!(err.code, "palette_contrast_insufficient");
+        assert!(err.message.contains("text on surface"), "{}", err.message);
+        assert!(err.message.contains("2.8"), "{}", err.message);
+    }
+
+    #[test]
+    fn palette_contrast_allows_dark_board_with_light_paper() {
+        // Felt Board shape: text never sits on bg; the paper colour does.
+        let fields = palette(
+            json!({"bg": "#143D38", "surface": "#F4EFE2", "text": "#2E2A22"}),
+            "#C8442B",
+        );
+        verify_palette_contrast("ps-1", &fields).unwrap();
+        // A ground that carries neither text nor paper is unusable.
+        let dead = palette(
+            json!({"bg": "#777777", "surface": "#ffffff", "text": "#111111"}),
+            "#C8442B",
+        );
+        let err = verify_palette_contrast("ps-1", &dead).unwrap_err();
+        assert_eq!(err.code, "palette_contrast_insufficient");
+        assert!(err.message.contains("bg"), "{}", err.message);
+    }
+
+    #[test]
+    fn palette_contrast_allows_highlighter_accents_but_not_dead_ones() {
+        // Acid Press shape: 1.15:1 on white, but text on the fill is 16:1.
+        let highlighter = palette(
+            json!({"bg": "#FFFFFF", "surface": "#FFFFFF", "text": "#111111"}),
+            "#D8FF36",
+        );
+        verify_palette_contrast("ps-1", &highlighter).unwrap();
+        // Mid-grey accent: invisible on the surface and unreadable under text.
+        let dead = palette(
+            json!({"bg": "#FFFFFF", "surface": "#FFFFFF", "text": "#767676"}),
+            "#C0C0C0",
+        );
+        let err = verify_palette_contrast("ps-1", &dead).unwrap_err();
+        assert_eq!(err.code, "palette_contrast_insufficient");
+        assert!(err.message.contains("accent"), "{}", err.message);
+    }
+
+    fn pad(body: &str) -> String {
+        format!("{body}\n{}", " ".repeat(80))
+    }
+
+    #[test]
+    fn shadcn_export_is_parsed_not_substring_matched() {
+        let real = pad(r##"{"type":"registry:theme","cssVars":{"light":{"background":"#fff"}},"meta":{"componentManifest":["button"]}}"##);
+        verify_file_body("lang", "file", "shadcn_export", None, "application/json", &real).unwrap();
+        let top_level = pad(r##"{"type":"registry:theme","cssVars":{"theme":{"radius":"0"}},"componentManifest":["button"]}"##);
+        verify_file_body("lang", "file", "shadcn_export", None, "application/json", &top_level).unwrap();
+
+        // Every required token present, none of them where it counts.
+        let vacuous = pad(r##"{"note":"\"registry:theme\" \"cssVars\" \"componentManifest\"","type":"other"}"##);
+        let err = verify_file_body("lang", "file", "shadcn_export", None, "application/json", &vacuous)
+            .unwrap_err();
+        assert_eq!(err.code, "shadcn_export_invalid");
+        let empty_vars = pad(r##"{"type":"registry:theme","cssVars":{},"componentManifest":["button"]}"##);
+        assert!(verify_file_body("lang", "file", "shadcn_export", None, "application/json", &empty_vars).is_err());
+        let not_json = pad(r##""registry:theme" "cssVars" "componentManifest" and nothing else at all"##);
+        assert!(verify_file_body("lang", "file", "shadcn_export", None, "application/json", &not_json).is_err());
+    }
+
+    #[test]
+    fn design_md_front_matter_keys_must_be_in_the_front_matter() {
+        let real = pad("---\nversion: alpha\nname: Akte\ncomponents:\n  button: {}\n---\n\n# Akte\n\nBody text long enough.");
+        verify_file_body("lang", "file", "design_md", None, "text/markdown", &real).unwrap();
+        let body_only = pad("---\nname: Akte\n---\n\n# Akte\n\nThe version: alpha format lists components further down.");
+        let err = verify_file_body("lang", "file", "design_md", None, "text/markdown", &body_only)
+            .unwrap_err();
+        assert_eq!(err.code, "design_md_invalid");
+        let unclosed = pad("---\nversion: alpha\ncomponents: {}\n\n# Akte never closes its front matter");
+        assert!(verify_file_body("lang", "file", "design_md", None, "text/markdown", &unclosed).is_err());
+    }
+
+    #[test]
+    fn component_spec_sections_must_be_headings() {
+        let real = pad("# shadcn/ui Components\n\n## ShadSync visual profile\n\n## Signature component recipes\n\n### button\n### card\n### input\n### tabs\n\n## Preview shots\n");
+        verify_file_body("lang", "file", "shadcn_component_spec", None, "text/markdown", &real).unwrap();
+        let prose = pad("This file has no shadcn/ui Components, ShadSync visual profile, Signature component recipes or Preview shots sections; discard buttonless inputs and tabs.");
+        let err = verify_file_body("lang", "file", "shadcn_component_spec", None, "text/markdown", &prose)
+            .unwrap_err();
+        assert_eq!(err.code, "shadcn_component_spec_invalid");
+        let substring_names = pad("# shadcn/ui Components\n## ShadSync visual profile\n## Signature component recipes\n## Preview shots\n\ndiscard the buttonhole, inputs and tabstops");
+        assert!(verify_file_body("lang", "file", "shadcn_component_spec", None, "text/markdown", &substring_names).is_err());
+    }
+
+    #[test]
+    fn invalid_banned_pattern_fails_instead_of_vanishing() {
+        let bands: serde_json::Value = serde_json::from_str(
+            r#"{"schema": "katagami:voice-bands/v1", "banned_patterns": ["not just (\\w+, but"]}"#,
+        )
+        .unwrap();
+        let texts = vec![("replica:x".to_string(), "It is not just fast, but kind.".to_string())];
+        let err = check_voice_bands_against(&bands, &texts, &texts).unwrap_err();
+        assert!(err.contains("banned_patterns"), "{err}");
+        assert!(err.contains("not just (\\w+, but"), "{err}");
+    }
+
+    #[test]
+    fn repair_prompt_describes_how_failures_are_reported() {
+        let payload = json!({"code": "composition_padded"});
+        let prompt = repair_task_prompt(2, "lang-1", "", "synthesize_language", &payload);
+        assert!(prompt.starts_with("REPAIR RUN 2/4 for DesignLanguage 'lang-1'."), "{prompt}");
+        assert!(prompt.contains("composition_padded"));
+        assert!(prompt.contains("lists every gate that failed"), "{prompt}");
+        assert!(!prompt.contains("FIRST failing gate"), "{prompt}");
     }
 }

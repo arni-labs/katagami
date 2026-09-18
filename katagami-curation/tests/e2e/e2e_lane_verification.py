@@ -427,18 +427,22 @@ def run_art_style_case(
     return job_id, art_id
 
 
-def run_palette_case(label, tokens_payload, expect_published):
+GOOD_NEUTRALS = {"bg": "#faf7f0", "surface": "#ffffff", "text": "#1c1a16", "muted": "#6b655a"}
+
+
+def run_palette_case(label, tokens_payload, expected_error=None, neutrals=GOOD_NEUTRALS, accent="#7c6f57"):
+    """expected_error=None means the palette must publish; otherwise the job
+    must fail with that finalizer error code and the palette stay unpublished."""
     jpg = jpeg_bytes()
     tokens_id = make_file(f"{label}-tokens.css", tokens_payload.encode(), "text/plain")
     thumb_id = make_file(f"{label}-pthumb.jpg", jpg, "image/jpeg")
 
     pal_id = create_entity("PaletteSystems")
-    flat = {"bg": "#faf7f0", "surface": "#ffffff", "ink": "#1c1a16", "muted": "#6b655a",
-            "accent": "#7c6f57", "error": "#b3402f", "warning": "#b3862f", "success": "#3f7a4e"}
+    flat = {**neutrals, "accent": accent, "error": "#b3402f", "warning": "#b3862f", "success": "#3f7a4e"}
     must_act("PaletteSystems", pal_id, "SubmitPaletteSystem", {
         "name": f"E2E {label}", "slug": f"e2e-{label}",
-        "signature": json.dumps([{"hex": "#7c6f57", "name": "Ochre ink"}]),
-        "neutrals": json.dumps({k: v for k, v in flat.items() if k in ("bg", "surface", "ink", "muted")}),
+        "signature": json.dumps([{"hex": accent, "name": "Primary accent"}]),
+        "neutrals": json.dumps(neutrals),
         "semantic": json.dumps({k: v for k, v in flat.items() if k in ("error", "warning", "success")}),
         "mood": json.dumps({"words": ["calm", "warm"]}),
         "ramps": json.dumps({"accent": ["#efe9dd", "#cbbfa4", "#7c6f57", "#4e4636"]}),
@@ -468,14 +472,14 @@ def run_palette_case(label, tokens_payload, expect_published):
     job = wait_finalized_job(job_id)
     pal = get_entity("PaletteSystems", pal_id)
     job_status, pal_status = entity_status(job), entity_status(pal)
-    err = (job.get("ErrorMessage") or (job.get("fields") or {}).get("error_message") or "")[:200]
+    err = (job.get("ErrorMessage") or (job.get("fields") or {}).get("error_message") or "")[:400]
 
-    if expect_published:
+    if expected_error is None:
         report(f"palette/{label}: job Completed", job_status == "Completed", f"job={job_status} err={err}")
         report(f"palette/{label}: palette Published", pal_status == "Published", f"palette={pal_status}")
     else:
         report(f"palette/{label}: job Failed", job_status == "Failed", f"job={job_status}")
-        report(f"palette/{label}: rejection names the tokens export", "palette_tokens_export_invalid" in err, f"err={err}")
+        report(f"palette/{label}: rejection is {expected_error}", expected_error in err, f"err={err}")
         report(f"palette/{label}: palette NOT published", pal_status != "Published", f"palette={pal_status}")
 
 
@@ -552,14 +556,25 @@ def main():
     print("== stage 4: palette happy path ==")
     good_tokens = "/* E2E — Katagami palette tokens */\n:root {\n" + "".join(
         f"  --ds-{k}: {v};\n" for k, v in {
-            "bg": "#faf7f0", "surface": "#ffffff", "ink": "#1c1a16", "muted": "#6b655a",
+            "bg": "#faf7f0", "surface": "#ffffff", "text": "#1c1a16", "muted": "#6b655a",
             "accent": "#7c6f57", "error": "#b3402f", "warning": "#b3862f", "success": "#3f7a4e",
         }.items()
     ) + "}\n/* DTCG */\n" + json.dumps({"color": {"accent": {"$type": "color", "$value": "#7c6f57"}}})
-    run_palette_case("good", good_tokens, expect_published=True)
+    run_palette_case("good", good_tokens)
 
     print("== stage 5: palette rejection (garbage tokens export) ==")
-    run_palette_case("bad", "oops, not a tokens document", expect_published=False)
+    run_palette_case("bad", "oops, not a tokens document", expected_error="palette_tokens_export_invalid")
+
+    print("== stage 6: palette contrast gate ==")
+    run_palette_case("highlighter", good_tokens, accent="#D8FF36")
+    run_palette_case("dark-board", good_tokens,
+                     neutrals={"bg": "#143D38", "surface": "#F4EFE2", "text": "#2E2A22", "muted": "#6b655a"})
+    run_palette_case("no-text-role", good_tokens, expected_error="palette_role_missing",
+                     neutrals={"bg": "#faf7f0", "surface": "#ffffff", "ink": "#1c1a16"})
+    run_palette_case("grey-on-white", good_tokens, expected_error="palette_contrast_insufficient",
+                     neutrals={"bg": "#ffffff", "surface": "#ffffff", "text": "#9a9a9a"})
+    run_palette_case("dead-accent", good_tokens, expected_error="palette_contrast_insufficient",
+                     neutrals={"bg": "#ffffff", "surface": "#ffffff", "text": "#767676"}, accent="#C0C0C0")
 
     print()
     print(f"== RESULT: {len(PASS)} passed, {len(FAIL)} failed ==")

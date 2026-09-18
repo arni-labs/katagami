@@ -70,9 +70,15 @@ temper.action('PaletteSystems', eid, 'SetCore', {
 flat = {**neutrals, "accent": signature[0]["hex"], **semantic}
 ```
 
-**Contrast is enforced deterministically by the finalizer** — `text`↔`surface` and
-`text`↔`bg` must clear WCAG AA (≥ 4.5:1), and the primary accent must clear ≥ 3.0:1
-on `surface`, or the palette is rejected back to you. Pick colors accordingly.
+**Contrast is enforced deterministically by the finalizer** (`palette_role_missing`,
+`palette_contrast_insufficient`), on opaque hexes:
+
+- `neutrals` must carry `bg`, `surface` and `text`.
+- `text` on `surface` ≥ 4.5:1.
+- `bg` must carry content: `text` **or** the `surface` color reaches 4.5:1 on it
+  (a dark board under light paper is fine; a ground nothing reads on is not).
+- the primary accent reaches 3.0:1 on `surface`, **or** `text` reaches 4.5:1 on the
+  accent (a highlighter fill behind text).
 
 **Ramps** — a tonal scale (50..950) for at least `accent` and a `neutral` ramp.
 Each step a real hex, monotonic in lightness.
@@ -115,8 +121,7 @@ temper.action('PaletteSystems', eid, 'SetUsageGuidance', {'usage_guidance': json
 Do not proceed until: `signature` has 1–4 valid hexes (`[0]` is the primary accent);
 `neutrals` has bg/surface/text/muted/border; `semantic` has success/warning/error/info;
 `ramps` has `neutral` + `accent` (>= 4 steps each); `proof_scenes` has the three keys;
-and the contrast rules above hold (text↔surface, text↔bg ≥ 4.5:1; accent↔surface ≥ 3.0:1)
-— the finalizer rejects palettes that fail.
+and the contrast rules above hold — the finalizer rejects palettes that fail.
 
 ## ARTIFACT PHASE
 
