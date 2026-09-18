@@ -2,6 +2,7 @@
 use sha2::{Digest, Sha256};
 use temper_wasm_sdk::prelude::*;
 
+mod art_style_gallery;
 mod art_style_review;
 mod facets;
 mod taste_doc;
@@ -2968,17 +2969,19 @@ fn verify_synthesized_art_styles(
         }
         let thumbnail_file_id = required_string_field(id, &lane_fields, "thumbnail_file_id")?;
 
-        for file_id in &reference_ids {
-            verify_lane_image_file(
-                ctx,
-                api_url,
-                headers,
-                "ArtStyle",
-                id,
-                file_id,
-                "reference_image",
-            )?;
-        }
+        art_style_gallery::verify_gallery(
+            id,
+            &lane_fields,
+            &prompt_template,
+            &reference_ids,
+            &thumbnail_file_id,
+            |file_id, sha256| {
+                verify_lane_image_file(ctx, api_url, headers, "ArtStyle", id, file_id, "gallery_image")?;
+                verify_art_style_proof_file(
+                    ctx, api_url, headers, id, file_id, sha256, true, "gallery_image",
+                )
+            },
+        )?;
         for file_id in &proof_ids {
             verify_lane_image_file(ctx, api_url, headers, "ArtStyle", id, file_id, "proof_shot")?;
         }
