@@ -212,13 +212,16 @@ const required = [
     read(`../katagami-commons/policies/${stem}.cedar`),
     /forbid\(principal, action, resource is \w+\)\s*\nunless \{ action (?:== Action::"read"|in \[Action::"read", Action::"list"\])[\s\S]*?context\.creator_sub == principal\.id/,
   ]),
-  // Attribution is curator/pipeline-only: SetCredits/SetModelProvenance reach
-  // Published, so a creator must not rewrite them on their own published record.
-  ...["design_language","art_style","palette_system"].map((stem) => [
+  // These lanes retain curator-only attribution. ArtStyle's state machine
+  // permits attribution authoring only before publication (checked below).
+  ...["design_language","palette_system"].map((stem) => [
     `${stem}.cedar routes SetCredits/SetModelProvenance to owner|curator|service`,
     read(`../katagami-commons/policies/${stem}.cedar`),
     /Action::"SetCredits",[\s\S]*?Action::"SetModelProvenance",[\s\S]*?unless \{[\s\S]*?\["owner", "curator"\]/,
   ]),
+  ["art_style.cedar limits contributor attribution to prepublication states",
+   read("../katagami-commons/policies/art_style.cedar"),
+   /action in \[Action::"SetCredits", Action::"SetModelProvenance"\][\s\S]*?unless \{[^;]*context has status && \["Draft", "UnderReview"\]\.contains\(context\.status\)/],
   // feedback_response was a bare `permit(principal, action, ...)` — the ARN-315
   // hole in its simplest form. It must now forbid all but service/owner/curator.
   ["feedback_response.cedar is no longer an open grant (ARN-315)",
