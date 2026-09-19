@@ -84,6 +84,12 @@ export const EVENT_ATTRS = {
   // MemberActivityDay action name; `error_kind` is the closed
   // ACTIVITY_ERROR_KINDS vocabulary (member-activity-core.mjs).
   activity_dispatch_failed: new Set(["action", "error_kind", "user_hash"]),
+  // Ask the library / the language linter: where the time went, never what was
+  // asked. `reason` is the closed pair jev | other.
+  ask_library: new Set(["tier", "kind", "results", "duration_ms", "read_ms", "want_ms", "fit_ms"]),
+  ask_library_failed: new Set(["tier", "reason"]),
+  check_against_language: new Set(["tier", "pass", "unclear", "fail"]),
+  check_against_language_failed: new Set(["tier", "reason"]),
 };
 
 // Module-load invariant: no allow-listed key may be identity-shaped or a

@@ -446,3 +446,15 @@ export function topTraits(dna, n = 5) {
     .sort((a, b) => b.value - a.value)
     .slice(0, n);
 }
+
+/** The labels to print on a gallery card, from stored fields of any model's
+ *  answers to this question set: a card describes, it does not compare. */
+export function cardTraits(fields, n = 3) {
+  if (!text(fields?.style_dna_version).startsWith(`${STYLE_DNA_SET}/`)) return [];
+  const dna = parse(fields?.style_dna, null);
+  if (!dna || typeof dna !== "object" || Array.isArray(dna)) return [];
+  return STYLE_DNA_QUESTIONS.filter((q) => typeof dna[q.id] === "number" && dna[q.id] >= TRAIT_AT)
+    .sort((a, b) => dna[b.id] - dna[a.id])
+    .slice(0, n)
+    .map((q) => q.label);
+}

@@ -20,6 +20,8 @@ export interface ArtStyleItem {
   /** CDN src -> /api/file proxy fallback for published asset URLs (ARN-354). */
   imageFallbacks?: Record<string, string>;
   tags: string[];
+  /** Style-DNA traits this style answers most strongly (may be empty). */
+  traits?: string[];
   /** Canonical taxonomy category ids (for shelving the lane by category). */
   taxonomyIds?: string[];
 }
@@ -104,6 +106,9 @@ export function ArtStyleCard({
             <span key={t}>· {t}</span>
           ))}
         </div>
+        {art.traits && art.traits.length > 0 ? (
+          <p className="truncate text-[12.5px] leading-snug text-muted-foreground">{art.traits.join(" · ")}</p>
+        ) : null}
       </div>
     </article>
   );

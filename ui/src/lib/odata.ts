@@ -1124,6 +1124,7 @@ export interface PageOpts {
   search?: string;
   hue?: string; // hue_bucket facet (design languages)
   family?: string; // family_id facet (design languages)
+  trait?: string; // style-DNA trait id (languages + art styles)
 }
 
 function odataLiteral(s: string): string {
@@ -1138,6 +1139,7 @@ function pageQuery(
     searchField?: "search_blob" | "name_tags";
     hue?: string;
     family?: string;
+    trait?: string;
   } = {},
 ): string {
   const clauses = ["Status eq 'Published'"];
@@ -1156,6 +1158,8 @@ function pageQuery(
   if (facets.hue) clauses.push(`hue_bucket eq '${odataLiteral(facets.hue)}'`);
   if (facets.family)
     clauses.push(`family_id eq '${odataLiteral(facets.family)}'`);
+  // style_traits is ' id id id ' — the spaces make this a whole-id match.
+  if (facets.trait) clauses.push(`contains(style_traits,' ${odataLiteral(facets.trait)} ')`);
   const params = new URLSearchParams();
   params.set("$filter", clauses.join(" and "));
   params.set("$orderby", "Id desc");
@@ -1199,10 +1203,11 @@ export async function pageDesignLanguages({
   search,
   hue,
   family,
+  trait,
 }: PageOpts = {}): Promise<PageResult<DesignLanguage>> {
   try {
     const resp = await odata<{ value?: Record<string, unknown>[] }>(
-      `DesignLanguages?${pageQuery(cursor, limit, search, { searchField: "search_blob", hue, family })}`,
+      `DesignLanguages?${pageQuery(cursor, limit, search, { searchField: "search_blob", hue, family, trait })}`,
     );
     const rows = (resp.value ?? [])
       .map(normalizeDesignLanguageRow)
@@ -1225,12 +1230,12 @@ export async function pageDesignLanguages({
 async function pageLane(
   set: string,
   demo: LaneEntity[],
-  { cursor, limit = 48, search }: PageOpts,
+  { cursor, limit = 48, search, trait }: PageOpts,
 ): Promise<PageResult<LaneEntity>> {
   try {
     const resp = await odata<{ value?: Record<string, unknown>[] }>(
       // Lanes carry a backfilled search_blob too → case-insensitive search.
-      `${set}?${pageQuery(cursor, limit, search, { searchField: "search_blob" })}`,
+      `${set}?${pageQuery(cursor, limit, search, { searchField: "search_blob", trait })}`,
     );
     const rows = (resp.value ?? []).map((r) => normalizeLaneRow(r, set));
     return slicePage(rows, limit);

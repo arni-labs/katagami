@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PageResult } from "@/lib/odata";
 
-export type Facets = { hue?: string; family?: string };
+export type Facets = { hue?: string; family?: string; trait?: string };
 
 type LoadPage<T> = (input: {
   cursor?: string | null;
   search?: string;
   hue?: string;
   family?: string;
+  trait?: string;
 }) => Promise<PageResult<T>>;
 
 /**
@@ -42,6 +43,7 @@ export function useInfiniteList<T>(
       search: search.trim() || undefined,
       hue: facets.hue,
       family: facets.family,
+      trait: facets.trait,
     }),
     [search, facets],
   );
