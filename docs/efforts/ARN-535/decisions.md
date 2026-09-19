@@ -43,3 +43,14 @@
 - **Options**: drop the manifest requirement to match reality; keep it.
 - **Chose keep**. Identical outcome to the old gate (0 of 61 pass), so it is not a regression, and the skill requires the field. The real finding is that 23 languages carry `shadcn_export_verified` despite this — a separate defect, since some path set that boolean without reading the body.
 - **Where**: `is_shadcn_registry_theme`.
+
+## Accept both YAML styles, both heading styles, and either manifest position
+- **Came up because**: the review panel (round 1, all three reviewers) found the first tightening rejected shapes the old substring gate accepted — a flow-mapping front matter (`{version: alpha, components: {}}`), Setext headings, a capitalised `### Input`, and an export whose top-level `componentManifest` is empty beside a populated `meta.componentManifest`.
+- **Options**: keep the narrow forms and let repair fix the artifacts; widen each gate to the shapes the contract actually allows.
+- **Chose widen**. The gate's job is to stop the body-substring defect, not to pick a spelling. Measured after: the component-spec gate newly fails 0 of 61 (and passes 3 more than the old gate); the export gate is unchanged at 0; DESIGN.md still newly fails 3, all of them the real defect. Given up: the checks are longer, and flow-mapping key scanning does not track braces inside quoted scalars — stated in the function's own comment.
+- **Where**: `front_matter_block`, `front_matter_declares`, `flow_mapping_keys`, `markdown_has_heading`, `has_whole_token`, `is_shadcn_registry_theme`; tests in `real_gate_panel_tests`.
+
+## Close a code fence only on a marker at least as long as the one that opened it
+- **Came up because**: the panel found a four-backtick example containing a ```` ```tsx ```` line inverted the fence state for the rest of the file, so a later real heading read as fenced.
+- **Chose** to track the opening marker and its length, per CommonMark. Given up: nothing measured — no stored spec triggered it, but the failure mode is silent and the fix is small.
+- **Where**: `markdown_has_heading`.

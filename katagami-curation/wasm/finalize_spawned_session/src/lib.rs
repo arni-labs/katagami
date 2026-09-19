@@ -2505,24 +2505,84 @@ fn verify_file_body(
 }
 
 /// True when `body` opens with a `---` YAML front-matter block that closes and
-/// declares every key at the top level (column 0) of that block.
+/// declares every key at the top level of that block.
+///
+/// Both YAML styles count: block mappings declare a key at column 0, flow
+/// mappings (`{version: alpha, components: {}}`) declare it after the opening
+/// brace or a comma. Keys nested under another key never count — the point of
+/// the gate is that the document's own front matter carries them, not that the
+/// string appears somewhere in the file.
 fn front_matter_has_keys(body: &str, keys: &[&str]) -> bool {
-    let mut lines = body.lines();
-    if lines.next().map(str::trim_end) != Some("---") {
+    let Some(block) = front_matter_block(body) else {
         return false;
-    }
-    let mut found = vec![false; keys.len()];
-    for line in lines {
+    };
+    keys.iter().all(|key| front_matter_declares(block, key))
+}
+
+/// The text between the opening `---` and the closing `---`, or None when the
+/// body does not open with front matter or never closes it.
+fn front_matter_block(body: &str) -> Option<&str> {
+    let rest = body.strip_prefix("---")?;
+    let rest = rest.strip_prefix('\r').unwrap_or(rest);
+    let rest = rest.strip_prefix('\n')?;
+    let mut end = 0usize;
+    for line in rest.split_inclusive('\n') {
         if line.trim_end() == "---" {
-            return found.iter().all(|seen| *seen);
+            return Some(&rest[..end]);
         }
-        for (seen, key) in found.iter_mut().zip(keys) {
-            *seen |= line
-                .strip_prefix(key)
-                .is_some_and(|rest| rest.starts_with(':'));
-        }
+        end += line.len();
     }
-    false
+    None
+}
+
+fn front_matter_declares(block: &str, key: &str) -> bool {
+    if block.trim_start().starts_with('{') {
+        return flow_mapping_keys(block).iter().any(|found| *found == key);
+    }
+    // Block style: the key must sit at column 0, so an indented key stays the
+    // property of whatever it is nested under.
+    block.match_indices(key).any(|(start, _)| {
+        block[start + key.len()..].starts_with(':')
+            && (start == 0 || block[..start].ends_with('\n'))
+    })
+}
+
+/// The keys of the outermost flow mapping (`{version: alpha, meta: {x: 1}}` →
+/// `version`, `meta`). Keys of nested mappings are not the document's own.
+/// Braces inside quoted scalars are not tracked; front matter here does not use
+/// them, and the gate is about which keys the document declares, not YAML
+/// conformance.
+fn flow_mapping_keys(block: &str) -> Vec<&str> {
+    let bytes = block.as_bytes();
+    let is_key_char = |c: u8| c.is_ascii_alphanumeric() || c == b'_' || c == b'-';
+    let mut keys = Vec::new();
+    let mut depth = 0usize;
+    let mut expect_key = false;
+    let mut i = 0usize;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'{' => {
+                depth += 1;
+                expect_key = depth == 1;
+            }
+            b'}' => depth = depth.saturating_sub(1),
+            b',' => expect_key = depth == 1,
+            c if expect_key && !c.is_ascii_whitespace() => {
+                let start = i;
+                while i < bytes.len() && is_key_char(bytes[i]) {
+                    i += 1;
+                }
+                if i > start && bytes.get(i) == Some(&b':') {
+                    keys.push(&block[start..i]);
+                }
+                expect_key = false;
+                continue;
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    keys
 }
 
 fn is_shadcn_registry_theme(body: &str) -> bool {
@@ -2535,35 +2595,88 @@ fn is_shadcn_registry_theme(body: &str) -> bool {
         .get("cssVars")
         .and_then(|vars| vars.as_object())
         .is_some_and(|scopes| scopes.values().any(non_empty_object));
-    let manifest = theme
-        .get("componentManifest")
-        .or_else(|| theme.pointer("/meta/componentManifest"));
-    theme.get("type").and_then(|v| v.as_str()) == Some("registry:theme")
-        && has_scope
-        && manifest
-            .and_then(|v| v.as_array())
-            .is_some_and(|items| !items.is_empty())
+    // Either position may carry it: the skill's example puts the manifest at the
+    // top level, the site's own generator puts it under `meta`. Check both
+    // rather than the first present, so an empty array beside a real one does
+    // not decide the answer.
+    let manifest = [
+        theme.get("componentManifest"),
+        theme.pointer("/meta/componentManifest"),
+    ]
+    .into_iter()
+    .flatten()
+    .any(|value| value.as_array().is_some_and(|items| !items.is_empty()));
+    theme.get("type").and_then(|v| v.as_str()) == Some("registry:theme") && has_scope && manifest
 }
 
-/// A markdown ATX heading whose text contains `title`, outside code fences.
+/// A markdown heading whose text contains `title`, outside code fences.
+///
+/// Both heading styles count: ATX (`## Preview shots`) and Setext (the title
+/// underlined with `=` or `-`). A fence closes only on a marker at least as
+/// long as the one that opened it, so a ```` ```tsx ```` line inside a
+/// four-backtick example does not invert the fence state for the rest of the
+/// file.
 fn markdown_has_heading(body: &str, title: &str) -> bool {
-    let mut in_fence = false;
-    body.lines().any(|line| {
+    let fence_marker = |line: &str| {
         let line = line.trim_start();
-        if line.starts_with("```") || line.starts_with("~~~") {
-            in_fence = !in_fence;
-            return false;
+        for marker in ['`', '~'] {
+            let run = line.chars().take_while(|c| *c == marker).count();
+            if run >= 3 {
+                return Some((marker, run));
+            }
         }
-        !in_fence && line.starts_with('#') && line.trim_start_matches('#').contains(title)
-    })
+        None
+    };
+    let is_setext_rule = |line: &str| {
+        let line = line.trim();
+        !line.is_empty()
+            && (line.chars().all(|c| c == '=') || line.chars().all(|c| c == '-'))
+    };
+
+    let mut open_fence: Option<(char, usize)> = None;
+    let lines: Vec<&str> = body.lines().collect();
+    for (index, line) in lines.iter().enumerate() {
+        if let Some((marker, run)) = fence_marker(line) {
+            match open_fence {
+                Some((open_marker, open_run)) if open_marker == marker && run >= open_run => {
+                    open_fence = None;
+                }
+                None => open_fence = Some((marker, run)),
+                _ => {}
+            }
+            continue;
+        }
+        if open_fence.is_some() {
+            continue;
+        }
+        let trimmed = line.trim_start();
+        if trimmed.starts_with('#') {
+            if trimmed.trim_start_matches('#').contains(title) {
+                return true;
+            }
+            continue;
+        }
+        if trimmed.contains(title)
+            && lines
+                .get(index + 1)
+                .is_some_and(|next| is_setext_rule(next))
+        {
+            return true;
+        }
+    }
+    false
 }
 
-/// `token` appears delimited by non-identifier characters ("card", not "discard").
+/// `token` appears delimited by non-identifier characters ("card", not
+/// "discard"), ignoring case: a recipe headed `### Input` names the primitive
+/// just as `input` does.
 fn has_whole_token(body: &str, token: &str) -> bool {
     let is_ident = |c: char| c.is_ascii_alphanumeric() || c == '-' || c == '_';
-    body.match_indices(token).any(|(start, _)| {
-        let before = body[..start].chars().next_back();
-        let after = body[start + token.len()..].chars().next();
+    let haystack = body.to_ascii_lowercase();
+    let needle = token.to_ascii_lowercase();
+    haystack.match_indices(&needle).any(|(start, _)| {
+        let before = haystack[..start].chars().next_back();
+        let after = haystack[start + needle.len()..].chars().next();
         !before.is_some_and(is_ident) && !after.is_some_and(is_ident)
     })
 }
@@ -7847,5 +7960,68 @@ mod real_gate_edge_tests {
         let texts = vec![("replica:x".to_string(), "Short text.".to_string())];
         let err = check_voice_bands_against(&bands, &texts, &texts).unwrap_err();
         assert!(err.contains("banned_patterns"), "{err}");
+    }
+}
+
+/// Regressions from the ARN-535 review panel: each gate accepted a shape the
+/// old substring check accepted, and the first tightening narrowed it too far.
+#[cfg(test)]
+mod real_gate_panel_tests {
+    use super::*;
+
+    fn pad(body: &str) -> String {
+        format!("{body}\n{}", " ".repeat(80))
+    }
+
+    #[test]
+    fn front_matter_accepts_yaml_flow_mappings() {
+        let flow = pad(
+            "---\n{version: alpha, components: {}}\n---\n\n# Akte\n\nA body long enough to clear the minimum artifact size for this gate.",
+        );
+        verify_file_body("lang", "file", "design_md", None, "text/markdown", &flow).unwrap();
+        // A key of a mapping nested inside the flow mapping is still not the
+        // document's own.
+        let nested_flow = "---\n{meta: {version: alpha, components: {}}}\n---\nbody";
+        assert!(!front_matter_has_keys(nested_flow, &["version", "components"]));
+    }
+
+    #[test]
+    fn shadcn_export_accepts_a_manifest_in_either_position() {
+        let both = pad(
+            r##"{"type":"registry:theme","cssVars":{"light":{"background":"#fff"}},"componentManifest":[],"meta":{"componentManifest":["button"]}}"##,
+        );
+        verify_file_body("lang", "file", "shadcn_export", None, "application/json", &both).unwrap();
+        let both_empty = pad(
+            r##"{"type":"registry:theme","cssVars":{"light":{"background":"#fff"}},"componentManifest":[],"meta":{"componentManifest":[]}}"##,
+        );
+        assert!(
+            verify_file_body("lang", "file", "shadcn_export", None, "application/json", &both_empty)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn component_spec_accepts_setext_headings_and_capitalised_names() {
+        let setext = pad(
+            "shadcn/ui Components\n====================\n\nShadSync visual profile\n-----------------------\n\nSignature component recipes\n---------------------------\n\n### Button\n### Card\n### Input\n### Tabs\n\nPreview shots\n-------------\n",
+        );
+        verify_file_body("lang", "file", "shadcn_component_spec", None, "text/markdown", &setext)
+            .unwrap();
+    }
+
+    #[test]
+    fn a_longer_fence_does_not_invert_the_heading_scan() {
+        let body = "# shadcn/ui Components\n\n````md\n```tsx\n<Button />\n```\n````\n\n## Preview shots\n";
+        assert!(markdown_has_heading(body, "Preview shots"));
+        // The inner fence's own content is still fenced.
+        let inner = "````md\n```tsx\n## Not a heading\n```\n````\n";
+        assert!(!markdown_has_heading(inner, "Not a heading"));
+    }
+
+    #[test]
+    fn component_names_match_regardless_of_case_but_not_as_substrings() {
+        assert!(has_whole_token("### Input", "input"));
+        assert!(has_whole_token("A TABS row", "tabs"));
+        assert!(!has_whole_token("discard the Cardboard", "card"));
     }
 }

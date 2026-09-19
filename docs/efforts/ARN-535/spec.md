@@ -39,9 +39,12 @@ Stored artifacts are served byte-for-byte by the site (`/language/<id>/shadcn.js
 |---|---|---|---|
 | palette contrast | n/a (did not exist) | 38 of 38 | 0 |
 | shadcn export | 0 of 61 | 0 of 61 | 0 |
+| shadcn component spec | 57 of 61 | 60 of 61 | 0 |
 | DESIGN.md front matter | 31 of 61 | 28 of 61 | 3 |
 
 No stored shadcn export contains `componentManifest` anywhere, so the old substring gate rejected all 61 too. The 23 marked `shadcn_export_verified` were therefore verified by some path that never read the body — worth a separate issue.
+
+The component-spec gate passes three more than the old substring gate: matching headings and whole tokens is more accurate than `contains`, which missed a spec whose section titles are Setext-underlined and counted `buttons` as `button`.
 
 The 3 newly failing DESIGN.md files carry `version:`/`components` in the body but not in the front matter, which is the defect this gate closes. They fail only if re-finalized.
 
