@@ -40,3 +40,12 @@ export function artStyleImageMetadata(raw: string | undefined): Map<string, ArtS
   }
   return result;
 }
+
+/** Older built-in records contain a provenance note instead of a model ID. */
+export function artStyleModelLabel(details: ArtStyleImageMetadata | undefined): string {
+  if (!details) return "";
+  const modelId = /^not exposed by (?:the )?built-in tool$/i.test(details.modelId)
+    ? ""
+    : details.modelId;
+  return [details.provider, modelId].filter(Boolean).join(" · ");
+}

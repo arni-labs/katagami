@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { artStyleImageMetadata } from '../src/lib/art-style-image-metadata.ts';
+import { artStyleImageMetadata, artStyleModelLabel } from '../src/lib/art-style-image-metadata.ts';
 
 const details = artStyleImageMetadata(JSON.stringify({items: [
   {file_id: 'fl-seedream', subject: 'Radio repair', model: {provider: 'ByteDance', model: 'bytedance/seedream/v5/pro/edit'}},
@@ -17,3 +17,7 @@ assert.equal(artStyleImageMetadata('{"items":{}}').size, 0);
 assert.equal(artStyleImageMetadata('{"items":[null,{"file_id":"fl-x","model":42}]}').get('fl-x').modelId, '');
 assert.equal(artStyleImageMetadata('{"references":[{"file":"fl-legacy","model":"exact-model"}]}').get('fl-legacy').modelId, 'exact-model');
 console.log('art-style per-file model provenance: pass');
+
+assert.equal(artStyleModelLabel(details.get('fl-original')), 'OpenAI');
+assert.equal(artStyleModelLabel(details.get('fl-nano')), 'Google · fal-ai/nano-banana-pro/edit');
+assert.equal(artStyleModelLabel(undefined), '');

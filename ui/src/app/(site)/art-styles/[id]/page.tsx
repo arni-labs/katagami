@@ -1,3 +1,4 @@
+import { artStyleModelLabel } from "@/lib/art-style-image-metadata";
 import { notFound } from "next/navigation";
 import { hasCuratorAccess } from "@/lib/owner";
 import Link from "next/link";
@@ -179,9 +180,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
                 </a>
                 <figcaption className="font-mono text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
                   <span className="sr-only">Model ID: </span>
-                  {details?.modelId
-                    ? `${details.provider ? `${details.provider} · ` : ""}${details.modelId}`
-                    : "Model ID not recorded"}
+                  {artStyleModelLabel(details)}
                 </figcaption>
               </figure>
             );
