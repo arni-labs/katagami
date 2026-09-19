@@ -29,6 +29,23 @@ permissions:
   contents: read
 
 jobs:
+  art-style-gallery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mcp/package-lock.json
+      - run: npm ci
+        working-directory: mcp
+      - run: npm run typecheck && npm run test:gallery
+        working-directory: mcp
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --locked
+        working-directory: katagami-curation/wasm/finalize_spawned_session
+
   ui:
     runs-on: ubuntu-latest
     env:

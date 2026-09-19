@@ -292,8 +292,68 @@ For every source and output:
 
 Build two or four proof items: two models for each selected source.
 Both model rows must point to the same source id and source hash for that
-category. Choose the strongest proof output as the thumbnail; no subject role
-is globally privileged.
+category. These proof outputs are separate from the six-image display gallery.
+
+### Six-image display gallery
+
+Every new or revised ArtStyle requires exactly six full-frame gallery images:
+four GPT Image 2.5, one Grok Image, and one Nano Banana. This standing default
+is separate from the two or four portability outputs above. Vary the subjects
+and compositions so the images demonstrate the technique across different content.
+Existing published styles remain available while their revisions are prepared.
+
+Use these exact verified provider/model identities; do not substitute or relabel:
+
+| Count | Provider | Model ID |
+| --- | --- | --- |
+| 4 combined | OpenAI | `openai/gpt-image-2.5/sunburst/text-to-image` or `openai/gpt-image-2.5/flare/text-to-image` |
+| 1 | xAI | `xai/grok-imagine-image/v2.0/text-to-image` |
+| 1 | Google | `fal-ai/nano-banana-pro` |
+
+For each image, send the exact canonical prompt followed by
+`\n\nSubject and scene:\n` and its subject description. Preserve the full actual
+provider prompt and request ID. Import the actual output bytes through
+`import_art_style_proof_image`; retain its Locked File ID and SHA-256. The six
+File IDs and six output hashes must all be distinct. Do not upload duplicates,
+crops, or placeholders to fill slots. Choose the strongest image and place it
+first; `thumbnail_file_id` must equal that first gallery File ID.
+
+The required `gallery_images` MCP input contains six records of this form:
+
+```json
+{
+  "file_id": "<Locked File id>",
+  "subject": "<actual subject and scene>",
+  "model": {"provider": "OpenAI", "model": "openai/gpt-image-2.5/sunburst/text-to-image"},
+  "generation_record": {
+    "schema_version": "1",
+    "kind": "art_style_gallery",
+    "style_slug": "<submitted slug>",
+    "prompt": "<exact full provider prompt>",
+    "canonical_prompt_sha256": "<SHA-256 of canonical prompt UTF-8>",
+    "output": {
+      "file_id": "<same Locked File id>",
+      "sha256": "<actual output byte SHA-256>",
+      "prompt_sha256": "<SHA-256 of full provider prompt UTF-8>",
+      "provider_request_id": "<actual provider request id, required>"
+    }
+  }
+}
+```
+
+All hashes are lowercase 64-character SHA-256. The MCP binds the records to the
+submitted slug, canonical prompt and thumbnail, then stores them in
+`reference_manifest` schema version `2`, with the same ordered
+`reference_image_file_ids`. The finalizer repeats validation and reads the
+Locked file bytes before attesting or publishing. `model_provenance.images`
+continues to describe the two portability models; each gallery item records its
+own producer.
+
+If access is denied or the provider restricts the account, preserve successful
+images and the current published style, report the exact remaining slots, and
+stop dependent generation. Do not switch identity or fabricate evidence. A
+merged contract is not proof that the live service accepts it: inspect the
+current tool schema and report any deployed-contract mismatch.
 
 ### Independent prompt and visual review
 
@@ -331,7 +391,7 @@ flip a score or label.
 
 ### Submit
 
-Call `submit_art_style` once with the complete Draft, imported proof records,
+Call `submit_art_style` once with the complete Draft, six `gallery_images`, imported proof records,
 independent source review, independent prompt review, and blind portability
 report. Do not call `SubmitForReview`, `AttachArtStyleReview`,
 `MarkQualityPassed`, or `Publish`.
@@ -342,7 +402,12 @@ Return:
 - `VerificationQueued` status;
 - verification job id;
 - exact canonical prompt hash;
-- the two image models and selected source roles used.
+- the two portability models and selected source roles used;
+- all six gallery image records and their exact producing models.
+
+After finalizer publication, verify the actual detail page renders and decodes
+exactly six distinct gallery images, including the first image as hero. A
+queued job, successful upload, or thumbnail alone is not a completed gallery.
 
 ## Palettes and design languages
 

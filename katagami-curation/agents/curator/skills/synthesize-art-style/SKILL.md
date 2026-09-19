@@ -1,7 +1,7 @@
 # Synthesize Art Style
 
 Create one complete `ArtStyle`: a medium, one canonical aesthetic prompt,
-slot-specific subject recipes, optional example images, multi-model proof shots,
+slot-specific subject recipes, six gallery images, multi-model proof shots,
 a thumbnail, source/rights evidence, and structured review evidence.
 
 ## When to use
@@ -28,7 +28,7 @@ An ArtStyle is one prompt, not an adapter system.
 - Do not create engine hints or model-specific aesthetic variants.
 - Do not write `in the style of ...`.
 - Do not put the invented catalog name in the operative prompt.
-- Do not require a reference image. References are optional gallery examples.
+- Do not require a style reference as input. The six output gallery examples are not style references.
 - A supplied content image may be edited, but it is not a style reference.
 
 ## Before starting
@@ -261,18 +261,32 @@ portability_report = {
 If any model misses a threshold, the style is not portable. Improve the one
 prompt and rerun the failed model; never add a per-model prompt.
 
-## 5. Write files and submit once
+## 5. Six-image display gallery
+
+Every new or revised style requires six display images, separately from the
+compact portability proof: four GPT Image 2.5, one Grok Image, one Nano Banana.
+Use the exact gallery model IDs, prompt construction and generation-record
+schema in `mcp/skills/katagami-contributor/SKILL.md` (the canonical contribution
+contract at https://github.com/arni-labs/katagami/blob/master/mcp/skills/katagami-contributor/SKILL.md).
+Use fresh varied subjects and compositions. All six output Files must be Locked
+and have distinct IDs and byte hashes. Preserve actual prompts, request IDs,
+model identity and output hashes. Order the strongest image first and use its
+File ID as thumbnail. Do not relabel another model or fill missing slots with
+duplicate images. Preserve a published style while a revision is incomplete.
+A provider restriction blocks dependent generation; retain successes and report
+the missing slots without changing identities to evade the restriction.
+
+## 6. Write files and submit once
 
 Import every contributor-supplied source and proof image.
 `proof_shots_manifest.items` must mirror all two or four proof records exactly,
 including category, subject, composition, source medium, mode, model/provider,
-`style_reference_used: false`, and the unmodified `generation_record`. Choose
-the strongest of those exact verified proof Files as the thumbnail; do
-not force the same role across styles and do not upload a separate or cropped
-thumbnail through this workflow.
-Optional example references use
-`reference_image_file_ids` and `reference_manifest`; pass `[]` and
-`{"items":[]}` when none exist.
+`style_reference_used: false`, and the unmodified `generation_record`.
+Keep proof separate from the display gallery. Put the six ordered gallery File
+IDs in `reference_image_file_ids` and their complete generation records in
+`reference_manifest` with `schema_version: "2"`. The thumbnail must be the first
+gallery File; do not upload a separate crop. The finalizer checks the gallery
+contract and actual Locked bytes before any attestation or publication.
 
 ```python
 slot_recipes = {
@@ -307,7 +321,7 @@ temper.action("ArtStyles", eid, "SubmitArtStyle", {
     "slot_recipes": json.dumps(slot_recipes, ensure_ascii=False),
     "guidance": json.dumps(guidance, ensure_ascii=False),
     "reference_image_file_ids": json.dumps(reference_ids),
-    "reference_manifest": json.dumps({"items": reference_manifest}, ensure_ascii=False),
+    "reference_manifest": json.dumps({"schema_version": "2", "items": reference_manifest}, ensure_ascii=False),
     "proof_shots_file_ids": json.dumps(proof_ids),
     "proof_shots_manifest": json.dumps(
         {"schema_version": "3", "items": proof_manifest},
@@ -348,3 +362,5 @@ temper.done("synthesize_art_style complete")
   authorized to use every source; import them into Katagami and retain their
   generation records. Katagami validates but never generates submission media.
 - Missing model access is a visible failed/blocked review, never a silent pass.
+
+After finalizer publication, inspect the actual page and verify all six distinct gallery images render and decode, including the first image as hero. A thumbnail or queued verification alone is not completion.

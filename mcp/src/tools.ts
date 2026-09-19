@@ -29,6 +29,8 @@ import {
   pairsWithFromImagery,
 } from "./design-md-art-style.js";
 
+import { artStyleGalleryImages, gallerySubmissionFields } from "./art-style-gallery.js";
+
 const ART_STYLE_PROOF_CATEGORIES = [
   "human_portrait",
   "nonhuman_living",
@@ -452,11 +454,14 @@ export function buildServer(auth: AuthInfo): McpServer {
           .describe(
             "Two distinct image models × the same one or two contributor-owned source images chosen for this style. Import sources and outputs first; bind their exact hashes and the canonical prompt hash in each generation_record. Do not reuse a recurring catalog fixture set.",
           ),
+        gallery_images: artStyleGalleryImages.describe(
+          "Six distinct gallery images: four GPT Image 2.5, one Grok Image, and one Nano Banana. Each prompt is the canonical prompt plus \n\nSubject and scene:\n and its subject. These are separate from portability proof shots.",
+        ),
         thumbnail_file_id: z
           .string()
           .min(1)
           .describe(
-            "Choose the strongest thumbnail from the verified proof file_ids; no semantic role is forced across styles",
+            "The first gallery image file_id; order the gallery with its strongest image first",
           ),
         source_basis: z
           .record(z.string(), z.unknown())
@@ -508,8 +513,12 @@ export function buildServer(auth: AuthInfo): McpServer {
     async (a) => {
       const set = KINDS.art_style.set;
       const proofIds = a.proof_shots.map((proof) => proof.file_id);
-      if (!proofIds.includes(a.thumbnail_file_id))
-        return fail("thumbnail_file_id must identify one of the verified proof shots.");
+      let galleryFields;
+      try {
+        galleryFields = gallerySubmissionFields(a.gallery_images, a.slug, a.prompt_template, a.thumbnail_file_id);
+      } catch (error) {
+        return fail(error instanceof Error ? error.message : "Invalid gallery evidence");
+      }
       const thumbId = a.thumbnail_file_id;
       if (a.entity_id) {
         const draft = await getEntity(id, set, a.entity_id);
@@ -528,8 +537,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         prompt_template: a.prompt_template,
         slot_recipes: asJsonString(a.slot_recipes),
         guidance: a.guidance ?? "",
-        reference_image_file_ids: [],
-        reference_manifest: asJsonString({ items: [] }),
+        ...galleryFields,
         proof_shots_file_ids: proofIds,
         proof_shots_manifest: asJsonString({
           schema_version: "3",
@@ -568,7 +576,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         verification_job_id: verificationJobId,
         attributed_to: id.email,
         url: galleryUrl("art_style", entityId),
-        governed_files: { proof_shots: proofIds, thumbnail: thumbId },
+        governed_files: { gallery_images: galleryFields.reference_image_file_ids, proof_shots: proofIds, thumbnail: thumbId },
         next:
           "The curator finalizer is independently verifying the exact prompt, rights basis, imported file hashes, depiction grammar, and proof matrix. It alone may advance or publish the Draft.",
       });
