@@ -156,32 +156,33 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
       ) : null}
 
       <section aria-label="Style gallery">
-        <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           {[hero, ...gallery].filter(Boolean).map((src, i) => {
             const details = images.metadata[src];
             const comparison = proofs.includes(src);
             const subject = details?.subject || `${name} ${comparison ? "model comparison" : "example"} ${i + 1}`;
             return (
-              <figure key={src} className="min-w-0 space-y-2">
+              <figure key={src} className="relative min-w-0 overflow-hidden">
                 <a
                   href={src}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`Open full image: ${subject}`}
-                  className="block bg-muted/30 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground"
+                  className="block aspect-square bg-muted/30 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foreground"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={src}
                     alt={subject}
                     loading={i < 2 ? "eager" : "lazy"}
-                    className="aspect-[4/3] w-full object-contain"
+                    className="h-full w-full object-cover"
                   />
                 </a>
-                <figcaption className="font-mono text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
-                  <span className="sr-only">Model ID: </span>
-                  {artStyleModelLabel(details)}
-                </figcaption>
+                {artStyleModelLabel(details) ? (
+                  <figcaption className="pointer-events-none absolute bottom-2 right-2 max-w-[calc(100%-1rem)] bg-black/75 px-2 py-1 text-[10px] font-medium leading-tight text-white sm:text-xs">
+                    {artStyleModelLabel(details)}
+                  </figcaption>
+                ) : null}
               </figure>
             );
           })}

@@ -41,11 +41,18 @@ export function artStyleImageMetadata(raw: string | undefined): Map<string, ArtS
   return result;
 }
 
-/** Older built-in records contain a provenance note instead of a model ID. */
+/** Display names are separate from the exact IDs retained in provenance. */
 export function artStyleModelLabel(details: ArtStyleImageMetadata | undefined): string {
   if (!details) return "";
-  const modelId = /^not exposed by (?:the )?built-in tool$/i.test(details.modelId)
-    ? ""
-    : details.modelId;
-  return [details.provider, modelId].filter(Boolean).join(" · ");
+  const id = details.modelId;
+  if (/nano-banana-pro/i.test(id)) return "Nano Banana Pro";
+  if (/nano-banana/i.test(id)) return "Nano Banana";
+  const seedream = id.match(/seedream[/-]v?(\d+(?:\.\d+)?)([/-]pro)?/i);
+  if (seedream) return `Seedream ${seedream[1]}${seedream[2] ? " Pro" : ""}`;
+  if (/gpt-image-2\.5/i.test(id)) return "GPT Image 2.5";
+  if (/grok-imagine/i.test(id)) return "Grok Imagine";
+  if (!id || /^not exposed by (?:the )?built-in tool$/i.test(id)) return details.provider;
+  return id.split("/").filter((part) =>
+    !/^(fal-ai|bytedance|openai|google|xai|edit|text-to-image|image-to-image)$/i.test(part)
+  ).join(" ").replaceAll("-", " ");
 }

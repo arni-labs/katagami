@@ -19,5 +19,7 @@ assert.equal(artStyleImageMetadata('{"references":[{"file":"fl-legacy","model":"
 console.log('art-style per-file model provenance: pass');
 
 assert.equal(artStyleModelLabel(details.get('fl-original')), 'OpenAI');
-assert.equal(artStyleModelLabel(details.get('fl-nano')), 'Google · fal-ai/nano-banana-pro/edit');
+assert.equal(artStyleModelLabel(details.get('fl-nano')), 'Nano Banana Pro');
 assert.equal(artStyleModelLabel(undefined), '');
+
+assert.equal(artStyleModelLabel(details.get('fl-seedream')), 'Seedream 5 Pro');

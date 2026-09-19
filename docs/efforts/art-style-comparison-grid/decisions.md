@@ -15,3 +15,11 @@
 **Options**: Keep the explanatory headings and numbered captions; use only model labels.
 **Chose model labels only because**: The images carry the visual comparison; subjects remain available as accessible image descriptions.
 **Where**: ui/src/app/(site)/art-styles/[id]/page.tsx.
+
+### D3 — Dense tiles with model-name overlays
+
+**Decision**: Use equal square tiles with a bottom-right model-name overlay.
+**Came up because**: Rita requested a dense grid and model names without edit or other endpoint suffixes.
+**Options**: Preserve full image proportions with captions below; fill equal tiles and keep originals accessible on click.
+**Chose equal tiles because**: The requested grid is compact and visually consistent; cropping affects only the thumbnail view and exact provenance remains stored.
+**Where**: The art-style detail page and art-style-image-metadata.ts.
