@@ -7775,3 +7775,74 @@ mod real_gate_tests {
         assert!(!prompt.contains("FIRST failing gate"), "{prompt}");
     }
 }
+
+#[cfg(test)]
+mod real_gate_edge_tests {
+    use super::*;
+
+    #[test]
+    fn front_matter_keys_are_top_level_only() {
+        // Nested under another key is not the document's own version/components.
+        let nested = "---\nmeta:\n  version: 1\n  components: []\n---\nbody";
+        assert!(!front_matter_has_keys(nested, &["version", "components"]));
+        // CRLF line endings still close the block.
+        let crlf = "---\r\nversion: alpha\r\ncomponents: {}\r\n---\r\nbody";
+        assert!(front_matter_has_keys(crlf, &["version", "components"]));
+        // A key prefix is not the key.
+        let prefix = "---\nversioning: no\ncomponents: {}\n---\nbody";
+        assert!(!front_matter_has_keys(prefix, &["version", "components"]));
+    }
+
+    #[test]
+    fn headings_inside_code_fences_do_not_count() {
+        let fenced = "# shadcn/ui Components\n\n```md\n## ShadSync visual profile\n```\n";
+        assert!(markdown_has_heading(fenced, "shadcn/ui Components"));
+        assert!(!markdown_has_heading(fenced, "ShadSync visual profile"));
+    }
+
+    #[test]
+    fn whole_token_match_ignores_substrings() {
+        assert!(has_whole_token("use a `card` here", "card"));
+        assert!(!has_whole_token("discard the cardboard", "card"));
+        assert!(has_whole_token("### card", "card"));
+        assert!(!has_whole_token("data-card-id", "card"));
+    }
+
+    #[test]
+    fn contrast_rejects_translucent_and_malformed_roles() {
+        let fields = json!({
+            "neutrals": {"bg": "#ffffff", "surface": "#ffffff", "text": "#11111180"},
+            "signature": [{"hex": "#1d4ed8"}]
+        });
+        assert_eq!(
+            verify_palette_contrast("ps-1", &fields).unwrap_err().code,
+            "palette_role_missing"
+        );
+        // An empty signature array cannot carry a primary accent.
+        let no_accent = json!({
+            "neutrals": {"bg": "#ffffff", "surface": "#ffffff", "text": "#111111"},
+            "signature": []
+        });
+        assert!(verify_palette_contrast("ps-1", &no_accent).is_err());
+    }
+
+    #[test]
+    fn palette_contrast_failures_are_repairable() {
+        let fields = json!({
+            "neutrals": {"bg": "#ffffff", "surface": "#ffffff", "text": "#9a9a9a"},
+            "signature": [{"hex": "#1d4ed8"}]
+        });
+        assert!(verify_palette_contrast("ps-1", &fields).unwrap_err().repairable);
+    }
+
+    #[test]
+    fn banned_pattern_entry_must_be_a_string() {
+        let bands: serde_json::Value = serde_json::from_str(
+            r#"{"schema": "katagami:voice-bands/v1", "banned_patterns": [42]}"#,
+        )
+        .unwrap();
+        let texts = vec![("replica:x".to_string(), "Short text.".to_string())];
+        let err = check_voice_bands_against(&bands, &texts, &texts).unwrap_err();
+        assert!(err.contains("banned_patterns"), "{err}");
+    }
+}
