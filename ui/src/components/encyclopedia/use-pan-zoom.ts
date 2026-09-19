@@ -41,13 +41,18 @@ export function usePrefersReducedMotion(): boolean {
 
 const noop = () => () => {};
 
+/** The map owns every wheel and trackpad gesture over it. */
+function swallowWheel(event: WheelEvent) {
+  event.preventDefault();
+}
+
 /** False during server render and hydration, true once on the client — for
  *  portals to document.body. */
 export function useMounted(): boolean {
   return useSyncExternalStore(noop, () => true, () => false);
 }
 
-export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: number = ZOOM_MAX) {
+export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: number = ZOOM_MAX, minZoom: number = ZOOM_MIN) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [camera, setCamera] = useState<Camera>(initial);
   const [animate, setAnimate] = useState(false);
@@ -61,6 +66,10 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
   // is exactly the re-render the memoised cards exist to avoid.
   const draggingRef = useRef(false);
   const animateTimer = useRef<number | null>(null);
+  // The camera readable from a handler without being its dependency, so the
+  // handlers keep one identity across a pan and the memoised cards stay put.
+  const cameraNow = useRef(camera);
+  useEffect(() => { cameraNow.current = camera; }, [camera]);
 
   const glide = useCallback((next: Camera) => {
     setAnimate(true);
@@ -69,11 +78,16 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     animateTimer.current = window.setTimeout(() => setAnimate(false), 520);
   }, []);
 
-  const clampK = useCallback((k: number) => Math.min(maxZoom, Math.max(ZOOM_MIN, k)), [maxZoom]);
+  /** The one clamp. Every path that sets a zoom goes through it, including
+   *  the map's own framing, so there is no second piece of arithmetic to keep
+   *  in step. `from` is where the camera is now: the floor never forces the
+   *  camera inward, so when the paper has shrunk under a camera already
+   *  further out, a zoom-out holds instead of jumping in. */
+  const clampK = useCallback((k: number, from: number) => Math.min(maxZoom, Math.max(Math.min(minZoom, from), k)), [maxZoom, minZoom]);
 
   const zoomAbout = useCallback((factor: number, sx: number, sy: number, smooth = false) => {
     setCamera((cam) => {
-      const k = clampK(cam.k * factor);
+      const k = clampK(cam.k * factor, cam.k);
       const ratio = k / cam.k;
       const next = { k, x: sx - (sx - cam.x) * ratio, y: sy - (sy - cam.y) * ratio };
       return next;
@@ -104,7 +118,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     const maxY = Math.max(...rects.map((r) => r.y + r.h));
     const w = Math.max(1, maxX - minX);
     const h = Math.max(1, maxY - minY);
-    const k = clampK(Math.min(maxK, (vw - padding * 2) / w, (vh - padding * 2) / h));
+    const k = clampK(Math.min(maxK, (vw - padding * 2) / w, (vh - padding * 2) / h), cameraNow.current.k);
     glide({ k, x: (vw - w * k) / 2 - minX * k, y: (vh - h * k) / 2 - minY * k });
   }, [glide, clampK]);
 
@@ -115,7 +129,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     const sx = screen?.x ?? el.clientWidth / 2;
     const sy = screen?.y ?? el.clientHeight / 2;
     setCamera((cam) => {
-      const kk = clampK(k ?? cam.k);
+      const kk = clampK(k ?? cam.k, cam.k);
       return { k: kk, x: sx - wx * kk, y: sy - wy * kk };
     });
     setAnimate(true);
@@ -135,6 +149,26 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     const factor = Math.min(1.4, Math.max(0.7, Math.exp(-event.deltaY * scale)));
     zoomAbout(factor, sx, sy);
   }, [zoomAbout]);
+
+  /** A node has taken this pointer for its own drag. The camera does not pan
+   *  with it, but the pointer still counts toward a pinch: a second finger
+   *  landing anywhere then zooms, as it would if the first had landed on
+   *  bare paper. Returns true when that pinch has begun, so the node drag
+   *  can stand down. */
+  const claimPointer = useCallback((event: React.PointerEvent): boolean => {
+    const el = viewportRef.current;
+    if (!el) return false;
+    pinch.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pinch.current.size !== 2) return false;
+    for (const id of pinch.current.keys()) { try { el.setPointerCapture(id); } catch { /* pointer already gone */ } }
+    const [a, b] = [...pinch.current.values()];
+    const rect = el.getBoundingClientRect();
+    const cam = cameraNow.current;
+    pinchStart.current = { dist: Math.hypot(a.x - b.x, a.y - b.y), k: cam.k, mid: { x: (a.x + b.x) / 2 - rect.left, y: (a.y + b.y) / 2 - rect.top }, cam };
+    drag.current = null;
+    return true;
+  }, []);
+  const pinching = useCallback(() => pinchStart.current !== null, []);
 
   const onPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     const el = viewportRef.current;
@@ -166,7 +200,7 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
       const [a, b] = [...pinch.current.values()];
       const start = pinchStart.current;
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
-      const k = clampK(start.k * (dist / Math.max(1, start.dist)));
+      const k = clampK(start.k * (dist / Math.max(1, start.dist)), start.k);
       const el = viewportRef.current!;
       const rect = el.getBoundingClientRect();
       const mid = { x: (a.x + b.x) / 2 - rect.left, y: (a.y + b.y) / 2 - rect.top };
@@ -198,14 +232,17 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
   }, []);
 
   // Wheel must be non-passive to preventDefault; React attaches passive wheel
-  // listeners, so register directly.
-  useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    const handler = (e: WheelEvent) => e.preventDefault();
-    el.addEventListener("wheel", handler, { passive: false });
-    return () => el.removeEventListener("wheel", handler);
+  // listeners, so register directly — and register on whatever element the
+  // viewport is right now. An effect run once at mount found nothing on a
+  // phone, where the map is mounted later on request, and the page scrolled
+  // under every wheel and trackpad gesture over the map.
+  const wheelTarget = useRef<HTMLDivElement | null>(null);
+  const guardWheel = useCallback((el: HTMLDivElement | null) => {
+    if (wheelTarget.current) wheelTarget.current.removeEventListener("wheel", swallowWheel);
+    wheelTarget.current = el;
+    el?.addEventListener("wheel", swallowWheel, { passive: false });
   }, []);
+  useEffect(() => () => guardWheel(null), [guardWheel]);
 
   const toWorld = useCallback((sx: number, sy: number) => ({ x: (sx - camera.x) / camera.k, y: (sy - camera.y) / camera.k }), [camera]);
 
@@ -218,5 +255,5 @@ export function usePanZoom(initial: Camera = { x: 0, y: 0, k: 1 }, maxZoom: numb
     onPointerLeave: endPointer,
   }), [onWheel, onPointerDown, onPointerMove, endPointer]);
 
-  return { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld };
+  return { viewportRef, camera, setCamera, animate, dragging, draggingRef, handlers, zoomStep, zoomAbout, fit, centerOn, glide, toWorld, guardWheel, claimPointer, pinching, clampK };
 }
