@@ -212,7 +212,12 @@ export function AtlasMap({ styles, families, holes, unplaced, sample }: { styles
     const now = new Set([...shown.placed.map((s) => s.id), ...shown.soon.map((h) => h.id)]);
     const gone = { styles: lastShown.current.styles.filter((s) => !now.has(s.id)), holes: lastShown.current.holes.filter((h) => !now.has(h.id)) };
     lastShown.current = { styles: shown.placed, holes: shown.soon };
-    if (reduced || gone.styles.length + gone.holes.length === 0) return;
+    if (reduced || gone.styles.length + gone.holes.length === 0) {
+      // Nothing left this time: make sure an earlier departure whose timer this
+      // change cancelled is not left mounted, invisible but focusable.
+      setLeaving((was) => (was.styles.length + was.holes.length === 0 ? was : { styles: [], holes: [] }));
+      return;
+    }
     setLeaving(gone);
     const timer = window.setTimeout(() => setLeaving({ styles: [], holes: [] }), 220);
     return () => window.clearTimeout(timer);
@@ -349,6 +354,8 @@ export function AtlasMap({ styles, families, holes, unplaced, sample }: { styles
         role="application"
         aria-label="Library atlas. Drag to pan, scroll or pinch to zoom, press a card to open it or to see what is tucked behind it."
         onKeyDown={(e) => {
+          // Cmd/Ctrl with + − 0 belongs to the browser's own zoom.
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
           if (e.key === "Escape") setFocusId(null);
           else if (e.key === "+" || e.key === "=") zoomStep(1);
           else if (e.key === "-" || e.key === "_") zoomStep(-1);

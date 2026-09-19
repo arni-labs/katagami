@@ -6,7 +6,7 @@ encyclopedia_made_work.py) and carries no made work. Each hole is put beside
 every placed style and Typesafe Jev answers one noul per pair: "is this style
 the kind of made work nearest to this direction?". A hole whose best answers
 reach PLACE_AT sits beside its nearest style, leaning toward the next two, then
-is pushed clear of the style cards and of other holes. A hole nothing comes near
+takes the nearest free spot clear of the style cards and of other holes. A hole nothing comes near
 stays off the map: the atlas is of visual work, and the encyclopedia also names
 things (a music genre, a material) no style here approaches.
 
@@ -138,23 +138,44 @@ def main():
                 "nearness": near[0][0],
             }
         )
-    # Push holes clear of style cards (which do not move) and of each other.
-    fixed = [(s["x"], s["y"]) for s in styles]
+    # Seat each hole in the free spot nearest where it wants to be, the surest
+    # holes first: a spiral outward from its target, a fraction of a card per
+    # step, taking the first spot clear of every style card (which do not move)
+    # and every hole already seated. Pushing overlapping holes apart pairwise
+    # did not converge where a dozen directions crowd one style, and left a
+    # third of them stacked where the page could never draw them.
+    import math
+
+    taken = [(s["x"], s["y"]) for s in styles]
     placed.sort(key=lambda h: -h["nearness"])
-    for _ in range(300):
-        moved = False
-        for a, h in enumerate(placed):
-            others = fixed + [(o["x"], o["y"]) for b, o in enumerate(placed) if b != a]
-            for ox, oy in others:
-                dx, dy = h["x"] - ox, h["y"] - oy
-                if abs(dx) < TILE[0] and abs(dy) < TILE[1]:
-                    if TILE[0] - abs(dx) <= TILE[1] - abs(dy):
-                        h["x"] += (TILE[0] - abs(dx)) * (1 if dx >= 0 else -1) * 0.5 + (1e-4 if dx == 0 else 0)
-                    else:
-                        h["y"] += (TILE[1] - abs(dy)) * (1 if dy >= 0 else -1) * 0.5 + (1e-4 if dy == 0 else 0)
-                    moved = True
-        if not moved:
-            break
+
+    def clear(x, y):
+        # A hair more than a card, so rounding the coordinates cannot reopen an overlap.
+        return all(abs(x - ox) >= TILE[0] * 1.02 or abs(y - oy) >= TILE[1] * 1.02 for ox, oy in taken)
+
+    seated = []
+    for h in placed:
+        spot = None
+        for ring in range(0, 400):
+            radius = ring * TILE[1] * 0.5
+            steps = max(1, int(2 * math.pi * radius / (TILE[0] * 0.5)))
+            for t in range(steps):
+                angle = 2 * math.pi * t / steps
+                x, y = h["x"] + radius * math.cos(angle) * TILE[0] / TILE[1], h["y"] + radius * math.sin(angle)
+                if -0.04 <= x <= 1.04 and -0.04 <= y <= 1.04 and clear(x, y):
+                    spot = (x, y)
+                    break
+            if spot:
+                break
+        if not spot:
+            sys.exit(f"no free spot found for {h['name']} — the paper is full; raise PLACE_AT")
+        h["x"], h["y"] = spot
+        taken.append(spot)
+        seated.append(h)
+    placed = seated
+    overlaps = sum(1 for i, a in enumerate(placed) for b in placed[i + 1 :] if abs(a["x"] - b["x"]) < TILE[0] and abs(a["y"] - b["y"]) < TILE[1])
+    if overlaps:
+        sys.exit(f"{overlaps} holes still overlap after seating")
     for h in placed:
         h["x"], h["y"], h["nearness"] = round(h["x"], 4), round(h["y"], 4), round(h["nearness"], 2)
     OUT.parent.mkdir(parents=True, exist_ok=True)
