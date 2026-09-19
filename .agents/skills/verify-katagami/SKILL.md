@@ -64,7 +64,7 @@ Mark these verified-unreachable with the prerequisite. Do not fake them, and do 
 
 ## Evidence
 
-- Save responses, rendered HTML, screenshots, and the relevant log excerpts under `/tmp/verify-katagami/<date>/`, and reference the files in the report or the `.proofs/` entry.
+- Save responses, rendered HTML, screenshots, and the relevant log excerpts under `/tmp/verify-katagami/<date>/`, and reference the files in the PR or effort summary.
 - Prove the real path: entity state read back over OData, not just HTTP 200s. Check side effects (entities created, files written, the export artifact stored) alongside what is visible.
 - For any change a visitor can see, the evidence includes the rendered page, before and after.
 - The contract suites are a cross-check, not the proof: `cd ui && npm test` and `cd katagami-curation && make test-integration` tell you the contracts still hold, and say nothing about whether the running app works.
