@@ -52,7 +52,7 @@ const Tile = memo(function Tile({ style: s, dim, rank, pressed, hidden, familyLa
         </span>
         <span className="block truncate px-2 pb-1.5 pt-1.5 font-display text-[14.5px] font-bold leading-tight tracking-[-0.01em]">{s.name}</span>
         {familyLabel ? (
-          <span className="absolute -top-2.5 left-2 bg-[var(--yuzu)] px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-black">
+          <span className="absolute -top-2.5 left-2 whitespace-nowrap bg-[var(--yuzu)] px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-black">
             {familyLabel}
           </span>
         ) : null}
