@@ -126,17 +126,15 @@ export function cellMaterial(cell: EncyclopediaCell): CellMaterial {
   return { image, text, palette, nameOnly: !image && !text && !palette };
 }
 
-/** What a cell shows of itself when the map is far out and there are no words
- *  yet. A picture when the cell has one; failing that the material it does
- *  have — a palette, a passage — so the field reads as material rather than as
- *  a grid of empty boxes. Only a cell with nothing at all falls back to its
- *  name, and the plate says so. Every face carries the caption that says where
- *  it came from; nothing is presented as the cell's own study unless it is. */
+/** The face a cell turns to the map. Nothing on it says where it came from
+ *  — a picture is a visual reference, and the sheet names the record — so a
+ *  face carries only what is drawn plus the eyebrow and ink the sheet's
+ *  rows use. */
 export type CellFace =
-  | { kind: "image"; url: string; alt: string; caption: string; eyebrow: string; ink: string }
-  | { kind: "palette"; swatches: string[]; caption: string; eyebrow: string; ink: string }
-  | { kind: "passage"; text: string; caption: string; eyebrow: string; ink: string }
-  | { kind: "name"; caption: string; eyebrow: string; note: string; ink: string };
+  | { kind: "image"; url: string; alt: string; eyebrow: string; ink: string }
+  | { kind: "palette"; swatches: string[]; eyebrow: string; ink: string }
+  | { kind: "passage"; text: string; eyebrow: string; ink: string }
+  | { kind: "name"; eyebrow: string; note: string; ink: string };
 
 /** Every face a cell can turn, best first. The list always ends in a face that
  *  cannot fail, so a picture whose asset has gone missing steps down to the
@@ -145,15 +143,13 @@ export type CellFace =
  *  nothing made for it, or a cell whose picture would not load. */
 export function cellFaces(cell: EncyclopediaCell): CellFace[] {
   const m = cellMaterial(cell);
-  const from = (piece: { source: "study" | "record"; eyebrow: string; title: string }) =>
-    piece.source === "study" ? `${piece.eyebrow} · ${piece.title}` : `from ${piece.title} · ${piece.eyebrow.toLowerCase()}`;
   const faces: CellFace[] = [];
-  if (m.image) faces.push({ kind: "image", url: m.image.url, alt: m.image.alt, caption: from(m.image), eyebrow: m.image.eyebrow, ink: m.image.ink });
-  if (m.palette) faces.push({ kind: "palette", swatches: m.palette.swatches, caption: from(m.palette), eyebrow: m.palette.eyebrow, ink: m.palette.ink });
-  if (m.text) faces.push({ kind: "passage", text: m.text.text, caption: from(m.text), eyebrow: m.text.eyebrow, ink: m.text.ink });
+  if (m.image) faces.push({ kind: "image", url: m.image.url, alt: m.image.alt, eyebrow: m.image.eyebrow, ink: m.image.ink });
+  if (m.palette) faces.push({ kind: "palette", swatches: m.palette.swatches, eyebrow: m.palette.eyebrow, ink: m.palette.ink });
+  if (m.text) faces.push({ kind: "passage", text: m.text.text, eyebrow: m.text.eyebrow, ink: m.text.ink });
   faces.push(faces.length
-    ? { kind: "name", caption: "The picture on this cell would not load", eyebrow: "Picture unavailable", note: "The material is recorded; its asset did not load.", ink: "var(--graphite)" }
-    : { kind: "name", caption: "Named cell · no material yet", eyebrow: "Named cell", note: "Nothing has been made for this cell yet.", ink: "var(--ramune)" });
+    ? { kind: "name", eyebrow: "Picture unavailable", note: "The material is recorded; its asset did not load.", ink: "var(--graphite)" }
+    : { kind: "name", eyebrow: "Named cell", note: "Nothing has been made for this cell yet.", ink: "var(--ramune)" });
   return faces;
 }
 
