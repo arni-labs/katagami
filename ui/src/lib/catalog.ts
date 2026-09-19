@@ -15,6 +15,9 @@ import {
   STYLE_DNA_QUESTIONS,
   type StyleDna,
 } from "./style-dna.mjs";
+import { createHash } from "node:crypto";
+import atlasFamilies from "@/data/atlas-families.json";
+import atlasHoles from "@/data/atlas-holes.json";
 import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
@@ -830,6 +833,8 @@ export type AtlasStyle = {
   neighbors: { id: string; similarity: number }[];
 };
 
+export type AtlasHole = { id: string; name: string; description: string; x: number; y: number };
+
 export async function libraryAtlas(tier: Tier) {
   const kinds = ["language", "art_style"] as const;
   const rowSets = await Promise.all(kinds.map((k) => visibleRows(k, tier)));
@@ -895,18 +900,30 @@ export async function libraryAtlas(tier: Tier) {
   const families = [...byFamily.entries()]
     .filter(([, members]) => members.length >= 2)
     .map(([id, members]) => {
-      const named = members.find((m) => m.id === medoidOf.get(id)) ?? [...members].sort((a, b) => a.name.localeCompare(b.name))[0];
+      // A family has a name of its own (data/atlas-families.json, written for
+      // this run). Without one it borrows a member's the caller can see.
+      const medoid = medoidOf.get(id) ?? "";
+      const given = atlasFamilies.atlas_version === version ? (atlasFamilies.names as Record<string, string>)[createHash("sha256").update(medoid).digest("hex").slice(0, 12)] : undefined;
+      const named = members.find((m) => m.id === medoid) ?? [...members].sort((a, b) => a.name.localeCompare(b.name))[0];
+      const x = members.reduce((sum, m) => sum + m.x, 0) / members.length;
+      const y = members.reduce((sum, m) => sum + m.y, 0) / members.length;
       return {
         id,
-        label: named.name,
+        label: given ?? named.name,
+        lead: named.id,
         count: members.length,
-        x: members.reduce((sum, m) => sum + m.x, 0) / members.length,
-        y: members.reduce((sum, m) => sum + m.y, 0) / members.length,
+        x,
+        y,
       };
     })
     .sort((a, b) => b.count - a.count);
 
-  return { tier, version, styles, families, unplaced: rows.length - placed.length };
+  // Coming soon: directions the encyclopedia names that no style here was made
+  // for, placed beside the made work nearest to them (scripts/atlas_holes.py).
+  // They belong to one atlas run, so they are drawn only beside that run's places.
+  const holes: AtlasHole[] = atlasHoles.atlas_version === version ? atlasHoles.holes.map((h) => ({ id: h.id, name: h.name, description: h.description, x: h.x, y: h.y })) : [];
+
+  return { tier, version, styles, families, holes, unplaced: rows.length - placed.length };
 }
 
 // --- check a page against a language -----------------------------------------

@@ -1,0 +1,3749 @@
+{
+ "atlas_version": "atlas/jev-1.13.0/2026-09-19",
+ "holes": [
+  {
+   "id": "art-deco",
+   "name": "Art Deco",
+   "description": "A decorative style that appeared in Paris in the 1910s and dominated the 1920s and early 1930s internationally, in architecture, interiors, furniture, jewellery, graphics and clothing. Its vocabulary is streamlined…",
+   "x": 0.6344,
+   "y": 0.4233,
+   "nearness": 0.9
+  },
+  {
+   "id": "east-asian-calligraphy",
+   "name": "East Asian Calligraphy",
+   "description": "Chinese, Korean, and Japanese brush-writing traditions and their modern descendants.",
+   "x": 0.8371,
+   "y": 0.0423,
+   "nearness": 0.89
+  },
+  {
+   "id": "geometric-abstraction",
+   "name": "Geometric Abstraction",
+   "description": "Abstraction built from geometric form, often in flat non-illusionistic space and referring to nothing outside the picture. It runs from Malevich and Mondrian through Concrete art and hard-edge painting into Latin…",
+   "x": 0.8372,
+   "y": 0.5838,
+   "nearness": 0.88
+  },
+  {
+   "id": "manga",
+   "name": "Manga",
+   "description": "Japanese comics, with a set of conventions that travel with them: black and white art, right-to-left reading, stylised faces, shaped speech balloons, speed lines and sound words drawn into the picture. Serialisation in…",
+   "x": 0.8681,
+   "y": 0.5855,
+   "nearness": 0.87
+  },
+  {
+   "id": "stains-washes",
+   "name": "Stains/Washes",
+   "description": "Stains/Washes uses dilute or absorbed color to make stains and washes.",
+   "x": 0.8083,
+   "y": 0.3723,
+   "nearness": 0.87
+  },
+  {
+   "id": "woodcut-and-linocut",
+   "name": "Woodcut and Linocut",
+   "description": "Relief-printing practices that cut away a block before inking it.",
+   "x": 0.6954,
+   "y": 0.6285,
+   "nearness": 0.87
+  },
+  {
+   "id": "cut-ripped",
+   "name": "Cut/Ripped",
+   "description": "Artists make Cut/Ripped work by cutting or tearing material during or after construction.",
+   "x": 0.5447,
+   "y": 0.894,
+   "nearness": 0.86
+  },
+  {
+   "id": "illustration",
+   "name": "Illustration",
+   "description": "A visual practice used in commissioned work, books, and independent art.",
+   "x": 0.7427,
+   "y": 0.4042,
+   "nearness": 0.86
+  },
+  {
+   "id": "japanese-culture-or-style",
+   "name": "Japanese (culture or style)",
+   "description": "Japanese (culture or style) groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8551,
+   "y": 0.1984,
+   "nearness": 0.86
+  },
+  {
+   "id": "printed-matter",
+   "name": "Printed Matter",
+   "description": "Printed Matter includes printed material used as art or as source material.",
+   "x": 0.528,
+   "y": 0.7554,
+   "nearness": 0.86
+  },
+  {
+   "id": "textile-arts",
+   "name": "Textile Arts",
+   "description": "Textile art uses textile support or media and includes processes such as weaving, sewing, knitting, and related work.",
+   "x": 0.7594,
+   "y": 0.596,
+   "nearness": 0.86
+  },
+  {
+   "id": "analog-horror",
+   "name": "Analog Horror",
+   "description": "Web horror uses simulated broadcasts, degraded recording, and serial fragments to build fictional worlds.",
+   "x": 0.0614,
+   "y": 0.2627,
+   "nearness": 0.85
+  },
+  {
+   "id": "carving",
+   "name": "Carving",
+   "description": "Carving cuts material away to make form or decoration.",
+   "x": 0.5804,
+   "y": 0.254,
+   "nearness": 0.85
+  },
+  {
+   "id": "neo-pop",
+   "name": "Neo-Pop",
+   "description": "Jeff Koons, Keith Haring, Jean-Michel Basquiat, Damien Hirst, Takashi Murakami, Yayoi Kusama, Romero Britto. 1980s. Pop Art, Minimalism, Superflat.",
+   "x": 0.8488,
+   "y": 0.7608,
+   "nearness": 0.85
+  },
+  {
+   "id": "poster",
+   "name": "Poster",
+   "description": "A poster is a public printed sheet that combines text and image.",
+   "x": 0.8891,
+   "y": 0.6203,
+   "nearness": 0.85
+  },
+  {
+   "id": "retrofuturism",
+   "name": "Retrofuturism",
+   "description": "Jules Verne, H.G. Wells, Frank R. Paul, Hugh Ferriss, Norman Bel Geddes. Late 19th Century - Early 20th Century. The Jetsons, Fallout franchise, Metropolis, Brazil, Bioshock, Sky Captain and the World of Tomorrow, The…",
+   "x": 0.1414,
+   "y": 0.3777,
+   "nearness": 0.85
+  },
+  {
+   "id": "work-on-paper",
+   "name": "Work on Paper",
+   "description": "Work on Paper includes manuscripts, prints, drawings, collages, and paintings that use paper as their support.",
+   "x": 0.7068,
+   "y": 0.4266,
+   "nearness": 0.85
+  },
+  {
+   "id": "cyberpunk",
+   "name": "Cyberpunk",
+   "description": "Cyberpunk groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.3198,
+   "y": 0.6621,
+   "nearness": 0.84
+  },
+  {
+   "id": "divisionism",
+   "name": "Divisionism",
+   "description": "A late nineteenth-century Italian painting style that sets hatching, dashes or areas of contrasting color beside one another to produce a luminous optical effect at a distance.",
+   "x": 0.9332,
+   "y": 0.3765,
+   "nearness": 0.84
+  },
+  {
+   "id": "east-asian",
+   "name": "East Asian",
+   "description": "East Asian styles and cultures grouped in Getty AAT's regional hierarchy.",
+   "x": 0.851,
+   "y": 0.2266,
+   "nearness": 0.84
+  },
+  {
+   "id": "hard-edge",
+   "name": "Hard-Edge",
+   "description": "West Coast painting from the 1960s that uses large areas with precise outlines extending across the canvas, often in two or three saturated hues. Jules Langsner named the style in 1959.",
+   "x": 0.9365,
+   "y": 0.6919,
+   "nearness": 0.84
+  },
+  {
+   "id": "japanese-styles-styles",
+   "name": "Japanese styles (styles)",
+   "description": "Japanese styles (styles) groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.6837,
+   "y": 0.1648,
+   "nearness": 0.84
+  },
+  {
+   "id": "postmodern-architecture-and-design",
+   "name": "Postmodern Architecture and Design",
+   "description": "A movement in art and design from about 1970 to 1990 that deliberately rejected modernism's clarity and simplicity in favor of complexity, contradiction, vivid color, theatricality and historical reference.",
+   "x": 0.7477,
+   "y": 0.8229,
+   "nearness": 0.84
+  },
+  {
+   "id": "relief",
+   "name": "Relief",
+   "description": "Relief is sculpture that projects from a backing plane.",
+   "x": 0.6128,
+   "y": 0.2041,
+   "nearness": 0.84
+  },
+  {
+   "id": "superflat",
+   "name": "Superflat",
+   "description": "Takashi Murakami and Kaikai Kiki artists. The documented period is 1990s onward, named in 2000. The cited work includes painting, sculpture, exhibitions and commercial collaborations.",
+   "x": 0.7021,
+   "y": 0.7861,
+   "nearness": 0.84
+  },
+  {
+   "id": "gold-leaf-and-gilding",
+   "name": "Gold Leaf and Gilding",
+   "description": "Gold Leaf and Gilding covers thin gold and the process of applying it to an object.",
+   "x": 0.565,
+   "y": 0.4092,
+   "nearness": 0.83
+  },
+  {
+   "id": "brutalism",
+   "name": "Brutalism",
+   "description": "Postwar architecture that uses rough concrete for structural form and leaves functional parts exposed. Le Corbusier's later work influenced its forceful masses, and Getty dates its main period to the 1960s and 1970s.",
+   "x": 0.4078,
+   "y": 0.5168,
+   "nearness": 0.82
+  },
+  {
+   "id": "glassmorphism",
+   "name": "Glassmorphism",
+   "description": "Michał Malewicz, Microsoft Windows Aero designers, and Apple interface teams. The documented period is 2007 precursors and a named 2020s movement. The cited work includes Windows 11, visionOS, iOS 26, translucent…",
+   "x": 0.323,
+   "y": 0.1109,
+   "nearness": 0.82
+  },
+  {
+   "id": "post-painterly-abstraction",
+   "name": "Post-Painterly Abstraction",
+   "description": "A term Clement Greenberg used for his 1964 Los Angeles exhibition, naming abstraction that dropped Abstract Expressionism's loaded gesture for flat, clear colour and open composition. Colour field painting and hard-edge…",
+   "x": 0.9169,
+   "y": 0.726,
+   "nearness": 0.82
+  },
+  {
+   "id": "punk-music",
+   "name": "punk music",
+   "description": "punk music groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.6386,
+   "y": 0.594,
+   "nearness": 0.82
+  },
+  {
+   "id": "punk-subculture",
+   "name": "punk subculture",
+   "description": "punk subculture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.4962,
+   "y": 0.6259,
+   "nearness": 0.82
+  },
+  {
+   "id": "1980s",
+   "name": "1980s",
+   "description": "This period covers art made during the 1980s.",
+   "x": 0.3107,
+   "y": 0.1378,
+   "nearness": 0.81
+  },
+  {
+   "id": "black-and-white-photography",
+   "name": "Black-and-White Photography",
+   "description": "A photographic practice based on a monochrome tonal range.",
+   "x": 0.3926,
+   "y": 0.4575,
+   "nearness": 0.81
+  },
+  {
+   "id": "delicate-materials",
+   "name": "Delicate Materials",
+   "description": "Delicate Materials includes fragile substances and substances made to look fragile.",
+   "x": 0.4932,
+   "y": 0.7986,
+   "nearness": 0.81
+  },
+  {
+   "id": "en-plein-air",
+   "name": "En plein air",
+   "description": "Painting completed outdoors, championed by the Impressionists.",
+   "x": 1.0189,
+   "y": 0.3312,
+   "nearness": 0.81
+  },
+  {
+   "id": "glass-and-ceramics",
+   "name": "Glass and Ceramics",
+   "description": "Glass and ceramics are inorganic materials used to make artworks and objects.",
+   "x": 0.5579,
+   "y": 0.0866,
+   "nearness": 0.81
+  },
+  {
+   "id": "pastel",
+   "name": "Pastel",
+   "description": "Pastel consists of dry pigment sticks and works made with them.",
+   "x": 0.5777,
+   "y": 0.8832,
+   "nearness": 0.81
+  },
+  {
+   "id": "punk-rock",
+   "name": "punk rock",
+   "description": "punk rock groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.6077,
+   "y": 0.7695,
+   "nearness": 0.81
+  },
+  {
+   "id": "still-lifes",
+   "name": "Still Lifes",
+   "description": "Still lifes make inanimate objects the primary subject of a composition. Getty records examples across painting, mosaic, watercolor, print, collage and photography.",
+   "x": 0.4848,
+   "y": 0.2513,
+   "nearness": 0.81
+  },
+  {
+   "id": "study",
+   "name": "Study",
+   "description": "A Study is a preparatory or exploratory work that is more finished than a sketch.",
+   "x": 0.4727,
+   "y": 0.3805,
+   "nearness": 0.81
+  },
+  {
+   "id": "visual-works-works",
+   "name": "visual works (works)",
+   "description": "Visual Works are created or arranged objects perceived primarily by sight, including pictorial, sculptural, and time-based works.",
+   "x": 0.7919,
+   "y": 0.5629,
+   "nearness": 0.81
+  },
+  {
+   "id": "abstract-art",
+   "name": "Abstract art",
+   "description": "Painting and sculpture composed from shape, colour and line without depicting a subject from the world. The picture is built on relations between its own marks, so the reading of it starts inside the frame. Wikipedia…",
+   "x": 0.837,
+   "y": 0.5557,
+   "nearness": 0.8
+  },
+  {
+   "id": "hardcore-punk",
+   "name": "hardcore punk",
+   "description": "hardcore punk groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.4565,
+   "y": 0.7148,
+   "nearness": 0.8
+  },
+  {
+   "id": "kawaii",
+   "name": "Kawaii",
+   "description": "Kawaii groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.3762,
+   "y": 0.8541,
+   "nearness": 0.8
+  },
+  {
+   "id": "manipulated-photography",
+   "name": "Manipulated Photography",
+   "description": "Photographers alter negatives, prints, or digital files as part of image-making.",
+   "x": 0.9566,
+   "y": 0.7305,
+   "nearness": 0.8
+  },
+  {
+   "id": "monochrome-painting",
+   "name": "Monochrome Painting",
+   "description": "Twentieth-century painters made the restriction to one hue a sustained abstract practice.",
+   "x": 0.8866,
+   "y": 0.1837,
+   "nearness": 0.8
+  },
+  {
+   "id": "punk",
+   "name": "Punk",
+   "description": "The Sex Pistols, Vivienne Westwood, Patti Smith, The Ramones, Richard Hell, The Clash. 1970s. Repo Man, Sid and Nancy, The Young Ones, The Return of the Living Dead, Proto-Punk, Hippie, Glam Rock.",
+   "x": 0.5642,
+   "y": 0.779,
+   "nearness": 0.8
+  },
+  {
+   "id": "tapestry-and-wall-hanging",
+   "name": "Tapestry and Wall Hanging",
+   "description": "Tapestries are heavy woven textiles with pictorial or ornamental decoration. Wall hangings are textiles hung for protection, warmth, or decoration.",
+   "x": 0.8703,
+   "y": 0.5562,
+   "nearness": 0.8
+  },
+  {
+   "id": "glitch-art",
+   "name": "Glitch Art",
+   "description": "Len Lye, Nam June Paik, Cory Arcangel, Rosa Menkman. The documented period is Mid-20th century (precursors), 1990s-2000s (as a distinct art movement). The cited work includes Glitch Art, A Colour Box, Magnet TV, glitsh.",
+   "x": 0.1852,
+   "y": 0.5675,
+   "nearness": 0.79
+  },
+  {
+   "id": "hanging-scroll",
+   "name": "Hanging Scroll",
+   "description": "A hanging scroll mounts painting or calligraphy vertically for display.",
+   "x": 0.8711,
+   "y": 0.0554,
+   "nearness": 0.79
+  },
+  {
+   "id": "hipster",
+   "name": "Hipster",
+   "description": "1940s New York jazz followers and the 1990s-2000s indie scenes around Sub Pop, American Apparel, and alternative neighborhoods. The documented period is 1940s, then 1990s-2000s. The cited work includes independent…",
+   "x": 0.4529,
+   "y": 0.7949,
+   "nearness": 0.79
+  },
+  {
+   "id": "information-design",
+   "name": "Information design",
+   "description": "Drawing made to explain something: a quantity, a network, an assembly, a route. The work is in choosing what to leave out, what to hold constant, and what the reader is meant to compare, so the drawing answers a…",
+   "x": 0.4822,
+   "y": 0.412,
+   "nearness": 0.79
+  },
+  {
+   "id": "large-brushstrokes-loose-brushwork",
+   "name": "Large Brushstrokes/Loose Brushwork",
+   "description": "Artists leave large, expressive brushstrokes visible in Large Brushstrokes/Loose Brushwork.",
+   "x": 0.8041,
+   "y": 0.0252,
+   "nearness": 0.79
+  },
+  {
+   "id": "washington-color-school",
+   "name": "Washington Color School",
+   "description": "A Washington DC movement from the 1950s to the 1970s in which painters stained unprimed canvas with thinned acrylic so that colour and support become one surface. Morris Louis and Kenneth Noland founded it, with Gene…",
+   "x": 0.764,
+   "y": 0.5287,
+   "nearness": 0.79
+  },
+  {
+   "id": "anarcho-punk",
+   "name": "Anarcho-Punk",
+   "description": "A late-1970s UK punk movement linked music, collage graphics, zines, independent records, and anarchist organizing.",
+   "x": 0.5275,
+   "y": 0.7871,
+   "nearness": 0.78
+  },
+  {
+   "id": "internet-aesthetic",
+   "name": "Internet aesthetic",
+   "description": "Internet aesthetic groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.1527,
+   "y": 0.5682,
+   "nearness": 0.78
+  },
+  {
+   "id": "photographic-source",
+   "name": "Photographic Source",
+   "description": "Photographic Source describes work derived from a found or artist-made photograph.",
+   "x": 0.3102,
+   "y": 0.698,
+   "nearness": 0.78
+  },
+  {
+   "id": "sculpting",
+   "name": "Sculpting",
+   "description": "Making three-dimensional work by shaping or combining material.",
+   "x": 0.5325,
+   "y": 0.1832,
+   "nearness": 0.78
+  },
+  {
+   "id": "song-dynasty-art",
+   "name": "Song-dynasty art",
+   "description": "Song court academies, scholar-painters, ceramic kilns, and print workshops produced distinct bodies of work.",
+   "x": 0.6704,
+   "y": 0.094,
+   "nearness": 0.78
+  },
+  {
+   "id": "airbrush-surrealism",
+   "name": "Airbrush Surrealism",
+   "description": "Commercial illustrators used smooth airbrush modeling for dreamlike album, poster, and advertising images. This account currently relies on the Aesthetics Wiki article alone for the bounded name and history.",
+   "x": 0.209,
+   "y": 0.0498,
+   "nearness": 0.77
+  },
+  {
+   "id": "deutscher-werkbund",
+   "name": "Deutscher Werkbund",
+   "description": "A German association of artists, architects, designers and manufacturers founded in 1907 to raise the quality of industrially made goods and to argue about whether design should be standardised or individual. Muthesius…",
+   "x": 0.7253,
+   "y": 0.5194,
+   "nearness": 0.77
+  },
+  {
+   "id": "generative-art",
+   "name": "Generative Art",
+   "description": "Rules, systems, or software generate all or part of the work.",
+   "x": 0.4176,
+   "y": 0.2094,
+   "nearness": 0.77
+  },
+  {
+   "id": "gutter-punk",
+   "name": "Gutter Punk",
+   "description": "North American and Western European gutter-punk and crust-punk street communities. The documented period is 1970s-1980s onward. The cited work includes The Decline of Western Civilization III, patched clothing, street…",
+   "x": 0.6623,
+   "y": 0.5198,
+   "nearness": 0.77
+  },
+  {
+   "id": "light-art",
+   "name": "Light Art",
+   "description": "Artists use electric or natural light as the work's primary medium.",
+   "x": 0.3109,
+   "y": 0.0419,
+   "nearness": 0.77
+  },
+  {
+   "id": "mecha",
+   "name": "Mecha",
+   "description": "Osamu Tezuka, Mitsuteru Yokoyama, Go Nagai, Yoshiyuki Tomino, Hideaki Anno. 1950s. Astro Boy, Gigantor, Mazinger Z, Mobile Suit Gundam, Transformers, Pacific Rim, Edge of Tomorrow, Neon Genesis Evangelion, Mecha, Mighty…",
+   "x": 0.1448,
+   "y": 0.4567,
+   "nearness": 0.77
+  },
+  {
+   "id": "nabis",
+   "name": "Nabis",
+   "description": "A group of young French painters active in Paris from 1888 to 1900, taking their name from the Hebrew for prophets and their programme from Gauguin by way of Sérusier's small panel The Talisman. They flattened space…",
+   "x": 0.8855,
+   "y": 0.7791,
+   "nearness": 0.77
+  },
+  {
+   "id": "painting-and-writing-tools",
+   "name": "Painting and Writing Tools",
+   "description": "Painting and Writing Tools includes brushes, seals, ink stones, and related implements.",
+   "x": 0.7161,
+   "y": 0.0839,
+   "nearness": 0.77
+  },
+  {
+   "id": "pop-music",
+   "name": "pop music",
+   "description": "pop music groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.6714,
+   "y": 0.7929,
+   "nearness": 0.77
+  },
+  {
+   "id": "post-1945-fine-arts-styles-and-movements",
+   "name": "post-1945 fine arts styles and movements",
+   "description": "post-1945 fine arts styles and movements groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8519,
+   "y": 0.8025,
+   "nearness": 0.77
+  },
+  {
+   "id": "riot-grrrl",
+   "name": "Riot Grrrl",
+   "description": "Allison Wolfe, Molly Neuman, Jen Smith, Tobi Vail (coined term and foundational figures). Early 1990s. The Punk Singer (2013), Girls to the Front: The True Story of the Riot Grrrl Revolution (2010), Revolution Girl…",
+   "x": 0.516,
+   "y": 0.4659,
+   "nearness": 0.77
+  },
+  {
+   "id": "skeuomorphism",
+   "name": "Skeuomorphism",
+   "description": "Apple and Microsoft interface-design teams. The documented period is 1980s-early 2010s. The cited work includes Mac OS X Aqua, iOS 1-6, iCal, iBooks and Windows Vista Aero.",
+   "x": 0.6193,
+   "y": 0.2411,
+   "nearness": 0.77
+  },
+  {
+   "id": "surface-covering-processes",
+   "name": "Surface Covering Processes",
+   "description": "Processes that add or apply material to an object's exterior.",
+   "x": 0.6383,
+   "y": 0.1761,
+   "nearness": 0.77
+  },
+  {
+   "id": "adventure-pulp",
+   "name": "Adventure Pulp",
+   "description": "Pulp magazines, serials, comics, and later films built a visual and narrative adventure tradition. This account currently relies on the Aesthetics Wiki article alone for the bounded name and history.",
+   "x": 0.6396,
+   "y": 0.7831,
+   "nearness": 0.76
+  },
+  {
+   "id": "modern-french-styles-and-movements",
+   "name": "modern French styles and movements",
+   "description": "modern French styles and movements groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9715,
+   "y": 0.703,
+   "nearness": 0.76
+  },
+  {
+   "id": "otaku",
+   "name": "Otaku",
+   "description": "Otaku groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8497,
+   "y": 0.5199,
+   "nearness": 0.76
+  },
+  {
+   "id": "projection",
+   "name": "Projection",
+   "description": "Projection uses projected light and images as a display technology or visual work.",
+   "x": 0.4122,
+   "y": 0.174,
+   "nearness": 0.76
+  },
+  {
+   "id": "scandinavian-architecture",
+   "name": "Scandinavian architecture",
+   "description": "Scandinavian architecture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7676,
+   "y": 0.4999,
+   "nearness": 0.76
+  },
+  {
+   "id": "scandinavian-medieval-styles",
+   "name": "Scandinavian Medieval styles",
+   "description": "Scandinavian Medieval styles groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8928,
+   "y": 0.5293,
+   "nearness": 0.76
+  },
+  {
+   "id": "1960s-art",
+   "name": "1960s art",
+   "description": "Art movements in the international post-1945 branch that began in the 1960s.",
+   "x": 0.971,
+   "y": 0.6695,
+   "nearness": 0.75
+  },
+  {
+   "id": "animation",
+   "name": "Animation",
+   "description": "Animation creates moving images with optical devices, drawing, and film. Studios and independent artists both practice it.",
+   "x": 0.7383,
+   "y": 0.453,
+   "nearness": 0.75
+  },
+  {
+   "id": "black-arts-movement",
+   "name": "Black Arts Movement",
+   "description": "The African American movement of the 1960s and 1970s that built its own presses, theatres and journals and argued for an art answerable to Black communities. Amiri Baraka's move to Harlem in 1965 is its usual starting…",
+   "x": 0.5951,
+   "y": 0.8038,
+   "nearness": 0.75
+  },
+  {
+   "id": "concrete-art",
+   "name": "Concrete Art",
+   "description": "Abstraction that refers to nothing outside itself, formulated by Theo van Doesburg in 1930 and taken up after his death by Max Bill. Its forms are geometric, planned in advance and conceived before execution, which is…",
+   "x": 0.8539,
+   "y": 0.4866,
+   "nearness": 0.75
+  },
+  {
+   "id": "counterculture",
+   "name": "counterculture",
+   "description": "counterculture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.4213,
+   "y": 0.7779,
+   "nearness": 0.75
+  },
+  {
+   "id": "digitally-manipulated",
+   "name": "Digitally Manipulated",
+   "description": "Digitally Manipulated work edits an image in software.",
+   "x": 0.1555,
+   "y": 0.1826,
+   "nearness": 0.75
+  },
+  {
+   "id": "documentary-photography",
+   "name": "Documentary Photography",
+   "description": "Photography intended to chronicle actual events, places, and lives.",
+   "x": 0.3895,
+   "y": 0.7765,
+   "nearness": 0.75
+  },
+  {
+   "id": "folk-dance",
+   "name": "folk dance",
+   "description": "folk dance groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.972,
+   "y": 0.6053,
+   "nearness": 0.75
+  },
+  {
+   "id": "hatching",
+   "name": "Hatching",
+   "description": "Hatching uses parallel lines to create shade, while crosshatching overlaps two sets of lines.",
+   "x": 0.3874,
+   "y": 0.8148,
+   "nearness": 0.75
+  },
+  {
+   "id": "landscape-photography",
+   "name": "Landscape Photography",
+   "description": "Photography of natural and cultivated terrain, including domestic parks, remote regions and botanical details. Early examples followed painting's motifs and compositions before photographers developed uses specific to…",
+   "x": 1.0042,
+   "y": 0.7135,
+   "nearness": 0.75
+  },
+  {
+   "id": "neumorphism",
+   "name": "Neumorphism",
+   "description": "Alexander Plyuto, Michał Malewicz and UI designers working on Dribbble. The documented period is 2019-2021. The cited work includes Plyuto's banking-app concept, interface studies and limited adoption in macOS Big Sur.",
+   "x": 0.6523,
+   "y": 0.2069,
+   "nearness": 0.75
+  },
+  {
+   "id": "pulled-scraped-and-scratched",
+   "name": "Pulled, Scraped, and Scratched",
+   "description": "Artists make Pulled, Scraped, and Scratched work by dragging tools across material, removing it, or scoring it.",
+   "x": 0.5145,
+   "y": 0.3694,
+   "nearness": 0.75
+  },
+  {
+   "id": "sculpture-by-material",
+   "name": "Sculpture by Material",
+   "description": "This branch organizes sculpture by the material used to make it.",
+   "x": 0.5689,
+   "y": 0.0536,
+   "nearness": 0.75
+  },
+  {
+   "id": "architecture-of-europe",
+   "name": "architecture of Europe",
+   "description": "architecture of Europe groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7739,
+   "y": 0.462,
+   "nearness": 0.74
+  },
+  {
+   "id": "artists-books",
+   "name": "Artists' Books",
+   "description": "Artists use the book itself as the work, with strong Fluxus and Conceptual lineages.",
+   "x": 0.5449,
+   "y": 1.0044,
+   "nearness": 0.74
+  },
+  {
+   "id": "color-theory",
+   "name": "Color Theory",
+   "description": "Color Theory describes principles of color mixing and combination.",
+   "x": 0.8931,
+   "y": 0.8061,
+   "nearness": 0.74
+  },
+  {
+   "id": "comedy",
+   "name": "comedy",
+   "description": "comedy groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.3092,
+   "y": 0.7246,
+   "nearness": 0.74
+  },
+  {
+   "id": "contemporary-folk-music",
+   "name": "contemporary folk music",
+   "description": "contemporary folk music groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8119,
+   "y": 0.4601,
+   "nearness": 0.74
+  },
+  {
+   "id": "dark-academia",
+   "name": "Dark Academia",
+   "description": "Tumblr and TikTok communities. The documented period is mid-2010s onward. The cited work includes image sets, dress, videos and a related fiction market.",
+   "x": 0.2305,
+   "y": 0.6464,
+   "nearness": 0.74
+  },
+  {
+   "id": "film-video",
+   "name": "Film/Video",
+   "description": "Artists adopted television, portable video, film, and installation from the 1950s onward.",
+   "x": 0.068,
+   "y": 0.2007,
+   "nearness": 0.74
+  },
+  {
+   "id": "forming-physical-activity",
+   "name": "forming (physical activity)",
+   "description": "Forming molds material into a chosen form or condition.",
+   "x": 0.4577,
+   "y": 0.196,
+   "nearness": 0.74
+  },
+  {
+   "id": "japanese-fashion-style",
+   "name": "Japanese fashion style",
+   "description": "Japanese fashion style groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7466,
+   "y": 0.0472,
+   "nearness": 0.74
+  },
+  {
+   "id": "memphis-rap",
+   "name": "Memphis rap",
+   "description": "Memphis rap groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7134,
+   "y": 0.8159,
+   "nearness": 0.74
+  },
+  {
+   "id": "neue-sachlichkeit",
+   "name": "Neue Sachlichkeit",
+   "description": "A German movement of the 1920s named by Gustav Hartlaub for a 1925 Mannheim exhibition, reacting against Expressionism with a cold, exact, unsparing realism. Beckmann, Dix and Grosz made its most cutting pictures of…",
+   "x": 0.1528,
+   "y": 0.5308,
+   "nearness": 0.74
+  },
+  {
+   "id": "object-making-processes",
+   "name": "Object-Making Processes",
+   "description": "Processes and techniques used to make physical objects.",
+   "x": 0.4306,
+   "y": 0.9772,
+   "nearness": 0.74
+  },
+  {
+   "id": "physicochemical-processes",
+   "name": "physicochemical processes",
+   "description": "Physicochemical Processes change a material or object through physical or chemical means.",
+   "x": 0.6448,
+   "y": 0.0521,
+   "nearness": 0.74
+  },
+  {
+   "id": "poolcore",
+   "name": "Poolcore",
+   "description": "Jared Pike. The documented period is 2010s. The cited work includes the Dream Pools series, The Classrooms, and POOLS.",
+   "x": 0.4131,
+   "y": -0.0046,
+   "nearness": 0.74
+  },
+  {
+   "id": "radical-design",
+   "name": "Radical Design",
+   "description": "Ettore Sottsass Jr., Archizoom, Superstudio, Studio 65, Gaetano Pesce, Alessandro Mendini, UFO. 1960s. Modernism, Memphis Design, Anti-Design.",
+   "x": 0.7919,
+   "y": 0.8446,
+   "nearness": 0.74
+  },
+  {
+   "id": "science-fiction",
+   "name": "Science fiction",
+   "description": "Fiction that imagines a change in what is technically or scientifically possible and follows what that change does to people and societies. It runs from Shelley's Frankenstein and Verne through the American pulp…",
+   "x": 0.3525,
+   "y": 0.2784,
+   "nearness": 0.74
+  },
+  {
+   "id": "sculpture-techniques",
+   "name": "Sculpture Techniques",
+   "description": "Techniques used to make three-dimensional sculpture from materials that include clay, wood, stone, bronze, ivory, and found objects.",
+   "x": 0.5556,
+   "y": 0.2854,
+   "nearness": 0.74
+  },
+  {
+   "id": "street-art",
+   "name": "Street art",
+   "description": "Visual work made in public places for a public that did not ask for it, growing out of New York and Philadelphia graffiti writing in the 1970s and widening into stencil, paste-up, mural and installation. Its terms are…",
+   "x": 0.6314,
+   "y": 0.8134,
+   "nearness": 0.74
+  },
+  {
+   "id": "color-photography",
+   "name": "Color Photography",
+   "description": "A photographic practice whose technical development preceded its wider museum acceptance in the 1970s.",
+   "x": 0.9921,
+   "y": 0.7447,
+   "nearness": 0.73
+  },
+  {
+   "id": "concrete",
+   "name": "Concrete",
+   "description": "Concrete combines aggregate with a cement or lime binder that hardens into a strong mass. Concrete is used in many directions without defining the direction.",
+   "x": 0.7899,
+   "y": 0.4245,
+   "nearness": 0.73
+  },
+  {
+   "id": "cottagecore",
+   "name": "Cottagecore",
+   "description": "Tumblr, Instagram and TikTok communities. The documented period is 2010s onward. The cited work includes photography, craft, dress, video and writing.",
+   "x": 0.8209,
+   "y": 0.4286,
+   "nearness": 0.73
+  },
+  {
+   "id": "criminal-subculture",
+   "name": "Criminal subculture",
+   "description": "Criminal subculture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.2281,
+   "y": 0.6781,
+   "nearness": 0.73
+  },
+  {
+   "id": "dada",
+   "name": "Dada",
+   "description": "An international movement begun in Zurich in 1916 as a response to the war and to the society that produced it, rejecting art's existing forms in favour of an anti-art of chance, collage, nonsense and provocation. It…",
+   "x": 0.3907,
+   "y": 0.951,
+   "nearness": 0.73
+  },
+  {
+   "id": "international-style",
+   "name": "International Style",
+   "description": "A style of modern architecture developed in Europe during the 1920s and 1930s. Architects used plain rectilinear forms, steel, reinforced concrete and glass to emphasize utility, flexible space and regular structure…",
+   "x": 0.5585,
+   "y": 0.4467,
+   "nearness": 0.73
+  },
+  {
+   "id": "maximalism",
+   "name": "Maximalism",
+   "description": "An aesthetic of excess and abundance, defined against minimalism, in which more is held to be more. In writing it names the long, digressive, encyclopedic novel of Pynchon, Wallace and Bolaño, and the term is used in…",
+   "x": 0.6731,
+   "y": 0.8265,
+   "nearness": 0.73
+  },
+  {
+   "id": "minimalism",
+   "name": "Minimalism",
+   "description": "Art reduced to its essentials, with the object and the viewer's experience of it in the room left as the whole content and the artist's hand withdrawn. It emerged in the United States in the 1960s against Abstract…",
+   "x": 0.7238,
+   "y": 0.3541,
+   "nearness": 0.73
+  },
+  {
+   "id": "modern-european-regional-styles-and-movements",
+   "name": "modern European regional styles and movements",
+   "description": "modern European regional styles and movements groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8851,
+   "y": 0.4871,
+   "nearness": 0.73
+  },
+  {
+   "id": "post-1945-architecture-and-design-styles-and-movements",
+   "name": "post-1945 architecture and design styles and movements",
+   "description": "post-1945 architecture and design styles and movements groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7603,
+   "y": 0.8502,
+   "nearness": 0.73
+  },
+  {
+   "id": "soft-sculpture",
+   "name": "Soft Sculpture",
+   "description": "Soft Sculpture uses pliable materials instead of sculpture's conventional hard, durable materials.",
+   "x": 0.4123,
+   "y": 0.2383,
+   "nearness": 0.73
+  },
+  {
+   "id": "staged-photography",
+   "name": "Staged Photography",
+   "description": "In staged photography, photographers build and perform scenes for the camera.",
+   "x": 0.4676,
+   "y": 1.0097,
+   "nearness": 0.73
+  },
+  {
+   "id": "y2k-futurism",
+   "name": "Y2K Futurism",
+   "description": "The Designers Republic, technology and media designers and later archivists. The documented period is about 1997-2004. The cited work includes interfaces, advertising, music graphics and products.",
+   "x": 0.0351,
+   "y": 0.3155,
+   "nearness": 0.73
+  },
+  {
+   "id": "y3k",
+   "name": "Y3K",
+   "description": "K-pop creative teams, fashion designers and digital artists. The documented period is early-to-mid 2020s. The cited work includes aespa-era concepts, metallic fashion, videos and virtual imagery.",
+   "x": 0.0005,
+   "y": 0.3221,
+   "nearness": 0.73
+  },
+  {
+   "id": "1940s-and-1950s-art",
+   "name": "1940s and 1950s art",
+   "description": "Art movements in the international post-1945 branch that began in the 1940s or 1950s.",
+   "x": 0.8435,
+   "y": 0.8315,
+   "nearness": 0.72
+  },
+  {
+   "id": "abstract-photography",
+   "name": "Abstract Photography",
+   "description": "Photography that does not read as a picture of a recognisable object, made by isolating a fragment, exploiting process, working without a camera or intervening in the material. Its line runs from Coburn's vortographs…",
+   "x": 0.1986,
+   "y": 0.6446,
+   "nearness": 0.72
+  },
+  {
+   "id": "album-folio-and-fan-formats",
+   "name": "Album, Folio and Fan Formats",
+   "description": "Album, Folio and Fan Formats groups East Asian works by their viewing format.",
+   "x": 0.8962,
+   "y": 0.2282,
+   "nearness": 0.72
+  },
+  {
+   "id": "architecture-of-the-earth",
+   "name": "architecture of the Earth",
+   "description": "architecture of the Earth groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.5589,
+   "y": 0.381,
+   "nearness": 0.72
+  },
+  {
+   "id": "arts-and-crafts-movement",
+   "name": "Arts and Crafts Movement",
+   "description": "A British movement of the late nineteenth century that reformed how buildings, furniture, textiles, metalwork, ceramics and other objects were designed and made. Its members opposed the social and material effects of…",
+   "x": 0.7603,
+   "y": 0.625,
+   "nearness": 0.72
+  },
+  {
+   "id": "bad-painting",
+   "name": "Bad Painting",
+   "description": "A trend in American figurative painting named by the curator Marcia Tucker for her 1978 exhibition at the New Museum, gathering fourteen mostly unknown painters. The work is deliberately awkward, cartoonish and…",
+   "x": 0.4601,
+   "y": 0.8262,
+   "nearness": 0.72
+  },
+  {
+   "id": "books-and-portfolios",
+   "name": "Books and Portfolios",
+   "description": "Books and portfolios include bound works and collections of loose works.",
+   "x": 0.1525,
+   "y": 0.4881,
+   "nearness": 0.72
+  },
+  {
+   "id": "de-stijl",
+   "name": "De Stijl",
+   "description": "A Dutch movement founded in 1917 around the magazine of the same name, which reduced painting to horizontals, verticals, the three primaries and black, white and grey. Mondrian and Van Doesburg argued it as a universal…",
+   "x": 0.9243,
+   "y": 0.5091,
+   "nearness": 0.72
+  },
+  {
+   "id": "design-architecture-study",
+   "name": "Design/Architecture Study",
+   "description": "A Design/Architecture Study prepares or develops an object or building.",
+   "x": 0.1219,
+   "y": 0.5206,
+   "nearness": 0.72
+  },
+  {
+   "id": "european",
+   "name": "European",
+   "description": "European groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7046,
+   "y": 0.459,
+   "nearness": 0.72
+  },
+  {
+   "id": "landscapes",
+   "name": "Landscapes",
+   "description": "Two-dimensional works in which terrain and natural elements dominate an outdoor scene. Architecture or figures may appear, while the terrain remains primary.",
+   "x": 0.8525,
+   "y": 0.3591,
+   "nearness": 0.72
+  },
+  {
+   "id": "music-of-europe",
+   "name": "music of Europe",
+   "description": "music of Europe groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8659,
+   "y": 0.4514,
+   "nearness": 0.72
+  },
+  {
+   "id": "net-art",
+   "name": "Net art",
+   "description": "Art made for and distributed through the internet, bypassing the gallery and museum, often requiring the viewer to act. The heroic period runs through the 1990s with jodi.org, using the browser's own faults as material…",
+   "x": 0.2007,
+   "y": 0.1584,
+   "nearness": 0.72
+  },
+  {
+   "id": "photojournalism",
+   "name": "Photojournalism",
+   "description": "News made and distributed through photographs.",
+   "x": 0.5993,
+   "y": 0.8343,
+   "nearness": 0.72
+  },
+  {
+   "id": "pittura-metafisica",
+   "name": "Pittura Metafisica",
+   "description": "An Italian style developed by Giorgio de Chirico from 1910 and joined by Carlo Carrà, painting empty arcaded squares, long shadows, mannequins and incongruous objects in a hard, still light. De Chirico described it as…",
+   "x": 0.7808,
+   "y": 0.9315,
+   "nearness": 0.72
+  },
+  {
+   "id": "process-art",
+   "name": "Process Art",
+   "description": "Work in which the making is the subject: gathering, sorting, pouring, folding, letting a material do what it does. Morris's felt pieces and Serra's verb list are its statements. The finished object is a residue of the…",
+   "x": 0.4424,
+   "y": 0.2753,
+   "nearness": 0.72
+  },
+  {
+   "id": "soul",
+   "name": "soul",
+   "description": "soul groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.3522,
+   "y": 0.7944,
+   "nearness": 0.72
+  },
+  {
+   "id": "speculative-fiction-film",
+   "name": "speculative fiction film",
+   "description": "speculative fiction film groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.0755,
+   "y": 0.3723,
+   "nearness": 0.72
+  },
+  {
+   "id": "whimsigothic",
+   "name": "Whimsigothic",
+   "description": "interior and graphic designers including Margo Chase and Vaughan Oliver. The documented period is late 1980s-early 2000s. The cited work includes rooms, furniture, packaging and graphics.",
+   "x": 0.8783,
+   "y": 0.4117,
+   "nearness": 0.72
+  },
+  {
+   "id": "abstract-expressionism",
+   "name": "Abstract Expressionism",
+   "description": "The American painting that emerged after the Second World War and dominated the 1950s, in two broad manners: the gestural attack of Pollock, de Kooning and Kline, and the large simple fields of Rothko, Newman and Still…",
+   "x": 0.9205,
+   "y": 0.4762,
+   "nearness": 0.71
+  },
+  {
+   "id": "cyberdelia",
+   "name": "Cyberdelia",
+   "description": "Timothy Leary, Mondo 2000 contributors and cyberculture communities. The documented period is late 1980s to mid-1990s. The cited work includes magazines, events, software and art.",
+   "x": 0.3091,
+   "y": 0.7545,
+   "nearness": 0.71
+  },
+  {
+   "id": "forms-of-expression-artistic-concept",
+   "name": "forms of expression (artistic concept)",
+   "description": "forms of expression (artistic concept) groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9634,
+   "y": 0.5117,
+   "nearness": 0.71
+  },
+  {
+   "id": "gen-z-soft-club",
+   "name": "Gen Z Soft Club",
+   "description": "George Clanton, Doss, FKA twigs, Shygirl, and CFCF. The documented period is 2010s onward. The cited work includes album art, videos, soft digital graphics, muted blue-green imagery, translucent objects, and nostalgic…",
+   "x": 0.2714,
+   "y": 0.1364,
+   "nearness": 0.71
+  },
+  {
+   "id": "glam-metal",
+   "name": "Glam metal",
+   "description": "Glam metal groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.2362,
+   "y": 0.1205,
+   "nearness": 0.71
+  },
+  {
+   "id": "ming-dynasty-art",
+   "name": "Ming-dynasty art",
+   "description": "Ming court workshops, literati circles, kilns, and urban markets supported painting, ceramics, textiles, and decorative arts.",
+   "x": 0.6824,
+   "y": 0.0591,
+   "nearness": 0.71
+  },
+  {
+   "id": "post-internet",
+   "name": "Post-Internet",
+   "description": "A loosely defined movement of the 2010s made when the internet had stopped being a novelty and became the condition everything is made in. Marisa Olson coined the term in 2006 for her own work, and the art it names…",
+   "x": 0.1682,
+   "y": 0.1505,
+   "nearness": 0.71
+  },
+  {
+   "id": "skeuomorph",
+   "name": "skeuomorph",
+   "description": "skeuomorph groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.3663,
+   "y": 0.9213,
+   "nearness": 0.71
+  },
+  {
+   "id": "union-des-artistes-modernes",
+   "name": "Union des artistes modernes",
+   "description": "A French association founded in 1929 by architects, decorators, sculptors and poster artists. Its members joined art, industrial technology and social aims through exhibitions and work across disciplines.",
+   "x": 1.0029,
+   "y": 0.6741,
+   "nearness": 0.71
+  },
+  {
+   "id": "fairycore",
+   "name": "Fairycore",
+   "description": "Fairycore groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.4888,
+   "y": 0.2164,
+   "nearness": 0.7
+  },
+  {
+   "id": "generic-styles-periods-and-cultures",
+   "name": "generic styles, periods, and cultures",
+   "description": "generic styles, periods, and cultures groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9965,
+   "y": 0.5489,
+   "nearness": 0.7
+  },
+  {
+   "id": "installation",
+   "name": "Installation",
+   "description": "A three-dimensional work that changes a viewer's experience of a place.",
+   "x": 0.1171,
+   "y": 0.4909,
+   "nearness": 0.7
+  },
+  {
+   "id": "japanese-youth-culture",
+   "name": "Japanese youth culture",
+   "description": "Japanese youth culture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0155,
+   "y": 0.5878,
+   "nearness": 0.7
+  },
+  {
+   "id": "photomontage",
+   "name": "Photomontage",
+   "description": "Dadaists, Constructivists, and political artists developed photomontage by cutting and recombining printed photographs.",
+   "x": 0.278,
+   "y": 0.7518,
+   "nearness": 0.7
+  },
+  {
+   "id": "typologies",
+   "name": "Typologies",
+   "description": "Systematic photographic series classify recurring human or industrial types.",
+   "x": 0.1174,
+   "y": 0.5498,
+   "nearness": 0.7
+  },
+  {
+   "id": "vaporwave",
+   "name": "Vaporwave",
+   "description": "Daniel Lopatin, James Ferraro, Vektroid and online labels. The documented period is early 2010s onward. The cited work includes albums, collage art, videos and memes.",
+   "x": 0.0341,
+   "y": 0.2252,
+   "nearness": 0.7
+  },
+  {
+   "id": "cultural-movements-and-attitudes",
+   "name": "cultural movements and attitudes",
+   "description": "cultural movements and attitudes groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7114,
+   "y": 0.8547,
+   "nearness": 0.69
+  },
+  {
+   "id": "culture-and-related-concepts",
+   "name": "culture and related concepts",
+   "description": "culture and related concepts groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.936,
+   "y": 0.7999,
+   "nearness": 0.69
+  },
+  {
+   "id": "darksynth",
+   "name": "Darksynth",
+   "description": "Perturbator, Carpenter Brut and electronic producers. The documented period is about 2012 onward. The cited work includes albums, live sets and game soundtracks.",
+   "x": -0.0101,
+   "y": 0.2499,
+   "nearness": 0.69
+  },
+  {
+   "id": "embroidery",
+   "name": "Embroidery",
+   "description": "Embroidery makes decorative needlework by stitching thread onto cloth, leather, or another material.",
+   "x": 0.2326,
+   "y": 0.7084,
+   "nearness": 0.69
+  },
+  {
+   "id": "experimental-pop",
+   "name": "experimental pop",
+   "description": "experimental pop groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.6324,
+   "y": 0.8433,
+   "nearness": 0.69
+  },
+  {
+   "id": "genres-in-literature-and-performing-arts",
+   "name": "genres in literature and performing arts",
+   "description": "genres in literature and performing arts groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0321,
+   "y": 0.6427,
+   "nearness": 0.69
+  },
+  {
+   "id": "glass-as-material",
+   "name": "Glass as Material",
+   "description": "Glass is an inorganic substance made by fusing silica with a basic oxide. It can be formed and decorated while hot. Glass appears in many directions without defining one by itself.",
+   "x": 0.2786,
+   "y": 0.0188,
+   "nearness": 0.69
+  },
+  {
+   "id": "indie-rock",
+   "name": "indie rock",
+   "description": "indie rock groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.6795,
+   "y": 0.862,
+   "nearness": 0.69
+  },
+  {
+   "id": "industrial-music",
+   "name": "industrial music",
+   "description": "industrial music groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.3132,
+   "y": 0.7915,
+   "nearness": 0.69
+  },
+  {
+   "id": "japandi",
+   "name": "Japandi",
+   "description": "Nina Tolstrup, Lars Vejen, Kohseki, Taijiro Ishiko, Jonah Takagi, and Hallgeir Homstvedt. The documented period is 1950s precedents and a late-2010s named style. The cited work includes the Enso lamp, Float chair…",
+   "x": 0.7022,
+   "y": 0.0314,
+   "nearness": 0.69
+  },
+  {
+   "id": "lightbox",
+   "name": "Lightbox",
+   "description": "A lightbox is an internally lit container used to display transparencies.",
+   "x": 0.5265,
+   "y": 0.0375,
+   "nearness": 0.69
+  },
+  {
+   "id": "mcbling",
+   "name": "McBling",
+   "description": "Paris Hilton, Lindsay Lohan, Britney Spears, Nicole Richie, Jessica Simpson, Dolly Parton. 2000s. The Simple Life, Mean Girls, Laguna Beach, Bling Era Rap Videos, Bubbleglam, Recession Pop Swag Indie Sleaze, McBling.",
+   "x": 0.621,
+   "y": 0.8748,
+   "nearness": 0.69
+  },
+  {
+   "id": "modern-north-american",
+   "name": "modern North American",
+   "description": "modern North American groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9032,
+   "y": 0.4391,
+   "nearness": 0.69
+  },
+  {
+   "id": "reduced-scale-architecture",
+   "name": "Reduced-Scale Architecture",
+   "description": "Reduced-Scale Architecture includes models and miniatures of buildings.",
+   "x": 0.5109,
+   "y": 1.0285,
+   "nearness": 0.69
+  },
+  {
+   "id": "2-tone",
+   "name": "2 Tone",
+   "description": "A late-1970s British ska movement joined records, bands, dress, and a black-and-white label identity.",
+   "x": 0.6999,
+   "y": 0.8926,
+   "nearness": 0.68
+  },
+  {
+   "id": "artistic-concepts",
+   "name": "artistic concepts",
+   "description": "artistic concepts groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8867,
+   "y": 0.8386,
+   "nearness": 0.68
+  },
+  {
+   "id": "basque-radical-rock",
+   "name": "Basque Radical Rock",
+   "description": "A 1980s Basque and Navarrese scene joined punk, ska, rock, language, politics, labels, venues, and graphics.",
+   "x": 0.6559,
+   "y": 0.9002,
+   "nearness": 0.68
+  },
+  {
+   "id": "carnival",
+   "name": "Carnival",
+   "description": "Carnival groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0371,
+   "y": 0.6851,
+   "nearness": 0.68
+  },
+  {
+   "id": "chance",
+   "name": "Chance",
+   "description": "Dada, Surrealism, and Fluxus artists used accident and random procedures as creative rules.",
+   "x": 0.3433,
+   "y": 0.8377,
+   "nearness": 0.68
+  },
+  {
+   "id": "culture-related-concepts",
+   "name": "culture-related concepts",
+   "description": "culture-related concepts groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8365,
+   "y": 0.8598,
+   "nearness": 0.68
+  },
+  {
+   "id": "die-brucke",
+   "name": "Die Brücke",
+   "description": "A German Expressionist group founded in Dresden in 1905 by four architecture students, Bleyl, Heckel, Kirchner and Schmidt-Rottluff, later joined by Nolde, Pechstein and Mueller. They painted in harsh colour with cut…",
+   "x": 0.6932,
+   "y": 0.5175,
+   "nearness": 0.68
+  },
+  {
+   "id": "drill",
+   "name": "drill",
+   "description": "drill groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9563,
+   "y": 0.4743,
+   "nearness": 0.68
+  },
+  {
+   "id": "electro-disco",
+   "name": "electro-disco",
+   "description": "electro-disco groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.0438,
+   "y": 0.3437,
+   "nearness": 0.68
+  },
+  {
+   "id": "fandom",
+   "name": "fandom",
+   "description": "fandom groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.814,
+   "y": 0.8865,
+   "nearness": 0.68
+  },
+  {
+   "id": "genre-pictures",
+   "name": "Genre Pictures",
+   "description": "Genre pictures depict scenes, events, objects or customs from everyday life in various media. Getty distinguishes the genre from other established classes of painting.",
+   "x": 0.2441,
+   "y": 0.7417,
+   "nearness": 0.68
+  },
+  {
+   "id": "gothic-art",
+   "name": "Gothic art",
+   "description": "The medieval style that grew out of Romanesque in northern France in the twelfth century and spread across Europe, led by architecture and carried into sculpture, stained glass, manuscripts and panel painting. Figures…",
+   "x": 0.6033,
+   "y": 0.0346,
+   "nearness": 0.68
+  },
+  {
+   "id": "japanese-fashion-styles",
+   "name": "Japanese fashion styles",
+   "description": "Japanese fashion styles groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7351,
+   "y": 0.0153,
+   "nearness": 0.68
+  },
+  {
+   "id": "manuscript",
+   "name": "Manuscript",
+   "description": "A manuscript is a handwritten text or related handwritten object.",
+   "x": 0.8846,
+   "y": 0.364,
+   "nearness": 0.68
+  },
+  {
+   "id": "material-fetishism",
+   "name": "material fetishism",
+   "description": "material fetishism groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.5677,
+   "y": 0.0266,
+   "nearness": 0.68
+  },
+  {
+   "id": "online-subculture",
+   "name": "Online subculture",
+   "description": "Online subculture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9375,
+   "y": 0.4354,
+   "nearness": 0.68
+  },
+  {
+   "id": "passage",
+   "name": "Passage",
+   "description": "Passage uses small intersecting planes of brushwork that blend into an image.",
+   "x": 0.9186,
+   "y": 0.3127,
+   "nearness": 0.68
+  },
+  {
+   "id": "precisionism",
+   "name": "Precisionism",
+   "description": "An American movement after the First World War that painted grain elevators, factories, bridges and skyscrapers as clean geometry in flat planes of light, with detail removed. Charles Demuth and Charles Sheeler are its…",
+   "x": 0.9939,
+   "y": 0.7733,
+   "nearness": 0.68
+  },
+  {
+   "id": "recycled",
+   "name": "Recycled",
+   "description": "Recycled work reuses discarded material in art.",
+   "x": 0.1926,
+   "y": 0.6773,
+   "nearness": 0.68
+  },
+  {
+   "id": "signalism",
+   "name": "Signalism",
+   "description": "A neo-avant-garde movement founded in Yugoslavia by Miroljub Todorović in the mid-1960s, working across poetry, visual art and the sciences, with manifestos, a journal and a body of computer-generated and visual poetry…",
+   "x": 0.2006,
+   "y": 0.1252,
+   "nearness": 0.68
+  },
+  {
+   "id": "sound-art",
+   "name": "Sound Art",
+   "description": "Sound Art makes sound its primary medium and developed from experimental music and kinetic sculpture.",
+   "x": 0.2026,
+   "y": 0.0957,
+   "nearness": 0.68
+  },
+  {
+   "id": "splattered-dripped",
+   "name": "Splattered/Dripped",
+   "description": "Artists drip or throw liquid material to make Splattered/Dripped paintings.",
+   "x": 0.9224,
+   "y": 0.1255,
+   "nearness": 0.68
+  },
+  {
+   "id": "straight-edge",
+   "name": "Straight Edge",
+   "description": "Ian MacKaye, Minor Threat and hardcore communities. The documented period is Washington, D.C., 1981 onward. The cited work includes songs, shows, zines and X-mark graphics.",
+   "x": 0.2778,
+   "y": 0.7797,
+   "nearness": 0.68
+  },
+  {
+   "id": "suprematism",
+   "name": "Suprematism",
+   "description": "Kazimir Malevich's abstraction, declared in 1915, built from a few geometric shapes in a limited palette and grounded in what he called the supremacy of pure artistic feeling. The Black Square is its founding statement…",
+   "x": 0.9779,
+   "y": 0.8008,
+   "nearness": 0.68
+  },
+  {
+   "id": "virtual-and-augmented-reality",
+   "name": "Virtual and Augmented Reality",
+   "description": "Virtual reality simulates an environment, while augmented reality adds digital elements to a view of the physical world.",
+   "x": 0.1104,
+   "y": 0.3732,
+   "nearness": 0.68
+  },
+  {
+   "id": "youth-subculture",
+   "name": "youth subculture",
+   "description": "youth subculture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8722,
+   "y": 0.869,
+   "nearness": 0.68
+  },
+  {
+   "id": "american-studio-craft-movement",
+   "name": "American Studio Craft Movement",
+   "description": "After World War II, American makers worked by hand in wood, fiber, metal, glass and ceramics. They organized through schools, university programs, craft fairs, the American Craft Council and regional communities…",
+   "x": 0.9564,
+   "y": 0.4084,
+   "nearness": 0.67
+  },
+  {
+   "id": "art-singulier",
+   "name": "Art Singulier",
+   "description": "A French current gathered self-taught and marginal makers outside conventional art institutions.",
+   "x": 0.3369,
+   "y": 0.8773,
+   "nearness": 0.67
+  },
+  {
+   "id": "big-pop",
+   "name": "Big Pop",
+   "description": "Commercial graphics use oversized type, flat color, and large familiar objects for playful impact. This account currently relies on the Aesthetics Wiki article alone for the bounded name and history.",
+   "x": 0.7092,
+   "y": 0.9199,
+   "nearness": 0.67
+  },
+  {
+   "id": "black-metal",
+   "name": "Black Metal",
+   "description": "Venom, Bathory, Mayhem and Norwegian scene bands. The documented period is 1981 through the 1990s. The cited work includes Black Metal, Under the Sign of the Black Mark and Deathcrush.",
+   "x": 0.2461,
+   "y": 0.7911,
+   "nearness": 0.67
+  },
+  {
+   "id": "burned-charred",
+   "name": "Burned/Charred",
+   "description": "Burned/Charred describes material that artists burn or that displays the effect of burning.",
+   "x": 0.9297,
+   "y": 0.1591,
+   "nearness": 0.67
+  },
+  {
+   "id": "concepts-in-the-arts-and-humanities",
+   "name": "concepts in the arts and humanities",
+   "description": "concepts in the arts and humanities groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0391,
+   "y": 0.6153,
+   "nearness": 0.67
+  },
+  {
+   "id": "flat-design",
+   "name": "Flat Design",
+   "description": "Microsoft Metro, Apple interface, and Google Material Design teams. The documented period is 2010-2025. The cited work includes Windows Phone UI, Windows 8, iOS 7, Material Design, and Nintendo Switch system software.",
+   "x": 1.0337,
+   "y": 0.7467,
+   "nearness": 0.67
+  },
+  {
+   "id": "future-funk",
+   "name": "Future Funk",
+   "description": "Saint Pepsi, Macross 82-99, Yung Bae. The documented period is 2010s. The cited work includes Urusei Yatsura, Sailor Moon, Kimagure Orange Road, Interstella 5555.",
+   "x": 0.997,
+   "y": 0.5089,
+   "nearness": 0.67
+  },
+  {
+   "id": "futurism",
+   "name": "Futurism",
+   "description": "An Italian movement launched by Marinetti's manifesto of 1909, which glorified speed, machinery, youth and violence and demanded that the past be swept away. Boccioni, Balla, Severini and Carrà worked out a painting and…",
+   "x": 0.9141,
+   "y": 0.4083,
+   "nearness": 0.67
+  },
+  {
+   "id": "institutional-critique",
+   "name": "Institutional Critique",
+   "description": "Contemporary art that scrutinizes and confronts the structures and practices of social, cultural and political institutions. Artists practice institutional critique through painting, sculpture, installation…",
+   "x": 0.1598,
+   "y": 0.6487,
+   "nearness": 0.67
+  },
+  {
+   "id": "japonisme",
+   "name": "Japonisme",
+   "description": "The absorption of Japanese art and design by Western European artists after trade with Japan reopened in 1858, named by the critic Philippe Burty in 1872. Ukiyo-e prints supplied flat colour, cropped composition, high…",
+   "x": 0.8949,
+   "y": 0.2587,
+   "nearness": 0.67
+  },
+  {
+   "id": "luminism",
+   "name": "Luminism",
+   "description": "A manner within American landscape painting of the 1850s to 1870s, in which light is the subject and the brushwork is hidden so completely that the surface looks like glass. Its pictures are horizontal, still and often…",
+   "x": 0.8864,
+   "y": 0.2984,
+   "nearness": 0.67
+  },
+  {
+   "id": "multiple-exposure",
+   "name": "Multiple Exposure",
+   "description": "Multiple Exposure combines two or more exposures in one photograph.",
+   "x": 0.9782,
+   "y": 0.439,
+   "nearness": 0.67
+  },
+  {
+   "id": "nouveau-realisme",
+   "name": "Nouveau Réalisme",
+   "description": "A movement declared in Milan in 1960 by the critic Pierre Restany with Yves Klein, whose manifesto proposed new ways of perceiving the real. Its artists took the material of the city directly into the work: torn…",
+   "x": 0.6755,
+   "y": 0.9289,
+   "nearness": 0.67
+  },
+  {
+   "id": "online-study-communities",
+   "name": "Online study communities",
+   "description": "Online study communities groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0297,
+   "y": 0.5358,
+   "nearness": 0.67
+  },
+  {
+   "id": "repetition",
+   "name": "Repetition",
+   "description": "Repetition recurs images, elements, or gestures within a work.",
+   "x": 0.9917,
+   "y": 0.4805,
+   "nearness": 0.67
+  },
+  {
+   "id": "seapunk",
+   "name": "Seapunk",
+   "description": "Lil Internet, Zombelle, Ultrademon and online collaborators. The documented period is 2011-2012. The cited work includes music releases, digital art and videos.",
+   "x": 0.1616,
+   "y": 0.1156,
+   "nearness": 0.67
+  },
+  {
+   "id": "signalwave",
+   "name": "Signalwave",
+   "description": "Midnight Television, Infinity Frequencies and vaporwave producers. The documented period is 2011 onward. The cited work includes fragmented broadcast-sample albums. Aesthetics Wiki is the only source for this bounded…",
+   "x": 0.0019,
+   "y": 0.2208,
+   "nearness": 0.67
+  },
+  {
+   "id": "studyblr",
+   "name": "Studyblr",
+   "description": "Tumblr student creators. The documented period is early-to-mid 2010s onward. The cited work includes designed notes, planners, printables and study blogs. Aesthetics Wiki is the only source for this bounded name and…",
+   "x": 0.3963,
+   "y": 0.9829,
+   "nearness": 0.67
+  },
+  {
+   "id": "bengal-school-of-art",
+   "name": "Bengal School of Art",
+   "description": "An Indian movement originating in Calcutta and Santiniketan in the early twentieth century, which turned from British academic training to Mughal and Rajput miniature and to Japanese wash technique. Abanindranath Tagore…",
+   "x": 0.9266,
+   "y": 0.1929,
+   "nearness": 0.66
+  },
+  {
+   "id": "chicago-imagists",
+   "name": "Chicago Imagists",
+   "description": "Chicago painters associated with the School of the Art Institute who showed at the Hyde Park Art Center in the late 1960s, under group names such as the Hairy Who. Their work is figurative, hard-edged, comic and…",
+   "x": 0.6438,
+   "y": 0.9428,
+   "nearness": 0.66
+  },
+  {
+   "id": "conceptual-art",
+   "name": "Conceptual Art",
+   "description": "Art in which the idea carries at least as much weight as the object, so that a work may exist as an instruction, a document, a proposition or a set of photographs. Sol LeWitt's 1967 Paragraphs on Conceptual Art put the…",
+   "x": 0.1319,
+   "y": 0.6104,
+   "nearness": 0.66
+  },
+  {
+   "id": "cut-ups-literature",
+   "name": "Cut-ups (Literature)",
+   "description": "Texts made by cutting an existing text into pieces and rearranging them. Brion Gysin introduced the method to William S. Burroughs at the Beat Hotel; Burroughs added the fold-in, and the two published The Third Mind in…",
+   "x": 0.4792,
+   "y": 1.039,
+   "nearness": 0.66
+  },
+  {
+   "id": "decadent-movement",
+   "name": "Decadent movement",
+   "description": "Writers and artists of the 1880s and 1890s, first in France and then across Europe and Britain, who put form, beauty and pleasure ahead of content and morality and favoured the morbid, the artificial and the sensual…",
+   "x": 0.9293,
+   "y": 0.2261,
+   "nearness": 0.66
+  },
+  {
+   "id": "extreme-metal",
+   "name": "extreme metal",
+   "description": "extreme metal groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.3046,
+   "y": 0.8782,
+   "nearness": 0.66
+  },
+  {
+   "id": "found-object-sculpture",
+   "name": "Found Object Sculpture",
+   "description": "Sculpture that uses natural or human-made objects with little or no alteration.",
+   "x": 0.1137,
+   "y": 0.5797,
+   "nearness": 0.66
+  },
+  {
+   "id": "french-youth-culture",
+   "name": "French youth culture",
+   "description": "French youth culture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9245,
+   "y": 0.8271,
+   "nearness": 0.66
+  },
+  {
+   "id": "hardcore",
+   "name": "hardcore",
+   "description": "hardcore groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7466,
+   "y": 0.9362,
+   "nearness": 0.66
+  },
+  {
+   "id": "hauntology",
+   "name": "Hauntology",
+   "description": "critics Mark Fisher and Simon Reynolds, Ghost Box artists, and The Caretaker. The documented period is 2000s onward. The cited work includes Everywhere at the End of Time, Scarfolk Council, degraded samples…",
+   "x": 0.1207,
+   "y": 0.6503,
+   "nearness": 0.66
+  },
+  {
+   "id": "modern-american",
+   "name": "modern American",
+   "description": "modern American groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9671,
+   "y": 0.8279,
+   "nearness": 0.66
+  },
+  {
+   "id": "neubrutalism",
+   "name": "Neubrutalism",
+   "description": "Lin Duncan and late-2010s UI and graphic-design communities. The documented period is late 2010s onward, with a 2022-2023 mainstream peak. The cited work includes Gumroad, Mozilla, Figma, Google I/O 2024 and other…",
+   "x": 0.0824,
+   "y": 0.5231,
+   "nearness": 0.66
+  },
+  {
+   "id": "northern-european-medieval-styles",
+   "name": "Northern European Medieval styles",
+   "description": "Northern European Medieval styles groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0237,
+   "y": 0.4779,
+   "nearness": 0.66
+  },
+  {
+   "id": "pc-music",
+   "name": "PC Music",
+   "description": "A. G. Cook, SOPHIE, Hannah Diamond, Charli XCX. 2010s. Vaporwave, Hyperpop, PC Music.",
+   "x": 0.0449,
+   "y": 0.3703,
+   "nearness": 0.66
+  },
+  {
+   "id": "synthwave",
+   "name": "Synthwave",
+   "description": "French house and electronic producers including Kavinsky and College. The documented period is mid-2000s onward. The cited work includes albums, film scores and Outrun graphics. Aesthetics Wiki is the only source for…",
+   "x": -0.0312,
+   "y": 0.2851,
+   "nearness": 0.66
+  },
+  {
+   "id": "twee",
+   "name": "Twee",
+   "description": "UK and US indie-pop musicians, filmmakers and designers. The documented period is 1980s onward. The cited work includes records, zines, films and fashion.",
+   "x": 0.4259,
+   "y": 1.0157,
+   "nearness": 0.66
+  },
+  {
+   "id": "vulture-culture",
+   "name": "Vulture Culture",
+   "description": "online specimen-preservation and craft communities. The documented period is 2010s onward. The cited work includes articulated skeletons, taxidermy, wet specimens and jewelry. Aesthetics Wiki is the only source for this…",
+   "x": 0.2732,
+   "y": 0.109,
+   "nearness": 0.66
+  },
+  {
+   "id": "afropunk",
+   "name": "Afropunk",
+   "description": "A Black punk community grew around a documentary, screenings, online discussion, bands, and a festival.",
+   "x": 0.2128,
+   "y": 0.7562,
+   "nearness": 0.65
+  },
+  {
+   "id": "alternative-music",
+   "name": "alternative music",
+   "description": "alternative music groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.2462,
+   "y": 0.8188,
+   "nearness": 0.65
+  },
+  {
+   "id": "cityscapes",
+   "name": "Cityscapes",
+   "description": "Creative works that depict cities, distinguished by a settlement's population, status and internal complexity.",
+   "x": 0.0427,
+   "y": 0.4219,
+   "nearness": 0.65
+  },
+  {
+   "id": "cybertwee",
+   "name": "Cybertwee",
+   "description": "Gabriella Hileman, May Waver and Violet Forest. The documented period is founded 2014. The cited work includes collective art, writing and web projects.",
+   "x": 0.1937,
+   "y": 0.7108,
+   "nearness": 0.65
+  },
+  {
+   "id": "edo-period-art",
+   "name": "Edo-period art",
+   "description": "Edo-period art appears within Getty AAT's hierarchy of Japanese styles and periods.",
+   "x": 0.9895,
+   "y": 0.4072,
+   "nearness": 0.65
+  },
+  {
+   "id": "embossed-paper",
+   "name": "Embossed Paper",
+   "description": "Embossed Paper is impressed with a mold to make raised or recessed designs.",
+   "x": 1.017,
+   "y": 0.4473,
+   "nearness": 0.65
+  },
+  {
+   "id": "fashion-subculture",
+   "name": "Fashion subculture",
+   "description": "Fashion subculture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8573,
+   "y": 0.8967,
+   "nearness": 0.65
+  },
+  {
+   "id": "festival",
+   "name": "Festival",
+   "description": "Festival groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9336,
+   "y": 0.8607,
+   "nearness": 0.65
+  },
+  {
+   "id": "genres-for-motion-pictures",
+   "name": "genres for motion pictures",
+   "description": "genres for motion pictures groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8132,
+   "y": 0.9175,
+   "nearness": 0.65
+  },
+  {
+   "id": "heian-period-art",
+   "name": "Heian-period art",
+   "description": "Heian court ateliers and temple workshops produced calligraphy, painting, sculpture, architecture, and decorated manuscripts from 794 to 1185.",
+   "x": 0.7691,
+   "y": 0.0051,
+   "nearness": 0.65
+  },
+  {
+   "id": "japanese-fashion-subculture",
+   "name": "Japanese fashion subculture",
+   "description": "Japanese fashion subculture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8464,
+   "y": 0.0148,
+   "nearness": 0.65
+  },
+  {
+   "id": "kinetic-sculpture",
+   "name": "Kinetic Sculpture",
+   "description": "Kinetic sculpture has moving parts. Duchamp, Constructivist artists, and Bauhaus artists developed the practice.",
+   "x": 1.0062,
+   "y": 0.3736,
+   "nearness": 0.65
+  },
+  {
+   "id": "medieval-european",
+   "name": "Medieval (European)",
+   "description": "Medieval (European) groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9155,
+   "y": 0.3421,
+   "nearness": 0.65
+  },
+  {
+   "id": "minimal-electronic-music",
+   "name": "minimal electronic music",
+   "description": "minimal electronic music groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.1169,
+   "y": 0.1356,
+   "nearness": 0.65
+  },
+  {
+   "id": "modern-french-styles-by-reign",
+   "name": "modern French styles by reign",
+   "description": "modern French styles by reign groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0266,
+   "y": 0.7748,
+   "nearness": 0.65
+  },
+  {
+   "id": "oceanpunk",
+   "name": "Oceanpunk",
+   "description": "Jules Verne and later nautical science-fiction filmmakers and game studios. The documented period is 1872 antecedent and 1990s genre popularization. The cited work includes Twenty Thousand Leagues Under the Seas…",
+   "x": 0.155,
+   "y": 0.0854,
+   "nearness": 0.65
+  },
+  {
+   "id": "oil-painting",
+   "name": "Oil Painting",
+   "description": "Oil Painting uses pigment bound in oil.",
+   "x": 1.0229,
+   "y": 0.8053,
+   "nearness": 0.65
+  },
+  {
+   "id": "post-industrial-music",
+   "name": "post-industrial music",
+   "description": "post-industrial music groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.161,
+   "y": 0.6868,
+   "nearness": 0.65
+  },
+  {
+   "id": "spray-paint",
+   "name": "Spray Paint",
+   "description": "Spray Paint is aerosol paint used in graffiti, design, and studio work.",
+   "x": 0.228,
+   "y": 0.0152,
+   "nearness": 0.65
+  },
+  {
+   "id": "time-lapse-photography-and-film",
+   "name": "Time-Lapse Photography and Film",
+   "description": "Time-Lapse Photography and Film shoots frames at intervals to compress a long event.",
+   "x": 0.0706,
+   "y": 0.1617,
+   "nearness": 0.65
+  },
+  {
+   "id": "90s-cool",
+   "name": "90s Cool",
+   "description": "Late-1990s films and games shared black clothing, sunglasses, green-black screens, and techno-inflected futurism. This account currently relies on the Aesthetics Wiki article alone for the bounded name and history.",
+   "x": 0.0367,
+   "y": 0.1969,
+   "nearness": 0.64
+  },
+  {
+   "id": "alternative-rock",
+   "name": "alternative rock",
+   "description": "alternative rock groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7138,
+   "y": 0.9508,
+   "nearness": 0.64
+  },
+  {
+   "id": "american-modernism",
+   "name": "American Modernism",
+   "description": "The American turn to modernist form from about 1900 through the mid-century, across painting, photography, writing and architecture. The 1913 Armory Show and Stieglitz's 291 gallery brought European modernism into the…",
+   "x": 1.0363,
+   "y": 0.7184,
+   "nearness": 0.64
+  },
+  {
+   "id": "animecore",
+   "name": "Animecore",
+   "description": "Internet images revisit early anime fandom through fan sites, conventions, screenshots, merchandise, and desktop culture. This account currently relies on the Aesthetics Wiki article alone for the bounded name and…",
+   "x": 0.2099,
+   "y": 0.7893,
+   "nearness": 0.64
+  },
+  {
+   "id": "art-informel",
+   "name": "Art Informel",
+   "description": "European gestural abstraction of the 1940s and 1950s, named by the critic Michel Tapié in 1950 for painting made without a preconceived form. It runs parallel to American Abstract Expressionism and gathers tachisme…",
+   "x": 0.9336,
+   "y": 0.2801,
+   "nearness": 0.64
+  },
+  {
+   "id": "atompunk",
+   "name": "Atompunk",
+   "description": "Speculative fiction reworks mid-century nuclear optimism, Cold War fear, and retrofuturist technology. This account currently relies on the Aesthetics Wiki article alone for the bounded name and history.",
+   "x": 0.0133,
+   "y": 0.3845,
+   "nearness": 0.64
+  },
+  {
+   "id": "breakcore",
+   "name": "breakcore",
+   "description": "breakcore groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.1253,
+   "y": 0.6796,
+   "nearness": 0.64
+  },
+  {
+   "id": "demoscene",
+   "name": "Demoscene",
+   "description": "International programmer, musician and visual-artist groups. The documented period is 1980s onward. The cited work includes executable audiovisual demos and competitions.",
+   "x": 0.0118,
+   "y": 0.3521,
+   "nearness": 0.64
+  },
+  {
+   "id": "diy-punk",
+   "name": "DIY Punk",
+   "description": "Jamie Reid, Vivienne Westwood, Linder Sterling and punk-zine communities. The documented period is late 1970s onward. The cited work includes Xerox zines, collage, posters and clothing. Aesthetics Wiki is the only…",
+   "x": 0.612,
+   "y": 0.9703,
+   "nearness": 0.64
+  },
+  {
+   "id": "german-expressionism",
+   "name": "German Expressionism",
+   "description": "Related movements in Germany before the First World War, Die Brücke in Dresden and Der Blaue Reiter in Munich among them, that distorted form and heightened colour to carry feeling. It peaked in Berlin in the 1920s and…",
+   "x": 1.038,
+   "y": 0.5062,
+   "nearness": 0.64
+  },
+  {
+   "id": "goth",
+   "name": "Goth",
+   "description": "Siouxsie Sioux, Robert Smith, Peter Murphy, Andrew Eldritch, Dave Vanian, Rozz Williams. The documented period is Late 1970s. The cited work includes Post-Punk, Glam Rock, Goth, The End.",
+   "x": 0.1817,
+   "y": 0.7589,
+   "nearness": 0.64
+  },
+  {
+   "id": "minimal-wave",
+   "name": "Minimal Wave",
+   "description": "Oppenheimer Analysis, Das Ding, Absolute Body Control, Deux, In Aeternam Vale, Martin Dupont. Late 1970s (initial musical period), 2000s (term coinage and subsequent renewed interest). Minimal Wave Records, Synthesize…",
+   "x": 0.3437,
+   "y": 0.1541,
+   "nearness": 0.64
+  },
+  {
+   "id": "movida-madrilena",
+   "name": "Movida Madrileña",
+   "description": "Pedro Almodovar, Alaska (Olvido Gara), Fabio McNamara, Tino Casal, and Ouka Leele. The documented period is the late 1970s. The cited work includes La Movida Madrilena, punk, post-punk, new wave, and pop.",
+   "x": 0.6783,
+   "y": 0.9764,
+   "nearness": 0.64
+  },
+  {
+   "id": "new-ugly",
+   "name": "New Ugly",
+   "description": "Chengan Xia, Yui Takada. Late 2010s. New Ugly (新丑风), New Ugly.",
+   "x": 0.6453,
+   "y": 0.9929,
+   "nearness": 0.64
+  },
+  {
+   "id": "op-art",
+   "name": "Op Art",
+   "description": "Abstraction built to act on the eye, using precise geometric pattern, high contrast and colour interaction to produce flicker, movement and after-images. Bridget Riley and Victor Vasarely are its central figures, and…",
+   "x": 0.0909,
+   "y": 0.6145,
+   "nearness": 0.64
+  },
+  {
+   "id": "portraiture",
+   "name": "Portraiture",
+   "description": "Portrait making organized as a visual genre. Getty records a one-sitter portrait as a portrait of one sitter, while the related forms beneath this cell specify other subjects and arrangements.",
+   "x": 0.9662,
+   "y": 0.2859,
+   "nearness": 0.64
+  },
+  {
+   "id": "programmer-art",
+   "name": "Programmer Art",
+   "description": "Markus Persson, Chris Pirih, Bay 12 Games and independent programmers. The documented period is late twentieth century onward, with intentional revival in the 2010s. The cited work includes early Minecraft textures…",
+   "x": 0.6277,
+   "y": 0.5595,
+   "nearness": 0.64
+  },
+  {
+   "id": "scandinavian-modern",
+   "name": "Scandinavian Modern",
+   "description": "A mid-twentieth-century Nordic furniture and industrial design category known for simple forms, light natural materials, organic shapes and little applied ornament. Nationalmuseum says a coordinated marketing campaign…",
+   "x": 1.0307,
+   "y": 0.4172,
+   "nearness": 0.64
+  },
+  {
+   "id": "south-korean-youth-culture",
+   "name": "South Korean youth culture",
+   "description": "South Korean youth culture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9166,
+   "y": 0.89,
+   "nearness": 0.64
+  },
+  {
+   "id": "1990s",
+   "name": "1990s",
+   "description": "Art of the 1990s responded to digital technology, globalization, debates about identity and censorship, and new media.",
+   "x": 0.8625,
+   "y": 0.926,
+   "nearness": 0.63
+  },
+  {
+   "id": "action-painting",
+   "name": "Action Painting",
+   "description": "A manner of Abstract Expressionist painting in which paint is dripped, thrown or dragged onto the canvas and the physical act of painting is left legible in the result. Harold Rosenberg named it in 1952, describing the…",
+   "x": 0.9079,
+   "y": 0.0612,
+   "nearness": 0.63
+  },
+  {
+   "id": "american-impressionism",
+   "name": "American Impressionism",
+   "description": "An American painting style from the later nineteenth century into the twentieth, using Impressionist brushwork and colour on American landscapes and comfortable middle-class subjects. Hassam, Twachtman and Robinson…",
+   "x": 1.0114,
+   "y": 0.2906,
+   "nearness": 0.63
+  },
+  {
+   "id": "arte-povera",
+   "name": "Arte Povera",
+   "description": "An Italian movement named by the critic Germano Celant in 1967, working with poor materials: earth, rags, wax, newspaper, live plants, neon. It was tied to the political ferment leading to 1968 and set the raw material…",
+   "x": 0.5807,
+   "y": 0.2274,
+   "nearness": 0.63
+  },
+  {
+   "id": "avantropop",
+   "name": "Avantropop",
+   "description": "Late-20th-century design mixes postmodern graphics, bright consumer imagery, and experimental pop culture. This account currently relies on the Aesthetics Wiki article alone for the bounded name and history.",
+   "x": 0.8236,
+   "y": 0.9483,
+   "nearness": 0.63
+  },
+  {
+   "id": "bakala",
+   "name": "Bakala",
+   "description": "Valencia's 1980s and 1990s club circuit produced music, posters, flyers, venue identities, and a mass youth scene.",
+   "x": 0.7527,
+   "y": 0.9665,
+   "nearness": 0.63
+  },
+  {
+   "id": "germanic",
+   "name": "Germanic",
+   "description": "Germanic groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.0803,
+   "y": 0.5577,
+   "nearness": 0.63
+  },
+  {
+   "id": "grunge",
+   "name": "Grunge",
+   "description": "Kurt Cobain, Eddie Vedder, Chris Cornell, Layne Staley, Courtney Love. The documented period is 1980s. The cited work includes Singles (1992 film), Hype! (1996 documentary). Aesthetics Wiki is the only source for this…",
+   "x": 0.6,
+   "y": 1.0005,
+   "nearness": 0.63
+  },
+  {
+   "id": "kidcore",
+   "name": "Kidcore",
+   "description": "Sanrio, Disney, Lisa Frank, Mattel, Hasbro. The documented period is Late 2010s. The cited work includes Kidcore, The Powerpuff Girls, Rugrats, Sesame Street. Aesthetics Wiki is the only source for this bounded name and…",
+   "x": 0.3286,
+   "y": 0.9241,
+   "nearness": 0.63
+  },
+  {
+   "id": "lo-fi-art",
+   "name": "Lo-fi Art",
+   "description": "artist Juan Pablo Machado, the Lofi Girl channel, and 2010s lo-fi hip-hop stream illustrators. The documented period is 2010s, with Lofi Girl launched in 2017. The cited work includes the lofi hip hop radio stream…",
+   "x": 0.0711,
+   "y": 0.127,
+   "nearness": 0.63
+  },
+  {
+   "id": "lowbrow",
+   "name": "Lowbrow",
+   "description": "Robert Williams, Juxtapoz artists, and the Los Angeles underground-comics, hot-rod, and punk-art scenes. The documented period is late 1960s onward. The cited work includes Juxtapoz, Last Gasp publications, paintings…",
+   "x": 0.2658,
+   "y": 0.8609,
+   "nearness": 0.63
+  },
+  {
+   "id": "movement-in-cinema",
+   "name": "Movement in cinema",
+   "description": "Movement in cinema groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9682,
+   "y": 0.8574,
+   "nearness": 0.63
+  },
+  {
+   "id": "new-rave",
+   "name": "New Rave",
+   "description": "Klaxons, Late of the Pier, Trash Fashion, New Young Pony Club, CSS. Mid-2000s (c. 2006-2008). NME Magazine, MySpace, Indie, Electroclash, Indie Sleaze.",
+   "x": 0.7899,
+   "y": 0.9617,
+   "nearness": 0.63
+  },
+  {
+   "id": "orphism-art",
+   "name": "Orphism (art)",
+   "description": "An offshoot of Cubism towards pure abstraction and bright colour, named by Guillaume Apollinaire in 1912 after Orpheus. Robert and Sonia Delaunay are its central figures, working from simultaneous colour contrast. It is…",
+   "x": 0.3166,
+   "y": 0.0074,
+   "nearness": 0.63
+  },
+  {
+   "id": "qing-dynasty-art",
+   "name": "Qing-dynasty art",
+   "description": "Qing court workshops, scholar-painters, professional artists, and foreign commissions produced an internally varied body of work.",
+   "x": 0.663,
+   "y": 0.0193,
+   "nearness": 0.63
+  },
+  {
+   "id": "rock-and-roll",
+   "name": "rock and roll",
+   "description": "rock and roll groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0023,
+   "y": 0.837,
+   "nearness": 0.63
+  },
+  {
+   "id": "street-racing",
+   "name": "Street racing",
+   "description": "Street racing groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.1573,
+   "y": 0.7263,
+   "nearness": 0.63
+  },
+  {
+   "id": "superflat-pop",
+   "name": "Superflat Pop",
+   "description": "Takashi Murakami, Lauren Faust and commercial animation, toy and game studios. The documented period is 2000s-early 2010s. The cited work includes Superflat Monogram, Milky Way and the Galaxy Girls, Katamari Damacy and…",
+   "x": 0.9094,
+   "y": 0.9168,
+   "nearness": 0.63
+  },
+  {
+   "id": "symbolism",
+   "name": "Symbolism",
+   "description": "A late nineteenth-century movement of French and Belgian origin that set out to reach absolute truths through symbol and suggestion, against naturalism and realism. Moréas published its manifesto in 1886, Mallarmé…",
+   "x": 0.9656,
+   "y": 0.2555,
+   "nearness": 0.63
+  },
+  {
+   "id": "video-game-assets",
+   "name": "Video-game assets",
+   "description": "Video-game assets groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.0646,
+   "y": 0.5879,
+   "nearness": 0.63
+  },
+  {
+   "id": "acid-design",
+   "name": "Acid Design",
+   "description": "A graphic style connects 1990s rave flyers to a mid-2010s digital revival marked by distorted type and synthetic imagery.",
+   "x": 0.7117,
+   "y": 0.9814,
+   "nearness": 0.62
+  },
+  {
+   "id": "automatism",
+   "name": "Automatism",
+   "description": "Surrealists adapted automatic writing and drawing to bypass conscious control.",
+   "x": 0.8843,
+   "y": 0.0272,
+   "nearness": 0.62
+  },
+  {
+   "id": "caravaggism",
+   "name": "Caravaggism",
+   "description": "Caravaggism is painting in Caravaggio's dramatic, naturalistic, high-contrast manner.",
+   "x": 0.1204,
+   "y": 0.7259,
+   "nearness": 0.62
+  },
+  {
+   "id": "cherry-emoji-twitter",
+   "name": "Cherry Emoji Twitter",
+   "description": "Samiyah, JE55ICAFANT, YUNGSADISTIC, Milfie and Twitter participants. The documented period is 2010s. The cited work includes tweets, styling and Cherry zines.",
+   "x": 0.6774,
+   "y": 1.0111,
+   "nearness": 0.62
+  },
+  {
+   "id": "cobra",
+   "name": "CoBrA",
+   "description": "A European avant-garde group active from 1948 to 1951, its name assembled by Christian Dotremont from Copenhagen, Brussels and Amsterdam. Asger Jorn, Karel Appel and Constant painted fast, bright and deliberately…",
+   "x": 0.6421,
+   "y": 1.029,
+   "nearness": 0.62
+  },
+  {
+   "id": "corecore",
+   "name": "Corecore",
+   "description": "Corecore groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.1233,
+   "y": 0.1086,
+   "nearness": 0.62
+  },
+  {
+   "id": "garage-rock",
+   "name": "garage rock",
+   "description": "garage rock groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.2962,
+   "y": 0.905,
+   "nearness": 0.62
+  },
+  {
+   "id": "recession-pop",
+   "name": "Recession Pop",
+   "description": "Lady Gaga, Ke$ha, Rihanna, Katy Perry, LMFAO, Nicki Minaj, Pitbull, Kylie Minogue. Late 2000s. Avantropop, Electroclash, McBling.",
+   "x": 0.8708,
+   "y": 0.9597,
+   "nearness": 0.62
+  },
+  {
+   "id": "rug",
+   "name": "Rug",
+   "description": "A rug is a heavy woven textile commonly used as a floor covering.",
+   "x": 1.0371,
+   "y": 0.383,
+   "nearness": 0.62
+  },
+  {
+   "id": "spatialism",
+   "name": "Spatialism",
+   "description": "A movement founded in Milan in 1947 by Lucio Fontana, which proposed an art combining colour, sound, space, movement and time, appropriate to an age of flight and broadcast. Its most famous result is the cut and…",
+   "x": 0.5577,
+   "y": 1.0337,
+   "nearness": 0.62
+  },
+  {
+   "id": "the-pictures-generation",
+   "name": "The Pictures Generation",
+   "description": "American artists who came up in the later 1970s and 1980s working by appropriating images from film, television and advertising, and examining what those images do. Douglas Crimp's 1977 exhibition Pictures at Artists…",
+   "x": 0.4784,
+   "y": 0.4654,
+   "nearness": 0.62
+  },
+  {
+   "id": "tools-and-equipment-hierarchy",
+   "name": "Tools and Equipment Hierarchy",
+   "description": "This branch groups tools, equipment, and instruments.",
+   "x": -0.0266,
+   "y": 0.3533,
+   "nearness": 0.62
+  },
+  {
+   "id": "transfer",
+   "name": "Transfer",
+   "description": "Transfer moves an image from one support to another.",
+   "x": 0.1787,
+   "y": 0.7909,
+   "nearness": 0.62
+  },
+  {
+   "id": "aestheticism",
+   "name": "Aestheticism",
+   "description": "A late nineteenth-century movement holding that art exists for its own beauty. Whistler, Rossetti, Wilde and Beardsley are its figures, and it extends into interiors, wallpaper, book design and dress. Art for art's sake…",
+   "x": 0.969,
+   "y": 0.2194,
+   "nearness": 0.61
+  },
+  {
+   "id": "art-nouveau",
+   "name": "Art Nouveau",
+   "description": "Architecture, decorative art and illustration of about 1890 to 1910 in Europe and the United States, built on fluid, undulating line drawn from plant forms and on new materials such as iron and glass. It went under…",
+   "x": 0.9662,
+   "y": 0.1906,
+   "nearness": 0.61
+  },
+  {
+   "id": "computer-aided-manufacturing",
+   "name": "Computer-Aided Manufacturing",
+   "description": "Computer-Aided Manufacturing makes objects with CNC equipment, 3-D printing, or related machinery.",
+   "x": 0.0308,
+   "y": 0.4581,
+   "nearness": 0.61
+  },
+  {
+   "id": "containers-hierarchy",
+   "name": "Containers Hierarchy",
+   "description": "Getty's containers hierarchy groups objects made to hold other things.",
+   "x": 0.2116,
+   "y": 0.8332,
+   "nearness": 0.61
+  },
+  {
+   "id": "cyber-ghetto",
+   "name": "Cyber Ghetto",
+   "description": "Ruth Laveau and online fashion communities. The documented period is 2010s. The cited work includes blog images, styling and digital collage.",
+   "x": 0.3585,
+   "y": 0.9518,
+   "nearness": 0.61
+  },
+  {
+   "id": "dance-pop",
+   "name": "dance-pop",
+   "description": "dance-pop groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.958,
+   "y": 0.8925,
+   "nearness": 0.61
+  },
+  {
+   "id": "hip-hop-genres",
+   "name": "Hip-hop genres",
+   "description": "Hip-hop genres groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0034,
+   "y": 0.8649,
+   "nearness": 0.61
+  },
+  {
+   "id": "inlay",
+   "name": "Inlay",
+   "description": "Inlay inserts small pieces of one material into a larger piece to make a design. Inlay appears in many directions without defining one by itself.",
+   "x": 0.9119,
+   "y": 0.944,
+   "nearness": 0.61
+  },
+  {
+   "id": "kitsch",
+   "name": "Kitsch",
+   "description": "Kitsch groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8329,
+   "y": 0.9821,
+   "nearness": 0.61
+  },
+  {
+   "id": "neo-chinese-style",
+   "name": "Neo-Chinese Style",
+   "description": "Vivienne Tam, Samuel Guì Yang, Clot, Angel Chen, Uma Wang and Yueqi Qi. The documented period is the term appeared in interior design in 2002 and became prominent in 2020s fashion. The cited work includes the Suzhou…",
+   "x": 0.697,
+   "y": 0.0003,
+   "nearness": 0.61
+  },
+  {
+   "id": "neofolk",
+   "name": "Neofolk",
+   "description": "Douglas Pearce, David Tibet, Tony Wakeford. 1980s. Industrial, Post-Punk, Neofolk.",
+   "x": 0.5946,
+   "y": -0.0003,
+   "nearness": 0.61
+  },
+  {
+   "id": "neon-and-fluorescent-light",
+   "name": "Neon and Fluorescent Light",
+   "description": "Neon lamps use ionized gas in glass tubes, while fluorescent lighting uses fluorescent lamps. Because it occurs across many directions, neon and fluorescent light does not define a direction on its own.",
+   "x": 0.0393,
+   "y": 0.166,
+   "nearness": 0.61
+  },
+  {
+   "id": "pattern-and-decoration",
+   "name": "Pattern and Decoration",
+   "description": "An American movement of the mid-1970s to early 1980s that made ornament, textile and the decorative into serious painting, against Minimalism's austerity. It drew on Islamic, African and folk pattern and on feminist…",
+   "x": 0.9894,
+   "y": 0.8918,
+   "nearness": 0.61
+  },
+  {
+   "id": "1970s",
+   "name": "1970s",
+   "description": "During the 1970s, transnational exchange influenced art practice, including earthworks, conceptual art, performance, and site-specific work.",
+   "x": 0.6322,
+   "y": -0.0027,
+   "nearness": 0.6
+  },
+  {
+   "id": "abstraction-creation",
+   "name": "Abstraction-Création",
+   "description": "A loose Paris association founded in 1931 to hold abstraction together against the pull of Breton's Surrealism, with several hundred members at its height. It published an annual, ran exhibitions and gathered geometric…",
+   "x": 1.0358,
+   "y": 0.8451,
+   "nearness": 0.6
+  },
+  {
+   "id": "buddhist-art",
+   "name": "Buddhist art",
+   "description": "Buddhist art includes images, reliquaries, manuscripts, and architecture made for monastic, court, pilgrimage, and lay settings across Asia.",
+   "x": 0.6663,
+   "y": -0.0173,
+   "nearness": 0.6
+  },
+  {
+   "id": "corporate-cyberspace",
+   "name": "Corporate Cyberspace",
+   "description": "Corporate Cyberspace groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.1716,
+   "y": 0.056,
+   "nearness": 0.6
+  },
+  {
+   "id": "crust-punk",
+   "name": "Crust Punk",
+   "description": "Hellbastard and British punk and metal bands. The documented period is early 1980s onward. The cited work includes recordings, zines, patches and performance. Aesthetics Wiki is the only source for this bounded name and…",
+   "x": 0.2614,
+   "y": 0.8882,
+   "nearness": 0.6
+  },
+  {
+   "id": "cybergoth",
+   "name": "Cybergoth",
+   "description": "European industrial and rave communities. The documented period is late 1990s onward. The cited work includes music, dance, cyberlox, clothing and club performance.",
+   "x": 0.4045,
+   "y": 0.582,
+   "nearness": 0.6
+  },
+  {
+   "id": "electroclash",
+   "name": "Electroclash",
+   "description": "Miss Kittin, Fischerspooner, Peaches, I-F and DJ Hell. The documented period is late 1990s to early 2000s. The cited work includes records, festivals and performance.",
+   "x": -0.035,
+   "y": 0.3121,
+   "nearness": 0.6
+  },
+  {
+   "id": "fetish",
+   "name": "Fetish",
+   "description": "Fetish groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7887,
+   "y": 0.9947,
+   "nearness": 0.6
+  },
+  {
+   "id": "fluxus",
+   "name": "Fluxus",
+   "description": "An international, interdisciplinary network of the 1960s and 1970s, named by George Maciunas in 1962, working in performance, event scores, small printed multiples and mail. Inspired by John Cage, it put chance and…",
+   "x": 0.0057,
+   "y": 0.1889,
+   "nearness": 0.6
+  },
+  {
+   "id": "funk-art",
+   "name": "Funk Art",
+   "description": "A Californian movement of the 1960s, centred on the Bay Area, that answered Abstract Expressionism's seriousness with figuration, humour, vulgarity and ceramics. Robert Arneson and the Davis ceramics circle made it in…",
+   "x": 0.477,
+   "y": 0.0213,
+   "nearness": 0.6
+  },
+  {
+   "id": "hippie",
+   "name": "Hippie",
+   "description": "Janis Joplin, Jimi Hendrix, The Beatles, the Grateful Dead, Joni Mitchell. The documented period is Mid-1960s-Early 1970s. The cited work includes Woodstock (1970 film), Easy Rider (1969 film), Hair (musical)…",
+   "x": 0.9529,
+   "y": 0.9245,
+   "nearness": 0.6
+  },
+  {
+   "id": "house-music",
+   "name": "house music",
+   "description": "house music groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7425,
+   "y": 0.9963,
+   "nearness": 0.6
+  },
+  {
+   "id": "industrial",
+   "name": "Industrial",
+   "description": "Genesis P-Orridge and Throbbing Gristle, Al Jourgensen and Ministry, Trent Reznor and Nine Inch Nails, Einstürzende Neubauten, and Skinny Puppy. The documented period is 1970s onward. The cited work includes Industrial…",
+   "x": 0.2246,
+   "y": 0.8739,
+   "nearness": 0.6
+  },
+  {
+   "id": "liminal-space",
+   "name": "Liminal Space",
+   "description": "4chan Backrooms creators, photographer Todd Hido, and video editor YOURLOCALBREADMAN. The documented period is 2000s roots and a 2019 online formation. The cited work includes The Backrooms, Homes at Night, No Players…",
+   "x": 0.1244,
+   "y": 0.0798,
+   "nearness": 0.6
+  },
+  {
+   "id": "mid-century-modern-design",
+   "name": "Mid-Century Modern Design",
+   "description": "An international design category for architecture, interiors, furniture, lighting, ceramics, glass and textiles made from about 1940 to 1965. Getty dates the name to Cara Greenberg's 1983 book, after much of the work it…",
+   "x": 0.0468,
+   "y": 0.5326,
+   "nearness": 0.6
+  },
+  {
+   "id": "mission-school",
+   "name": "Mission School",
+   "description": "Barry McGee, Margaret Kilgallen, Chris Johanson, Alicia McCarthy, Ruby Neri. 1990s. Global Village Coffeehouse, Lowbrow, Hipster. Aesthetics Wiki is the only source for this bounded name and history.",
+   "x": 0.3167,
+   "y": 0.9515,
+   "nearness": 0.6
+  },
+  {
+   "id": "modern-british-styles-and-movements",
+   "name": "modern British styles and movements",
+   "description": "modern British styles and movements groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0362,
+   "y": 0.8783,
+   "nearness": 0.6
+  },
+  {
+   "id": "modern-polish-styles-and-movements",
+   "name": "modern Polish styles and movements",
+   "description": "modern Polish styles and movements groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.5152,
+   "y": 0.0005,
+   "nearness": 0.6
+  },
+  {
+   "id": "neo-tokyo",
+   "name": "Neo-Tokyo",
+   "description": "Shotaro Kaneda (Akira), Major Motoko Kusanagi (Ghost in the Shell). 1980s. Akira, Ghost in the Shell, Blade Runner (as a key influence), Cyberpunk, Neo-Tokyo, Akira. Aesthetics Wiki is the only source for this bounded…",
+   "x": 0.0874,
+   "y": 0.6594,
+   "nearness": 0.6
+  },
+  {
+   "id": "neo-y2k",
+   "name": "Neo-Y2K",
+   "description": "Terrell Davis, Froyo Tam, Arixant, Doss, DV-i, Princess Nokia, Andypantsz, Maxime Dardenne, Cody Vondell, Hvnter, Charli XCX, and FKA Twigs. The documented period is the late 2010s. The cited work includes Y2K Futurism…",
+   "x": -0.0351,
+   "y": 0.2196,
+   "nearness": 0.6
+  },
+  {
+   "id": "pc-98",
+   "name": "PC-98",
+   "description": "NEC platform developers, ZUN, Takahiro Yonemura and Japanese game and doujin communities. The documented period is 1980s-1990s, with later revival work. The cited work includes Dōkyūsei, Shizuku, Touhou Project, game…",
+   "x": 0.1415,
+   "y": 0.7629,
+   "nearness": 0.6
+  },
+  {
+   "id": "post-punk",
+   "name": "Post-Punk",
+   "description": "Ian Curtis (Joy Division), Siouxsie Sioux (Siouxsie and the Banshees), Robert Smith (The Cure), David Byrne (Talking Heads). 1970s. Punk, New Wave, Goth. Aesthetics Wiki is the only source for this bounded name and…",
+   "x": 0.1771,
+   "y": 0.8192,
+   "nearness": 0.6
+  },
+  {
+   "id": "postminimalism",
+   "name": "Postminimalism",
+   "description": "Work of the late 1960s and early 1970s that took Minimalism's clarity and let process, gravity, softness and chance back in. Robert Pincus-Witten coined the term in 1971; Eva Hesse and Richard Serra's early lead pieces…",
+   "x": 0.5516,
+   "y": -0.0105,
+   "nearness": 0.6
+  },
+  {
+   "id": "rinpa-school",
+   "name": "Rinpa school",
+   "description": "A Japanese painting style associated with Sōtatsu and later Rinpa practice during the Edo period.",
+   "x": 0.9578,
+   "y": 0.1266,
+   "nearness": 0.6
+  },
+  {
+   "id": "romanticism",
+   "name": "Romanticism",
+   "description": "A movement that began in Europe at the end of the eighteenth century and argued for subjectivity, imagination and nature against the Enlightenment and the industrial order. In literature it turns to the isolated…",
+   "x": 0.9678,
+   "y": 0.1587,
+   "nearness": 0.6
+  },
+  {
+   "id": "russian-cosmism",
+   "name": "Russian Cosmism",
+   "description": "Alexander Scriabin. 1900s. Cosmicism, Russian Futurism, Russian Cosmism.",
+   "x": 0.0388,
+   "y": 0.4859,
+   "nearness": 0.6
+  },
+  {
+   "id": "screen-format",
+   "name": "Screen Format",
+   "description": "Screen Format includes folding, standing, and sliding-screen works.",
+   "x": 0.601,
+   "y": 1.0294,
+   "nearness": 0.6
+  },
+  {
+   "id": "shibuya-kei",
+   "name": "Shibuya-Kei",
+   "description": "Cornelius, Pizzicato Five and Flipper's Guitar. The documented period is Tokyo, early-to-late 1990s. The cited work includes recordings, sleeves, fashion and graphics.",
+   "x": 1.0045,
+   "y": 0.2548,
+   "nearness": 0.6
+  },
+  {
+   "id": "simpsonwave",
+   "name": "Simpsonwave",
+   "description": "totallytv, Spicster and online editors. The documented period is 2006 and especially 2015-2016. The cited work includes Simpsons video edits set to vaporwave and lo-fi music.",
+   "x": -0.0311,
+   "y": 0.1927,
+   "nearness": 0.6
+  },
+  {
+   "id": "southern-european-medieval-styles",
+   "name": "Southern European Medieval styles",
+   "description": "Southern European Medieval styles groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0,
+   "y": 0.2134,
+   "nearness": 0.6
+  },
+  {
+   "id": "trucks",
+   "name": "Trucks",
+   "description": "Trucks groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9848,
+   "y": 0.9195,
+   "nearness": 0.6
+  },
+  {
+   "id": "xpiritualism",
+   "name": "Xpiritualism",
+   "description": "3rd.world.elite and online collage artists. The documented period is late 2010s-2020s. The cited work includes Instagram collages, video edits and linked music.",
+   "x": 0.7107,
+   "y": 1.0113,
+   "nearness": 0.6
+  },
+  {
+   "id": "australiana",
+   "name": "Australiana",
+   "description": "Australian designers built a national fashion language from local flora, fauna, scenery, color, and popular imagery.",
+   "x": 1.0016,
+   "y": 0.1844,
+   "nearness": 0.59
+  },
+  {
+   "id": "brazilian-subculture",
+   "name": "Brazilian subculture",
+   "description": "Brazilian subculture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8645,
+   "y": 0.9899,
+   "nearness": 0.59
+  },
+  {
+   "id": "der-blaue-reiter",
+   "name": "Der Blaue Reiter",
+   "description": "A Munich group and almanac created by Kandinsky and Franz Marc, which mounted two exhibitions in 1911 and 1912 and published its almanac in 1912. It set spiritual content above representation, and placed folk art…",
+   "x": 1.0342,
+   "y": 0.9051,
+   "nearness": 0.59
+  },
+  {
+   "id": "easy-listening",
+   "name": "easy listening",
+   "description": "easy listening groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.3554,
+   "y": 0.983,
+   "nearness": 0.59
+  },
+  {
+   "id": "hardcore-hip-hop",
+   "name": "hardcore hip-hop",
+   "description": "hardcore hip-hop groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.2628,
+   "y": 0.9152,
+   "nearness": 0.59
+  },
+  {
+   "id": "heavy-metal-subculture",
+   "name": "Heavy metal subculture",
+   "description": "Heavy metal subculture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.2761,
+   "y": 0.9435,
+   "nearness": 0.59
+  },
+  {
+   "id": "hipness-purgatory",
+   "name": "Hipness Purgatory",
+   "description": "New York anti-folk artists Jeffrey Lewis, Walter Mitty and His Makeshift Orchestra, Wingnut Dishwashers Union, and Metro Zu. The documented period is 2004-2013. The cited work includes Ashes57's Swamp 81 artwork, Juno…",
+   "x": 0.2242,
+   "y": 0.9045,
+   "nearness": 0.59
+  },
+  {
+   "id": "hyperrealism",
+   "name": "Hyperrealism",
+   "description": "Extreme realism developed into a named late-twentieth-century practice across painting and sculpture.",
+   "x": 0.7648,
+   "y": 1.0238,
+   "nearness": 0.59
+  },
+  {
+   "id": "inorganic-material",
+   "name": "Inorganic Material",
+   "description": "Material that does not come from animal or plant matter.",
+   "x": 0.001,
+   "y": 0.4264,
+   "nearness": 0.59
+  },
+  {
+   "id": "krocha",
+   "name": "Krocha",
+   "description": "late-2000s Austrian Krocha youth, DJs, and dance-event promoters. The documented period is late 2000s. The cited work includes Krocha Traxx Vol. 1, Krocha Hits Vol. 1, neon dress, Vokuhila hair, hard dance, and club…",
+   "x": 0.4809,
+   "y": -0.0075,
+   "nearness": 0.59
+  },
+  {
+   "id": "lounge-music",
+   "name": "lounge music",
+   "description": "lounge music groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.0841,
+   "y": 0.0967,
+   "nearness": 0.59
+  },
+  {
+   "id": "plakatstil",
+   "name": "Plakatstil",
+   "description": "Lucian Bernhard. 1900s-1910s. Art Nouveau, Art Deco, Bauhaus. Aesthetics Wiki is the only source for this bounded name and history.",
+   "x": 0.964,
+   "y": 0.9542,
+   "nearness": 0.59
+  },
+  {
+   "id": "realism-art-movement",
+   "name": "Realism (art movement)",
+   "description": "A French movement of the 1840s that rejected Romanticism and set out to paint ordinary contemporary people and situations at the scale history painting had reserved for gods and kings. Courbet is its proponent and A…",
+   "x": 0.1923,
+   "y": 0.8665,
+   "nearness": 0.59
+  },
+  {
+   "id": "renaissance-baroque-styles",
+   "name": "Renaissance-Baroque styles",
+   "description": "Renaissance-Baroque styles groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.2815,
+   "y": -0.0102,
+   "nearness": 0.59
+  },
+  {
+   "id": "school-of-paris",
+   "name": "School of Paris",
+   "description": "The French and émigré artists who worked in Paris while the city was the centre of Western art. Before the war the term named the foreign-born painters of Montparnasse, Modigliani, Chagall and Soutine among them, and…",
+   "x": 1.0283,
+   "y": 0.9353,
+   "nearness": 0.59
+  },
+  {
+   "id": "serbian-youth-culture",
+   "name": "Serbian youth culture",
+   "description": "Serbian youth culture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9185,
+   "y": 0.976,
+   "nearness": 0.59
+  },
+  {
+   "id": "site-specific-art",
+   "name": "Site-Specific Art",
+   "description": "The work's identity depends on its physical location and context.",
+   "x": 0.1315,
+   "y": 0.0476,
+   "nearness": 0.59
+  },
+  {
+   "id": "sovietwave",
+   "name": "Sovietwave",
+   "description": "Russian, Belarusian and Ukrainian electronic musicians including PPK. The documented period is early 2010s onward. The cited work includes synth releases and retro-Soviet videos. Aesthetics Wiki is the only source for…",
+   "x": -0.0241,
+   "y": 0.3896,
+   "nearness": 0.59
+  },
+  {
+   "id": "terracotta",
+   "name": "Terracotta",
+   "description": "Terracotta is a clay body that is shaped, dried, and fired for pottery, sculpture, lamps, tiles, and other objects. Because it occurs across many directions, terracotta does not define a direction on its own.",
+   "x": 0.9279,
+   "y": 0.2528,
+   "nearness": 0.59
+  },
+  {
+   "id": "american-hip-hop",
+   "name": "American hip-hop",
+   "description": "American hip-hop groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.688,
+   "y": 1.0392,
+   "nearness": 0.58
+  },
+  {
+   "id": "american-realism",
+   "name": "American Realism",
+   "description": "An American movement across art, literature and music that took contemporary social life and ordinary people as its subject. It begins in mid-nineteenth-century writing and becomes a major tendency in painting in the…",
+   "x": 1.0373,
+   "y": 0.2598,
+   "nearness": 0.58
+  },
+  {
+   "id": "australian-youth-culture",
+   "name": "Australian youth culture",
+   "description": "Australian youth culture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.8283,
+   "y": 1.0128,
+   "nearness": 0.58
+  },
+  {
+   "id": "camera-obscura",
+   "name": "Camera Obscura",
+   "description": "A camera obscura is a darkened optical chamber that projects an image.",
+   "x": 0.1962,
+   "y": 0.021,
+   "nearness": 0.58
+  },
+  {
+   "id": "chicano-art-movement",
+   "name": "Chicano art movement",
+   "description": "Mexican American artists from the 1960s building a distinct artistic identity alongside the Chicano civil rights movement, in murals, posters, printmaking and performance. Its imagery draws on Mexican muralism, Catholic…",
+   "x": 0.8771,
+   "y": 1.0176,
+   "nearness": 0.58
+  },
+  {
+   "id": "colab",
+   "name": "Colab",
+   "description": "Collaborative Projects, a New York artists' group formed in the late 1970s out of open meetings, which organised exhibitions in disused buildings, ran a cable programme and worked without a hierarchy. The Times Square…",
+   "x": 0.3865,
+   "y": 1.018,
+   "nearness": 0.58
+  },
+  {
+   "id": "dreampunk",
+   "name": "Dreampunk",
+   "description": "David Russo, Dream Catalogue, 2814 and related producers. The documented period is 2014 onward. The cited work includes original electronic albums and visual releases.",
+   "x": 0.0339,
+   "y": 0.1323,
+   "nearness": 0.58
+  },
+  {
+   "id": "gothic-migration-culture-or-period",
+   "name": "Gothic (Migration culture or period)",
+   "description": "Gothic (Migration culture or period) groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7291,
+   "y": -0.0133,
+   "nearness": 0.58
+  },
+  {
+   "id": "hippie-goth",
+   "name": "Hippie Goth",
+   "description": "Stevie Nicks, Florence Welch, Lisa Bonet, and Goth and bohemian fashion communities. The documented period is 1980s onward. The cited work includes flowing black garments, lace, shawls, layered jewelry, botanical…",
+   "x": 0.807,
+   "y": -0.0029,
+   "nearness": 0.58
+  },
+  {
+   "id": "junkpunk",
+   "name": "Junkpunk",
+   "description": "Evan Calder Williams, China Mieville. The documented period is 2010s. The cited work includes Junkpunk, Salvagepunk, Scavenged Punk, Gunnm (Battle Angel Alita). Aesthetics Wiki is the only source for this bounded name…",
+   "x": 0.0526,
+   "y": 0.6319,
+   "nearness": 0.58
+  },
+  {
+   "id": "metal",
+   "name": "Metal",
+   "description": "Metal is a class of material associated with luster, conductivity, opacity, fusibility, and malleability or ductility. Metal is used in many directions without defining the direction.",
+   "x": -0.0325,
+   "y": 0.1584,
+   "nearness": 0.58
+  },
+  {
+   "id": "neo-romanticism",
+   "name": "Neo-romanticism",
+   "description": "A recurring return to Romantic material and feeling after Romanticism itself, in literature, painting, music and architecture. The label covers several distinct episodes, among them the British painters and writers of…",
+   "x": 0.5838,
+   "y": -0.0306,
+   "nearness": 0.58
+  },
+  {
+   "id": "oil-on-panel",
+   "name": "Oil on Panel",
+   "description": "This technique uses a wooden support for oil paint.",
+   "x": 1.0087,
+   "y": 0.9627,
+   "nearness": 0.58
+  },
+  {
+   "id": "photorealism",
+   "name": "Photorealism",
+   "description": "Richard Estes, Chuck Close, Audrey Flack, Ralph Goings, Robert Bechtle. Late 1960s-1970s. Pop Art, Photorealism.",
+   "x": 0.0865,
+   "y": 0.7018,
+   "nearness": 0.58
+  },
+  {
+   "id": "poured",
+   "name": "Poured",
+   "description": "Artists make Poured work by pouring liquid paint or another medium.",
+   "x": 0.6249,
+   "y": -0.0364,
+   "nearness": 0.58
+  },
+  {
+   "id": "prehistoric-art",
+   "name": "Prehistoric Art",
+   "description": "Prehistoric art comes from periods before the first contemporary written accounts, with dates that differ by people and field of study.",
+   "x": 1.001,
+   "y": 0.1553,
+   "nearness": 0.58
+  },
+  {
+   "id": "psychedelia",
+   "name": "Psychedelia",
+   "description": "Timothy Leary, Aldous Huxley, Ken Kesey, Owsley Stanley, The Beatles, The Grateful Dead, Jefferson Airplane, Pink Floyd, The Doors. 1960s. The Electric Kool-Aid Acid Test (book), Revolver (album), Sgt. Pepper's Lonely…",
+   "x": 0.9688,
+   "y": 0.9819,
+   "nearness": 0.58
+  },
+  {
+   "id": "purism",
+   "name": "Purism",
+   "description": "A movement of 1918 to 1925 founded by Amédée Ozenfant and Charles-Édouard Jeanneret, later Le Corbusier, which set out to purify Cubism of what they considered its arbitrary and decorative turn. It paints ordinary…",
+   "x": 0.0335,
+   "y": 0.5598,
+   "nearness": 0.58
+  },
+  {
+   "id": "queercore",
+   "name": "Queercore",
+   "description": "G. B. Jones, Bruce LaBruce and Toronto queer-punk participants. The documented period is mid-1980s onward. The cited work includes J.D.s, SCAB, films, zines, records and performances. Aesthetics Wiki is the only source…",
+   "x": 0.3235,
+   "y": 0.9848,
+   "nearness": 0.58
+  },
+  {
+   "id": "rave",
+   "name": "Rave",
+   "description": "Sunrise, Revolution in Progress, Pete Marland and UK, Detroit and Chicago dance communities. The documented period is late 1980s-1990s. The cited work includes Shoom and Groove Park parties, Castlemorton Common…",
+   "x": 0.3504,
+   "y": 1.0288,
+   "nearness": 0.58
+  },
+  {
+   "id": "reliquary",
+   "name": "Reliquary",
+   "description": "A reliquary safeguards or displays relics.",
+   "x": 0.45,
+   "y": -0.0063,
+   "nearness": 0.58
+  },
+  {
+   "id": "restored-and-repurposed",
+   "name": "Restored and Repurposed",
+   "description": "Restored and Repurposed work heavily restores an existing object or assigns it a new use.",
+   "x": 0.0536,
+   "y": 0.6701,
+   "nearness": 0.58
+  },
+  {
+   "id": "shunga",
+   "name": "Shunga",
+   "description": "Japanese erotic art, mostly woodblock prints and illustrated books in the ukiyo-e manner, produced from the seventeenth to the nineteenth centuries by nearly every major print artist. The name means picture of spring…",
+   "x": 0.909,
+   "y": 1.0058,
+   "nearness": 0.58
+  },
+  {
+   "id": "space-age",
+   "name": "Space Age",
+   "description": "André Courrèges, Pierre Cardin, Paco Rabanne and Eero Saarinen. The documented period is mid-1950s-early 1970s. The cited work includes space-age fashion collections, TWA's Moonliner, pod furniture and terminal…",
+   "x": -0.0335,
+   "y": 0.4192,
+   "nearness": 0.58
+  },
+  {
+   "id": "spiral-arts-alliance",
+   "name": "Spiral (arts alliance)",
+   "description": "A collective of African American artists formed in New York on 5 July 1963 by Romare Bearden, Charles Alston, Norman Lewis and Hale Woodruff, meeting to argue what a Black artist owed the civil rights movement. It held…",
+   "x": 0.1438,
+   "y": 0.8033,
+   "nearness": 0.58
+  },
+  {
+   "id": "swedish-youth-culture",
+   "name": "Swedish youth culture",
+   "description": "Swedish youth culture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9463,
+   "y": 1.0094,
+   "nearness": 0.58
+  },
+  {
+   "id": "tablet-stele",
+   "name": "Tablet/Stele",
+   "description": "Stelae are upright stone slabs used as commemorative markers. Tablets are flat slabs made to carry inscriptions or pictures.",
+   "x": 0.5089,
+   "y": -0.039,
+   "nearness": 0.58
+  },
+  {
+   "id": "trap-music",
+   "name": "trap music",
+   "description": "trap music groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.164,
+   "y": 0.0214,
+   "nearness": 0.58
+  },
+  {
+   "id": "venetian-painting",
+   "name": "Venetian painting",
+   "description": "The painting of Renaissance Venice and after, in which colour and light carry what Florentine painting carried by drawing. It begins with the Bellini workshops and runs through Giorgione, Titian, Tintoretto and Veronese…",
+   "x": 0.3561,
+   "y": -0.0281,
+   "nearness": 0.58
+  },
+  {
+   "id": "appropriation",
+   "name": "Appropriation",
+   "description": "Appropriation reuses borrowed images, sometimes with little alteration.",
+   "x": 0.1105,
+   "y": 0.777,
+   "nearness": 0.57
+  },
+  {
+   "id": "ceramic",
+   "name": "Ceramic",
+   "description": "Ceramic is a hard, brittle, heat-resistant material made by firing nonmetallic minerals or clay. Ceramic is used in many directions without defining the direction.",
+   "x": 0.6971,
+   "y": -0.031,
+   "nearness": 0.57
+  },
+  {
+   "id": "chernobyl-stalkers",
+   "name": "Chernobyl Stalkers",
+   "description": "Ukrainian exclusion-zone explorers. The documented period is 1990s onward. The cited work includes photography, video, writing and shared expedition records.",
+   "x": -0.0004,
+   "y": 0.4664,
+   "nearness": 0.57
+  },
+  {
+   "id": "chicha",
+   "name": "Chicha",
+   "description": "Peruvian musicians, poster painters and migrant communities. The documented period is mid-1970s onward. The cited work includes records, street posters, flyers and murals.",
+   "x": 0.286,
+   "y": 0.9715,
+   "nearness": 0.57
+  },
+  {
+   "id": "cybercore",
+   "name": "Cybercore",
+   "description": "Pinterest and TikTok image-makers. The documented period is about 2020 onward. The cited work includes collages, edits, outfits and anime-derived graphics. Aesthetics Wiki is the only source for this bounded name and…",
+   "x": -0.0018,
+   "y": 0.1591,
+   "nearness": 0.57
+  },
+  {
+   "id": "dansaekhwa",
+   "name": "Dansaekhwa",
+   "description": "A retroactive grouping of Korean painting shown from the mid-1970s, usually translated monochrome painting, in which the canvas is worked by soaking, pushing, tearing or repeated marking. Park Seo-bo, Ha Chong-hyun and…",
+   "x": 0.0324,
+   "y": 0.591,
+   "nearness": 0.57
+  },
+  {
+   "id": "dark-romanticism",
+   "name": "Dark Romanticism",
+   "description": "Edgar Allan Poe, Nathaniel Hawthorne, Emily Dickinson and allied writers. The documented period is nineteenth century. The cited work includes fiction and poetry. Aesthetics Wiki is the only source for this bounded name…",
+   "x": 0.7754,
+   "y": -0.023,
+   "nearness": 0.57
+  },
+  {
+   "id": "decopunk",
+   "name": "Decopunk",
+   "description": "Animation, game and fiction creators. The documented period is late twentieth century onward. The cited work includes BioShock, Batman: The Animated Series and Skullgirls. Aesthetics Wiki is the only source for this…",
+   "x": -0.0347,
+   "y": 0.4616,
+   "nearness": 0.57
+  },
+  {
+   "id": "electronic-dance-music",
+   "name": "electronic dance music",
+   "description": "electronic dance music groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.7962,
+   "y": 1.0302,
+   "nearness": 0.57
+  },
+  {
+   "id": "endurance-art",
+   "name": "Endurance Art",
+   "description": "Long performances test physical or emotional stamina, with a lineage through 1970s Body Art.",
+   "x": 0.092,
+   "y": 0.0683,
+   "nearness": 0.57
+  },
+  {
+   "id": "expressionism",
+   "name": "Expressionism",
+   "description": "A modernist movement that began in northern Europe around 1900 and shows the world entirely from a subjective position, distorting it for emotional effect. It runs across painting, poetry, drama, film and architecture…",
+   "x": 0.9405,
+   "y": 0.0652,
+   "nearness": 0.57
+  },
+  {
+   "id": "group-zero",
+   "name": "Group Zero",
+   "description": "A group founded in Düsseldorf in the late 1950s by Heinz Mack and Otto Piene, joined by Günther Uecker in 1961, which set out to start again from nothing after the war. Piene described zero as a zone of silence and pure…",
+   "x": 0.4368,
+   "y": -0.0336,
+   "nearness": 0.57
+  },
+  {
+   "id": "handscroll",
+   "name": "Handscroll",
+   "description": "A handscroll is a long horizontal painting or work of calligraphy viewed by unrolling it.",
+   "x": 0.814,
+   "y": -0.0326,
+   "nearness": 0.57
+  },
+  {
+   "id": "indie-sleaze",
+   "name": "Indie Sleaze",
+   "description": "The Cobrasnake (Mark Hunter), Cory Kennedy, Sky Ferreira, Uffie, M.I.A., Crystal Castles, Agyness Deyn, LCD Soundsystem, Jeremy Scott. The documented period is Mid-to-late 2000s. The cited work includes McBling…",
+   "x": 0.3185,
+   "y": 1.0238,
+   "nearness": 0.57
+  },
+  {
+   "id": "manba",
+   "name": "Manba",
+   "description": "Buriteri. The documented period is Late 1990s-Early 2000s. The cited work includes Magazines (egg, Ranzuki). Aesthetics Wiki is the only source for this bounded name and history.",
+   "x": 0.2804,
+   "y": 1.0001,
+   "nearness": 0.57
+  },
+  {
+   "id": "new-wave-film",
+   "name": "New Wave film",
+   "description": "New Wave film groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.2414,
+   "y": 0.9539,
+   "nearness": 0.57
+  },
+  {
+   "id": "silver-age-comics",
+   "name": "Silver Age Comics",
+   "description": "DC and Marvel writers, artists and printers. The documented period is mid-1950s-early 1970s. The cited work includes superhero comic books and their four-color printed art. Aesthetics Wiki is the only source for this…",
+   "x": 0.8273,
+   "y": 1.04,
+   "nearness": 0.57
+  },
+  {
+   "id": "weirdcore",
+   "name": "Weirdcore",
+   "description": "Tumblr and later online image-makers. The documented period is late 1990s visual sources and early 2020s popularity. The cited work includes edited photographs, GIFs and videos. Aesthetics Wiki is the only source for…",
+   "x": 0.0197,
+   "y": 0.6523,
+   "nearness": 0.57
+  },
+  {
+   "id": "wood",
+   "name": "Wood",
+   "description": "Wood is the principal tissue of trees and other woody plants and can be cut, carved, joined, or finished. Wood appears in many directions without defining one by itself.",
+   "x": 1.0193,
+   "y": 0.994,
+   "nearness": 0.57
+  },
+  {
+   "id": "yuan-dynasty-art",
+   "name": "Yuan-dynasty art",
+   "description": "Yuan court patronage, trans-Eurasian exchange, and scholar-painter networks affected painting, ceramics, textiles, and metalwork.",
+   "x": 0.8574,
+   "y": -0.0168,
+   "nearness": 0.57
+  },
+  {
+   "id": "2020-alt",
+   "name": "2020 Alt",
+   "description": "A TikTok youth scene joined punk-coded dress, dramatic makeup, short video, and hyperpop during the 2020 lockdowns.",
+   "x": 0.2451,
+   "y": 0.9829,
+   "nearness": 0.56
+  },
+  {
+   "id": "alternative-metal",
+   "name": "alternative metal",
+   "description": "alternative metal groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.1585,
+   "y": 0.8461,
+   "nearness": 0.56
+  },
+  {
+   "id": "art-hoe",
+   "name": "Art Hoe",
+   "description": "A 2015 Tumblr and Instagram movement placed young people of color inside canonical art imagery and circulated original portraits and collages.",
+   "x": 0.2682,
+   "y": 1.0295,
+   "nearness": 0.56
+  },
+  {
+   "id": "austurbane",
+   "name": "Austurbane",
+   "description": "Australian 1980s and 1990s design combined urban polish, local graphics, fashion, hospitality, and postmodern color. This account currently relies on the Aesthetics Wiki article alone for the bounded name and history.",
+   "x": 0.7227,
+   "y": 1.0381,
+   "nearness": 0.56
+  },
+  {
+   "id": "chilean-youth-culture",
+   "name": "Chilean youth culture",
+   "description": "Chilean youth culture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.9852,
+   "y": 1.0209,
+   "nearness": 0.56
+  },
+  {
+   "id": "digital-horror",
+   "name": "Digital Horror",
+   "description": "David Firth, Alex Hall and web-horror communities. The documented period is early 2000s onward. The cited work includes Salad Fingers, Ben Drowned and Petscop. Aesthetics Wiki is the only source for this bounded name…",
+   "x": 0.0558,
+   "y": 0.6996,
+   "nearness": 0.56
+  },
+  {
+   "id": "electronic-body-music",
+   "name": "Electronic Body Music",
+   "description": "DAF, Front 242, Nitzer Ebb and European post-industrial scenes. The documented period is late 1970s onward. The cited work includes records and club performance.",
+   "x": 0.0851,
+   "y": 0.7365,
+   "nearness": 0.56
+  },
+  {
+   "id": "grime-art",
+   "name": "Grime Art",
+   "description": "Richie Velasquez (deladeso). The documented period is Mid-2010s. The cited work includes Grime Art, Head Splitter.",
+   "x": 0.2103,
+   "y": 0.9358,
+   "nearness": 0.56
+  },
+  {
+   "id": "jojifuku",
+   "name": "Jojifuku",
+   "description": "Mezzo Piano, Pom Ponette, Angel Blue, Daisy Lovers, Sanrio, Angelic Pretty. The documented period is 2010s. The cited work includes Nakayoshi Magazine, Ciao Magazine. Aesthetics Wiki is the only source for this bounded…",
+   "x": 0.1826,
+   "y": 0.899,
+   "nearness": 0.56
+  },
+  {
+   "id": "land-art",
+   "name": "Land Art",
+   "description": "Art made in and from the landscape, emerging in the 1960s and 1970s, in which earth, stone, salt and weather are the material and the site is not separable from the piece. Smithson's Spiral Jetty, De Maria's Lightning…",
+   "x": 0.9783,
+   "y": 0.0997,
+   "nearness": 0.56
+  },
+  {
+   "id": "medieval-styles-and-periods",
+   "name": "Medieval styles and periods",
+   "description": "Medieval styles and periods groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.0312,
+   "y": 0.213,
+   "nearness": 0.56
+  },
+  {
+   "id": "musical-instrument",
+   "name": "Musical Instrument",
+   "description": "A musical instrument is an apparatus made primarily to produce music.",
+   "x": 0.9219,
+   "y": 1.0378,
+   "nearness": 0.56
+  },
+  {
+   "id": "neue-slowenische-kunst",
+   "name": "Neue Slowenische Kunst",
+   "description": "Laibach, IRWIN, Scipion Nasice Sisters Theatre. 1980s. Industrial, Neue Slowenische Kunst, Monumental Retro-Avant-Garde.",
+   "x": 0.1228,
+   "y": 0.8381,
+   "nearness": 0.56
+  },
+  {
+   "id": "post-impressionism",
+   "name": "Post-Impressionism",
+   "description": "The French painting of roughly 1886 to 1905 that came after Impressionism and turned from recording light towards structure, symbol and personal expression. Cézanne, Van Gogh, Gauguin and Seurat are its four principal…",
+   "x": 1.0187,
+   "y": 1.0257,
+   "nearness": 0.56
+  },
+  {
+   "id": "psychobilly",
+   "name": "Psychobilly",
+   "description": "The Meteors. Early 1980s. Rockabilly, Punk, Psychobilly.",
+   "x": 0.207,
+   "y": 0.9689,
+   "nearness": 0.56
+  },
+  {
+   "id": "steel",
+   "name": "Steel",
+   "description": "Steel is a durable, malleable alloy of iron and carbon that may include other elements. Steel appears in many directions without defining one by itself.",
+   "x": 0.32,
+   "y": -0.0264,
+   "nearness": 0.56
+  },
+  {
+   "id": "taxidermy",
+   "name": "Taxidermy",
+   "description": "Taxidermy makes a lifelike animal representation by arranging preserved skin over a model or stuffed form. Taxidermy is used in many directions without defining the direction.",
+   "x": 0.2177,
+   "y": -0.0157,
+   "nearness": 0.56
+  },
+  {
+   "id": "tempera",
+   "name": "Tempera",
+   "description": "Tempera binds pigment with egg or another emulsion.",
+   "x": 0.0133,
+   "y": 0.5323,
+   "nearness": 0.56
+  },
+  {
+   "id": "vectorheart",
+   "name": "Vectorheart",
+   "description": "The Designers Republic, Bionic Systems and game/graphic studios. The documented period is mid-1990s-2000s. The cited work includes Wipeout identities, websites and electronic-music graphics. Aesthetics Wiki is the only…",
+   "x": 0.0003,
+   "y": 0.5053,
+   "nearness": 0.56
+  },
+  {
+   "id": "aesthetic-rap",
+   "name": "Aesthetic Rap",
+   "description": "A small online rap scene combines short melodic tracks, anime or internet imagery, and edited videos. This account currently relies on the Aesthetics Wiki article alone for the bounded name and history.",
+   "x": 0.0333,
+   "y": 0.1011,
+   "nearness": 0.55
+  },
+  {
+   "id": "archive-fashion",
+   "name": "Archive Fashion",
+   "description": "Collectors and stylists build looks from past designer collections and circulate references online. This account currently relies on the Aesthetics Wiki article alone for the bounded name and history.",
+   "x": 0.3946,
+   "y": -0.0378,
+   "nearness": 0.55
+  },
+  {
+   "id": "artists-frame",
+   "name": "Artist's Frame",
+   "description": "An Artist's Frame is designed or selected as part of the artwork.",
+   "x": 0.1049,
+   "y": 0.8075,
+   "nearness": 0.55
+  },
+  {
+   "id": "asian-baby-girl",
+   "name": "Asian Baby Girl",
+   "description": "A 1990s Asian American youth subculture later became a social-media fashion and beauty style.",
+   "x": 0.9266,
+   "y": 0.0332,
+   "nearness": 0.55
+  },
+  {
+   "id": "beijing-east-village",
+   "name": "Beijing East Village",
+   "description": "An avant-garde community that formed in 1993 in a cheap settlement on Beijing's eastern margin, where Zhang Huan, Ma Liuming and the photographer Rong Rong made and recorded extreme performance work. It was broken up by…",
+   "x": 0.0767,
+   "y": 0.7691,
+   "nearness": 0.55
+  },
+  {
+   "id": "biopunk",
+   "name": "Biopunk",
+   "description": "Greg Bear, Bruce Sterling, Octavia E. Butler and Paul Di Filippo. The documented period is 1980s onward. The cited work includes Blood Music, Schismatrix and Ribofunk.",
+   "x": 0.8946,
+   "y": -0.0048,
+   "nearness": 0.55
+  },
+  {
+   "id": "chicanafuturism",
+   "name": "Chicanafuturism",
+   "description": "A movement named by the scholar Catherine S. Ramírez in 2004, on the model of Afrofuturism, in which Chicana artists and writers work with technology, science fiction and the future from a Chicana position. It attends…",
+   "x": -0.0003,
+   "y": 0.1202,
+   "nearness": 0.55
+  },
+  {
+   "id": "city-pop",
+   "name": "City Pop",
+   "description": "Japanese singers, songwriters and studios. The documented period is mid-1970s through the 1980s. The cited work includes Plastic Love and a large recorded pop catalogue. Aesthetics Wiki is the only source for this…",
+   "x": 0.2502,
+   "y": -0.0266,
+   "nearness": 0.55
+  },
+  {
+   "id": "corrido",
+   "name": "Corrido",
+   "description": "Corrido groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.4727,
+   "y": -0.0356,
+   "nearness": 0.55
+  },
+  {
+   "id": "cumbia",
+   "name": "cumbia",
+   "description": "cumbia groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.2356,
+   "y": 1.0131,
+   "nearness": 0.55
+  },
+  {
+   "id": "dark-girly-and-sweet-girly",
+   "name": "Dark Girly and Sweet Girly",
+   "description": "Japanese fashion communities and brands such as Liz Lisa, Secret Honey and Dear My Love. The documented period is 2019 onward. The cited work includes garments, shop collections and participant styling. Aesthetics Wiki…",
+   "x": 0.1516,
+   "y": 0.8806,
+   "nearness": 0.55
+  },
+  {
+   "id": "deathrock",
+   "name": "Deathrock",
+   "description": "Christian Death, 45 Grave, Castration Squad and club communities. The documented period is late 1970s to 1980s. The cited work includes recordings, performance and fashion.",
+   "x": 0.0491,
+   "y": 0.7303,
+   "nearness": 0.55
+  },
+  {
+   "id": "deconstructivism",
+   "name": "Deconstructivism",
+   "description": "A postmodern architectural movement of the 1980s in which a building looks fragmented, with harmony, continuity and symmetry deliberately withheld. The name joins Constructivism to Derrida's deconstruction, and a 1988…",
+   "x": -0.0004,
+   "y": 0.5862,
+   "nearness": 0.55
+  },
+  {
+   "id": "divine-machinery",
+   "name": "Divine Machinery",
+   "description": "Stane Jagodič, José Antonio Hernández-Díez and online image-makers. The documented period is 1980s precedents and a mid-2020s community. The cited work includes sculpture, installations and digital images.",
+   "x": -0.0336,
+   "y": 0.127,
+   "nearness": 0.55
+  },
+  {
+   "id": "enamel",
+   "name": "Enamel",
+   "description": "Enamel is a vitreous coating fused to metal, glass, or ceramic for protection or decoration. Enamel appears in many directions without defining one by itself.",
+   "x": 0.9264,
+   "y": -0.0142,
+   "nearness": 0.55
+  },
+  {
+   "id": "frutiger-aero",
+   "name": "Frutiger Aero",
+   "description": "Asadal Design, Microsoft, Apple. The documented period is 2000s. The cited work includes Y2K Futurism, Flat Design, Frutiger Aero, Web 2.0 Gloss. Aesthetics Wiki is the only source for this bounded name and history.",
+   "x": 0.5434,
+   "y": -0.0374,
+   "nearness": 0.55
+  },
+  {
+   "id": "gutai",
+   "name": "Gutai",
+   "description": "A Japanese avant-garde collective founded in Ashiya in 1954 by Jirō Yoshihara and dissolved after his death in 1972. The name means concreteness, and the group set out to make the encounter between a body and a material…",
+   "x": 0.9602,
+   "y": 0.0148,
+   "nearness": 0.55
+  },
+  {
+   "id": "icepunk",
+   "name": "Icepunk",
+   "description": "Drrty Pharms. The documented period is 2010s. The cited work includes Icepunk, Coldrave. Aesthetics Wiki is the only source for this bounded name and history.",
+   "x": 0.2848,
+   "y": -0.0369,
+   "nearness": 0.55
+  },
+  {
+   "id": "lolita-fashion",
+   "name": "Lolita fashion",
+   "description": "Lolita fashion groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.1715,
+   "y": 0.926,
+   "nearness": 0.55
+  },
+  {
+   "id": "mail-art",
+   "name": "Mail Art",
+   "description": "A networked practice uses postal systems to distribute work and test circulation and exchange.",
+   "x": 0.0673,
+   "y": 0.7986,
+   "nearness": 0.55
+  },
+  {
+   "id": "marine-paintings",
+   "name": "Marine Paintings",
+   "description": "Creative works depicting ships, shipbuilding or harbors. Getty distinguishes them from seascapes, where the water dominates the scene.",
+   "x": 0.1845,
+   "y": -0.0147,
+   "nearness": 0.55
+  },
+  {
+   "id": "mono-ha",
+   "name": "Mono-ha",
+   "description": "A Japanese and Korean movement from the late 1960s in which natural and industrial materials are placed in relation and left largely unaltered: stone on steel, glass under rock, cotton, wire, water. Lee Ufan gave it its…",
+   "x": 0.9752,
+   "y": 0.0542,
+   "nearness": 0.55
+  },
+  {
+   "id": "pixel-ui",
+   "name": "Pixel UI",
+   "description": "Apple, Microsoft, Atari. 1980s. Classic Mac OS, Windows 3.x, Windows 9X (95, 98, ME), Windows NT (3.1, 4.0, 2000), Pixel UI, Tetris, Super Mario Bros 3. Aesthetics Wiki is the only source for this bounded name and…",
+   "x": 0.0114,
+   "y": 0.6202,
+   "nearness": 0.55
+  },
+  {
+   "id": "renaissance-baroque-regional-styles",
+   "name": "Renaissance-Baroque regional styles",
+   "description": "Renaissance-Baroque regional styles groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.1279,
+   "y": 0.02,
+   "nearness": 0.55
+  },
+  {
+   "id": "skate-punk",
+   "name": "Skate Punk",
+   "description": "Southern California hardcore bands including NOFX, Bad Religion and Pennywise. The documented period is early 1980s-1990s. The cited work includes albums and skate videos. Aesthetics Wiki is the only source for this…",
+   "x": 0.1757,
+   "y": 0.9561,
+   "nearness": 0.55
+  },
+  {
+   "id": "slushwave",
+   "name": "Slushwave",
+   "description": "t e l e p a t h and vaporwave producers. The documented period is early 2010s onward. The cited work includes long ambient sample-based albums.",
+   "x": 0.0327,
+   "y": 0.0674,
+   "nearness": 0.55
+  },
+  {
+   "id": "spanish-medieval-styles",
+   "name": "Spanish Medieval styles",
+   "description": "Spanish Medieval styles groups creative practices placed together by a cited vocabulary or source.",
+   "x": 1.039,
+   "y": 0.1833,
+   "nearness": 0.55
+  },
+  {
+   "id": "uchuu-kei",
+   "name": "Uchuu Kei",
+   "description": "Harajuku fashion designers, boutiques and wearers. The documented period is 2000s-2010s. The cited work includes space-themed coordinated outfits and accessories.",
+   "x": -0.0316,
+   "y": 0.5067,
+   "nearness": 0.55
+  },
+  {
+   "id": "ukrainian-youth-culture",
+   "name": "Ukrainian youth culture",
+   "description": "Ukrainian youth culture groups creative practices placed together by a cited vocabulary or source.",
+   "x": 0.2043,
+   "y": 1.0209,
+   "nearness": 0.55
+  },
+  {
+   "id": "webcore",
+   "name": "Webcore",
+   "description": "Joel G and early-web revival creators. The documented period is late 2010s-2020 onward. The cited work includes ENA, music, websites and interface collage. Aesthetics Wiki is the only source for this bounded name and…",
+   "x": 0.0757,
+   "y": 0.0378,
+   "nearness": 0.55
+  }
+ ]
+}

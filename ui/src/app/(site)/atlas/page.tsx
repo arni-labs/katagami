@@ -14,5 +14,5 @@ export const metadata: Metadata = {
 export default async function AtlasPage() {
   const tier = (await hasFullGalleryAccess()) ? "full" : "sample";
   const atlas = await libraryAtlas(tier);
-  return <AtlasMap styles={atlas.styles} families={atlas.families} unplaced={atlas.unplaced} sample={tier === "sample"} />;
+  return <AtlasMap styles={atlas.styles} families={atlas.families} holes={atlas.holes} unplaced={atlas.unplaced} sample={tier === "sample"} />;
 }
