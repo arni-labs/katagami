@@ -831,6 +831,10 @@ export type AtlasStyle = {
   y: number;
   family: string | null;
   neighbors: { id: string; similarity: number }[];
+  /** Style-DNA question ids this style answers strongly (may be empty). */
+  traits: string[];
+  /** Hue bucket of a language's primary colour; art styles have none. */
+  hue: string | null;
 };
 
 export type AtlasHole = { id: string; name: string; description: string; x: number; y: number };
@@ -886,6 +890,8 @@ export async function libraryAtlas(tier: Tier) {
       thumbnail_url: str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null,
       x: Number.parseFloat(str(f.atlas_x)),
       y: Number.parseFloat(str(f.atlas_y)),
+      traits: str(f.style_traits).trim().split(/\s+/).filter(Boolean),
+      hue: str(f.hue_bucket) || null,
       family: (() => {
         const key = familyKey(str(f.atlas_family));
         if (key) medoidOf.set(key, str(f.atlas_family));
