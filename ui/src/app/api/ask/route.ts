@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { askLibrary } from "@/lib/catalog";
+import { askConcepts, askLibrary } from "@/lib/catalog";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { JevUnavailableError } from "@/lib/jev.mjs";
 import { trackServerEvent } from "@/lib/server-telemetry";
@@ -20,6 +20,8 @@ export const maxDuration = 60;
  *   ?q=<sentence>                 required, 8..400 characters
  *   ?kind=language|art_style      optional — omit for both
  *   ?k=<1..20>                    optional — how many results (default 8)
+ *   ?stage=concepts               optional — the encyclopedia's directions for the sentence,
+ *                                 split into those with made work and those with none.
  *   ?stage=match                  optional — answer after the first model call: the match
  *                                 by style DNA, with `want` (how the sentence was read).
  *
@@ -119,8 +121,46 @@ async function answer(request: Request, ask: Ask) {
   }
 }
 
+// The encyclopedia's answer to the same sentence. Cells are not tiered — there is
+// no shelf of them — so one stored answer serves every caller.
+const recentConcepts = new Map<string, { at: number; body: unknown }>();
+const conceptsInFlight = new Map<string, ReturnType<typeof askConcepts>>();
+
+async function concepts(request: Request, query: string) {
+  const key = normalise(query);
+  const hit = recentConcepts.get(key);
+  if (hit && Date.now() - hit.at < RECENT_MS) return NextResponse.json(hit.body, { headers: { "Cache-Control": "no-store" } });
+  const tier = (await hasFullGalleryAccess()) ? "full" : "sample";
+  try {
+    // The fan-out is ten model calls: a second request for a sentence already
+    // being answered waits for the first instead of starting its own.
+    let pending = conceptsInFlight.get(key);
+    if (!pending) {
+      if (!mayStart("ask-concepts", callerOf(request), tier)) {
+        return NextResponse.json({ error: TOO_MANY }, { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } });
+      }
+      const mine = askConcepts(query);
+      pending = mine;
+      conceptsInFlight.set(key, mine);
+      void mine.finally(() => conceptsInFlight.delete(key)).catch(() => undefined);
+    }
+    const body = await pending;
+    if (recentConcepts.size >= RECENT_MAX) recentConcepts.delete(recentConcepts.keys().next().value as string);
+    recentConcepts.set(key, { at: Date.now(), body });
+    return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
+  } catch (err) {
+    const jev = err instanceof JevUnavailableError;
+    trackServerEvent("ask_library_failed", { tier, reason: jev ? "jev" : "other" }, "error");
+    return NextResponse.json({ error: "the encyclopedia could not be asked just now" }, { status: jev ? 503 : 500, headers: { "Cache-Control": "no-store" } });
+  }
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  if (url.searchParams.get("stage") === "concepts") {
+    const q = (url.searchParams.get("q") ?? "").trim();
+    return q.length < 8 ? NextResponse.json({ error: "missing 'q'" }, { status: 400 }) : concepts(request, q);
+  }
   const ask = parse(Object.fromEntries(url.searchParams));
   return "error" in ask ? NextResponse.json(ask, { status: 400 }) : answer(request, ask);
 }

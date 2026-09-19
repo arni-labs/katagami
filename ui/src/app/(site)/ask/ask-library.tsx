@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GalleryImage } from "@/components/gallery-image";
 
 type Card = {
@@ -14,6 +14,8 @@ type Card = {
   fit: number | null;
   medium?: string;
 };
+type Concept = { id: string; name: string; description: string; made: number; relevance: number };
+type Concepts = { considered: number; made: Concept[]; unmade: Concept[] };
 type Answer = {
   query: string;
   tier: "full" | "sample";
@@ -32,11 +34,6 @@ const EXAMPLES = [
   "A compliance dashboard for a bank's audit team",
   "A zine-like site for an underground music label",
 ];
-const KINDS = [
-  { value: "", label: "Both" },
-  { value: "language", label: "Design languages" },
-  { value: "art_style", label: "Art styles" },
-] as const;
 const FIT_WORD = (fit: number | null, judging: boolean) => (fit === null ? (judging ? "Judging fit…" : "Matched by traits") : fit >= 0.8 ? "Strong fit" : fit >= 0.5 ? "Could work" : "A stretch");
 const CARD_SIZES = "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw";
 
@@ -75,13 +72,21 @@ function ResultCard({ card, judging }: { card: Card; judging: boolean }) {
 
 export function AskLibrary() {
   const [query, setQuery] = useState("");
-  const [kind, setKind] = useState<string>("");
   const [state, setState] = useState<"idle" | "asking" | "error">("idle");
   const [error, setError] = useState("");
   const [answer, setAnswer] = useState<Answer | null>(null);
+  const [concepts, setConcepts] = useState<Concepts | null>(null);
+  const [owner, setOwner] = useState(false);
+  // The encyclopedia is the owner's for now: everyone sees the directions, only the owner can open one.
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store", credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => setOwner(Boolean(me?.owner)))
+      .catch(() => undefined);
+  }, []);
   const latest = useRef(0);
 
-  async function ask(text: string, nextKind = kind) {
+  async function ask(text: string) {
     const q = text.trim();
     if (q.length < 8) {
       setState("error");
@@ -91,11 +96,17 @@ export function AskLibrary() {
     const turn = ++latest.current;
     setState("asking");
     setError("");
+    setConcepts(null);
+    // The encyclopedia is asked alongside the library, not after it; its answer
+    // lands when it lands and never holds the styles up.
+    void fetch(`/api/ask?${new URLSearchParams({ q, stage: "concepts" })}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body) => { if (turn === latest.current && body) setConcepts(body as Concepts); })
+      .catch(() => undefined);
     try {
       // Two steps, so something is on screen after the first model call: the
       // match by style DNA, then the same list re-judged for fit.
       const params = new URLSearchParams({ q, k: "8", stage: "match" });
-      if (nextKind) params.set("kind", nextKind);
       const first = await fetch(`/api/ask?${params}`);
       const matched = await first.json().catch(() => null);
       if (turn !== latest.current) return;
@@ -108,7 +119,7 @@ export function AskLibrary() {
       const second = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ q, k: 8, kind: nextKind || undefined, want: matched.want }),
+        body: JSON.stringify({ q, k: 8, want: matched.want }),
       });
       const body = await second.json().catch(() => null);
       if (turn !== latest.current) return;
@@ -117,6 +128,10 @@ export function AskLibrary() {
       setState("idle");
     } catch (err) {
       if (turn !== latest.current) return;
+      // The styles on screen belong to the last question that worked; this
+      // question's directions must not sit under them.
+      setConcepts(null);
+      setAnswer((shown) => (shown?.query === q ? shown : null));
       setState("error");
       setError(err instanceof Error ? err.message : "Asking failed.");
     }
@@ -151,25 +166,6 @@ export function AskLibrary() {
           {state === "asking" ? "Reading…" : "Ask"}
         </button>
       </form>
-
-      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
-        <div role="group" aria-label="What to look through" className="flex flex-wrap gap-2">
-          {KINDS.map((k) => (
-            <button
-              key={k.value}
-              type="button"
-              aria-pressed={kind === k.value}
-              onClick={() => {
-                setKind(k.value);
-                if (answer) void ask(answer.query, k.value);
-              }}
-              className={`sticker-card cursor-pointer px-3.5 py-2 text-[14.5px] ${kind === k.value ? "bg-[var(--yuzu)] text-black" : ""}`}
-            >
-              {k.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {!answer && state !== "asking" ? (
         <div className="mt-12">
@@ -240,6 +236,36 @@ export function AskLibrary() {
                     </li>
                   ))}
                 </ul>
+              </section>
+            ) : null}
+
+            {concepts && concepts.made.length + concepts.unmade.length > 0 ? (
+              <section className="mt-16">
+                <h2 className="font-display text-[26px] font-bold tracking-[-0.02em]">From the encyclopedia</h2>
+                <p className="mt-3 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
+                  Named directions a designer might reach for here, out of {concepts.considered} in the encyclopedia — including ones nobody has made a language for yet.
+                </p>
+                <div className="mt-8 grid gap-x-12 gap-y-10 lg:grid-cols-2">
+                  {([["Nothing made yet", concepts.unmade], ["With work in the library", concepts.made]] as const).map(([title, list]) =>
+                    list.length > 0 ? (
+                      <div key={title}>
+                        <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{title}</h3>
+                        <ul className="mt-4 flex flex-col gap-5">
+                          {list.map((c) => (
+                            <li key={c.id}>
+                              {owner ? (
+                                <Link href={`/encyclopedia?cell=${encodeURIComponent(c.id)}`} className="ink-underline font-display text-[18px] font-bold tracking-[-0.02em]">{c.name}</Link>
+                              ) : (
+                                <span className="font-display text-[18px] font-bold tracking-[-0.02em]">{c.name}</span>
+                              )}
+                              <p className="mt-1 max-w-xl text-[14.5px] leading-snug text-muted-foreground">{c.description}</p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null,
+                  )}
+                </div>
               </section>
             ) : null}
 
