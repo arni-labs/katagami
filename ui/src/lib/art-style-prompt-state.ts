@@ -18,10 +18,8 @@ export function artStyleGallerySources({
   const examples = [...new Set(referenceUrls.filter(Boolean))];
   const hero =
     examples[0] || thumbnailUrl || visibleProofs[0] || "";
-  // Proofs compare models on matched source content. A curated example set
-  // demonstrates the style across subjects and owns the visible gallery.
-  const gallery = [...new Set(
-    examples.length > 1 ? examples.slice(1) : visibleProofs,
-  )].filter((src) => src && src !== hero);
+  // Examples and matched-source model comparisons are both useful to readers.
+  const gallery = [...new Set([...examples.slice(1), ...visibleProofs])]
+    .filter((src) => src && src !== hero);
   return { hero, gallery };
 }

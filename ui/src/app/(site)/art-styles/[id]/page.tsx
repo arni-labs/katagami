@@ -1,3 +1,4 @@
+import { artStyleModelLabel } from "@/lib/art-style-image-metadata";
 import { notFound } from "next/navigation";
 import { hasCuratorAccess } from "@/lib/owner";
 import Link from "next/link";
@@ -145,7 +146,6 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             />
           </span>
         }
-        description="An engine-agnostic style recipe: a wide hero, examples across subjects, and a portable prompt."
         rightSlot={<Stamp color="sakura">{medium}</Stamp>}
       />
 
@@ -155,28 +155,39 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         </div>
       ) : null}
 
-      {/* hero + proof gallery */}
-      <StickyNote tint="sakura" className="p-3">
-        <div className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "16/9" }}>
-          {hero ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={hero} alt={`${name} hero`} className="h-full w-full object-cover" />
-          ) : null}
+      <section aria-label="Style gallery">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+          {[hero, ...gallery].filter(Boolean).map((src, i) => {
+            const details = images.metadata[src];
+            const comparison = proofs.includes(src);
+            const subject = details?.subject || `${name} ${comparison ? "model comparison" : "example"} ${i + 1}`;
+            return (
+              <figure key={src} className="relative min-w-0 overflow-hidden">
+                <a
+                  href={src}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Open full image: ${subject}`}
+                  className="block aspect-square bg-muted/30 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foreground"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={subject}
+                    loading={i < 2 ? "eager" : "lazy"}
+                    className="h-full w-full object-cover"
+                  />
+                </a>
+                {artStyleModelLabel(details) ? (
+                  <figcaption className="pointer-events-none absolute bottom-2 right-2 max-w-[calc(100%-1rem)] bg-black/75 px-2 py-1 text-[10px] font-medium leading-tight text-white sm:text-xs">
+                    {artStyleModelLabel(details)}
+                  </figcaption>
+                ) : null}
+              </figure>
+            );
+          })}
         </div>
-        {gallery.length > 0 ? (
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {gallery.map((src, i) => (
-              <div key={i} className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "1/1" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`${name} example ${i + 1}`} className="h-full w-full object-cover" />
-              </div>
-            ))}
-          </div>
-        ) : null}
-        <div className="mt-2 px-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground/70">
-          1 hero · {gallery.length} example{gallery.length === 1 ? "" : "s"}
-        </div>
-      </StickyNote>
+      </section>
 
       {/* recipe — retain the established detail-page presentation. Verification
           affects publication and gallery eligibility, not the visual chrome. */}
