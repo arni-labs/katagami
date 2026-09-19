@@ -401,16 +401,17 @@ function askCard(kind: Kind, r: Row, dna: StyleDna) {
 // What an answer needs of each style, and nothing else. A full read of the two
 // sets is 9.6 MB — every row carries its tokens, taste vector and manifests —
 // and on a cold server that read, not Jev, was most of the wait. The pool is a
-// megabyte, is shared between server instances through the data cache, and is
-// rebuilt every ten minutes; the backfill is the only thing that changes it.
+// megabyte and is shared between server instances through the data cache. It
+// is rebuilt every two minutes and aged from when it was built, not fetched:
+// a style taken off the visitor shelf must leave anonymous answers promptly.
 type PoolStyle = { kind: "language" | "art_style"; row: Row; dna: StyleDna; doc: string };
 const POOL_FIELDS = [
-  "name", "slug", "tags", "medium", "family_id", "taxonomy_ids", "shown_to_visitors", "Shown_to_visitors",
+  "name", "slug", "tags", "medium", "family_id", "taxonomy_ids", "shown_to_visitors", "Shown_to_visitors", "ShownToVisitors",
   "landing_thumbnail_asset_url", "thumbnail_asset_url",
 ];
-const POOL_TTL_S = 600;
+const POOL_TTL_S = 120;
 
-async function buildAskPool(): Promise<{ styles: PoolStyle[]; undescribed: number }> {
+async function buildAskPool(): Promise<{ styles: PoolStyle[]; undescribed: number; builtAt: number }> {
   const kinds = ["language", "art_style"] as const;
   const sets = await Promise.all(kinds.map(async (k) => withDevFields(await readAll(SET[k], PUBLISHED))));
   const styles: PoolStyle[] = [];
@@ -428,17 +429,21 @@ async function buildAskPool(): Promise<{ styles: PoolStyle[]; undescribed: numbe
       styles.push({ kind, row: { entity_id: full.entity_id, fields, booleans: full.booleans }, dna, doc: buildStyleDoc(kind, full.fields).slice(0, 700) });
     }
   });
-  return { styles, undescribed };
+  return { styles, undescribed, builtAt: Date.now() };
 }
 
 const sharedAskPool = unstable_cache(buildAskPool, ["ask-pool", JEV_MODEL], { revalidate: POOL_TTL_S });
-let localAskPool: { at: number; pool: Awaited<ReturnType<typeof buildAskPool>> } | null = null;
+let localAskPool: Awaited<ReturnType<typeof buildAskPool>> | null = null;
 
 async function askPool() {
-  if (localAskPool && Date.now() - localAskPool.at < POOL_TTL_S * 1000) return localAskPool.pool;
+  const fresh = (pool: { builtAt: number }) => Date.now() - pool.builtAt < POOL_TTL_S * 1000;
+  if (localAskPool && fresh(localAskPool)) return localAskPool;
   // The dev field overlay reads a local file; the shared cache would hide edits to it.
-  const pool = process.env.KATAGAMI_DEV_FIELDS_FILE ? await buildAskPool() : await sharedAskPool();
-  localAskPool = { at: Date.now(), pool };
+  let pool = process.env.KATAGAMI_DEV_FIELDS_FILE ? await buildAskPool() : await sharedAskPool();
+  // The shared cache serves a stale entry while it revalidates; past its age, or
+  // if a read came back empty, build here rather than answer from it.
+  if (!fresh(pool) || pool.styles.length === 0) pool = await buildAskPool();
+  if (pool.styles.length > 0) localAskPool = pool;
   return pool;
 }
 

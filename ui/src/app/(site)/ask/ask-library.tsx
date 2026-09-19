@@ -37,14 +37,14 @@ const KINDS = [
   { value: "language", label: "Design languages" },
   { value: "art_style", label: "Art styles" },
 ] as const;
-const FIT_WORD = (fit: number | null) => (fit === null ? "Judging fit…" : fit >= 0.8 ? "Strong fit" : fit >= 0.5 ? "Could work" : "A stretch");
+const FIT_WORD = (fit: number | null, judging: boolean) => (fit === null ? (judging ? "Judging fit…" : "Matched by traits") : fit >= 0.8 ? "Strong fit" : fit >= 0.5 ? "Could work" : "A stretch");
 const CARD_SIZES = "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw";
 
 function hrefOf(card: Card) {
   return `/${card.kind === "language" ? "language" : "art-styles"}/${card.id}`;
 }
 
-function ResultCard({ card }: { card: Card }) {
+function ResultCard({ card, judging }: { card: Card; judging: boolean }) {
   return (
     <Link href={hrefOf(card)} className="sticker-card group/card flex h-full flex-col overflow-hidden">
       <div className="relative w-full overflow-hidden bg-muted" style={{ aspectRatio: "16 / 10" }}>
@@ -64,7 +64,7 @@ function ResultCard({ card }: { card: Card }) {
             {card.kind === "language" ? "Language" : card.medium || "Art style"}
           </span>
         </div>
-        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ramune)]">{FIT_WORD(card.fit)}</p>
+        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ramune)]">{FIT_WORD(card.fit, judging)}</p>
         {card.traits.length > 0 ? (
           <p className="text-[14.5px] leading-snug text-muted-foreground">{card.traits.join(" · ")}</p>
         ) : null}
@@ -220,7 +220,7 @@ export function AskLibrary() {
                 <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                   {answer.results.map((card) => (
                     <li key={card.id}>
-                      <ResultCard card={card} />
+                      <ResultCard card={card} judging={state === "asking"} />
                     </li>
                   ))}
                 </ul>
@@ -236,7 +236,7 @@ export function AskLibrary() {
                 <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                   {answer.strange.map((card) => (
                     <li key={card.id}>
-                      <ResultCard card={card} />
+                      <ResultCard card={card} judging={state === "asking"} />
                     </li>
                   ))}
                 </ul>

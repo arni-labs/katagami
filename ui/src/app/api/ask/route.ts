@@ -3,6 +3,7 @@ import { askLibrary } from "@/lib/catalog";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { JevUnavailableError } from "@/lib/jev.mjs";
 import { trackServerEvent } from "@/lib/server-telemetry";
+import { STYLE_DNA_QUESTIONS } from "@/lib/style-dna.mjs";
 import { callerOf, mayStart, TOO_MANY } from "@/lib/spend-guard";
 
 export const dynamic = "force-dynamic";
@@ -53,36 +54,59 @@ function parse(input: { q?: unknown; kind?: unknown; k?: unknown; stage?: unknow
     kind: input.kind === "language" || input.kind === "art_style" ? input.kind : undefined,
     limit: Number.isFinite(kRaw) ? Math.min(Math.max(kRaw, 1), 20) : undefined,
     stage: input.stage === "match" ? "match" : undefined,
-    want: input.want && typeof input.want === "object" && !Array.isArray(input.want) ? (input.want as Record<string, number>) : undefined,
+    want: wholeReading(input.want),
   };
+}
+
+/** A reading is accepted only whole and in range; anything else is no reading, and the ask is an ordinary one. */
+function wholeReading(value: unknown): Record<string, number> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const given = value as Record<string, unknown>;
+  const reading: Record<string, number> = {};
+  for (const q of STYLE_DNA_QUESTIONS) {
+    const n = given[q.id];
+    if (typeof n !== "number" || !Number.isFinite(n) || n < 0 || n > 1) return undefined;
+    reading[q.id] = n;
+  }
+  return reading;
 }
 
 async function answer(request: Request, ask: Ask) {
   const tier = (await hasFullGalleryAccess()) ? "full" : "sample";
+  // An answer built from a caller's own reading is that caller's alone: it is
+  // never stored or shared, or one forged reading would become everyone's
+  // answer to that sentence for ten minutes.
+  const shared = !ask.want;
   const key = JSON.stringify([tier, ask.kind ?? "", ask.limit ?? "", ask.stage ?? "", normalise(ask.query)]);
-  const hit = recent.get(key);
+  const hit = shared ? recent.get(key) : undefined;
   if (hit && Date.now() - hit.at < RECENT_MS) {
     return NextResponse.json(hit.body, { headers: { "Cache-Control": "no-store" } });
   }
 
   const started = Date.now();
   try {
-    let pending = inFlight.get(key);
+    let pending = shared ? inFlight.get(key) : undefined;
     if (!pending) {
-      // The fit stage of an answer already begun is the second half of one
-      // ask, so it draws on its own allowance rather than counting as a new one.
+      // The fit stage of an answer already begun is the second half of one ask
+      // and costs one model call, so it draws on its own allowance.
       if (!mayStart(ask.want ? "ask-fit" : "ask", callerOf(request), tier)) {
         return NextResponse.json(
           { error: TOO_MANY },
           { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
         );
       }
-      pending = askLibrary(tier, ask).finally(() => inFlight.delete(key));
-      inFlight.set(key, pending);
+      pending = askLibrary(tier, ask);
+      if (shared) {
+        const mine = pending;
+        inFlight.set(key, mine);
+        void mine.finally(() => inFlight.delete(key)).catch(() => undefined);
+      }
     }
     const body = await pending;
-    if (recent.size >= RECENT_MAX) recent.delete(recent.keys().next().value as string);
-    recent.set(key, { at: Date.now(), body });
+    if (shared) {
+      if (recent.size >= RECENT_MAX) recent.delete(recent.keys().next().value as string);
+      recent.set(key, { at: Date.now(), body });
+    }
     if (!body.provisional) {
       trackServerEvent("ask_library", { tier, kind: ask.kind ?? "all", results: body.results.length, duration_ms: Date.now() - started, read_ms: body.timings_ms.read, want_ms: body.timings_ms.want, fit_ms: body.timings_ms.fit });
     }
