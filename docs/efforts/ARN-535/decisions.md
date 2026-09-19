@@ -54,3 +54,14 @@
 - **Came up because**: the panel found a four-backtick example containing a ```` ```tsx ```` line inverted the fence state for the rest of the file, so a later real heading read as fenced.
 - **Chose** to track the opening marker and its length, per CommonMark. Given up: nothing measured — no stored spec triggered it, but the failure mode is silent and the fix is small.
 - **Where**: `markdown_has_heading`.
+
+## Reject malformed or commented-out content rather than pattern-matching it
+- **Came up because**: round two found four ways to satisfy the widened gates without the artifact declaring or showing anything: an unclosed flow mapping (`{version: alpha, components: {}`), a key inside a quoted scalar (`{title: "version: alpha"}`), a four-space-indented Setext "heading" (CommonMark reads it as code), and required headings or component names inside an HTML comment.
+- **Options**: accept them as harmless; reject each.
+- **Chose reject**. Each is the same defect the effort exists to close — text that looks like a declaration without being one. `flow_mapping_keys` now returns None on unbalanced braces and skips quoted scalars; `markdown_has_heading` ignores indented lines; both heading and token checks run on the body with HTML comments stripped. Measured after: still 0 of 61 newly failing on the component spec. Given up: an unterminated `<!--` swallows the rest of the file, which matches what a renderer does.
+- **Where**: `flow_mapping_keys`, `markdown_has_heading`, `strip_html_comments`, `has_whole_token`; tests in `real_gate_round_two_tests`.
+
+## Panel delta mode could not produce a record
+- **Came up because**: two `--previous` rounds returned "no rubric JSON" from all three reviewers, so `review.round2.json` records zero reviewers ran. Invoking a reviewer directly with the same diff produced a substantive review in prose with no rubric block.
+- **Chose** to act on the reviewer output directly (both manual runs' findings are fixed above) and report the runner defect rather than treat an empty record as a passing round. The round-one record stands as the full-panel evidence.
+- **Where**: `stack/review/run-panel.py` delta path; reported separately.

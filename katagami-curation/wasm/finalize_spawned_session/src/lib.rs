@@ -2537,7 +2537,8 @@ fn front_matter_block(body: &str) -> Option<&str> {
 
 fn front_matter_declares(block: &str, key: &str) -> bool {
     if block.trim_start().starts_with('{') {
-        return flow_mapping_keys(block).iter().any(|found| *found == key);
+        return flow_mapping_keys(block)
+            .is_some_and(|found| found.iter().any(|name| *name == key));
     }
     // Block style: the key must sit at column 0, so an indented key stays the
     // property of whatever it is nested under.
@@ -2548,11 +2549,9 @@ fn front_matter_declares(block: &str, key: &str) -> bool {
 }
 
 /// The keys of the outermost flow mapping (`{version: alpha, meta: {x: 1}}` →
-/// `version`, `meta`). Keys of nested mappings are not the document's own.
-/// Braces inside quoted scalars are not tracked; front matter here does not use
-/// them, and the gate is about which keys the document declares, not YAML
-/// conformance.
-fn flow_mapping_keys(block: &str) -> Vec<&str> {
+/// `version`, `meta`), or None when the mapping never closes. Keys of nested
+/// mappings, and text inside quoted scalars, are not the document's own.
+fn flow_mapping_keys(block: &str) -> Option<Vec<&str>> {
     let bytes = block.as_bytes();
     let is_key_char = |c: u8| c.is_ascii_alphanumeric() || c == b'_' || c == b'-';
     let mut keys = Vec::new();
@@ -2561,11 +2560,22 @@ fn flow_mapping_keys(block: &str) -> Vec<&str> {
     let mut i = 0usize;
     while i < bytes.len() {
         match bytes[i] {
+            quote @ (b'"' | b'\'') => {
+                // A quoted scalar is a value, not structure: `{t: "version: x"}`
+                // declares `t` alone.
+                i += 1;
+                while i < bytes.len() && bytes[i] != quote {
+                    i += if bytes[i] == b'\\' { 2 } else { 1 };
+                }
+                expect_key = false;
+            }
             b'{' => {
                 depth += 1;
                 expect_key = depth == 1;
             }
-            b'}' => depth = depth.saturating_sub(1),
+            b'}' => {
+                depth = depth.checked_sub(1)?;
+            }
             b',' => expect_key = depth == 1,
             c if expect_key && !c.is_ascii_whitespace() => {
                 let start = i;
@@ -2582,7 +2592,8 @@ fn flow_mapping_keys(block: &str) -> Vec<&str> {
         }
         i += 1;
     }
-    keys
+    // An unclosed mapping is malformed YAML, not a declaration.
+    (depth == 0).then_some(keys)
 }
 
 fn is_shadcn_registry_theme(body: &str) -> bool {
@@ -2609,14 +2620,17 @@ fn is_shadcn_registry_theme(body: &str) -> bool {
     theme.get("type").and_then(|v| v.as_str()) == Some("registry:theme") && has_scope && manifest
 }
 
-/// A markdown heading whose text contains `title`, outside code fences.
+/// A markdown heading whose text contains `title`, outside code fences and
+/// HTML comments.
 ///
 /// Both heading styles count: ATX (`## Preview shots`) and Setext (the title
 /// underlined with `=` or `-`). A fence closes only on a marker at least as
 /// long as the one that opened it, so a ```` ```tsx ```` line inside a
-/// four-backtick example does not invert the fence state for the rest of the
-/// file.
+/// four-backtick example does not invert the fence state. A line indented four
+/// or more spaces is a code block, not a heading.
 fn markdown_has_heading(body: &str, title: &str) -> bool {
+    let body = strip_html_comments(body);
+    let indented = |line: &str| line.len() - line.trim_start_matches(' ').len() >= 4;
     let fence_marker = |line: &str| {
         let line = line.trim_start();
         for marker in ['`', '~'] {
@@ -2628,9 +2642,11 @@ fn markdown_has_heading(body: &str, title: &str) -> bool {
         None
     };
     let is_setext_rule = |line: &str| {
-        let line = line.trim();
-        !line.is_empty()
-            && (line.chars().all(|c| c == '=') || line.chars().all(|c| c == '-'))
+        !indented(line) && {
+            let line = line.trim();
+            !line.is_empty()
+                && (line.chars().all(|c| c == '=') || line.chars().all(|c| c == '-'))
+        }
     };
 
     let mut open_fence: Option<(char, usize)> = None;
@@ -2646,7 +2662,7 @@ fn markdown_has_heading(body: &str, title: &str) -> bool {
             }
             continue;
         }
-        if open_fence.is_some() {
+        if open_fence.is_some() || indented(line) {
             continue;
         }
         let trimmed = line.trim_start();
@@ -2667,12 +2683,28 @@ fn markdown_has_heading(body: &str, title: &str) -> bool {
     false
 }
 
+/// `body` with `<!-- ... -->` removed. Commented-out sections are not content:
+/// nothing renders them, so they must not satisfy a content gate.
+fn strip_html_comments(body: &str) -> String {
+    let mut out = String::with_capacity(body.len());
+    let mut rest = body;
+    while let Some(start) = rest.find("<!--") {
+        out.push_str(&rest[..start]);
+        rest = match rest[start..].find("-->") {
+            Some(end) => &rest[start + end + 3..],
+            None => "",
+        };
+    }
+    out.push_str(rest);
+    out
+}
+
 /// `token` appears delimited by non-identifier characters ("card", not
 /// "discard"), ignoring case: a recipe headed `### Input` names the primitive
 /// just as `input` does.
 fn has_whole_token(body: &str, token: &str) -> bool {
     let is_ident = |c: char| c.is_ascii_alphanumeric() || c == '-' || c == '_';
-    let haystack = body.to_ascii_lowercase();
+    let haystack = strip_html_comments(body).to_ascii_lowercase();
     let needle = token.to_ascii_lowercase();
     haystack.match_indices(&needle).any(|(start, _)| {
         let before = haystack[..start].chars().next_back();
@@ -8023,5 +8055,51 @@ mod real_gate_panel_tests {
         assert!(has_whole_token("### Input", "input"));
         assert!(has_whole_token("A TABS row", "tabs"));
         assert!(!has_whole_token("discard the Cardboard", "card"));
+    }
+}
+
+/// Round-two review findings: shapes that satisfied the widened gates without
+/// the artifact actually declaring or showing the content.
+#[cfg(test)]
+mod real_gate_round_two_tests {
+    use super::*;
+
+    #[test]
+    fn an_unclosed_flow_mapping_is_not_a_declaration() {
+        let unclosed = "---\n{version: alpha, components: {}\n---\nbody";
+        assert!(!front_matter_has_keys(unclosed, &["version", "components"]));
+        assert!(flow_mapping_keys("{version: alpha").is_none());
+        assert!(flow_mapping_keys("{version: alpha}").is_some());
+    }
+
+    #[test]
+    fn keys_inside_quoted_scalars_do_not_count() {
+        let quoted = "---\n{title: \"version: alpha, components: two\"}\n---\nbody";
+        assert!(!front_matter_has_keys(quoted, &["version", "components"]));
+        // The real keys beside a quoted scalar still count.
+        let mixed = "---\n{title: \"a, b\", version: alpha, components: {}}\n---\nbody";
+        assert!(front_matter_has_keys(mixed, &["version", "components"]));
+    }
+
+    #[test]
+    fn indented_code_is_not_a_heading() {
+        let code = "    Preview shots\n    -------------\n";
+        assert!(!markdown_has_heading(code, "Preview shots"));
+        let real = "Preview shots\n-------------\n";
+        assert!(markdown_has_heading(real, "Preview shots"));
+        let indented_atx = "    ## Preview shots\n";
+        assert!(!markdown_has_heading(indented_atx, "Preview shots"));
+    }
+
+    #[test]
+    fn commented_out_sections_do_not_satisfy_the_gate() {
+        let commented = "# shadcn/ui Components\n\n<!--\n## Preview shots\n### input\n-->\n";
+        assert!(markdown_has_heading(commented, "shadcn/ui Components"));
+        assert!(!markdown_has_heading(commented, "Preview shots"));
+        assert!(!has_whole_token(commented, "input"));
+        // An unterminated comment swallows the rest of the file, as a renderer
+        // would.
+        let unterminated = "# shadcn/ui Components\n<!--\n## Preview shots\n";
+        assert!(!markdown_has_heading(unterminated, "Preview shots"));
     }
 }
