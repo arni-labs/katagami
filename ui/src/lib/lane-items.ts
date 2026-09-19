@@ -1,3 +1,4 @@
+import { artStyleImageMetadata, type ArtStyleImageMetadata } from "@/lib/art-style-image-metadata";
 import {
   artStyleDisplayName,
   getFileUrl,
@@ -51,6 +52,7 @@ function publishedAssetUrl(value: unknown): string {
 // 404, instead of the old blanket "proxy everything" workaround that made the
 // whole lane slow.
 export interface ArtStyleImageSet {
+  metadata: Record<string, ArtStyleImageMetadata>;
   refs: string[];
   proofs: string[];
   thumb: string;
@@ -102,7 +104,15 @@ export function artStyleImages(
     : "";
   if (thumbCdn && thumbProxy) fallbacks[thumbCdn] = thumbProxy;
 
+  const metadata: Record<string, ArtStyleImageMetadata> = {};
+  for (const raw of [fields.reference_manifest, fields.proof_shots_manifest]) {
+    for (const [fileId, details] of artStyleImageMetadata(raw)) {
+      metadata[urlFor(fileId)] = details;
+    }
+  }
+
   return {
+    metadata,
     refs: ids.map(urlFor),
     proofs: proofIds.map(urlFor),
     thumb: thumbCdn || thumbProxy,

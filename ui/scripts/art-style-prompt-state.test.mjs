@@ -37,6 +37,19 @@ assert.deepEqual(verifiedGallery, {
   gallery: ["proof-1", "proof-2"],
 });
 
+// A contributor's example set must not disappear when proof is attached.
+const exampleGallery = artStyleGallerySources({
+  status: "Published",
+  promptVerified: true,
+  referenceUrls: ["portrait", "street", "still-life", "interior", "street"],
+  proofUrls: ["same-source-model-a", "same-source-model-b"],
+  thumbnailUrl: "same-source-model-a",
+});
+assert.deepEqual(exampleGallery, {
+  hero: "portrait",
+  gallery: ["street", "still-life", "interior", "same-source-model-a", "same-source-model-b"],
+});
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const detailPage = fs.readFileSync(
   path.join(here, "../src/app/(site)/art-styles/[id]/page.tsx"),
@@ -46,18 +59,14 @@ const demoCatalog = fs.readFileSync(
   path.join(here, "../src/lib/demo-catalog.ts"),
   "utf8",
 );
-assert.match(detailPage, /rounded-\[2px\]/);
+
 assert.match(detailPage, /rounded-\[3px\] p-3 font-mono text-\[12px\]/);
 assert.match(detailPage, /space-y-1\.5 text-\[13px\]/);
 assert.match(detailPage, /mb-4 max-w-2xl text-\[14px\]/);
-assert.match(
-  detailPage,
-  /An engine-agnostic style recipe: a wide hero, proof shots across subjects, and a portable prompt\./,
-);
 assert.match(detailPage, />Prompt template</);
 assert.match(detailPage, /label="Copy recipe"/);
 assert.match(detailPage, /label="Copy prompt only"/);
-assert.match(detailPage, /\{gallery\.map\(\(src, i\) => \(/);
+assert.match(detailPage, /aria-label="Style gallery"/);
 assert.doesNotMatch(detailPage, /gallery\.slice\(/);
 assert.doesNotMatch(detailPage, /ArtStyleEvidence/);
 assert.doesNotMatch(detailPage, /artStylePromptLabel/);

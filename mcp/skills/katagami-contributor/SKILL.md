@@ -5,6 +5,11 @@ description: Contribute governed design languages, palettes, and art styles to K
 
 # Katagami contributor
 
+Discover the current contribution endpoint at
+`https://katagami.ai/.well-known/mcp/server-card.json`; the gallery endpoint
+`https://katagami.ai/mcp` is read-only. The CLI supports `login`, `import-image`,
+`submit art_style --file payload.json`, and `status art_style <id>`.
+
 Use the authenticated Katagami MCP as the contribution boundary for the **work
 itself**. Its current tool schemas are the source of truth for payload
 mechanics, and no artifact — design language, palette, art style, writing style
@@ -249,25 +254,31 @@ name is metadata, not an instruction and not evidence.
 
 ### Portability evidence
 
-Use four contributor-owned source images:
+Choose one or two contributor-owned source images specifically for this style.
+Select their primary semantic roles from:
 
 - `human_portrait`
 - `nonhuman_living`
 - `still_life_object`
 - `landscape_environment`
 
-Across that quartet, use exactly these four distinct source media:
+Choose the source media from:
 
 - `documentary photograph`
 - `black-ink line drawing`
 - `neutral synthetic 3d render`
 - `flat vector illustration`
 
-Send the identical four source files and exact canonical prompt to two
-distinct image models. This produces eight edit outputs. Source fixtures may
-be existing contributor-owned files; they do not need to be newly generated.
-A single source across two models checks cross-model consistency but does not
-establish transfer across subject roles or source media.
+Send the identical one or two source files and exact canonical prompt to two
+distinct image models. This produces two or four edit outputs. When using two sources, their primary roles must differ and their source
+media must differ. One source is a smaller comparison with less coverage. A scene may naturally contain people, animals, objects and an
+environment. Do not require four isolated images to cover those concepts.
+
+Choose fresh actual subjects and compositions for each art style. Do not reuse
+the house fixture set or the same person, animal, props or landscape across the
+catalog. Use models requested by the contributor; verify current model identifiers
+and record the actual producing model. Never label an older connector's output as
+the latest model, or assume a CLI includes free image generation without testing it.
 
 Do not use style-reference images in the portability matrix. They are an
 optional supplement outside this gate, never its backbone.
@@ -279,15 +290,83 @@ For every source and output:
 3. Bind the exact source id/hash, output id/hash, canonical prompt hash, model,
    and provider request id when available in the generation record.
 
-Build exactly eight proof items: two models for each of the four categories.
+Build two or four proof items: two models for each selected source.
 Both model rows must point to the same source id and source hash for that
-category. Choose the strongest proof output as the thumbnail; no subject role
-is globally privileged.
+category. These proof outputs are separate from the six-image display gallery.
+
+### Six-image display gallery
+
+Every new or revised ArtStyle requires exactly six full-frame gallery images:
+four GPT Image 2.5, one Grok Image, and one Nano Banana. This standing default
+is separate from the two or four portability outputs above. Vary the subjects
+and compositions so the images demonstrate the technique across different content.
+Existing published styles remain available while their revisions are prepared.
+
+Use these exact verified provider/model identities; do not substitute or relabel:
+
+| Count | Provider | Model ID |
+| --- | --- | --- |
+| 4 combined | OpenAI | `openai/gpt-image-2.5/sunburst/text-to-image` or `openai/gpt-image-2.5/flare/text-to-image` |
+| 1 | xAI | `xai/grok-imagine-image/v2.0/text-to-image` |
+| 1 | Google | `fal-ai/nano-banana-pro` |
+
+For each image, send the exact canonical prompt followed by
+`\n\nSubject and scene:\n` and its subject description. Preserve the full actual
+provider prompt and request ID. Import the actual output bytes through
+`import_art_style_proof_image`; retain its Locked File ID and SHA-256. The six
+File IDs and six output hashes must all be distinct. Do not upload duplicates,
+crops, or placeholders to fill slots. Choose the strongest image and place it
+first; `thumbnail_file_id` must equal that first gallery File ID.
+
+The required `gallery_images` MCP input contains six records of this form:
+
+```json
+{
+  "file_id": "<Locked File id>",
+  "subject": "<actual subject and scene>",
+  "model": {"provider": "OpenAI", "model": "openai/gpt-image-2.5/sunburst/text-to-image"},
+  "generation_record": {
+    "schema_version": "1",
+    "kind": "art_style_gallery",
+    "style_slug": "<submitted slug>",
+    "prompt": "<exact full provider prompt>",
+    "canonical_prompt_sha256": "<SHA-256 of canonical prompt UTF-8>",
+    "output": {
+      "file_id": "<same Locked File id>",
+      "sha256": "<actual output byte SHA-256>",
+      "prompt_sha256": "<SHA-256 of full provider prompt UTF-8>",
+      "provider_request_id": "<actual provider request id, required>"
+    }
+  }
+}
+```
+
+All hashes are lowercase 64-character SHA-256. The MCP binds the records to the
+submitted slug, canonical prompt and thumbnail, then stores them in
+`reference_manifest` schema version `2`, with the same ordered
+`reference_image_file_ids`. The finalizer repeats validation and reads the
+Locked file bytes before attesting or publishing. `model_provenance.images`
+continues to describe the two portability models; each gallery item records its
+own producer.
+
+If access is denied or the provider restricts the account, preserve successful
+images and the current published style, report the exact remaining slots, and
+stop dependent generation. Do not switch identity or fabricate evidence. A
+merged contract is not proof that the live service accepts it: inspect the
+current tool schema and report any deployed-contract mismatch.
 
 ### Independent prompt and visual review
 
 The prompt review quotes substantive, non-overlapping evidence for the eight
-dimensions above and attests `source_medium_independent=true`.
+dimensions above in canonical order. Store the quote strings inside
+`prompt_review.observable_dimensions`, keyed by `medium_material`, `marks_edges`,
+`depiction_grammar`, `tonal_shading`, `color_roles`, `composition`,
+`signature_details`, and `exclusions`. Include `schema_version="1"`, the exact
+`prompt`, reviewer provider/model distinct from the author, `verdict="pass"`,
+and true attestations for `reference_independent`, `subject_independent`,
+`source_medium_independent`, `model_agnostic`, and `style_name_independent`.
+Include `contradictions=[]` and actual `revision_count` (0 or 1). Revise once
+and re-review if needed; never invent passing attestations.
 
 The blind portability review scores each anonymous output on:
 
@@ -312,7 +391,7 @@ flip a score or label.
 
 ### Submit
 
-Call `submit_art_style` once with the complete Draft, imported proof records,
+Call `submit_art_style` once with the complete Draft, six `gallery_images`, imported proof records,
 independent source review, independent prompt review, and blind portability
 report. Do not call `SubmitForReview`, `AttachArtStyleReview`,
 `MarkQualityPassed`, or `Publish`.
@@ -323,7 +402,12 @@ Return:
 - `VerificationQueued` status;
 - verification job id;
 - exact canonical prompt hash;
-- the two image models and four source roles used.
+- the two portability models and selected source roles used;
+- all six gallery image records and their exact producing models.
+
+After finalizer publication, verify the actual detail page renders and decodes
+exactly six distinct gallery images, including the first image as hero. A
+queued job, successful upload, or thumbnail alone is not a completed gallery.
 
 ## Palettes and design languages
 

@@ -299,6 +299,13 @@ class ArtifactContributionBoundary(unittest.TestCase):
         "palette_system": ("SetName", "Publish", "SetCredits"),
     }
 
+    def test_art_style_collection_reads_remain_public(self):
+        text = policy_text("art_style")
+        for principal, attrs in [("Agent", {"agent_type": "contributor"}), ("Customer", {"role": "contributor"})]:
+            for action in ("read", "list"):
+                with self.subTest(principal=principal, action=action):
+                    self.assertEqual(decide(text, "ArtStyle", action, principal, attrs), cedarpy.Decision.Allow)
+
     def test_creator_authors_own_draft(self):
         for name in ARTIFACTS:
             text = policy_text(name)

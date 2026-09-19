@@ -839,13 +839,13 @@ pub(super) fn verify_portability_report(
         })?;
 
     let proof_set: BTreeSet<&str> = proof_ids.iter().map(String::as_str).collect();
-    if proof_ids.len() != 8 || proof_set.len() != 8 {
+    if !matches!(proof_ids.len(), 2 | 4) || proof_set.len() != proof_ids.len() {
         return Err(art_error(
             owner_id,
             "art_style_portability_matrix_incomplete",
             "proof_shots_file_ids",
             format!(
-                "ArtStyle '{owner_id}' needs exactly eight unique proofs: two models by four semantic roles"
+                "ArtStyle '{owner_id}' needs exactly two or four unique proofs: two models using the same one or two sources"
             ),
         ));
     }
@@ -868,7 +868,7 @@ pub(super) fn verify_portability_report(
     let manifest_items = proof_manifest
         .get("items")
         .and_then(Value::as_array)
-        .filter(|items| items.len() == 8)
+        .filter(|items| items.len() == proof_ids.len())
         .ok_or_else(|| {
             art_error(
                 owner_id,
@@ -979,20 +979,21 @@ pub(super) fn verify_portability_report(
         let cases = model
             .get("cases")
             .and_then(Value::as_array)
-            .filter(|items| items.len() == 4)
+            .filter(|items| items.len() == proof_ids.len() / 2)
             .ok_or_else(|| {
                 art_error(
                     owner_id,
                     "art_style_portability_cases_missing",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' needs exactly four semantic-role cases per image model"
+                        "ArtStyle '{owner_id}' needs the same one or two source cases per image model"
                     ),
                 )
             })?;
         let mut categories = BTreeSet::new();
         let mut source_media = BTreeSet::new();
         let mut source_matrix = BTreeSet::new();
+        let mut source_ids = BTreeSet::new();
         let mut model_total = 0.0;
         for case in cases {
             if !exact_object_keys(
@@ -1084,6 +1085,14 @@ pub(super) fn verify_portability_report(
                     ),
                 ));
             }
+            if !source_ids.insert(record.source_file_id.clone()) {
+                return Err(art_error(
+                    owner_id,
+                    "art_style_portability_source_duplicate",
+                    "portability_report",
+                    format!("ArtStyle '{owner_id}' must use a distinct source file for each case within an image model"),
+                ));
+            }
             source_matrix.insert((
                 record.category.clone(),
                 record.subject.clone(),
@@ -1106,25 +1115,17 @@ pub(super) fn verify_portability_report(
             model_total += average;
             verified_records.push(record);
         }
-        let expected_categories = PROOF_CATEGORIES
-            .iter()
-            .map(|value| value.to_string())
-            .collect::<BTreeSet<_>>();
-        let expected_media = SOURCE_MEDIA
-            .iter()
-            .map(|value| value.to_string())
-            .collect::<BTreeSet<_>>();
-        if categories != expected_categories
-            || source_media != expected_media
-            || source_matrix.len() != 4
-            || model_total / 4.0 < 1.5
+        if categories.len() != cases.len()
+            || source_media.len() != cases.len()
+            || source_matrix.len() != cases.len()
+            || model_total / (cases.len() as f64) < 1.5
         {
             return Err(art_error(
                 owner_id,
                 "art_style_portability_model_below_threshold",
                 "portability_report",
                 format!(
-                    "ArtStyle '{owner_id}' failed the per-model four-role, four-medium, source, or score threshold"
+                    "ArtStyle '{owner_id}' failed the per-model distinct-role, distinct-medium, source, or score threshold"
                 ),
             ));
         }
@@ -1135,7 +1136,7 @@ pub(super) fn verify_portability_report(
                     "art_style_portability_matrix_mismatch",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' must test the exact same four generated sources on both image models"
+                        "ArtStyle '{owner_id}' must test the exact same selected sources on both image models"
                     ),
                 ));
             }
@@ -1144,13 +1145,16 @@ pub(super) fn verify_portability_report(
         }
     }
 
-    if tested_models.len() != 2 || used_files.len() != 8 || verified_records.len() != 8 {
+    if tested_models.len() != 2
+        || used_files.len() != proof_ids.len()
+        || verified_records.len() != proof_ids.len()
+    {
         return Err(art_error(
             owner_id,
             "art_style_portability_matrix_incomplete",
             "portability_report",
             format!(
-                "ArtStyle '{owner_id}' needs two distinct image models by four roles and a score for every attached proof"
+                "ArtStyle '{owner_id}' needs two distinct image models using the same one or two sources and a score for every attached proof"
             ),
         ));
     }
@@ -1204,6 +1208,10 @@ mod tests {
     }
 
     fn valid_fields() -> Value {
+        fields_with_case_count(2)
+    }
+
+    fn fields_with_case_count(case_count: usize) -> Value {
         let dims = json!({
             "medium_material": "two-ink relief print on fibrous matte paper",
             "marks_edges": "blunt carved contours and visibly broken edges",
@@ -1219,7 +1227,7 @@ mod tests {
         let mut models = Vec::new();
         for (provider, model) in TEST_MODELS {
             let mut cases = Vec::new();
-            for index in 0..4 {
+            for index in 0..case_count {
                 let file_id = format!("proof-{provider}-{model}-{index}");
                 let record = proof_record(provider, model, index, &file_id);
                 proof_ids.push(file_id.clone());
@@ -1306,6 +1314,99 @@ mod tests {
         assert!(verify_source_basis("as-1", &fields, prompt).is_ok());
         assert!(verify_prompt_review("as-1", &fields, prompt).is_ok());
         assert!(verify_portability_report("as-1", &fields, prompt, &proof_ids).is_ok());
+    }
+
+    fn verify_fields(fields: &Value) -> Result<VerifiedPortabilityReport, VerificationError> {
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_str().unwrap().to_string())
+            .collect::<Vec<_>>();
+        verify_portability_report("as-1", fields, PROMPT, &proof_ids)
+    }
+
+    #[test]
+    fn one_or_two_cases_per_model_pass() {
+        for count in [1, 2] {
+            let verified = verify_fields(&fields_with_case_count(count)).unwrap();
+            assert_eq!(verified.proof_records.len(), count * 2);
+        }
+    }
+
+    #[test]
+    fn unsupported_case_counts_fail() {
+        for count in [0, 3, 4] {
+            assert!(
+                verify_fields(&fields_with_case_count(count)).is_err(),
+                "count {count}"
+            );
+        }
+    }
+
+    #[test]
+    fn asymmetric_case_counts_fail() {
+        let mut fields = valid_fields();
+        fields["portability_report"]["models"][1]["cases"]
+            .as_array_mut()
+            .unwrap()
+            .pop();
+        assert_eq!(
+            verify_fields(&fields).unwrap_err().code,
+            "art_style_portability_cases_missing"
+        );
+    }
+
+    #[test]
+    fn two_case_sets_cannot_relabel_one_source_as_two() {
+        let mut fields = valid_fields();
+        for model in 0..2 {
+            let source = fields["portability_report"]["models"][model]["cases"][0]
+                ["generation_record"]["source"]
+                .clone();
+            fields["portability_report"]["models"][model]["cases"][1]["generation_record"]
+                ["source"] = source.clone();
+            fields["proof_shots_manifest"]["items"][model * 2 + 1]["generation_record"]["source"] =
+                source;
+        }
+        assert_eq!(
+            verify_fields(&fields).unwrap_err().code,
+            "art_style_portability_source_duplicate"
+        );
+    }
+
+    #[test]
+    fn two_case_sets_need_distinct_media() {
+        let mut fields = valid_fields();
+        fields["proof_shots_manifest"]["items"][1]["source_medium"] = json!(SOURCE_MEDIA[0]);
+        fields["portability_report"]["models"][0]["cases"][1]["source_medium"] =
+            json!(SOURCE_MEDIA[0]);
+        assert_eq!(
+            verify_fields(&fields).unwrap_err().code,
+            "art_style_portability_model_below_threshold"
+        );
+    }
+
+    #[test]
+    fn smaller_sets_still_require_the_exact_prompt_and_hashes() {
+        for count in [1, 2] {
+            let mut fields = fields_with_case_count(count);
+            fields["portability_report"]["models"][0]["cases"][0]["prompt"] =
+                json!("changed prompt");
+            assert_eq!(
+                verify_fields(&fields).unwrap_err().code,
+                "art_style_portability_prompt_changed"
+            );
+            for hash in ["sha256", "prompt_sha256"] {
+                let mut fields = fields_with_case_count(count);
+                fields["proof_shots_manifest"]["items"][0]["generation_record"]["output"][hash] =
+                    json!(sha256_hex("changed bytes"));
+                assert_eq!(
+                    verify_fields(&fields).unwrap_err().code,
+                    "art_style_proof_record_mismatch"
+                );
+            }
+        }
     }
 
     #[test]
@@ -1553,7 +1654,7 @@ mod tests {
     #[test]
     fn signed_source_medium_cannot_be_relabelled() {
         let mut fields = valid_fields();
-        fields["portability_report"]["models"][1]["cases"][2]["source_medium"] =
+        fields["portability_report"]["models"][1]["cases"][1]["source_medium"] =
             json!("oil painting");
         let proof_ids = fields["proof_ids"]
             .as_array()
@@ -1616,9 +1717,9 @@ mod tests {
     }
 
     #[test]
-    fn both_models_must_receive_the_identical_four_sources() {
+    fn both_models_must_receive_the_identical_selected_sources() {
         let mut fields = valid_fields();
-        let manifest_index = 4;
+        let manifest_index = 2;
         let mut record =
             fields["proof_shots_manifest"]["items"][manifest_index]["generation_record"].clone();
         record["source"]["file_id"] = json!("different-generated-source");
@@ -1644,7 +1745,7 @@ mod tests {
     }
 
     #[test]
-    fn every_model_needs_all_four_roles_and_all_four_media() {
+    fn two_case_sets_need_distinct_roles() {
         let mut fields = valid_fields();
         fields["proof_shots_manifest"]["items"][1]["category"] = json!(PROOF_CATEGORIES[0]);
         fields["portability_report"]["models"][0]["cases"][1]["category"] =
@@ -1670,14 +1771,14 @@ mod tests {
     fn models_are_not_hardcoded_to_one_provider() {
         let mut fields = valid_fields();
         fields["portability_report"]["models"][1]["provider"] = json!("second-provider");
-        fields["proof_shots_manifest"]["items"][4]["model"]["provider"] =
-            json!("second-provider");
-        fields["proof_shots_manifest"]["items"][5]["model"]["provider"] =
-            json!("second-provider");
-        fields["proof_shots_manifest"]["items"][6]["model"]["provider"] =
-            json!("second-provider");
-        fields["proof_shots_manifest"]["items"][7]["model"]["provider"] =
-            json!("second-provider");
+        for item in fields["proof_shots_manifest"]["items"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .skip(2)
+        {
+            item["model"]["provider"] = json!("second-provider");
+        }
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()

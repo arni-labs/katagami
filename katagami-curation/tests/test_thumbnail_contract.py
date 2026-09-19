@@ -187,7 +187,7 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertNotIn("/api/files/publish-asset", source)
         self.assertIn('"owner_ref_type": "DesignLanguage"', source)
         self.assertIn('"owner_ref_id": language_id', source)
-        self.assertIn('"namespace": "katagami/design-languages"', source)
+        self.assertIn('"namespace": "katagami-design-languages"', source)
         self.assertIn('"label": label', source)
         self.assertIn('"artifact"', source)
         self.assertIn('"design_md"', source)

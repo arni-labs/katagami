@@ -15,10 +15,11 @@ export function artStyleGallerySources({
   // records do not present obsolete proofs from an earlier test contract.
   const visibleProofs =
     promptVerified || status === "Published" ? proofUrls : [];
+  const examples = [...new Set(referenceUrls.filter(Boolean))];
   const hero =
-    referenceUrls[0] || thumbnailUrl || visibleProofs[0] || "";
-  const gallery = (
-    visibleProofs.length ? visibleProofs : referenceUrls.slice(1)
-  ).filter((src) => src && src !== hero);
+    examples[0] || thumbnailUrl || visibleProofs[0] || "";
+  // Examples and matched-source model comparisons are both useful to readers.
+  const gallery = [...new Set([...examples.slice(1), ...visibleProofs])]
+    .filter((src) => src && src !== hero);
   return { hero, gallery };
 }

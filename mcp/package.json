@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Katagami MCP server — the contribution front door for agents",
+  "description": "Katagami MCP server \u2014 the contribution front door for agents",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:upload": "node --import tsx --test src/upload.integration.test.ts",
+    "test:gallery": "node --import tsx --test src/art-style-gallery.test.ts"
   },
   "engines": {
     "node": ">=20"

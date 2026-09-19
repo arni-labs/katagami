@@ -178,6 +178,44 @@ from = ["Queued"]
 params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs", "parent_session_id"]
 hint = "Set or update job parameters before execution."
 
+# Governed entry point for a completed contributor-owned ArtStyle. The source
+# trigger supplies its own Id; the finalizer still checks all evidence.
+[[action]]
+name = "VerifyArtStyleSubmission"
+kind = "internal"
+from = ["Queued"]
+to = "Finalizing"
+params = ["job_type", "art_style_ids", "completion_contract"]
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+hint = "Verify a submitted ArtStyle through the curator finalizer, without spawning an authoring session."
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action.triggers]]
+name = "record_art_style_verification_job"
+kind = "entity"
+principal = "curation-service"
+target_entity = "ArtStyle"
+target_action = "RecordVerificationJob"
+
+[action.triggers.params_from]
+verification_job_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "art_style_ids"
+
 [[action]]
 name = "ConfigureAndSubmit"
 kind = "internal"

@@ -41,7 +41,7 @@ export function scopeForResource(resource: string): string {
 
 /** The protected resource this AS mints tokens for (the contribution adapter). */
 export function mcpResource(): string {
-  return process.env.KATAGAMI_MCP_RESOURCE || "https://mcp.katagami.ai";
+  return process.env.KATAGAMI_MCP_RESOURCE || "https://katagami-mcp-production-eb81.up.railway.app";
 }
 
 /** RFC 8707 resource indicators are honored only for known resources —

@@ -1,0 +1,455 @@
+{
+  "format": "katagami:narrative-structures/v1",
+  "entity_set": "NarrativeStructures",
+  "deployment": "not-deployed",
+  "records": [
+    {
+      "id": "ring-composition",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Ring composition",
+        "slug": "ring-composition",
+        "aliases": "[\"Ring structure\",\"chiastic composition\",\"chiastic structure\"]",
+        "instruction": "Arrange corresponding subjects or episodes in reverse order around a central turn, so the second half answers the first.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Place paired units in reverse order around one central turn; the number of pairs may vary.\",\"example\":[{\"position\":1,\"name\":\"A\"},{\"position\":2,\"name\":\"B\"},{\"position\":3,\"name\":\"C\"},{\"position\":4,\"name\":\"Central turn\"},{\"position\":5,\"name\":\"C′\"},{\"position\":6,\"name\":\"B′\"},{\"position\":7,\"name\":\"A′\"}]}",
+        "exemplars": "[{\"work\":\"Beowulf\"},{\"work\":\"Iliad\",\"creator\":\"Homer\"},{\"work\":\"Odyssey\",\"creator\":\"Homer\"}]",
+        "sources": "[{\"title\":\"John D. Niles, Ring Composition and the Structure of Beowulf\",\"url\":\"https://www.cambridge.org/core/journals/pmla/article/abs/ring-composition-and-the-structure-of-beowulf/B36957736B90889A1C2F0261D7592A88\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "frame-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Frame narrative",
+        "slug": "frame-narrative",
+        "aliases": "[\"Frame story\",\"framing narrative\",\"outer narrative\"]",
+        "instruction": "Open an enclosing situation in which one or more interior narratives are told, then return to the enclosing situation.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Outer situation\"},{\"position\":2,\"name\":\"Occasion for telling\"},{\"position\":3,\"name\":\"Interior narrative or narratives\"},{\"position\":4,\"name\":\"Return to the outer situation\"},{\"position\":5,\"name\":\"Outer closure\"}]}",
+        "exemplars": "[{\"work\":\"The Decameron\"},{\"work\":\"The Canterbury Tales\"},{\"work\":\"One Thousand and One Nights\"}]",
+        "sources": "[{\"title\":\"The Cambridge Introduction to Narrative, Borders of Narrative\",\"url\":\"https://www.cambridge.org/core/books/cambridge-introduction-to-narrative/borders-of-narrative/0B5E1442AD2222F266D3E0D900E8508F\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[\"frame-stories\"]"
+      }
+    },
+    {
+      "id": "epistolary-form",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Epistolary form",
+        "slug": "epistolary-form",
+        "aliases": "[\"Epistolary narrative\",\"documentary correspondence narrative\",\"novel in letters\"]",
+        "instruction": "Construct the work from letters and other documents whose dates, authors, recipients, omissions, and contradictions determine disclosure order.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Documents establish correspondents and situation\"},{\"position\":2,\"name\":\"Exchanges accumulate partial accounts\"},{\"position\":3,\"name\":\"Gaps or contradictions alter understanding\"},{\"position\":4,\"name\":\"Surviving correspondence supplies or withholds closure\"}]}",
+        "exemplars": "[{\"work\":\"Pamela\",\"creator\":\"Samuel Richardson\"},{\"work\":\"Clarissa\",\"creator\":\"Samuel Richardson\"},{\"work\":\"Dracula\",\"creator\":\"Bram Stoker\"}]",
+        "sources": "[{\"title\":\"Oregon State University, What is an Epistolary Novel?\",\"url\":\"https://liberalarts.oregonstate.edu/wlf/what-epistolary-novel\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[\"epistolary-fiction\"]"
+      }
+    },
+    {
+      "id": "interlace-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Interlace narrative",
+        "slug": "interlace-narrative",
+        "aliases": "[\"Entrelacement\",\"interlaced narrative\",\"interweaving\"]",
+        "instruction": "Alternate among concurrent narrative lines, suspend a line at a charged point, and resume it after visiting the others until the lines meet or answer one another.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Open two or more concurrent lines, alternate among them while earlier lines remain unresolved, then bring the lines into relation.\",\"example\":[{\"position\":1,\"name\":\"Establish line A\"},{\"position\":2,\"name\":\"Switch to line B while A remains unresolved\"},{\"position\":3,\"name\":\"Continue through further lines or returns\"},{\"position\":4,\"name\":\"Resume earlier lines\"},{\"position\":5,\"name\":\"Converge or close the lines in relation\"}]}",
+        "exemplars": "[{\"work\":\"Lancelot-Grail Cycle\"},{\"work\":\"Orlando Furioso\",\"creator\":\"Ludovico Ariosto\"},{\"work\":\"The Lord of the Rings\",\"creator\":\"J. R. R. Tolkien\"}]",
+        "sources": "[{\"title\":\"Richard West, The Interlace Structure of The Lord of the Rings\",\"url\":\"https://commons.und.edu/theses/6711/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "reverse-chronology",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Reverse chronology",
+        "slug": "reverse-chronology",
+        "aliases": "[\"Backward narrative\",\"reverse chronological narrative\",\"retrograde narrative\"]",
+        "instruction": "Present the principal events from latest to earliest, so causes arrive after their effects.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Final event or condition\"},{\"position\":2,\"name\":\"Immediate predecessor\"},{\"position\":3,\"name\":\"Successively earlier causes\"},{\"position\":4,\"name\":\"Earliest event or origin\"}]}",
+        "exemplars": "[{\"work\":\"Betrayal\",\"creator\":\"Harold Pinter\"},{\"work\":\"Memento\",\"creator\":\"Christopher Nolan\"},{\"work\":\"Irréversible\",\"creator\":\"Gaspar Noé\"}]",
+        "sources": "[{\"title\":\"Reverse chronology\",\"url\":\"https://en.wikipedia.org/wiki/Reverse_chronology\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "circular-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Circular narrative",
+        "slug": "circular-narrative",
+        "aliases": "[\"Circular structure\",\"loop narrative\",\"full-circle narrative\"]",
+        "instruction": "Return at the end to the opening situation, event, or wording, with the intervening work changing how the beginning is understood.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Opening situation\"},{\"position\":2,\"name\":\"Departure or expansion\"},{\"position\":3,\"name\":\"Consequences\"},{\"position\":4,\"name\":\"Return to the opening\"},{\"position\":5,\"name\":\"Reinterpretation or repetition\"}]}",
+        "exemplars": "[{\"work\":\"Finnegans Wake\",\"creator\":\"James Joyce\"},{\"work\":\"Decline and Fall\",\"creator\":\"Evelyn Waugh\"},{\"work\":\"Of Mice and Men\",\"creator\":\"John Steinbeck\"}]",
+        "sources": "[{\"title\":\"Stephanie E. Katz, Here We Go 'Round in Circles\",\"url\":\"https://etheses.bham.ac.uk/id/eprint/13395/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "linked-story-cycle",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Linked-story cycle",
+        "slug": "linked-story-cycle",
+        "aliases": "[\"Short-story cycle\",\"short-story sequence\",\"composite novel\",\"linked stories\",\"novel in stories\"]",
+        "instruction": "Arrange stories that can be read independently so recurring people, places, or consequences also make a larger work.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Order self-contained stories so shared elements revise or extend the larger work, then close through accumulation rather than one continuous plot resolution.\",\"example\":[{\"position\":1,\"name\":\"Self-contained story\"},{\"position\":2,\"name\":\"Later story with a shared element\"},{\"position\":3,\"name\":\"Further independent stories revise or extend the whole\"},{\"position\":4,\"name\":\"Cumulative closure\"}]}",
+        "exemplars": "[{\"work\":\"Winesburg, Ohio\",\"creator\":\"Sherwood Anderson\"},{\"work\":\"Dubliners\",\"creator\":\"James Joyce\"},{\"work\":\"The Things They Carried\",\"creator\":\"Tim O'Brien\"}]",
+        "sources": "[{\"title\":\"Wiley, Short Story Cycle\",\"url\":\"https://doi.org/10.1002/9781119431732.ecaf0262\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[\"linked-stories\"]"
+      }
+    },
+    {
+      "id": "cumulative-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Cumulative narrative",
+        "slug": "cumulative-narrative",
+        "aliases": "[\"Cumulative tale\",\"chain tale\",\"progressive-addition tale\"]",
+        "instruction": "Repeat a stable passage while adding one person, object, or deed at every recurrence, sometimes undoing the series in reverse.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Repeat a stable passage with one addition at each recurrence; after maximum accumulation, the series may unwind in reverse or release abruptly.\",\"example\":[{\"position\":1,\"name\":\"Base incident\"},{\"position\":2,\"name\":\"First repetition plus addition\"},{\"position\":3,\"name\":\"Successive repetitions plus additions\"},{\"position\":4,\"name\":\"Maximum accumulation\"},{\"position\":5,\"name\":\"Optional reverse unwinding or abrupt release\"}]}",
+        "exemplars": "[{\"work\":\"The Gingerbread Man\"},{\"work\":\"The House That Jack Built\"},{\"work\":\"The Old Woman and Her Pig\"}]",
+        "sources": "[{\"title\":\"A Companion to the Fairy Tale, Catch If You Can: The Cumulative Tale\",\"url\":\"https://www.cambridge.org/core/books/abs/companion-to-the-fairy-tale/catch-if-you-can-the-cumulative-tale/DD2204C4C9F3E9E3B7641D191FD8551C\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "multiperspectival-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Multiperspectival narrative",
+        "slug": "multiperspectival-narrative",
+        "aliases": "[\"Multiperspectivity\",\"polyperspectivity\",\"multiple-viewpoint narrative\"]",
+        "instruction": "Present an event or subject through several materially different viewpoints whose agreement or conflict determines what the reader can know.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Present at least two distinct accounts, then let their agreement, conflict, or unresolved difference determine the work's knowledge.\",\"example\":[{\"position\":1,\"name\":\"Account from viewpoint A\"},{\"position\":2,\"name\":\"Account from viewpoint B\"},{\"position\":3,\"name\":\"Further accounts or returns\"},{\"position\":4,\"name\":\"Comparison and revision\"},{\"position\":5,\"name\":\"Reconciliation or unresolved contradiction\"}]}",
+        "exemplars": "[{\"work\":\"The Moonstone\",\"creator\":\"Wilkie Collins\"},{\"work\":\"The Waves\",\"creator\":\"Virginia Woolf\"},{\"work\":\"My Name Is Red\",\"creator\":\"Orhan Pamuk\"}]",
+        "sources": "[{\"title\":\"The Living Handbook of Narratology, Multiperspectivity\",\"url\":\"https://www-archiv.fdm.uni-hamburg.de/lhn/node/37.html\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "diary-form",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Diary form",
+        "slug": "diary-form",
+        "aliases": "[\"Diary narrative\",\"journal narrative\",\"fictional diary\"]",
+        "instruction": "Build the work from dated entries written close to the narrated events, so chronology, gaps, and the diarist's limited knowledge control disclosure.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Order dated entries near their narrated events and use the sequence, gaps, and limited knowledge to control disclosure.\",\"example\":[{\"position\":1,\"name\":\"Initial dated entry and situation\"},{\"position\":2,\"name\":\"Periodic entries after events\"},{\"position\":3,\"name\":\"Omissions or revisions across gaps\"},{\"position\":4,\"name\":\"Last entry or editorial closure\"}]}",
+        "exemplars": "[{\"work\":\"The Diary of a Nobody\",\"creator\":\"George and Weedon Grossmith\"},{\"work\":\"The Yellow Wallpaper\",\"creator\":\"Charlotte Perkins Gilman\"},{\"work\":\"Flowers for Algernon\",\"creator\":\"Daniel Keyes\"}]",
+        "sources": "[{\"title\":\"Cambridge University Press excerpt on diary fiction\",\"url\":\"https://assets.cambridge.org/97805211/08256/excerpt/9780521108256_excerpt.pdf\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[\"diary-fiction\"]"
+      }
+    },
+    {
+      "id": "hypertext-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Hypertext narrative",
+        "slug": "hypertext-narrative",
+        "aliases": "[\"Hyperfiction\",\"link-node narrative\",\"networked narrative\"]",
+        "instruction": "Divide the work into text units connected by links, leaving reading order partly to the reader while controlling which units can follow which.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Connect text units as a directed network that constrains, but does not fully determine, the reader's path.\",\"example\":[{\"position\":1,\"name\":\"Entry node\"},{\"position\":2,\"name\":\"Reader-selected link\"},{\"position\":3,\"name\":\"Reachable node\"},{\"position\":4,\"name\":\"Further traversal\"},{\"position\":5,\"name\":\"Exit or open cessation\"}]}",
+        "exemplars": "[{\"work\":\"afternoon, a story\",\"creator\":\"Michael Joyce\"},{\"work\":\"Victory Garden\",\"creator\":\"Stuart Moulthrop\"},{\"work\":\"Patchwork Girl\",\"creator\":\"Shelley Jackson\"}]",
+        "sources": "[{\"title\":\"Raine Koskimaa, Hypertext Fiction\",\"url\":\"https://users.jyu.fi/~koskimaa/thesis/chapter5.htm\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[\"hypertext-fiction\"]"
+      }
+    },
+    {
+      "id": "branching-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Branching narrative",
+        "slug": "branching-narrative",
+        "aliases": "[\"Branching-path narrative\",\"choose-your-own narrative\",\"gamebook structure\"]",
+        "instruction": "Place consequential choices at decision points so a reader or player selects one of several authored continuations and endings.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Branch the authored path at consequential choices; later paths may remain separate, rejoin, or loop before reaching distinct endings.\",\"example\":[{\"position\":1,\"name\":\"Common opening\"},{\"position\":2,\"name\":\"Choice point\"},{\"position\":3,\"name\":\"Branch\"},{\"position\":4,\"name\":\"Later choice or convergence\"},{\"position\":5,\"name\":\"Branch-specific ending\"}]}",
+        "exemplars": "[{\"work\":\"The Cave of Time\",\"creator\":\"Edward Packard\"},{\"work\":\"80 Days\",\"creator\":\"Inkle\"},{\"work\":\"Black Mirror: Bandersnatch\"}]",
+        "sources": "[{\"title\":\"Library of Congress, Choose-your-own stories\",\"url\":\"https://id.loc.gov/authorities/genreForms/gf2014026259\",\"handling\":\"cited_and_paraphrased\"},{\"title\":\"Gamebook\",\"url\":\"https://en.wikipedia.org/wiki/Gamebook\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[\"choose-your-own-stories\"]"
+      }
+    },
+    {
+      "id": "anachronic-modular-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Anachronic modular narrative",
+        "slug": "anachronic-modular-narrative",
+        "aliases": "[\"Anachronic narrative\",\"temporally modular narrative\"]",
+        "instruction": "Arrange substantial narrative units from different times without giving one chronology stable priority until late in the work, if at all.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Order substantial modules from different times without a controlling chronology, then align them late or leave their relation partly unresolved.\",\"example\":[{\"position\":1,\"name\":\"Temporal module A\"},{\"position\":2,\"name\":\"Module from another time\"},{\"position\":3,\"name\":\"Further reordered modules\"},{\"position\":4,\"name\":\"Late causal alignment or residual uncertainty\"}]}",
+        "exemplars": "[{\"work\":\"Pulp Fiction\"},{\"work\":\"21 Grams\"},{\"work\":\"Eternal Sunshine of the Spotless Mind\"}]",
+        "sources": "[{\"title\":\"Matthew Campora on Allan Cameron's Modular Narratives in Contemporary Cinema\",\"url\":\"https://www.sensesofcinema.com/2010/book-reviews/modular-narratives-in-contemporary-cinema-by-allan-cameron/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "forking-path-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Forking-path narrative",
+        "slug": "forking-path-narrative",
+        "aliases": "[\"Alternate-path narrative\",\"multiple-future narrative\",\"possible-world narrative\"]",
+        "instruction": "Repeat a common situation with a changed decision or circumstance, then follow mutually exclusive outcomes as parts of the authored work.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Establish a common situation and divergence, follow two or more mutually exclusive outcome paths, returning to the common situation or divergence before each additional path, then compare the paths or select a final outcome.\",\"example\":[{\"position\":1,\"name\":\"Common situation\"},{\"position\":2,\"name\":\"Divergence\"},{\"position\":3,\"name\":\"Outcome A\"},{\"position\":4,\"name\":\"Reset or return to divergence\"},{\"position\":5,\"name\":\"Outcome B\"},{\"position\":6,\"name\":\"Comparison or final selected outcome\"}]}",
+        "exemplars": "[{\"work\":\"Groundhog Day\"},{\"work\":\"Run Lola Run\"},{\"work\":\"Sliding Doors\"}]",
+        "sources": "[{\"title\":\"Matthew Campora on Allan Cameron's taxonomy\",\"url\":\"https://www.sensesofcinema.com/2010/book-reviews/modular-narratives-in-contemporary-cinema-by-allan-cameron/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "sustained-allegory",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Sustained allegory",
+        "slug": "sustained-allegory",
+        "aliases": "[\"Narrative allegory\",\"continuous allegory\",\"allegorical narrative\"]",
+        "instruction": "Compose a literal narrative whose people, places, and events maintain a second coherent sequence of meaning across the complete work.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Establish literal terms\"},{\"position\":2,\"name\":\"Establish corresponding figurative terms\"},{\"position\":3,\"name\":\"Develop both sequences together\"},{\"position\":4,\"name\":\"Resolve the literal sequence and figurative argument\"}]}",
+        "exemplars": "[{\"work\":\"The Faerie Queene\",\"creator\":\"Edmund Spenser\"},{\"work\":\"The Pilgrim's Progress\",\"creator\":\"John Bunyan\"},{\"work\":\"Animal Farm\",\"creator\":\"George Orwell\"}]",
+        "sources": "[{\"title\":\"University of London, Allegory and Allegoresis\",\"url\":\"https://s3-eu-west-1.amazonaws.com/uoliaepub/English/Later_Middle_Ages_EN3025/OEBPS/Text/LLMA_12-3.html\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[\"allegories\"]"
+      }
+    },
+    {
+      "id": "aristotelian-complication-and-denouement",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Aristotelian complication and denouement",
+        "slug": "aristotelian-complication-and-denouement",
+        "aliases": "[\"Aristotelian dramatic structure\",\"complication-unravelling structure\"]",
+        "instruction": "Develop one causally unified plot through complication, then turn through recognition or reversal into denouement.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Move from the beginning through complication, include recognition, reversal, or both when present, then proceed through the denouement to the end.\",\"example\":[{\"position\":1,\"name\":\"Beginning\"},{\"position\":2,\"name\":\"Complication\"},{\"position\":3,\"name\":\"Reversal or recognition when present\"},{\"position\":4,\"name\":\"Denouement\"},{\"position\":5,\"name\":\"End\"}]}",
+        "exemplars": "[{\"work\":\"Oedipus Rex\",\"creator\":\"Sophocles\"},{\"work\":\"Iphigenia in Tauris\",\"creator\":\"Euripides\"},{\"work\":\"Odyssey\",\"creator\":\"Homer\"}]",
+        "sources": "[{\"title\":\"Aristotle, Poetics\",\"url\":\"https://www.gutenberg.org/files/1974/1974-h/1974-h.htm\",\"handling\":\"public_domain\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "freytag-five-part-dramatic-structure",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Freytag's five-part dramatic structure",
+        "slug": "freytag-five-part-dramatic-structure",
+        "aliases": "[\"Freytag's pyramid\",\"Freytag's triangle\",\"five-part tragedy\"]",
+        "instruction": "Raise dramatic force from introduction through a central climax, then reduce it through return and catastrophe.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Introduction\"},{\"position\":2,\"name\":\"Rise\"},{\"position\":3,\"name\":\"Climax\"},{\"position\":4,\"name\":\"Return or fall\"},{\"position\":5,\"name\":\"Catastrophe\"}]}",
+        "exemplars": "[{\"work\":\"Hamlet\",\"creator\":\"William Shakespeare\"},{\"work\":\"Macbeth\",\"creator\":\"William Shakespeare\"},{\"work\":\"Julius Caesar\",\"creator\":\"William Shakespeare\"}]",
+        "sources": "[{\"title\":\"Gustav Freytag, Technique of the Drama, chapter 2\",\"url\":\"https://www.briantriber.com/WritingSamples/Freytag_Drama/Freytag_11_Ch2_P2.html\",\"handling\":\"public_domain\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "field-three-act-structure",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Field three-act structure",
+        "slug": "field-three-act-structure",
+        "aliases": "[\"Syd Field model\",\"setup-confrontation-resolution model\"]",
+        "instruction": "Divide a screenplay into setup, prolonged confrontation, and resolution, with a decisive plot point changing direction at each division.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Setup\"},{\"position\":2,\"name\":\"First plot point\"},{\"position\":3,\"name\":\"Confrontation\"},{\"position\":4,\"name\":\"Second plot point\"},{\"position\":5,\"name\":\"Resolution\"}]}",
+        "exemplars": "[{\"work\":\"Chinatown\"},{\"work\":\"Network\"},{\"work\":\"Butch Cassidy and the Sundance Kid\"}]",
+        "sources": "[{\"title\":\"Syd Field, Screenplay\",\"url\":\"https://openlibrary.org/works/OL2702209W/Screenplay\",\"handling\":\"cited_and_paraphrased\"},{\"title\":\"CUNY teaching gloss on Syd Field\",\"url\":\"https://files.commons.gc.cuny.edu/wp-content/blogs.dir/4120/files/2018/08/Three-Act-Structure.Jim-Soto-glosses-SYD_FIELD.pdf\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "thompson-four-part-structure",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Thompson four-part structure",
+        "slug": "thompson-four-part-structure",
+        "aliases": "[\"Kristin Thompson four-part model\",\"four-part Hollywood structure\"]",
+        "instruction": "Divide a feature into setup, Complicating Action, sustained development, and climax, with an optional short epilogue.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Use four required parts in order, then optionally add a short epilogue.\",\"example\":[{\"position\":1,\"name\":\"Setup\"},{\"position\":2,\"name\":\"Complicating Action\"},{\"position\":3,\"name\":\"Development\"},{\"position\":4,\"name\":\"Climax\"},{\"position\":5,\"name\":\"Optional epilogue\"}]}",
+        "exemplars": "[{\"work\":\"Back to the Future\"},{\"work\":\"The Silence of the Lambs\"},{\"work\":\"Groundhog Day\"}]",
+        "sources": "[{\"title\":\"David Bordwell, The Classical Hollywood Whatzis\",\"url\":\"https://www.davidbordwell.net/blog/2018/06/10/the-classical-hollywood-whatzis/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "eight-sequence-structure",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Eight-sequence structure",
+        "slug": "eight-sequence-structure",
+        "aliases": "[\"Sequence approach\",\"sequence method\",\"Frank Daniel method\"]",
+        "instruction": "Build a feature from successive short dramatic units, commonly eight, with every unit posing and resolving a local question while advancing the larger work.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Use successive short dramatic units, commonly eight. Each unit poses and resolves a local question, and the last resolves the principal dramatic question.\",\"example\":[{\"position\":1,\"name\":\"Sequence 1\"},{\"position\":2,\"name\":\"Sequence 2\"},{\"position\":3,\"name\":\"Sequence 3\"},{\"position\":4,\"name\":\"Sequence 4\"},{\"position\":5,\"name\":\"Sequence 5\"},{\"position\":6,\"name\":\"Sequence 6\"},{\"position\":7,\"name\":\"Sequence 7\"},{\"position\":8,\"name\":\"Sequence 8 resolves the principal question\"}]}",
+        "exemplars": "[{\"work\":\"Toy Story\"},{\"work\":\"North by Northwest\"},{\"work\":\"The Lord of the Rings: The Fellowship of the Ring\"}]",
+        "sources": "[{\"title\":\"Paul Joseph Gulino, Screenwriting: The Sequence Approach\",\"url\":\"https://www.bloomsbury.com/us/screenwriting-9798765104620/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "yorke-five-act-structure",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Yorke five-act structure",
+        "slug": "yorke-five-act-structure",
+        "aliases": "[\"Into the Woods five-act model\",\"symmetrical five-act structure\"]",
+        "instruction": "Arrange five acts around a central acquisition or revelation, then make the later acts test and revise the earlier movement toward change.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Initial condition and awakening\"},{\"position\":2,\"name\":\"Commitment\"},{\"position\":3,\"name\":\"Midpoint acquisition or revelation\"},{\"position\":4,\"name\":\"Consequences and crisis\"},{\"position\":5,\"name\":\"Changed resolution\"}]}",
+        "exemplars": "[{\"work\":\"The Godfather\"},{\"work\":\"Hamlet\",\"creator\":\"William Shakespeare\"},{\"work\":\"Breaking Bad\"}]",
+        "sources": "[{\"title\":\"John Yorke, Five Act Structure\",\"url\":\"https://www.johnyorkestory.com/five-act-structure/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "kishotenketsu",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Kishōtenketsu",
+        "slug": "kishotenketsu",
+        "aliases": "[\"Kishōtenketsu\",\"qǐ-chéng-zhuǎn-hé\",\"gi-seung-jeon-gyeol\",\"four-part composition\",\"起承転結\"]",
+        "instruction": "Introduce and develop a subject, bring in a third-part turn that changes its relation, then connect all parts in the conclusion.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Ki, introduction\"},{\"position\":2,\"name\":\"Shō, development\"},{\"position\":3,\"name\":\"Ten, turn or disjunction\"},{\"position\":4,\"name\":\"Ketsu, connection and conclusion\"}]}",
+        "exemplars": "[{\"work\":\"Final Fantasy VII\"},{\"work\":\"The Key\",\"creator\":\"Jun'ichirō Tanizaki\"},{\"work\":\"The Castle of Cagliostro\",\"creator\":\"Hayao Miyazaki\"}]",
+        "sources": "[{\"title\":\"Richard Anatone, Kishōtenketsu as Leitmotif\",\"url\":\"https://doi.org/10.1525/jsmg.2023.4.4.15\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "jo-ha-kyu",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Jo-ha-kyū",
+        "slug": "jo-ha-kyu",
+        "aliases": "[\"Jo-ha-kyu\",\"introduction-break-rapid close\",\"Zeami's pacing principle\",\"序破急\"]",
+        "instruction": "Begin slowly, expand and accelerate through the central development, then conclude rapidly, with the same pacing relation available at nested scales.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Jo, slow introduction\"},{\"position\":2,\"name\":\"Ha, development, break, and acceleration\"},{\"position\":3,\"name\":\"Kyū, rapid conclusion\"}]}",
+        "exemplars": "[{\"work\":\"Takasago\"},{\"work\":\"Atsumori\"},{\"work\":\"Hagoromo\"}]",
+        "sources": "[{\"title\":\"Noh as Intermedia, Form\",\"url\":\"https://noh.stanford.edu/form/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "pancha-sandhi",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Pancha-sandhi",
+        "slug": "pancha-sandhi",
+        "aliases": "[\"Pañca-sandhi\",\"five junctures\",\"Sanskrit five-stage dramatic structure\",\"पञ्चसन्धि\"]",
+        "instruction": "Develop a dramatic seed through five junctures from its first indication to the attainment that completes it.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Mukha, opening\"},{\"position\":2,\"name\":\"Pratimukha, progression\"},{\"position\":3,\"name\":\"Garbha, development\"},{\"position\":4,\"name\":\"Vimarśa or avamarśa, pause, obstruction, or reversal\"},{\"position\":5,\"name\":\"Nirvāhaṇa, conclusion\"}]}",
+        "exemplars": "[{\"work\":\"Abhijñānaśākuntalam\",\"creator\":\"Kālidāsa\"},{\"work\":\"Mṛcchakaṭika\",\"creator\":\"Śūdraka\"},{\"work\":\"Uttararāmacarita\",\"creator\":\"Bhavabhūti\"}]",
+        "sources": "[{\"title\":\"INFLIBNET, Itivritta: Theme and Development\",\"url\":\"https://ebooks.inflibnet.ac.in/engp11/chapter/itivritta-theme-and-development/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "abstract-episodic-structure",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Abstract episodic structure",
+        "slug": "abstract-episodic-structure",
+        "aliases": "[\"Abstract series\",\"rule-ordered episodic narrative\"]",
+        "instruction": "Arrange causally weak episodes by a non-narrative ordering system such as a count, alphabet, catalogue, or repeated formal rule.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Choose a count, alphabet, catalogue, or repeated formal rule and order causally weak episodes by it until the series completes or breaks.\",\"example\":[{\"position\":1,\"name\":\"Establish the ordering rule\"},{\"position\":2,\"name\":\"Present successive episodes according to it\"},{\"position\":3,\"name\":\"Complete or break the series\"}]}",
+        "exemplars": "[{\"work\":\"Drowning by Numbers\",\"creator\":\"Peter Greenaway\"},{\"work\":\"A Zed & Two Noughts\",\"creator\":\"Peter Greenaway\"}]",
+        "sources": "[{\"title\":\"Matthew Campora on Allan Cameron's episodic categories\",\"url\":\"https://www.sensesofcinema.com/2010/book-reviews/modular-narratives-in-contemporary-cinema-by-allan-cameron/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "narrative-anthology",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Narrative anthology",
+        "slug": "narrative-anthology",
+        "aliases": "[\"Anthology narrative\",\"shared-world anthology\",\"multi-strand anthology\"]",
+        "instruction": "Place apparently separate narratives in the same fictional world, then let shared places, encounters, or consequences disclose their relation.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Develop separate strands in a shared world, then disclose their relation through setting, crossover, or consequence.\",\"example\":[{\"position\":1,\"name\":\"Strand A\"},{\"position\":2,\"name\":\"Separate strand B\"},{\"position\":3,\"name\":\"Further strands\"},{\"position\":4,\"name\":\"Crossovers or shared setting\"},{\"position\":5,\"name\":\"Collective or parallel closure\"}]}",
+        "exemplars": "[{\"work\":\"Dekalog\",\"creator\":\"Krzysztof Kieślowski\"},{\"work\":\"Mystery Train\",\"creator\":\"Jim Jarmusch\"},{\"work\":\"Short Cuts\",\"creator\":\"Robert Altman\"}]",
+        "sources": "[{\"title\":\"Matthew Campora on Allan Cameron's narrative anthology\",\"url\":\"https://www.sensesofcinema.com/2010/book-reviews/modular-narratives-in-contemporary-cinema-by-allan-cameron/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "split-screen-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Split-screen narrative",
+        "slug": "split-screen-narrative",
+        "aliases": "[\"Spatially simultaneous narrative\",\"multi-frame narrative\"]",
+        "instruction": "Divide the visual field into two or more frames so concurrent or earlier events remain visible together and their timing or contrast creates the work's organization.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Maintain at least two visible frames, coordinate their timelines, and use attention, sound, and intersections to organize the work.\",\"example\":[{\"position\":1,\"name\":\"Establish frames\"},{\"position\":2,\"name\":\"Align their timelines\"},{\"position\":3,\"name\":\"Vary attention or sound priority\"},{\"position\":4,\"name\":\"Create intersections\"},{\"position\":5,\"name\":\"Conclude together or release the division\"}]}",
+        "exemplars": "[{\"work\":\"Timecode\"},{\"work\":\"Conversations with Other Women\"},{\"work\":\"Pretend\"}]",
+        "sources": "[{\"title\":\"Matthew Campora on Allan Cameron's split-screen category\",\"url\":\"https://www.sensesofcinema.com/2010/book-reviews/modular-narratives-in-contemporary-cinema-by-allan-cameron/\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "alternating-parallel-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Alternating parallel narrative",
+        "slug": "alternating-parallel-narrative",
+        "aliases": "[\"Dual narrative\",\"parallel plot structure\",\"alternating narrative\"]",
+        "instruction": "Alternate between two complete narrative lines whose comparison, causal relation, or eventual meeting supplies the larger design.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Line A\"},{\"position\":2,\"name\":\"Line B\"},{\"position\":3,\"name\":\"Alternating development\"},{\"position\":4,\"name\":\"Correspondence or convergence\"},{\"position\":5,\"name\":\"Paired or common resolution\"}]}",
+        "exemplars": "[{\"work\":\"Mrs Dalloway\",\"creator\":\"Virginia Woolf\"},{\"work\":\"The Hours\",\"creator\":\"Michael Cunningham\"},{\"work\":\"All the Light We Cannot See\",\"creator\":\"Anthony Doerr\"}]",
+        "sources": "[{\"title\":\"ERIC, Reading and Writing in the Middle Grades, parallel-narrative unit\",\"url\":\"https://files.eric.ed.gov/fulltext/ED472279.pdf\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "nested-narrative",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Nested narrative",
+        "slug": "nested-narrative",
+        "aliases": "[\"Chinese-box narrative\",\"embedded narrative\",\"recursive frame\"]",
+        "instruction": "Descend through two or more narrative levels, then return through those levels so information from an inner account changes the containing account.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Descend through at least two narrative levels, then return through them in reverse order so the inner account changes its container.\",\"example\":[{\"position\":1,\"name\":\"Outer level\"},{\"position\":2,\"name\":\"Embedded level\"},{\"position\":3,\"name\":\"Optional deeper level\"},{\"position\":4,\"name\":\"Innermost account\"},{\"position\":5,\"name\":\"Return through the levels in reverse order\"}]}",
+        "exemplars": "[{\"work\":\"Frankenstein\",\"creator\":\"Mary Shelley\"},{\"work\":\"Wuthering Heights\",\"creator\":\"Emily Brontë\"},{\"work\":\"The Manuscript Found in Saragossa\",\"creator\":\"Jan Potocki\"}]",
+        "sources": "[{\"title\":\"The Living Handbook of Narratology, Narrative Levels\",\"url\":\"https://www-archiv.fdm.uni-hamburg.de/lhn/node/32.html\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "in-medias-res",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "In medias res",
+        "slug": "in-medias-res",
+        "aliases": "[\"Beginning in the middle\",\"medias-res opening\",\"retrospective disclosure\"]",
+        "instruction": "Open after the underlying events have begun and make the rest of the work disclose the omitted causes through backward reference or embedded recounting.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Mid-course opening\"},{\"position\":2,\"name\":\"Immediate present development\"},{\"position\":3,\"name\":\"Disclosure of earlier causes\"},{\"position\":4,\"name\":\"Convergence of past and present\"},{\"position\":5,\"name\":\"Continuation to the end\"}]}",
+        "exemplars": "[{\"work\":\"Iliad\",\"creator\":\"Homer\"},{\"work\":\"Odyssey\",\"creator\":\"Homer\"},{\"work\":\"Paradise Lost\",\"creator\":\"John Milton\"}]",
+        "sources": "[{\"title\":\"In medias res\",\"url\":\"https://en.wikipedia.org/wiki/In_medias_res\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "mise-en-abyme",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Mise en abyme",
+        "slug": "mise-en-abyme",
+        "aliases": "[\"Mirroring inset\",\"recursive self-representation\",\"play within the play\"]",
+        "instruction": "Insert a smaller representation of the containing work that comments on, predicts, or revises the reader's understanding of that complete work.",
+        "movements": "{\"kind\":\"fixed\",\"parts\":[{\"position\":1,\"name\":\"Containing narrative\"},{\"position\":2,\"name\":\"Inset representation\"},{\"position\":3,\"name\":\"Recognized correspondence\"},{\"position\":4,\"name\":\"Altered reading of the containing narrative\"},{\"position\":5,\"name\":\"Outer resolution\"}]}",
+        "exemplars": "[{\"work\":\"Hamlet\",\"creator\":\"William Shakespeare\"},{\"work\":\"The Counterfeiters\",\"creator\":\"André Gide\"},{\"work\":\"Inception\",\"creator\":\"Christopher Nolan\"}]",
+        "sources": "[{\"title\":\"Lucien Dällenbach, Reflexivity and Reading\",\"url\":\"https://www.persee.fr/doc/litt_0047-4800_1978_num_29_1_2090\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    },
+    {
+      "id": "braided-essay",
+      "action": "SubmitNarrativeStructure",
+      "params": {
+        "name": "Braided essay",
+        "slug": "braided-essay",
+        "aliases": "[\"Braided narrative essay\",\"multi-strand essay\",\"segmented braid\"]",
+        "instruction": "Alternate recurring nonfiction strands without requiring chronological or causal continuity, and let their accumulating relation supply the conclusion.",
+        "movements": "{\"kind\":\"rule\",\"rule\":\"Alternate two or more recurring nonfiction strands and let their accumulating relation, rather than chronology or causation, supply the close.\",\"example\":[{\"position\":1,\"name\":\"Strand A\"},{\"position\":2,\"name\":\"Strand B\"},{\"position\":3,\"name\":\"Optional strand C\"},{\"position\":4,\"name\":\"Repeated alternation with shorter or more intense sections\"},{\"position\":5,\"name\":\"Convergence or relational close\"}]}",
+        "exemplars": "[{\"work\":\"A Braided Heart\",\"creator\":\"Brenda Miller\"},{\"work\":\"Time and Distance Overcome\",\"creator\":\"Eula Biss\"},{\"work\":\"The Fourth State of Matter\",\"creator\":\"Jo Ann Beard\"}]",
+        "sources": "[{\"title\":\"Brenda Miller, A Braided Heart\",\"url\":\"https://press.umich.edu/Books/A/A-Braided-Heart3\",\"handling\":\"cited_and_paraphrased\"}]",
+        "encyclopedia_cell_ids": "[]"
+      }
+    }
+  ]
+}
