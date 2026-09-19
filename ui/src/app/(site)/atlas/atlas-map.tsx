@@ -22,6 +22,9 @@ const FAMILY_INKS = ["var(--sakura)", "var(--ramune)", "var(--yuzu)"];
 // that were hidden behind a family's lead card have room, and pop out.
 const CARD_PX = 124; // a card's width on screen while the paper is zoomed out
 const CARD_GAP = 10;
+// Past the zoom where every card has room (about 0.94) cards grow with the paper:
+// that is the closer look. The zoom stops where a card is about 210px wide.
+const MAX_ZOOM = 1.6;
 
 // A pan or zoom changes the camera sixty times a second. A tile depends on none
 // of it — its counter-scale comes from one CSS variable on the paper — so it is
@@ -61,7 +64,7 @@ const Tile = memo(function Tile({ style: s, dim, rank, pressed, hidden, familyLa
 
 export function AtlasMap({ styles, families, unplaced, sample }: { styles: AtlasStyle[]; families: Family[]; unplaced: number; sample: boolean }) {
   const reduced = usePrefersReducedMotion();
-  const { viewportRef, camera, animate, dragging, draggingRef, handlers, zoomStep, fit, centerOn, glide, guardWheel } = usePanZoom({ x: 0, y: 0, k: 0.2 }, 2.4, 0.08);
+  const { viewportRef, camera, animate, dragging, draggingRef, handlers, zoomStep, fit, centerOn, glide, guardWheel } = usePanZoom({ x: 0, y: 0, k: 0.2 }, MAX_ZOOM, 0.08);
   const [kind, setKind] = useState<"" | "language" | "art_style">("");
   const [focusId, setFocusId] = useState<string | null>(null);
   const framed = useRef(false);
@@ -159,7 +162,7 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
   const glideTo = useCallback((wx: number, wy: number, k: number) => {
     const el = viewportRef.current;
     if (!el) return;
-    const kk = Math.min(k, 2.4);
+    const kk = Math.min(k, MAX_ZOOM);
     glide({ k: kk, x: el.clientWidth / 2 - wx * kk, y: el.clientHeight / 2 - wy * kk });
   }, [viewportRef, glide]);
   // A neighbour of the focused style was asked for by name: it opens, stack or not.
@@ -171,7 +174,7 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
     if (draggingRef.current) return;
     // A card with others tucked behind it opens them first, as a cluster does
     // on a map; once it stands alone, a press opens the style itself.
-    if ((tuckedRef.current.get(s.id) ?? 0) > 0 && zoomNow.current < 2.3 && !litRef.current?.has(s.id)) {
+    if ((tuckedRef.current.get(s.id) ?? 0) > 0 && zoomNow.current < MAX_ZOOM - 0.05 && !litRef.current?.has(s.id)) {
       // Twice as close, on the card pressed: always progress, however wide the family lies.
       glideTo(s.x * PAPER, s.y * PAPER, zoomNow.current * 2);
       return;

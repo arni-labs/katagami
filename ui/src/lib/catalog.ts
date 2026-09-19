@@ -797,7 +797,7 @@ export async function askConcepts(queryIn: string, limit = 6) {
     }),
   );
   const answered = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
-  if (answered.length === 0) throw new JevUnavailableError("Jev answered none of the encyclopedia batches");
+  if (answered.flat().length === 0) throw new JevUnavailableError("Jev answered none of the encyclopedia batches");
   const ranked = answered.flat().filter((c) => c.relevance >= CONCEPT_FLOOR).sort((x, y) => y.relevance - x.relevance);
   return {
     query,
