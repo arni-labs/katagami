@@ -8,6 +8,7 @@ import { trackMcpToolCall, trackServerEvent } from "@/lib/server-telemetry";
 import {
   describeCatalog,
   askLibrary,
+  checkAgainstLanguage,
   searchDesigns,
   getDesign,
   getDesignMd,
@@ -249,7 +250,7 @@ function gone(tier: Tier) {
 // cardinality or smuggle content.
 const KNOWN_ARG_KEYS = new Set([
   "id_or_slug", "id", "slug", "kind", "format", "query", "medium", "tag",
-  "taxonomy", "family", "limit", "cursor", "color", "role",
+  "taxonomy", "family", "limit", "cursor", "color", "role", "page",
 ]);
 function argKeysOf(args: unknown): string | undefined {
   if (!args || typeof args !== "object") return "(none)";
@@ -355,6 +356,26 @@ const baseHandler = createMcpHandler(
         },
       },
       async (a, extra) => ok(await askLibrary(tierOf(extra), a)),
+    );
+
+    server.registerTool(
+      "check_against_language",
+      {
+        title: "Check a page against a design language",
+        description:
+          "After building a page with a Katagami design language, pass the language and the page's source (HTML with its CSS) to get a scorecard: exact checks of colours, typefaces and corner radii against the language's tokens, and each of the language's rules, do's and don'ts judged against the page (pass / unclear / fail, worst first). Use it to find what to fix before you hand the page over. It reads source, not pixels, so include the CSS.",
+        inputSchema: {
+          ...ID_ALIASES,
+          page: z.string().min(40).max(200_000).describe("The page's HTML source, CSS included"),
+        },
+      },
+      async (a, extra) => {
+        const tier = tierOf(extra);
+        const id = idOf(a);
+        if (!id) return missingId();
+        const card = await checkAgainstLanguage(tier, id, a.page);
+        return card ? ok(card) : gone(tier);
+      },
     );
 
     // --- design languages --------------------------------------------------

@@ -3,6 +3,7 @@ import { askLibrary } from "@/lib/catalog";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { JevUnavailableError } from "@/lib/jev.mjs";
 import { trackServerEvent } from "@/lib/server-telemetry";
+import { callerOf, mayStart, TOO_MANY } from "@/lib/spend-guard";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -25,26 +26,10 @@ export const maxDuration = 30;
 // minute. All of it is per server instance — a floor under abuse, not a wall.
 const recent = new Map<string, { at: number; body: unknown }>();
 const inFlight = new Map<string, Promise<Awaited<ReturnType<typeof askLibrary>>>>();
-const starts = new Map<string, number[]>();
 const RECENT_MS = 10 * 60_000;
 const RECENT_MAX = 500;
-const WINDOW_MS = 60_000;
-const STARTS_PER_WINDOW = { sample: 6, full: 30 } as const;
 
 const normalise = (q: string) => q.toLowerCase().replace(/\s+/g, " ").replace(/[\s.!?…]+$/u, "");
-
-function mayStart(who: string, tier: "sample" | "full"): boolean {
-  const now = Date.now();
-  const mine = (starts.get(who) ?? []).filter((at) => now - at < WINDOW_MS);
-  if (mine.length >= STARTS_PER_WINDOW[tier]) {
-    starts.set(who, mine);
-    return false;
-  }
-  mine.push(now);
-  if (starts.size >= 5_000) starts.clear();
-  starts.set(who, mine);
-  return true;
-}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -77,10 +62,9 @@ export async function GET(request: Request) {
   try {
     let pending = inFlight.get(key);
     if (!pending) {
-      const who = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-      if (!mayStart(who, tier)) {
+      if (!mayStart("ask", callerOf(request), tier)) {
         return NextResponse.json(
-          { error: "that is a lot of questions in a minute — give it a moment and ask again" },
+          { error: TOO_MANY },
           { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
         );
       }

@@ -14,6 +14,7 @@ import {
   STYLE_DNA_QUESTIONS,
   type StyleDna,
 } from "./style-dna.mjs";
+import { judgedChecks, judgedQuestions, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
 // commons through this module, so "what an identity may see" is defined once.
@@ -587,4 +588,43 @@ export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format
     },
   };
   return { format, tailwind_config: config };
+}
+
+// --- check a page against a language -----------------------------------------
+//
+// The scorecard an agent asks for after building with a language: what code can
+// measure (colours, typefaces, radii against the tokens) and what needs a look
+// (each rule, do and don't, as one Jev noul over the page source). One Jev call.
+// It reports; it does not gate — a contributor's submission is still reviewed.
+
+export async function checkAgainstLanguage(tier: Tier, idOrSlug: string, page: string) {
+  const design = await getDesign("language", idOrSlug, tier);
+  if (!design) return null;
+  const state = pageState(page);
+  const measured = measuredChecks(design, page);
+  const checks = judgedChecks(design);
+  let judged: { kind: string; name: string; rule: string; follows: number; verdict: string }[] = [];
+  let model: string | null = null;
+  if (checks.length > 0) {
+    const res = await askJev(`A web page built with the design language "${design.name}". Its source:\n${state}`, judgedQuestions(checks), { timeoutMs: 12_000, retries: 1 });
+    model = res.model;
+    judged = checks.map((c, i) => {
+      const noul = res.answers[`c${i}`]?.noul;
+      if (typeof noul !== "number" || !Number.isFinite(noul)) throw new JevUnavailableError("Jev left a rule unjudged");
+      return { kind: c.kind, name: c.name, rule: c.text, ...verdictOf(noul, c.expect) };
+    });
+  }
+  const all = [...measured, ...judged];
+  const count = (v: string) => all.filter((c) => c.verdict === v).length;
+  return {
+    language: { id: design.id, name: design.name, url: design.url },
+    model,
+    page_chars_read: state.length,
+    page_truncated: state.length < page.trim().length && state.length >= 24_000,
+    summary: { pass: count("pass"), unclear: count("unclear"), fail: count("fail") },
+    // Worst first: what to fix is the point of asking.
+    measured,
+    judged: judged.sort((a, b) => a.follows - b.follows),
+    note: "Measured checks are exact. Judged checks are a fast model's reading of the page source, not a review: treat 'fail' as where to look first and 'unclear' as not decided.",
+  };
 }
