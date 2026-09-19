@@ -157,8 +157,8 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
 
       <section aria-label="Style gallery" className="space-y-5">
         <div className="flex items-baseline justify-between gap-4">
-          <SectionHeading eyebrow="the images" eyebrowColor="graphite">
-            One style, different interpretations
+          <SectionHeading>
+            Style gallery
           </SectionHeading>
           <span className="shrink-0 font-mono text-xs text-muted-foreground">
             {[hero, ...gallery].filter(Boolean).length} images
