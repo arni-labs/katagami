@@ -62,16 +62,22 @@ trap 'kill $BLOB_PID 2>/dev/null || true' EXIT
 # `default` only, which is why the app loads there (also the production tenant
 # name).
 #
-# Two registration steps, both needed: `--app` runs the verification cascade and
-# loads the tenant's Cedar policies (including this harness's permit-all), while
-# only POST /api/specs/load-dir exposes the entity sets over OData. Same split as
-# scripts/run-local.sh.
+# Registration takes both steps, in this order:
+#   1. `--app` verifies the specs and loads the tenant's Cedar policies. Without
+#      the policies, step 2 is denied ("no matching permit policy").
+#   2. POST /api/specs/load-dir exposes the entity sets over OData; `--app`
+#      alone leaves only the ten kernel sets.
+# Step 2 must wait for the boot cascade: called while it runs, load-dir blocks
+# and its own registration never verifies, so every entity write answers 423
+# VerificationRequired.
 export TEMPER_API_KEY="${E2E_API_KEY:-e2e-local-operator-key}"
 E2E_TENANT="${E2E_TENANT:-default}"
+TEMPER_LOG="$E2E_STATE_DIR/temper.log"
+SPEC_COUNT="$(ls "$MERGED"/*.ioa.toml | wc -l | tr -d ' ')"
 
 HOME="$E2E_STATE_DIR/home" "$TEMPER_BIN" serve \
   --port "$E2E_PORT" --tenant "$E2E_TENANT" --no-observe \
-  --app "$E2E_TENANT=$MERGED" &
+  --app "$E2E_TENANT=$MERGED" > "$TEMPER_LOG" 2>&1 &
 TEMPER_PID=$!
 trap 'kill $BLOB_PID $TEMPER_PID 2>/dev/null || true' EXIT
 
@@ -79,7 +85,23 @@ curl --retry 120 --retry-delay 1 --retry-connrefused -sf \
   -H "X-Tenant-Id: $E2E_TENANT" -H "Authorization: Bearer $TEMPER_API_KEY" \
   "http://127.0.0.1:$E2E_PORT/tdata" >/dev/null
 
-echo "registering merged specs over OData (verification cascade; minutes on a debug build)"
+echo "verifying $SPEC_COUNT specs (L0-L3 cascade; ~40min on a debug build, log: $TEMPER_LOG)"
+for _ in $(seq 1 360); do
+  verified="$(grep -c 'all levels passed' "$TEMPER_LOG" || true)"
+  [ "$verified" -ge "$SPEC_COUNT" ] && break
+  # Confirm the port is still ours rather than trusting the PID: macOS recycles
+  # PIDs fast enough that a just-stopped run's PID can name a live process.
+  curl -sf -o /dev/null -m 5 -H "X-Tenant-Id: $E2E_TENANT" \
+    -H "Authorization: Bearer $TEMPER_API_KEY" "http://127.0.0.1:$E2E_PORT/tdata" \
+    || { echo "temper stopped answering during verification; see $TEMPER_LOG" >&2; exit 1; }
+  sleep 10
+done
+if [ "$(grep -c 'all levels passed' "$TEMPER_LOG" || true)" -lt "$SPEC_COUNT" ]; then
+  echo "verification did not finish for all $SPEC_COUNT specs; see $TEMPER_LOG" >&2
+  exit 1
+fi
+
+echo "registering entity sets over OData"
 LOAD_RESPONSE="$(curl --max-time 1800 -s -X POST "http://127.0.0.1:$E2E_PORT/api/specs/load-dir" \
   -H "Content-Type: application/json" -H "X-Tenant-Id: $E2E_TENANT" \
   -H "Authorization: Bearer $TEMPER_API_KEY" \
