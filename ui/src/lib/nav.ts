@@ -11,6 +11,9 @@ export interface NavLink {
 
 export const NAV_LINKS: NavLink[] = [
   { href: "/", label: "Gallery" },
+  // /ask is live but unlinked until the Typesafe account has credits again
+  // (2026-09-19: HTTP 402) — a menu entry must not lead to "try again shortly".
+  { href: "/atlas", label: "Atlas" },
   { href: "/palettes", label: "Palettes" },
   { href: "/art-styles", label: "Art Styles" },
   { href: "/studio", label: "Studio" },

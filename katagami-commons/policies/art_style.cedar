@@ -12,6 +12,8 @@ forbid(
     Action::"AttachArtStyleReview",
     Action::"AttachComputedFacets",
     Action::"AttachPublishedAssets",
+    Action::"AttachAtlasPlace",
+    Action::"AttachStyleDna",
     Action::"AttachTasteVector",
     Action::"AttachVerifiedThumbnail",
     Action::"IncrementFork",

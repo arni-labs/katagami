@@ -5,8 +5,11 @@ import { verifyReadBearer, readMcpAuthInfo, whoamiFromAuth } from "@/lib/catalog
 import { clampRejectionReason } from "@/lib/catalog-auth-core.mjs";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
 import { trackMcpToolCall, trackServerEvent } from "@/lib/server-telemetry";
+import { mayStart, TOO_MANY } from "@/lib/spend-guard";
 import {
   describeCatalog,
+  askLibrary,
+  checkAgainstLanguage,
   searchDesigns,
   getDesign,
   getDesignMd,
@@ -248,7 +251,7 @@ function gone(tier: Tier) {
 // cardinality or smuggle content.
 const KNOWN_ARG_KEYS = new Set([
   "id_or_slug", "id", "slug", "kind", "format", "query", "medium", "tag",
-  "taxonomy", "family", "limit", "cursor", "color", "role",
+  "taxonomy", "family", "limit", "cursor", "color", "role", "page",
 ]);
 function argKeysOf(args: unknown): string | undefined {
   if (!args || typeof args !== "object") return "(none)";
@@ -309,6 +312,16 @@ const MISSING_ID_TEXT = JSON.stringify(
   2,
 );
 
+/** Who is spending a paid model call: the signed-in person, so one caller's loop cannot rate-limit everyone else. */
+function spenderOf(extra: unknown): string {
+  const who = authOf(extra)?.extra;
+  return who?.sub || who?.email || "mcp";
+}
+
+function tooMany() {
+  return { content: [{ type: "text" as const, text: JSON.stringify({ error: "rate_limited", message: TOO_MANY }) }], isError: true };
+}
+
 function missingId() {
   return { content: [{ type: "text" as const, text: MISSING_ID_TEXT }], isError: true };
 }
@@ -338,6 +351,47 @@ const baseHandler = createMcpHandler(
         inputSchema: {},
       },
       async (_args, extra) => ok(await describeCatalog(tierOf(extra))),
+    );
+
+    // --- ask: judgment over the whole library --------------------------------
+    server.registerTool(
+      "ask_library",
+      {
+        title: "Ask the library",
+        description:
+          "Describe the product you are designing in one sentence and get the design languages and art styles that fit it, judged against each style's description rather than matched on keywords. Returns `results` (best fit first, each with `fit` 0..1 and its strongest `traits`), `strange` (styles unlike the rest of the library that were still judged a fit — worth a look when you want something unexpected), and how the sentence was read (`wants`, `avoids`). Use this before search_* when you have a brief rather than a name or tag.",
+        inputSchema: {
+          query: z.string().min(8).max(400).describe("One sentence: what the product is and who it is for"),
+          kind: z.enum(["language", "art_style"]).optional().describe("Omit to look through both"),
+          limit: z.number().int().min(1).max(20).optional(),
+        },
+      },
+      async (a, extra) => {
+        const tier = tierOf(extra);
+        if (!mayStart("mcp-ask", spenderOf(extra), tier)) return tooMany();
+        return ok(await askLibrary(tier, a));
+      },
+    );
+
+    server.registerTool(
+      "check_against_language",
+      {
+        title: "Check a page against a design language",
+        description:
+          "After building a page with a Katagami design language, pass the language and the page's source (HTML with its CSS) to get a scorecard: exact checks of colours, typefaces and corner radii against the language's tokens, and each of the language's rules, do's and don'ts judged against the page (pass / unclear / fail, worst first). Use it to find what to fix before you hand the page over. It reads source, not pixels, so include the CSS.",
+        inputSchema: {
+          ...ID_ALIASES,
+          page: z.string().min(40).max(200_000).describe("The page's HTML source, CSS included"),
+        },
+      },
+      async (a, extra) => {
+        const tier = tierOf(extra);
+        const id = idOf(a);
+        if (!id) return missingId();
+        if (!mayStart("mcp-check", spenderOf(extra), tier)) return tooMany();
+        const card = await checkAgainstLanguage(tier, id, a.page);
+        return card ? ok(card) : gone(tier);
+      },
     );
 
     // --- design languages --------------------------------------------------

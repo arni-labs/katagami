@@ -210,6 +210,61 @@ name = "taste_vector_model"
 type = "string"
 initial = ""
 
+# Style DNA — Jev's answers (0..1) to the library's descriptive question set,
+# as a JSON object {question_id: probability}. style_dna_version names the
+# question set + model so answers from different sets are never compared.
+# Written by AttachStyleDna (the backfill job); empty until asked.
+[[state]]
+name = "style_dna"
+type = "string"
+initial = ""
+
+[[state]]
+name = "style_dna_version"
+type = "string"
+initial = ""
+
+# The traits this style answers strongly (>= 0.6), as space-delimited question
+# ids with a leading and trailing space (" dark_ground quiet "), so the gallery
+# can $filter one with contains(style_traits,' quiet ') — the kernel filters
+# flat scalars only, never inside the style_dna JSON.
+[[state]]
+name = "style_traits"
+type = "string"
+initial = ""
+
+# Atlas place — where this style sits on the library atlas, a 2D map laid out
+# from Jev's pairwise "same visual idea?" answers over the whole library.
+# atlas_x / atlas_y are 0..1 decimals as strings; atlas_family is the entity id
+# of the medoid of the family this style belongs to ("" for a style on its own);
+# atlas_neighbors is a JSON array of [entity_id, similarity] for its nearest
+# styles; atlas_version names the run so places from two runs are never drawn
+# on one map. Written by AttachAtlasPlace (scripts/library_atlas.py).
+[[state]]
+name = "atlas_x"
+type = "string"
+initial = ""
+
+[[state]]
+name = "atlas_y"
+type = "string"
+initial = ""
+
+[[state]]
+name = "atlas_family"
+type = "string"
+initial = ""
+
+[[state]]
+name = "atlas_neighbors"
+type = "string"
+initial = ""
+
+[[state]]
+name = "atlas_version"
+type = "string"
+initial = ""
+
 # ADR-0155: declared vector access path. The kernel maintains an exact-scan kNN
 # index over taste_vector, partitioned by taste_vector_model (only same-model
 # vectors ever compare), and serves it through Temper.Nearest(decl='taste',...).
@@ -411,6 +466,20 @@ kind = "internal"
 from = ["Draft", "UnderReview", "Published"]
 params = ["taste_vector", "taste_vector_model"]
 hint = "Attach the semantic taste embedding computed from the language's canonical taste document (name, tags, philosophy summary, typography, palette). taste_vector is a JSON float array; taste_vector_model identifies the embedding model so mixed-model vectors are never compared. Written by the curation finalizer after quality review, or by the backfill job."
+
+[[action]]
+name = "AttachStyleDna"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+params = ["style_dna", "style_dna_version", "style_traits"]
+hint = "Attach the style DNA: a JSON object of descriptive question id -> probability (0..1) answered by a System One model over this entity's canonical description. style_dna_version identifies the question set and model (e.g. dna-v1/jev-1.13.0) so mixed sets are never compared. style_traits is the flat, filterable list of strongly-answered question ids. Descriptive only — never a quality judgment. Written by the backfill job."
+
+[[action]]
+name = "AttachAtlasPlace"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+params = ["atlas_x", "atlas_y", "atlas_family", "atlas_neighbors", "atlas_version"]
+hint = "Attach this style's place on the library atlas: 0..1 coordinates, the medoid id of its family, its nearest neighbours as a JSON array of [entity_id, similarity], and the run version. A place only means something beside the other places of the same run, so the atlas job rewrites every row with one atlas_version. Descriptive only. Written by the atlas job."
 
 [[action]]
 name = "AttachComputedFacets"
