@@ -73,19 +73,19 @@ function wholeReading(value: unknown): Record<string, number> | undefined {
 
 async function answer(request: Request, ask: Ask) {
   const tier = (await hasFullGalleryAccess()) ? "full" : "sample";
-  // An answer built from a caller's own reading is that caller's alone: it is
-  // never stored or shared, or one forged reading would become everyone's
-  // answer to that sentence for ten minutes.
-  const shared = !ask.want;
-  const key = JSON.stringify([tier, ask.kind ?? "", ask.limit ?? "", ask.stage ?? "", normalise(ask.query)]);
-  const hit = shared ? recent.get(key) : undefined;
+  // An answer built from a caller's reading is stored under that reading: the
+  // page's own second step is reused when the sentence is asked again, and a
+  // forged reading can only ever answer someone who sends the same forgery.
+  const reading = ask.want ? STYLE_DNA_QUESTIONS.map((q) => Math.round((ask.want?.[q.id] ?? 0) * 1000)).join(",") : "";
+  const key = JSON.stringify([tier, ask.kind ?? "", ask.limit ?? "", ask.stage ?? "", normalise(ask.query), reading]);
+  const hit = recent.get(key);
   if (hit && Date.now() - hit.at < RECENT_MS) {
     return NextResponse.json(hit.body, { headers: { "Cache-Control": "no-store" } });
   }
 
   const started = Date.now();
   try {
-    let pending = shared ? inFlight.get(key) : undefined;
+    let pending = inFlight.get(key);
     if (!pending) {
       // The fit stage of an answer already begun is the second half of one ask
       // and costs one model call, so it draws on its own allowance.
@@ -95,18 +95,14 @@ async function answer(request: Request, ask: Ask) {
           { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
         );
       }
-      pending = askLibrary(tier, ask);
-      if (shared) {
-        const mine = pending;
-        inFlight.set(key, mine);
-        void mine.finally(() => inFlight.delete(key)).catch(() => undefined);
-      }
+      const mine = askLibrary(tier, ask);
+      pending = mine;
+      inFlight.set(key, mine);
+      void mine.finally(() => inFlight.delete(key)).catch(() => undefined);
     }
     const body = await pending;
-    if (shared) {
-      if (recent.size >= RECENT_MAX) recent.delete(recent.keys().next().value as string);
-      recent.set(key, { at: Date.now(), body });
-    }
+    if (recent.size >= RECENT_MAX) recent.delete(recent.keys().next().value as string);
+    recent.set(key, { at: Date.now(), body });
     if (!body.provisional) {
       trackServerEvent("ask_library", { tier, kind: ask.kind ?? "all", results: body.results.length, duration_ms: Date.now() - started, read_ms: body.timings_ms.read, want_ms: body.timings_ms.want, fit_ms: body.timings_ms.fit });
     }
