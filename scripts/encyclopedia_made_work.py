@@ -36,7 +36,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from library_atlas import SETS, Temper, ask_jev, env, style_doc  # noqa: E402
+from library_atlas import SETS, Temper, ask_jev, env, fingerprint, style_doc  # noqa: E402
 
 MAPS = {"art", "design"}
 BATCH = 60
@@ -56,7 +56,12 @@ def load_tree(temper):
             doc = json.loads((row.get("fields") or {}).get("document") or "")
         except ValueError:
             continue
-        if any(m.get("map") in MAPS for m in doc.get("maps", [])):
+        # A cell whose document is not the contract's shape is skipped, not fatal.
+        if not isinstance(doc, dict) or not isinstance(doc.get("name"), str):
+            continue
+        for key in ("maps", "broader", "manifestations"):
+            doc[key] = [x for x in doc.get(key) or [] if isinstance(x, dict)] if isinstance(doc.get(key), list) else []
+        if any(m.get("map") in MAPS for m in doc["maps"]):
             cells[row["entity_id"]] = doc
     kids = collections.defaultdict(list)
     for cid, doc in cells.items():
@@ -133,8 +138,13 @@ def main():
     if out.exists():
         for line in out.read_text().splitlines():
             rec = json.loads(line)
-            done[rec["id"]] = rec["reached"]
-    todo = [s for s in styles if s["id"] not in done]
+            done[(rec["id"], rec.get("print"))] = rec["reached"]
+    # A judgment is reused only for the text and model it was made from, against
+    # the same set of candidate cells.
+    tree_print = fingerprint("\n".join(candidates))
+    for style in styles:
+        style["print"] = fingerprint(style["doc"] + tree_print)
+    todo = [s for s in styles if (s["id"], s["print"]) not in done]
 
     def run(style):
         try:
@@ -149,8 +159,8 @@ def main():
                 failed += 1
                 print(f"  FAILED {style['name']}: {err}", file=sys.stderr)
                 continue
-            done[style["id"]] = reached
-            f.write(json.dumps({"id": style["id"], "reached": reached}) + "\n")
+            done[(style["id"], style["print"])] = reached
+            f.write(json.dumps({"id": style["id"], "print": style["print"], "reached": reached}) + "\n")
             if n % 25 == 0:
                 f.flush()
                 print(f"  {n}/{len(todo)} walked", flush=True)
@@ -159,7 +169,7 @@ def main():
     placements = []
     touched = {cid for cid, doc in cells.items() if doc.get("manifestations")}
     for style in styles:
-        reached = done.get(style["id"]) or []
+        reached = [r for r in done.get((style["id"], style["print"])) or [] if r["cell"] in cells]
         propose, curator = [], []
         for r in reached:
             if (style["set"], style["id"], r["cell"]) in already:

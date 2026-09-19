@@ -312,10 +312,10 @@ const MISSING_ID_TEXT = JSON.stringify(
   2,
 );
 
-/** Who is spending a paid model call: the token's client, so one caller cannot loop Jev. */
+/** Who is spending a paid model call: the signed-in person, so one caller's loop cannot rate-limit everyone else. */
 function spenderOf(extra: unknown): string {
-  const info = (extra as { authInfo?: { clientId?: string } } | undefined)?.authInfo;
-  return info?.clientId || "mcp";
+  const who = authOf(extra)?.extra;
+  return who?.sub || who?.email || "mcp";
 }
 
 function tooMany() {

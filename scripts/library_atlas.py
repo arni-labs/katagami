@@ -26,6 +26,7 @@ Needs numpy and scikit-learn.
 import argparse
 import collections
 import datetime
+import hashlib
 import json
 import os
 import pathlib
@@ -167,16 +168,25 @@ def ask_jev(key, state, questions):
     raise RuntimeError(last)
 
 
+def fingerprint(doc):
+    """What an answer was computed from: the model and the exact text compared."""
+    return hashlib.sha256(f"{JEV_MODEL}\n{doc}".encode()).hexdigest()[:12]
+
+
 def ask_pairs(items, work):
     """Every pair once. The checkpoint is keyed by entity id and read in either order, so a library that grew or came back in another order resumes cleanly."""
     key = env("TYPESAFE_API_KEY")
     out = work / "pairs.jsonl"
     sim = {}
-    if out.exists():
-        for line in out.read_text().splitlines():
-            a, b, s = json.loads(line)
-            sim[(a, b)] = sim[(b, a)] = s
     ids = [it["id"] for it in items]
+    prints = {it["id"]: fingerprint(it["doc"]) for it in items}
+    if out.exists():
+        # An answer is reused only if both styles still read as they did and the
+        # model is the same; an edited style or a new model is asked again.
+        for line in out.read_text().splitlines():
+            a, b, s, fa, fb = json.loads(line)
+            if prints.get(a) == fa and prints.get(b) == fb:
+                sim[(a, b)] = sim[(b, a)] = s
     todo = []
     for i, a in enumerate(ids):
         rest = [j for j in range(i + 1, len(ids)) if (a, ids[j]) not in sim]
@@ -194,7 +204,7 @@ def ask_pairs(items, work):
         for n, (answers, used) in enumerate(pool.map(run, todo)):
             for a, b, s in answers:
                 sim[(a, b)] = sim[(b, a)] = s
-                f.write(json.dumps([a, b, s]) + "\n")
+                f.write(json.dumps([a, b, s, prints[a], prints[b]]) + "\n")
             tokens += used
             if n % 200 == 0:
                 f.flush()

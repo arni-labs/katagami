@@ -91,7 +91,8 @@ const hex6 = (h) => {
 // A colour, not a fragment: "#fff" after a CSS-ish boundary, never href="#facade",
 // a selector "#add{", or a character reference "&#123456;". Alpha digits are dropped.
 const HEX_COLOUR = /(?<![\w&"'#=/])#([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])(?!\s*\{)/gi;
-const OTHER_COLOUR = /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color)\(/i;
+// Colours this does not resolve: colour functions, and any colour property set from a variable.
+const OTHER_COLOUR = /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color)\(|(?:color|background|fill|stroke|border|outline|shadow)[a-z-]{0,20}\s*:[^;}<]{0,120}var\(/i;
 const clip = (list) => list.slice(0, 8).join(", ").slice(0, 200);
 
 /** What the code can measure: colours, font families and radii, against the tokens. */
@@ -120,7 +121,7 @@ export function measuredChecks(design, page) {
           : used.length === 0
             ? "no hex colours found in the page"
             : unmeasured
-              ? `${used.length} hex colours, all in the tokens; colours written as rgb()/hsl() were not measured`
+              ? `${used.length} hex colours, all in the tokens; colours set by rgb()/hsl() or a variable were not measured`
               : `${used.length} colours, all in the tokens`,
     });
   }

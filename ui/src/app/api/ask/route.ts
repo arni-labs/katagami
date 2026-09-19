@@ -6,7 +6,9 @@ import { trackServerEvent } from "@/lib/server-telemetry";
 import { callerOf, mayStart, TOO_MANY } from "@/lib/spend-guard";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+// A cold catalog read (15s) plus two Jev calls with one retry each (about 12s
+// apiece at worst) must still leave time to answer in JSON.
+export const maxDuration = 60;
 
 /**
  * GET /api/ask — describe a product in a sentence; get the design languages and

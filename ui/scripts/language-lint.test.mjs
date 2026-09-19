@@ -43,6 +43,8 @@ test("colours, typefaces and radii are measured against the tokens", () => {
   assert.equal(measuredChecks(design, notColours)[0].verdict, "pass");
   // a page coloured with rgb() cannot pass on its one token hex
   assert.equal(measuredChecks(design, `<style>p{color:rgb(1,2,3);background:#fff}</style>`)[0].verdict, "unclear");
+  // nor on a variable whose value it never resolves
+  assert.equal(measuredChecks(design, `<style>:root{--rogue:red}p{color:var(--rogue);background:#fff}</style>`)[0].verdict, "unclear");
   // alpha digits are dropped, so an off-token 8-digit hex is still caught
   assert.equal(measuredChecks(design, `<style>p{color:#12345678}</style>`)[0].verdict, "fail");
   // var() radii decide nothing; a repeated declaration does not echo the page back

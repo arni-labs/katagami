@@ -6,7 +6,7 @@ import { trackServerEvent } from "@/lib/server-telemetry";
 import { callerOf, mayStart, TOO_MANY } from "@/lib/spend-guard";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 /**
  * POST /api/check — { language: <id or slug>, page: <HTML source, CSS included> }
