@@ -15,6 +15,7 @@ import {
   STYLE_DNA_QUESTIONS,
   type StyleDna,
 } from "./style-dna.mjs";
+import atlasHoles from "@/data/atlas-holes.json";
 import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
@@ -830,6 +831,8 @@ export type AtlasStyle = {
   neighbors: { id: string; similarity: number }[];
 };
 
+export type AtlasHole = { id: string; name: string; description: string; x: number; y: number };
+
 export async function libraryAtlas(tier: Tier) {
   const kinds = ["language", "art_style"] as const;
   const rowSets = await Promise.all(kinds.map((k) => visibleRows(k, tier)));
@@ -906,7 +909,12 @@ export async function libraryAtlas(tier: Tier) {
     })
     .sort((a, b) => b.count - a.count);
 
-  return { tier, version, styles, families, unplaced: rows.length - placed.length };
+  // Coming soon: directions the encyclopedia names that no style here was made
+  // for, placed beside the made work nearest to them (scripts/atlas_holes.py).
+  // They belong to one atlas run, so they are drawn only beside that run's places.
+  const holes: AtlasHole[] = atlasHoles.atlas_version === version ? atlasHoles.holes.map((h) => ({ id: h.id, name: h.name, description: h.description, x: h.x, y: h.y })) : [];
+
+  return { tier, version, styles, families, holes, unplaced: rows.length - placed.length };
 }
 
 // --- check a page against a language -----------------------------------------

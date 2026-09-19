@@ -1,0 +1,61 @@
+{
+ "atlas_version": "atlas/jev-1.13.0/2026-09-19",
+ "holes": [
+  {
+   "id": "1980s",
+   "name": "1980s",
+   "description": "This period covers art made during the 1980s.",
+   "x": 0.5899,
+   "y": 0.4914,
+   "nearness": 0.79
+  },
+  {
+   "id": "1960s-art",
+   "name": "1960s art",
+   "description": "Art movements in the international post-1945 branch that began in the 1960s.",
+   "x": 0.7732,
+   "y": 0.7136,
+   "nearness": 0.75
+  },
+  {
+   "id": "1940s-and-1950s-art",
+   "name": "1940s and 1950s art",
+   "description": "Art movements in the international post-1945 branch that began in the 1940s or 1950s.",
+   "x": 0.8277,
+   "y": 0.6839,
+   "nearness": 0.71
+  },
+  {
+   "id": "2-tone",
+   "name": "2 Tone",
+   "description": "A late-1970s British ska movement joined records, bands, dress, and a black-and-white label identity.",
+   "x": 0.5028,
+   "y": 0.6276,
+   "nearness": 0.68
+  },
+  {
+   "id": "1990s",
+   "name": "1990s",
+   "description": "Art of the 1990s responded to digital technology, globalization, debates about identity and censorship, and new media.",
+   "x": 0.4324,
+   "y": 0.651,
+   "nearness": 0.65
+  },
+  {
+   "id": "1970s",
+   "name": "1970s",
+   "description": "During the 1970s, transnational exchange influenced art practice, including earthworks, conceptual art, performance, and site-specific work.",
+   "x": 0.6696,
+   "y": 0.3064,
+   "nearness": 0.62
+  },
+  {
+   "id": "1918-1939-interwar",
+   "name": "1918-1939 (Interwar)",
+   "description": "European art between the world wars included a renewed interest in figuration, clear outlines, modeled form, and classical order.",
+   "x": 0.6444,
+   "y": 0.4834,
+   "nearness": 0.52
+  }
+ ]
+}
