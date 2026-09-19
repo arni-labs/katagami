@@ -67,9 +67,9 @@ const Tile = memo(function Tile({ style: s, dim, rank, pressed, hidden, mark, nu
 
 // A direction the encyclopedia names and nobody here has made work for yet.
 // Drawn as a sheet still on the press: halftone where the picture will be.
-const HoleTile = memo(function HoleTile({ hole: h, dim, pressed, nudgeX, nudgeY, still, delay, leaving, onOpen }: { hole: AtlasHole; dim: boolean; pressed: boolean; nudgeX: number; nudgeY: number; still: boolean; delay: number; leaving: boolean; onOpen: (h: AtlasHole) => void }) {
+const HoleTile = memo(function HoleTile({ hole: h, dim, raised, pressed, nudgeX, nudgeY, still, delay, leaving, onOpen }: { hole: AtlasHole; dim: boolean; raised: boolean; pressed: boolean; nudgeX: number; nudgeY: number; still: boolean; delay: number; leaving: boolean; onOpen: (h: AtlasHole) => void }) {
   return (
-    <div className="absolute" style={{ left: h.x * PAPER - TILE_W / 2 + nudgeX, top: h.y * PAPER - TILE_H / 2 + nudgeY, width: TILE_W, zIndex: pressed ? 4 : dim ? 0 : 3, transform: "scale(var(--f))", transformOrigin: "50% 42%", transition: still ? undefined : "left 320ms cubic-bezier(0.22, 1, 0.36, 1), top 320ms cubic-bezier(0.22, 1, 0.36, 1)" }}>
+    <div className="absolute" style={{ left: h.x * PAPER - TILE_W / 2 + nudgeX, top: h.y * PAPER - TILE_H / 2 + nudgeY, width: TILE_W, zIndex: pressed ? 4 : raised ? 3 : 0, transform: "scale(var(--f))", transformOrigin: "50% 42%", transition: still ? undefined : "left 320ms cubic-bezier(0.22, 1, 0.36, 1), top 320ms cubic-bezier(0.22, 1, 0.36, 1)" }}>
       <div className={still ? "" : leaving ? "atlas-leave" : "atlas-pop"} style={{ animationDelay: still || leaving ? undefined : `${delay}ms` }}>
         <button
           type="button"
@@ -482,9 +482,9 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
             return <span key={`line-${l.id}`} aria-hidden className="pointer-events-none absolute origin-left bg-[var(--ramune)]" style={{ left: x1, top: y1, width: Math.hypot(x2 - x1, y2 - y1), height: 2 / camera.k, opacity: 0.25 + l.weight * 0.6, transform: `rotate(${Math.atan2(y2 - y1, x2 - x1)}rad)` }} />;
           })}
           {shown.soon.map((h, i) => (
-            <HoleTile key={h.id} hole={h} dim={Boolean(lit && !lit.has(h.id))} pressed={focusId === h.id} nudgeX={shown.nudge.get(h.id)?.x ?? 0} nudgeY={shown.nudge.get(h.id)?.y ?? 0} still={reduced} delay={Math.min(i * 5, 240)} leaving={false} onOpen={open} />
+            <HoleTile key={h.id} hole={h} dim={Boolean(lit && !lit.has(h.id))} raised={Boolean(lit?.has(h.id))} pressed={focusId === h.id} nudgeX={shown.nudge.get(h.id)?.x ?? 0} nudgeY={shown.nudge.get(h.id)?.y ?? 0} still={reduced} delay={Math.min(i * 5, 240)} leaving={false} onOpen={open} />
           ))}
-          {leaving.holes.map((h) => <HoleTile key={`gone-${h.id}`} hole={h} dim={false} pressed={false} nudgeX={0} nudgeY={0} still={false} delay={0} leaving onOpen={open} />)}
+          {leaving.holes.map((h) => <HoleTile key={`gone-${h.id}`} hole={h} dim={false} raised={false} pressed={false} nudgeX={0} nudgeY={0} still={false} delay={0} leaving onOpen={open} />)}
           {shown.placed.map((s, i) => {
             const tucked = shown.tucked.get(s.id) ?? 0;
             return (

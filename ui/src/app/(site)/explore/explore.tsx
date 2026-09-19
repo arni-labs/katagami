@@ -27,8 +27,10 @@ const HALF = 0.54;
 const SNAP_HEIGHT: Record<Snap, string> = { peek: "7.25rem", half: `${HALF * 100}%`, full: "92%" };
 const hrefOf = (c: { kind: string; id: string }) => `/${c.kind === "language" ? "language" : "art-styles"}/${c.id}`;
 
-function useScreen(): Screen {
-  const [screen, setScreen] = useState<Screen>("desk");
+// Unknown until the browser says: the three layouts give the map different
+// room, and a map fitted for the wrong one opens as a speck off the edge.
+function useScreen(): Screen | null {
+  const [screen, setScreen] = useState<Screen | null>(null);
   useEffect(() => {
     const read = () => setScreen(window.innerWidth < 768 ? "phone" : window.innerWidth >= 1800 ? "wide" : "desk");
     read();
@@ -39,7 +41,8 @@ function useScreen(): Screen {
 }
 
 export function Explore({ styles, families, holes, sample }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[]; sample: boolean }) {
-  const screen = useScreen();
+  const measured = useScreen();
+  const screen: Screen = measured ?? "desk";
   const api = useRef<AtlasApi | null>(null);
   const [query, setQuery] = useState("");
   const [state, setState] = useState<"idle" | "asking" | "error">("idle");
@@ -53,6 +56,7 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
   const [snap, setSnap] = useState<Snap>("half");
   const [editing, setEditing] = useState(false);
   const turn = useRef(0);
+  const deckShown = useRef(""); // the deck card the map last followed, kept across sheet heights
 
   const byId = useMemo(() => new Map(styles.map((s) => [s.id, s])), [styles]);
   const holeIds = useMemo(() => new Set(holes.map((h) => h.id)), [holes]);
@@ -77,7 +81,9 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
   const framed = useRef("");
   useEffect(() => {
     const ids = answer ? [...answer.results, ...answer.strange].map((c) => c.id) : picked ? picked.slice(0, 60).map((s) => s.id) : [];
-    const key = ids.join(",");
+    // Order does not matter: the judged fit reorders the same cards, and re-framing
+    // then would throw away a pan made while it was being judged.
+    const key = [...ids].sort().join(",");
     if (key === framed.current) return;
     framed.current = key;
     if (ids.length > 0) api.current?.frame(ids);
@@ -118,8 +124,9 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
     setAnswer(null); setConcepts(null); setHue(""); setTraits([]); setQuery(""); setState("idle"); setError(""); setEditing(false);
     api.current?.clearFocus();
   }, []);
-  const toggleTrait = (id: string) => { setAnswer(null); setConcepts(null); setTraits((now) => (now.includes(id) ? now.filter((t) => t !== id) : [...now, id])); };
-  const pickHue = (h: string) => { setAnswer(null); setConcepts(null); setHue((now) => (now === h ? "" : h)); };
+  // Picking by eye abandons any question still being read.
+  const toggleTrait = (id: string) => { turn.current++; setState("idle"); setAnswer(null); setConcepts(null); setTraits((now) => (now.includes(id) ? now.filter((t) => t !== id) : [...now, id])); };
+  const pickHue = (h: string) => { turn.current++; setState("idle"); setAnswer(null); setConcepts(null); setHue((now) => (now === h ? "" : h)); };
 
   // ---- pieces shared by the three layouts ---------------------------------
   const askForm = (
@@ -186,7 +193,7 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
         <span className="min-w-0 flex-1">
           <span className="block truncate font-display text-[16px] font-bold tracking-[-0.02em]">{card.name}</span>
           <span className="block font-mono text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: strange ? "var(--sakura)" : "var(--ramune)" }}>{strange ? "Strange, still fits" : FIT_WORD(card.fit, state === "asking")}</span>
-          <span className="block truncate text-[13px] text-muted-foreground">{card.traits.slice(0, 3).join(" · ")}</span>
+          <span className="block truncate text-[14.5px] text-muted-foreground">{card.traits.slice(0, 3).join(" · ")}</span>
         </span>
       </button>
     </li>
@@ -250,21 +257,23 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
     </p>
   );
   const heading = (
-    <h1 className="font-display text-[34px] font-bold leading-[1.02] tracking-[-0.03em] xl:text-[40px]">What are you <Marker color="yuzu">making</Marker>?</h1>
+    <h1 className="font-display text-[34px] font-bold leading-[1.02] tracking-[-0.03em] xl:text-[40px]">What are you <span className="whitespace-nowrap"><Marker color="yuzu">making</Marker>?</span></h1>
   );
 
   const focused = focusId ? byId.get(focusId) ?? null : null;
+
+  if (!measured) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
 
   // ---- phone: the map above, everything else in a sheet under the thumb -----
   if (screen === "phone") {
     const deck = answer ? [...answer.results.map((c) => ({ c, strange: false })), ...answer.strange.map((c) => ({ c, strange: true }))] : [];
     return (
       <div className="relative h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full overflow-hidden">
-        <AtlasMap styles={styles} families={families} holes={holes} unplaced={0} sample={sample} host={{ ownChrome: false, ownSheet: false, lit, accent, apiRef: api, onFocus: setFocusId, fill: true, insets: { top: 12, right: 12, left: 12, bottom: snap === "peek" ? 124 : Math.round((typeof window === "undefined" ? 700 : window.innerHeight - 129) * HALF) + 8 } }} />
+        <AtlasMap key={screen} styles={styles} families={families} holes={holes} unplaced={0} sample={sample} host={{ ownChrome: false, ownSheet: false, lit, accent, apiRef: api, onFocus: setFocusId, fill: true, insets: { top: 12, right: 12, left: 12, bottom: snap === "peek" ? 124 : Math.round((typeof window === "undefined" ? 700 : window.innerHeight - 129) * HALF) + 8 } }} />
         <PhoneSheet snap={snap} setSnap={setSnap}>
           {snap === "peek" ? (
             <button type="button" onClick={() => setSnap("half")} className="w-full cursor-pointer text-left">
-              <span className="block font-display text-[22px] font-bold tracking-[-0.02em]">What are you <Marker color="yuzu">making</Marker>?</span>
+              <span className="block font-display text-[22px] font-bold tracking-[-0.02em]">What are you <span className="whitespace-nowrap"><Marker color="yuzu">making</Marker>?</span></span>
               <span className="mt-1 block text-[14.5px] text-muted-foreground">{lit ? `${lit.size} lit on the map — pull up` : "Pull up to ask, or pick a colour"}</span>
             </button>
           ) : (
@@ -277,7 +286,7 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
                     <button type="button" onClick={clear} className="ink-underline shrink-0 cursor-pointer text-[14.5px]">New</button>
                   </div>
                   {errorLine}
-                  {deck.length > 0 ? <PhoneDeck deck={deck} judging={state === "asking"} onShow={(id) => api.current?.focusOn(id)} /> : <p className="text-[17px]">Nothing in view fits that yet.</p>}
+                  {deck.length > 0 ? <PhoneDeck deck={deck} judging={state === "asking"} shown={deckShown} onShow={(id) => api.current?.focusOn(id)} /> : <p className="text-[17px]">Nothing in view fits that yet.</p>}
                   {concepts ? <ConceptLine concepts={concepts} holeIds={holeIds} onPick={(id) => { api.current?.focusOn(id); setSnap("peek"); }} /> : null}
                 </>
               ) : (
@@ -319,7 +328,7 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
       <div className="grid h-[calc(100dvh-65px)] w-full grid-cols-[30rem_minmax(0,1fr)_34rem]">
         <aside aria-label="Ask" className="overflow-y-auto px-10 py-10">{panel}</aside>
         <div className="relative min-w-0">
-          <AtlasMap styles={styles} families={families} holes={holes} unplaced={0} sample={sample} host={{ ownChrome: false, lit, accent, apiRef: api, onFocus: setFocusId, fill: true, insets: { top: 32, right: focusId ? 372 : 32, bottom: 32, left: 32 } }} />
+          <AtlasMap key={screen} styles={styles} families={families} holes={holes} unplaced={0} sample={sample} host={{ ownChrome: false, lit, accent, apiRef: api, onFocus: setFocusId, fill: true, insets: { top: 32, right: focusId ? 372 : 32, bottom: 32, left: 32 } }} />
         </div>
         <aside aria-label="Results" className="overflow-y-auto px-8 py-10">
           {answer ? (
@@ -340,7 +349,7 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
 
   return (
     <div className="relative h-[calc(100dvh-65px)] w-full overflow-hidden">
-      <AtlasMap styles={styles} families={families} holes={holes} unplaced={0} sample={sample} host={{ ownChrome: false, lit, accent, apiRef: api, onFocus: setFocusId, fill: true, insets: { top: 32, right: focusId ? 388 : 40, bottom: 32, left: 456 } }} />
+      <AtlasMap key={screen} styles={styles} families={families} holes={holes} unplaced={0} sample={sample} host={{ ownChrome: false, lit, accent, apiRef: api, onFocus: setFocusId, fill: true, insets: { top: 32, right: focusId ? 388 : 40, bottom: 32, left: 456 } }} />
       <aside aria-label="Ask" className="absolute bottom-6 left-6 top-6 z-10 w-[26rem] overflow-y-auto bg-background/95 px-7 py-8 shadow-[var(--shadow-card-hover)]" style={{ overscrollBehavior: "contain" }}>
         {panel}
       </aside>
@@ -366,9 +375,8 @@ function ConceptLine({ concepts, holeIds, onPick }: { concepts: Concepts; holeId
 }
 
 /** A swipeable deck: the card under the thumb is the one the map shows. */
-function PhoneDeck({ deck, judging, onShow }: { deck: { c: Card; strange: boolean }[]; judging: boolean; onShow: (id: string) => void }) {
+function PhoneDeck({ deck, judging, shown, onShow }: { deck: { c: Card; strange: boolean }[]; judging: boolean; shown: { current: string }; onShow: (id: string) => void }) {
   const root = useRef<HTMLUListElement | null>(null);
-  const shown = useRef("");
   useEffect(() => {
     const el = root.current;
     if (!el) return;
@@ -377,9 +385,11 @@ function PhoneDeck({ deck, judging, onShow }: { deck: { c: Card; strange: boolea
       const id = top?.target.getAttribute("data-id");
       if (id && id !== shown.current) { shown.current = id; onShow(id); }
     }, { root: el, threshold: 0.7 });
+    // Back from a lower sheet: return to the card that was showing, not the first.
+    if (shown.current) el.querySelector(`li[data-id="${shown.current}"]`)?.scrollIntoView({ inline: "center", block: "nearest" });
     el.querySelectorAll("li").forEach((li) => seen.observe(li));
     return () => seen.disconnect();
-  }, [deck, onShow]);
+  }, [deck, onShow, shown]);
   return (
     <ul ref={root} className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none]">
       {deck.map(({ c, strange }) => (
