@@ -31,8 +31,21 @@ A `banned_patterns` entry that is not a string or does not compile fails the voi
 
 `repair_task_prompt` builds the repair task. It says the error lists every failed gate and each gate stops at its first problem.
 
+## Measured blast radius (the 61 published languages, 38 published palettes)
+
+Stored artifacts are served byte-for-byte by the site (`/language/<id>/shadcn.json`) or with only an added `art_style` front-matter block (`/DESIGN.md`), so they can be measured without store access.
+
+| Gate | Old gate passes | New gate passes | Newly failing |
+|---|---|---|---|
+| palette contrast | n/a (did not exist) | 38 of 38 | 0 |
+| shadcn export | 0 of 61 | 0 of 61 | 0 |
+| DESIGN.md front matter | 31 of 61 | 28 of 61 | 3 |
+
+No stored shadcn export contains `componentManifest` anywhere, so the old substring gate rejected all 61 too. The 23 marked `shadcn_export_verified` were therefore verified by some path that never read the body — worth a separate issue.
+
+The 3 newly failing DESIGN.md files carry `version:`/`components` in the body but not in the front matter, which is the defect this gate closes. They fail only if re-finalized.
+
 ## Not covered
 
 - Contributor submissions through the MCP skip the finalizer palette path; a curator reviews them. The same contrast rule for that route is a follow-up.
-- Stored artifacts could not be measured: this session has no read access to the production store. Published palettes were measured through the public pages. The served DESIGN.md is rendered by the site, so it does not show what the stored file contains.
 - Semantic checks move to Jev (ARN-536).

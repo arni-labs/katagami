@@ -25,12 +25,13 @@ import urllib.request
 from urllib.parse import quote
 
 BASE = os.environ.get("E2E_BASE", "http://127.0.0.1:3901")
-TENANT = os.environ.get("E2E_TENANT", "katagami")
+TENANT = os.environ.get("E2E_TENANT", "default")
+# The operator credential serve_local.sh bootstraps: Temper resolves identity
+# from a tenant credential and strips caller-declared x-temper-* headers
+# (ADR-0157).
 HDRS = {
     "X-Tenant-Id": TENANT,
-    "x-temper-principal-kind": "agent",
-    "x-temper-principal-id": "e2e-driver",
-    "x-temper-agent-type": "system",
+    "Authorization": "Bearer " + os.environ.get("E2E_API_KEY", "e2e-local-operator-key"),
 }
 
 PASS, FAIL = [], []

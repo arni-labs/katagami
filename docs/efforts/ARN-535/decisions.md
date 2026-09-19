@@ -31,3 +31,15 @@
 ## Committed WASM is built with the local toolchain
 - **Came up because**: `test_wasm_source_parity` already fails on master for `build_session_message` on this machine; builds are not reproducible across toolchains and CI does not run the parity test.
 - **Chose** to commit the `finalize_spawned_session.wasm` built here (rustc 1.95.0-nightly 2026-02-08) and leave `build_session_message.wasm` untouched.
+
+## Keep the DESIGN.md front-matter key requirement despite 3 regressions
+- **Came up because**: 33 of 61 published languages have front matter without `version:`/`components:`; the library carries two front-matter conventions and the skill documents only the older one.
+- **Options**: (a) structural check only (front matter opens, closes, parses) — regresses nothing; (b) structure plus the documented keys — 3 languages newly fail; (c) ask which convention is canonical before shipping.
+- **Chose (b)**. Measured: the old gate already rejects 30 of those 33, so the keys requirement newly fails only 3, and each of those passes today only because `version:` appears in the body — the exact defect. Given up: the two-convention question stays open, and those 3 need a front-matter fix on their next regenerate.
+- **Where**: `front_matter_has_keys`; `docs/efforts/ARN-535/spec.md` blast-radius table.
+
+## Do not soften the shadcn export gate to match stored files
+- **Came up because**: no stored export contains `componentManifest`, so every published language fails the new gate — and failed the old substring gate too.
+- **Options**: drop the manifest requirement to match reality; keep it.
+- **Chose keep**. Identical outcome to the old gate (0 of 61 pass), so it is not a regression, and the skill requires the field. The real finding is that 23 languages carry `shadcn_export_verified` despite this — a separate defect, since some path set that boolean without reading the body.
+- **Where**: `is_shadcn_registry_theme`.

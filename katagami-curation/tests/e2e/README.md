@@ -31,7 +31,7 @@ git clone --depth 1 https://github.com/nerdsane/temper.git /tmp/temper-main
 # 2. Build the finalizer WASM from this branch:
 (cd ../../wasm && ./build.sh)
 
-# 3. Boot the disposable server (merged single tenant `katagami`, isolated state):
+# 3. Boot the disposable server (tenant `default`, isolated state, operator bearer):
 TEMPER_BIN=/tmp/temper-main/target/debug/temper ./serve_local.sh
 
 # 4. Register a disposable contributor credential in the local runtime,

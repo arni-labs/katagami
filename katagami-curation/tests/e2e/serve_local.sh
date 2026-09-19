@@ -11,7 +11,7 @@
 #   E2E_STATE_DIR   throwaway state dir (default ./.e2e-state; HOME is pointed here
 #                   so the server's turso db + registry never touch real state)
 #
-# The merged tenant is named `katagami`. A permit-all Cedar policy is added —
+# Specs load into tenant `default`. A permit-all Cedar policy is added —
 # this harness is for a disposable local tenant only.
 set -euo pipefail
 
@@ -56,6 +56,37 @@ python3 "$SCRIPT_DIR/blob_sink.py" &
 BLOB_PID=$!
 trap 'kill $BLOB_PID 2>/dev/null || true' EXIT
 
-HOME="$E2E_STATE_DIR/home" exec "$TEMPER_BIN" serve \
-  --port "$E2E_PORT" --no-observe \
-  --app "katagami=$MERGED"
+# Identity comes from a tenant credential only (ADR-0157): Temper strips
+# caller-declared x-temper-* headers, so the driver presents TEMPER_API_KEY as a
+# bearer. The kernel bootstraps that key as an operator credential in tenant
+# `default` only, which is why the app loads there (also the production tenant
+# name).
+#
+# Two registration steps, both needed: `--app` runs the verification cascade and
+# loads the tenant's Cedar policies (including this harness's permit-all), while
+# only POST /api/specs/load-dir exposes the entity sets over OData. Same split as
+# scripts/run-local.sh.
+export TEMPER_API_KEY="${E2E_API_KEY:-e2e-local-operator-key}"
+E2E_TENANT="${E2E_TENANT:-default}"
+
+HOME="$E2E_STATE_DIR/home" "$TEMPER_BIN" serve \
+  --port "$E2E_PORT" --tenant "$E2E_TENANT" --no-observe \
+  --app "$E2E_TENANT=$MERGED" &
+TEMPER_PID=$!
+trap 'kill $BLOB_PID $TEMPER_PID 2>/dev/null || true' EXIT
+
+curl --retry 120 --retry-delay 1 --retry-connrefused -sf \
+  -H "X-Tenant-Id: $E2E_TENANT" -H "Authorization: Bearer $TEMPER_API_KEY" \
+  "http://127.0.0.1:$E2E_PORT/tdata" >/dev/null
+
+echo "registering merged specs over OData (verification cascade; minutes on a debug build)"
+LOAD_RESPONSE="$(curl --max-time 1800 -s -X POST "http://127.0.0.1:$E2E_PORT/api/specs/load-dir" \
+  -H "Content-Type: application/json" -H "X-Tenant-Id: $E2E_TENANT" \
+  -H "Authorization: Bearer $TEMPER_API_KEY" \
+  -d "{\"specs_dir\":\"$MERGED\",\"tenant\":\"$E2E_TENANT\",\"merge\":true}")"
+if ! grep -q '"all_passed":true' <<<"$LOAD_RESPONSE"; then
+  echo "spec load failed: ${LOAD_RESPONSE:0:2000}" >&2
+  exit 1
+fi
+echo "==> ready on :$E2E_PORT (tenant $E2E_TENANT)"
+wait $TEMPER_PID
