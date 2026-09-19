@@ -6,6 +6,7 @@ import { LanguageCardOwnerSlot } from "@/components/language-card-owner-controls
 import { ThumbnailPreview } from "@/components/thumbnail-preview";
 import { ProvenanceBadge } from "@/components/provenance-badge";
 import { thumbnailPreviewSources } from "@/lib/thumbnail-sources";
+import { cardTraits } from "@/lib/style-dna.mjs";
 
 const statusFallbackTone: Record<string, string> = {
   Draft: "var(--muted-foreground)",
@@ -143,6 +144,7 @@ function FullCard({
   const id = lang.entity_id;
 
   const tags = parseJson<string[]>(f.tags) ?? [];
+  const traits = cardTraits(f);
   const isHumanProvenance =
     f.provenance_tier === "human_curated" || f.provenance_tier === "human_authored";
   const tokens = parseJson<Tokens>(f.tokens);
@@ -233,6 +235,10 @@ function FullCard({
             <StatusStamp status={lang.status} tint={stickyTint} />
           ) : null}
         </div>
+
+        {traits.length > 0 ? (
+          <p className="truncate text-[12.5px] leading-snug text-muted-foreground">{traits.join(" · ")}</p>
+        ) : null}
 
         {(tags.length > 0 || isHumanProvenance) && (
           <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1">

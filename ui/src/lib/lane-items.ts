@@ -1,3 +1,4 @@
+import { cardTraits } from "@/lib/style-dna.mjs";
 import { artStyleImageMetadata, type ArtStyleImageMetadata } from "@/lib/art-style-image-metadata";
 import {
   artStyleDisplayName,
@@ -182,5 +183,6 @@ export function toArtStyleItem(r: LaneEntity): ArtStyleItem {
       hero && images.fallbacks[hero] ? { [hero]: images.fallbacks[hero] } : {},
     tags: parseJson<string[]>(r.fields.tags) ?? [],
     taxonomyIds: parseJson<string[]>(r.fields.taxonomy_ids) ?? [],
+    traits: cardTraits(r.fields),
   };
 }

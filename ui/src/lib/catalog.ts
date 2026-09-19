@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { isShownToVisitorsRecord as isShownToVisitors } from "./featured.mjs";
 import { rowMatchesIdOrSlug } from "./catalog-membership.mjs";
 import { askJev, JEV_MODEL, JevUnavailableError, score } from "./jev.mjs";
@@ -370,7 +371,15 @@ export async function searchDesigns(kind: Kind, tier: Tier, a: SearchArgs) {
 // styles far from the library's average that Jev still scores as a fit — the
 // ones a keyword or a nearest-vector search would never put in front of you.
 
-export type AskArgs = { query: string; kind?: "language" | "art_style"; limit?: number };
+export type AskArgs = {
+  query: string;
+  kind?: "language" | "art_style";
+  limit?: number;
+  /** "match" stops after the first Jev call: the DNA match, shown while the fit is judged. */
+  stage?: "match";
+  /** The sentence's reading from a "match" answer, so the fit stage does not pay for it twice. */
+  want?: Record<string, number>;
+};
 
 const ASK_MAX_QUERY = 400;
 const ASK_SHORTLIST = 24;
@@ -389,24 +398,75 @@ function askCard(kind: Kind, r: Row, dna: StyleDna) {
   };
 }
 
+// What an answer needs of each style, and nothing else. A full read of the two
+// sets is 9.6 MB — every row carries its tokens, taste vector and manifests —
+// and on a cold server that read, not Jev, was most of the wait. The pool is a
+// megabyte and is shared between server instances through the data cache. It
+// is rebuilt every two minutes and aged from when it was built, not fetched:
+// a style taken off the visitor shelf must leave anonymous answers promptly.
+type PoolStyle = { kind: "language" | "art_style"; row: Row; dna: StyleDna; doc: string };
+const POOL_FIELDS = [
+  "name", "slug", "tags", "medium", "family_id", "taxonomy_ids", "shown_to_visitors", "Shown_to_visitors", "ShownToVisitors",
+  "landing_thumbnail_asset_url", "thumbnail_asset_url",
+];
+const POOL_TTL_S = 120;
+
+async function buildAskPool(): Promise<{ styles: PoolStyle[]; undescribed: number; builtAt: number }> {
+  const kinds = ["language", "art_style"] as const;
+  const sets = await Promise.all(kinds.map(async (k) => withDevFields(await readAll(SET[k], PUBLISHED))));
+  const styles: PoolStyle[] = [];
+  let undescribed = 0;
+  kinds.forEach((kind, i) => {
+    for (const full of sets[i]) {
+      if (!str(full.fields?.name)) continue;
+      const dna = storedDna(full.fields, JEV_MODEL);
+      if (!dna) {
+        undescribed++;
+        continue;
+      }
+      const fields: Record<string, unknown> = {};
+      for (const key of POOL_FIELDS) if (full.fields?.[key] !== undefined) fields[key] = full.fields[key];
+      styles.push({ kind, row: { entity_id: full.entity_id, fields, booleans: full.booleans }, dna, doc: buildStyleDoc(kind, full.fields).slice(0, 700) });
+    }
+  });
+  return { styles, undescribed, builtAt: Date.now() };
+}
+
+const sharedAskPool = unstable_cache(buildAskPool, ["ask-pool", JEV_MODEL], { revalidate: POOL_TTL_S });
+let localAskPool: Awaited<ReturnType<typeof buildAskPool>> | null = null;
+
+async function askPool() {
+  const fresh = (pool: { builtAt: number }) => Date.now() - pool.builtAt < POOL_TTL_S * 1000;
+  if (localAskPool && fresh(localAskPool)) return localAskPool;
+  // The dev field overlay reads a local file; the shared cache would hide edits to it.
+  let pool = process.env.KATAGAMI_DEV_FIELDS_FILE ? await buildAskPool() : await sharedAskPool();
+  // The shared cache serves a stale entry while it revalidates; past its age, or
+  // if a read came back empty, build here rather than answer from it.
+  if (!fresh(pool) || pool.styles.length === 0) pool = await buildAskPool();
+  if (pool.styles.length > 0) localAskPool = pool;
+  return pool;
+}
+
 export async function askLibrary(tier: Tier, a: AskArgs) {
   const query = a.query.trim().slice(0, ASK_MAX_QUERY);
   const limit = Math.min(Math.max(a.limit ?? 8, 1), 20);
-  const kinds: ("language" | "art_style")[] = a.kind ? [a.kind] : ["language", "art_style"];
-  const rowSets = await Promise.all(kinds.map((k) => visibleRows(k, tier)));
-  const pool = kinds.flatMap((kind, i) =>
-    rowSets[i].flatMap((row) => {
-      const dna = storedDna(row.fields, JEV_MODEL);
-      return dna ? [{ kind, row, dna }] : [];
-    }),
-  );
-  const unread = rowSets.reduce((n, rows) => n + rows.length, 0) - pool.length;
+  const started = Date.now();
+  const all = await askPool();
+  const inView = all.styles.filter((p) => (!a.kind || p.kind === a.kind) && (tier === "full" || isShownToVisitors(p.row)));
+  const pool = inView;
+  // Styles with no DNA yet cannot be told apart by tier without the full rows;
+  // the count is of the whole library and is reported only to the full tier.
+  const unread = tier === "full" && !a.kind ? all.undescribed : 0;
+  const readMs = Date.now() - started;
   if (pool.length === 0) {
-    return { query, tier, model: null, considered: 0, unread, wants: [], avoids: [], results: [], strange: [], note: "No style in view has been described yet." };
+    return { query, tier, model: null, considered: 0, unread, wants: [], avoids: [], results: [], strange: [], timings_ms: { read: readMs, want: 0, fit: 0 }, note: "No style in view has been described yet." };
   }
 
-  const wantRes = await askJev(`Product: ${query}`, wantQuestions(), ASK_JEV);
-  const want = dnaFromAnswers(wantRes.answers);
+  const wantStarted = Date.now();
+  // A reading handed back by the caller is used only if it is whole and in range.
+  const given = a.want && STYLE_DNA_QUESTIONS.every((q) => typeof a.want?.[q.id] === "number" && a.want[q.id] >= 0 && a.want[q.id] <= 1) ? (a.want as StyleDna) : null;
+  const want = given ?? dnaFromAnswers((await askJev(`Product: ${query}`, wantQuestions(), ASK_JEV)).answers);
+  const wantMs = Date.now() - wantStarted;
   if (!want) throw new JevUnavailableError("Jev left a question about the product unanswered");
 
   const crowd = centroid(pool.map((p) => p.dna));
@@ -414,6 +474,25 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     .map((p) => ({ ...p, match: matchScore(want, p.dna), odd: oddness(p.dna, crowd) }))
     .sort((x, y) => y.match - x.match);
   const shortlist = ranked.slice(0, ASK_SHORTLIST);
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const leaning = STYLE_DNA_QUESTIONS.map((q) => ({ label: q.label, value: want[q.id] }));
+  const wants = leaning.filter((l) => l.value >= 0.6).sort((x, y) => y.value - x.value).slice(0, 6).map((l) => l.label);
+  const avoids = leaning.filter((l) => l.value <= 0.2).sort((x, y) => x.value - y.value).slice(0, 4).map((l) => l.label);
+  const tierNote = tier === "sample" ? "Matched against the visitor shelf. Sign in with Google to ask the full library." : "Matched against the full library.";
+  if (a.stage === "match") {
+    const names = new Set<string>();
+    const first = shortlist.filter((p) => {
+      const name = str(p.row.fields?.name).toLowerCase();
+      return names.has(name) ? false : Boolean(names.add(name));
+    });
+    return {
+      query, tier, model: JEV_MODEL, considered: pool.length, unread, provisional: true, want,
+      timings_ms: { read: readMs, want: wantMs, fit: 0 }, wants, avoids,
+      results: first.slice(0, limit).map((p) => ({ ...askCard(p.kind, p.row, p.dna), fit: null, match: round(p.match) })),
+      strange: [],
+      note: tierNote,
+    };
+  }
   // Outsiders: the oddest styles in the next band down, so the second call can
   // find a fit the DNA match alone ranked too low to show.
   const outsiders = ranked
@@ -422,16 +501,18 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     .slice(0, ASK_OUTSIDERS);
   const judged = [...shortlist, ...outsiders];
 
+  const fitStarted = Date.now();
   const fitRes = await askJev(
     `Product: ${query}`,
     Object.fromEntries(
       judged.map((p, i) => [
         `s${i}`,
-        score(`How well would this style serve the product?\n${buildStyleDoc(p.kind, p.row.fields).slice(0, 700)}`, FIT_LEVELS),
+        score(`How well would this style serve the product?\n${p.doc}`, FIT_LEVELS),
       ]),
     ),
     ASK_JEV,
   );
+  const fitMs = Date.now() - fitStarted;
   const scored = judged.map((p, i) => {
     const fit = fitRes.answers[`s${i}`]?.score;
     // An unscored style must not pass as "a stretch": without every score the
@@ -460,23 +541,20 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     .sort((x, y) => y.odd - x.odd)
     .slice(0, 3);
 
-  const round = (n: number) => Math.round(n * 100) / 100;
   const out = (p: (typeof unique)[number]) => ({ ...askCard(p.kind, p.row, p.dna), fit: round(p.fit), match: round(p.match) });
-  const leaning = STYLE_DNA_QUESTIONS.map((q) => ({ label: q.label, value: want[q.id] }));
   return {
     query,
     tier,
     model: fitRes.model,
     considered: pool.length,
     unread,
-    wants: leaning.filter((l) => l.value >= 0.6).sort((x, y) => y.value - x.value).slice(0, 6).map((l) => l.label),
-    avoids: leaning.filter((l) => l.value <= 0.2).sort((x, y) => x.value - y.value).slice(0, 4).map((l) => l.label),
+    timings_ms: { read: readMs, want: wantMs, fit: fitMs },
+    provisional: false,
+    wants,
+    avoids,
     results: results.map(out),
     strange: strange.map(out),
-    note:
-      tier === "sample"
-        ? "Matched against the visitor shelf. Sign in with Google to ask the full library."
-        : "Matched against the full library.",
+    note: tierNote,
   };
 }
 

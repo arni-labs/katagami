@@ -90,3 +90,12 @@ test("a row with misshapen fields still gets a document", () => {
   assert.equal(doc, "design language: Odd");
   assert.equal(buildStyleDoc("art_style", { name: "Odd", tags: '"x"', guidance: '{"do":"use paper"}' }), "art style: Odd");
 });
+
+test("a card prints the strongest traits of any dna-v1 answers, and nothing for another set", async () => {
+  const { cardTraits } = await import("../src/lib/style-dna.mjs");
+  const style_dna = JSON.stringify({ ...flat(0.1), quiet: 0.95, japanese: 0.7, flat: 0.61, playful: 0.59 });
+  assert.deepEqual(cardTraits({ style_dna, style_dna_version: "dna-v1/jev-9" }), ["quiet", "Japanese", "flat"]);
+  assert.deepEqual(cardTraits({ style_dna, style_dna_version: "dna-v0/jev-1" }), []);
+  assert.deepEqual(cardTraits({ style_dna: "[]", style_dna_version: "dna-v1/x" }), []);
+  assert.deepEqual(cardTraits(undefined), []);
+});

@@ -11,7 +11,7 @@ type Card = {
   url: string;
   thumbnail_url: string | null;
   traits: string[];
-  fit: number;
+  fit: number | null;
   medium?: string;
 };
 type Answer = {
@@ -23,6 +23,8 @@ type Answer = {
   results: Card[];
   strange: Card[];
   note: string;
+  provisional?: boolean;
+  want?: Record<string, number>;
 };
 
 const EXAMPLES = [
@@ -35,14 +37,14 @@ const KINDS = [
   { value: "language", label: "Design languages" },
   { value: "art_style", label: "Art styles" },
 ] as const;
-const FIT_WORD = (fit: number) => (fit >= 0.8 ? "Strong fit" : fit >= 0.5 ? "Could work" : "A stretch");
+const FIT_WORD = (fit: number | null, judging: boolean) => (fit === null ? (judging ? "Judging fit…" : "Matched by traits") : fit >= 0.8 ? "Strong fit" : fit >= 0.5 ? "Could work" : "A stretch");
 const CARD_SIZES = "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw";
 
 function hrefOf(card: Card) {
   return `/${card.kind === "language" ? "language" : "art-styles"}/${card.id}`;
 }
 
-function ResultCard({ card }: { card: Card }) {
+function ResultCard({ card, judging }: { card: Card; judging: boolean }) {
   return (
     <Link href={hrefOf(card)} className="sticker-card group/card flex h-full flex-col overflow-hidden">
       <div className="relative w-full overflow-hidden bg-muted" style={{ aspectRatio: "16 / 10" }}>
@@ -62,7 +64,7 @@ function ResultCard({ card }: { card: Card }) {
             {card.kind === "language" ? "Language" : card.medium || "Art style"}
           </span>
         </div>
-        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ramune)]">{FIT_WORD(card.fit)}</p>
+        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ramune)]">{FIT_WORD(card.fit, judging)}</p>
         {card.traits.length > 0 ? (
           <p className="text-[14.5px] leading-snug text-muted-foreground">{card.traits.join(" · ")}</p>
         ) : null}
@@ -90,12 +92,27 @@ export function AskLibrary() {
     setState("asking");
     setError("");
     try {
-      const params = new URLSearchParams({ q, k: "8" });
+      // Two steps, so something is on screen after the first model call: the
+      // match by style DNA, then the same list re-judged for fit.
+      const params = new URLSearchParams({ q, k: "8", stage: "match" });
       if (nextKind) params.set("kind", nextKind);
-      const res = await fetch(`/api/ask?${params}`);
-      const body = await res.json().catch(() => null);
+      const first = await fetch(`/api/ask?${params}`);
+      const matched = await first.json().catch(() => null);
       if (turn !== latest.current) return;
-      if (!res.ok || !body) throw new Error(body?.error ?? "Asking failed. Try again in a moment.");
+      if (!first.ok || !matched) throw new Error(matched?.error ?? "Asking failed. Try again in a moment.");
+      setAnswer(matched as Answer);
+      if (matched.results.length === 0) {
+        setState("idle");
+        return;
+      }
+      const second = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q, k: 8, kind: nextKind || undefined, want: matched.want }),
+      });
+      const body = await second.json().catch(() => null);
+      if (turn !== latest.current) return;
+      if (!second.ok || !body) throw new Error(body?.error ?? "Asking failed. Try again in a moment.");
       setAnswer(body as Answer);
       setState("idle");
     } catch (err) {
@@ -182,7 +199,7 @@ export function AskLibrary() {
         </p>
       ) : null}
 
-      <div aria-live="polite" className={state === "asking" ? "opacity-50 transition-opacity motion-reduce:transition-none" : ""}>
+      <div aria-live="polite" aria-busy={state === "asking"} className={state === "asking" && !answer?.provisional ? "opacity-50 transition-opacity motion-reduce:transition-none" : ""}>
         {answer ? (
           <>
             <section className="mt-14">
@@ -203,7 +220,7 @@ export function AskLibrary() {
                 <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                   {answer.results.map((card) => (
                     <li key={card.id}>
-                      <ResultCard card={card} />
+                      <ResultCard card={card} judging={state === "asking"} />
                     </li>
                   ))}
                 </ul>
@@ -219,7 +236,7 @@ export function AskLibrary() {
                 <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                   {answer.strange.map((card) => (
                     <li key={card.id}>
-                      <ResultCard card={card} />
+                      <ResultCard card={card} judging={state === "asking"} />
                     </li>
                   ))}
                 </ul>

@@ -19,6 +19,7 @@ import { PaletteCard, type PaletteItem } from "@/components/palette-card";
 import { ArtStyleCard, type ArtStyleItem } from "@/components/art-style-card";
 import { KX_FIELD } from "@/lib/katagami-ui";
 import type { DesignLanguage } from "@/lib/odata";
+import { STYLE_DNA_QUESTIONS } from "@/lib/style-dna.mjs";
 
 // Matches the lane catalog: paint-cull each card, same grid as the shelved view.
 const CARD_CV: CSSProperties = {
@@ -102,7 +103,7 @@ function InfiniteShell({
   const field = meaning ? (meaningPlaceholder ?? placeholder) : placeholder;
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <div className="relative w-full max-w-sm sm:w-72">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -187,6 +188,55 @@ const HUE_SWATCHES: [string, string][] = [
   ["pink", "#e93d82"],
   ["neutral", "#9ba1a6"],
 ];
+
+// Style-DNA traits: the library's own descriptive vocabulary, answered per style
+// by Jev. One at a time, filtered server-side (contains(style_traits,' id ')).
+// Forty-nine chips would bury the toolbar, so they sit behind one control.
+function TraitPicker({ active, onPick }: { active?: string; onPick: (t?: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const current = STYLE_DNA_QUESTIONS.find((q) => q.id === active);
+  return (
+    <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls="trait-picker"
+          onClick={() => setOpen((v) => !v)}
+          className="sticker-card cursor-pointer px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground"
+        >
+          traits {open ? "−" : "+"}
+        </button>
+        {current ? (
+          <button
+            type="button"
+            onClick={() => onPick(undefined)}
+            aria-label={`Clear the ${current.label} filter`}
+            className="cursor-pointer bg-[var(--yuzu)] px-2.5 py-1 text-[13px] text-black"
+          >
+            {current.label} ×
+          </button>
+        ) : null}
+      </div>
+      {open ? (
+        <div id="trait-picker" role="group" aria-label="Filter by trait" className="flex max-w-3xl flex-wrap gap-1.5">
+          {STYLE_DNA_QUESTIONS.map((q) => (
+            <button
+              key={q.id}
+              type="button"
+              title={q.style}
+              aria-pressed={active === q.id}
+              onClick={() => onPick(active === q.id ? undefined : q.id)}
+              className={`cursor-pointer px-2 py-1 text-[13px] transition-colors ${active === q.id ? "bg-[var(--yuzu)] text-black" : "bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] text-foreground/80 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-foreground"}`}
+            >
+              {q.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function HueBar({
   active,
@@ -307,7 +357,7 @@ export function InfiniteLanguages({
   const meaningActive = mode === "meaning" && querying;
   // Curator's picks lead only the unfiltered keyword browse view. Facets and
   // meaning-ranking don't compose in v1, so meaning mode hides the facet bar.
-  const keywordFiltering = querying || !!facets.hue || !!facets.family;
+  const keywordFiltering = querying || !!facets.hue || !!facets.family || !!facets.trait;
   const browsing = !meaningActive && !keywordFiltering && featured.length > 0;
   const pinnedIds = new Set(featured.map((f) => f.entity_id));
   const keywordGrid = browsing
@@ -331,6 +381,7 @@ export function InfiniteLanguages({
               active={facets.family}
               onPick={(id) => setFacet("family", id)}
             />
+            <TraitPicker active={facets.trait} onPick={(t) => setFacet("trait", t)} />
           </div>
         )
       }
@@ -456,7 +507,7 @@ export function InfiniteArtStyles({
   canArchive?: boolean;
 }) {
   const [mode, setMode] = useState<SearchMode>("keyword");
-  const { items, search, setSearch, loading, cursor, sentinelRef } =
+  const { items, search, setSearch, facets, setFacet, loading, cursor, sentinelRef } =
     useInfiniteList<ArtStyleItem>(
       initialItems,
       initialCursor,
@@ -478,6 +529,7 @@ export function InfiniteArtStyles({
       meaningPlaceholder="Describe a look — “hand-drawn watercolor”"
       mode={mode}
       setMode={setMode}
+      toolbar={mode === "meaning" ? null : <TraitPicker active={facets.trait} onPick={(t) => setFacet("trait", t)} />}
       loading={meaningActive ? sem.loading : loading}
       searchFailed={meaningActive ? sem.failed : false}
       exhausted={meaningActive ? true : cursor === null}

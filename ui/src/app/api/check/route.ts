@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     return NextResponse.json(card, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {
     const jev = err instanceof JevUnavailableError;
-    trackServerEvent("check_against_language_failed", { tier, reason: jev ? "jev" : "other", message: String(err).slice(0, 200) }, "error");
+    trackServerEvent("check_against_language_failed", { tier, reason: jev ? "jev" : "other" }, "error");
     return NextResponse.json(
       { error: jev ? "checking is temporarily unavailable — try again shortly" : "checking failed on our side — it has been logged" },
       { status: jev ? 503 : 500 },

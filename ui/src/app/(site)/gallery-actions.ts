@@ -14,6 +14,11 @@ import {
 } from "@/lib/search";
 import { toArtStyleItem, toPaletteItem } from "@/lib/lane-items";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
+import { STYLE_DNA_QUESTIONS } from "@/lib/style-dna.mjs";
+
+// A trait reaches an OData filter, so only a known question id may pass.
+const TRAIT_IDS = new Set(STYLE_DNA_QUESTIONS.map((q) => q.id));
+const traitOf = (t?: string) => (t && TRAIT_IDS.has(t) ? t : undefined);
 import type { PaletteItem } from "@/components/palette-card";
 import type { ArtStyleItem } from "@/components/art-style-card";
 
@@ -34,6 +39,7 @@ export async function loadLanguagePage(input: {
   search?: string;
   hue?: string;
   family?: string;
+  trait?: string;
 }): Promise<PageResult<DesignLanguage>> {
   // ARN-385: language browsing beyond the owner-picked visitor shelf is a
   // signed-in surface. Enforced here — not just hidden in the UI — because a
@@ -44,6 +50,7 @@ export async function loadLanguagePage(input: {
     search: input.search,
     hue: input.hue,
     family: input.family,
+    trait: traitOf(input.trait),
     limit: LIMIT,
   });
 }
@@ -68,6 +75,7 @@ export async function loadPalettePage(input: {
 export async function loadArtStylePage(input: {
   cursor?: string | null;
   search?: string;
+  trait?: string;
 }): Promise<PageResult<ArtStyleItem>> {
   // ARN-385: art-style browsing beyond the owner-picked visitor shelf is a
   // signed-in surface — same gate as loadLanguagePage. Enforced here, not just
@@ -76,6 +84,7 @@ export async function loadArtStylePage(input: {
   const page = await pageArtStyles({
     cursor: input.cursor ?? undefined,
     search: input.search,
+    trait: traitOf(input.trait),
     limit: ART_STYLE_LIMIT,
   });
   return { items: page.items.map(toArtStyleItem), nextCursor: page.nextCursor };
