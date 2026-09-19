@@ -63,10 +63,6 @@ const demoCatalog = fs.readFileSync(
 assert.match(detailPage, /rounded-\[3px\] p-3 font-mono text-\[12px\]/);
 assert.match(detailPage, /space-y-1\.5 text-\[13px\]/);
 assert.match(detailPage, /mb-4 max-w-2xl text-\[14px\]/);
-assert.match(
-  detailPage,
-  /Explore the style across subjects and compare how different models interpret the same recipe\./,
-);
 assert.match(detailPage, />Prompt template</);
 assert.match(detailPage, /label="Copy recipe"/);
 assert.match(detailPage, /label="Copy prompt only"/);

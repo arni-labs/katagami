@@ -145,7 +145,6 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             />
           </span>
         }
-        description="Explore the style across subjects and compare how different models interpret the same recipe."
         rightSlot={<Stamp color="sakura">{medium}</Stamp>}
       />
 
@@ -155,22 +154,14 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         </div>
       ) : null}
 
-      <section aria-label="Style gallery" className="space-y-5">
-        <div className="flex items-baseline justify-between gap-4">
-          <SectionHeading>
-            Style gallery
-          </SectionHeading>
-          <span className="shrink-0 font-mono text-xs text-muted-foreground">
-            {[hero, ...gallery].filter(Boolean).length} images
-          </span>
-        </div>
-        <div className="grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2">
+      <section aria-label="Style gallery">
+        <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
           {[hero, ...gallery].filter(Boolean).map((src, i) => {
             const details = images.metadata[src];
             const comparison = proofs.includes(src);
             const subject = details?.subject || `${name} ${comparison ? "model comparison" : "example"} ${i + 1}`;
             return (
-              <figure key={src} className="min-w-0 space-y-3">
+              <figure key={src} className="min-w-0 space-y-2">
                 <a
                   href={src}
                   target="_blank"
@@ -186,17 +177,11 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
                     className="aspect-[4/3] w-full object-contain"
                   />
                 </a>
-                <figcaption className="space-y-2">
-                  <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                    <span>{String(i + 1).padStart(2, "0")}</span>
-                    <span>{comparison ? "Model comparison" : "Style example"}</span>
-                    {details?.provider ? <span className="ml-auto">{details.provider}</span> : null}
-                  </div>
-                  <p className="text-[17px] leading-snug">{subject}</p>
-                  <p className="font-mono text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
-                    <span className="sr-only">Model ID: </span>
-                    {details?.modelId || "Model ID not recorded"}
-                  </p>
+                <figcaption className="font-mono text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
+                  <span className="sr-only">Model ID: </span>
+                  {details?.modelId
+                    ? `${details.provider ? `${details.provider} · ` : ""}${details.modelId}`
+                    : "Model ID not recorded"}
                 </figcaption>
               </figure>
             );
