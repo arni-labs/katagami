@@ -2,7 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { isShownToVisitorsRecord as isShownToVisitors } from "./featured.mjs";
 import { rowMatchesIdOrSlug } from "./catalog-membership.mjs";
-import { askJev, JEV_MODEL, JevUnavailableError, score } from "./jev.mjs";
+import { askJev, JEV_MODEL, JevUnavailableError, noul, score } from "./jev.mjs";
 import {
   buildStyleDoc,
   centroid,
@@ -683,6 +683,128 @@ export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format
     },
   };
   return { format, tailwind_config: config };
+}
+
+// --- ask the encyclopedia: directions, made or not ----------------------------
+//
+// The same sentence, put to the encyclopedia's art and design cells: which named
+// directions would be a useful reference for this product — including the ones
+// the library has made nothing for yet, which is where a new language could go.
+// Every direction-naming cell is asked (no walk down the tree, so no early wrong
+// turn hides one): about 870 cells in eight Jev calls made together, roughly a
+// fifth of a cent. Roots and container headings are left out — they are true of
+// everything under them.
+
+/** Cut at a word, and say so: a description must not end mid-syllable. */
+function clipWords(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max - 30)).replace(/[\s,;:.]+$/, "")}…`;
+}
+
+type Concept = { id: string; name: string; description: string; made: number };
+const CONCEPT_TTL_S = 600;
+const CONCEPT_BATCH = 120;
+const CONTAINER_KIDS = 10;
+// Below this a direction is a guess. A plain product (a ferry timetable) tops out
+// near 0.5 where a pointed one (a punk zine) reaches 0.9, so the floor is low and
+// the list is short rather than the other way round.
+const CONCEPT_FLOOR = 0.4;
+
+async function buildConceptPool(): Promise<{ concepts: Concept[]; builtAt: number }> {
+  const rows = await readAll("EncyclopediaCells", "Status ne 'Archived'");
+  type Doc = { name: string; description: string; maps: string[]; broader: string[]; made: number };
+  const cells = new Map<string, Doc>();
+  for (const row of rows) {
+    let doc: unknown;
+    try {
+      doc = JSON.parse(str(row.fields?.document));
+    } catch {
+      continue;
+    }
+    if (!doc || typeof doc !== "object" || Array.isArray(doc)) continue;
+    const d = doc as Record<string, unknown>;
+    const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is Record<string, unknown> => Boolean(x) && typeof x === "object") : []);
+    const maps = list(d.maps).map((m) => str(m.map));
+    if (!str(d.name) || !maps.some((m) => m === "art" || m === "design")) continue;
+    cells.set(row.entity_id, {
+      name: str(d.name),
+      description: str(d.description),
+      maps,
+      broader: list(d.broader).map((b) => str(b.cellId)),
+      made: list(d.manifestations).length,
+    });
+  }
+  const kids = new Map<string, string[]>();
+  for (const [id, c] of cells) for (const b of c.broader) if (cells.has(b)) kids.set(b, [...(kids.get(b) ?? []), id]);
+  const depth = new Map<string, number>();
+  const queue = [...cells.keys()].filter((id) => !cells.get(id)!.broader.some((b) => cells.has(b)));
+  for (const root of queue) depth.set(root, 0);
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    for (const kid of kids.get(id) ?? []) {
+      if (!depth.has(kid)) {
+        depth.set(kid, depth.get(id)! + 1);
+        queue.push(kid);
+      }
+    }
+  }
+  const concepts: Concept[] = [];
+  for (const [id, c] of cells) {
+    const d = depth.get(id) ?? 0;
+    const narrower = kids.get(id)?.length ?? 0;
+    if (c.name.startsWith("<") || /\((hierarchy name|works)\)/.test(c.name) || narrower >= CONTAINER_KIDS) continue;
+    if (d >= 2 || (d >= 1 && narrower === 0)) concepts.push({ id, name: c.name, description: clipWords(c.description, 170), made: c.made });
+  }
+  return { concepts, builtAt: Date.now() };
+}
+
+const sharedConceptPool = unstable_cache(buildConceptPool, ["ask-concepts"], { revalidate: CONCEPT_TTL_S });
+let localConceptPool: Awaited<ReturnType<typeof buildConceptPool>> | null = null;
+
+async function conceptPool() {
+  const fresh = (pool: { builtAt: number }) => Date.now() - pool.builtAt < CONCEPT_TTL_S * 1000;
+  if (localConceptPool && fresh(localConceptPool)) return localConceptPool;
+  let pool = await sharedConceptPool();
+  if (!fresh(pool) || pool.concepts.length === 0) pool = await buildConceptPool();
+  if (pool.concepts.length > 0) localConceptPool = pool;
+  return pool;
+}
+
+export async function askConcepts(queryIn: string, limit = 6) {
+  const query = queryIn.trim().slice(0, ASK_MAX_QUERY);
+  const started = Date.now();
+  const { concepts } = await conceptPool();
+  const readMs = Date.now() - started;
+  const batches: Concept[][] = [];
+  for (let at = 0; at < concepts.length; at += CONCEPT_BATCH) batches.push(concepts.slice(at, at + CONCEPT_BATCH));
+  const judgeStarted = Date.now();
+  const answered = await Promise.all(
+    batches.map(async (batch) => {
+      const res = await askJev(
+        `Product: ${query}`,
+        Object.fromEntries(
+          batch.map((c, i) => [`c${i}`, noul(`A designer working on this product would reach for the following direction as a visual reference.\n${c.name}: ${c.description}`)]),
+        ),
+        ASK_JEV,
+      );
+      return batch.map((c, i) => {
+        const n = res.answers[`c${i}`]?.noul;
+        if (typeof n !== "number" || !Number.isFinite(n)) throw new JevUnavailableError("Jev left a direction unjudged");
+        return { ...c, relevance: Math.round(n * 100) / 100 };
+      });
+    }),
+  );
+  const ranked = answered.flat().filter((c) => c.relevance >= CONCEPT_FLOOR).sort((x, y) => y.relevance - x.relevance);
+  return {
+    query,
+    considered: concepts.length,
+    timings_ms: { read: readMs, judge: Date.now() - judgeStarted },
+    // Two lists, because they are two different offers: a direction with work
+    // to look at now, and a direction nobody has made anything for yet.
+    made: ranked.filter((c) => c.made > 0).slice(0, limit),
+    unmade: ranked.filter((c) => c.made === 0).slice(0, limit),
+  };
 }
 
 // --- the library atlas ---------------------------------------------------------
