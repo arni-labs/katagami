@@ -1,6 +1,19 @@
 import "server-only";
 import { isShownToVisitorsRecord as isShownToVisitors } from "./featured.mjs";
 import { rowMatchesIdOrSlug } from "./catalog-membership.mjs";
+import { askJev, score } from "./jev.mjs";
+import {
+  buildStyleDoc,
+  centroid,
+  matchScore,
+  oddness,
+  storedDna,
+  topTraits,
+  wantQuestions,
+  dnaFromAnswers,
+  STYLE_DNA_QUESTIONS,
+  type StyleDna,
+} from "./style-dna.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
 // commons through this module, so "what an identity may see" is defined once.
@@ -326,6 +339,117 @@ export async function searchDesigns(kind: Kind, tier: Tier, a: SearchArgs) {
     returned: pageRows.length,
     next_cursor: start + limit < hits.length ? start + limit : null,
     results: pageRows.map((r) => summary(kind, r)),
+  };
+}
+
+// --- ask the library: judgment, not keywords ---------------------------------
+//
+// A product sentence is matched in two Jev calls, one after the other. The
+// first asks the style-DNA questions of the sentence ("would the right design
+// for this be dark? dense? playful?"); the stored DNA of every visible style is
+// then compared in code, which costs nothing per style. The second call reads
+// the shortlist's real descriptions and scores fit. "Strange" results are
+// styles far from the library's average that Jev still scores as a fit — the
+// ones a keyword or a nearest-vector search would never put in front of you.
+
+export type AskArgs = { query: string; kind?: "language" | "art_style"; limit?: number };
+
+const ASK_MAX_QUERY = 400;
+const ASK_SHORTLIST = 24;
+const ASK_OUTSIDERS = 12;
+const FIT_LEVELS = ["wrong for it", "could work", "strong fit"];
+
+function askCard(kind: Kind, r: Row, dna: StyleDna) {
+  const f = r.fields ?? {};
+  return {
+    ...summary(kind, r),
+    thumbnail_url: str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null,
+    traits: topTraits(dna).map((t) => t.label),
+  };
+}
+
+export async function askLibrary(tier: Tier, a: AskArgs) {
+  const query = a.query.trim().slice(0, ASK_MAX_QUERY);
+  const limit = Math.min(Math.max(a.limit ?? 8, 1), 20);
+  const kinds: ("language" | "art_style")[] = a.kind ? [a.kind] : ["language", "art_style"];
+  const rowSets = await Promise.all(kinds.map((k) => visibleRows(k, tier)));
+  const pool = kinds.flatMap((kind, i) =>
+    rowSets[i].flatMap((row) => {
+      const dna = storedDna(row.fields);
+      return dna ? [{ kind, row, dna }] : [];
+    }),
+  );
+  const unread = rowSets.reduce((n, rows) => n + rows.length, 0) - pool.length;
+  if (pool.length === 0) {
+    return { query, tier, results: [], strange: [], wants: [], avoids: [], unread, note: "No style in view has been described yet." };
+  }
+
+  const wantRes = await askJev(`Product: ${query}`, wantQuestions());
+  const want = dnaFromAnswers(wantRes.answers);
+  if (!want) throw new Error("Jev left a question about the product unanswered");
+
+  const crowd = centroid(pool.map((p) => p.dna));
+  const ranked = pool
+    .map((p) => ({ ...p, match: matchScore(want, p.dna), odd: oddness(p.dna, crowd) }))
+    .sort((x, y) => y.match - x.match);
+  const shortlist = ranked.slice(0, ASK_SHORTLIST);
+  // Outsiders: the oddest styles in the next band down, so the second call can
+  // find a fit the DNA match alone ranked too low to show.
+  const outsiders = ranked
+    .slice(ASK_SHORTLIST, ASK_SHORTLIST + 96)
+    .sort((x, y) => y.odd - x.odd)
+    .slice(0, ASK_OUTSIDERS);
+  const judged = [...shortlist, ...outsiders];
+
+  const fitRes = await askJev(
+    `Product: ${query}`,
+    Object.fromEntries(
+      judged.map((p, i) => [
+        `s${i}`,
+        score(`How well would this style serve the product?\n${buildStyleDoc(p.kind, p.row.fields).slice(0, 700)}`, FIT_LEVELS),
+      ]),
+    ),
+  );
+  const scored = judged.map((p, i) => {
+    const ans = fitRes.answers[`s${i}`];
+    // Jev's score is the expected level index (0..2); normalise to 0..1.
+    return { ...p, fit: typeof ans?.score === "number" ? ans.score / (FIT_LEVELS.length - 1) : 0 };
+  });
+
+  // One card per name: the library holds a few same-named siblings.
+  const seen = new Set<string>();
+  const unique = scored
+    .sort((x, y) => y.fit - x.fit || y.match - x.match)
+    .filter((p) => {
+      const name = str(p.row.fields?.name).toLowerCase();
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+  const results = unique.slice(0, limit);
+  const shown = new Set(results.map((p) => p.row.entity_id));
+  const strange = unique
+    .filter((p) => !shown.has(p.row.entity_id) && p.fit >= 0.5)
+    .sort((x, y) => y.odd - x.odd)
+    .slice(0, 3);
+
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const out = (p: (typeof unique)[number]) => ({ ...askCard(p.kind, p.row, p.dna), fit: round(p.fit), match: round(p.match) });
+  const leaning = STYLE_DNA_QUESTIONS.map((q) => ({ label: q.label, value: want[q.id] }));
+  return {
+    query,
+    tier,
+    model: fitRes.model,
+    considered: pool.length,
+    unread,
+    wants: leaning.filter((l) => l.value >= 0.6).sort((x, y) => y.value - x.value).slice(0, 6).map((l) => l.label),
+    avoids: leaning.filter((l) => l.value <= 0.2).sort((x, y) => x.value - y.value).slice(0, 4).map((l) => l.label),
+    results: results.map(out),
+    strange: strange.map(out),
+    note:
+      tier === "sample"
+        ? "Matched against the visitor shelf. Sign in with Google to ask the full library."
+        : "Matched against the full library.",
   };
 }
 

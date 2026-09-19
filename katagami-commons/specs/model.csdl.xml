@@ -82,6 +82,9 @@
              related languages). JSON float array + the model that made it. -->
         <Property Name="TasteVector" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="TasteVectorModel" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Style DNA: descriptive question id -> probability, and the question-set/model version. -->
+        <Property Name="StyleDna" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="StyleDnaVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Precomputed gallery facets: flat scalars for server-side filtering +
              keyset pagination. The kernel can only $filter stored scalars (not
              JSON-derived values, and only case-sensitively), so the categorical
@@ -335,6 +338,9 @@
         <!-- Taste embedding: semantic vector for discovery. JSON float array + model id. -->
         <Property Name="TasteVector" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="TasteVectorModel" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Style DNA: descriptive question id -> probability, and the question-set/model version. -->
+        <Property Name="StyleDna" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="StyleDnaVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Quality signals -->
         <Property Name="QualityScore" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="QualityReviewPassed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />

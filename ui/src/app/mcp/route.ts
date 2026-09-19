@@ -7,6 +7,7 @@ import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs
 import { trackMcpToolCall, trackServerEvent } from "@/lib/server-telemetry";
 import {
   describeCatalog,
+  askLibrary,
   searchDesigns,
   getDesign,
   getDesignMd,
@@ -338,6 +339,22 @@ const baseHandler = createMcpHandler(
         inputSchema: {},
       },
       async (_args, extra) => ok(await describeCatalog(tierOf(extra))),
+    );
+
+    // --- ask: judgment over the whole library --------------------------------
+    server.registerTool(
+      "ask_library",
+      {
+        title: "Ask the library",
+        description:
+          "Describe the product you are designing in one sentence and get the design languages and art styles that fit it, judged against each style's description rather than matched on keywords. Returns `results` (best fit first, each with `fit` 0..1 and its strongest `traits`), `strange` (styles unlike the rest of the library that were still judged a fit — worth a look when you want something unexpected), and how the sentence was read (`wants`, `avoids`). Use this before search_* when you have a brief rather than a name or tag.",
+        inputSchema: {
+          query: z.string().min(8).max(400).describe("One sentence: what the product is and who it is for"),
+          kind: z.enum(["language", "art_style"]).optional().describe("Omit to look through both"),
+          limit: z.number().int().min(1).max(20).optional(),
+        },
+      },
+      async (a, extra) => ok(await askLibrary(tierOf(extra), a)),
     );
 
     // --- design languages --------------------------------------------------

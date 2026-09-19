@@ -11,6 +11,7 @@ export interface NavLink {
 
 export const NAV_LINKS: NavLink[] = [
   { href: "/", label: "Gallery" },
+  { href: "/ask", label: "Ask" },
   { href: "/palettes", label: "Palettes" },
   { href: "/art-styles", label: "Art Styles" },
   { href: "/studio", label: "Studio" },

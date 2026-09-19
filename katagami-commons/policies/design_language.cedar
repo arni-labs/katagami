@@ -11,6 +11,7 @@ forbid(
     Action::"Archive",
     Action::"AttachComputedFacets",
     Action::"AttachPublishedAssets",
+    Action::"AttachStyleDna",
     Action::"AttachTasteVector",
     Action::"AttachVerifiedThumbnail",
     Action::"IncrementFork",

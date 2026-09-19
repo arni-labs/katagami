@@ -161,6 +161,20 @@ name = "taste_vector_model"
 type = "string"
 initial = ""
 
+# Style DNA — Jev's answers (0..1) to the library's descriptive question set,
+# as a JSON object {question_id: probability}. style_dna_version names the
+# question set + model so answers from different sets are never compared.
+# Written by AttachStyleDna (the backfill job); empty until asked.
+[[state]]
+name = "style_dna"
+type = "string"
+initial = ""
+
+[[state]]
+name = "style_dna_version"
+type = "string"
+initial = ""
+
 # ADR-0155: declared vector access path. The kernel maintains an exact-scan kNN
 # index over taste_vector, partitioned by taste_vector_model (only same-model
 # vectors ever compare), and serves it through Temper.Nearest(decl='taste',...).
@@ -315,6 +329,13 @@ kind = "internal"
 from = ["Draft", "UnderReview", "Published"]
 params = ["taste_vector", "taste_vector_model"]
 hint = "Attach the semantic taste embedding computed from this entity's canonical taste document. taste_vector is a JSON float array; taste_vector_model identifies the embedding model so mixed-model vectors are never compared. Written by the curation finalizer or the backfill job."
+
+[[action]]
+name = "AttachStyleDna"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+params = ["style_dna", "style_dna_version"]
+hint = "Attach the style DNA: a JSON object of descriptive question id -> probability (0..1) answered by a System One model over this entity's canonical description. style_dna_version identifies the question set and model (e.g. dna-v1/jev-1.13.0) so mixed sets are never compared. Descriptive only — never a quality judgment. Written by the backfill job."
 
 [[action]]
 name = "AttachComputedFacets"
