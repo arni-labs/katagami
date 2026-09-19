@@ -1649,3 +1649,9 @@
 @media (prefers-reduced-motion: reduce) {
   .atlas-leave, .atlas-sheet { animation: none; }
 }
+
+/* Atlas: a family's name stands on the map, not in a box — a halo of paper keeps
+   it legible over the glow and the dotted ground. */
+.atlas-family-name {
+  text-shadow: 0 0 6px var(--background), 0 0 12px var(--background), 0 0 2px var(--background);
+}
