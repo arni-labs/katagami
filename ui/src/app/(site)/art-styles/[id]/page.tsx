@@ -145,7 +145,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             />
           </span>
         }
-        description="An engine-agnostic style recipe: a wide hero, examples across subjects, and a portable prompt."
+        description="Explore the style across subjects and compare how different models interpret the same recipe."
         rightSlot={<Stamp color="sakura">{medium}</Stamp>}
       />
 
@@ -155,28 +155,54 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         </div>
       ) : null}
 
-      {/* hero + proof gallery */}
-      <StickyNote tint="sakura" className="p-3">
-        <div className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "16/9" }}>
-          {hero ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={hero} alt={`${name} hero`} className="h-full w-full object-cover" />
-          ) : null}
+      <section aria-label="Style gallery" className="space-y-5">
+        <div className="flex items-baseline justify-between gap-4">
+          <SectionHeading eyebrow="the images" eyebrowColor="graphite">
+            One style, different interpretations
+          </SectionHeading>
+          <span className="shrink-0 font-mono text-xs text-muted-foreground">
+            {[hero, ...gallery].filter(Boolean).length} images
+          </span>
         </div>
-        {gallery.length > 0 ? (
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {gallery.map((src, i) => (
-              <div key={i} className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "1/1" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`${name} example ${i + 1}`} className="h-full w-full object-cover" />
-              </div>
-            ))}
-          </div>
-        ) : null}
-        <div className="mt-2 px-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground/70">
-          1 hero · {gallery.length} example{gallery.length === 1 ? "" : "s"}
+        <div className="grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2">
+          {[hero, ...gallery].filter(Boolean).map((src, i) => {
+            const details = images.metadata[src];
+            const comparison = proofs.includes(src);
+            const subject = details?.subject || `${name} ${comparison ? "model comparison" : "example"} ${i + 1}`;
+            return (
+              <figure key={src} className="min-w-0 space-y-3">
+                <a
+                  href={src}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Open full image: ${subject}`}
+                  className="block bg-muted/30 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={subject}
+                    loading={i < 2 ? "eager" : "lazy"}
+                    className="aspect-[4/3] w-full object-contain"
+                  />
+                </a>
+                <figcaption className="space-y-2">
+                  <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    <span>{String(i + 1).padStart(2, "0")}</span>
+                    <span>{comparison ? "Model comparison" : "Style example"}</span>
+                    {details?.provider ? <span className="ml-auto">{details.provider}</span> : null}
+                  </div>
+                  <p className="text-[17px] leading-snug">{subject}</p>
+                  <p className="font-mono text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
+                    <span className="sr-only">Model ID: </span>
+                    {details?.modelId || "Model ID not recorded"}
+                  </p>
+                </figcaption>
+              </figure>
+            );
+          })}
         </div>
-      </StickyNote>
+      </section>
 
       {/* recipe — retain the established detail-page presentation. Verification
           affects publication and gallery eligibility, not the visual chrome. */}
