@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { GalleryImage } from "@/components/gallery-image";
 import { Marker } from "@/components/page-hero";
@@ -16,6 +16,26 @@ const PAPER = 5200;
 const TILE_W = 132;
 const TILE_H = 84;
 const FAMILY_INKS = ["var(--sakura)", "var(--ramune)", "var(--yuzu)"];
+
+// A pan or zoom changes the camera sixty times a second; a tile depends on none
+// of it, so it is memoised and the 457 pictures stay put while the paper moves.
+const Tile = memo(function Tile({ style: s, dim, rank, pressed, named, still, onOpen }: { style: AtlasStyle; dim: boolean; rank: number; pressed: boolean; named: boolean; still: boolean; onOpen: (s: AtlasStyle) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(s)}
+      aria-label={`${s.name}, ${s.kind === "language" ? "design language" : "art style"}`}
+      aria-pressed={pressed}
+      className="sticker-card absolute block cursor-pointer overflow-hidden p-0 text-left"
+      style={{ left: s.x * PAPER - TILE_W / 2, top: s.y * PAPER - TILE_H / 2, width: TILE_W, opacity: dim ? 0.18 : 1, zIndex: rank, transition: still ? undefined : "opacity 200ms" }}
+    >
+      <span className="relative block w-full bg-muted" style={{ height: TILE_H }}>
+        {s.thumbnail_url ? <GalleryImage src={s.thumbnail_url} alt="" sizes="132px" className="object-cover" /> : null}
+      </span>
+      {named ? <span className="block truncate px-2 py-1.5 font-display text-[14.5px] font-bold leading-tight tracking-[-0.01em]">{s.name}</span> : null}
+    </button>
+  );
+});
 
 export function AtlasMap({ styles, families, unplaced, sample }: { styles: AtlasStyle[]; families: Family[]; unplaced: number; sample: boolean }) {
   const reduced = usePrefersReducedMotion();
@@ -61,6 +81,8 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
     return () => { root.style.overflow = before.overflow; root.style.overscrollBehavior = before.overscroll; };
   }, []);
 
+  const zoomNow = useRef(camera.k);
+  useEffect(() => { zoomNow.current = camera.k; }, [camera.k]);
   const open = useCallback((s: AtlasStyle) => {
     if (draggingRef.current) return;
     setFocusId(s.id);
@@ -69,8 +91,8 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
     // The sheet covers the right 340px on a wide screen and the lower part of
     // a narrow one; the focused style is centred in what is left.
     const screen = el ? (wide ? { x: (el.clientWidth - 364) / 2, y: el.clientHeight / 2 } : { x: el.clientWidth / 2, y: el.clientHeight * 0.3 }) : undefined;
-    centerOn(s.x * PAPER, s.y * PAPER, Math.max(camera.k, wide ? 0.9 : 0.7), screen);
-  }, [draggingRef, centerOn, camera.k, viewportRef]);
+    centerOn(s.x * PAPER, s.y * PAPER, Math.max(zoomNow.current, wide ? 0.9 : 0.7), screen);
+  }, [draggingRef, centerOn, viewportRef]);
 
   // Far out, a tile is a swatch of its picture; close in, it carries its name.
   const named = camera.k >= 0.55;
@@ -94,6 +116,7 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
         role="application"
         aria-label="Library atlas. Drag to pan, scroll to zoom, choose a style to see what is near it."
         onKeyDown={(e) => { if (e.key === "Escape") setFocusId(null); }}
+        onScroll={(e) => { e.currentTarget.scrollTop = 0; e.currentTarget.scrollLeft = 0; }}
         {...handlers}
       >
         <div
@@ -112,25 +135,9 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
                 return <span key={`line-${n.id}`} aria-hidden className="pointer-events-none absolute origin-left bg-[var(--ramune)]" style={{ left: x1, top: y1, width: len, height: 2 / camera.k, opacity: 0.25 + n.similarity * 0.6, transform: `rotate(${Math.atan2(y2 - y1, x2 - x1)}rad)` }} />;
               })
             : null}
-          {styles.map((s) => {
-            const dim = (kind && s.kind !== kind) || (lit && !lit.has(s.id));
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => open(s)}
-                aria-label={`${s.name}, ${s.kind === "language" ? "design language" : "art style"}`}
-                aria-pressed={focusId === s.id}
-                className="sticker-card absolute block cursor-pointer overflow-hidden p-0 text-left"
-                style={{ left: s.x * PAPER - TILE_W / 2, top: s.y * PAPER - TILE_H / 2, width: TILE_W, opacity: dim ? 0.18 : 1, zIndex: focusId === s.id ? 3 : lit?.has(s.id) ? 2 : 1, transition: reduced ? undefined : "opacity 200ms" }}
-              >
-                <span className="relative block w-full bg-muted" style={{ height: TILE_H }}>
-                  {s.thumbnail_url ? <GalleryImage src={s.thumbnail_url} alt="" sizes="132px" className="object-cover" /> : null}
-                </span>
-                {named ? <span className="block truncate px-2 py-1.5 font-display text-[13px] font-bold leading-tight tracking-[-0.01em]">{s.name}</span> : null}
-              </button>
-            );
-          })}
+          {styles.map((s) => (
+            <Tile key={s.id} style={s} dim={Boolean((kind && s.kind !== kind) || (lit && !lit.has(s.id)))} rank={focusId === s.id ? 3 : lit?.has(s.id) ? 2 : 1} pressed={focusId === s.id} named={named} still={reduced} onOpen={open} />
+          ))}
           {families.map((f) => (
             <span key={`label-${f.id}`} className="pointer-events-none absolute z-[4] -translate-x-1/2 whitespace-nowrap bg-background px-2 py-1 font-mono font-bold uppercase tracking-[0.16em] text-foreground shadow-[var(--shadow-card)]" style={{ left: f.x * PAPER, top: f.y * PAPER - TILE_H - 8, fontSize: Math.min(15 / camera.k, 64), opacity: lit ? 0.2 : named ? 0.55 : 1 }}>
               {f.label} · {f.count}

@@ -5,6 +5,7 @@ import { verifyReadBearer, readMcpAuthInfo, whoamiFromAuth } from "@/lib/catalog
 import { clampRejectionReason } from "@/lib/catalog-auth-core.mjs";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
 import { trackMcpToolCall, trackServerEvent } from "@/lib/server-telemetry";
+import { mayStart, TOO_MANY } from "@/lib/spend-guard";
 import {
   describeCatalog,
   askLibrary,
@@ -311,6 +312,16 @@ const MISSING_ID_TEXT = JSON.stringify(
   2,
 );
 
+/** Who is spending a paid model call: the token's client, so one caller cannot loop Jev. */
+function spenderOf(extra: unknown): string {
+  const info = (extra as { authInfo?: { clientId?: string } } | undefined)?.authInfo;
+  return info?.clientId || "mcp";
+}
+
+function tooMany() {
+  return { content: [{ type: "text" as const, text: JSON.stringify({ error: "rate_limited", message: TOO_MANY }) }], isError: true };
+}
+
 function missingId() {
   return { content: [{ type: "text" as const, text: MISSING_ID_TEXT }], isError: true };
 }
@@ -355,7 +366,11 @@ const baseHandler = createMcpHandler(
           limit: z.number().int().min(1).max(20).optional(),
         },
       },
-      async (a, extra) => ok(await askLibrary(tierOf(extra), a)),
+      async (a, extra) => {
+        const tier = tierOf(extra);
+        if (!mayStart("mcp-ask", spenderOf(extra), tier)) return tooMany();
+        return ok(await askLibrary(tier, a));
+      },
     );
 
     server.registerTool(
@@ -373,6 +388,7 @@ const baseHandler = createMcpHandler(
         const tier = tierOf(extra);
         const id = idOf(a);
         if (!id) return missingId();
+        if (!mayStart("mcp-check", spenderOf(extra), tier)) return tooMany();
         const card = await checkAgainstLanguage(tier, id, a.page);
         return card ? ok(card) : gone(tier);
       },

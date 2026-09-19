@@ -11,18 +11,37 @@
 // Plain .mjs: shared by the Next server and node --test.
 
 export const PAGE_MAX_CHARS = 24_000;
+// What is looked at at all, measured checks included: a page's design is in its head and first screens.
+const PAGE_READ_CHARS = 120_000;
+export const MAX_JUDGED = 40;
 const FOLLOWS_AT = 0.65;
 const BREAKS_AT = 0.35;
 
 const isRecord = (v) => v && typeof v === "object" && !Array.isArray(v);
 const strings = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === "string" && x.trim()) : []);
 
+// Remove every open...close span by index, in one pass. A lazy regex rescans to
+// the end of the page for each unclosed opener, which is quadratic: forty
+// thousand "<!--" cost 1.6 seconds of blocked CPU on a route anyone can call.
+function strip(text, open, close) {
+  const lower = text.toLowerCase();
+  let out = "";
+  let at = 0;
+  for (;;) {
+    const start = lower.indexOf(open, at);
+    if (start < 0) return out + text.slice(at);
+    out += text.slice(at, start);
+    const end = lower.indexOf(close, start + open.length);
+    if (end < 0) return out; // unclosed: the rest is inside it
+    at = end + close.length;
+  }
+}
+
 /** The page as Jev reads it: scripts, comments and data URIs carry no design. */
 export function pageState(page) {
-  return String(page ?? "")
-    .replace(/<script\b[\s\S]*?<\/script>/gi, "")
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/data:[a-z]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/gi, "data:…")
+  const source = String(page ?? "").slice(0, PAGE_READ_CHARS);
+  return strip(strip(source, "<script", "</script>"), "<!--", "-->")
+    .replace(/data:[a-z]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]{0,200000}/gi, "data:…")
     .replace(/[ \t]+/g, " ")
     .replace(/\n\s*\n+/g, "\n")
     .trim()
@@ -40,7 +59,7 @@ export function judgedChecks(design) {
   const guidance = isRecord(design?.guidance) ? design.guidance : {};
   for (const text of strings(guidance.do)) checks.push({ kind: "do", name: "", text: text.trim(), expect: "follows" });
   for (const text of strings(guidance.dont)) checks.push({ kind: "dont", name: "", text: text.trim(), expect: "breaks" });
-  return checks.slice(0, 40);
+  return checks;
 }
 
 export function judgedQuestions(checks) {
@@ -66,13 +85,19 @@ export function verdictOf(noul, expect) {
 
 const hex6 = (h) => {
   const x = h.replace("#", "").toLowerCase();
-  return `#${x.length === 3 ? [...x].map((c) => c + c).join("") : x.slice(0, 6)}`;
+  return `#${x.length <= 4 ? [...x.slice(0, 3)].map((c) => c + c).join("") : x.slice(0, 6)}`;
 };
+
+// A colour, not a fragment: "#fff" after a CSS-ish boundary, never href="#facade",
+// a selector "#add{", or a character reference "&#123456;". Alpha digits are dropped.
+const HEX_COLOUR = /(?<![\w&"'#=/])#([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])(?!\s*\{)/gi;
+const OTHER_COLOUR = /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color)\(/i;
+const clip = (list) => list.slice(0, 8).join(", ").slice(0, 200);
 
 /** What the code can measure: colours, font families and radii, against the tokens. */
 export function measuredChecks(design, page) {
   const tokens = isRecord(design?.tokens) ? design.tokens : {};
-  const source = String(page ?? "");
+  const source = String(page ?? "").slice(0, PAGE_READ_CHARS);
   const out = [];
 
   const allowed = new Set(
@@ -81,23 +106,34 @@ export function measuredChecks(design, page) {
       .map((v) => hex6(v.trim())),
   );
   if (allowed.size > 0) {
-    const used = [...new Set((source.match(/#[0-9a-f]{6}\b|#[0-9a-f]{3}\b/gi) ?? []).map(hex6))];
+    const used = [...new Set([...source.matchAll(HEX_COLOUR)].map((m) => hex6(m[1])))];
     const off = used.filter((c) => !allowed.has(c));
+    // Colours written as rgb(), hsl() and the like are not measured here, so
+    // their presence caps the verdict at unclear: a pass must mean every colour.
+    const unmeasured = OTHER_COLOUR.test(source);
     out.push({
       check: "colours come from the language's tokens",
-      verdict: used.length === 0 ? "unclear" : off.length === 0 ? "pass" : "fail",
-      detail: used.length === 0 ? "no hex colours found in the page" : off.length === 0 ? `${used.length} colours, all in the tokens` : `not in the tokens: ${off.slice(0, 8).join(", ")}`,
+      verdict: off.length > 0 ? "fail" : used.length === 0 || unmeasured ? "unclear" : "pass",
+      detail:
+        off.length > 0
+          ? `not in the tokens: ${clip(off)}`
+          : used.length === 0
+            ? "no hex colours found in the page"
+            : unmeasured
+              ? `${used.length} hex colours, all in the tokens; colours written as rgb()/hsl() were not measured`
+              : `${used.length} colours, all in the tokens`,
     });
   }
 
   const typography = isRecord(tokens.typography) ? tokens.typography : {};
   const fonts = ["heading_font", "body_font", "mono_font"].map((k) => typography[k]).filter((v) => typeof v === "string" && v.trim());
   if (fonts.length > 0) {
-    const missing = fonts.filter((f) => !source.toLowerCase().includes(f.toLowerCase()));
+    const lower = source.toLowerCase();
+    const missing = fonts.filter((f) => !lower.includes(f.toLowerCase()));
     out.push({
       check: "the language's typefaces are used",
       verdict: missing.length === 0 ? "pass" : missing.length === fonts.length ? "fail" : "unclear",
-      detail: missing.length === 0 ? fonts.join(", ") : `not found: ${missing.join(", ")}`,
+      detail: missing.length === 0 ? clip(fonts) : `not found: ${clip(missing)}`,
     });
   }
 
@@ -107,12 +143,15 @@ export function measuredChecks(design, page) {
       .map((v) => v.trim().replace(/^0px$/, "0")),
   );
   if (radii.size > 0) {
-    const used = [...new Set([...source.matchAll(/border-radius\s*:\s*([^;}"']+)/gi)].flatMap((m) => m[1].trim().split(/\s+/)).map((v) => v.replace(/^0px$/, "0")))];
-    const off = used.filter((v) => /^\d/.test(v) && !radii.has(v));
+    const used = [...new Set([...source.matchAll(/border-radius\s*:\s*([^;}"'<]{1,80})/gi)].flatMap((m) => m[1].trim().split(/\s+/)).map((v) => v.replace(/^0px$/, "0")))];
+    const literal = used.filter((v) => /^\d/.test(v));
+    const off = literal.filter((v) => !radii.has(v));
+    // A radius given as var(--r) says nothing until the variable is resolved,
+    // which this does not do: only literal lengths can pass or fail.
     out.push({
       check: "corner radii come from the language's tokens",
-      verdict: used.length === 0 ? "unclear" : off.length === 0 ? "pass" : "fail",
-      detail: used.length === 0 ? "no border-radius declarations found" : off.length === 0 ? `radii used: ${used.join(", ")}` : `not in the tokens: ${off.slice(0, 8).join(", ")}`,
+      verdict: off.length > 0 ? "fail" : literal.length === 0 ? "unclear" : "pass",
+      detail: off.length > 0 ? `not in the tokens: ${clip(off)}` : literal.length === 0 ? "no literal border-radius lengths found" : `radii used: ${clip(literal)}`,
     });
   }
   return out;

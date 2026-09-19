@@ -14,7 +14,7 @@ import {
   STYLE_DNA_QUESTIONS,
   type StyleDna,
 } from "./style-dna.mjs";
-import { judgedChecks, judgedQuestions, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
+import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
 // commons through this module, so "what an identity may see" is defined once.
@@ -645,6 +645,17 @@ export async function libraryAtlas(tier: Tier) {
   });
   const visible = new Set(placed.map(({ row }) => row.entity_id));
 
+  // A family is stored as its medoid's entity id, and the medoid is chosen over
+  // the whole library — so to a shelf caller it may be an off-shelf id. The
+  // client gets an opaque key instead.
+  const familyKeys = new Map<string, string>();
+  const familyKey = (medoid: string) => {
+    if (!medoid) return null;
+    if (!familyKeys.has(medoid)) familyKeys.set(medoid, `f${familyKeys.size + 1}`);
+    return familyKeys.get(medoid) ?? null;
+  };
+  const medoidOf = new Map<string, string>();
+
   const styles: AtlasStyle[] = placed.map(({ kind, row }) => {
     const f = row.fields ?? {};
     let neighbors: { id: string; similarity: number }[] = [];
@@ -667,7 +678,11 @@ export async function libraryAtlas(tier: Tier) {
       thumbnail_url: str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null,
       x: Number.parseFloat(str(f.atlas_x)),
       y: Number.parseFloat(str(f.atlas_y)),
-      family: str(f.atlas_family) || null,
+      family: (() => {
+        const key = familyKey(str(f.atlas_family));
+        if (key) medoidOf.set(key, str(f.atlas_family));
+        return key;
+      })(),
       neighbors,
     };
   });
@@ -677,7 +692,7 @@ export async function libraryAtlas(tier: Tier) {
   const families = [...byFamily.entries()]
     .filter(([, members]) => members.length >= 2)
     .map(([id, members]) => {
-      const named = members.find((m) => m.id === id) ?? [...members].sort((a, b) => a.name.localeCompare(b.name))[0];
+      const named = members.find((m) => m.id === medoidOf.get(id)) ?? [...members].sort((a, b) => a.name.localeCompare(b.name))[0];
       return {
         id,
         label: named.name,
@@ -703,7 +718,9 @@ export async function checkAgainstLanguage(tier: Tier, idOrSlug: string, page: s
   if (!design) return null;
   const state = pageState(page);
   const measured = measuredChecks(design, page);
-  const checks = judgedChecks(design);
+  // Guidance first: a language's don'ts are its sharpest lines, so they are never the ones cut.
+  const every = judgedChecks(design);
+  const checks = [...every.filter((c) => c.kind !== "rule"), ...every.filter((c) => c.kind === "rule")].slice(0, MAX_JUDGED);
   let judged: { kind: string; name: string; rule: string; follows: number; verdict: string }[] = [];
   let model: string | null = null;
   if (checks.length > 0) {
@@ -723,6 +740,7 @@ export async function checkAgainstLanguage(tier: Tier, idOrSlug: string, page: s
     page_chars_read: state.length,
     page_truncated: state.length < page.trim().length && state.length >= 24_000,
     summary: { pass: count("pass"), unclear: count("unclear"), fail: count("fail") },
+    checks_not_judged: every.length - checks.length,
     // Worst first: what to fix is the point of asking.
     measured,
     judged: judged.sort((a, b) => a.follows - b.follows),

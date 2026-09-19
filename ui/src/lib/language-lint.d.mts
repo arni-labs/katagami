@@ -1,5 +1,6 @@
 import type { JevQuestion } from "./jev.mjs";
 export const PAGE_MAX_CHARS: number;
+export const MAX_JUDGED: number;
 export type Verdict = "pass" | "unclear" | "fail";
 export type JudgedCheck = { kind: "rule" | "do" | "dont"; name: string; text: string; expect: "follows" | "breaks" };
 export function pageState(page: string): string;
