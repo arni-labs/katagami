@@ -45,6 +45,12 @@ locations), and the `wasm32-unknown-unknown` toolchain for step 2.
 
 ## Notes
 
+- Do not edit `serve_local.sh` while a run is in flight: bash reads a script by
+  byte offset, so an edit under a running instance makes it execute garbage and
+  exit, taking the server with it. Run a copy (`cp serve_local.sh
+  .serve_run_immutable.sh && ./.serve_run_immutable.sh`) when iterating.
+
+
 - `blob_sink.py` stands in for the public-asset object store: the
   publish-artifact flow PUTs blobs to `published_blob_endpoint` exactly as in
   production; the sink accepts them. The driver sets the three
