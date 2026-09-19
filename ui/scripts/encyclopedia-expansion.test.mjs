@@ -124,6 +124,24 @@ test("a cell shown under one parent spends no slot and counts as nothing hidden 
   assert.equal(visible.cells.size, 2 + q.length + p.length, "every shown cell is on the paper once");
 });
 
+test("a cell past a parent's page that a deeper parent shows is not counted as hidden", () => {
+  // The real case: Australian Gothic is the 16th child of Literary genre and
+  // also a child of Gothic fiction. The walk reaches Literary genre first, so
+  // while it ran the 16th child looked hidden; Gothic fiction then showed it.
+  // Literary genre's "+N" must count what is off the paper once the walk is
+  // over — before, it promised ten and paging delivered nine.
+  const kids = Array.from({ length: 19 }, (_, i) => cell(`k${i}`, `Kid ${String(i).padStart(2, "0")}`, { broader: ["genre"], manifestations: 40 - i }));
+  const cells = [cell("genre", "Genre"), cell("gothic", "Gothic", { broader: ["genre"], manifestations: 50 }), ...kids, cell("shared", "Shared", { broader: ["genre", "gothic"] })];
+  const graph = index(cells);
+  const state = toggle(toggle(initialExpansion(["art"]), "genre"), "gothic");
+  const visible = computeVisible(graph, ["art"], state);
+  assert.ok(visible.shown.get("gothic").some((c) => c.id === "shared"), "the deeper parent shows the shared cell");
+  assert.ok(!visible.shown.get("genre").some((c) => c.id === "shared"), "it is past the shallower parent's page");
+  const offPaper = graph.orderedChildren("genre").filter((c) => !visible.cells.has(c.id)).length;
+  assert.equal(visible.hidden.get("genre"), offPaper, "+N counts only what is off the paper");
+  assert.equal(offPaper, 21 - BATCH - 1);
+});
+
 test("a containment cycle no root reaches still opens from its category", () => {
   const cells = [cell("x", "X", { broader: ["y"] }), cell("y", "Y", { broader: ["x"] }), cell("r", "Root")];
   const graph = index(cells);

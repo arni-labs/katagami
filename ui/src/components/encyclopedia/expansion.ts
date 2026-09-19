@@ -103,7 +103,6 @@ export function computeVisible(index: GraphIndex, maps: MapName[], state: Expans
     // a slot nor counts as hidden.
     const own = kids.filter((kid) => !cells.has(kid.id));
     const list = own.slice(0, shownCount(state, key));
-    hidden.set(key, own.length - list.length);
     shown.set(key, list);
     for (const kid of list) {
       cells.add(kid.id);
@@ -113,6 +112,13 @@ export function computeVisible(index: GraphIndex, maps: MapName[], state: Expans
   };
   for (const map of maps) reveal(hubKey(map));
   while (queue.length) reveal(queue.shift()!);
+  // Hidden is counted once the walk is over, against everything on the paper:
+  // a cell past this node's page that a node visited later went on to show is
+  // not hidden, and counting it during the walk promised a "+N" that paging
+  // could not deliver.
+  for (const key of shown.keys()) {
+    hidden.set(key, childrenOf(index, key).filter((kid) => !cells.has(kid.id)).length);
+  }
   return { cells, shown, hidden, under };
 }
 
