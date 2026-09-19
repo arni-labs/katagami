@@ -230,6 +230,24 @@ test("a cell's layer is its depth, and each layer draws smaller than the one abo
   assert.ok(plateBox(c, 2).h < plateBox(c, 1).h);
 });
 
+test("a cell's layer is its depth as drawn: under a deep parent it draws smaller than that parent", () => {
+  // X hangs from root R1 and from C, which sits two down under R2. With R1
+  // folded and C open, X is shown under C and must draw a layer below C —
+  // not at depth one, which would make the narrower cell the bigger card.
+  const cells = [cell("r1", "R1"), cell("r2", "R2"), cell("b", "B", { broader: ["r2"] }), cell("c", "C", { broader: ["b"] }), cell("x", "X", { broader: ["r1", "c"] })];
+  const graph = index(cells);
+  let state = initialExpansion(["art"]);
+  state = toggle(state, "r1"); // open then fold R1 so X is not shown under it
+  state = toggle(state, "r1");
+  state = toggle(toggle(toggle(state, "r2"), "b"), "c");
+  const layout = layoutVisible(graph, computeVisible(graph, ["art"], state), ["art"]);
+  const c = layout.byId.get("c"); const x = layout.byId.get("x");
+  assert.ok(c && x, "C and X are on the paper");
+  assert.equal(c.level, 2);
+  assert.equal(x.level, 3, "X is one layer below the cell it hangs from");
+  assert.ok(x.scale < c.scale);
+});
+
 test("a plate's box is the size its own level draws at", () => {
   const cells = [cell("a", "Alpha", { manifestations: 2 }), cell("b", "Beta", { broader: ["a"] })];
   const graph = index(cells);
