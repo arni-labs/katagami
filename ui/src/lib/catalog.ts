@@ -1,7 +1,7 @@
 import "server-only";
 import { isShownToVisitorsRecord as isShownToVisitors } from "./featured.mjs";
 import { rowMatchesIdOrSlug } from "./catalog-membership.mjs";
-import { askJev, JevUnavailableError, score } from "./jev.mjs";
+import { askJev, JEV_MODEL, JevUnavailableError, score } from "./jev.mjs";
 import {
   buildStyleDoc,
   centroid,
@@ -378,7 +378,7 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   const rowSets = await Promise.all(kinds.map((k) => visibleRows(k, tier)));
   const pool = kinds.flatMap((kind, i) =>
     rowSets[i].flatMap((row) => {
-      const dna = storedDna(row.fields);
+      const dna = storedDna(row.fields, JEV_MODEL);
       return dna ? [{ kind, row, dna }] : [];
     }),
   );

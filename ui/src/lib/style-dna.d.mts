@@ -7,7 +7,7 @@ export function styleQuestions(): Record<string, JevQuestion>;
 export function wantQuestions(): Record<string, JevQuestion>;
 export function dnaFromAnswers(answers: Record<string, JevAnswer>): StyleDna | null;
 export function dnaVersion(model: string): string;
-export function storedDna(fields: Record<string, unknown> | undefined): StyleDna | null;
+export function storedDna(fields: Record<string, unknown> | undefined, model: string): StyleDna | null;
 export function matchScore(want: StyleDna, dna: StyleDna): number;
 export function centroid(dnas: StyleDna[]): StyleDna;
 export function oddness(dna: StyleDna, crowd: StyleDna): number;

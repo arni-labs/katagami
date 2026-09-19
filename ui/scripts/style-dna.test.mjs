@@ -43,13 +43,15 @@ test("answers become DNA only when every question was answered", () => {
   assert.equal(dnaFromAnswers(answers), null);
 });
 
-test("stored DNA from another question set is not read", () => {
+test("stored DNA from another question set or model is not read", () => {
   const style_dna = JSON.stringify(flat(0.4));
-  assert.ok(storedDna({ style_dna, style_dna_version: dnaVersion("jev-1.13.0") }));
-  assert.equal(storedDna({ style_dna, style_dna_version: "dna-v0/jev-1.13.0" }), null);
-  assert.equal(storedDna({ style_dna: "{}", style_dna_version: `${STYLE_DNA_SET}/x` }), null);
-  assert.equal(storedDna({ style_dna: "not json", style_dna_version: `${STYLE_DNA_SET}/x` }), null);
-  assert.equal(storedDna(undefined), null);
+  const M = "jev-1.13.0";
+  assert.ok(storedDna({ style_dna, style_dna_version: dnaVersion(M) }, M));
+  assert.equal(storedDna({ style_dna, style_dna_version: "dna-v0/jev-1.13.0" }, M), null);
+  assert.equal(storedDna({ style_dna, style_dna_version: dnaVersion("jev-2.0.0") }, M), null, "another model's answers are not compared");
+  assert.equal(storedDna({ style_dna: "{}", style_dna_version: dnaVersion(M) }, M), null);
+  assert.equal(storedDna({ style_dna: "not json", style_dna_version: dnaVersion(M) }, M), null);
+  assert.equal(storedDna(undefined, M), null);
 });
 
 test("oddness is distance from the crowd", () => {
@@ -81,4 +83,10 @@ test("the document tolerates JSON strings, objects, lists and missing fields", (
 test("the filterable traits field wraps every id in spaces, so contains(' quiet ') cannot match a longer id", () => {
   assert.equal(traitsField({ ...flat(0.1), quiet: 0.6, flat: 0.9 }), " quiet flat ");
   assert.equal(traitsField(flat(0.1)), "");
+});
+
+test("a row with misshapen fields still gets a document", () => {
+  const doc = buildStyleDoc("language", { name: "Odd", tags: "{}", tokens: "[]", philosophy: "7", layout_principles: "" });
+  assert.equal(doc, "design language: Odd");
+  assert.equal(buildStyleDoc("art_style", { name: "Odd", tags: '"x"', guidance: '{"do":"use paper"}' }), "art style: Odd");
 });

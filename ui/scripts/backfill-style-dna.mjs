@@ -8,7 +8,7 @@
 //
 // Env: TEMPER_API_URL, TEMPER_API_KEY, TEMPER_TENANT (default "default"),
 //      TYPESAFE_API_KEY.
-import { askJev } from "../src/lib/jev.mjs";
+import { askJev, JEV_MODEL } from "../src/lib/jev.mjs";
 import { buildStyleDoc, dnaFromAnswers, dnaVersion, storedDna, styleQuestions, traitsField } from "../src/lib/style-dna.mjs";
 
 const API = requiredEnv("TEMPER_API_URL").replace(/\/+$/, "");
@@ -74,7 +74,7 @@ async function main() {
     console.log(`${set}: ${rows.length} ${ANY_STATUS ? "rows" : "published"}`);
     for (const row of rows) {
       const fields = row.fields ?? {};
-      if (!ALL && storedDna(fields)) {
+      if (!ALL && storedDna(fields, JEV_MODEL)) {
         skipped++;
         continue;
       }
@@ -82,6 +82,7 @@ async function main() {
         const { answers, model, inputTokens } = await askJev(buildStyleDoc(kind, fields), styleQuestions());
         const dna = dnaFromAnswers(answers);
         if (!dna) throw new Error("Jev left a question unanswered");
+        if (model !== JEV_MODEL) throw new Error(`asked ${JEV_MODEL}, answered by ${model} — pin JEV_MODEL to the model in use`);
         tokens += inputTokens;
         if (APPLY) {
           await attach(set, row.entity_id, {

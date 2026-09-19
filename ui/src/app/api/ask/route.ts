@@ -64,7 +64,7 @@ export async function GET(request: Request) {
   }
   const kind = kindParam === "language" || kindParam === "art_style" ? kindParam : undefined;
   const kRaw = Number.parseInt(url.searchParams.get("k") ?? "", 10);
-  const limit = Number.isFinite(kRaw) ? kRaw : undefined;
+  const limit = Number.isFinite(kRaw) ? Math.min(Math.max(kRaw, 1), 20) : undefined;
 
   const tier = (await hasFullGalleryAccess()) ? "full" : "sample";
   const key = JSON.stringify([tier, kind ?? "", limit ?? "", normalise(query)]);

@@ -323,18 +323,28 @@ function parse(v, fallback) {
   }
 }
 const text = (v) => (typeof v === "string" ? v.trim() : "");
+// Catalog fields are authored JSON: a list may arrive as an object, a string or
+// nothing. One odd row must not take the whole library's answer down with it.
+const list = (v) => {
+  const p = parse(v, []);
+  return Array.isArray(p) ? p.filter((x) => typeof x === "string") : [];
+};
+const record = (v) => {
+  const p = parse(v, null);
+  return p && typeof p === "object" && !Array.isArray(p) ? p : {};
+};
 const summaryOf = (v) => {
   const p = parse(v, null);
-  return p && !Array.isArray(p) && typeof p === "object" ? text(p.summary) : text(v);
+  return p && !Array.isArray(p) && typeof p === "object" ? text(p.summary) : typeof p === "string" ? text(p) : "";
 };
 
 /** The canonical text Jev reads for one catalog row. kind: "language" | "art_style". */
 export function buildStyleDoc(kind, fields) {
   const f = fields ?? {};
-  const tags = (parse(f.tags, []) || []).filter((t) => t !== "specimen").join(", ");
+  const tags = list(f.tags).filter((t) => t !== "specimen").join(", ");
   const lines = [];
   if (kind === "language") {
-    const colors = parse(f.tokens, {})?.colors ?? {};
+    const colors = record(record(f.tokens).colors);
     const palette = ["primary", "secondary", "accent", "background", "text"]
       .filter((role) => text(colors[role]))
       .map((role) => `${role} ${colors[role]}`)
@@ -349,7 +359,7 @@ export function buildStyleDoc(kind, fields) {
       palette && `palette: ${palette}`,
     );
   } else {
-    const dos = (parse(f.guidance, {})?.do ?? []).slice(0, 3).join(" ").slice(0, 400);
+    const dos = list(record(f.guidance).do).slice(0, 3).join(" ").slice(0, 400);
     lines.push(
       `art style: ${text(f.name)}`,
       tags && `qualities: ${tags}`,
@@ -383,9 +393,10 @@ export function dnaFromAnswers(answers) {
 
 export const dnaVersion = (model) => `${STYLE_DNA_SET}/${model}`;
 
-/** Stored fields -> DNA, only when it was asked with the current question set. */
-export function storedDna(fields) {
-  if (!text(fields?.style_dna_version).startsWith(`${STYLE_DNA_SET}/`)) return null;
+/** Stored fields -> DNA, only when it was asked with this question set by this
+ *  model: answers from another model are another instrument's readings. */
+export function storedDna(fields, model) {
+  if (text(fields?.style_dna_version) !== dnaVersion(model)) return null;
   const p = parse(fields?.style_dna, null);
   if (!p || typeof p !== "object") return null;
   for (const id of IDS) if (typeof p[id] !== "number") return null;

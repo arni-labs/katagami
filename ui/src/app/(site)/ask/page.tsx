@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function AskPage() {
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 pb-28 pt-14 sm:px-8 sm:pt-20">
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-10">
       <PageHero
         eyebrow="Ask"
         eyebrowAccent="sakura"
@@ -22,6 +22,6 @@ export default function AskPage() {
         description="Say what you are making, in a sentence. Every design language and art style is read against it — by judgment, not keywords."
       />
       <AskLibrary />
-    </main>
+    </div>
   );
 }
