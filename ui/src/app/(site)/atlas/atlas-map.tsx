@@ -17,29 +17,46 @@ const TILE_W = 132;
 const TILE_H = 84;
 const FAMILY_INKS = ["var(--sakura)", "var(--ramune)", "var(--yuzu)"];
 
-// A pan or zoom changes the camera sixty times a second; a tile depends on none
-// of it, so it is memoised and the 457 pictures stay put while the paper moves.
-const Tile = memo(function Tile({ style: s, dim, rank, pressed, named, still, onOpen }: { style: AtlasStyle; dim: boolean; rank: number; pressed: boolean; named: boolean; still: boolean; onOpen: (s: AtlasStyle) => void }) {
+// Like a map: a card keeps about the same size on screen at every zoom, so only
+// as many are drawn as fit without covering one another. Zoom in and the ones
+// that were hidden behind a family's lead card have room, and pop out.
+const CARD_PX = 124; // a card's width on screen while the paper is zoomed out
+const CARD_GAP = 10;
+
+// A pan or zoom changes the camera sixty times a second. A tile depends on none
+// of it — its counter-scale comes from one CSS variable on the paper — so it is
+// memoised and the pictures stay put while the paper moves.
+const Tile = memo(function Tile({ style: s, dim, rank, pressed, hidden, familyLabel, still, delay, onOpen }: { style: AtlasStyle; dim: boolean; rank: number; pressed: boolean; hidden: number; familyLabel: string | null; still: boolean; delay: number; onOpen: (s: AtlasStyle) => void }) {
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(s)}
-      aria-label={`${s.name}, ${s.kind === "language" ? "design language" : "art style"}`}
-      aria-pressed={pressed}
-      className="sticker-card absolute block cursor-pointer overflow-hidden p-0 text-left"
-      style={{ left: s.x * PAPER - TILE_W / 2, top: s.y * PAPER - TILE_H / 2, width: TILE_W, opacity: dim ? 0.18 : 1, zIndex: rank, transition: still ? undefined : "opacity 200ms" }}
+    <div
+      className="absolute"
+      style={{ left: s.x * PAPER - TILE_W / 2, top: s.y * PAPER - TILE_H / 2, width: TILE_W, zIndex: rank, transform: "scale(var(--f))", transformOrigin: "50% 42%" }}
     >
-      <span className="relative block w-full bg-muted" style={{ height: TILE_H }}>
-        {s.thumbnail_url ? <GalleryImage src={s.thumbnail_url} alt="" sizes="132px" className="object-cover" /> : null}
-      </span>
-      {named ? <span className="block truncate px-2 py-1.5 font-display text-[14.5px] font-bold leading-tight tracking-[-0.01em]">{s.name}</span> : null}
-    </button>
+      <button
+        type="button"
+        onClick={() => onOpen(s)}
+        aria-label={`${s.name}, ${s.kind === "language" ? "design language" : "art style"}${hidden > 0 ? `, and ${hidden} more like it — zoom in` : ""}`}
+        aria-pressed={pressed}
+        className={`atlas-card sticker-card relative block w-full cursor-pointer p-0 text-left ${still ? "" : "atlas-pop"}`}
+        style={{ opacity: dim ? 0.18 : 1, animationDelay: still ? undefined : `${delay}ms`, boxShadow: hidden > 0 ? "5px 5px 0 -1px var(--card), 5px 5px 0 0 color-mix(in srgb, var(--foreground) 16%, transparent), 10px 10px 0 -1px var(--card), 10px 10px 0 0 color-mix(in srgb, var(--foreground) 10%, transparent), var(--shadow-card)" : undefined }}
+      >
+        <span className="relative block w-full overflow-hidden bg-muted" style={{ height: TILE_H }}>
+          {s.thumbnail_url ? <GalleryImage src={s.thumbnail_url} alt="" sizes="160px" className="object-cover" /> : null}
+        </span>
+        <span className="block truncate px-2 pb-1.5 pt-1.5 font-display text-[14.5px] font-bold leading-tight tracking-[-0.01em]">{s.name}</span>
+        {familyLabel ? (
+          <span className="absolute -top-2.5 left-2 bg-[var(--yuzu)] px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-black">
+            {familyLabel}
+          </span>
+        ) : null}
+      </button>
+    </div>
   );
 });
 
 export function AtlasMap({ styles, families, unplaced, sample }: { styles: AtlasStyle[]; families: Family[]; unplaced: number; sample: boolean }) {
   const reduced = usePrefersReducedMotion();
-  const { viewportRef, camera, animate, dragging, draggingRef, handlers, zoomStep, fit, centerOn, guardWheel } = usePanZoom({ x: 0, y: 0, k: 0.2 }, 2.4, 0.08);
+  const { viewportRef, camera, animate, dragging, draggingRef, handlers, zoomStep, fit, centerOn, glide, guardWheel } = usePanZoom({ x: 0, y: 0, k: 0.2 }, 2.4, 0.08);
   const [kind, setKind] = useState<"" | "language" | "art_style">("");
   const [focusId, setFocusId] = useState<string | null>(null);
   const framed = useRef(false);
@@ -58,6 +75,57 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
     }
     return best;
   }, [focus, styles]);
+
+  // Who is drawn first when there is not room for everyone: each family's lead
+  // (the member nearest its centre, biggest families first), then the styles
+  // that stand alone, then family members by how central they are.
+  const order = useMemo(() => {
+    const centre = new Map(families.map((f) => [f.id, f]));
+    const size = new Map(families.map((f) => [f.id, f.count]));
+    const dist = (s: AtlasStyle) => { const c = s.family ? centre.get(s.family) : null; return c ? Math.hypot(s.x - c.x, s.y - c.y) : 0; };
+    const byFamily = new Map<string, AtlasStyle[]>();
+    const alone: AtlasStyle[] = [];
+    for (const s of styles) {
+      if (s.family && centre.has(s.family)) byFamily.set(s.family, [...(byFamily.get(s.family) ?? []), s]);
+      else alone.push(s);
+    }
+    const leads: AtlasStyle[] = [];
+    const rest: { s: AtlasStyle; rank: number }[] = [];
+    for (const [id, members] of [...byFamily.entries()].sort((a, b) => (size.get(b[0]) ?? 0) - (size.get(a[0]) ?? 0))) {
+      // The family is named after one of its members; when that member is in
+      // view it leads, so the label and the card agree.
+      const named = centre.get(id)?.label;
+      members.sort((a, b) => Number(b.name === named) - Number(a.name === named) || dist(a) - dist(b));
+      leads.push(members[0]);
+      members.slice(1).forEach((s, i) => rest.push({ s, rank: i }));
+    }
+    rest.sort((a, b) => a.rank - b.rank);
+    return { list: [...leads, ...alone, ...rest.map((r) => r.s)], leads: new Set(leads.map((s) => s.id)) };
+  }, [styles, families]);
+
+  // Zoom in steps: the set is recomputed when the zoom crosses a step, not on
+  // every frame of a pinch.
+  const step = Math.round(Math.log(Math.max(camera.k, 0.01)) / Math.log(1.18));
+  const shown = useMemo(() => {
+    const k = 1.18 ** step;
+    const f = Math.max(1, CARD_PX / (TILE_W * k));
+    const w = (TILE_W * f + CARD_GAP / k) / PAPER;
+    const h = ((TILE_H + 30) * f + CARD_GAP / k) / PAPER;
+    const placed: AtlasStyle[] = [];
+    const ids = new Set<string>();
+    // A style with no room is tucked behind the card that is in its way, and
+    // that card says how many it is holding.
+    const tucked = new Map<string, number>();
+    // The focused style and its neighbours are always on the paper.
+    const first = lit ? styles.filter((s) => lit.has(s.id)) : [];
+    for (const s of [...first, ...order.list]) {
+      if (ids.has(s.id) || (kind && s.kind !== kind)) continue;
+      const inWay = first.includes(s) ? undefined : placed.find((o) => Math.abs(o.x - s.x) < w && Math.abs(o.y - s.y) < h);
+      if (!inWay) { placed.push(s); ids.add(s.id); }
+      else tucked.set(inWay.id, (tucked.get(inWay.id) ?? 0) + 1);
+    }
+    return { placed, ids, tucked };
+  }, [step, order, styles, kind, lit]);
 
   const fitAll = useCallback(() => {
     fit(styles.map((s) => ({ x: s.x * PAPER - TILE_W / 2, y: s.y * PAPER - TILE_H / 2, w: TILE_W, h: TILE_H })), 48, 1);
@@ -83,8 +151,23 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
 
   const zoomNow = useRef(camera.k);
   useEffect(() => { zoomNow.current = camera.k; }, [camera.k]);
+  const glideTo = useCallback((wx: number, wy: number, k: number) => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const kk = Math.min(k, 2.4);
+    glide({ k: kk, x: el.clientWidth / 2 - wx * kk, y: el.clientHeight / 2 - wy * kk });
+  }, [viewportRef, glide]);
+  const tuckedRef = useRef(shown.tucked);
+  useEffect(() => { tuckedRef.current = shown.tucked; }, [shown]);
   const open = useCallback((s: AtlasStyle) => {
     if (draggingRef.current) return;
+    // A card with others tucked behind it opens them first, as a cluster does
+    // on a map; once it stands alone, a press opens the style itself.
+    if ((tuckedRef.current.get(s.id) ?? 0) > 0 && zoomNow.current < 2.3) {
+      // Twice as close, on the card pressed: always progress, however wide the family lies.
+      glideTo(s.x * PAPER, s.y * PAPER, zoomNow.current * 2);
+      return;
+    }
     setFocusId(s.id);
     const el = viewportRef.current;
     const wide = el ? el.clientWidth >= 640 : true;
@@ -92,10 +175,9 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
     // a narrow one; the focused style is centred in what is left.
     const screen = el ? (wide ? { x: (el.clientWidth - 364) / 2, y: el.clientHeight / 2 } : { x: el.clientWidth / 2, y: el.clientHeight * 0.3 }) : undefined;
     centerOn(s.x * PAPER, s.y * PAPER, Math.max(zoomNow.current, wide ? 0.9 : 0.7), screen);
-  }, [draggingRef, centerOn, viewportRef]);
+  }, [draggingRef, centerOn, viewportRef, order, glideTo]);
 
-  // Far out, a tile is a swatch of its picture; close in, it carries its name.
-  const named = camera.k >= 0.55;
+  const factor = Math.max(1, CARD_PX / (TILE_W * camera.k));
 
   if (styles.length === 0) {
     return (
@@ -121,7 +203,7 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
       >
         <div
           className="absolute left-0 top-0 h-0 w-0"
-          style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.k})`, transformOrigin: "0 0", transition: animate && !reduced ? "transform 520ms cubic-bezier(0.22, 1, 0.36, 1)" : undefined, willChange: "transform" }}
+          style={{ ["--f" as string]: factor, transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.k})`, transformOrigin: "0 0", transition: animate && !reduced ? "transform 520ms cubic-bezier(0.22, 1, 0.36, 1)" : undefined, willChange: "transform" }}
         >
           {families.map((f, i) => (
             <span key={`wash-${f.id}`} aria-hidden className="halftone-wash pointer-events-none absolute" style={{ left: f.x * PAPER - 300, top: f.y * PAPER - 230, width: 600, height: 460, ["--wash-ink" as string]: FAMILY_INKS[i % 3], opacity: lit ? 0.08 : 0.26 }} />
@@ -135,18 +217,17 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
                 return <span key={`line-${n.id}`} aria-hidden className="pointer-events-none absolute origin-left bg-[var(--ramune)]" style={{ left: x1, top: y1, width: len, height: 2 / camera.k, opacity: 0.25 + n.similarity * 0.6, transform: `rotate(${Math.atan2(y2 - y1, x2 - x1)}rad)` }} />;
               })
             : null}
-          {styles.map((s) => (
-            <Tile key={s.id} style={s} dim={Boolean((kind && s.kind !== kind) || (lit && !lit.has(s.id)))} rank={focusId === s.id ? 3 : lit?.has(s.id) ? 2 : 1} pressed={focusId === s.id} named={named} still={reduced} onOpen={open} />
-          ))}
-          {families.map((f) => (
-            <span key={`label-${f.id}`} className="pointer-events-none absolute z-[4] -translate-x-1/2 whitespace-nowrap bg-background px-2 py-1 font-mono font-bold uppercase tracking-[0.16em] text-foreground shadow-[var(--shadow-card)]" style={{ left: f.x * PAPER, top: f.y * PAPER - TILE_H - 8, fontSize: Math.min(15 / camera.k, 64), opacity: lit ? 0.2 : named ? 0.55 : 1 }}>
-              {f.label} · {f.count}
-            </span>
-          ))}
+          {shown.placed.map((s, i) => {
+            const tucked = shown.tucked.get(s.id) ?? 0;
+            const fam = tucked > 0 && order.leads.has(s.id) ? families.find((f) => f.id === s.family) : null;
+            return (
+              <Tile key={s.id} style={s} dim={Boolean(lit && !lit.has(s.id))} rank={focusId === s.id ? 4 : lit?.has(s.id) ? 3 : order.leads.has(s.id) ? 2 : 1} pressed={focusId === s.id} hidden={tucked} familyLabel={tucked > 0 ? `${fam ? `${fam.label} ` : ""}+${tucked}` : null} still={reduced} delay={Math.min(i * 6, 240)} onOpen={open} />
+            );
+          })}
         </div>
       </div>
 
-      <div className={`pointer-events-none absolute left-4 top-6 z-10 max-w-md sm:left-8 sm:top-8 ${focus ? "max-sm:hidden" : ""}`}>
+      <div className={`pointer-events-none absolute left-0 top-0 z-10 max-w-md bg-background/90 px-4 pb-3 pt-6 sm:left-8 sm:top-8 sm:bg-transparent sm:p-0 ${focus ? "max-sm:hidden" : ""}`}>
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Atlas</p>
         <h1 className="mt-1 font-display text-[28px] font-bold leading-tight tracking-[-0.03em] sm:text-[36px]">The <Marker color="ramune">atlas</Marker></h1>
         <div role="group" aria-label="Show" className="pointer-events-auto mt-4 flex flex-wrap gap-2">
@@ -154,6 +235,10 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
             <button key={value} type="button" aria-pressed={kind === value} onClick={() => setKind(value)} className={`sticker-card cursor-pointer px-3 py-1.5 text-[14.5px] ${kind === value ? "bg-[var(--yuzu)] text-black" : ""}`}>{label}</button>
           ))}
         </div>
+        <p className="pointer-events-auto mt-3 text-[14.5px] text-muted-foreground sm:hidden">
+          {styles.length} styles · zoom in for more{sample ? " · " : ""}
+          {sample ? <Link href="/signin" className="ink-underline text-foreground">sign in for all</Link> : null}
+        </p>
       </div>
 
       <div className="absolute bottom-6 left-4 z-10 flex flex-col gap-2 sm:left-8">
@@ -162,7 +247,7 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
         <button type="button" onClick={() => { setFocusId(null); fitAll(); }} className="sticker-card cursor-pointer px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.16em]">Fit</button>
       </div>
 
-      <p className={`pointer-events-none absolute bottom-6 right-4 z-10 max-w-[60%] text-right text-[14.5px] leading-snug text-muted-foreground sm:right-8 sm:max-w-xs ${focus ? "max-sm:hidden" : ""}`}>
+      <p className={`pointer-events-none absolute bottom-6 right-4 z-10 max-w-[60%] bg-background/90 max-sm:hidden px-3 py-2 text-right text-[14.5px] leading-snug text-muted-foreground sm:right-8 sm:max-w-xs ${focus ? "max-sm:hidden" : ""}`}>
         {styles.length} styles in {families.length} families. Near means alike; distances are a reading, not a measure.
         {unplaced > 0 ? ` ${unplaced} newer styles are not placed yet.` : ""}
         {sample ? " This is the visitor shelf — " : ""}
