@@ -41,8 +41,8 @@ export async function askJev(state, questions, { timeoutMs = 20_000, retries = 3
       continue;
     }
     if (res.ok) {
-      const json = await res.json();
-      if (!json || typeof json.answers !== "object") {
+      const json = await res.json().catch(() => null);
+      if (!json || typeof json.answers !== "object" || json.answers === null) {
         throw new JevUnavailableError("Jev returned no answers");
       }
       return {

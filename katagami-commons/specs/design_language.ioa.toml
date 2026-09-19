@@ -224,6 +224,15 @@ name = "style_dna_version"
 type = "string"
 initial = ""
 
+# The traits this style answers strongly (>= 0.6), as space-delimited question
+# ids with a leading and trailing space (" dark_ground quiet "), so the gallery
+# can $filter one with contains(style_traits,' quiet ') — the kernel filters
+# flat scalars only, never inside the style_dna JSON.
+[[state]]
+name = "style_traits"
+type = "string"
+initial = ""
+
 # ADR-0155: declared vector access path. The kernel maintains an exact-scan kNN
 # index over taste_vector, partitioned by taste_vector_model (only same-model
 # vectors ever compare), and serves it through Temper.Nearest(decl='taste',...).
@@ -430,8 +439,8 @@ hint = "Attach the semantic taste embedding computed from the language's canonic
 name = "AttachStyleDna"
 kind = "internal"
 from = ["Draft", "UnderReview", "Published"]
-params = ["style_dna", "style_dna_version"]
-hint = "Attach the style DNA: a JSON object of descriptive question id -> probability (0..1) answered by a System One model over this entity's canonical description. style_dna_version identifies the question set and model (e.g. dna-v1/jev-1.13.0) so mixed sets are never compared. Descriptive only — never a quality judgment. Written by the backfill job."
+params = ["style_dna", "style_dna_version", "style_traits"]
+hint = "Attach the style DNA: a JSON object of descriptive question id -> probability (0..1) answered by a System One model over this entity's canonical description. style_dna_version identifies the question set and model (e.g. dna-v1/jev-1.13.0) so mixed sets are never compared. style_traits is the flat, filterable list of strongly-answered question ids. Descriptive only — never a quality judgment. Written by the backfill job."
 
 [[action]]
 name = "AttachComputedFacets"

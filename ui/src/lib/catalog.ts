@@ -1,7 +1,7 @@
 import "server-only";
 import { isShownToVisitorsRecord as isShownToVisitors } from "./featured.mjs";
 import { rowMatchesIdOrSlug } from "./catalog-membership.mjs";
-import { askJev, score } from "./jev.mjs";
+import { askJev, JevUnavailableError, score } from "./jev.mjs";
 import {
   buildStyleDoc,
   centroid,
@@ -358,6 +358,9 @@ const ASK_MAX_QUERY = 400;
 const ASK_SHORTLIST = 24;
 const ASK_OUTSIDERS = 12;
 const FIT_LEVELS = ["wrong for it", "could work", "strong fit"];
+// On a request path a slow Jev is a failed Jev: two calls must finish well
+// inside the route's budget, so each gets one short try and one retry.
+const ASK_JEV = { timeoutMs: 6_000, retries: 1 };
 
 function askCard(kind: Kind, r: Row, dna: StyleDna) {
   const f = r.fields ?? {};
@@ -381,12 +384,12 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   );
   const unread = rowSets.reduce((n, rows) => n + rows.length, 0) - pool.length;
   if (pool.length === 0) {
-    return { query, tier, results: [], strange: [], wants: [], avoids: [], unread, note: "No style in view has been described yet." };
+    return { query, tier, model: null, considered: 0, unread, wants: [], avoids: [], results: [], strange: [], note: "No style in view has been described yet." };
   }
 
-  const wantRes = await askJev(`Product: ${query}`, wantQuestions());
+  const wantRes = await askJev(`Product: ${query}`, wantQuestions(), ASK_JEV);
   const want = dnaFromAnswers(wantRes.answers);
-  if (!want) throw new Error("Jev left a question about the product unanswered");
+  if (!want) throw new JevUnavailableError("Jev left a question about the product unanswered");
 
   const crowd = centroid(pool.map((p) => p.dna));
   const ranked = pool
@@ -409,11 +412,17 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
         score(`How well would this style serve the product?\n${buildStyleDoc(p.kind, p.row.fields).slice(0, 700)}`, FIT_LEVELS),
       ]),
     ),
+    ASK_JEV,
   );
   const scored = judged.map((p, i) => {
-    const ans = fitRes.answers[`s${i}`];
+    const fit = fitRes.answers[`s${i}`]?.score;
+    // An unscored style must not pass as "a stretch": without every score the
+    // ranking is the DNA match wearing the fit's label.
+    if (typeof fit !== "number" || !Number.isFinite(fit)) {
+      throw new JevUnavailableError("Jev left a style's fit unscored");
+    }
     // Jev's score is the expected level index (0..2); normalise to 0..1.
-    return { ...p, fit: typeof ans?.score === "number" ? ans.score / (FIT_LEVELS.length - 1) : 0 };
+    return { ...p, fit: Math.min(1, Math.max(0, fit / (FIT_LEVELS.length - 1))) };
   });
 
   // One card per name: the library holds a few same-named siblings.

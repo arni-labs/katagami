@@ -93,9 +93,9 @@ export function AskLibrary() {
       const params = new URLSearchParams({ q, k: "8" });
       if (nextKind) params.set("kind", nextKind);
       const res = await fetch(`/api/ask?${params}`);
-      const body = await res.json();
+      const body = await res.json().catch(() => null);
       if (turn !== latest.current) return;
-      if (!res.ok) throw new Error(body?.error ?? "Asking failed.");
+      if (!res.ok || !body) throw new Error(body?.error ?? "Asking failed. Try again in a moment.");
       setAnswer(body as Answer);
       setState("idle");
     } catch (err) {

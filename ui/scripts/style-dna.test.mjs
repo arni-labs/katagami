@@ -12,6 +12,7 @@ import {
   storedDna,
   styleQuestions,
   topTraits,
+  traitsField,
   wantQuestions,
 } from "../src/lib/style-dna.mjs";
 
@@ -75,4 +76,9 @@ test("the document tolerates JSON strings, objects, lists and missing fields", (
   assert.match(doc, /pinned by the door/);
   assert.match(doc, /palette: primary #C8442A/);
   assert.equal(buildStyleDoc("art_style", { name: "Overprint", medium: "print" }), "art style: Overprint\nmedium: print");
+});
+
+test("the filterable traits field wraps every id in spaces, so contains(' quiet ') cannot match a longer id", () => {
+  assert.equal(traitsField({ ...flat(0.1), quiet: 0.6, flat: 0.9 }), " quiet flat ");
+  assert.equal(traitsField(flat(0.1)), "");
 });

@@ -12,3 +12,5 @@ export function matchScore(want: StyleDna, dna: StyleDna): number;
 export function centroid(dnas: StyleDna[]): StyleDna;
 export function oddness(dna: StyleDna, crowd: StyleDna): number;
 export function topTraits(dna: StyleDna, n?: number): { id: string; label: string; value: number }[];
+export const TRAIT_AT: number;
+export function traitsField(dna: StyleDna): string;

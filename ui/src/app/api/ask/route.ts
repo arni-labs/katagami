@@ -18,11 +18,33 @@ export const maxDuration = 30;
  *   ?k=<1..20>                    optional — how many results (default 8)
  */
 
-// The same sentence asked again within ten minutes is answered from memory:
-// an answer costs two model calls, and a refresh should not pay twice.
+// An answer costs two model calls, so the route spends them once: the same
+// sentence (case, spacing and end punctuation aside) within ten minutes is
+// answered from memory, a second request for a sentence already being answered
+// waits for the first, and one address may only start so many new answers a
+// minute. All of it is per server instance — a floor under abuse, not a wall.
 const recent = new Map<string, { at: number; body: unknown }>();
+const inFlight = new Map<string, Promise<Awaited<ReturnType<typeof askLibrary>>>>();
+const starts = new Map<string, number[]>();
 const RECENT_MS = 10 * 60_000;
 const RECENT_MAX = 500;
+const WINDOW_MS = 60_000;
+const STARTS_PER_WINDOW = { sample: 6, full: 30 } as const;
+
+const normalise = (q: string) => q.toLowerCase().replace(/\s+/g, " ").replace(/[\s.!?…]+$/u, "");
+
+function mayStart(who: string, tier: "sample" | "full"): boolean {
+  const now = Date.now();
+  const mine = (starts.get(who) ?? []).filter((at) => now - at < WINDOW_MS);
+  if (mine.length >= STARTS_PER_WINDOW[tier]) {
+    starts.set(who, mine);
+    return false;
+  }
+  mine.push(now);
+  if (starts.size >= 5_000) starts.clear();
+  starts.set(who, mine);
+  return true;
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -45,7 +67,7 @@ export async function GET(request: Request) {
   const limit = Number.isFinite(kRaw) ? kRaw : undefined;
 
   const tier = (await hasFullGalleryAccess()) ? "full" : "sample";
-  const key = JSON.stringify([tier, kind ?? "", limit ?? "", query.toLowerCase()]);
+  const key = JSON.stringify([tier, kind ?? "", limit ?? "", normalise(query)]);
   const hit = recent.get(key);
   if (hit && Date.now() - hit.at < RECENT_MS) {
     return NextResponse.json(hit.body, { headers: { "Cache-Control": "no-store" } });
@@ -53,19 +75,31 @@ export async function GET(request: Request) {
 
   const started = Date.now();
   try {
-    const body = await askLibrary(tier, { query, kind, limit });
+    let pending = inFlight.get(key);
+    if (!pending) {
+      const who = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+      if (!mayStart(who, tier)) {
+        return NextResponse.json(
+          { error: "that is a lot of questions in a minute — give it a moment and ask again" },
+          { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
+        );
+      }
+      pending = askLibrary(tier, { query, kind, limit }).finally(() => inFlight.delete(key));
+      inFlight.set(key, pending);
+    }
+    const body = await pending;
     if (recent.size >= RECENT_MAX) recent.delete(recent.keys().next().value as string);
     recent.set(key, { at: Date.now(), body });
     trackServerEvent("ask_library", { tier, kind: kind ?? "all", results: body.results.length, duration_ms: Date.now() - started });
     return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {
-    trackServerEvent("ask_library_failed", { tier, reason: err instanceof JevUnavailableError ? "jev" : "other" }, "error");
-    if (err instanceof JevUnavailableError) {
-      return NextResponse.json(
-        { error: "asking is temporarily unavailable — try again shortly" },
-        { status: 503, headers: { "Cache-Control": "no-store" } },
-      );
-    }
-    throw err;
+    // Every failure answers in JSON the page can show. Only a Jev fault is a
+    // 503 "try again"; anything else is ours and is logged as such.
+    const jev = err instanceof JevUnavailableError;
+    trackServerEvent("ask_library_failed", { tier, reason: jev ? "jev" : "other", message: String(err).slice(0, 200) }, "error");
+    return NextResponse.json(
+      { error: jev ? "asking is temporarily unavailable — try again shortly" : "asking failed on our side — it has been logged" },
+      { status: jev ? 503 : 500, headers: { "Cache-Control": "no-store" } },
+    );
   }
 }

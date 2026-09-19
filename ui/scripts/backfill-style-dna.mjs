@@ -3,11 +3,13 @@
 // time — the whole library is a few minutes and a few cents, so there is no
 // concurrency to manage. Idempotent: rows already answered with the current
 // question set are skipped unless --all. DRY-RUN by default; pass --apply.
+// --any-status drops the Published filter, for a local stack whose seed stops
+// at Draft.
 //
 // Env: TEMPER_API_URL, TEMPER_API_KEY, TEMPER_TENANT (default "default"),
 //      TYPESAFE_API_KEY.
 import { askJev } from "../src/lib/jev.mjs";
-import { buildStyleDoc, dnaFromAnswers, dnaVersion, storedDna, styleQuestions } from "../src/lib/style-dna.mjs";
+import { buildStyleDoc, dnaFromAnswers, dnaVersion, storedDna, styleQuestions, traitsField } from "../src/lib/style-dna.mjs";
 
 const API = requiredEnv("TEMPER_API_URL").replace(/\/+$/, "");
 const KEY = requiredEnv("TEMPER_API_KEY");
@@ -15,6 +17,7 @@ requiredEnv("TYPESAFE_API_KEY");
 const TENANT = process.env.TEMPER_TENANT || "default";
 const APPLY = process.argv.includes("--apply");
 const ALL = process.argv.includes("--all");
+const ANY_STATUS = process.argv.includes("--any-status");
 // Namespace fallback, mirroring backfill-facets.mjs.
 const NAMESPACES = ["Temper", "KatagamiCommons", "Katagami.Curation", "Katagami"];
 const H = { "X-Tenant-Id": TENANT, Authorization: `Bearer ${KEY}` };
@@ -66,8 +69,9 @@ async function main() {
   let failed = 0;
   let tokens = 0;
   for (const [kind, set] of SETS) {
-    const rows = await collectAll(`${set}?$filter=${encodeURIComponent("Status eq 'Published'")}&$top=500`);
-    console.log(`${set}: ${rows.length} published`);
+    const filter = ANY_STATUS ? "" : `$filter=${encodeURIComponent("Status eq 'Published'")}&`;
+    const rows = await collectAll(`${set}?${filter}$top=500`);
+    console.log(`${set}: ${rows.length} ${ANY_STATUS ? "rows" : "published"}`);
     for (const row of rows) {
       const fields = row.fields ?? {};
       if (!ALL && storedDna(fields)) {
@@ -80,7 +84,11 @@ async function main() {
         if (!dna) throw new Error("Jev left a question unanswered");
         tokens += inputTokens;
         if (APPLY) {
-          await attach(set, row.entity_id, { style_dna: JSON.stringify(dna), style_dna_version: dnaVersion(model) });
+          await attach(set, row.entity_id, {
+            style_dna: JSON.stringify(dna),
+            style_dna_version: dnaVersion(model),
+            style_traits: traitsField(dna),
+          });
         }
         asked++;
         if (asked % 25 === 0) console.log(`  … ${asked} asked`);

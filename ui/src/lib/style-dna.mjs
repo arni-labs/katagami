@@ -408,6 +408,15 @@ export function matchScore(want, dna) {
   return weight > 0 ? sum / weight : 0;
 }
 
+/** Answers at or above this are a trait of the style: shown on its card, filterable. */
+export const TRAIT_AT = 0.6;
+
+/** The flat, filterable form stored beside the DNA: " dark_ground quiet ". */
+export function traitsField(dna) {
+  const ids = IDS.filter((id) => dna[id] >= TRAIT_AT);
+  return ids.length > 0 ? ` ${ids.join(" ")} ` : "";
+}
+
 /** Mean DNA of a set of styles: the crowd. */
 export function centroid(dnas) {
   const c = Object.fromEntries(IDS.map((id) => [id, 0]));
@@ -422,7 +431,7 @@ export function oddness(dna, crowd) {
 /** The few traits a style answers most strongly, for a card: [{id,label,value}]. */
 export function topTraits(dna, n = 5) {
   return STYLE_DNA_QUESTIONS.map((q) => ({ id: q.id, label: q.label, value: dna[q.id] }))
-    .filter((t) => t.value >= 0.6)
+    .filter((t) => t.value >= TRAIT_AT)
     .sort((a, b) => b.value - a.value)
     .slice(0, n);
 }
