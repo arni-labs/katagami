@@ -128,6 +128,10 @@ export function AskLibrary() {
       setState("idle");
     } catch (err) {
       if (turn !== latest.current) return;
+      // The styles on screen belong to the last question that worked; this
+      // question's directions must not sit under them.
+      setConcepts(null);
+      setAnswer((shown) => (shown?.query === q ? shown : null));
       setState("error");
       setError(err instanceof Error ? err.message : "Asking failed.");
     }

@@ -32,13 +32,17 @@ const Tile = memo(function Tile({ style: s, dim, rank, pressed, hidden, familyLa
       className="absolute"
       style={{ left: s.x * PAPER - TILE_W / 2, top: s.y * PAPER - TILE_H / 2, width: TILE_W, zIndex: rank, transform: "scale(var(--f))", transformOrigin: "50% 42%" }}
     >
+      {/* The arrival animation lives on its own wrapper: a finished animation
+          holds its last frame over inline styles, and on the button it pinned
+          opacity at 1 (no dimming) and transform at none (no hover lift). */}
+      <div className={still ? "" : "atlas-pop"} style={{ animationDelay: still ? undefined : `${delay}ms` }}>
       <button
         type="button"
         onClick={() => onOpen(s)}
-        aria-label={`${s.name}, ${s.kind === "language" ? "design language" : "art style"}${hidden > 0 ? `, and ${hidden} more like it — zoom in` : ""}`}
-        aria-pressed={pressed}
-        className={`atlas-card sticker-card relative block w-full cursor-pointer p-0 text-left ${still ? "" : "atlas-pop"}`}
-        style={{ opacity: dim ? 0.18 : 1, animationDelay: still ? undefined : `${delay}ms`, boxShadow: hidden > 0 ? "5px 5px 0 -1px var(--card), 5px 5px 0 0 color-mix(in srgb, var(--foreground) 16%, transparent), 10px 10px 0 -1px var(--card), 10px 10px 0 0 color-mix(in srgb, var(--foreground) 10%, transparent), var(--shadow-card)" : undefined }}
+        aria-label={`${s.name}, ${s.kind === "language" ? "design language" : "art style"}${hidden > 0 ? `, with ${hidden} more behind it` : ""}`}
+        aria-pressed={hidden > 0 ? undefined : pressed}
+        className="atlas-card sticker-card relative block w-full cursor-pointer p-0 text-left"
+        style={{ opacity: dim ? 0.18 : 1, boxShadow: hidden > 0 ? "6px 6px 0 0 color-mix(in srgb, var(--foreground) 7%, var(--card)), 12px 12px 0 0 color-mix(in srgb, var(--foreground) 4%, var(--card)), var(--shadow-card)" : undefined }}
       >
         <span className="relative block w-full overflow-hidden bg-muted" style={{ height: TILE_H }}>
           {s.thumbnail_url ? <GalleryImage src={s.thumbnail_url} alt="" sizes="160px" className="object-cover" /> : null}
@@ -50,6 +54,7 @@ const Tile = memo(function Tile({ style: s, dim, rank, pressed, hidden, familyLa
           </span>
         ) : null}
       </button>
+      </div>
     </div>
   );
 });
@@ -157,13 +162,16 @@ export function AtlasMap({ styles, families, unplaced, sample }: { styles: Atlas
     const kk = Math.min(k, 2.4);
     glide({ k: kk, x: el.clientWidth / 2 - wx * kk, y: el.clientHeight / 2 - wy * kk });
   }, [viewportRef, glide]);
+  // A neighbour of the focused style was asked for by name: it opens, stack or not.
+  const litRef = useRef(lit);
+  useEffect(() => { litRef.current = lit; }, [lit]);
   const tuckedRef = useRef(shown.tucked);
   useEffect(() => { tuckedRef.current = shown.tucked; }, [shown]);
   const open = useCallback((s: AtlasStyle) => {
     if (draggingRef.current) return;
     // A card with others tucked behind it opens them first, as a cluster does
     // on a map; once it stands alone, a press opens the style itself.
-    if ((tuckedRef.current.get(s.id) ?? 0) > 0 && zoomNow.current < 2.3) {
+    if ((tuckedRef.current.get(s.id) ?? 0) > 0 && zoomNow.current < 2.3 && !litRef.current?.has(s.id)) {
       // Twice as close, on the card pressed: always progress, however wide the family lies.
       glideTo(s.x * PAPER, s.y * PAPER, zoomNow.current * 2);
       return;

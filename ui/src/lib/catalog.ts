@@ -779,7 +779,9 @@ export async function askConcepts(queryIn: string, limit = 6) {
   const batches: Concept[][] = [];
   for (let at = 0; at < concepts.length; at += CONCEPT_BATCH) batches.push(concepts.slice(at, at + CONCEPT_BATCH));
   const judgeStarted = Date.now();
-  const answered = await Promise.all(
+  // One slow batch must not cost the whole answer: whatever came back is
+  // ranked, and only a fan-out that returned nothing at all is a failure.
+  const settled = await Promise.allSettled(
     batches.map(async (batch) => {
       const res = await askJev(
         `Product: ${query}`,
@@ -788,17 +790,18 @@ export async function askConcepts(queryIn: string, limit = 6) {
         ),
         ASK_JEV,
       );
-      return batch.map((c, i) => {
+      return batch.flatMap((c, i) => {
         const n = res.answers[`c${i}`]?.noul;
-        if (typeof n !== "number" || !Number.isFinite(n)) throw new JevUnavailableError("Jev left a direction unjudged");
-        return { ...c, relevance: Math.round(n * 100) / 100 };
+        return typeof n === "number" && Number.isFinite(n) ? [{ ...c, relevance: Math.round(n * 100) / 100 }] : [];
       });
     }),
   );
+  const answered = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+  if (answered.length === 0) throw new JevUnavailableError("Jev answered none of the encyclopedia batches");
   const ranked = answered.flat().filter((c) => c.relevance >= CONCEPT_FLOOR).sort((x, y) => y.relevance - x.relevance);
   return {
     query,
-    considered: concepts.length,
+    considered: answered.reduce((n, batch) => n + batch.length, 0),
     timings_ms: { read: readMs, judge: Date.now() - judgeStarted },
     // Two lists, because they are two different offers: a direction with work
     // to look at now, and a direction nobody has made anything for yet.

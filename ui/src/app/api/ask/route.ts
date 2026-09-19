@@ -124,17 +124,27 @@ async function answer(request: Request, ask: Ask) {
 // The encyclopedia's answer to the same sentence. Cells are not tiered — there is
 // no shelf of them — so one stored answer serves every caller.
 const recentConcepts = new Map<string, { at: number; body: unknown }>();
+const conceptsInFlight = new Map<string, ReturnType<typeof askConcepts>>();
 
 async function concepts(request: Request, query: string) {
   const key = normalise(query);
   const hit = recentConcepts.get(key);
   if (hit && Date.now() - hit.at < RECENT_MS) return NextResponse.json(hit.body, { headers: { "Cache-Control": "no-store" } });
   const tier = (await hasFullGalleryAccess()) ? "full" : "sample";
-  if (!mayStart("ask-concepts", callerOf(request), tier)) {
-    return NextResponse.json({ error: TOO_MANY }, { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } });
-  }
   try {
-    const body = await askConcepts(query);
+    // The fan-out is ten model calls: a second request for a sentence already
+    // being answered waits for the first instead of starting its own.
+    let pending = conceptsInFlight.get(key);
+    if (!pending) {
+      if (!mayStart("ask-concepts", callerOf(request), tier)) {
+        return NextResponse.json({ error: TOO_MANY }, { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } });
+      }
+      const mine = askConcepts(query);
+      pending = mine;
+      conceptsInFlight.set(key, mine);
+      void mine.finally(() => conceptsInFlight.delete(key)).catch(() => undefined);
+    }
+    const body = await pending;
     if (recentConcepts.size >= RECENT_MAX) recentConcepts.delete(recentConcepts.keys().next().value as string);
     recentConcepts.set(key, { at: Date.now(), body });
     return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
