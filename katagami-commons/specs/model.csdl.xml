@@ -86,6 +86,12 @@
         <Property Name="StyleDna" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="StyleDnaVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="StyleTraits" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Atlas place: where the style sits on the library atlas (see AttachAtlasPlace). -->
+        <Property Name="AtlasX" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="AtlasY" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="AtlasFamily" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="AtlasNeighbors" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="AtlasVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Precomputed gallery facets: flat scalars for server-side filtering +
              keyset pagination. The kernel can only $filter stored scalars (not
              JSON-derived values, and only case-sensitively), so the categorical
@@ -343,6 +349,12 @@
         <Property Name="StyleDna" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="StyleDnaVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="StyleTraits" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Atlas place: where the style sits on the library atlas (see AttachAtlasPlace). -->
+        <Property Name="AtlasX" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="AtlasY" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="AtlasFamily" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="AtlasNeighbors" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="AtlasVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Quality signals -->
         <Property Name="QualityScore" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="QualityReviewPassed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />

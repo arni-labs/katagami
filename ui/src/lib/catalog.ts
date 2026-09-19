@@ -173,9 +173,26 @@ const PUBLISHED = "Status eq 'Published'";
 const byEntityId = (a: Row, b: Row) =>
   a.entity_id < b.entity_id ? -1 : a.entity_id > b.entity_id ? 1 : 0;
 
+// Development only: lay computed fields (style DNA, atlas places) over the rows
+// read from the backend, from a JSON file of { entity_id: { field: value } }.
+// A backfill's output can then be seen in the real pages, on real content,
+// before anything is written to the backend it was computed for. Never active
+// in a production build, whatever the environment says.
+let devFields: Record<string, Record<string, unknown>> | null | undefined;
+async function withDevFields(rows: Row[]): Promise<Row[]> {
+  const file = process.env.KATAGAMI_DEV_FIELDS_FILE;
+  if (process.env.NODE_ENV !== "development" || !file) return rows;
+  if (devFields === undefined) {
+    const { readFile } = await import("node:fs/promises");
+    devFields = JSON.parse(await readFile(file, "utf8")) as Record<string, Record<string, unknown>>;
+  }
+  const extra = devFields;
+  return extra ? rows.map((r) => (extra[r.entity_id] ? { ...r, fields: { ...r.fields, ...extra[r.entity_id] } } : r)) : rows;
+}
+
 /** Gate: which published rows may this tier see? */
 async function visibleRows(kind: Kind, tier: Tier): Promise<Row[]> {
-  const rows = (await readAll(SET[kind], PUBLISHED)).filter((r) => str(r.fields?.name));
+  const rows = (await withDevFields(await readAll(SET[kind], PUBLISHED))).filter((r) => str(r.fields?.name));
   if (tier === "full") return rows;
   // The anonymous portion is the owner-curated visitor shelf — the
   // `shown_to_visitors` set — for ALL three kinds, sorted by entity_id so it is
@@ -439,7 +456,7 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   const results = unique.slice(0, limit);
   const shown = new Set(results.map((p) => p.row.entity_id));
   const strange = unique
-    .filter((p) => !shown.has(p.row.entity_id) && p.fit >= 0.5)
+    .filter((p) => !shown.has(p.row.entity_id) && p.fit >= 0.4)
     .sort((x, y) => y.odd - x.odd)
     .slice(0, 3);
 
@@ -588,6 +605,90 @@ export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format
     },
   };
   return { format, tailwind_config: config };
+}
+
+// --- the library atlas ---------------------------------------------------------
+//
+// A map to browse instead of a list. Places come from scripts/library_atlas.py
+// (Jev's pairwise "same visual idea?" over the whole library); this only reads
+// them, through the same gate as everything else. A sample-tier caller gets the
+// shelf's places and nothing that names an off-shelf style: neighbours are cut
+// to the visible set and a family is labelled by a member the caller can see.
+
+export type AtlasStyle = {
+  id: string;
+  kind: "language" | "art_style";
+  name: string;
+  href: string;
+  thumbnail_url: string | null;
+  x: number;
+  y: number;
+  family: string | null;
+  neighbors: { id: string; similarity: number }[];
+};
+
+export async function libraryAtlas(tier: Tier) {
+  const kinds = ["language", "art_style"] as const;
+  const rowSets = await Promise.all(kinds.map((k) => visibleRows(k, tier)));
+  const rows = kinds.flatMap((kind, i) => rowSets[i].map((row) => ({ kind, row })));
+
+  // One run's places only: the version most rows carry.
+  const versions = new Map<string, number>();
+  for (const { row } of rows) {
+    const v = str(row.fields?.atlas_version);
+    if (v) versions.set(v, (versions.get(v) ?? 0) + 1);
+  }
+  const version = [...versions.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const placed = rows.filter(({ row }) => {
+    const f = row.fields ?? {};
+    return version !== null && str(f.atlas_version) === version && Number.isFinite(Number.parseFloat(str(f.atlas_x))) && Number.isFinite(Number.parseFloat(str(f.atlas_y)));
+  });
+  const visible = new Set(placed.map(({ row }) => row.entity_id));
+
+  const styles: AtlasStyle[] = placed.map(({ kind, row }) => {
+    const f = row.fields ?? {};
+    let neighbors: { id: string; similarity: number }[] = [];
+    try {
+      const parsed: unknown = JSON.parse(str(f.atlas_neighbors) || "[]");
+      if (Array.isArray(parsed)) {
+        neighbors = parsed
+          .filter((n): n is [string, number] => Array.isArray(n) && typeof n[0] === "string" && typeof n[1] === "number")
+          .filter(([id]) => visible.has(id))
+          .map(([id, similarity]) => ({ id, similarity }));
+      }
+    } catch {
+      // a misshapen neighbour list costs that style its neighbours, not the map
+    }
+    return {
+      id: row.entity_id,
+      kind,
+      name: str(f.name),
+      href: `/${PATH[kind]}/${row.entity_id}`,
+      thumbnail_url: str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null,
+      x: Number.parseFloat(str(f.atlas_x)),
+      y: Number.parseFloat(str(f.atlas_y)),
+      family: str(f.atlas_family) || null,
+      neighbors,
+    };
+  });
+
+  const byFamily = new Map<string, AtlasStyle[]>();
+  for (const s of styles) if (s.family) byFamily.set(s.family, [...(byFamily.get(s.family) ?? []), s]);
+  const families = [...byFamily.entries()]
+    .filter(([, members]) => members.length >= 2)
+    .map(([id, members]) => {
+      const named = members.find((m) => m.id === id) ?? [...members].sort((a, b) => a.name.localeCompare(b.name))[0];
+      return {
+        id,
+        label: named.name,
+        count: members.length,
+        x: members.reduce((sum, m) => sum + m.x, 0) / members.length,
+        y: members.reduce((sum, m) => sum + m.y, 0) / members.length,
+      };
+    })
+    .sort((a, b) => b.count - a.count);
+
+  return { tier, version, styles, families, unplaced: rows.length - placed.length };
 }
 
 // --- check a page against a language -----------------------------------------
