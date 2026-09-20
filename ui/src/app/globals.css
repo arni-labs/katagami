@@ -1654,3 +1654,74 @@
 @media (prefers-reduced-motion: reduce) {
   .atlas-leave, .atlas-sheet { animation: none; }
 }
+
+/* Explore previews (the halftone field, the river). A label over the field keeps
+   a halo of paper so the inks beneath never eat it; a lens picture settles into
+   its slot; a river tile grows toward the pointer. */
+.explore-halo {
+  text-shadow: 0 0 4px var(--background), 0 0 8px var(--background), 0 0 2px var(--background);
+}
+.explore-card {
+  animation: atlas-sheet-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.explore-lens-item {
+  animation: explore-lens-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes explore-lens-in {
+  from { opacity: 0; scale: 0.7; }
+}
+.river-tile {
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .explore-card, .explore-lens-item { animation: none; }
+  .river-tile { transition: none; }
+}
+
+/* A stamp: paper with a perforated edge. Two masks, one punching a row of holes
+   centred on the left and right edges, one on the top and bottom, intersected.
+   --w/--h are the stamp's size and --p the hole pitch (set inline so holes meet
+   the corners evenly). */
+.stamp {
+  --r: calc(var(--p) * 0.3);
+  background: var(--stamp-paper, #f7f3ea);
+  -webkit-mask:
+    radial-gradient(circle, #0000 var(--r), #000 calc(var(--r) + 0.5px)) calc(var(--w) / 2) calc(var(--ph) / 2) / var(--w) var(--ph),
+    radial-gradient(circle, #0000 var(--r), #000 calc(var(--r) + 0.5px)) calc(var(--pw) / 2) calc(var(--h) / 2) / var(--pw) var(--h);
+  -webkit-mask-composite: source-in;
+  mask:
+    radial-gradient(circle, #0000 var(--r), #000 calc(var(--r) + 0.5px)) calc(var(--w) / 2) calc(var(--ph) / 2) / var(--w) var(--ph),
+    radial-gradient(circle, #0000 var(--r), #000 calc(var(--r) + 0.5px)) calc(var(--pw) / 2) calc(var(--h) / 2) / var(--pw) var(--h);
+  mask-composite: intersect;
+}
+.dark .stamp { --stamp-paper: #e9e4d8; }
+
+/* The mosaic: a stamp slides to its new place when the sheet is re-sorted, and its
+   inner layer swells toward the pointer. */
+.mosaic-stamp { transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms; }
+.mosaic-swell { transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1); transform-origin: 50% 50%; }
+@media (prefers-reduced-motion: reduce) { .mosaic-stamp, .mosaic-swell { transition: none; } }
+
+/* Books (the stacks, the spines): a spine lifts under the pointer; the spread opens from its gutter. */
+.book-spine { transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms, height 300ms cubic-bezier(0.22, 1, 0.36, 1); }
+.book-spine:hover, .book-spine:focus-visible { transform: translateY(-10px); }
+.book-open { animation: book-open 320ms cubic-bezier(0.22, 1, 0.36, 1) both; transform-origin: 50% 60%; }
+@keyframes book-open { from { opacity: 0; transform: scaleX(0.55) translateY(12px); } }
+@media (prefers-reduced-motion: reduce) { .book-spine { transition: none; } .book-open { animation: none; } }
+.spine-cover { animation: spine-turn 320ms cubic-bezier(0.22, 1, 0.36, 1) both; transform-origin: 0 50%; }
+@keyframes spine-turn { from { opacity: 0.4; transform: perspective(900px) rotateY(-78deg); } }
+@media (prefers-reduced-motion: reduce) { .spine-cover { animation: none; } }
+
+/* Stamp sheets: a stamp lifts a little under the pointer; a torn one lands on the desk. */
+.sheet-stamp { transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms; }
+.sheet-stamp:hover, .sheet-stamp:focus-visible { transform: translateY(-3px) scale(1.06); position: relative; z-index: 2; filter: drop-shadow(0 6px 8px rgba(30, 35, 45, 0.35)); }
+.desk-stamp { animation: desk-drop 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes desk-drop { from { opacity: 0; translate: 0 -26px; scale: 1.18; } }
+@media (prefers-reduced-motion: reduce) { .sheet-stamp { transition: none; } .desk-stamp { animation: none; } }
+
+/* The sentence: a blank is a swipe of highlighter, set a little askew like a real one. */
+.sentence-slot { isolation: isolate; }
+.sentence-slot::before { content: ""; position: absolute; z-index: -1; inset: 0.12em -0.04em 0.02em; background: var(--swipe); transform: rotate(-0.6deg); }
+.sentence-slot:focus-within::before { inset: 0.04em -0.08em -0.04em; }
+.hand-card { transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1); transform-origin: 50% 120%; animation: desk-drop 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) { .hand-card { transition: none; animation: none; } }

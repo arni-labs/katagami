@@ -17,6 +17,7 @@ import {
 } from "./style-dna.mjs";
 import { createHash } from "node:crypto";
 import atlasFamilies from "@/data/atlas-families.json";
+import styleInks from "@/data/style-inks.json";
 import atlasHoles from "@/data/atlas-holes.json";
 import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
@@ -835,6 +836,8 @@ export type AtlasStyle = {
   traits: string[];
   /** Hue bucket of a language's primary colour; art styles have none. */
   hue: string | null;
+  /** The colour the thumbnail reads as from a distance (scripts/style-inks.mjs); null until that has been run for it. */
+  ink: string | null;
 };
 
 export type AtlasHole = { id: string; name: string; description: string; x: number; y: number };
@@ -892,6 +895,7 @@ export async function libraryAtlas(tier: Tier) {
       y: Number.parseFloat(str(f.atlas_y)),
       traits: str(f.style_traits).trim().split(/\s+/).filter(Boolean),
       hue: str(f.hue_bucket) || null,
+      ink: (styleInks.inks as Record<string, string>)[createHash("sha256").update(row.entity_id).digest("hex").slice(0, 12)] ?? null,
       family: (() => {
         const key = familyKey(str(f.atlas_family));
         if (key) medoidOf.set(key, str(f.atlas_family));
