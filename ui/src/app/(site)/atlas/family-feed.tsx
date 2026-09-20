@@ -81,7 +81,7 @@ export function FamilyFeed({ styles, families, holes, lit, accent, find, onSoon 
 }
 
 /** The atlas on a phone: the family rows by default, the map one tap away. A host page puts its own controls in `top`, and an answer of its own in place of the rows as `body`. */
-export function PhoneAtlas({ styles, families, holes, sample, lit, accent, top, body, apiRef }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[]; sample: boolean; lit?: Set<string> | null; accent?: Set<string> | null; top?: React.ReactNode; body?: ((showOnMap: (id: string) => void) => React.ReactNode) | null; apiRef?: React.MutableRefObject<AtlasApi | null> }) {
+export function PhoneAtlas({ styles, families, holes, sample, lit, accent, top, body, apiRef, title = "The atlas" }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[]; sample: boolean; lit?: Set<string> | null; accent?: Set<string> | null; top?: React.ReactNode; body?: ((showOnMap: (id: string) => void) => React.ReactNode) | null; apiRef?: React.MutableRefObject<AtlasApi | null>; title?: string }) {
   const [view, setView] = useState<"list" | "map">("list");
   const [find, setFind] = useState("");
   // A direction still to come has no page of its own: a tap takes it to the map, where its sheet says what it is.
@@ -99,7 +99,7 @@ export function PhoneAtlas({ styles, families, holes, sample, lit, accent, top, 
   return (
     <div className="flex h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full flex-col overflow-hidden">
       <div className="z-10 max-h-[60%] shrink-0 overflow-y-auto bg-background px-4 pb-2 pt-3 shadow-[0_1px_0_rgba(30,35,45,0.06)]">
-        <h1 className="sr-only">The atlas</h1>
+        <h1 className="sr-only">{title}</h1>
         {top}
         <div className="mt-2 flex items-center gap-2">
           {/* An answer is a short ranked list: there is nothing in it to find by name. */}

@@ -216,10 +216,13 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   const step = Math.round(Math.log(Math.max(camera.k, 0.01)) / Math.log(1.18));
   const shown = useMemo(() => {
     const k = 1.18 ** step;
-    const f = tileScale(k, cardPx);
-    const w = (TILE_W * f + CARD_GAP / k) / PAPER;
-    const namedStep = TILE_W * k * f >= NAMED_AT;
-    const h = ((TILE_H + (namedStep ? 30 : 0)) * f + CARD_GAP / k) / PAPER;
+    // Room is measured at the far-out edge of this step, where tiles take the most
+    // paper, so nothing touches anywhere within the step, not only at its middle.
+    const kLow = 1.18 ** (step - 0.5);
+    const f = tileScale(kLow, cardPx);
+    const w = (TILE_W * f + CARD_GAP / kLow) / PAPER;
+    const namedStep = TILE_W * k * tileScale(k, cardPx) >= NAMED_AT;
+    const h = ((TILE_H + (namedStep ? 30 : 0)) * f + CARD_GAP / kLow) / PAPER;
     const spots: { id: string; x: number; top: number; bottom: number }[] = [];
     const placed: AtlasStyle[] = [];
     const soon: AtlasHole[] = [];
@@ -442,7 +445,7 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   useEffect(() => {
     if (openedOn.current) return;
     openedOn.current = true;
-    if (hostLit && hostLit.size > 0 && hostLit.size <= 60) frame([...hostLit]);
+    if (hostLit && hostLit.size > 0) frame([...hostLit].slice(0, 60));
   }, [hostLit, frame]);
   const onHostFocus = host?.onFocus;
   useEffect(() => { onHostFocus?.(focusId); }, [focusId, onHostFocus]);
@@ -487,7 +490,7 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   // where two would touch, the larger family keeps its label and the other waits
   // for a closer zoom.
   const familyChips = useMemo(() => {
-    const k = 1.18 ** step;
+    const k = 1.18 ** (step - 0.5); // the far-out edge of the step, where labels sit closest
     const kept: { g: Family; anchor: AtlasStyle; x: number; y: number; w: number }[] = [];
     for (const g of [...grounds].sort((a, b) => b.count - a.count)) {
       const anchor = (placedIds.has(g.lead) ? byId.get(g.lead) : undefined) ?? shown.placed.find((s) => s.family === g.id);

@@ -48,7 +48,10 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
   const [hue, setHue] = useState("");
   const [traits, setTraits] = useState<string[]>([]);
   const [moreQuestions, setMoreQuestions] = useState(false);
-  const [focusId, setFocusId] = useState<string | null>(null);
+  // A focus belongs to the layout it was made in: a map rebuilt for another screen opens with none.
+  const [focus, setFocus] = useState<{ screen: Screen; id: string | null }>({ screen: "desk", id: null });
+  const focusId = focus.screen === screen ? focus.id : null;
+  const setFocusId = useCallback((id: string | null) => setFocus({ screen, id }), [screen]);
   const [refine, setRefine] = useState(false);
   const turn = useRef(0);
 
@@ -225,7 +228,7 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
 
   // ---- phone: a list under the thumb, the map one tap away ---------------------
   if (phone) {
-    return <PhoneAtlas styles={styles} families={families} holes={holes} sample={sample} lit={lit} accent={accent} apiRef={api} top={<div className="flex flex-col gap-2">{askForm}{errorLine}{refineBar}{refinePanel}</div>} body={answer ? resultsFor : null} />;
+    return <PhoneAtlas styles={styles} families={families} holes={holes} sample={sample} lit={lit} accent={accent} apiRef={api} title="What are you making?" top={<div className="flex flex-col gap-2">{askForm}{errorLine}{refineBar}{refinePanel}</div>} body={answer ? resultsFor : null} />;
   }
 
   // ---- desktop and wide: one slim panel over the map ---------------------------
