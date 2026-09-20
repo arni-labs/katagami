@@ -5,8 +5,8 @@ Drives the REAL production flow against a locally served Temper with paw-fs +
 katagami-commons + katagami-curation installed and the actual
 finalize_spawned_session WASM registered:
 
-  one or two Locked source Files + two or four recorded proof Files
-  -> ArtStyle (SubmitArtStyle, no references)
+  six Locked gallery Files + two or four prompt-only proof Files
+  -> ArtStyle (SubmitArtStyle, prompt-bound gallery and proofs)
   -> engine-created CurationJob VerifyArtStyleSubmission (fires the finalizer WASM)
   -> assert ArtStyle Published (happy) / job Failed + style unpublished
      (HTML posing as one proof; recorded hash mismatch)
@@ -35,22 +35,20 @@ HDRS = {
 }
 
 PASS, FAIL = [], []
-EDIT_ENDPOINTS = [
-    "openai/gpt-image-2/edit",
-    "fal-ai/nano-banana-2/edit",
+IMAGE_MODELS = [
+    "gpt-image-2.5",
+    "gemini-3-pro-image-preview",
 ]
 PROOF_CASES = [
     {
         "category": "human_portrait",
         "subject": "night-shift printer beside a blank paper stack",
         "composition": "waist-up three-quarter portrait with open space to one side",
-        "source_medium": "documentary photograph",
     },
     {
         "category": "nonhuman_living",
         "subject": "urban pigeon lifting into flight",
         "composition": "single bird crossing the frame diagonally with wings spread",
-        "source_medium": "black-ink line drawing",
     },
 ]
 
@@ -181,12 +179,12 @@ def wait_fields(set_name, eid, field_names, timeout=15):
     raise AssertionError(f"{set_name}({eid}) fields {field_names} never became visible")
 
 
-def jpeg_bytes():
+def jpeg_bytes(variant=0):
     from PIL import Image, ImageDraw
 
     img = Image.new("RGB", (64, 48), (244, 240, 230))
     d = ImageDraw.Draw(img)
-    d.ellipse([10, 8, 50, 40], fill=(40, 52, 84))
+    d.ellipse([10, 8, 50, 40], fill=(40 + variant * 10, 52, 84))
     buf = io.BytesIO()
     img.save(buf, "JPEG", quality=82)
     return buf.getvalue()
@@ -218,9 +216,9 @@ def run_art_style_case(
     fake_proof_index=None,
     mismatched_hash_index=None,
     expected_error_code="lane_file_not_image",
-    source_count=2,
+    subject_count=2,
 ):
-    """Exercise reference-free publication with optional proof/consent failures."""
+    """Exercise prompt-only publication using explicitly synthetic local fixtures."""
     jpg = jpeg_bytes()
     sizable_png = sizable_png_bytes()
     fake_html = (b"<!doctype html><html><body>" + b"not an image " * 40 + b"</body></html>")
@@ -246,30 +244,14 @@ def run_art_style_case(
         "signature_details": "slight ink spread and irregular hand pressure",
         "exclusions": "Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry",
     }
-    source_payloads = [jpg, sizable_png][:source_count]
-    source_records = []
-    for index, (case, payload) in enumerate(zip(PROOF_CASES, source_payloads)):
-        extension = "png" if index in (1, 3) else "jpg"
-        mime = "image/png" if extension == "png" else "image/jpeg"
-        file_id = make_file(
-            f"{label}-generated-source-{index}.{extension}",
-            payload,
-            mime,
-            lock=True,
-        )
-        source_records.append({
-            "file_id": file_id,
-            "sha256": sha256(payload),
-        })
-
     proof_specs = [
         (model, case_index)
-        for model in EDIT_ENDPOINTS
-        for case_index in range(source_count)
+        for model in IMAGE_MODELS
+        for case_index in range(subject_count)
     ]
     proof_ids = []
     proof_records = []
-    cases_by_model = {model: [] for model in EDIT_ENDPOINTS}
+    cases_by_model = {model: [] for model in IMAGE_MODELS}
     for index, (model, case_index) in enumerate(proof_specs):
         case = PROOF_CASES[case_index]
         if index == fake_proof_index:
@@ -287,15 +269,22 @@ def run_art_style_case(
         )
         proof_ids.append(file_id)
         generation_record = {
-            "schema_version": "1",
+            "schema_version": "2",
             "kind": "art_style_proof",
             "style_slug": f"e2e-{label}",
-            "source": source_records[case_index].copy(),
+            "mode": "text_to_image",
+            "input_image_file_ids": [],
+            "prompt": prompt + "\n\nSubject and scene:\n" + case["subject"],
+            "canonical_prompt_sha256": sha256(prompt),
+            "execution": {
+                "route": "provider", "harness": "local-fixture", "tool": "synthetic-local-fixture",
+                "receipt": f"local-fixture-{label}-{index}", "requested_model": model,
+                "provider_request_id": f"local-fixture-request-{label}-{index}",
+            },
             "output": {
                 "file_id": file_id,
                 "sha256": sha256(payload),
-                "prompt_sha256": sha256(prompt),
-                "provider_request_id": f"{label}-output-request-{model_label}-{case_index}",
+                "prompt_sha256": sha256(prompt + "\n\nSubject and scene:\n" + case["subject"]),
             },
         }
         if index == mismatched_hash_index:
@@ -305,8 +294,7 @@ def run_art_style_case(
             "category": case["category"],
             "subject": case["subject"],
             "composition": case["composition"],
-            "source_medium": case["source_medium"],
-            "mode": "image_edit",
+            "mode": "text_to_image",
             "style_reference_used": False,
             "model": {"provider": "fal", "model": model},
             "generation_record": generation_record,
@@ -317,18 +305,43 @@ def run_art_style_case(
             "category": case["category"],
             "subject": case["subject"],
             "composition": case["composition"],
-            "source_medium": case["source_medium"],
-            "mode": "image_edit",
+            "mode": "text_to_image",
             "prompt": prompt,
             "style_reference_used": False,
-            "content_preserved": True,
-            "source_medium_replaced": True,
+            "subject_followed": True,
+            "style_applied": True,
             "generation_record": generation_record,
             "scores": {dimension: 2 for dimension in dimensions},
         })
-    thumb_id = make_file(f"{label}-thumb.jpg", jpg, "image/jpeg")
+    gallery_ids, gallery_records = [], []
+    for index in range(6):
+        # Different encoded JPEGs, not duplicated gallery bytes. Local fixture
+        # receipts are test data only, never production generation evidence.
+        payload = jpeg_bytes(index)
+        file_id = make_file(f"{label}-gallery-{index}.jpg", payload, "image/jpeg", lock=True)
+        provider, model, requested = (
+            ("OpenAI", "gpt-image-2.5", "GPT Image 2.5") if index < 4 else
+            ("xAI", "grok-imagine-image", "Grok Image") if index == 4 else
+            ("Google", "gemini-3-pro-image-preview", "Nano Banana")
+        )
+        subject = f"local fixture scene {index}"
+        full_prompt = prompt + "\n\nSubject and scene:\n" + subject
+        gallery_ids.append(file_id)
+        gallery_records.append({
+            "file_id": file_id, "subject": subject, "model": {"provider": provider, "model": model},
+            "generation_record": {
+                "schema_version": "2", "kind": "art_style_gallery", "style_slug": f"e2e-{label}",
+                "mode": "text_to_image", "input_image_file_ids": [], "prompt": full_prompt,
+                "canonical_prompt_sha256": sha256(prompt),
+                "execution": {"route": "provider", "harness": "local-fixture", "tool": "synthetic-local-fixture",
+                    "receipt": f"local-fixture-gallery-{index}", "requested_model": requested,
+                    "provider_request_id": f"local-fixture-request-gallery-{index}"},
+                "output": {"file_id": file_id, "sha256": sha256(payload), "prompt_sha256": sha256(full_prompt)},
+            },
+        })
+    thumb_id = gallery_ids[0]
     portability_report = {
-        "schema_version": "1",
+        "schema_version": "2",
         "verdict": "pass",
         "prompt": prompt,
         "blind_evaluation": True,
@@ -347,11 +360,11 @@ def run_art_style_case(
         "prompt_template": prompt,
         "slot_recipes": json.dumps({"hero": "wide establishing scene", "avatar": "portrait bust"}),
         "guidance": "e2e guidance",
-        "reference_image_file_ids": [],
-        "reference_manifest": json.dumps({"items": []}),
+        "reference_image_file_ids": gallery_ids,
+        "reference_manifest": json.dumps({"schema_version": "3", "items": gallery_records}),
         "proof_shots_file_ids": proof_ids,
         "proof_shots_manifest": json.dumps({
-            "schema_version": "3",
+            "schema_version": "4",
             "items": proof_records,
         }),
         "thumbnail_file_id": thumb_id,
@@ -537,8 +550,8 @@ def main():
     print("== stage 1: art style happy path (no reference images) ==")
     _, good_art_id = run_art_style_case("good", expect_published=True)
 
-    print("== stage 1a: one-source cross-model comparison ==")
-    run_art_style_case("one-source", expect_published=True, source_count=1)
+    print("== stage 1a: one-subject cross-model comparison ==")
+    run_art_style_case("one-subject", expect_published=True, subject_count=1)
 
     print("== stage 1b: forged attestation is denied to non-system principals ==")
     verify_non_system_cannot_forge_attestation(good_art_id)

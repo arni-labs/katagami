@@ -38,13 +38,6 @@ const ART_STYLE_PROOF_CATEGORIES = [
   "landscape_environment",
 ] as const;
 
-const ART_STYLE_SOURCE_MEDIA = [
-  "documentary photograph",
-  "black-ink line drawing",
-  "neutral synthetic 3d render",
-  "flat vector illustration",
-] as const;
-
 const KINDS = {
   language: { set: "DesignLanguages", path: "language" },
   palette: { set: "PaletteSystems", path: "palettes" },
@@ -117,41 +110,44 @@ function fail(message: string) {
   };
 }
 
-const artStyleGenerationRecord = z
-  .object({
-    schema_version: z.literal("1"),
-    kind: z.literal("art_style_proof"),
-    style_slug: z.string(),
-    source: z
-      .object({
-        file_id: z.string(),
-        sha256: z.string().regex(/^[a-f0-9]{64}$/),
-      })
-      .strict(),
-    output: z
-      .object({
-        file_id: z.string(),
-        sha256: z.string().regex(/^[a-f0-9]{64}$/),
-        prompt_sha256: z.string().regex(/^[a-f0-9]{64}$/),
-        provider_request_id: z.string().optional(),
-      })
-      .strict(),
-  })
-  .strict();
+const proofText = z.string().trim().min(1);
+const proofHash = z.string().regex(/^[a-f0-9]{64}$/);
+const artStyleGenerationRecord = z.object({
+  schema_version: z.literal("2"),
+  kind: z.literal("art_style_proof"),
+  style_slug: proofText,
+  mode: z.literal("text_to_image"),
+  input_image_file_ids: z.array(z.string()).length(0),
+  prompt: proofText,
+  canonical_prompt_sha256: proofHash,
+  execution: z.object({
+    route: z.enum(["builtin", "provider"]),
+    harness: proofText, tool: proofText, receipt: proofText, requested_model: proofText,
+    provider_request_id: proofText.nullable(),
+  }).strict(),
+  output: z.object({
+    file_id: proofText, sha256: proofHash, prompt_sha256: proofHash,
+  }).strict(),
+}).strict();
 
 const artStyleProofInput = z.object({
-  file_id: z.string().min(1),
+  file_id: proofText,
   category: z.enum(ART_STYLE_PROOF_CATEGORIES),
-  subject: z.string().min(1),
-  composition: z.string().min(1),
-  source_medium: z.enum(ART_STYLE_SOURCE_MEDIA),
-  mode: z.literal("image_edit"),
+  subject: proofText,
+  composition: proofText,
+  mode: z.literal("text_to_image"),
   style_reference_used: z.literal(false),
-  model: z.object({ provider: z.string().min(1), model: z.string().min(1) }).strict(),
+  model: z.object({ provider: proofText, model: proofText.nullable() }).strict(),
   generation_record: artStyleGenerationRecord.describe(
-    "Contributor-supplied provenance binding the exact prompt hash, imported source bytes, image model request when available, and imported output bytes. Katagami verifies the files and cross-model matrix but does not generate them.",
+    "Prompt-only provenance binding the exact full prompt, canonical prompt hash, real invocation receipt and output bytes. Built-in model versions and request IDs remain null when unexposed. No source images.",
   ),
-}).strict();
+}).strict().superRefine((proof, context) => {
+  const { route, harness, provider_request_id } = proof.generation_record.execution;
+  const { provider, model } = proof.model;
+  if ((route === "provider" && (model === null || provider_request_id === null)) ||
+      (route === "builtin" && !((harness === "codex" && provider === "OpenAI") || (harness === "grok" && provider === "xAI"))))
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Proof execution must identify the actual provider or native harness without invented metadata" });
+});
 
 const lineageInput = {
   parent_ids: z.array(z.string()).optional().describe("Katagami entity ids this derives from"),
@@ -449,10 +445,10 @@ export function buildServer(auth: AuthInfo): McpServer {
           .min(2)
           .max(4)
           .refine((items) => items.length === 2 || items.length === 4, {
-            message: "Provide two or four proofs: one or two matched sources on each of two models",
+            message: "Provide two or four proofs: one or two matched subject descriptions on each of two models",
           })
           .describe(
-            "Two distinct image models × the same one or two contributor-owned source images chosen for this style. Import sources and outputs first; bind their exact hashes and the canonical prompt hash in each generation_record. Do not reuse a recurring catalog fixture set.",
+            "Two distinct image models × the same one or two fresh subject descriptions, generated from text alone. Import outputs and bind exact bytes, canonical prompt hash and full prompt hash in each generation_record. No input images or style-reference images.",
           ),
         gallery_images: artStyleGalleryImages.describe(
           "Six distinct gallery images: four GPT Image 2.5, one Grok Image, and one Nano Banana. Each prompt is the canonical prompt plus \n\nSubject and scene:\n and its subject. These are separate from portability proof shots.",
@@ -476,7 +472,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         portability_report: z
           .record(z.string(), z.unknown())
           .describe(
-            "Schema-v1 blind cross-model scores over every imported proof File id and generation record.",
+            "Schema-v2 blind cross-model scores over every prompt-only output File id and generation record; cases attest subject_followed and style_applied.",
           ),
         tags: z.array(z.string()).optional(),
         direction_id: z.string().optional(),
@@ -484,12 +480,12 @@ export function buildServer(auth: AuthInfo): McpServer {
         ...lineageInput,
         model_provenance: z.object({
           style: z.object({ model: z.string(), provider: z.string() }),
-          source: z.object({ model: z.string(), provider: z.string() }),
+          source: z.object({ model: z.string(), provider: z.string() }).optional(),
           images: z
             .array(
               z
                 .object({
-                  model: z.string(),
+                  model: z.string().nullable(),
                   provider: z.string(),
                   tool: z.string().optional(),
                 })
@@ -540,7 +536,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         ...galleryFields,
         proof_shots_file_ids: proofIds,
         proof_shots_manifest: asJsonString({
-          schema_version: "3",
+          schema_version: "4",
           items: a.proof_shots,
         }),
         thumbnail_file_id: thumbId,

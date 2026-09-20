@@ -2,7 +2,7 @@
 
 Source-level checks, in the style of the other contract tests here: the pieces
 that make capture work are spread across a converter, a hook wrapper, and two
-role skills, and each of them can be individually correct while the wiring
+a native ledger reference, and each of them can be individually correct while the wiring
 between them silently rots. These assertions are what notice.
 """
 
@@ -32,10 +32,8 @@ HOOK_README = HOOK_DIR / "README.md"
 HOOK_SNIPPET = HOOK_DIR / "settings.snippet.json"
 JUDGE_SKILL = SKILLS_DIR / "katagami-judge" / "SKILL.md"
 
-ROLE_SKILLS = [
-    SKILLS_DIR / "katagami-contributor" / "SKILL.md",
-    SKILLS_DIR / "katagami-iterate" / "SKILL.md",
-]
+CAPTURE_DOCS = [REPO_ROOT / "docs" / "native-contribution-ledger.md"]
+ROLE_POINTERS = [SKILLS_DIR / name / "README.md" for name in ("katagami-contributor", "katagami-iterate")]
 
 
 def _load(path, module_name):
@@ -624,30 +622,36 @@ class HookWiringTest(unittest.TestCase):
             self.assertIn(expected, readme)
 
 
-class RoleSkillPreambleTest(unittest.TestCase):
-    """Both role skills must carry the same capture preamble.
+class NativeLedgerCaptureReferenceTest(unittest.TestCase):
+    """Role pointers share one native ledger capture reference.
 
     A skill that forgets the headers produces a trajectory with holes in it,
     and the holes are invisible until someone tries to judge the run — which is
     exactly too late.
     """
 
+    def test_role_directories_only_point_to_stack(self):
+        for pointer in ROLE_POINTERS:
+            self.assertIn("arni-labs/stack", pointer.read_text())
+            self.assertIn("native-contribution-ledger.md", pointer.read_text())
+            self.assertFalse(pointer.with_name("SKILL.md").exists())
+
     def test_every_role_skill_exists(self):
-        for skill in ROLE_SKILLS:
+        for skill in CAPTURE_DOCS:
             self.assertTrue(skill.is_file(), f"missing role skill: {skill}")
 
     def test_every_role_skill_has_a_trajectory_capture_section(self):
-        for skill in ROLE_SKILLS:
+        for skill in CAPTURE_DOCS:
             self.assertIn("## Trajectory capture", skill.read_text(), skill.name)
 
     def test_every_role_skill_names_both_headers_verbatim(self):
-        for skill in ROLE_SKILLS:
+        for skill in CAPTURE_DOCS:
             text = skill.read_text()
             self.assertIn("X-Session-Id", text, skill.name)
             self.assertIn("X-Intent", text, skill.name)
 
     def test_every_role_skill_requires_ids_at_the_start(self):
-        for skill in ROLE_SKILLS:
+        for skill in CAPTURE_DOCS:
             text = skill.read_text()
             self.assertIn("session_id", text, skill.name)
             self.assertIn("trajectory_id", text, skill.name)
@@ -655,7 +659,7 @@ class RoleSkillPreambleTest(unittest.TestCase):
     def test_every_role_skill_reads_the_ids_rather_than_minting_them(self):
         # A self-minted trajectory_id resolves to no stored document: the hook
         # files the trajectory under the harness session id.
-        for skill in ROLE_SKILLS + [JUDGE_SKILL]:
+        for skill in CAPTURE_DOCS + [JUDGE_SKILL]:
             text = skill.read_text()
             self.assertIn("capture.py identity", text, skill.name)
             flowed = " ".join(text.lower().split())
@@ -665,12 +669,12 @@ class RoleSkillPreambleTest(unittest.TestCase):
             )
 
     def test_every_role_skill_requires_the_roles_own_credential(self):
-        for skill in ROLE_SKILLS:
+        for skill in CAPTURE_DOCS:
             self.assertIn("own agent credential", skill.read_text(), skill.name)
 
 
-class ContributorDrivesTheActorLedgerTest(unittest.TestCase):
-    """The contributor skill must actually drive CuratorAgent through its states.
+class NativeContributionLedgerTest(unittest.TestCase):
+    """The native ledger reference documents CuratorAgent actions and guards.
 
     Capturing a trajectory and defining an actor spec are worth nothing on
     their own: layer 1 replays the actor actions the run invoked, so a skill
@@ -679,13 +683,13 @@ class ContributorDrivesTheActorLedgerTest(unittest.TestCase):
     """
 
     def setUp(self):
-        self.skill = (SKILLS_DIR / "katagami-contributor" / "SKILL.md").read_text()
+        self.skill = (REPO_ROOT / "docs" / "native-contribution-ledger.md").read_text()
         self.spec = tomllib.loads(
             (CURATION_ROOT / "specs" / "curator_agent.ioa.toml").read_text()
         )
 
     def test_it_creates_the_run_entity(self):
-        self.assertIn("POST $TEMPER_API_URL/tdata/CuratorAgents", self.skill)
+        self.assertIn('await temper.create(tenant, "CuratorAgents", {})', self.skill)
 
     def test_it_reads_the_id_the_server_actually_returns(self):
         self.assertIn('"entity_id"', self.skill)
@@ -709,13 +713,17 @@ class ContributorDrivesTheActorLedgerTest(unittest.TestCase):
         # not define sends the run into `unknown_action` on every replay.
         alphabet = {a["name"] for a in self.spec["action"]}
         for line in self.skill.splitlines():
-            for token in re.findall(r"Temper\.([A-Za-z][A-Za-z0-9_]*)", line):
+            if not line.startswith("| `"):
+                continue
+            for token in re.findall(r"`([A-Z][A-Za-z]+)`", line):
                 if token.startswith("<"):
                     continue
-                self.assertIn(token, alphabet | {"Record", "Action"}, line)
+                self.assertIn(token, alphabet | {"CuratorAgent", "Drafting", "Submitted", "UnderReview", "Published", "SessionStart"}, line)
 
-    def test_it_uses_the_bound_action_path_shape(self):
-        self.assertIn("/tdata/CuratorAgents('<run id>')/Temper.", self.skill)
+    def test_it_uses_native_action_dispatch(self):
+        self.assertIn('await temper.action(tenant, "CuratorAgents", run_id, "ReceiveBrief", brief_fields)', self.skill)
+        self.assertNotIn("POST $TEMPER_API_URL", self.skill)
+        self.assertNotIn("x-temper-principal-id:", self.skill)
 
     def test_it_explains_the_submission_guards_rather_than_only_listing_them(self):
         for guard in ("self_review_complete", "jobs_in_flight", "cross_entity_state"):
