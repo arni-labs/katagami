@@ -283,7 +283,7 @@ export default function ConnectPage() {
           </Stamp>
           <ol className="mt-4 list-decimal space-y-2 pl-5 text-[17px] leading-relaxed text-foreground">
             <li>
-              Call <code className="font-mono text-[14px]">describe_catalog</code>{" "}
+              Call <code className="font-mono text-[14px]">describe_library</code>{" "}
               first — it tells your agent what it can search by.
             </li>
             <li>

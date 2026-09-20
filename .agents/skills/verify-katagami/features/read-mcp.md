@@ -1,7 +1,7 @@
 # The read MCP at /mcp
 
 ## Sub-features
-The in-app MCP server at `ui/src/app/mcp/route.ts` — the surface outside agents consume the catalog through. Eleven tools: `describe_catalog`, `whoami`, three searches (`search_design_languages`, `search_palettes`, `search_art_styles`) and six getters (`get_design_language`, `get_design_md`, `get_tokens`, `get_palette`, `get_art_style`, `get_embodiment`). One shared bearer gate (`readMcpAuthInfo` over `verifyReadBearer`) decides the tier, and every call is counted through `trackMcpToolCall`.
+The in-app MCP server at `ui/src/app/mcp/route.ts` — the surface outside agents consume the catalog through. Ten tools: `describe_library`, `whoami`, two that judge with Jev (`ask_library`, `compose_kit`), one search and one getter that take a `kind` of `design_language`, `palette` or `art_style` (`search_library`, `get_library_entry`), three narrower getters (`get_design_md`, `get_design_tokens`, `get_reference_page`) and `check_page_against_language`. The same tools answer without a bearer at `/mcp/open`, from the visitor shelf only. One shared bearer gate (`readMcpAuthInfo` over `verifyReadBearer`) decides the tier, and every call is counted through `trackMcpToolCall`.
 
 This is a different server from the contribution MCP in `mcp/` — that one writes, this one only reads, and it is the one published at katagami.ai/mcp.
 
@@ -18,12 +18,12 @@ call() { curl -s -X POST http://localhost:3012/mcp \
   -H 'Accept: application/json, text/event-stream' -d "$1" | sed 's/^data: //' | grep '^{'; }
 
 call '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
-call '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_art_styles","arguments":{"limit":1}}}'
-call '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"get_art_style","arguments":{"id":"cathode-ray"}}}'
+call '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_library","arguments":{"kind":"art_style","limit":1}}}'
+call '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"get_library_entry","arguments":{"kind":"art_style","id":"cathode-ray"}}}'
 ```
 
 ## What proves it
-`tools/list` returns all eleven tools; a search returns a non-zero `total_matching` with real ids; and the id a search hands back fetches the same entity through `get_*` under any of `id`, `slug`, or `id_or_slug`. A call with no identifier returns `missing_id` naming all three, not a bare SDK rejection. Every one of those calls appears in Datadog within about a minute as `@evt:mcp_tool_call`, and a rejected one carries `@arg_keys`.
+`tools/list` returns all ten tools; a search returns a non-zero `total_matching` with real ids; and the id a search hands back fetches the same entity through `get_library_entry` under any of `id`, `slug`, or `id_or_slug`. A call with no identifier returns `missing_id` naming all three, not a bare SDK rejection. Every one of those calls appears in Datadog within about a minute as `@evt:mcp_tool_call`, and a rejected one carries `@arg_keys`.
 
 ## Gotchas
 Run against a **production build** (`npm run build && npx next start`), not `next dev`: `NEXT_PUBLIC_*` values are inlined at build time, so a server built without `NEXT_PUBLIC_TEMPER_API_URL` silently reads `http://localhost:3500` and every search returns `total_matching: 0` while still answering 200.

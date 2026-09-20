@@ -240,7 +240,7 @@ export async function anonMaySee(kind: Kind, idOrSlug: string): Promise<boolean>
   );
 }
 
-// --- describe_catalog: the agent's map --------------------------------------
+// --- describe_library: the agent's map --------------------------------------
 
 export async function describeCatalog(tier: Tier) {
   const [langs, palettes, arts, taxRows] = await Promise.all([
@@ -295,7 +295,7 @@ export async function describeCatalog(tier: Tier) {
     },
     taxonomy_count: taxById.size,
     how_to_search:
-      "Call search_design_languages / search_palettes / search_art_styles with any of the facets above, or free-text `query`. Every result carries its facets back so you can refine.",
+      "Call search_library with a `kind` and any of that kind's facets above, or free-text `query`. Every result carries its facets back so you can refine. For a brief rather than a name, call ask_library.",
   };
 }
 
