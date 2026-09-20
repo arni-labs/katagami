@@ -481,7 +481,8 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   if (change && !refined) throw new JevUnavailableError("Jev left a question about the change unanswered");
   const want = refined?.reading ?? read;
   const moved = (refined?.moved ?? []).slice(0, 8).map((m) => ({ trait: m.label, from: m.from, to: m.to }));
-  const changes = [a.changes?.trim().slice(0, ASK_MAX_QUERY), change].filter(Boolean).join("; ");
+  // Handed back whole on the next call, so it must fit the field it comes back in: the newest changes are kept.
+  const changes = [a.changes?.trim(), change].filter(Boolean).join("; ").slice(-ASK_MAX_QUERY);
   const wantMs = Date.now() - wantStarted;
 
   const crowd = centroid(pool.map((p) => p.dna));
@@ -584,8 +585,8 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
 // be read outright: one Jev call scores every visible palette against the
 // sentence. A last call asks, for every pair among the finalists, whether the
 // two belong to the same visual world — a kit is ranked by how well each part
-// fits the product and how well the three sit together. Four model calls, the
-// first three side by side.
+// fits the product and how well the three sit together. Five model calls: the
+// sentence is read once, then three fits side by side, then the pairings.
 
 const KIT_FINALISTS = 4;
 const KIT_JEV = { timeoutMs: 8_000, retries: 1 };
@@ -621,12 +622,18 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number 
       .sort((x, y) => y.fit - x.fit)
       .slice(0, KIT_FINALISTS);
   };
+  const want = dnaFromAnswers((await askJev(`Product: ${query}`, wantQuestions(), KIT_JEV)).answers);
+  if (!want) throw new JevUnavailableError("Jev left a question about the product unanswered");
   const [langs, arts, pals] = await Promise.all([
-    askLibrary(tier, { query, kind: "language", limit: KIT_FINALISTS }),
-    askLibrary(tier, { query, kind: "art_style", limit: KIT_FINALISTS }),
+    askLibrary(tier, { query, kind: "language", limit: KIT_FINALISTS, want }),
+    askLibrary(tier, { query, kind: "art_style", limit: KIT_FINALISTS, want }),
     palettesFit(),
   ]);
-  const L = langs.results, A = arts.results, P = pals;
+  // The last language finalist is a strange one when Ask found any: a style unlike
+  // the rest of the library that was still judged a fit, so one kit can surprise.
+  const odd = langs.strange[0];
+  const L = odd ? [...langs.results.slice(0, KIT_FINALISTS - 1), odd] : langs.results;
+  const A = arts.results, P = pals;
   if (L.length === 0 || A.length === 0 || P.length === 0) {
     return { query, tier, kits: [], note: "Not enough styles in view to compose a kit: a kit needs a design language, a palette and an art style." };
   }
@@ -664,7 +671,12 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number 
   trios.sort((x, y) => y.rank - x.rank);
   // One kit per language: three kits that differ only in palette are one idea thrice.
   const usedLang = new Set<number>();
-  const chosen = trios.filter((t) => (usedLang.has(t.i) ? false : Boolean(usedLang.add(t.i)))).slice(0, limit);
+  const perLang = trios.filter((t) => (usedLang.has(t.i) ? false : Boolean(usedLang.add(t.i))));
+  const isOdd = (t: { i: number }) => Boolean(odd) && t.i === L.length - 1;
+  const chosen = perLang.slice(0, limit);
+  // With room for more than one kit, the last place goes to the surprising one.
+  const surprise = perLang.find(isOdd);
+  if (surprise && limit > 1 && !chosen.includes(surprise)) chosen[chosen.length - 1] = surprise;
   const round = (n: number) => Math.round(n * 100) / 100;
   return {
     query,
@@ -675,6 +687,7 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number 
       const l = L[t.i], p = P[t.j], x = A[t.k];
       const q = `ui=${encodeURIComponent(l.id)}&palette=${encodeURIComponent(p.row.entity_id)}&art=${encodeURIComponent(x.id)}`;
       return {
+        surprising: isOdd(t),
         belongs_together: round(t.belongs),
         fits_product: round(t.fits),
         language: l,
@@ -683,7 +696,7 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number 
         brief_url: `${GALLERY}/studio/BRIEF.md?${q}`,
       };
     }),
-    note: "Each kit is a design language, a palette and an art style judged to fit the product and to belong together. brief_url is the build brief for that exact combination. To pick the parts yourself, search each kind and compose the same URLs.",
+    note: "Each kit is a design language, a palette and an art style judged to fit the product and to belong together. A kit marked `surprising` is built on a language unlike the rest of the library that was still judged a fit — offer it as the unexpected option. brief_url is the build brief for that exact combination. To pick the parts yourself, search each kind and compose the same URLs.",
   };
 }
 

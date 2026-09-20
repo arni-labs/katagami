@@ -687,6 +687,8 @@ const required = [
     /trackServerEvent\("mcp_auth_challenge"/],
   // Every verb enters through `door`, and the only way past it that skips the
   // counter is the open door, which never answers 401.
+  ["the open door is only the open door: a path or a query flag, nothing broader", mcp,
+    /return url\.searchParams\.get\("door"\) === "open" \|\| url\.pathname\.replace\(\/\\\/\+\$\/, ""\)\.endsWith\("\/mcp\/open"\);/],
   ["all /mcp verbs go through the auth-challenge counter", mcp,
     /const door = \(req: Request\) => \(isOpenDoor\(req\) \? openDoor\(req\) : trackedHandler\(req\)\);[\s\S]*export \{ get as GET, door as POST, door as DELETE \}/],
   // The rule is that this contract runs on every build, not that prebuild spells

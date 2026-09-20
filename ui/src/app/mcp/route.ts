@@ -283,6 +283,11 @@ const picturesArg = z
   .boolean()
   .optional()
   .describe("Attach thumbnails of the first three results as images (default true). Pass false when only the JSON is needed.");
+// A search is often a lookup on the way to something else, so its pictures are asked for.
+const searchPicturesArg = z
+  .boolean()
+  .optional()
+  .describe("Pass true to attach thumbnails of the first three results as images. Every result carries `thumbnail_url` either way.");
 
 const INSTRUCTIONS = `Katagami is a curated library of complete visual styles: design languages (tokens, rules, layout, a DESIGN.md), palette systems and art styles (prompt recipes for image generation). Everything here is read-only.
 
@@ -313,6 +318,7 @@ function gone(tier: Tier) {
 const KNOWN_ARG_KEYS = new Set([
   "id_or_slug", "id", "slug", "kind", "format", "query", "medium", "tag",
   "taxonomy", "family", "limit", "cursor", "color", "role", "page",
+  "refine", "reading", "changes", "images",
 ]);
 function argKeysOf(args: unknown): string | undefined {
   if (!args || typeof args !== "object") return "(none)";
@@ -456,7 +462,7 @@ const baseHandler = createMcpHandler(
         title: "Compose a kit",
         annotations: READS,
         description:
-          "Get a complete starting point for a product in one call: a design language (UI tokens and rules), a palette system and an art style (for imagery), each judged to fit the product and judged to belong together. Returns up to three `kits`, one per language, each with the three parts (`url`, `thumbnail_url`, `fit`), `belongs_together` and `fits_product` (0..1), and a `brief_url` — the build brief for that exact combination, ready to hand to a coding agent. Use this when someone wants a whole look; use ask_library or the search_* tools to choose one kind at a time, then compose the same URLs yourself.",
+          "Get a complete starting point for a product in one call: a design language (UI tokens and rules), a palette system and an art style (for imagery), each judged to fit the product and judged to belong together. Returns up to three `kits`, one per language — the last one `surprising` when the library holds an unusual style that still fits — each with the three parts (`url`, `thumbnail_url`, `fit`), `belongs_together` and `fits_product` (0..1), and a `brief_url` — the build brief for that exact combination, ready to hand to a coding agent. Use this when someone wants a whole look; use ask_library or the search_* tools to choose one kind at a time, then compose the same URLs yourself.",
         inputSchema: {
           query: z.string().min(8).max(400).describe("One sentence: what the product is and who it is for"),
           limit: z.number().int().min(1).max(4).optional().describe("How many kits (default 3)"),
@@ -509,12 +515,12 @@ const baseHandler = createMcpHandler(
           tag: z.string().optional(),
           limit: z.number().int().min(1).max(100).optional(),
           cursor: z.number().int().min(0).optional().describe("`next_cursor` from the previous page"),
-          images: picturesArg,
+          images: searchPicturesArg,
         },
       },
       async ({ images, ...a }, extra) => {
         const found = await searchDesigns("language", tierOf(extra), a);
-        return okWithPictures(found, found.results, images !== false);
+        return okWithPictures(found, found.results, images === true);
       },
     );
     server.registerTool(
@@ -587,12 +593,12 @@ const baseHandler = createMcpHandler(
           tag: z.string().optional(),
           limit: z.number().int().min(1).max(100).optional(),
           cursor: z.number().int().min(0).optional().describe("`next_cursor` from the previous page"),
-          images: picturesArg,
+          images: searchPicturesArg,
         },
       },
       async ({ images, ...a }, extra) => {
         const found = await searchDesigns("palette", tierOf(extra), a);
-        return okWithPictures(found, found.results, images !== false);
+        return okWithPictures(found, found.results, images === true);
       },
     );
     server.registerTool(
@@ -628,12 +634,12 @@ const baseHandler = createMcpHandler(
           taxonomy: z.string().optional(),
           limit: z.number().int().min(1).max(100).optional(),
           cursor: z.number().int().min(0).optional().describe("`next_cursor` from the previous page"),
-          images: picturesArg,
+          images: searchPicturesArg,
         },
       },
       async ({ images, ...a }, extra) => {
         const found = await searchDesigns("art_style", tierOf(extra), a);
-        return okWithPictures(found, found.results, images !== false);
+        return okWithPictures(found, found.results, images === true);
       },
     );
     server.registerTool(
