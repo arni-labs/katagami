@@ -7,6 +7,7 @@ import { GalleryImage } from "@/components/gallery-image";
 import { Marker } from "@/components/page-hero";
 import { usePanZoom, usePrefersReducedMotion } from "@/components/encyclopedia/use-pan-zoom";
 import type { AtlasHole, AtlasStyle } from "@/lib/catalog";
+import { FamilyField, type FieldPoint } from "./family-field";
 
 type Family = { id: string; label: string; lead: string; count: number; x: number; y: number };
 
@@ -15,7 +16,6 @@ type Family = { id: string; label: string; lead: string; count: number; x: numbe
 const PAPER = 5200;
 const TILE_W = 132;
 const TILE_H = 84;
-const FAMILY_INKS = ["var(--sakura)", "var(--ramune)", "var(--yuzu)"];
 
 // Like a map: a card keeps about the same size on screen at every zoom, so only
 // as many are drawn as fit without covering one another. Zoom in and the ones
@@ -423,25 +423,44 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     }
     return ink;
   }, [families]);
-  // A family's ground is the ink pooled under each of its cards that is on the
-  // paper right now. Far out that is one pool round the lead card; as the zoom
-  // lets more of the family out, their pools run together into a territory the
-  // shape of the family, and it draws back in when they tuck away. Nothing is
-  // drawn where the family has no card, so the paper between families stays white.
-  const pools = useMemo(() => {
-    const k = 1.18 ** step;
-    const f = Math.max(1, cardPx / (TILE_W * k));
-    // Reach a little past the card, in the units of this zoom step, so two
-    // neighbouring cards' pools meet and the margin looks the same at every zoom.
-    const reach = (Math.hypot(TILE_W, TILE_H + 30) * f) / 2 + 26 / k;
-    return { reach, blur: 30 / k, of: shown.placed.filter((s) => s.family && inkOf.has(s.family)) };
-  }, [shown, step, cardPx, inkOf]);
   const grounds = families;
   const nameOpacity = camera.k >= TRUE_SIZE_ZOOM ? 0.45 : 1;
   // Far out the grounds are the map's colour; close in they sit behind many more
   // cards, so they thin a little as the paper grows.
-  const glowOpacity = Math.min(0.3, Math.max(0.16, 0.34 - camera.k * 0.2));
+  const fieldAlpha = Math.min(0.3, Math.max(0.17, 0.34 - camera.k * 0.18));
   const placedIds = useMemo(() => new Set(shown.placed.map((s) => s.id)), [shown]);
+
+  // Only what is on screen is in the document. Zoomed in, the paper holds nine
+  // hundred cards and their pictures; mounting them all is what brought phones
+  // down. While the camera glides, both ends of the flight count as on screen.
+  const restCamera = useRef(camera);
+  useEffect(() => { if (!animate) restCamera.current = camera; }, [animate, camera]);
+  const vw = viewportRef.current?.clientWidth ?? 1440;
+  const vh = viewportRef.current?.clientHeight ?? 900;
+  const cardW = TILE_W * camera.k * factor;
+  const onScreen = (item: { id: string; x: number; y: number }) => {
+    const n = shown.nudge.get(item.id);
+    const wx = item.x * PAPER + (n?.x ?? 0), wy = item.y * PAPER + (n?.y ?? 0);
+    const margin = cardW * 1.5 + 80;
+    return [camera, ...(animate ? [restCamera.current] : [])].some((cam) => {
+      const sx = cam.x + wx * cam.k, sy = cam.y + wy * cam.k;
+      return sx > -margin && sx < vw + margin && sy > -margin && sy < vh + margin;
+    });
+  };
+  const seenStyles = shown.placed.filter(onScreen);
+  const seenHoles = shown.soon.filter(onScreen);
+
+  // The family grounds: one splat of the family's ink per family card on
+  // screen, handed to the GPU field behind the cards. When something is lit,
+  // only lit cards keep their ground.
+  // Wide enough that neighbouring family cards' splats meet and run into one
+  // bubble, tight enough that families stay separate and the paper shows between.
+  const fieldRadius = cardW * 1.85;
+  const fieldPoints: FieldPoint[] = seenStyles.flatMap((s) => {
+    if (!s.family || !inkOf.has(s.family) || (lit && !lit.has(s.id))) return [];
+    const n = shown.nudge.get(s.id);
+    return [{ x: camera.x + (s.x * PAPER + (n?.x ?? 0)) * camera.k, y: camera.y + (s.y * PAPER + (n?.y ?? 0)) * camera.k + cardW * 0.08, ink: (inkOf.get(s.family) ?? 0) as 0 | 1 | 2 }];
+  });
 
   if (styles.length === 0) {
     return (
@@ -463,6 +482,12 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
 
   return (
     <div className={host?.fill ? "relative h-full w-full overflow-hidden" : "relative h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full overflow-hidden md:h-[calc(100dvh-65px)]"}>
+      {/* The grounds are drawn in screen space from the camera the state holds,
+          which during a glide is already the destination while the paper is
+          still travelling: so they sit the flight out and return on arrival. */}
+      <div className="absolute inset-0" style={{ opacity: animate && !reduced ? 0 : 1, transition: reduced ? undefined : animate ? "opacity 120ms" : "opacity 320ms 180ms" }}>
+        <FamilyField points={fieldPoints} radius={fieldRadius} alpha={fieldAlpha} inks={["--sakura", "--ramune", "--yuzu"]} />
+      </div>
       <div
         ref={attach}
         className="absolute inset-0 select-none overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--ramune)]"
@@ -490,23 +515,15 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
           className="absolute left-0 top-0 h-0 w-0"
           style={{ ["--f" as string]: factor, transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.k})`, transformOrigin: "0 0", transition: animate && !reduced ? "transform 520ms cubic-bezier(0.22, 1, 0.36, 1)" : undefined, willChange: "transform" }}
         >
-          {pools.of.map((s) => (
-            // A spread shadow, not a filter: hundreds of these cost far less than
-            // hundreds of blurs, and a shadow of one flat ink is still a blob, not a gradient.
-            <span key={`pool-${s.id}`} aria-hidden className="pointer-events-none absolute h-0 w-0 rounded-[50%]" // Under the card wherever it is drawn (an answer's cards are eased apart),
-            // gone entirely when its card is dimmed, and resized over a moment rather
-            // than popping when the zoom crosses a step.
-            style={{ left: s.x * PAPER + (shown.nudge.get(s.id)?.x ?? 0), top: s.y * PAPER + 12 + (shown.nudge.get(s.id)?.y ?? 0), boxShadow: `0 0 ${pools.blur}px ${pools.reach}px ${FAMILY_INKS[inkOf.get(s.family ?? "") ?? 0]}`, opacity: lit && !lit.has(s.id) ? 0 : glowOpacity, transition: reduced ? undefined : "opacity 300ms, box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1), left 320ms cubic-bezier(0.22, 1, 0.36, 1), top 320ms cubic-bezier(0.22, 1, 0.36, 1)" }} />
-          ))}
           {lines.map((l) => {
             const x1 = l.from.x * PAPER, y1 = l.from.y * PAPER, x2 = l.to.x * PAPER, y2 = l.to.y * PAPER;
             return <span key={`line-${l.id}`} aria-hidden className="pointer-events-none absolute origin-left bg-[var(--ramune)]" style={{ left: x1, top: y1, width: Math.hypot(x2 - x1, y2 - y1), height: 2 / camera.k, opacity: 0.25 + l.weight * 0.6, transform: `rotate(${Math.atan2(y2 - y1, x2 - x1)}rad)` }} />;
           })}
-          {shown.soon.map((h, i) => (
+          {seenHoles.map((h, i) => (
             <HoleTile key={h.id} hole={h} dim={Boolean(lit && !lit.has(h.id))} raised={Boolean(lit?.has(h.id))} pressed={focusId === h.id} nudgeX={shown.nudge.get(h.id)?.x ?? 0} nudgeY={shown.nudge.get(h.id)?.y ?? 0} still={reduced} delay={Math.min(i * 5, 240)} leaving={false} onOpen={open} />
           ))}
           {leaving.holes.map((h) => <HoleTile key={`gone-${h.id}`} hole={h} dim={false} raised={false} pressed={false} nudgeX={0} nudgeY={0} still={false} delay={0} leaving onOpen={open} />)}
-          {shown.placed.map((s, i) => {
+          {seenStyles.map((s, i) => {
             const tucked = shown.tucked.get(s.id) ?? 0;
             return (
               <Tile key={s.id} style={s} dim={Boolean(lit && !lit.has(s.id))} rank={focusId === s.id ? 4 : lit?.has(s.id) ? 3 : order.leads.has(s.id) ? 2 : 1} pressed={focusId === s.id} hidden={hostLit ? 0 : tucked} nudgeX={shown.nudge.get(s.id)?.x ?? 0} nudgeY={shown.nudge.get(s.id)?.y ?? 0} mark={host?.accent?.has(s.id) ? "strange" : hostLit?.has(s.id) ? "fit" : ""} still={reduced} delay={Math.min(i * 6, 240)} leaving={false} onOpen={open} />
