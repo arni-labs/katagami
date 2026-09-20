@@ -127,6 +127,8 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
 
   // ---- the camera: an offset that never stops at an edge, and a light ---------
   const cam = useRef({ x: 0, y: 0, vx: 0, vy: 0, px: -1, py: -1, run: 0, drag: null as null | { x: number; y: number; t: number; far: number }, pinch: 0 });
+  const calm = useRef(false);
+  useEffect(() => { const q = window.matchMedia("(prefers-reduced-motion: reduce)"); const read = () => { calm.current = q.matches; }; read(); q.addEventListener("change", read); return () => q.removeEventListener("change", read); }, []);
   const glare = useRef<HTMLDivElement | null>(null);
   const held = useRef(new Map<string, HTMLElement>());
   const lit_ = useRef(new Set<string>());
@@ -159,6 +161,8 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
   }, [size, stepX, stepY]);
   const coast = useCallback(() => {
     const k = cam.current;
+    // Asked for less motion: nothing glides. A flick stops where it was let go; a jump (see bring) lands at once.
+    if (calm.current) { k.vx = 0; k.vy = 0; paint(); return; }
     if (k.run) return;
     const step = () => {
       k.x += k.vx; k.y += k.vy; k.vx *= 0.94; k.vy *= 0.94;
@@ -177,9 +181,10 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
     // The nearest copy of that cell on the wrapping sheet.
     const wantX = size.w / 2 - (c + 0.5) * stepX, wantY = (size.h - 120) / 2 - (r + 0.5) * stepY, spanX = world.cols * stepX, spanY = world.rows * stepY;
     const dx = wantX - k.x - Math.round((wantX - k.x) / spanX) * spanX, dy = wantY - k.y - Math.round((wantY - k.y) / spanY) * spanY;
+    if (calm.current) { k.x += dx; k.y += dy; k.vx = 0; k.vy = 0; paint(); return; }
     k.vx = dx * 0.064; k.vy = dy * 0.064; // what a 0.94 decay carries just that far
     coast();
-  }, [size, stepX, stepY, world, coast]);
+  }, [size, stepX, stepY, world, coast, paint]);
   const goTo = useCallback((id: string) => { const at = world.where.get(id); if (at) { bring(at.c, at.r); setOpen(at); } }, [world, bring]);
   // A new sort or a new answer brings its centre (or its best fit) into view.
   const led = useRef("");
@@ -246,7 +251,7 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
   };
   const onKey = (e: React.KeyboardEvent) => {
     const by = { ArrowLeft: [1, 0], ArrowRight: [-1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
-    if (by) { e.preventDefault(); cam.current.vx = by[0] * stepX * 0.07; cam.current.vy = by[1] * stepY * 0.07; coast(); }
+    if (by) { e.preventDefault(); if (calm.current) { cam.current.x += by[0] * stepX; cam.current.y += by[1] * stepY; paint(); } else { cam.current.vx = by[0] * stepX * 0.07; cam.current.vy = by[1] * stepY * 0.07; coast(); } }
     else if (e.key === "+" || e.key === "=") zoomTo(zoom + 1); else if (e.key === "-") zoomTo(zoom - 1);
   };
 
@@ -298,16 +303,30 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
 /** A stamp opened: large, over a veil of its own ink, leaning to the pointer. Arrows and a swipe turn to its neighbours. */
 function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style: AtlasStyle; family: Family | null; fit: Fit | null; judging: boolean; phone: boolean; onTurn: (by: number) => void; onClose: () => void }) {
   const card = useRef<HTMLDivElement | null>(null);
+  const root = useRef<HTMLDivElement | null>(null);
   const swipe = useRef<{ x: number } | null>(null);
+  // A modal: focus moves in when it opens, stays in while it is open, and goes back where it was when it closes.
   useEffect(() => {
-    const key = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); else if (e.key === "ArrowRight") onTurn(1); else if (e.key === "ArrowLeft") onTurn(-1); };
+    const before = document.activeElement as HTMLElement | null;
+    root.current?.querySelector<HTMLElement>("a[href]")?.focus();
+    return () => before?.focus?.();
+  }, []);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Tab" && root.current) {
+        const stops = [...root.current.querySelectorAll<HTMLElement>("a[href], button")], first = stops[0], last = stops[stops.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); } else if (!root.current.contains(document.activeElement)) { e.preventDefault(); first?.focus(); }
+        return;
+      }
+      if (e.key === "Escape") onClose(); else if (e.key === "ArrowRight") onTurn(1); else if (e.key === "ArrowLeft") onTurn(-1);
+    };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, [onClose, onTurn]);
   const w = phone ? 268 : 380, h = Math.round(w * RATIO);
   const light = (e: React.PointerEvent) => { const el = card.current; if (!el) return; const r = el.getBoundingClientRect(); el.style.setProperty("--lx", String((e.clientX - r.left - r.width / 2) * 2.4)); el.style.setProperty("--ly", String((e.clientY - r.top - r.height / 2) * 2.4)); };
   return (
-    <div role="dialog" aria-label={style.name} className="viewer-veil absolute inset-0 z-40 flex flex-col items-center justify-center gap-5 px-5 backdrop-blur-2xl backdrop-saturate-150" style={{ background: `color-mix(in srgb, ${style.ink ?? "#888"} 38%, color-mix(in srgb, var(--background) 72%, transparent))` }}
+    <div ref={root} role="dialog" aria-modal="true" aria-label={style.name} className="viewer-veil absolute inset-0 z-40 flex flex-col items-center justify-center gap-5 px-5 backdrop-blur-2xl backdrop-saturate-150" style={{ background: `color-mix(in srgb, ${style.ink ?? "#888"} 38%, color-mix(in srgb, var(--background) 72%, transparent))` }}
       onClick={onClose} onPointerMove={light} onPointerDown={(e) => { swipe.current = { x: e.clientX }; }} onPointerUp={(e) => { const d = swipe.current ? e.clientX - swipe.current.x : 0; swipe.current = null; if (Math.abs(d) > 60) { e.stopPropagation(); onTurn(d < 0 ? 1 : -1); } }}>
       <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 cursor-pointer bg-background/60 p-2.5 backdrop-blur-md"><X size={18} /></button>
       <div ref={card} onClick={(e) => e.stopPropagation()} className="book-open" style={{ filter: "drop-shadow(0 30px 40px rgba(30,35,45,0.45))", ["--lx" as string]: -120, ["--ly" as string]: -160 }}>
