@@ -1725,3 +1725,95 @@
 .sentence-slot:focus-within::before { inset: 0.04em -0.08em -0.04em; }
 .hand-card { transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1); transform-origin: 50% 120%; animation: desk-drop 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 @media (prefers-reduced-motion: reduce) { .hand-card { transition: none; animation: none; } }
+
+/* Cards that answer to light (the mosaic canvas, the field's lens). A lit card
+   knows where it is (--cx, --cy) and where the light is (--lx, --ly), both plain
+   numbers of pixels set by script on an ancestor; everything else is arithmetic
+   here, so moving the light costs two property writes, not one per card.
+   It leans toward the light, a soft highlight crosses it, and a thin band of
+   foil colour follows. The owner asked for these material effects by name; they
+   are the one place this site uses a gradient. */
+.lit, .lit-on > .stamp {
+  --dx: calc(var(--lx, 0) - var(--cx, 0));
+  --dy: calc(var(--ly, 0) - var(--cy, 0));
+  position: relative;
+  transform: perspective(700px) rotateY(clamp(-11deg, calc(var(--dx) * 0.055deg), 11deg)) rotateX(clamp(-11deg, calc(var(--dy) * -0.055deg), 11deg)) scale(1.04);
+  will-change: transform;
+}
+.lit::after, .lit::before, .lit-on > .stamp::after, .lit-on > .stamp::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+/* The highlight: where the light would glance off varnished paper. */
+.lit::after, .lit-on > .stamp::after {
+  background: radial-gradient(circle at calc(50% + var(--dx) * 0.5px) calc(50% + var(--dy) * 0.5px), rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.14) 34%, rgba(255, 255, 255, 0) 60%);
+  mix-blend-mode: screen;
+}
+/* The foil: a band of colour whose hue and place follow the light. */
+.lit::before, .lit-on > .stamp::before {
+  background: linear-gradient(115deg, transparent 30%, hsl(calc(200 + var(--dx) * 0.35) 95% 72% / 0.55) 46%, hsl(calc(320 + var(--dy) * 0.35) 95% 74% / 0.5) 54%, transparent 70%);
+  background-size: 260% 260%;
+  background-position: calc(50% + var(--dx) * 0.12%) calc(50% + var(--dy) * 0.12%);
+  mix-blend-mode: color-dodge;
+  opacity: 0.55;
+}
+/* Paper grain, as a tiny tiled noise: the texture a stamp is printed on. A PNG, not an SVG filter:
+   turbulence is rasterised again for every card that comes into view. */
+/* Plain alpha, no blend mode: blending per card is what makes a sheet of hundreds slow to move. */
+.stamp-grain { position: absolute; inset: 0; pointer-events: none; z-index: 2; opacity: 0.32; background-image: url("data:image/png;base64,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"); }
+@media (prefers-reduced-motion: reduce) { .lit, .lit-on > .stamp { transform: none; } .lit::before, .lit-on > .stamp::before { display: none; } }
+/* On the canvas only the few cards round the pointer answer to it (script marks them .lit-on); a card eases
+   back when the light moves off. The whole sheet shares one glare that slides as you pan: light for hundreds
+   of cards at the cost of one layer. */
+.canvas-cell > .stamp { transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1); }
+.canvas-glare { position: absolute; inset: -20%; pointer-events: none; z-index: 6; background: linear-gradient(115deg, rgba(255,255,255,0) 36%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 64%); background-size: 220% 220%; will-change: background-position; }
+.dark .canvas-glare { opacity: 0.45; }
+
+/* The canvas: a cell arrives with a small settle, and the opened card rises over a veil of its own ink. */
+.canvas-cell { animation: canvas-cell-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes canvas-cell-in { from { opacity: 0; scale: 0.86; } }
+.viewer-veil { animation: viewer-veil-in 260ms ease-out both; }
+@keyframes viewer-veil-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .canvas-cell, .viewer-veil { animation: none; } }
+
+/* A cheaper perforation for sheets of hundreds: instead of masking each stamp (a mask per element is slow to
+   move), the holes are painted over its edges in the colour of whatever it lies on (--punch). */
+.stamp.stamp-punched { -webkit-mask: none; mask: none; }
+.stamp-holes {
+  position: absolute; inset: 0; pointer-events: none; z-index: 4;
+  --hole: radial-gradient(circle, var(--punch) var(--r), transparent calc(var(--r) + 0.5px));
+  background-image: var(--hole), var(--hole), var(--hole), var(--hole);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  background-size: var(--pw) calc(var(--r) * 2 + 2px), var(--pw) calc(var(--r) * 2 + 2px), calc(var(--r) * 2 + 2px) var(--ph), calc(var(--r) * 2 + 2px) var(--ph);
+  background-position: calc(var(--pw) / 2) calc(-1 * var(--r) - 1px), calc(var(--pw) / 2) calc(100% + var(--r) + 1px), calc(-1 * var(--r) - 1px) calc(var(--ph) / 2), calc(100% + var(--r) + 1px) calc(var(--ph) / 2);
+}
+
+/* Liquid glass (the field's lens). See field/glass-lens.tsx for what each layer is for. */
+.glass-body, .glass-rim, .glass-spec { position: absolute; inset: 0; border-radius: 9999px; pointer-events: none; }
+.glass-body {
+  background: color-mix(in srgb, var(--background) 30%, transparent);
+  -webkit-backdrop-filter: blur(9px) saturate(1.9) brightness(1.05);
+  backdrop-filter: blur(9px) saturate(1.9) brightness(1.05);
+  box-shadow: 0 34px 80px -26px rgba(20, 25, 40, 0.5), 0 10px 22px -10px rgba(20, 25, 40, 0.28), 0 0 0 1px rgba(20, 25, 40, 0.07);
+}
+/* The bevel: light gathered on the inside of the rim, brightest at the top where it enters. */
+.glass-rim {
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.7),
+    inset 0 4px 7px rgba(255, 255, 255, 0.95),
+    inset 0 0 0 9px rgba(255, 255, 255, 0.1),
+    inset 0 -2px 4px rgba(255, 255, 255, 0.35),
+    inset 0 -18px 30px -14px rgba(255, 255, 255, 0.42),
+    inset 0 0 46px rgba(255, 255, 255, 0.16);
+}
+/* The specular arcs: two bright stretches of rim, opposite each other, that swing with the lens's travel. */
+.glass-spec {
+  background: conic-gradient(from calc(var(--la, -40) * 1deg), rgba(255,255,255,0) 0deg, rgba(255,255,255,0.95) 26deg, rgba(255,255,255,0) 64deg, rgba(255,255,255,0) 176deg, rgba(255,255,255,0.6) 206deg, rgba(255,255,255,0) 244deg, rgba(255,255,255,0) 360deg);
+  -webkit-mask: radial-gradient(circle closest-side, #0000 calc(100% - 3.5px), #000 calc(100% - 2.5px), #000 100%);
+  mask: radial-gradient(circle closest-side, #0000 calc(100% - 3.5px), #000 calc(100% - 2.5px), #000 100%);
+  transition: background 0s;
+}
+.dark .glass-body { background: color-mix(in srgb, #0c0e12 38%, transparent); -webkit-backdrop-filter: blur(9px) saturate(1.7) brightness(0.92); backdrop-filter: blur(9px) saturate(1.7) brightness(0.92); }
+.dark .glass-rim { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.28), inset 0 3px 5px rgba(255,255,255,0.45), inset 0 -18px 30px -14px rgba(255,255,255,0.16), inset 0 0 46px rgba(255,255,255,0.06); }
+@media (prefers-reduced-transparency: reduce) { .glass-body { background: var(--background); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* A print mounted in the lens: a paper mat, a shadow that lifts it off the glass, and the same light as the canvas cards. */
+.lens-print { display: block; padding: 3px; background: #fbf9f4; box-shadow: 0 10px 22px -10px rgba(20, 25, 40, 0.55), 0 2px 4px rgba(20, 25, 40, 0.18); }
+.glass-chip { background: color-mix(in srgb, var(--background) 62%, transparent); -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4), 0 6px 16px -8px rgba(20,25,40,0.4); }
