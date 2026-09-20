@@ -20,19 +20,23 @@ const TILE_H = 84;
 // Like a map: a card keeps about the same size on screen at every zoom, so only
 // as many are drawn as fit without covering one another. Zoom in and the ones
 // that were hidden behind a family's lead card have room, and pop out.
-const CARD_PX_WIDE = 124; // a card's width on screen while the paper is zoomed out
-const CARD_PX_NARROW = 80; // on a phone, so the first view holds more than a handful
-const CARD_GAP = 18;
+// Far out the map is a mosaic of pictures: small tiles, no words, as many as
+// fit. Names arrive when a tile is big enough to carry one (NAMED_AT), or on
+// hover before that.
+const CARD_PX_WIDE = 78; // a tile's width on screen while the paper is zoomed out
+const CARD_PX_NARROW = 60;
+const NAMED_AT = 104; // screen pixels of tile width from which it carries its name
+const CARD_GAP = 10;
 const NAME_ROOM = 30; // screen pixels kept clear above a family's lead card for its name
 // Past the zoom where every card has room (about 0.94) cards grow with the paper:
 // that is the closer look. The zoom stops where a card is about 210px wide.
 const MAX_ZOOM = 1.6;
-const TRUE_SIZE_ZOOM = CARD_PX_WIDE / 132 + 0.02; // where the counter-scale reaches 1
+const TRUE_SIZE_ZOOM = NAMED_AT / 132 + 0.04; // close enough that tiles are at their true size and carry names
 
 // A pan or zoom changes the camera sixty times a second. A tile depends on none
 // of it — its counter-scale comes from one CSS variable on the paper — so it is
 // memoised and the pictures stay put while the paper moves.
-const Tile = memo(function Tile({ style: s, dim, rank, pressed, hidden, mark, nudgeX, nudgeY, still, delay, leaving, onOpen }: { style: AtlasStyle; dim: boolean; rank: number; pressed: boolean; hidden: number; mark: "" | "fit" | "strange"; nudgeX: number; nudgeY: number; still: boolean; delay: number; leaving: boolean; onOpen: (s: AtlasStyle) => void }) {
+const Tile = memo(function Tile({ style: s, named, dim, rank, pressed, hidden, mark, nudgeX, nudgeY, still, delay, leaving, onOpen }: { style: AtlasStyle; named: boolean; dim: boolean; rank: number; pressed: boolean; hidden: number; mark: "" | "fit" | "strange"; nudgeX: number; nudgeY: number; still: boolean; delay: number; leaving: boolean; onOpen: (s: AtlasStyle) => void }) {
   return (
     <div
       className="absolute"
@@ -48,15 +52,20 @@ const Tile = memo(function Tile({ style: s, dim, rank, pressed, hidden, mark, nu
         onClick={() => onOpen(s)}
         aria-label={`${s.name}, ${s.kind === "language" ? "design language" : "art style"}${hidden > 0 ? `, with ${hidden} more behind it` : ""}`}
         aria-pressed={hidden > 0 ? undefined : pressed}
-        className="atlas-card sticker-card relative block w-full cursor-pointer p-0 text-left"
-        style={{ opacity: dim ? 0.18 : 1, boxShadow: hidden > 0 ? "6px 6px 0 0 color-mix(in srgb, var(--foreground) 7%, var(--card)), 12px 12px 0 0 color-mix(in srgb, var(--foreground) 4%, var(--card)), var(--shadow-card)" : undefined }}
+        className={`atlas-card group/tile relative block w-full cursor-pointer p-0 text-left ${named ? "sticker-card" : "shadow-[0_1px_2px_rgba(30,35,45,0.18),0_6px_16px_-10px_rgba(30,35,45,0.5)]"}`}
+        style={{ opacity: dim ? 0.18 : 1, boxShadow: hidden > 0 ? (named ? "6px 6px 0 0 color-mix(in srgb, var(--foreground) 7%, var(--card)), 12px 12px 0 0 color-mix(in srgb, var(--foreground) 4%, var(--card)), var(--shadow-card)" : "4px 4px 0 0 color-mix(in srgb, var(--foreground) 9%, var(--card)), 8px 8px 0 0 color-mix(in srgb, var(--foreground) 5%, var(--card))") : undefined }}
       >
         <span className="relative block w-full overflow-hidden bg-muted [&_img]:object-cover [&_img]:object-top" style={{ height: TILE_H }}>
           {s.thumbnail_url ? <GalleryImage src={s.thumbnail_url} alt="" sizes="160px" className="object-cover" /> : null}
         </span>
-        <span className="block truncate px-2 pb-1.5 pt-1.5 font-display text-[14.5px] font-bold leading-tight tracking-[-0.01em]">{s.name}</span>
+        {named ? (
+          <span className="block truncate px-2 pb-1.5 pt-1.5 font-display text-[14.5px] font-bold leading-tight tracking-[-0.01em]">{s.name}</span>
+        ) : (
+          // A picture-only tile says its name when pointed at or focused.
+          <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 whitespace-nowrap bg-foreground px-2 py-1 font-display text-[13px] font-bold text-background opacity-0 transition-opacity group-hover/tile:opacity-100 group-focus-visible/tile:opacity-100 motion-reduce:transition-none">{s.name}</span>
+        )}
         {mark ? <span aria-hidden className="absolute inset-x-0 bottom-0 h-1.5" style={{ background: mark === "strange" ? "var(--sakura)" : "var(--ramune)" }} /> : null}
-        {hidden > 0 ? (
+        {hidden > 0 && named ? (
           <span aria-hidden className="absolute -right-2 -top-2.5 bg-[var(--yuzu)] px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-[0.06em] text-black">+{hidden}</span>
         ) : null}
       </button>
@@ -67,7 +76,7 @@ const Tile = memo(function Tile({ style: s, dim, rank, pressed, hidden, mark, nu
 
 // A direction the encyclopedia names and nobody here has made work for yet.
 // Drawn as a sheet still on the press: halftone where the picture will be.
-const HoleTile = memo(function HoleTile({ hole: h, dim, raised, pressed, nudgeX, nudgeY, still, delay, leaving, onOpen }: { hole: AtlasHole; dim: boolean; raised: boolean; pressed: boolean; nudgeX: number; nudgeY: number; still: boolean; delay: number; leaving: boolean; onOpen: (h: AtlasHole) => void }) {
+const HoleTile = memo(function HoleTile({ hole: h, named, dim, raised, pressed, nudgeX, nudgeY, still, delay, leaving, onOpen }: { hole: AtlasHole; named: boolean; dim: boolean; raised: boolean; pressed: boolean; nudgeX: number; nudgeY: number; still: boolean; delay: number; leaving: boolean; onOpen: (h: AtlasHole) => void }) {
   return (
     <div className="absolute" style={{ left: h.x * PAPER - TILE_W / 2 + nudgeX, top: h.y * PAPER - TILE_H / 2 + nudgeY, width: TILE_W, zIndex: pressed ? 4 : raised ? 3 : 0, transform: "scale(var(--f))", transformOrigin: "50% 42%", transition: still ? undefined : "left 320ms cubic-bezier(0.22, 1, 0.36, 1), top 320ms cubic-bezier(0.22, 1, 0.36, 1)" }}>
       <div className={still ? "" : leaving ? "atlas-leave" : "atlas-pop"} style={{ animationDelay: still || leaving ? undefined : `${delay}ms` }}>
@@ -76,14 +85,18 @@ const HoleTile = memo(function HoleTile({ hole: h, dim, raised, pressed, nudgeX,
           onClick={() => onOpen(h)}
           aria-label={`${h.name}, coming soon`}
           aria-pressed={pressed}
-          className="atlas-card relative block w-full cursor-pointer bg-[color-mix(in_srgb,var(--card)_82%,transparent)] p-0 text-left shadow-[0_1px_0_rgba(30,35,45,0.04),0_6px_18px_-12px_rgba(30,35,45,0.35)]"
+          className="atlas-card group/tile relative block w-full cursor-pointer bg-[color-mix(in_srgb,var(--card)_82%,transparent)] p-0 text-left shadow-[0_1px_0_rgba(30,35,45,0.04),0_6px_18px_-12px_rgba(30,35,45,0.35)]"
           style={{ opacity: dim ? 0.18 : 1 }}
         >
           <span className="relative block w-full overflow-hidden" style={{ height: TILE_H }}>
             <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} />
-            <span className="absolute bottom-2 left-2 -rotate-3 bg-[var(--sakura)] px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-white">Coming soon</span>
+            {named ? <span className="absolute bottom-2 left-2 -rotate-3 bg-[var(--sakura)] px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-white">Coming soon</span> : <span aria-hidden className="absolute bottom-1.5 left-1.5 h-2.5 w-2.5 bg-[var(--sakura)]" />}
           </span>
-          <span className="block truncate px-2 pb-1.5 pt-1.5 font-display text-[14.5px] font-bold leading-tight tracking-[-0.01em] text-foreground/80">{h.name}</span>
+          {named ? (
+            <span className="block truncate px-2 pb-1.5 pt-1.5 font-display text-[14.5px] font-bold leading-tight tracking-[-0.01em] text-foreground/80">{h.name}</span>
+          ) : (
+            <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 whitespace-nowrap bg-[var(--sakura)] px-2 py-1 font-display text-[13px] font-bold text-white opacity-0 transition-opacity group-hover/tile:opacity-100 group-focus-visible/tile:opacity-100 motion-reduce:transition-none">{h.name} · soon</span>
+          )}
         </button>
       </div>
     </div>
@@ -128,6 +141,7 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   const [owner, setOwner] = useState(false);
   const framed = useRef(false);
   const [narrow, setNarrow] = useState(false);
+  const [touched, setTouched] = useState(false);
   // The viewport's size as state: which cards are mounted depends on it, so a
   // rotation or a window resize has to re-render, not wait for the next pan.
   const [view, setView] = useState({ w: 1440, h: 900 });
@@ -206,7 +220,8 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     const k = 1.18 ** step;
     const f = Math.max(1, cardPx / (TILE_W * k));
     const w = (TILE_W * f + CARD_GAP / k) / PAPER;
-    const h = ((TILE_H + 30) * f + CARD_GAP / k) / PAPER;
+    const namedStep = TILE_W * k * f >= NAMED_AT;
+    const h = ((TILE_H + (namedStep ? 30 : 0)) * f + CARD_GAP / k) / PAPER;
     const spots: { id: string; x: number; top: number; bottom: number }[] = [];
     const placed: AtlasStyle[] = [];
     const soon: AtlasHole[] = [];
@@ -238,9 +253,12 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
       seen.add(s.id);
       if (take(s)) placed.push(s);
     }
-    if (kind === "" || kind === "soon") {
+    // Far out the map is the made work and nothing else: what is still to come
+    // joins once tiles are big enough to say so (or when it is asked for, or lit).
+    const holesWanted = kind === "soon" || (kind === "" && namedStep);
+    if (holesWanted || forced.size > 0 || first.size > 0) {
       for (const hole of [...holes.filter((x) => forced.has(x.id)), ...holes.filter((x) => first.has(x.id)), ...holes]) {
-        if (seen.has(hole.id)) continue;
+        if (seen.has(hole.id) || (!holesWanted && !forced.has(hole.id) && !first.has(hole.id))) continue;
         seen.add(hole.id);
         if (take(hole)) soon.push(hole);
       }
@@ -343,6 +361,11 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     return () => { root.style.overflow = before.overflow; root.style.overscrollBehavior = before.overscroll; };
   }, []);
 
+  // The hint has done its job once the reader has moved the map themselves: any
+  // camera change after the opening fit has had time to land.
+  const settledAt = useRef(0);
+  useEffect(() => { settledAt.current = Date.now() + 1600; }, []);
+  useEffect(() => { if (settledAt.current && Date.now() > settledAt.current) setTouched(true); }, [camera]);
   const zoomNow = useRef(camera.k);
   useEffect(() => { zoomNow.current = camera.k; }, [camera.k]);
   const glideTo = useCallback((wx: number, wy: number, k: number, screen?: { x: number; y: number }) => {
@@ -371,8 +394,8 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
           : { x: el.clientWidth / 2, y: el.clientHeight * 0.28 };
     // Close enough that cards are at their true size: the layout guarantees no
     // two overlap there, so the focused item and its neighbours all read clean.
-    glideTo(item.x * PAPER, item.y * PAPER, Math.max(zoomNow.current, cardPx / TILE_W + 0.02), screen);
-  }, [viewportRef, glideTo, cardPx]);
+    glideTo(item.x * PAPER, item.y * PAPER, Math.max(zoomNow.current, TRUE_SIZE_ZOOM), screen);
+  }, [viewportRef, glideTo]);
 
   const open = useCallback((s: { id: string; x: number; y: number }) => {
     if (draggingRef.current) return;
@@ -423,6 +446,12 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   }, [find, styles, holes]);
 
   const factor = Math.max(1, cardPx / (TILE_W * camera.k));
+  const named = TILE_W * (1.18 ** step) * Math.max(1, cardPx / (TILE_W * 1.18 ** step)) >= NAMED_AT;
+  // The first tiles arrive as a bloom from the middle of the map outward; after
+  // that, arrivals are only a breath apart.
+  const bloomed = useRef(false);
+  useEffect(() => { const t = window.setTimeout(() => { bloomed.current = true; }, 1400); return () => window.clearTimeout(t); }, []);
+  const delayOf = (item: { x: number; y: number }, i: number) => (bloomed.current ? Math.min(i * 4, 160) : Math.round(Math.hypot(item.x - 0.5, item.y - 0.5) * 1100));
   // A family's ground: a soft blob of one ink under where most of its cards sit
   // (the spread, not the extremes — one far-flung member must not flood the
   // map), with the family's name at its head. Names are for the far view; up
@@ -441,7 +470,7 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   const nameOpacity = camera.k >= TRUE_SIZE_ZOOM ? 0.45 : 1;
   // Far out the grounds are the map's colour; close in they sit behind many more
   // cards, so they thin a little as the paper grows.
-  const fieldAlpha = Math.min(0.3, Math.max(0.17, 0.34 - camera.k * 0.18));
+  const fieldAlpha = Math.min(0.26, Math.max(0.16, 0.3 - camera.k * 0.14));
   const placedIds = useMemo(() => new Set(shown.placed.map((s) => s.id)), [shown]);
 
   // Only what is on screen is in the document. Zoomed in, the paper holds nine
@@ -538,13 +567,13 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
             return <span key={`line-${l.id}`} aria-hidden className="pointer-events-none absolute origin-left bg-[var(--ramune)]" style={{ left: x1, top: y1, width: Math.hypot(x2 - x1, y2 - y1), height: 2 / camera.k, opacity: 0.25 + l.weight * 0.6, transform: `rotate(${Math.atan2(y2 - y1, x2 - x1)}rad)` }} />;
           })}
           {seenHoles.map((h, i) => (
-            <HoleTile key={h.id} hole={h} dim={Boolean(lit && !lit.has(h.id))} raised={Boolean(lit?.has(h.id))} pressed={focusId === h.id} nudgeX={shown.nudge.get(h.id)?.x ?? 0} nudgeY={shown.nudge.get(h.id)?.y ?? 0} still={reduced} delay={Math.min(i * 5, 240)} leaving={false} onOpen={open} />
+            <HoleTile key={h.id} hole={h} named={named} dim={Boolean(lit && !lit.has(h.id))} raised={Boolean(lit?.has(h.id))} pressed={focusId === h.id} nudgeX={shown.nudge.get(h.id)?.x ?? 0} nudgeY={shown.nudge.get(h.id)?.y ?? 0} still={reduced} delay={delayOf(h, i)} leaving={false} onOpen={open} />
           ))}
-          {leaving.holes.map((h) => <HoleTile key={`gone-${h.id}`} hole={h} dim={false} raised={false} pressed={false} nudgeX={0} nudgeY={0} still={false} delay={0} leaving onOpen={open} />)}
+          {leaving.holes.map((h) => <HoleTile key={`gone-${h.id}`} hole={h} named={named} dim={false} raised={false} pressed={false} nudgeX={0} nudgeY={0} still={false} delay={0} leaving onOpen={open} />)}
           {seenStyles.map((s, i) => {
             const tucked = shown.tucked.get(s.id) ?? 0;
             return (
-              <Tile key={s.id} style={s} dim={Boolean(lit && !lit.has(s.id))} rank={focusId === s.id ? 4 : lit?.has(s.id) ? 3 : order.leads.has(s.id) ? 2 : 1} pressed={focusId === s.id} hidden={hostLit ? 0 : tucked} nudgeX={shown.nudge.get(s.id)?.x ?? 0} nudgeY={shown.nudge.get(s.id)?.y ?? 0} mark={host?.accent?.has(s.id) ? "strange" : hostLit?.has(s.id) ? "fit" : ""} still={reduced} delay={Math.min(i * 6, 240)} leaving={false} onOpen={open} />
+              <Tile key={s.id} style={s} named={named} dim={Boolean(lit && !lit.has(s.id))} rank={focusId === s.id ? 4 : lit?.has(s.id) ? 3 : order.leads.has(s.id) ? 2 : 1} pressed={focusId === s.id} hidden={hostLit ? 0 : tucked} nudgeX={shown.nudge.get(s.id)?.x ?? 0} nudgeY={shown.nudge.get(s.id)?.y ?? 0} mark={host?.accent?.has(s.id) ? "strange" : hostLit?.has(s.id) ? "fit" : ""} still={reduced} delay={delayOf(s, i)} leaving={false} onOpen={open} />
             );
           })}
           {grounds.map((g) => {
@@ -553,21 +582,23 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
             return (
               <span key={`name-${g.id}`} className="atlas-family-name pointer-events-none absolute z-[5] whitespace-nowrap font-display font-bold tracking-[-0.02em] text-foreground" style={{ left: lead.x * PAPER, top: lead.y * PAPER - TILE_H / 2, // The card grows about a point 42% down its 115px height, so its top edge
                 // rises 48px for every unit of scale; the name rides that edge.
-                transform: "translate(-50%, calc(-100% - 8px * var(--f) - 48px * (var(--f) - 1))) scale(var(--f))", transformOrigin: "50% 100%", fontSize: 16, opacity: lit ? 0.12 : nameOpacity, transition: reduced ? undefined : "opacity 300ms" }}>
+                // The name keeps one size on screen whatever the tiles do; it rides the
+                // top edge of its lead tile, which rises as the tile is counter-scaled.
+                transform: `translate(-50%, calc(-100% - 6px * var(--f) - ${named ? 48 : 35}px * (var(--f) - 1)))`, fontSize: 14 / camera.k, opacity: lit ? 0.12 : nameOpacity, transition: reduced ? undefined : "opacity 300ms" }}>
                 {g.label}
               </span>
             );
           })}
-          {leaving.styles.map((s) => <Tile key={`gone-${s.id}`} style={s} dim={false} rank={0} pressed={false} hidden={0} mark="" nudgeX={0} nudgeY={0} still={false} delay={0} leaving onOpen={open} />)}
+          {leaving.styles.map((s) => <Tile key={`gone-${s.id}`} style={s} named={named} dim={false} rank={0} pressed={false} hidden={0} mark="" nudgeX={0} nudgeY={0} still={false} delay={0} leaving onOpen={open} />)}
         </div>
       </div>
 
       {/* Top bar: on a phone a band of paper across the top; on a wide screen it floats over the map's corner. A host page draws its own. */}
       {host?.ownChrome === false ? null : (
         <>
-      <div className={`absolute inset-x-0 top-0 z-10 bg-background/92 px-4 pb-3 pt-3 shadow-[0_1px_0_rgba(30,35,45,0.05)] sm:inset-x-auto sm:left-6 sm:top-6 sm:w-[24rem] sm:p-5 sm:shadow-[var(--shadow-card)] ${sheetOpen ? "max-sm:hidden" : ""}`}>
-        <h1 className="mt-1 font-display text-[36px] font-bold leading-tight tracking-[-0.03em] max-sm:sr-only">The <Marker color="ramune">atlas</Marker></h1>
-        <div className="relative sm:mt-5">
+      <div className={`absolute inset-x-0 top-0 z-10 bg-background px-4 pb-3 pt-3 shadow-[0_1px_0_rgba(30,35,45,0.05)] sm:inset-x-auto sm:left-6 sm:top-6 sm:w-[22rem] sm:p-4 sm:shadow-[var(--shadow-card)] ${sheetOpen ? "max-sm:hidden" : ""}`}>
+        <h1 className="sr-only">The atlas</h1>
+        <div className="relative">
           <label htmlFor="atlas-find" className="sr-only">Find a style or a direction on the map</label>
           <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -609,6 +640,15 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
         <button type="button" onClick={() => { setFocusId(null); fitAll(); }} aria-label="Fit the whole map" className="sticker-card h-11 cursor-pointer px-3 font-mono text-[11px] font-bold uppercase tracking-[0.16em]">Fit</button>
       </div>
 
+      {host?.ownChrome !== false ? (
+        <p aria-hidden className={`pointer-events-none absolute right-5 top-5 z-10 bg-background/90 px-3 py-2 text-right font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground max-sm:hidden ${sheetOpen ? "hidden" : ""}`}>
+          <span className="block font-display text-[22px] font-bold normal-case tracking-[-0.02em] text-foreground">{styles.length}</span>
+          styles · {families.length} families{holes.length > 0 ? ` · ${holes.length} to come` : ""}
+        </p>
+      ) : null}
+      <p aria-hidden className={`pointer-events-none absolute inset-x-0 z-10 text-center text-[14.5px] text-muted-foreground transition-opacity duration-500 motion-reduce:transition-none ${touched || sheetOpen ? "opacity-0" : "opacity-100"}`} style={{ bottom: 22 + (host?.insets?.bottom ?? 0) }}>
+        Drag to explore · {narrow ? "pinch" : "scroll"} to zoom
+      </p>
       {sample && host?.ownChrome !== false ? (
         <p className={`absolute bottom-6 right-4 z-10 bg-background/90 px-3 py-2 text-[14.5px] text-muted-foreground max-sm:hidden sm:right-8`}>
           This is the visitor shelf — <Link href="/signin" className="ink-underline text-foreground">sign in for all</Link>
