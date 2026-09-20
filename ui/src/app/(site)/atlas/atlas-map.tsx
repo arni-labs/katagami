@@ -493,7 +493,10 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
           {pools.of.map((s) => (
             // A spread shadow, not a filter: hundreds of these cost far less than
             // hundreds of blurs, and a shadow of one flat ink is still a blob, not a gradient.
-            <span key={`pool-${s.id}`} aria-hidden className="pointer-events-none absolute h-0 w-0 rounded-[50%]" style={{ left: s.x * PAPER, top: s.y * PAPER + 12, boxShadow: `0 0 ${pools.blur}px ${pools.reach}px ${FAMILY_INKS[inkOf.get(s.family ?? "") ?? 0]}`, opacity: lit ? (lit.has(s.id) ? glowOpacity : 0.03) : glowOpacity, transition: reduced ? undefined : "opacity 300ms" }} />
+            <span key={`pool-${s.id}`} aria-hidden className="pointer-events-none absolute h-0 w-0 rounded-[50%]" // Under the card wherever it is drawn (an answer's cards are eased apart),
+            // gone entirely when its card is dimmed, and resized over a moment rather
+            // than popping when the zoom crosses a step.
+            style={{ left: s.x * PAPER + (shown.nudge.get(s.id)?.x ?? 0), top: s.y * PAPER + 12 + (shown.nudge.get(s.id)?.y ?? 0), boxShadow: `0 0 ${pools.blur}px ${pools.reach}px ${FAMILY_INKS[inkOf.get(s.family ?? "") ?? 0]}`, opacity: lit && !lit.has(s.id) ? 0 : glowOpacity, transition: reduced ? undefined : "opacity 300ms, box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1), left 320ms cubic-bezier(0.22, 1, 0.36, 1), top 320ms cubic-bezier(0.22, 1, 0.36, 1)" }} />
           ))}
           {lines.map((l) => {
             const x1 = l.from.x * PAPER, y1 = l.from.y * PAPER, x2 = l.to.x * PAPER, y2 = l.to.y * PAPER;
