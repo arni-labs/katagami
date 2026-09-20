@@ -15,5 +15,5 @@ export const metadata: Metadata = {
 export default async function MosaicPage() {
   const tier = (await hasFullGalleryAccess()) ? "full" : "sample";
   const atlas = await libraryAtlas(tier);
-  return <Mosaic styles={atlas.styles} families={atlas.families} />;
+  return <Mosaic styles={atlas.styles} families={atlas.families} holes={atlas.holes} />;
 }

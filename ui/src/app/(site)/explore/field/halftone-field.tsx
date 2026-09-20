@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AtlasHole, AtlasStyle } from "@/lib/catalog";
 import { FitPicture } from "../../atlas/fit-picture";
+import { GlassLens } from "./glass-lens";
 import { AskDock, NEUTRAL_INK, StyleCard, hueOf, isDark, useAsk, useScreen, type Family } from "../shared";
 
 // The library as one halftone. Every style is a dot in the colour its artwork
@@ -135,7 +136,16 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
     const a = at.current;
     a.tx = Math.min(size.w - R - 6, Math.max(R + 6, x));
     a.ty = Math.min(size.h - dockRoom - R - 6, Math.max(R + 6, y));
-    const paint = () => { if (lensEl.current) lensEl.current.style.transform = `translate3d(${a.x - R}px, ${a.y - R}px, 0)`; };
+    const paint = () => {
+      const el = lensEl.current;
+      if (!el) return;
+      el.style.transform = `translate3d(${a.x - R}px, ${a.y - R}px, 0)`;
+      // The glass answers to movement: its highlights swing to face the way it is travelling, and the
+      // light on the prints inside leads the same way. At rest the light comes from the upper left.
+      const vx = a.tx - a.x, vy = a.ty - a.y, speed = Math.hypot(vx, vy);
+      if (speed > 0.6) el.style.setProperty("--la", (Math.atan2(vy, vx) * (180 / Math.PI) - 118).toFixed(0));
+      el.style.setProperty("--lx", (-R * 0.55 + vx * 5).toFixed(0)); el.style.setProperty("--ly", (-R * 0.6 + vy * 5).toFixed(0));
+    };
     if (!glide || reduced.current) { a.x = a.tx; a.y = a.ty; paint(); look(Math.min(size.w, Math.max(0, x)), Math.min(size.h, Math.max(0, y))); return; }
     look(Math.min(size.w, Math.max(0, x)), Math.min(size.h, Math.max(0, y)));
     if (a.run) return;
@@ -188,6 +198,7 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
     const p = pointer(e);
     if (p.touch) { if (dragging.current) moveTo(p.x, p.y - R - 28, true); return; } // the lens rides above the finger
     if (!locked) moveTo(p.x, p.y, true);
+    else if (lensEl.current) { lensEl.current.style.setProperty("--lx", (p.x - at.current.x).toFixed(0)); lensEl.current.style.setProperty("--ly", (p.y - at.current.y).toFixed(0)); } // pinned: the pointer is the light
   };
   const onDown = (e: React.PointerEvent) => {
     const p = pointer(e);
@@ -235,7 +246,7 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
       <p className="pointer-events-none absolute left-4 top-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground md:left-6 md:top-4"><span className="text-foreground">{styles.length}</span> styles · {holes.length} to come</p>
 
       <div ref={lensEl} className="absolute left-0 top-0 will-change-transform" style={{ width: R * 2, height: R * 2, pointerEvents: "none" }}>
-        <div className="absolute inset-0 rounded-full bg-background shadow-[0_18px_60px_-18px_rgba(30,35,45,0.5),0_0_0_1px_rgba(30,35,45,0.06)]" />
+        <GlassLens radius={R}>
         {near.map((id, i) => {
           const s = byId.get(id), slot = slots[i];
           if (!s || !slot) return null;
@@ -243,12 +254,16 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
           return (
             <button key={id} type="button" aria-label={s.name} onClick={() => { setLocked(true); setOpenId(id); }} onPointerEnter={() => setHover(id)} onPointerLeave={() => setHover(null)} onFocus={() => { setLocked(true); setHover(id); }} onBlur={() => setHover(null)}
               className="explore-lens-item absolute cursor-pointer" style={{ pointerEvents: locked ? "auto" : "none", left: R + slot.x, top: R + slot.y - (i === 0 ? 8 : 0), transform: "translate(-50%, -50%)", opacity: lit && !lit.has(id) ? 0.35 : 1, outline: openId === id ? "2px solid var(--foreground)" : undefined, outlineOffset: 2 }}>
-              <FitPicture src={s.thumbnail_url} height={slot.h} maxWidth={Math.round(slot.h * 1.34)} sizes="128px" />
-              {fit ? <span aria-hidden className="absolute inset-x-0 -bottom-1 h-[3px]" style={{ background: fit.strange ? "var(--sakura)" : "var(--ramune)" }} /> : null}
+              {/* A print mounted on the glass: it takes the lens's light, from where it sits in it. */}
+              <span className="lens-print lit" style={{ ["--cx" as string]: Math.round(slot.x), ["--cy" as string]: Math.round(slot.y) }}>
+                <FitPicture src={s.thumbnail_url} height={slot.h - 6} maxWidth={Math.round(slot.h * 1.34) - 6} sizes={i === 0 ? "256px" : "128px"} />
+              </span>
+              {fit ? <span aria-hidden className="absolute inset-x-0 -bottom-1.5 h-[3px]" style={{ background: fit.strange ? "var(--sakura)" : "var(--ramune)" }} /> : null}
             </button>
           );
         })}
-        {named ? <p aria-live="polite" className="pointer-events-none absolute inset-x-0 text-center text-[12.5px] font-semibold leading-tight" style={{ top: R + slots[0].h / 2 + 2 }}><span className="bg-background/90 px-1.5 py-0.5">{named.name}</span></p> : null}
+        {named ? <p aria-live="polite" className="pointer-events-none absolute inset-x-0 z-10 text-center text-[12.5px] font-semibold leading-tight" style={{ top: R + slots[0].h / 2 + 1 }}><span className="glass-chip inline-block px-2 py-1">{named.name}</span></p> : null}
+        </GlassLens>
       </div>
 
       {!touched ? <p aria-hidden className="explore-halo pointer-events-none absolute inset-x-0 bottom-[7.5rem] text-center text-[12.5px] text-muted-foreground md:bottom-auto md:top-4">{phone ? "Drag across the field" : "Move to look · click to hold the lens"}</p> : null}
