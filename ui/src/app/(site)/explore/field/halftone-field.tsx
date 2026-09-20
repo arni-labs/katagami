@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AtlasHole, AtlasStyle } from "@/lib/catalog";
 import { FitPicture } from "../../atlas/fit-picture";
-import { AskDock, NEUTRAL_INK, StyleCard, hueOf, useAsk, useScreen, type Family } from "../shared";
+import { AskDock, NEUTRAL_INK, StyleCard, hueOf, isDark, useAsk, useScreen, type Family } from "../shared";
 
 // The library as one halftone. Every style is a dot in the colour its artwork
 // reads as, placed where the atlas put it, so likeness shows as continents of
@@ -52,11 +52,8 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
     const watch = new ResizeObserver(measure);
     watch.observe(el);
     const themed = new MutationObserver(() => setTheme((n) => n + 1));
-    themed.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    const scheme = window.matchMedia("(prefers-color-scheme: dark)");
-    const flip = () => setTheme((n) => n + 1);
-    scheme.addEventListener("change", flip);
-    return () => { watch.disconnect(); themed.disconnect(); scheme.removeEventListener("change", flip); };
+    themed.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => { watch.disconnect(); themed.disconnect(); };
   }, [screen]);
 
   // The atlas square, fitted to whatever room there is (a tall phone stretches it; dots do not mind).
@@ -85,7 +82,7 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
     if (!g) return;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, size.w, size.h);
-    const dark = document.documentElement.dataset.theme === "dark" || (!document.documentElement.dataset.theme && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    const dark = isDark();
     g.globalCompositeOperation = dark ? "screen" : "multiply"; // inks overprint, as on a riso
     const base = phone ? 4.4 : 6.2;
     // Directions still to come: the faint grain the made work sits in.

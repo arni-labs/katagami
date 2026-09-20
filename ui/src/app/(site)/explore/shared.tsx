@@ -19,6 +19,9 @@ export const HUES: [string, string][] = [["red", "#e5484d"], ["orange", "#f76b15
 const TRAIT = new Map(STYLE_DNA_QUESTIONS.map((q) => [q.id, q.label]));
 export const fitWord = (f: Fit, judging: boolean) => (f.strange ? "Strange, still fits" : f.fit === null ? (judging ? "Judging fit…" : "Matched by traits") : f.fit >= 0.8 ? "Strong fit" : f.fit >= 0.5 ? "Could work" : "A stretch");
 
+/** The site's theme is a class on the root (next-themes), not the OS preference. */
+export const isDark = () => document.documentElement.classList.contains("dark");
+
 /** The hue a colour belongs to, in the picker's own nine names. */
 export function hueOf(ink: string | null): string {
   if (!ink) return "neutral";
