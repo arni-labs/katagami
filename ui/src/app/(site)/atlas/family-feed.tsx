@@ -31,8 +31,11 @@ export function FamilyFeed({ styles, families, holes, lit, accent, find }: { sty
       // What is still to come in this family's part of the map: the directions seated nearest its centre.
       const soon = lit || q ? [] : holes.filter((h) => Math.hypot(h.x - f.x, h.y - f.y) < 0.07).slice(0, 4);
       return { id: f.id, label: f.label, ink: INKS[ink.get(f.id) ?? 0], total: f.count, members, soon };
-    }).filter((r) => r.members.length > 0);
+    }).filter((r) => r.members.length > 0) as { id: string; label: string; ink: string; total: number; members: AtlasStyle[]; soon: AtlasHole[] }[];
     const alone = styles.filter((s) => (!s.family || !families.some((f) => f.id === s.family)) && keep(s));
+    // A name search also reaches the directions still to come, wherever they sit.
+    const named = q ? holes.filter((h) => h.name.toLowerCase().includes(q)).slice(0, 12) : [];
+    if (named.length > 0) out.push({ id: "soon", label: "Coming soon", ink: "var(--sakura)", total: named.length, members: [], soon: named });
     if (alone.length > 0) out.push({ id: "alone", label: "On their own", ink: "var(--muted-foreground)", total: alone.length, members: alone, soon: [] });
     return out;
   }, [styles, families, holes, lit, find]);
@@ -45,7 +48,7 @@ export function FamilyFeed({ styles, families, holes, lit, accent, find }: { sty
           <h2 className="flex items-center gap-2 px-4 font-mono text-[11px] font-bold uppercase tracking-[0.14em]">
             <span aria-hidden className="inline-block h-2 w-2 rounded-full" style={{ background: row.ink }} />
             {row.label}
-            <span className="font-normal text-muted-foreground">{row.members.length === row.total ? row.total : `${row.members.length} of ${row.total}`}</span>
+            <span className="font-normal text-muted-foreground">{row.members.length === row.total || row.members.length === 0 ? row.total : `${row.members.length} of ${row.total}`}</span>
           </h2>
           <ul className="mt-2 flex snap-x gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
             {row.members.map((s) => (

@@ -29,7 +29,7 @@ const NAMED_AT = 104; // screen pixels of tile width from which it carries its n
 const CARD_GAP = 10;
 const NAME_ROOM = 30; // screen pixels kept clear above a family's lead card for its name
 // Past the zoom where every card has room (about 0.94) cards grow with the paper:
-// that is the closer look. The zoom stops where a card is about 210px wide.
+// that is the closer look. The zoom stops at MAX_ZOOM; a card stops growing sooner (CARD_PX_MAX).
 const MAX_ZOOM = 1.6;
 const CARD_PX_MAX = 148; // a tile never grows past this on screen: zooming further buys room between tiles, not bigger type
 // How much a tile is counter-scaled at zoom k, so that on screen it is never smaller than `floor` nor larger than CARD_PX_MAX.
@@ -170,10 +170,8 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   // and a flat map cannot keep all of them close (about seven in ten are), so
   // lines from a card to "nearest" styles across the map read as a mistake. They
   // are a list in the sheet instead; the map says nearness only as distance.
-  // What stays bright: the focused item's circle, else whatever the host lit.
+  // The only thing that lights the map is a host's set (an answer, a pick).
   const hostLit = host?.lit ?? null;
-  // A host's lit set (an answer) stays lit when one of its cards is opened; the
-  // focus circle lights the map only when the host has lit nothing.
   const lit = hostLit;
   // The style least like the focused one that is still on the map: the far shore.
   const farthest = useMemo(() => {
@@ -435,6 +433,14 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     };
     return () => { if (host.apiRef) host.apiRef.current = null; };
   }, [host?.apiRef, frame, focusOn, fitAll, byId, holeById]);
+  // A map that opens with something already lit (a phone switching from its list
+  // to the map, a layout change mid-answer) opens on it, not on the whole paper.
+  const openedOn = useRef(false);
+  useEffect(() => {
+    if (openedOn.current) return;
+    openedOn.current = true;
+    if (hostLit && hostLit.size > 0 && hostLit.size <= 60) frame([...hostLit]);
+  }, [hostLit, frame]);
   const onHostFocus = host?.onFocus;
   useEffect(() => { onHostFocus?.(focusId); }, [focusId, onHostFocus]);
 
@@ -467,7 +473,6 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     return ink;
   }, [families]);
   const grounds = families;
-  const nameOpacity = 1;
   // Far out the grounds are the map's colour; close in they sit behind many more
   // cards, so they thin a little as the paper grows.
   // A tint, not a colour field: enough to see where a family lies, never enough
@@ -592,7 +597,7 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
               <span key={`name-${g.id}`} className="pointer-events-none absolute z-[5] flex items-center gap-1.5 whitespace-nowrap bg-background/90 px-1.5 py-0.5 font-mono font-bold uppercase tracking-[0.12em] text-foreground" style={{ left: anchor.x * PAPER + (n?.x ?? 0), top: anchor.y * PAPER - TILE_H / 2 + (n?.y ?? 0),
                 // One size on screen whatever the tiles do; it rides the top edge of
                 // its tile, which rises as the tile is counter-scaled.
-                transform: `translate(-50%, calc(-100% - 5px * var(--f) - ${named ? 48 : 35}px * (var(--f) - 1)))`, fontSize: 10 / camera.k, gap: 5 / camera.k, padding: `${2 / camera.k}px ${5 / camera.k}px`, opacity: lit ? 0.15 : nameOpacity, transition: reduced ? undefined : "opacity 300ms" }}>
+                transform: `translate(-50%, calc(-100% - 5px * var(--f) - ${named ? 48 : 35}px * (var(--f) - 1)))`, fontSize: 10 / camera.k, gap: 5 / camera.k, padding: `${2 / camera.k}px ${5 / camera.k}px`, opacity: lit ? 0.15 : 1, transition: reduced ? undefined : "opacity 300ms" }}>
                 <span aria-hidden className="inline-block rounded-full" style={{ width: 7 / camera.k, height: 7 / camera.k, background: ["var(--sakura)", "var(--ramune)", "var(--yuzu)"][inkOf.get(g.id) ?? 0] }} />
                 {g.label}
                 <span className="font-normal text-muted-foreground">{g.count}</span>
