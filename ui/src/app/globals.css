@@ -1654,3 +1654,26 @@
 @media (prefers-reduced-motion: reduce) {
   .atlas-leave, .atlas-sheet { animation: none; }
 }
+
+/* Explore previews (the halftone field, the river). A label over the field keeps
+   a halo of paper so the inks beneath never eat it; a lens picture settles into
+   its slot; a river tile grows toward the pointer. */
+.explore-halo {
+  text-shadow: 0 0 4px var(--background), 0 0 8px var(--background), 0 0 2px var(--background);
+}
+.explore-card {
+  animation: atlas-sheet-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.explore-lens-item {
+  animation: explore-lens-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes explore-lens-in {
+  from { opacity: 0; scale: 0.7; }
+}
+.river-tile {
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .explore-card, .explore-lens-item { animation: none; }
+  .river-tile { transition: none; }
+}
