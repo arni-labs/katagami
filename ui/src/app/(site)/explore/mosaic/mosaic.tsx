@@ -7,7 +7,7 @@ import { STYLE_DNA_QUESTIONS } from "@/lib/style-dna.mjs";
 import type { AtlasHole, AtlasStyle } from "@/lib/catalog";
 import { AskDock, fitWord, hueOf, useAsk, useScreen, type Family, type Fit } from "../shared";
 import { flow } from "../river/course";
-import { Stamp } from "../stamp";
+import { Stamp, quick } from "../stamp";
 
 // The library as an endless sheet of stamps. The sheet wraps in both directions,
 // so you can pan for ever and come round again; drag (or scroll) to pan, with
@@ -23,7 +23,7 @@ type Cell = { kind: "style"; s: AtlasStyle } | { kind: "soon"; h: AtlasHole } | 
 const TRAIT = new Map(STYLE_DNA_QUESTIONS.map((q) => [q.id, q.label]));
 const SIZES = { phone: [46, 74, 112], desk: [58, 96, 148] };
 const RATIO = 1.2, GAP = 10;
-const GROUND = "color-mix(in srgb, var(--foreground) 13%, var(--background))"; // what the sheet lies on, and so the colour of a stamp's holes
+const GROUND = "color-mix(in srgb, var(--foreground) 15%, var(--background))"; // the desk the stamps lie on
 const HUE_ANGLE: Record<string, number> = { red: 0, orange: 28, yellow: 52, green: 120, teal: 172, blue: 222, violet: 275, pink: 325 };
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 const tone = (ink: string | null) => {
@@ -33,6 +33,15 @@ const tone = (ink: string | null) => {
   return { h: d === 0 ? 0 : (max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60, s: d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1)), l };
 };
 
+// The large picture is asked for before it is needed: when a card is pointed at or pressed, and for the cards either
+// side of an open one. By the time the view opens, it is usually already here.
+const warmed = new Set<string>();
+function warm(src: string | null | undefined, width: 750 | 1080) {
+  if (!src || warmed.has(src)) return;
+  warmed.add(src);
+  const img = new Image(); img.decoding = "async"; img.src = quick(src, width);
+}
+
 type CellProps = { c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; mark: "" | "fit" | "strange"; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
 // One stamp on the sheet, keyed by its slot in a recycling pool (see Sheet): when the window slides, the stamp
 // that left one edge is handed the place that arrived at the other, which is an update, not a mount. Memoised on plain values, so when the window of visible cells slides by a row
@@ -40,11 +49,11 @@ type CellProps = { c: number; r: number; cell: Cell; w: number; h: number; stepX
 const CellView = memo(function CellView({ c, r, cell, w, h, stepX, stepY, dim, mark, hold, onOpen }: CellProps) {
   if (!cell) return null;
   const x = c * stepX, y = r * stepY, key = `${c},${r}`;
-  if (cell.kind === "soon") return <span ref={(el) => hold(key, el)} title={`${cell.h.name}: coming soon`} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.25 : 0.8 }}><Stamp src={null} ink={null} w={w} h={h} label={w > 90 ? "Soon" : undefined} soon punch={GROUND} /></span>;
+  if (cell.kind === "soon") return <span ref={(el) => hold(key, el)} title={`${cell.h.name}: coming soon`} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.25 : 0.8 }}><Stamp src={null} ink={null} w={w} h={h} label={w > 66 ? "Soon" : undefined} soon /></span>;
   const s = cell.s;
   return (
-    <button ref={(el) => hold(key, el)} type="button" onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, boxShadow: `0 ${w > 90 ? 8 : 4}px ${w > 90 ? 16 : 8}px -${w > 90 ? 6 : 3}px rgba(30,35,45,0.45)`, outline: mark ? `2px solid var(${mark === "strange" ? "--sakura" : "--ramune"})` : undefined, outlineOffset: 3 }}>
-      <Stamp src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w > 90 ? s.name : undefined} fast={w > 120 ? 384 : w > 70 ? 256 : 128} punch={GROUND} />
+    <button ref={(el) => hold(key, el)} type="button" onPointerEnter={(e) => { if (e.pointerType === "mouse") warm(s.thumbnail_url, 1080); }} onPointerDown={() => warm(s.thumbnail_url, w < 60 ? 750 : window.innerWidth < 768 ? 750 : 1080)} onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, outline: mark ? `2px solid var(${mark === "strange" ? "--sakura" : "--ramune"})` : undefined, outlineOffset: 3 }}>
+      <Stamp src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} fast={w > 120 ? 384 : w > 70 ? 256 : 128} />
     </button>
   );
 });
@@ -272,7 +281,9 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
     const before = { overflow: root.style.overflow, overscroll: root.style.overscrollBehavior };
     root.style.overflow = "hidden"; root.style.overscrollBehavior = "none";
     window.scrollTo(0, 0);
-    return () => { el.removeEventListener("wheel", on); root.style.overflow = before.overflow; root.style.overscrollBehavior = before.overscroll; };
+    const pin = () => { if (window.scrollX || window.scrollY) window.scrollTo(0, 0); };
+    window.addEventListener("scroll", pin);
+    return () => { window.removeEventListener("scroll", pin); el.removeEventListener("wheel", on); root.style.overflow = before.overflow; root.style.overscrollBehavior = before.overscroll; };
   }, [screen]);
   const onKey = (e: React.KeyboardEvent) => {
     const by = { ArrowLeft: [1, 0], ArrowRight: [-1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
@@ -289,6 +300,10 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
 
   // The opened card, and its neighbours along the row for the arrows and the swipe.
   const shown = open ? cellAt(open.c, open.r) : null, style = shown?.kind === "style" ? shown.s : null;
+  useEffect(() => {
+    if (!open) return;
+    for (const by of [-1, 1]) for (let step = 1; step <= world.cols; step++) { const cell = cellAt(open.c + by * step, open.r); if (cell?.kind === "style") { warm(cell.s.thumbnail_url, phone ? 750 : 1080); break; } }
+  }, [open, world, cellAt, phone]);
   const turn = useCallback((by: number) => {
     if (!open) return;
     for (let step = 1; step <= world.cols; step++) { const c = open.c + by * step; if (cellAt(c, open.r)?.kind === "style") { bring(c, open.r); setOpen({ c, r: open.r }); return; } }
@@ -299,9 +314,9 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
 
   if (!screen) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
   return (
-    <div ref={box} style={{ background: GROUND }} className={`relative h-[calc(100dvh-65px)] w-full select-none overflow-hidden`}>
+    <div ref={box} onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} style={{ background: GROUND }} className={`relative h-[calc(100dvh-65px)] w-full select-none overflow-hidden`}>
       <h1 className="sr-only">Explore the library</h1>
-      <div role="application" aria-label="The sheet. Drag or use the arrow keys to move across it; plus and minus change how much you see." tabIndex={0} onKeyDown={onKey} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={(e) => { if (e.pointerType === "mouse") { cam.current.px = -1; cam.current.py = -1; paint(); } }} ref={surface}
+      <div role="application" aria-label="The sheet. Drag or use the arrow keys to move across it; plus and minus change how much you see." tabIndex={0} onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} onKeyDown={onKey} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={(e) => { if (e.pointerType === "mouse") { cam.current.px = -1; cam.current.py = -1; paint(); } }} ref={surface}
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">
         <div ref={layer} className="absolute left-0 top-0 will-change-transform">
           <Sheet hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={lit} fits={ask.fits} onOpen={openCell} />
@@ -324,16 +339,21 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
   );
 }
 
-/** A stamp opened: large, over a veil of its own ink, leaning to the pointer. Arrows and a swipe turn to its neighbours. */
+/** A stamp opened: the entry's pictures at their own shape, the main one large, on a veil of the entry's ink.
+ *  The picture is the way in (it is a link to the entry's page), as is the wide button under it. What the sheet
+ *  already loaded is shown at once, soft, while the large picture arrives over it. */
 function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style: AtlasStyle; family: Family | null; fit: Fit | null; judging: boolean; phone: boolean; onTurn: (by: number) => void; onClose: () => void }) {
-  const card = useRef<HTMLDivElement | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
   const swipe = useRef<{ x: number } | null>(null);
+  const pictures = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.thumbnail_url ? [style.thumbnail_url] : []), [style]);
+  const [at, setAt] = useState(0);
+  const [shape, setShape] = useState<number | null>(null);
+  const main = pictures[at] ?? null, big = phone ? 750 : 1080;
   // A modal: focus moves in when it opens, stays in while it is open, and goes back where it was when it closes.
   useEffect(() => {
     const before = document.activeElement as HTMLElement | null;
-    root.current?.querySelector<HTMLElement>("a[href]")?.focus();
-    return () => before?.focus?.();
+    root.current?.querySelector<HTMLElement>("a[href]")?.focus({ preventScroll: true });
+    return () => before?.focus?.({ preventScroll: true });
   }, []);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
@@ -347,23 +367,49 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, [onClose, onTurn]);
-  const w = phone ? 268 : 380, h = Math.round(w * RATIO);
-  const light = (e: React.PointerEvent) => { const el = card.current; if (!el) return; const r = el.getBoundingClientRect(); el.style.setProperty("--lx", String((e.clientX - r.left - r.width / 2) * 2.4)); el.style.setProperty("--ly", String((e.clientY - r.top - r.height / 2) * 2.4)); };
+  // The other pictures are fetched while the first is looked at, so stepping through them is instant.
+  useEffect(() => { for (const p of pictures.slice(1, 4)) { const img = new Image(); img.src = quick(p, big); } }, [pictures, big]);
+
+  // The room for the picture: what is left of the screen after the words and the button; the picture keeps its own shape inside it.
+  const roomW = phone ? window.innerWidth - 32 : Math.min(window.innerWidth * 0.62, 1100), roomH = (window.innerHeight - 65) * (phone ? 0.46 : 0.62);
+  const ratio = shape ?? 1.5, w = Math.round(Math.min(roomW, roomH * ratio)), h = Math.round(w / ratio);
   return (
-    <div ref={root} role="dialog" aria-modal="true" aria-label={style.name} className="viewer-veil absolute inset-0 z-40 flex flex-col items-center justify-center gap-5 px-5 backdrop-blur-2xl backdrop-saturate-150" style={{ background: `color-mix(in srgb, ${style.ink ?? "#888"} 38%, color-mix(in srgb, var(--background) 72%, transparent))` }}
-      onClick={onClose} onPointerMove={light} onPointerDown={(e) => { swipe.current = { x: e.clientX }; }} onPointerUp={(e) => { const d = swipe.current ? e.clientX - swipe.current.x : 0; swipe.current = null; if (Math.abs(d) > 60) { e.stopPropagation(); onTurn(d < 0 ? 1 : -1); } }}>
-      <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 cursor-pointer bg-background/60 p-2.5 backdrop-blur-md"><X size={18} /></button>
-      <div ref={card} onClick={(e) => e.stopPropagation()} className="book-open" style={{ filter: "drop-shadow(0 30px 40px rgba(30,35,45,0.45))", ["--lx" as string]: -120, ["--ly" as string]: -160 }}>
-        <Stamp src={style.thumbnail_url} ink={style.ink} w={w} h={h} label={style.name} sizes="420px" lit={{ x: 0, y: 0 }} />
-      </div>
-      <div onClick={(e) => e.stopPropagation()} className="flex w-full max-w-[420px] flex-col items-center gap-2 text-center">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/70">{style.kind === "language" ? "Design language" : "Art style"}{family ? ` · ${family.label}` : ""}</p>
-        {fit ? <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: fit.strange ? "var(--sakura)" : "var(--ramune)" }}>{fitWord(fit, judging)}</p> : null}
+    <div ref={root} role="dialog" aria-modal="true" aria-label={style.name} className="viewer-veil absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 overflow-y-auto px-4 py-6 backdrop-blur-2xl backdrop-saturate-150" style={{ background: `color-mix(in srgb, ${style.ink ?? "#888"} 34%, color-mix(in srgb, var(--background) 78%, transparent))` }}
+      onClick={onClose} onPointerDown={(e) => { swipe.current = { x: e.clientX }; }} onPointerUp={(e) => { const d = swipe.current ? e.clientX - swipe.current.x : 0; swipe.current = null; if (Math.abs(d) > 70) { e.stopPropagation(); onTurn(d < 0 ? 1 : -1); } }}>
+      <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 z-10 cursor-pointer bg-background/70 p-2.5 backdrop-blur-md"><X size={18} /></button>
+      <button type="button" onClick={(e) => { e.stopPropagation(); onTurn(-1); }} aria-label="Previous" className="absolute left-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer bg-background/70 p-3 backdrop-blur-md max-md:hidden"><ArrowLeft size={18} /></button>
+      <button type="button" onClick={(e) => { e.stopPropagation(); onTurn(1); }} aria-label="Next" className="absolute right-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer bg-background/70 p-3 backdrop-blur-md max-md:hidden"><ArrowRight size={18} /></button>
+
+      {main ? (
+        <Link href={style.href} onClick={(e) => e.stopPropagation()} aria-label={`Open ${style.name}`} className="viewer-print group relative block shrink-0 bg-[#fbf9f4] p-2 shadow-[0_30px_70px_-24px_rgba(20,25,40,0.6)] md:p-3" style={{ width: w + (phone ? 16 : 24) }}>
+          {/* The small picture the sheet already has, stretched soft, holds the place while the large one loads over it. */}
+          <span className="relative block overflow-hidden" style={{ width: w, height: h, backgroundImage: `url("${quick(main, 256)}")`, backgroundSize: "cover", backgroundColor: style.ink ?? undefined }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img key={main} src={quick(main, big)} alt={style.name} decoding="async" draggable={false} onLoad={(e) => { const i = e.currentTarget; if (i.naturalWidth > 0) setShape(i.naturalWidth / i.naturalHeight); i.style.opacity = "1"; }} className="absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity duration-300" />
+          </span>
+          <span className="pointer-events-none absolute bottom-4 right-4 bg-foreground px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-background opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 max-md:hidden">Open</span>
+        </Link>
+      ) : null}
+
+      {pictures.length > 1 ? (
+        <ul onClick={(e) => e.stopPropagation()} className="flex max-w-full shrink-0 gap-2 overflow-x-auto px-1 [scrollbar-width:none]">
+          {pictures.map((p, i) => (
+            <li key={p} className="shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <button type="button" onClick={() => { setShape(null); setAt(i); }} aria-label={`Picture ${i + 1} of ${pictures.length}`} aria-pressed={i === at} className="block cursor-pointer bg-[#fbf9f4] p-1 shadow-[0_6px_14px_-8px_rgba(20,25,40,0.6)]" style={{ opacity: i === at ? 1 : 0.62 }}><img src={quick(p, 128)} alt="" loading="lazy" className="block h-12 w-auto md:h-14" /></button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <div onClick={(e) => e.stopPropagation()} className="flex w-full max-w-[460px] shrink-0 flex-col items-center gap-1.5 text-center">
+        <h2 className="font-display text-[24px] font-bold leading-tight tracking-[-0.02em] md:text-[30px]">{style.name}</h2>
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/70">{style.kind === "language" ? "Design language" : "Art style"}{family ? ` · ${family.label}` : ""}{fit ? <span className="font-bold" style={{ color: fit.strange ? "var(--sakura)" : "var(--ramune)" }}> · {fitWord(fit, judging)}</span> : null}</p>
         {style.traits.length > 0 ? <p className="text-[13.5px] leading-snug text-foreground/75">{style.traits.slice(0, 5).map((t) => TRAIT.get(t) ?? t).join(" · ")}</p> : null}
-        <div className="mt-2 flex items-center gap-2">
-          <button type="button" onClick={() => onTurn(-1)} aria-label="Previous" className="cursor-pointer bg-background/60 p-3 backdrop-blur-md"><ArrowLeft size={16} /></button>
-          <Link href={style.href} className="bg-foreground px-7 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-background">Open</Link>
-          <button type="button" onClick={() => onTurn(1)} aria-label="Next" className="cursor-pointer bg-background/60 p-3 backdrop-blur-md"><ArrowRight size={16} /></button>
+        <div className="mt-2 flex w-full items-stretch gap-2">
+          <button type="button" onClick={() => onTurn(-1)} aria-label="Previous" className="cursor-pointer bg-background/70 px-4 backdrop-blur-md md:hidden"><ArrowLeft size={18} /></button>
+          <Link href={style.href} className="flex-1 bg-foreground px-7 py-4 text-center font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-background">Open {style.kind === "language" ? "language" : "art style"}</Link>
+          <button type="button" onClick={() => onTurn(1)} aria-label="Next" className="cursor-pointer bg-background/70 px-4 backdrop-blur-md md:hidden"><ArrowRight size={18} /></button>
         </div>
       </div>
     </div>

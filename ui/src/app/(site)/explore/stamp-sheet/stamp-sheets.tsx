@@ -27,12 +27,12 @@ const Sheets = memo(function Sheets({ sheets, w, h, cols, lit, torn, openId, onO
                   {/* A torn stamp leaves its place on the sheet empty. */}
                   {torn?.has(s.id) ? <span aria-hidden className="block h-full w-full bg-black/[0.07]" /> : (
                     <button type="button" onClick={() => onOpen(s.id)} aria-label={s.name} title={s.name} className="sheet-stamp block cursor-pointer" style={{ opacity: lit && !lit.has(s.id) ? 0.3 : 1, outline: openId === s.id ? "2px solid #000" : undefined, outlineOffset: -2 }}>
-                      <Stamp src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w >= 56 ? s.name : undefined} sizes="128px" />
+                      <Stamp src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w >= 56 ? s.name : undefined} sizes="128px" flat />
                     </button>
                   )}
                 </li>
               ))}
-              {sheet.soon.map((hole) => <li key={hole.id} title={`${hole.name}: coming soon`} style={{ width: w, height: h, opacity: lit ? 0.3 : 1 }}><Stamp src={null} ink={null} w={w} h={h} label={w >= 56 ? "Soon" : undefined} soon /></li>)}
+              {sheet.soon.map((hole) => <li key={hole.id} title={`${hole.name}: coming soon`} style={{ width: w, height: h, opacity: lit ? 0.3 : 1 }}><Stamp src={null} ink={null} w={w} h={h} label={w >= 56 ? "Soon" : undefined} soon flat /></li>)}
             </ul>
           </div>
         </section>

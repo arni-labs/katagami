@@ -828,6 +828,8 @@ export type AtlasStyle = {
   name: string;
   href: string;
   thumbnail_url: string | null;
+  /** Every picture the entry has to show, the main one first (a language's landing and embodiment; an art style's references). */
+  pictures: string[];
   x: number;
   y: number;
   family: string | null;
@@ -855,6 +857,21 @@ function atlasPicture(kind: "language" | "art_style", f: Record<string, unknown>
     }
   }
   return str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null;
+}
+
+function atlasPictures(kind: "language" | "art_style", f: Record<string, unknown>): string[] {
+  const out: string[] = [];
+  const add = (url: string) => { const path = url.replace(/^https?:\/\/(www\.)?katagami\.ai/, "").split("?")[0]; if (path && !out.includes(path)) out.push(path); };
+  if (kind === "art_style") {
+    try {
+      const ids: unknown = JSON.parse(str(f.reference_image_file_ids) || "[]");
+      if (Array.isArray(ids)) for (const id of ids.slice(0, 6)) if (typeof id === "string" && /^fl-[0-9a-f-]+$/.test(id)) add(`/api/file/${id}`);
+    } catch {
+      // no references to show
+    }
+  }
+  for (const key of ["landing_thumbnail_asset_url", "thumbnail_asset_url"]) if (kind === "language" || out.length === 0) add(str(f[key]));
+  return out;
 }
 
 export async function libraryAtlas(tier: Tier) {
@@ -906,6 +923,7 @@ export async function libraryAtlas(tier: Tier) {
       name: str(f.name),
       href: `/${PATH[kind]}/${row.entity_id}`,
       thumbnail_url: atlasPicture(kind, f),
+      pictures: atlasPictures(kind, f),
       x: Number.parseFloat(str(f.atlas_x)),
       y: Number.parseFloat(str(f.atlas_y)),
       traits: str(f.style_traits).trim().split(/\s+/).filter(Boolean),
