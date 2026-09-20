@@ -413,18 +413,34 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   // (the spread, not the extremes — one far-flung member must not flood the
   // map), with the family's name at its head. Names are for the far view; up
   // close the cards speak and the names step back.
-  const grounds = useMemo(() => families.map((f) => {
-    const members = styles.filter((s) => s.family === f.id);
-    const sd = (pick: (s: AtlasStyle) => number, mid: number) => Math.sqrt(members.reduce((sum, s) => sum + (pick(s) - mid) ** 2, 0) / Math.max(members.length, 1));
-    // Pools, not floods: enough to sit under the family's heart, capped so that
-    // thirty-five of them read as separate inks rather than one wash.
-    const reach = (spread: number) => Math.min(spread * 1.2 + 150 / PAPER, 470 / PAPER);
-    return { ...f, rx: reach(sd((s) => s.x, f.x)), ry: reach(sd((s) => s.y, f.y)) };
-  }), [families, styles]);
+  // A family's ink: no two families that sit near each other share one, so
+  // where grounds meet they read as two territories, not one smear.
+  const inkOf = useMemo(() => {
+    const ink = new Map<string, number>();
+    for (const f of families) {
+      const near = families.filter((o) => ink.has(o.id)).sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y)).slice(0, 2).map((o) => ink.get(o.id));
+      ink.set(f.id, [0, 1, 2].find((i) => !near.includes(i)) ?? 0);
+    }
+    return ink;
+  }, [families]);
+  // A family's ground is the ink pooled under each of its cards that is on the
+  // paper right now. Far out that is one pool round the lead card; as the zoom
+  // lets more of the family out, their pools run together into a territory the
+  // shape of the family, and it draws back in when they tuck away. Nothing is
+  // drawn where the family has no card, so the paper between families stays white.
+  const pools = useMemo(() => {
+    const k = 1.18 ** step;
+    const f = Math.max(1, cardPx / (TILE_W * k));
+    // Reach a little past the card, in the units of this zoom step, so two
+    // neighbouring cards' pools meet and the margin looks the same at every zoom.
+    const reach = (Math.hypot(TILE_W, TILE_H + 30) * f) / 2 + 26 / k;
+    return { reach, blur: 30 / k, of: shown.placed.filter((s) => s.family && inkOf.has(s.family)) };
+  }, [shown, step, cardPx, inkOf]);
+  const grounds = families;
   const nameOpacity = camera.k >= TRUE_SIZE_ZOOM ? 0.45 : 1;
-  // Far out the pools are the map's colour; close in they would spread into a
-  // wash behind everything, so they thin as the paper grows.
-  const glowOpacity = Math.min(0.18, Math.max(0.05, 0.21 - camera.k * 0.2));
+  // Far out the grounds are the map's colour; close in they sit behind many more
+  // cards, so they thin a little as the paper grows.
+  const glowOpacity = Math.min(0.3, Math.max(0.16, 0.34 - camera.k * 0.2));
   const placedIds = useMemo(() => new Set(shown.placed.map((s) => s.id)), [shown]);
 
   if (styles.length === 0) {
@@ -474,8 +490,10 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
           className="absolute left-0 top-0 h-0 w-0"
           style={{ ["--f" as string]: factor, transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.k})`, transformOrigin: "0 0", transition: animate && !reduced ? "transform 520ms cubic-bezier(0.22, 1, 0.36, 1)" : undefined, willChange: "transform" }}
         >
-          {grounds.map((g, i) => (
-            <span key={`glow-${g.id}`} aria-hidden className="pointer-events-none absolute rounded-[50%]" style={{ left: (g.x - g.rx) * PAPER, top: (g.y - g.ry) * PAPER, width: g.rx * 2 * PAPER, height: g.ry * 2 * PAPER, background: FAMILY_INKS[i % 3], filter: "blur(80px)", opacity: lit ? 0.04 : glowOpacity, transition: reduced ? undefined : "opacity 300ms" }} />
+          {pools.of.map((s) => (
+            // A spread shadow, not a filter: hundreds of these cost far less than
+            // hundreds of blurs, and a shadow of one flat ink is still a blob, not a gradient.
+            <span key={`pool-${s.id}`} aria-hidden className="pointer-events-none absolute h-0 w-0 rounded-[50%]" style={{ left: s.x * PAPER, top: s.y * PAPER + 12, boxShadow: `0 0 ${pools.blur}px ${pools.reach}px ${FAMILY_INKS[inkOf.get(s.family ?? "") ?? 0]}`, opacity: lit ? (lit.has(s.id) ? glowOpacity : 0.03) : glowOpacity, transition: reduced ? undefined : "opacity 300ms" }} />
           ))}
           {lines.map((l) => {
             const x1 = l.from.x * PAPER, y1 = l.from.y * PAPER, x2 = l.to.x * PAPER, y2 = l.to.y * PAPER;
