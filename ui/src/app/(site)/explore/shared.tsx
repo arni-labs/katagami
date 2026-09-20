@@ -82,7 +82,7 @@ export function useAsk() {
   return { query, setQuery, state, error, answer, fits, ask, clear };
 }
 
-/** The ask, docked under the thumb: a field, the nine hues, and the answers as chips to fly to. */
+/** The ask, docked under the thumb. An ask and a colour are two ways to light the library, and the newer one wins: a field, the nine hues, and the answers as chips to fly to. */
 export function AskDock({ ask, hue, onHue, onGo, byId, lit }: { ask: ReturnType<typeof useAsk>; hue: string; onHue: (h: string) => void; onGo: (id: string) => void; byId: Map<string, AtlasStyle>; lit: number | null }) {
   const found = ask.fits ? [...ask.fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank) : [];
   return (
@@ -102,7 +102,7 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit }: { ask: ReturnType<
           </ul>
         ) : null}
         {ask.state === "error" ? <p role="alert" className="px-1 text-[12.5px] text-[var(--beni)]">{ask.error}</p> : null}
-        <form onSubmit={(e) => { e.preventDefault(); void ask.ask(ask.query); }} className="flex items-stretch gap-2">
+        <form onSubmit={(e) => { e.preventDefault(); onHue(""); void ask.ask(ask.query); }} className="flex items-stretch gap-2">
           <label htmlFor="explore-ask" className="sr-only">What are you making?</label>
           <input id="explore-ask" value={ask.query} onChange={(e) => ask.setQuery(e.target.value)} maxLength={400} autoComplete="off" placeholder="What are you making, and for whom?" className="min-w-0 flex-1 bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2.5 text-[16px] outline-none placeholder:text-muted-foreground md:text-[14px]" />
           <button type="submit" disabled={ask.state === "asking"} className="shrink-0 cursor-pointer bg-foreground px-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-background disabled:opacity-50">{ask.state === "asking" ? "Reading" : "Ask"}</button>
@@ -110,7 +110,7 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit }: { ask: ReturnType<
         <div className="flex items-center gap-2 px-1">
           <div role="group" aria-label="Colour" className="flex gap-1.5 overflow-x-auto p-0.5 [scrollbar-width:none]">
             {HUES.map(([name, ink]) => (
-              <button key={name} type="button" aria-pressed={hue === name} aria-label={name} title={name} onClick={() => onHue(hue === name ? "" : name)} className="h-5 w-5 shrink-0 cursor-pointer rounded-full" style={{ background: ink, boxShadow: hue === name ? "0 0 0 2px var(--background), 0 0 0 4px var(--foreground)" : undefined }} />
+              <button key={name} type="button" aria-pressed={hue === name} aria-label={name} title={name} onClick={() => { if (ask.answer || ask.state === "asking") ask.clear(); onHue(hue === name ? "" : name); }} className="h-5 w-5 shrink-0 cursor-pointer rounded-full" style={{ background: ink, boxShadow: hue === name ? "0 0 0 2px var(--background), 0 0 0 4px var(--foreground)" : undefined }} />
             ))}
           </div>
           <p aria-live="polite" className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{lit === null ? "" : `${lit} lit`}</p>

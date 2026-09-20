@@ -41,6 +41,7 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
   const byId = useMemo(() => new Map(styles.map((s) => [s.id, s])), [styles]);
   const familyOf = useMemo(() => new Map(families.map((f) => [f.id, f])), [families]);
   const reduced = useRef(false);
+  const [theme, setTheme] = useState(0); // bumped when the page changes theme: the inks blend differently on a dark ground
 
   useEffect(() => {
     reduced.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -50,12 +51,17 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(el);
-    return () => watch.disconnect();
+    const themed = new MutationObserver(() => setTheme((n) => n + 1));
+    themed.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    const scheme = window.matchMedia("(prefers-color-scheme: dark)");
+    const flip = () => setTheme((n) => n + 1);
+    scheme.addEventListener("change", flip);
+    return () => { watch.disconnect(); themed.disconnect(); scheme.removeEventListener("change", flip); };
   }, [screen]);
 
   // The atlas square, fitted to whatever room there is (a tall phone stretches it; dots do not mind).
   const R = Math.round(Math.min(phone ? 136 : 184, size.w * 0.44));
-  const dockRoom = phone ? 172 : 0; // the lens never slides under the ask
+  const dockRoom = phone ? 172 : 128; // the lens never slides under the ask
   const place = useCallback((x: number, y: number) => {
     const mx = phone ? 22 : 64, top = phone ? 34 : 44, bottom = phone ? 128 : 140;
     return { x: mx + x * (size.w - mx * 2), y: top + y * (size.h - top - bottom) };
@@ -100,13 +106,22 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
       g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
     });
     g.globalAlpha = 1;
-  }, [dots, holes, lit, ask.fits, size, phone, place]);
+  }, [dots, holes, lit, ask.fits, size, phone, place, theme]);
 
   // ---- the lens -----------------------------------------------------------
   const at = useRef({ x: 0, y: 0, tx: 0, ty: 0, run: 0 });
   const nearKey = useRef("");
   const look = useCallback((x: number, y: number) => {
-    const ranked = dots.map((d) => ({ id: d.s.id, a: Math.atan2(d.y - y, d.x - x), d: (d.x - x) ** 2 + (d.y - y) ** 2 })).sort((p, q) => p.d - q.d).slice(0, SHOWN);
+    // The nineteen nearest, kept in a short sorted list as the dots go by: no sort of the whole library per pointer event.
+    const ranked: { id: string; a: number; d: number }[] = [];
+    for (const dot of dots) {
+      const d = (dot.x - x) ** 2 + (dot.y - y) ** 2;
+      if (ranked.length === SHOWN && d >= ranked[SHOWN - 1].d) continue;
+      let at = ranked.length;
+      while (at > 0 && ranked[at - 1].d > d) at--;
+      ranked.splice(at, 0, { id: dot.s.id, a: Math.atan2(dot.y - y, dot.x - x), d });
+      if (ranked.length > SHOWN) ranked.pop();
+    }
     // Each ring keeps its members in the order they sit around the lens point, so a picture is on the side its dot is on.
     const out: string[] = [];
     let from = 0;
@@ -124,8 +139,8 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
     a.tx = Math.min(size.w - R - 6, Math.max(R + 6, x));
     a.ty = Math.min(size.h - dockRoom - R - 6, Math.max(R + 6, y));
     const paint = () => { if (lensEl.current) lensEl.current.style.transform = `translate3d(${a.x - R}px, ${a.y - R}px, 0)`; };
-    if (!glide || reduced.current) { a.x = a.tx; a.y = a.ty; paint(); look(x, y); return; }
-    look(x, y);
+    if (!glide || reduced.current) { a.x = a.tx; a.y = a.ty; paint(); look(Math.min(size.w, Math.max(0, x)), Math.min(size.h, Math.max(0, y))); return; }
+    look(Math.min(size.w, Math.max(0, x)), Math.min(size.h, Math.max(0, y)));
     if (a.run) return;
     const step = () => {
       a.x += (a.tx - a.x) * 0.22; a.y += (a.ty - a.y) * 0.22;
@@ -139,7 +154,9 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
   // Open on the middle of the field, so the first thing seen is the lens at work.
   const opened = useRef(false);
   useEffect(() => {
-    if (opened.current || size.w === 0 || dots.length === 0) return;
+    if (size.w === 0 || dots.length === 0) return;
+    // A resize keeps the lens where it was looking, clamped to the new room.
+    if (opened.current) { const frame = requestAnimationFrame(() => moveTo(at.current.tx, at.current.ty, false)); return () => cancelAnimationFrame(frame); }
     // On the next frame: the lens reads the laid-out field, and an effect is no place to set state.
     const frame = requestAnimationFrame(() => {
       opened.current = true;
@@ -183,6 +200,13 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
     if (locked) { setLocked(false); setOpenId(null); moveTo(p.x, p.y, true); } else { setLocked(true); if (near[0]) setOpenId(near[0]); }
   };
 
+  const onKey = (e: React.KeyboardEvent) => {
+    const by = { ArrowLeft: [-28, 0], ArrowRight: [28, 0], ArrowUp: [0, -28], ArrowDown: [0, 28] }[e.key];
+    if (by) { e.preventDefault(); setTouched(true); setLocked(true); moveTo(at.current.tx + by[0], at.current.ty + by[1], true); }
+    else if (e.key === "Enter" && near[0]) { setLocked(true); setOpenId(near[0]); }
+    else if (e.key === "Escape") { setLocked(false); setOpenId(null); }
+  };
+
   const labels = useMemo(() => {
     const kept: { f: Family; x: number; y: number; w: number }[] = [];
     for (const f of families) {
@@ -207,21 +231,21 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
     <div ref={box} className="relative h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full select-none overflow-hidden md:h-[calc(100dvh-65px)]">
       <h1 className="sr-only">Explore the library</h1>
       <canvas ref={canvas} aria-hidden className="absolute inset-0 h-full w-full" style={{ width: size.w, height: size.h }} />
-      <div className="absolute inset-0 touch-none" onPointerMove={onMove} onPointerDown={onDown} onPointerUp={() => { dragging.current = false; }} onPointerCancel={() => { dragging.current = false; }} style={{ cursor: locked ? "default" : "none" }} />
+      <div role="application" aria-label="The field. Arrow keys move the lens; Enter opens the nearest style." tabIndex={0} onKeyDown={onKey} className="absolute inset-0 touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)]" onPointerMove={onMove} onPointerDown={onDown} onPointerUp={() => { dragging.current = false; }} onPointerCancel={() => { dragging.current = false; }} style={{ cursor: locked ? "default" : "none" }} />
       {labels.map(({ f, x, y }) => (
         <span key={f.id} aria-hidden className="explore-halo pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/80 transition-opacity duration-300" style={{ left: x, top: y, opacity: lit ? 0.25 : 1 }}>{f.label}</span>
       ))}
       <p className="pointer-events-none absolute left-4 top-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground md:left-6 md:top-4"><span className="text-foreground">{styles.length}</span> styles · {holes.length} to come</p>
 
-      <div ref={lensEl} className="absolute left-0 top-0 will-change-transform" style={{ width: R * 2, height: R * 2, pointerEvents: locked ? "auto" : "none" }}>
+      <div ref={lensEl} className="absolute left-0 top-0 will-change-transform" style={{ width: R * 2, height: R * 2, pointerEvents: "none" }}>
         <div className="absolute inset-0 rounded-full bg-background shadow-[0_18px_60px_-18px_rgba(30,35,45,0.5),0_0_0_1px_rgba(30,35,45,0.06)]" />
         {near.map((id, i) => {
           const s = byId.get(id), slot = slots[i];
           if (!s || !slot) return null;
           const fit = ask.fits?.get(id);
           return (
-            <button key={id} type="button" tabIndex={locked ? 0 : -1} aria-label={s.name} onClick={() => setOpenId(id)} onPointerEnter={() => setHover(id)} onPointerLeave={() => setHover(null)} onFocus={() => setHover(id)} onBlur={() => setHover(null)}
-              className="explore-lens-item absolute cursor-pointer" style={{ left: R + slot.x, top: R + slot.y - (i === 0 ? 8 : 0), transform: "translate(-50%, -50%)", opacity: lit && !lit.has(id) ? 0.35 : 1, outline: openId === id ? "2px solid var(--foreground)" : undefined, outlineOffset: 2 }}>
+            <button key={id} type="button" aria-label={s.name} onClick={() => { setLocked(true); setOpenId(id); }} onPointerEnter={() => setHover(id)} onPointerLeave={() => setHover(null)} onFocus={() => { setLocked(true); setHover(id); }} onBlur={() => setHover(null)}
+              className="explore-lens-item absolute cursor-pointer" style={{ pointerEvents: locked ? "auto" : "none", left: R + slot.x, top: R + slot.y - (i === 0 ? 8 : 0), transform: "translate(-50%, -50%)", opacity: lit && !lit.has(id) ? 0.35 : 1, outline: openId === id ? "2px solid var(--foreground)" : undefined, outlineOffset: 2 }}>
               <FitPicture src={s.thumbnail_url} height={slot.h} maxWidth={Math.round(slot.h * 1.34)} sizes="128px" />
               {fit ? <span aria-hidden className="absolute inset-x-0 -bottom-1 h-[3px]" style={{ background: fit.strange ? "var(--sakura)" : "var(--ramune)" }} /> : null}
             </button>
@@ -234,7 +258,7 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
       {open ? <StyleCard style={open} family={open.family ? familyOf.get(open.family) ?? null : null} fit={ask.fits?.get(open.id) ?? null} judging={ask.state === "asking"} byId={byId} onGo={flyTo} onClose={() => setOpenId(null)} /> : null}
       <AskDock ask={ask} hue={hue} onHue={setHue} onGo={flyTo} byId={byId} lit={lit ? lit.size : null} />
       {/* The field is a picture; this is the same library for a reader that cannot see it. */}
-      <ul className="sr-only">{styles.map((s) => <li key={s.id}><Link href={s.href}>{s.name}</Link></li>)}</ul>
+      <ul className="sr-only">{styles.map((s) => <li key={s.id}><Link href={s.href} tabIndex={-1}>{s.name}</Link></li>)}</ul>
     </div>
   );
 }

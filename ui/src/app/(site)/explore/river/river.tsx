@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GalleryImage } from "@/components/gallery-image";
 import type { AtlasStyle } from "@/lib/catalog";
-import { AskDock, NEUTRAL_INK, StyleCard, hueOf, useAsk, useScreen, type Family } from "../shared";
+import { AskDock, NEUTRAL_INK, StyleCard, hueOf, useAsk, useScreen, type Family, type Fit } from "../shared";
 
 // The library as one river. Styles are put in a single order where like sits
 // beside like (family by family, along the atlas), then laid as tiles in lanes
@@ -12,7 +12,8 @@ import { AskDock, NEUTRAL_INK, StyleCard, hueOf, useAsk, useScreen, type Family 
 // overlap. Tiles turn with the flow and stand upright as they grow toward the
 // pointer; on a phone the swell rides down the river as you scroll.
 
-type Slot = { x: number; y: number; a: number; s: number };
+type Slot = { x: number; y: number; a: number; s: number; k: number };
+const LIT = 1.32; // a lit tile stands a little proud of the river
 
 /** One order for the whole library: a walk through the families by nearness, each family walked along the way to the next. */
 function flow(styles: AtlasStyle[], families: Family[]): AtlasStyle[] {
@@ -42,34 +43,60 @@ function flow(styles: AtlasStyle[], families: Family[]): AtlasStyle[] {
 }
 
 /** The serpentine's tile slots, in flow order. `s` is how far down the river a slot is, measured along the middle. */
-function course(count: number, width: number, tile: number, gap: number, lanes: number) {
-  const pitch = tile + gap, half = (lanes * pitch) / 2;
-  const turn = half + (width < 768 ? 20 : 44); // the middle lane's turning radius: the inside lane still has room to turn
-  const margin = width < 768 ? 10 : 56;
-  const run = Math.max(60, width - 2 * (margin + half + turn));
-  const leg = run + Math.PI * turn, x0 = margin + half + turn, top = half + (width < 768 ? 46 : 60);
+function course(count: number, width: number, tile: number, gap: number, wanted: number) {
+  const pitch = tile + gap, phone = width < 750, margin = phone ? 8 : 56, slack = phone ? 30 : 44;
+  // As many lanes as leave a straight run at least a tile long: a narrow phone carries three, not four.
+  let lanes = wanted;
+  const room = (n: number) => width - 2 * margin - 2 * ((n * pitch) / 2 + (n * pitch) / 2 + slack);
+  while (lanes > 2 && room(lanes) < pitch) lanes--;
+  const half = (lanes * pitch) / 2, turn = half + slack; // the middle lane's turning radius: the inside lane still has room to turn
+  const run = Math.max(pitch, room(lanes));
+  const leg = run + Math.PI * turn, x0 = margin + half + turn, top = half + (phone ? 46 : 60);
   const slots: Slot[] = [];
-  for (let legNo = 0; slots.length < count + lanes * 4 && legNo < 400; legNo++) {
+  for (let legNo = 0; slots.length < count + lanes * 4 && legNo < 2000; legNo++) {
     const dir = legNo % 2 === 0 ? 1 : -1, y = top + legNo * turn * 2;
     for (let lane = 0; lane < lanes; lane++) {
       const off = (lane - (lanes - 1) / 2) * pitch; // + is below the middle on a rightward run
       // Slots share a stretch evenly, never closer than a tile and its gap, so a run meets its turn without a pinch.
-      const along = Math.floor(run / pitch), step = run / along;
+      const along = Math.max(1, Math.floor(run / pitch)), step = run / along;
       // The first run starts at the page's edge, not where a turn would have put it.
       const lead = legNo === 0 ? Math.floor((x0 - margin - pitch / 2) / step) : 0;
-      for (let k = -Math.max(0, lead); k < along; k++) { const d = (k + 0.5) * step; slots.push({ x: dir === 1 ? x0 + d : x0 + run - d, y: y + off * dir, a: 0, s: legNo * leg + d }); }
-      // The U-turn: a half circle about a point level with the next run's start.
-      const r = turn - off, arc = Math.PI * r, n = Math.max(1, Math.floor(arc / pitch));
+      for (let k = -Math.max(0, lead); k < along; k++) { const d = (k + 0.5) * step; slots.push({ x: dir === 1 ? x0 + d : x0 + run - d, y: y + off * dir, a: 0, s: legNo * leg + d, k: 1 }); }
+      // The U-turn: a half circle about a point level with the next run's start. Tiles turn with
+      // the flow, so it is their inner edges that would touch first: the count is taken there.
+      // Neighbours in the next lane sit at other angles, and two squares turned against each other need
+      // more room than two that are square-on: in a turn a tile is drawn just small enough (`k`) to clear any of them.
+      const r = turn - off, n = Math.max(1, Math.floor((Math.PI * (r - tile / 2)) / (tile + 1)));
       for (let k = 0; k < n; k++) {
         const t = ((k + 0.5) / n) * Math.PI, cx = dir === 1 ? x0 + run : x0, cy = y + turn;
-        slots.push({ x: cx + dir * Math.sin(t) * r, y: cy - Math.cos(t) * r, a: dir * t, s: legNo * leg + run + t * turn });
+        slots.push({ x: cx + dir * Math.sin(t) * r, y: cy - Math.cos(t) * r, a: dir * t, s: legNo * leg + run + t * turn, k: Math.min(1, pitch / (tile * (0.5 + Math.SQRT1_2))) });
       }
     }
   }
   slots.sort((p, q) => p.s - q.s);
   const used = slots.slice(0, count);
-  return { slots: used, height: Math.max(...used.map((p) => p.y)) + half + 200, leg, turn, half, top };
+  return { slots: used, height: used.reduce((low, p) => Math.max(low, p.y), 0) + half + 200, leg, turn, half, top };
 }
+
+type TileProps = { ordered: AtlasStyle[]; slots: Slot[]; tile: number; lit: Set<string> | null; fits: Map<string, Fit> | null; openId: string | null; lift: number; hold: (id: string, el: HTMLButtonElement | null) => void; onOpen: (id: string) => void; onNear: (x: number, y: number) => void };
+// The tiles are the heavy part (hundreds of pictures). They depend on nothing that changes as the
+// page scrolls or the pointer moves, so they are drawn once and the swell moves them by hand.
+const Tiles = memo(function Tiles({ ordered, slots, tile, lit, fits, openId, lift, hold, onOpen, onNear }: TileProps) {
+  return (
+    <>
+      {ordered.map((s, i) => {
+        const p = slots[i], fit = fits?.get(s.id);
+        if (!p) return null;
+        return (
+          <button key={s.id} type="button" ref={(el) => hold(s.id, el)} onClick={() => onOpen(s.id)} onFocus={() => onNear(p.x, p.y)} aria-label={s.name}
+            className="river-tile absolute block cursor-pointer overflow-hidden bg-muted [&_img]:object-cover" style={{ left: p.x - tile / 2, top: p.y - tile / 2, width: tile, height: tile, transform: `rotate(${p.a}rad) scale(${lit?.has(s.id) ? lift : p.k})`, zIndex: lit?.has(s.id) ? 8 : undefined, background: s.ink ?? undefined, opacity: lit && !lit.has(s.id) ? 0.3 : 1, outline: openId === s.id ? "2px solid var(--foreground)" : fit ? `2px solid var(${fit.strange ? "--sakura" : "--ramune"})` : undefined, outlineOffset: 1 }}>
+            {s.thumbnail_url ? <GalleryImage src={s.thumbnail_url} alt="" sizes="128px" className="object-cover" /> : null}
+          </button>
+        );
+      })}
+    </>
+  );
+});
 
 export function River({ styles, families }: { styles: AtlasStyle[]; families: Family[] }) {
   const screen = useScreen();
@@ -78,7 +105,8 @@ export function River({ styles, families }: { styles: AtlasStyle[]; families: Fa
   const strip = useRef<HTMLCanvasElement | null>(null);
   const tiles = useRef(new Map<string, HTMLButtonElement>());
   const [width, setWidth] = useState(0);
-  const [view, setView] = useState({ top: 0, h: 1 });
+  const windowEl = useRef<HTMLSpanElement | null>(null);
+  const bar = useRef<HTMLDivElement | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [hue, setHue] = useState("");
   const [named, setNamed] = useState<string | null>(null);
@@ -90,12 +118,12 @@ export function River({ styles, families }: { styles: AtlasStyle[]; families: Fa
   // The scrubber keeps a strip of the right edge to itself.
   const lay = useMemo(() => (width ? course(ordered.length, width - (phone ? 18 : 30), tile, gap, lanes) : null), [ordered.length, width, phone, tile, gap, lanes]);
   const spot = useMemo(() => new Map(ordered.map((s, i) => [s.id, i])), [ordered]);
-  const LIT = 1.32; // a lit tile stands a little proud of the river
+  const hold = useCallback((id: string, el: HTMLButtonElement | null) => { if (el) tiles.current.set(id, el); else tiles.current.delete(id); }, []);
 
   useEffect(() => {
     const el = scroller.current;
     if (!el) return;
-    const measure = () => { setWidth(el.clientWidth); setView({ top: el.scrollTop, h: el.clientHeight }); };
+    const measure = () => setWidth(el.clientWidth);
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(el);
@@ -108,6 +136,13 @@ export function River({ styles, families }: { styles: AtlasStyle[]; families: Fa
     return null;
   }, [ask.fits, hue, styles, byId]);
 
+  // Slots bucketed by place, so the swell looks only at the tiles around the pointer however long the river grows.
+  const CELL = 160;
+  const grid = useMemo(() => {
+    const cells = new Map<string, number[]>();
+    lay?.slots.forEach((p, i) => { const key = `${Math.floor(p.x / CELL)},${Math.floor(p.y / CELL)}`; const cell = cells.get(key); if (cell) cell.push(i); else cells.set(key, [i]); });
+    return cells;
+  }, [lay]);
   const litRef = useRef(lit);
   useEffect(() => { litRef.current = lit; }, [lit]);
 
@@ -118,36 +153,42 @@ export function River({ styles, families }: { styles: AtlasStyle[]; families: Fa
     const reach = phone ? 84 : 150, grow = phone ? 1.5 : 1.7;
     const now = new Set<string>();
     let nearest: string | null = null, nearestD = Infinity;
-    ordered.forEach((s, i) => {
-      const p = lay.slots[i], d = Math.hypot(p.x - px, p.y - py);
+    const cx = Math.floor(px / CELL), cy = Math.floor(py / CELL);
+    const around = [-1, 0, 1].flatMap((dx) => [-1, 0, 1].flatMap((dy) => grid.get(`${cx + dx},${cy + dy}`) ?? []));
+    around.forEach((i) => {
+      const s = ordered[i], p = lay.slots[i], d = Math.hypot(p.x - px, p.y - py);
       if (d > reach) return;
       const el = tiles.current.get(s.id);
       if (!el) return;
       const m = Math.cos((d / reach) * (Math.PI / 2)) ** 2; // 1 under the pointer, 0 at the rim
       // A fisheye: tiles are pushed out from the pointer in step with how much the ones inside them have grown.
       const out = d * 1.5 * m;
-      el.style.transform = `translate(${((p.x - px) / (d || 1)) * out}px, ${((p.y - py) / (d || 1)) * out}px) rotate(${p.a * (1 - m)}rad) scale(${Math.max(litRef.current?.has(s.id) ? LIT : 1, 1 + m * m * grow)})`;
+      el.style.transform = `translate(${((p.x - px) / (d || 1)) * out}px, ${((p.y - py) / (d || 1)) * out}px) rotate(${p.a * (1 - m)}rad) scale(${Math.max(litRef.current?.has(s.id) ? LIT : p.k, p.k + m * m * grow)})`;
       el.style.zIndex = String(10 + Math.round(m * 50));
       now.add(s.id);
       if (d < nearestD) { nearestD = d; nearest = s.id; }
     });
-    for (const id of swollen.current) if (!now.has(id)) { const el = tiles.current.get(id), p = lay.slots[spot.get(id) ?? 0]; if (el) { el.style.transform = `rotate(${p.a}rad) scale(${litRef.current?.has(id) ? LIT : 1})`; el.style.zIndex = ""; } }
+    for (const id of swollen.current) if (!now.has(id)) { const el = tiles.current.get(id), p = lay.slots[spot.get(id) ?? 0]; if (el) { el.style.transform = `rotate(${p.a}rad) scale(${litRef.current?.has(id) ? LIT : p.k})`; el.style.zIndex = ""; } }
     swollen.current = now;
     setNamed((was) => (was === nearest ? was : nearest));
-  }, [lay, ordered, spot, phone]);
+  }, [lay, ordered, spot, phone, grid]);
 
   // On a phone there is no pointer to follow: the swell travels down the middle of the river as the page scrolls.
   const ride = useCallback(() => {
     const el = scroller.current;
-    if (!el || !lay) return;
-    setView({ top: el.scrollTop, h: el.clientHeight });
+    if (!el || !lay || lay.slots.length === 0) return;
+    // The scrubber's window is moved by hand: state here would redraw the page on every scroll event.
+    if (windowEl.current) { windowEl.current.style.top = `${(el.scrollTop / lay.height) * 100}%`; windowEl.current.style.height = `${Math.min(100, (el.clientHeight / lay.height) * 100)}%`; }
+    bar.current?.setAttribute("aria-valuenow", String(Math.round((el.scrollTop / Math.max(1, lay.height - el.clientHeight)) * 100)));
     if (!phone) return;
     const y = el.scrollTop + el.clientHeight * 0.42;
     const s = Math.max(0, ((y - lay.slots[0].y + lay.turn) / (lay.turn * 2)) * lay.leg - lay.leg / 2);
-    let best = 0;
-    // Only slots far enough from the edges that a grown tile stays on the screen.
-    const inside = (p: Slot) => p.x > 64 && p.x < width - 84;
-    lay.slots.forEach((p, i) => { if (inside(p) && (!inside(lay.slots[best]) || Math.abs(p.s - s) < Math.abs(lay.slots[best].s - s))) best = i; });
+    // Slots are in flow order: find the one at `s` by halving, then the nearest to it that a grown tile fits on screen at.
+    let lo = 0, hi = lay.slots.length - 1;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (lay.slots[mid].s < s) lo = mid + 1; else hi = mid; }
+    let best = lo;
+    const inside = (p: Slot | undefined) => p !== undefined && p.x > 64 && p.x < width - 84;
+    for (let step = 0; step < 40 && !inside(lay.slots[best]); step++) best = inside(lay.slots[lo + step]) ? lo + step : inside(lay.slots[lo - step]) ? lo - step : best;
     swell(lay.slots[best].x, lay.slots[best].y);
   }, [lay, phone, swell, width]);
   useEffect(() => { const frame = requestAnimationFrame(ride); return () => cancelAnimationFrame(frame); }, [ride]);
@@ -217,28 +258,22 @@ export function River({ styles, families }: { styles: AtlasStyle[]; families: Fa
   return (
     <div className="relative h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full overflow-hidden md:h-[calc(100dvh-65px)]">
       <h1 className="sr-only">Explore the library</h1>
-      <div ref={scroller} onScroll={ride} className="h-full w-full overflow-y-auto overflow-x-hidden pr-5 md:pr-8" style={{ overscrollBehavior: "contain" }}
+      <div ref={scroller} id="river" onScroll={ride} className="h-full w-full overflow-y-auto overflow-x-hidden pr-5 md:pr-8" style={{ overscrollBehavior: "contain" }}
         onPointerMove={(e) => { if (e.pointerType !== "mouse" || !scroller.current) return; const r = scroller.current.getBoundingClientRect(); swell(e.clientX - r.left, e.clientY - r.top + scroller.current.scrollTop); }}
         onPointerLeave={(e) => { if (e.pointerType === "mouse") swell(-9999, -9999); }}>
         <div className="relative" style={{ height: lay?.height ?? 0 }}>
           <p className="absolute left-4 top-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground md:left-6 md:top-4"><span className="text-foreground">{styles.length}</span> styles, like beside like</p>
           {banks.map(({ f, x, y }) => <span key={f.id} aria-hidden className="explore-halo pointer-events-none absolute z-[5] -translate-x-1/2 whitespace-nowrap font-mono text-[9.5px] font-bold uppercase tracking-[0.14em] text-foreground/75" style={{ left: Math.min(Math.max(x, 70), width - 90), top: y, opacity: lit ? 0.3 : 1 }}>{f.label}</span>)}
-          {lay ? ordered.map((s, i) => {
-            const p = lay.slots[i], fit = ask.fits?.get(s.id);
-            return (
-              <button key={s.id} type="button" ref={(el) => { if (el) tiles.current.set(s.id, el); else tiles.current.delete(s.id); }} onClick={() => setOpenId(s.id)} aria-label={s.name}
-                className="river-tile absolute block cursor-pointer overflow-hidden bg-muted [&_img]:object-cover" style={{ left: p.x - tile / 2, top: p.y - tile / 2, width: tile, height: tile, transform: `rotate(${p.a}rad) scale(${lit?.has(s.id) ? LIT : 1})`, zIndex: lit?.has(s.id) ? 8 : undefined, background: s.ink ?? undefined, opacity: lit && !lit.has(s.id) ? 0.3 : 1, outline: openId === s.id ? "2px solid var(--foreground)" : fit ? `2px solid var(${fit.strange ? "--sakura" : "--ramune"})` : undefined, outlineOffset: 1 }}>
-                {s.thumbnail_url ? <GalleryImage src={s.thumbnail_url} alt="" sizes="128px" className="object-cover" /> : null}
-              </button>
-            );
-          }) : null}
+          {lay ? <Tiles ordered={ordered} slots={lay.slots} tile={tile} lit={lit} fits={ask.fits} openId={openId} lift={LIT} hold={hold} onOpen={setOpenId} onNear={swell} /> : null}
           {name && nameAt ? <p aria-hidden className="pointer-events-none absolute z-[70] -translate-x-1/2 whitespace-nowrap bg-foreground px-1.5 py-0.5 text-[12px] font-semibold text-background" style={{ left: Math.min(Math.max(nameAt.x, 60), width - 80), top: nameAt.y + (tile * (1 + (phone ? 1.5 : 1.7))) / 2 + 8 }}>{name.name}</p> : null}
         </div>
       </div>
 
-      <div className="absolute bottom-3 right-1 top-3 z-20 w-4 cursor-ns-resize touch-none md:right-2 md:w-5" onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); scrub(e); }} onPointerMove={scrub} role="scrollbar" aria-label="The whole river" aria-controls="river" aria-valuenow={lay ? Math.round((view.top / lay.height) * 100) : 0} aria-valuemin={0} aria-valuemax={100} aria-orientation="vertical">
+      <div ref={bar} tabIndex={0} className="absolute bottom-3 right-1 top-3 z-20 w-4 cursor-ns-resize touch-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ramune)] md:right-2 md:w-5" onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); scrub(e); }} onPointerMove={scrub}
+        onKeyDown={(e) => { const el = scroller.current; if (!el || !lay) return; const by = { ArrowDown: 80, ArrowUp: -80, PageDown: el.clientHeight * 0.9, PageUp: -el.clientHeight * 0.9, Home: -lay.height, End: lay.height }[e.key]; if (by === undefined) return; e.preventDefault(); el.scrollTop += by; }}
+        role="scrollbar" aria-label="The whole river" aria-controls="river" aria-valuenow={0} aria-valuemin={0} aria-valuemax={100} aria-orientation="vertical">
         <canvas ref={strip} aria-hidden className="h-full w-full" />
-        {lay ? <span aria-hidden className="pointer-events-none absolute inset-x-[-2px] shadow-[0_0_0_2px_var(--foreground)]" style={{ top: `${(view.top / lay.height) * 100}%`, height: `${Math.min(100, (view.h / lay.height) * 100)}%` }} /> : null}
+        <span ref={windowEl} aria-hidden className="pointer-events-none absolute inset-x-[-2px] shadow-[0_0_0_2px_var(--foreground)]" style={{ top: 0, height: "20%" }} />
       </div>
 
       {open ? <StyleCard style={open} family={open.family ? familyOf.get(open.family) ?? null : null} fit={ask.fits?.get(open.id) ?? null} judging={ask.state === "asking"} byId={byId} onGo={goTo} onClose={() => setOpenId(null)} /> : null}

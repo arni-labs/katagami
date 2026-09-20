@@ -20,7 +20,9 @@ const H = { "X-Tenant-Id": process.env.TEMPER_TENANT || "default", Authorization
 async function collectAll(path) {
   const out = [];
   let url = `${API}/tdata/${path}`;
-  while (url) {
+  const seen = new Set();
+  while (url && !seen.has(url)) {
+    seen.add(url);
     const res = await fetch(url, { headers: H });
     if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`);
     const j = await res.json();
@@ -67,6 +69,8 @@ await Promise.all(Array.from({ length: 10 }, async () => {
     catch (err) { failed++; console.error(`  no ink for ${row.fields?.name}: ${err.message}`); }
   }
 }));
+// A bad run (the image host down, a changed URL shape) must not replace good inks with none.
+if (failed > rows.length * 0.1 || Object.keys(inks).length === 0) { console.error(`${failed} of ${rows.length} thumbnails failed; style-inks.json left as it was`); process.exit(1); }
 const sorted = Object.fromEntries(Object.entries(inks).sort(([a], [b]) => a.localeCompare(b)));
 writeFileSync(new URL("../src/data/style-inks.json", import.meta.url), JSON.stringify({ inks: sorted }, null, 0) + "\n");
 console.log(`${Object.keys(sorted).length} inks of ${rows.length} styles; ${failed} failed`);
