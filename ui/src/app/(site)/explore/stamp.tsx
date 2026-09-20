@@ -4,7 +4,7 @@ import { GalleryImage } from "@/components/gallery-image";
 import { canOptimizeGallerySrc, galleryImageSrc } from "@/lib/gallery-image";
 
 /** The optimizer's URL for a thumbnail, for a plain <img>: a sheet that mounts stamps by the row as it is panned cannot afford a component with state per picture. */
-const quick = (src: string, width: 128 | 256 | 384) => (canOptimizeGallerySrc(src) ? `/_next/image?url=${encodeURIComponent(galleryImageSrc(src))}&w=${width}&q=70` : src);
+const quick = (src: string, width: 128 | 256 | 384) => (canOptimizeGallerySrc(src) ? `/_next/image?url=${encodeURIComponent(galleryImageSrc(src))}&w=${width}&q=75` : src); // 75 is the only quality the production optimizer accepts (next.config sets no `qualities`); the dev server takes any
 
 /** A perforated stamp carrying a style's picture. The hole pitch is fitted to each side so holes meet the corners evenly. */
 export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = false, veil = 0, lit, punch, fast }: { src: string | null; ink: string | null; w: number; h: number; label?: string; value?: string; sizes?: string; soon?: boolean; /** 0..1: how much of the picture is hidden under the style's ink (a stamp seen from far away). `--veil` on an ancestor scales it. */ veil?: number; /** Where the stamp's centre is, in the same pixel space as the light (--lx, --ly): makes it a light-reactive card. */ lit?: { x: number; y: number }; /** The colour the stamp lies on: holes are painted in it instead of cut, which is far cheaper across a sheet of hundreds. */ punch?: string; /** Draw the picture as a plain <img> at this optimizer width. */ fast?: 128 | 256 | 384 }) {
