@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import type { AtlasHole, AtlasStyle } from "@/lib/catalog";
 import { AtlasMap, type AtlasApi } from "./atlas-map";
@@ -16,7 +16,7 @@ type Family = { id: string; label: string; lead: string; count: number; x: numbe
 const INKS = ["var(--sakura)", "var(--ramune)", "var(--yuzu)"];
 const ROW_H = 92;
 
-export function FamilyFeed({ styles, families, holes, lit, accent, find }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[]; lit?: Set<string> | null; accent?: Set<string> | null; find?: string }) {
+export function FamilyFeed({ styles, families, holes, lit, accent, find, onSoon }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[]; lit?: Set<string> | null; accent?: Set<string> | null; find?: string; onSoon?: (id: string) => void }) {
   const rows = useMemo(() => {
     const q = (find ?? "").trim().toLowerCase();
     const keep = (s: AtlasStyle) => (!lit || lit.has(s.id)) && (!q || s.name.toLowerCase().includes(q));
@@ -64,11 +64,13 @@ export function FamilyFeed({ styles, families, holes, lit, accent, find }: { sty
             ))}
             {row.soon.map((h) => (
               <li key={h.id} className="shrink-0 snap-start">
+                <button type="button" onClick={() => onSoon?.(h.id)} className="block cursor-pointer text-left">
                 <span className="relative block overflow-hidden" style={{ height: ROW_H, width: Math.round(ROW_H * 1.2) }}>
                   <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.5 }} />
                   <span className="absolute bottom-1.5 left-1.5 bg-[var(--sakura)] px-1 py-0.5 font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-white">soon</span>
                 </span>
                 <span className="mt-1 block max-w-[7rem] truncate text-[12.5px] leading-tight text-muted-foreground">{h.name}</span>
+                </button>
               </li>
             ))}
           </ul>
@@ -79,15 +81,24 @@ export function FamilyFeed({ styles, families, holes, lit, accent, find }: { sty
 }
 
 /** The atlas on a phone: the family rows by default, the map one tap away. A host page puts its own controls in `top`, and an answer of its own in place of the rows as `body`. */
-export function PhoneAtlas({ styles, families, holes, sample, lit, accent, top, body, apiRef }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[]; sample: boolean; lit?: Set<string> | null; accent?: Set<string> | null; top?: React.ReactNode; body?: React.ReactNode; apiRef?: React.MutableRefObject<AtlasApi | null> }) {
+export function PhoneAtlas({ styles, families, holes, sample, lit, accent, top, body, apiRef }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[]; sample: boolean; lit?: Set<string> | null; accent?: Set<string> | null; top?: React.ReactNode; body?: ((showOnMap: (id: string) => void) => React.ReactNode) | null; apiRef?: React.MutableRefObject<AtlasApi | null> }) {
   const [view, setView] = useState<"list" | "map">("list");
   const [find, setFind] = useState("");
+  // A direction still to come has no page of its own: a tap takes it to the map, where its sheet says what it is.
+  const own = useRef<AtlasApi | null>(null);
+  const api = apiRef ?? own;
+  const [wanted, setWanted] = useState<string | null>(null);
+  const showOnMap = (id: string) => { setWanted(id); setView("map"); };
+  useEffect(() => {
+    if (view !== "map" || !wanted) return;
+    api.current?.focusOn(wanted);
+  }, [view, wanted, api]);
   const tab = (value: "list" | "map", label: string) => (
-    <button type="button" aria-pressed={view === value} onClick={() => setView(value)} className={`cursor-pointer px-3 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] ${view === value ? "bg-foreground text-background" : "text-muted-foreground"}`}>{label}</button>
+    <button type="button" aria-pressed={view === value} onClick={() => { setWanted(null); setView(value); }} className={`cursor-pointer px-3 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] ${view === value ? "bg-foreground text-background" : "text-muted-foreground"}`}>{label}</button>
   );
   return (
     <div className="flex h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full flex-col overflow-hidden">
-      <div className="z-10 shrink-0 bg-background px-4 pb-2 pt-3 shadow-[0_1px_0_rgba(30,35,45,0.06)]">
+      <div className="z-10 max-h-[60%] shrink-0 overflow-y-auto bg-background px-4 pb-2 pt-3 shadow-[0_1px_0_rgba(30,35,45,0.06)]">
         <h1 className="sr-only">The atlas</h1>
         {top}
         <div className="mt-2 flex items-center gap-2">
@@ -104,11 +115,11 @@ export function PhoneAtlas({ styles, families, holes, sample, lit, accent, top, 
       </div>
       {view === "map" ? (
         <div className="relative min-h-0 flex-1">
-          <AtlasMap styles={styles} families={families} holes={holes} unplaced={0} sample={sample} host={{ ownChrome: false, fill: true, lit, accent, apiRef, insets: { top: 12, right: 12, bottom: 12, left: 12 } }} />
+          <AtlasMap styles={styles} families={families} holes={holes} unplaced={0} sample={sample} host={{ ownChrome: false, fill: true, lit, accent, apiRef: api, insets: { top: 12, right: 12, bottom: 12, left: 12 } }} />
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto pt-4" style={{ overscrollBehavior: "contain" }}>
-          {body ? <div className="px-4 pb-8">{body}</div> : <FamilyFeed styles={styles} families={families} holes={holes} lit={lit} accent={accent} find={find} />}
+          {body ? <div className="px-4 pb-8">{body(showOnMap)}</div> : <FamilyFeed styles={styles} families={families} holes={holes} lit={lit} accent={accent} find={find} onSoon={showOnMap} />}
           {sample ? <p className="px-4 pb-8 text-[13px] text-muted-foreground">This is the visitor shelf. <Link href="/signin" className="ink-underline text-foreground">Sign in for all</Link></p> : null}
         </div>
       )}

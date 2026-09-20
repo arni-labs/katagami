@@ -309,6 +309,8 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   // The host's chrome, read at the moment of framing (it moves: a phone sheet has snap points).
   const hostInsets = useRef(host?.insets);
   useEffect(() => { hostInsets.current = host?.insets; }, [host?.insets]);
+  const ownSheetRef = useRef(host?.ownSheet !== false);
+  useEffect(() => { ownSheetRef.current = host?.ownSheet !== false; }, [host?.ownSheet]);
   const fitAll = useCallback(() => {
     const el = viewportRef.current;
     if (!el || styles.length === 0) return;
@@ -382,7 +384,8 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     setFocusId(item.id);
     const el = viewportRef.current;
     const wide = el ? el.clientWidth >= 640 : true;
-    const own = hostInsets.current;
+    // A narrow map that draws its own sheet keeps the item clear of it, whatever room a host asked for.
+    const own = !wide && ownSheetRef.current ? undefined : hostInsets.current;
     const screen = !el
       ? undefined
       : own

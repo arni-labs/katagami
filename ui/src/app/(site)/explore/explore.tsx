@@ -192,7 +192,7 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
   };
 
   const directions = concepts ? [...concepts.unmade.slice(0, 5), ...concepts.made.slice(0, 4)] : [];
-  const results = answer ? (
+  const resultsFor = (showOnMap: (id: string) => void) => answer ? (
     <div aria-live="polite" aria-busy={state === "asking"}>
       <p className="text-[12.5px] leading-snug text-muted-foreground">
         {answer.wants.length > 0 ? <>Read as wanting <strong className="font-semibold text-foreground">{answer.wants.slice(0, 4).join(", ")}</strong>. </> : null}
@@ -206,10 +206,10 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
           <ul className="mt-2 flex flex-wrap gap-1">
             {directions.map((c) => (
               <li key={c.id}>
-                {holeIds.has(c.id) && !phone ? (
-                  <button type="button" onClick={() => api.current?.focusOn(c.id)} title={c.description} className="cursor-pointer bg-[color-mix(in_srgb,var(--sakura)_14%,transparent)] px-2 py-1 text-[13px] hover:bg-[color-mix(in_srgb,var(--sakura)_24%,transparent)]">{c.name} <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--sakura)]">soon</span></button>
+                {holeIds.has(c.id) ? (
+                  <button type="button" onClick={() => showOnMap(c.id)} title={c.description} className="cursor-pointer bg-[color-mix(in_srgb,var(--sakura)_14%,transparent)] px-2 py-1 text-[13px] hover:bg-[color-mix(in_srgb,var(--sakura)_24%,transparent)]">{c.name} <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--sakura)]">soon</span></button>
                 ) : (
-                  <span title={c.description} className="inline-block bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-2 py-1 text-[13px] text-foreground/80">{c.name}{holeIds.has(c.id) ? <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--sakura)]"> soon</span> : null}</span>
+                  <span title={c.description} className="inline-block bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-2 py-1 text-[13px] text-foreground/80">{c.name}</span>
                 )}
               </li>
             ))}
@@ -225,7 +225,7 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
 
   // ---- phone: a list under the thumb, the map one tap away ---------------------
   if (phone) {
-    return <PhoneAtlas styles={styles} families={families} holes={holes} sample={sample} lit={lit} accent={accent} apiRef={api} top={<div className="flex flex-col gap-2">{askForm}{errorLine}{refineBar}{refinePanel}</div>} body={results} />;
+    return <PhoneAtlas styles={styles} families={families} holes={holes} sample={sample} lit={lit} accent={accent} apiRef={api} top={<div className="flex flex-col gap-2">{askForm}{errorLine}{refineBar}{refinePanel}</div>} body={answer ? resultsFor : null} />;
   }
 
   // ---- desktop and wide: one slim panel over the map ---------------------------
@@ -240,7 +240,7 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
         {errorLine}
         {refineBar}
         {refinePanel}
-        {results}
+        {resultsFor((id) => api.current?.focusOn(id))}
         {sample ? <p className="text-[12.5px] text-muted-foreground">Visitor shelf. <Link href="/signin" className="ink-underline text-foreground">Sign in</Link> for the whole library.</p> : null}
       </aside>
     </div>
