@@ -81,7 +81,7 @@ export function StampSheets({ styles, families, holes }: { styles: AtlasStyle[];
   const score = (f: Fit) => (f.fit === null ? "" : String(Math.round(f.fit * 100)));
   if (!screen) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
   return (
-    <div className="relative h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full overflow-hidden md:h-[calc(100dvh-65px)]">
+    <div className="relative h-[calc(100dvh-65px)] w-full overflow-hidden">
       <h1 className="sr-only">Explore the library</h1>
       <div ref={scroller} className="h-full w-full overflow-y-auto overflow-x-hidden px-3 pb-44 pt-10 md:px-8" style={{ overscrollBehavior: "contain" }}>
         <p className="absolute left-4 top-3 z-10 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground md:left-8"><span className="text-foreground">{styles.length}</span> stamps on {sheets.length} sheets</p>

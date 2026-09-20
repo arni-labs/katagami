@@ -107,7 +107,7 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit }: { ask: ReturnType<
         {ask.state === "error" ? <p role="alert" className="px-1 text-[12.5px] text-[var(--beni)]">{ask.error}</p> : null}
         <form onSubmit={(e) => { e.preventDefault(); onHue(""); void ask.ask(ask.query); }} className="flex items-stretch gap-2">
           <label htmlFor="explore-ask" className="sr-only">What are you making?</label>
-          <input id="explore-ask" value={ask.query} onChange={(e) => ask.setQuery(e.target.value)} maxLength={400} autoComplete="off" placeholder="Ask anything: a word, a mood, what you are making" className="min-w-0 flex-1 bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2.5 text-[16px] outline-none placeholder:text-muted-foreground md:text-[14px]" />
+          <input id="explore-ask" value={ask.query} onChange={(e) => ask.setQuery(e.target.value)} maxLength={400} autoComplete="off" placeholder="Ask anything: a word, a mood, a project" className="min-w-0 flex-1 bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2.5 text-[16px] outline-none placeholder:text-muted-foreground md:text-[14px]" />
           <button type="submit" disabled={ask.state === "asking"} className="shrink-0 cursor-pointer bg-foreground px-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-background disabled:opacity-50">{ask.state === "asking" ? "Reading" : "Ask"}</button>
         </form>
         <div className="flex items-center gap-2 px-1">

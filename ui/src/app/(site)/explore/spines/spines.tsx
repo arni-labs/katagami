@@ -133,7 +133,7 @@ export function Spines({ styles, families }: { styles: AtlasStyle[]; families: F
 
   if (!screen) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
   return (
-    <div className="relative h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full overflow-hidden md:h-[calc(100dvh-65px)]">
+    <div className="relative h-[calc(100dvh-65px)] w-full overflow-hidden">
       <h1 className="sr-only">Explore the library</h1>
       <p className="absolute left-4 top-3 z-10 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground md:left-8"><span className="text-foreground">{styles.length}</span> styles on one shelf</p>
       <div ref={scroller} id="shelf" onScroll={track} onWheel={(e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && scroller.current) scroller.current.scrollLeft += e.deltaY; }}

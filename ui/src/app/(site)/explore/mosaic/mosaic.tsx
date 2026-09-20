@@ -299,7 +299,7 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
 
   if (!screen) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
   return (
-    <div ref={box} style={{ background: GROUND }} className={`relative h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full select-none overflow-hidden md:h-[calc(100dvh-65px)]`}>
+    <div ref={box} style={{ background: GROUND }} className={`relative h-[calc(100dvh-65px)] w-full select-none overflow-hidden`}>
       <h1 className="sr-only">Explore the library</h1>
       <div role="application" aria-label="The sheet. Drag or use the arrow keys to move across it; plus and minus change how much you see." tabIndex={0} onKeyDown={onKey} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={(e) => { if (e.pointerType === "mouse") { cam.current.px = -1; cam.current.py = -1; paint(); } }} ref={surface}
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">

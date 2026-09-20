@@ -39,6 +39,8 @@ const tabs = [
 
 export function MobileNav() {
   const pathname = usePathname();
+  // The explore views are full-screen canvases with their own docked controls; the header's menu already carries these links.
+  if (pathname?.startsWith("/explore/")) return null;
 
   return (
     <nav
