@@ -11,6 +11,8 @@ import {
   storedDna,
   topTraits,
   wantQuestions,
+  refineQuestions,
+  applyRefinement,
   dnaFromAnswers,
   STYLE_DNA_QUESTIONS,
   type StyleDna,
@@ -167,6 +169,7 @@ function summary(kind: Kind, r: Row) {
     // reads its own visibility.
     shown_to_visitors: isShownToVisitors(r),
     url: `${GALLERY}/${PATH[kind]}/${r.entity_id}`,
+    thumbnail_url: str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null,
     ...(kind === "language"
       ? { design_md_url: `${GALLERY}/language/${r.entity_id}/DESIGN.md` }
       : {}),
@@ -383,6 +386,10 @@ export type AskArgs = {
   stage?: "match";
   /** The sentence's reading from a "match" answer, so the fit stage does not pay for it twice. */
   want?: Record<string, number>;
+  /** A change to the reading — "quieter, warmer" — asked instead of re-reading the sentence. */
+  refine?: string;
+  /** Changes already folded into `want` by earlier refinements, so the fit is judged with them in mind. */
+  changes?: string;
 };
 
 const ASK_MAX_QUERY = 400;
@@ -394,10 +401,8 @@ const FIT_LEVELS = ["wrong for it", "could work", "strong fit"];
 const ASK_JEV = { timeoutMs: 6_000, retries: 1 };
 
 function askCard(kind: Kind, r: Row, dna: StyleDna) {
-  const f = r.fields ?? {};
   return {
     ...summary(kind, r),
-    thumbnail_url: str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null,
     traits: topTraits(dna).map((t) => t.label),
   };
 }
@@ -469,9 +474,15 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   const wantStarted = Date.now();
   // A reading handed back by the caller is used only if it is whole and in range.
   const given = a.want && STYLE_DNA_QUESTIONS.every((q) => typeof a.want?.[q.id] === "number" && a.want[q.id] >= 0 && a.want[q.id] <= 1) ? (a.want as StyleDna) : null;
-  const want = given ?? dnaFromAnswers((await askJev(`Product: ${query}`, wantQuestions(), ASK_JEV)).answers);
+  const read = given ?? dnaFromAnswers((await askJev(`Product: ${query}`, wantQuestions(), ASK_JEV)).answers);
+  if (!read) throw new JevUnavailableError("Jev left a question about the product unanswered");
+  const change = a.refine?.trim().slice(0, ASK_MAX_QUERY);
+  const refined = change ? applyRefinement(read, (await askJev(`Change asked for: ${change}`, refineQuestions(), ASK_JEV)).answers) : null;
+  if (change && !refined) throw new JevUnavailableError("Jev left a question about the change unanswered");
+  const want = refined?.reading ?? read;
+  const moved = (refined?.moved ?? []).slice(0, 8).map((m) => ({ trait: m.label, from: m.from, to: m.to }));
+  const changes = [a.changes?.trim().slice(0, ASK_MAX_QUERY), change].filter(Boolean).join("; ");
   const wantMs = Date.now() - wantStarted;
-  if (!want) throw new JevUnavailableError("Jev left a question about the product unanswered");
 
   const crowd = centroid(pool.map((p) => p.dna));
   const ranked = pool
@@ -490,7 +501,7 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
       return names.has(name) ? false : Boolean(names.add(name));
     });
     return {
-      query, tier, model: JEV_MODEL, considered: pool.length, unread, provisional: true, want,
+      query, tier, model: JEV_MODEL, considered: pool.length, unread, provisional: true, want, changes, moved,
       timings_ms: { read: readMs, want: wantMs, fit: 0 }, wants, avoids,
       results: first.slice(0, limit).map((p) => ({ ...askCard(p.kind, p.row, p.dna), fit: null, match: round(p.match) })),
       strange: [],
@@ -507,7 +518,7 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
 
   const fitStarted = Date.now();
   const fitRes = await askJev(
-    `Product: ${query}`,
+    changes ? `Product: ${query}\nThe design should also be: ${changes}` : `Product: ${query}`,
     Object.fromEntries(
       judged.map((p, i) => [
         `s${i}`,
@@ -554,6 +565,9 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     unread,
     timings_ms: { read: readMs, want: wantMs, fit: fitMs },
     provisional: false,
+    want,
+    changes,
+    moved,
     wants,
     avoids,
     results: results.map(out),

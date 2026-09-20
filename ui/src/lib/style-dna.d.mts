@@ -6,6 +6,12 @@ export function buildStyleDoc(kind: "language" | "art_style", fields: Record<str
 export function styleQuestions(): Record<string, JevQuestion>;
 export function wantQuestions(): Record<string, JevQuestion>;
 export function dnaFromAnswers(answers: Record<string, JevAnswer>): StyleDna | null;
+export const REFINE_MOVES_AT: number;
+export function refineQuestions(): Record<string, JevQuestion>;
+export function applyRefinement(
+  reading: StyleDna,
+  answers: Record<string, JevAnswer>,
+): { reading: StyleDna; moved: { id: string; label: string; from: number; to: number }[] } | null;
 export function dnaVersion(model: string): string;
 export function storedDna(fields: Record<string, unknown> | undefined, model: string): StyleDna | null;
 export function matchScore(want: StyleDna, dna: StyleDna): number;
