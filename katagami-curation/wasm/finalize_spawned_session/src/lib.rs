@@ -3,6 +3,7 @@ use sha2::{Digest, Sha256};
 use temper_wasm_sdk::prelude::*;
 
 mod art_style_gallery;
+mod art_style_generation;
 mod art_style_review;
 mod facets;
 mod taste_doc;
@@ -3586,21 +3587,8 @@ fn verify_art_style_proof_record_files(
     owner_id: &str,
     records: &[art_style_review::VerifiedProofRecord],
 ) -> Result<(), VerificationError> {
-    let mut verified_sources = std::collections::BTreeSet::new();
     let mut verified_outputs = std::collections::BTreeSet::new();
     for record in records {
-        if verified_sources.insert(record.source_file_id.clone()) {
-            verify_art_style_proof_file(
-                ctx,
-                api_url,
-                headers,
-                owner_id,
-                &record.source_file_id,
-                &record.source_sha256,
-                true,
-                "proof_source",
-            )?;
-        }
         if !verified_outputs.insert(record.output_file_id.clone()) {
             return Err(VerificationError::new(
                 "art_style_proof_output_duplicate",
@@ -3623,13 +3611,11 @@ fn verify_art_style_proof_record_files(
             "proof_output",
         )?;
     }
-    if !(1..=2).contains(&verified_sources.len())
-        || verified_outputs.len() != verified_sources.len() * 2
-    {
+    if !matches!(verified_outputs.len(), 2 | 4) {
         return Err(VerificationError::new(
             "art_style_proof_file_matrix_incomplete",
             format!(
-                "ArtStyle '{owner_id}' proof records must resolve to one or two immutable sources and exactly two unique outputs per source"
+                "ArtStyle '{owner_id}' prompt-only proof records must resolve to two or four unique immutable outputs"
             ),
         )
         .entity("ArtStyle", owner_id)

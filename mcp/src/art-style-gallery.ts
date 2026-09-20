@@ -4,20 +4,32 @@ import { z } from "zod";
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
 const galleryModel = z.union([
   z.object({ provider: z.literal("OpenAI"), model: z.enum([
-    "openai/gpt-image-2.5/sunburst/text-to-image",
+    "gpt-image-2.5", "openai/gpt-image-2.5/sunburst/text-to-image",
     "openai/gpt-image-2.5/flare/text-to-image",
+  ]).nullable() }).strict(),
+  z.object({ provider: z.literal("xAI"), model: z.enum([
+    "grok-imagine-image", "grok-imagine-image-v2", "xai/grok-imagine-image/v2.0/text-to-image",
+  ]).nullable() }).strict(),
+  z.object({ provider: z.literal("Google"), model: z.enum([
+    "fal-ai/nano-banana-pro", "gemini-3-pro-image-preview",
   ]) }).strict(),
-  z.object({ provider: z.literal("xAI"), model: z.literal("xai/grok-imagine-image/v2.0/text-to-image") }).strict(),
-  z.object({ provider: z.literal("Google"), model: z.literal("fal-ai/nano-banana-pro") }).strict(),
 ]);
+const nonempty = z.string().trim().min(1);
+const execution = z.object({
+  route: z.enum(["builtin", "provider"]), harness: nonempty, tool: nonempty,
+  receipt: nonempty, requested_model: nonempty, provider_request_id: nonempty.nullable(),
+}).strict();
 
 export const artStyleGalleryImages = z.array(z.object({
   file_id: z.string().min(1),
   subject: z.string().trim().min(1),
   model: galleryModel,
   generation_record: z.object({
-    schema_version: z.literal("1"),
+    schema_version: z.literal("2"),
     kind: z.literal("art_style_gallery"),
+    mode: z.literal("text_to_image"),
+    input_image_file_ids: z.array(z.string()).length(0),
+    execution,
     style_slug: z.string().min(1),
     prompt: z.string().min(1),
     canonical_prompt_sha256: sha256,
@@ -25,10 +37,17 @@ export const artStyleGalleryImages = z.array(z.object({
       file_id: z.string().min(1),
       sha256,
       prompt_sha256: sha256,
-      provider_request_id: z.string().trim().min(1),
     }).strict(),
   }).strict(),
-}).strict()).length(6).refine(items =>
+}).strict().superRefine((image, context) => {
+  const { route, harness, requested_model, provider_request_id } = image.generation_record.execution;
+  const { provider, model } = image.model;
+  const requested = provider === "OpenAI" ? "GPT Image 2.5" : provider === "xAI" ? "Grok Image" : "Nano Banana";
+  if (requested_model !== requested ||
+      (route === "provider" && (model === null || provider_request_id === null)) ||
+      (route === "builtin" && !((harness === "codex" && provider === "OpenAI") || (harness === "grok" && provider === "xAI"))))
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Gallery execution must record the actual route, requested model and available provenance" });
+})).length(6).refine(items =>
   items.filter(i => i.model.provider === "OpenAI").length === 4 &&
   items.filter(i => i.model.provider === "xAI").length === 1 &&
   items.filter(i => i.model.provider === "Google").length === 1,
@@ -59,6 +78,6 @@ export function gallerySubmissionFields(
   }
   return {
     reference_image_file_ids: ids,
-    reference_manifest: JSON.stringify({ schema_version: "2", items: images }),
+    reference_manifest: JSON.stringify({ schema_version: "3", items: images }),
   };
 }
