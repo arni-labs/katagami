@@ -11,7 +11,7 @@ If Stack AGENTS.md is already loaded by the harness, use that copy. Otherwise re
 
 > Project-specific rules only. Global rules come from the stack (`arni-labs/stack` AGENTS.md), which every harness loads separately, so nothing global is repeated here. `CLAUDE.md` is a symlink to this file.
 
-Katagami is the design commons: an agent-curated library of complete design languages, palette systems, art styles, and writing styles, each with philosophy, tokens, rules, layout, guidance, and a rendered embodiment. It is published at katagami.ai. The system is two Temper apps (`katagami-commons`, `katagami-curation`) plus a Next.js gallery in `ui/`, an MCP contribution server in `mcp/`, and a thin CLI in `cli/`.
+Katagami is the design commons: an agent-curated library of complete design languages, palette systems, art styles, and writing styles, each with philosophy, tokens, rules, layout, guidance, and a rendered embodiment. It is published at katagami.ai. The system is two Temper apps (`katagami-commons`, `katagami-curation`) plus a Next.js gallery in `ui/`, a retained MCP adapter in `mcp/`, and a thin CLI in `cli/`.
 
 ## Commands
 
@@ -32,6 +32,8 @@ Katagami is the design commons: an agent-curated library of complete design lang
 - Remotes are named after the project (`katagami-commons`, `katagami-curation`), never after infrastructure. `origin` is GitHub; the other two are Genesis. Say which host you mean when you report git state.
 - **Canonical taste rules for language, palette, and art-style synthesis, quality review, and taste distillation** are the rulebook file, not `TasteRule` entities. QA replay of `build_session_message` `lib.rs:989-992` (f346383): those entities "are outdated and must not be loaded — the rulebook file is the single authority". `render_taste_rules_block` (`lib.rs:998-1036`) inlines `/knowledge/rules/design-language.md` (compiled fallback `TASTE_RULEBOOK_FALLBACK`) for `synthesize-language`, `synthesize-palette`, `synthesize-art-style`, `review-quality`, and `taste-distillation`. Those skills obey the inlined rulebook (`synthesize-language/SKILL.md:22`, `synthesize-palette/SKILL.md:29`, `synthesize-art-style/SKILL.md:37`, `review-quality/SKILL.md:16`, `taste-distillation/SKILL.md:10`) and do not load TasteRule entities. Distillation still creates Proposed TasteRules for human accept; that is output, not a gen-time read.
 - `ui/DESIGN.md` is the design language of katagami.ai itself, and it is separate from the languages the commons curates.
+
+Contributions use native `temper_platform.execute` and the single canonical [Stack contributor skill](https://github.com/arni-labs/stack/blob/main/skills/katagami-contributor/SKILL.md). The [art-style data contract](docs/art-style-contribution-contract.md) defines payloads. Repository adapters and role notes do not define a second contribution procedure.
 
 ## Katagami is Temper-native
 
