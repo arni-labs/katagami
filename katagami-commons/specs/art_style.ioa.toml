@@ -255,7 +255,7 @@ effect = [
   { type = "set_bool", var = "has_portability_evidence", value = "false" }
 ]
 params = ["name", "slug", "medium", "prompt_template", "slot_recipes", "guidance", "reference_image_file_ids", "reference_manifest", "proof_shots_file_ids", "proof_shots_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "source_basis", "prompt_review", "portability_report", "tags", "direction_id", "curator_notes"]
-hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/one paste-ready observable prompt/slot_recipes/guidance + six gallery outputs (four GPT Image 2.5, one Grok Image, one Nano Banana) in reference_manifest schema version 2 + contributor-supplied multi-model proof shots made without style references + thumbnail + lineage + model provenance + credits + source_basis + independent prompt_review + portability_report + direction_id. Katagami does not generate submission images. Leaves the entity in Draft. The finalizer validates the reports, files, and hashes, internally attests them, and alone may mark quality/publish. Files must already be Locked."
+hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/one paste-ready observable prompt/slot_recipes/guidance + six gallery outputs (four GPT Image 2.5, one Grok Image, one Nano Banana) in reference_manifest schema version 3 + contributor-supplied prompt-only proof shots from two distinct model identities + thumbnail + lineage + model provenance + credits + source_basis + independent prompt_review + portability_report + direction_id. Katagami does not generate submission images. Leaves the entity in Draft. The finalizer validates the reports, files, and hashes, internally attests them, and alone may mark quality/publish. Files must already be Locked."
 
 
 # The engine binds verification to this submitted entity. Contributors do not
@@ -326,7 +326,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_reference_images", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "has_source_basis_review", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["reference_image_file_ids", "reference_manifest"]
-hint = "Attach six ordered gallery File ids plus reference_manifest schema version 2: four GPT Image 2.5, one Grok Image, one Nano Banana, with distinct Locked file bytes, exact model IDs, prompt hashes and real provider request IDs. The first gallery File is the thumbnail. These are display outputs, not required style-reference inputs. Portability proof remains separate. Published styles must Revise first, only when the complete replacement is ready."
+hint = "Attach six ordered gallery File ids plus reference_manifest schema version 3: four GPT Image 2.5, one Grok Image, one Nano Banana, with distinct Locked file bytes, prompt hashes and generation record version 2. Built-in Codex/Grok records use real harness tool receipts and may leave an unexposed model version or provider request ID null; provider records require exact model and request IDs. Requested models never masquerade as observed model IDs. The first gallery File is the thumbnail. These are display outputs, not required style-reference inputs. Portability proof remains separate. Published styles must Revise first, only when the complete replacement is ready."
 
 # --- Actions: Proof Shots (canonical subjects rendered in-style) ---
 
@@ -336,7 +336,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_proof_shots", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "has_source_basis_review", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }, { type = "set_bool", var = "has_portability_evidence", value = "false" }]
 params = ["proof_shots_file_ids", "proof_shots_manifest"]
-hint = "Attach two or four contributor-supplied proof shots: two distinct edit models using the same one or two sources. Choose fresh subjects and compositions for each style from human portrait, non-human living subject, still-life/object, and landscape/environment roles; do not reuse recurring catalog fixtures. Two-source sets use distinct primary roles and source media. Every item carries a generation record binding exact imported source/output file ids, byte hashes and canonical prompt hash. The finalizer requires every source and output File Locked and hashes all files. Each case must preserve recognizable content and fully replace source medium, with medium/material and depiction grammar scoring 2/2. Katagami validates evidence but never invokes an image provider."
+hint = "Attach two or four prompt-only proof shots: the same one or two fresh subject descriptions on two distinct model identities. Use proof manifest version 4, generation records version 2 and portability report version 2. Render the unchanged canonical prompt plus Subject and scene text, with mode text_to_image and no input images. Choose roles from human portrait, non-human living subject, still-life/object, and landscape/environment; two subjects use distinct roles. Every record binds the exact Locked output file, byte hash, prompt hash and genuine harness/provider receipt. Independent blind scoring must confirm subject_followed and style_applied, with medium/material and depiction grammar scoring 2/2. Katagami validates evidence but never invokes an image provider."
 
 # --- Actions: Thumbnail / Public Assets ---
 
@@ -489,7 +489,7 @@ kind = "input"
 from = ["Draft"]
 to = "UnderReview"
 guard = [{ type = "is_true", var = "has_medium" }, { type = "is_true", var = "has_prompt_template" }, { type = "is_true", var = "has_proof_shots" }, { type = "is_true", var = "has_thumbnail" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
-hint = "Curation-service callback after the WASM finalizer verifies every proof file, generation chain, and report. Requires medium, one portable prompt, two or four proof shots from two distinct models, and a Ready/Locked thumbnail. Cedar denies contributors. Optional example references are not a prerequisite. Proof readiness stays in WASM, which streams and hashes every locked source and output."
+hint = "Curation-service callback after the WASM finalizer verifies every proof file, generation chain, and report. Requires medium, one portable prompt, two or four proof shots from two distinct models, and a Ready/Locked thumbnail. Cedar denies contributors. Six display gallery outputs are validated separately. Proof readiness stays in WASM, which streams and hashes every Locked output; no source images are accepted."
 
 [[action]]
 name = "Publish"
@@ -498,7 +498,7 @@ from = ["UnderReview"]
 to = "Published"
 guard = [{ type = "is_true", var = "has_medium" }, { type = "is_true", var = "has_prompt_template" }, { type = "is_true", var = "has_slot_recipes" }, { type = "is_true", var = "has_proof_shots" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "has_credits" }, { type = "is_true", var = "has_model_provenance" }, { type = "is_true", var = "has_source_basis_review" }, { type = "is_true", var = "has_prompt_review" }, { type = "is_true", var = "has_portability_evidence" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
 effect = [{ type = "increment", field = "version" }]
-hint = "Curation-service callback after finalizer attestation. Cedar denies contributors. Requires medium, one portable prompt, slot recipes, multi-model proof shots, thumbnail, credits, model provenance, source/rights review, independent prompt review, per-model portability evidence, quality review, and public assets. Optional example references are not required."
+hint = "Curation-service callback after finalizer attestation. Cedar denies contributors. Requires medium, one portable prompt, slot recipes, multi-model proof shots, thumbnail, credits, model provenance, source/rights review, independent prompt review, per-model portability evidence, quality review, and public assets. The finalizer also requires six validated display gallery outputs."
 
 [[action]]
 name = "Revise"

@@ -23,6 +23,12 @@ const nextConfig: NextConfig = {
     "/palettes": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
     "/art-styles": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
   },
+  // The read MCP has two doors on one server: /mcp requires a bearer (the 401 is
+  // what lets a host draw its connect card) and /mcp/open never asks for one and
+  // serves the visitor shelf. One route file, so the two cannot drift apart.
+  async rewrites() {
+    return [{ source: "/mcp/open", destination: "/mcp?door=open" }];
+  },
   images: {
     // Optimized variants are keyed by an immutable file-id source (the cache-bust
     // query is stripped before optimizing), so they never need re-optimizing.

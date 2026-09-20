@@ -7,3 +7,6 @@
 # bindings are missing instead of skipping.
 cedarpy>=3.4.1
 pytest>=8,<10
+
+# Image fixtures used by the compiled art-style finalizer ABI test.
+Pillow==12.3.0

@@ -391,6 +391,45 @@ export function dnaFromAnswers(answers) {
   return out;
 }
 
+// Refining a reading: "quieter, warmer" is a change, not a product. Each trait
+// is asked as an ordinal score — less, unchanged, more — so a nudge that says
+// nothing about a trait leaves it where it was instead of re-reading it.
+const REFINE_LEVELS = ["less of this", "the change says nothing about this", "more of this"];
+/** A score below this distance from "unchanged" is Jev hedging, not a request. */
+export const REFINE_MOVES_AT = 0.3;
+/** How far a whole-hearted "more" or "less" carries a trait along 0..1. */
+const REFINE_STEP = 0.5;
+
+/** Jev fan-out: what a change asks for on every trait. */
+export function refineQuestions() {
+  return Object.fromEntries(
+    STYLE_DNA_QUESTIONS.map((q) => [
+      q.id,
+      { type: "score", instructions: `A designer asked for this change to a visual design. What does it ask for on this trait?\nTrait: ${q.style}`, criteria: REFINE_LEVELS },
+    ]),
+  );
+}
+
+/**
+ * A reading moved by a change. Returns { reading, moved } — moved lists only the
+ * traits the change spoke to, largest first — or null if any answer is missing.
+ */
+export function applyRefinement(reading, answers) {
+  const next = {};
+  const moved = [];
+  for (const q of STYLE_DNA_QUESTIONS) {
+    const s = answers?.[q.id]?.score;
+    if (typeof s !== "number" || !Number.isFinite(s)) return null;
+    const ask = Math.min(1, Math.max(-1, s - 1));
+    const from = reading[q.id];
+    const to = Math.abs(ask) < REFINE_MOVES_AT ? from : Math.round(Math.min(1, Math.max(0, from + ask * REFINE_STEP)) * 1000) / 1000;
+    next[q.id] = to;
+    if (to !== from) moved.push({ id: q.id, label: q.label, from, to });
+  }
+  moved.sort((a, b) => Math.abs(b.to - b.from) - Math.abs(a.to - a.from));
+  return { reading: next, moved };
+}
+
 export const dnaVersion = (model) => `${STYLE_DNA_SET}/${model}`;
 
 /** Stored fields -> DNA, only when it was asked with this question set by this

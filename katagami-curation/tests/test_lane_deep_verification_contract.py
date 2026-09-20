@@ -26,13 +26,9 @@ FIXTURE_ROOT = ROOT / "fixtures" / "art-style-portability"
 AUDIT_MATRIX = json.loads((FIXTURE_ROOT / "audit-matrix.json").read_text())
 AUDIT_REPORT = json.loads((FIXTURE_ROOT / "audit-report.json").read_text())
 CURATION_JOB_SPEC = (ROOT / "specs" / "curation_job.ioa.toml").read_text()
-CONTRIBUTOR_SKILL = (
-    Path(__file__).resolve().parents[2]
-    / "mcp"
-    / "skills"
-    / "katagami-contributor"
-    / "SKILL.md"
-).read_text()
+CONTRIBUTION_CONTRACT = (Path(__file__).resolve().parents[2] / "docs" / "art-style-contribution-contract.md").read_text()
+CONTRIBUTOR_POINTER = (Path(__file__).resolve().parents[2] / "mcp" / "skills" / "katagami-contributor" / "README.md").read_text()
+
 
 
 class LaneDeepVerificationContractTests(unittest.TestCase):
@@ -126,19 +122,24 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn("portability_report", submit_params)
         self.assertIn('"source_medium_independent"', ART_REVIEW_SRC)
 
-    def test_external_contributor_skill_uses_the_governed_art_style_boundary(self):
-        normalized_skill = " ".join(CONTRIBUTOR_SKILL.split())
+    def test_stack_owns_procedure_and_repository_owns_data_contract(self):
+        self.assertIn("arni-labs/stack/blob/main/skills/katagami-contributor/SKILL.md", CONTRIBUTOR_POINTER)
+        self.assertIn("docs/art-style-contribution-contract.md", CONTRIBUTOR_POINTER)
+        normalized = " ".join(CONTRIBUTION_CONTRACT.split())
         for marker in [
-            "Use the authenticated Katagami MCP as the contribution boundary",
-            "VerificationQueued",
-            "Katagami does not generate or edit images for outside contributors",
-            "`depiction_grammar=2`",
-            "One model cannot hide behind the other model's average",
-            "Do not call `SubmitForReview`",
+            "native `temper_platform.execute`",
+            "`SubmitArtStyle`",
+            "finalizer alone attests quality and publishes",
+            "gallery manifest **3**",
+            "proof manifest **4**",
+            "generation records **2**",
+            "portability report **2**",
+            "Old image-edit evidence cannot be relabelled prompt-only",
         ]:
-            self.assertIn(marker, normalized_skill)
-        self.assertNotIn("Cedar is open-permit", CONTRIBUTOR_SKILL)
-        self.assertNotIn("POST /tdata/ArtStyles", CONTRIBUTOR_SKILL)
+            self.assertIn(marker, normalized)
+        self.assertNotIn("POST /tdata/ArtStyles", CONTRIBUTION_CONTRACT)
+        for action in ["SubmitForReview", "AttachArtStyleReview", "MarkQualityPassed", "AttachPublishedAssets", "Publish"]:
+            self.assertIn(f"`{action}`", ART_SKILL)
 
     def test_committed_wasm_imports_the_bounded_streaming_host_abi(self):
         # The live local E2E executes this committed module. These binary-level
@@ -187,7 +188,7 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertEqual(job["triggers"][0]["module"], "finalize_spawned_session")
         self.assertIn('"VerificationQueued"', submit)
 
-    def test_reference_images_are_optional_but_proof_is_required(self):
+    def test_state_machine_requires_proof_and_finalizer_verifies_gallery(self):
         actions = self._by_name(self.art, "action")
         for action_name in ["SubmitForReview", "Publish"]:
             guard = actions[action_name]["guard"]
@@ -199,13 +200,12 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
     def test_contributor_proofs_are_verified_without_katagami_generation(self):
         for marker in [
             "generation_record",
-            "content_preserved",
-            "source_medium_replaced",
+            "subject_followed",
+            "style_applied",
             "no_living_artist_target",
             "tradition_level_description",
             "art_style_source_review_not_independent",
-            "art_style_portability_source_medium_preserved",
-            "source_file_id",
+            "text_to_image",
             "output_file_id",
         ]:
             self.assertIn(marker, ART_REVIEW_SRC)
@@ -220,10 +220,12 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             "art_style_proof_file_hash_mismatch",
         ]:
             self.assertIn(marker, FINALIZER_SRC)
-        self.assertIn("contributor-supplied", ART_SKILL)
-        self.assertIn("PawMedia", ART_SKILL)
+        self.assertIn("There are no source Files", CONTRIBUTION_CONTRACT)
+        self.assertIn("prompt-only", CONTRIBUTION_CONTRACT)
         attach_hint = self._by_name(self.art, "action")["AttachProofShots"]["hint"]
-        self.assertIn("contributor-supplied", attach_hint)
+        self.assertIn("prompt-only proof shots", attach_hint)
+        self.assertIn("no input images", attach_hint)
+        self.assertIn("genuine harness/provider receipt", attach_hint)
         self.assertIn("generation record", attach_hint)
         self.assertIn("generation_record", MCP_TOOLS)
         self.assertNotIn("createHmac", MCP_TOOLS)
@@ -572,14 +574,14 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
 
     # --- skill: pipeline styles set credits + provenance ---
 
-    def test_synthesize_art_style_skill_sets_credits_and_provenance(self):
-        self.assertIn('"credits": json.dumps(credits', ART_SKILL)
-        self.assertIn('"model_provenance": json.dumps(model_provenance', ART_SKILL)
-        self.assertIn("source_basis", ART_SKILL)
-        self.assertIn("prompt_review", ART_SKILL)
-        self.assertIn("portability_report", ART_SKILL)
-        self.assertIn("same aesthetic prompt", ART_SKILL)
-        self.assertNotIn("MUST contain the literal substrings `{subject}`", ART_SKILL)
+    def test_curator_adapter_defers_to_canonical_procedure_and_data_contract(self):
+        self.assertIn("sole contribution", ART_SKILL)
+        self.assertIn("stack/blob/main/skills/katagami-contributor/SKILL.md", ART_SKILL)
+        self.assertIn("docs/art-style-contribution-contract.md", ART_SKILL)
+        for marker in ["model provenance", "credits", "source_basis", "prompt_review", "portability_report"]:
+            self.assertIn(marker, CONTRIBUTION_CONTRACT)
+        self.assertIn("Do not invent model IDs", ART_SKILL)
+        self.assertNotIn("json.dumps(credits", ART_SKILL)
 
 
 if __name__ == "__main__":

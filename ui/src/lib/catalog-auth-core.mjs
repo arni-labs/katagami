@@ -169,7 +169,8 @@ export function whoamiFromAuth(auth) {
   if (!auth) {
     return {
       tier: "sample",
-      access: "unreachable on /mcp — this URL requires a bearer",
+      access: "the visitor shelf — the same styles a signed-out person sees on katagami.ai",
+      unlock: "Connect to https://katagami.ai/mcp instead of /mcp/open and sign in with Google for the full library.",
     };
   }
   return {

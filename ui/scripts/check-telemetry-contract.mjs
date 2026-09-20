@@ -560,7 +560,12 @@ const required = [
   [
     "the kind values are named in the schema, not left to be guessed",
     mcp,
-    /the same values search results and get_\* responses carry/,
+    /"design_language", "palette" or "art_style" — the same values every result carries in its own `kind` field/,
+  ],
+  [
+    "a `kind` a response carries is one the schema accepts back",
+    mcp,
+    /function ok\(raw: unknown\) \{\s*const data = publicKinds\(raw\);/,
   ],
   [
     "identifier aliases accept JSON null, not only absence",
@@ -685,8 +690,12 @@ const required = [
   ["budget-exceeded calls are tracked, not silently killed", mcp, /tool_budget_exceeded/],
   ["/mcp 401s emit mcp_auth_challenge (anonymous demand is visible)", mcp,
     /trackServerEvent\("mcp_auth_challenge"/],
+  // Every verb enters through `door`, and the only way past it that skips the
+  // counter is the open door, which never answers 401.
+  ["the open door is only the open door: a path or a query flag, nothing broader", mcp,
+    /return url\.searchParams\.get\("door"\) === "open" \|\| url\.pathname\.replace\(\/\\\/\+\$\/, ""\)\.endsWith\("\/mcp\/open"\);/],
   ["all /mcp verbs go through the auth-challenge counter", mcp,
-    /export \{ get as GET, trackedHandler as POST, trackedHandler as DELETE \}/],
+    /const door = \(req: Request\) => \(isOpenDoor\(req\) \? openDoor\(req\) : trackedHandler\(req\)\);[\s\S]*export \{ get as GET, door as POST, door as DELETE \}/],
   // The rule is that this contract runs on every build, not that prebuild spells
   // its filename. Naming the file was how the rule was written when prebuild held
   // a hand-written list, and that list is what let an unregistered test file go

@@ -2,7 +2,7 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 
-use super::{lane_json_value, VerificationError};
+use super::{art_style_generation::validate_execution, lane_json_value, VerificationError};
 
 fn object_has_keys(value: &Value, keys: &[&str]) -> bool {
     value.as_object().is_some_and(|object| {
@@ -43,7 +43,7 @@ pub(super) fn verify_gallery(
     };
     let manifest = lane_json_value(fields, "reference_manifest").ok_or_else(invalid)?;
     if !object_has_keys(&manifest, &["schema_version", "items"])
-        || manifest["schema_version"] != "2"
+        || manifest["schema_version"] != "3"
     {
         return Err(invalid());
     }
@@ -75,17 +75,42 @@ pub(super) fn verify_gallery(
         {
             return Err(invalid());
         }
-        match (
-            text(&item["model"]["provider"]),
-            text(&item["model"]["model"]),
-        ) {
-            (
-                "OpenAI",
-                "openai/gpt-image-2.5/sunburst/text-to-image"
-                | "openai/gpt-image-2.5/flare/text-to-image",
-            ) => models[0] += 1,
-            ("xAI", "xai/grok-imagine-image/v2.0/text-to-image") => models[1] += 1,
-            ("Google", "fal-ai/nano-banana-pro") => models[2] += 1,
+        let execution = &item["generation_record"]["execution"];
+        validate_execution(&item["model"], &item["generation_record"]).map_err(|_| invalid())?;
+        let model = item["model"]["model"].as_str();
+        let requested = text(&execution["requested_model"]);
+        match (text(&item["model"]["provider"]), requested) {
+            ("OpenAI", "GPT Image 2.5")
+                if model.is_none_or(|m| {
+                    matches!(
+                        m,
+                        "gpt-image-2.5"
+                            | "openai/gpt-image-2.5/sunburst/text-to-image"
+                            | "openai/gpt-image-2.5/flare/text-to-image"
+                    )
+                }) =>
+            {
+                models[0] += 1
+            }
+            ("xAI", "Grok Image")
+                if model.is_none_or(|m| {
+                    matches!(
+                        m,
+                        "grok-imagine-image"
+                            | "grok-imagine-image-v2"
+                            | "xai/grok-imagine-image/v2.0/text-to-image"
+                    )
+                }) =>
+            {
+                models[1] += 1
+            }
+            ("Google", "Nano Banana")
+                if model.is_some_and(|m| {
+                    matches!(m, "fal-ai/nano-banana-pro" | "gemini-3-pro-image-preview")
+                }) =>
+            {
+                models[2] += 1
+            }
             _ => return Err(invalid()),
         }
         let record = &item["generation_record"];
@@ -99,16 +124,17 @@ pub(super) fn verify_gallery(
                 "prompt",
                 "canonical_prompt_sha256",
                 "output",
+                "mode",
+                "input_image_file_ids",
+                "execution",
             ],
-        ) || !object_has_keys(
-            output,
-            &["file_id", "sha256", "prompt_sha256", "provider_request_id"],
-        ) {
+        ) || !object_has_keys(output, &["file_id", "sha256", "prompt_sha256"])
+        {
             return Err(invalid());
         }
         let prompt = format!("{canonical_prompt}\n\nSubject and scene:\n{subject}");
         let output_hash = text(&output["sha256"]);
-        if record["schema_version"] != "1"
+        if record["schema_version"] != "2"
             || record["kind"] != "art_style_gallery"
             || text(&record["style_slug"]) != slug
             || text(&record["prompt"]) != prompt
@@ -117,7 +143,6 @@ pub(super) fn verify_gallery(
             || !is_hash(output_hash)
             || !hashes.insert(output_hash)
             || text(&output["prompt_sha256"]) != hash(&prompt)
-            || text(&output["provider_request_id"]).trim().is_empty()
         {
             return Err(invalid());
         }
@@ -152,13 +177,17 @@ mod tests {
             };
             json!({"file_id":format!("file-{i}"), "subject":subject,
                 "model":{"provider":provider,"model":model},
-                "generation_record":{"schema_version":"1","kind":"art_style_gallery",
+                "generation_record":{"schema_version":"2","kind":"art_style_gallery",
+                    "mode":"text_to_image","input_image_file_ids":[],
+                    "execution":{"route":"provider","harness":"codex","tool":"fal",
+                        "receipt":format!("request-{i}"),"requested_model":if i<4 {"GPT Image 2.5"} else if i==4 {"Grok Image"} else {"Nano Banana"},
+                        "provider_request_id":format!("request-{i}")},
                     "style_slug":"morrow-ink","prompt":prompt,"canonical_prompt_sha256":hash(PROMPT),
                     "output":{"file_id":format!("file-{i}"),"sha256":hash(&format!("image-{i}")),
-                        "prompt_sha256":hash(&prompt),"provider_request_id":format!("request-{i}")}}})
+                        "prompt_sha256":hash(&prompt)}}})
         }).collect();
         (
-            json!({"slug":"morrow-ink","reference_manifest":{"schema_version":"2","items":items}}),
+            json!({"slug":"morrow-ink","reference_manifest":{"schema_version":"3","items":items}}),
             (0..6).map(|i| format!("file-{i}")).collect(),
         )
     }
@@ -213,7 +242,7 @@ mod tests {
                     json!("wrong")
             },
             |f| {
-                f["reference_manifest"]["items"][0]["generation_record"]["output"]
+                f["reference_manifest"]["items"][0]["generation_record"]["execution"]
                     ["provider_request_id"] = json!("")
             },
             |f| {
@@ -277,5 +306,53 @@ mod tests {
         let verifier = &function[validation..function.find("for file_id in &proof_ids").unwrap()];
         assert!(verifier.contains("verify_art_style_proof_file("));
         assert!(verifier.contains("sha256, true, \"gallery_image\""));
+    }
+    #[test]
+    fn builtin_gallery_preserves_unexposed_versions_and_real_receipts() {
+        let (mut fields, ids) = fixture();
+        for index in 0..5 {
+            let item = &mut fields["reference_manifest"]["items"][index];
+            item["model"]["model"] = Value::Null;
+            let execution = &mut item["generation_record"]["execution"];
+            execution["route"] = json!("builtin");
+            execution["harness"] = json!(if index < 4 { "codex" } else { "grok" });
+            execution["tool"] = json!("native-image-generation");
+            execution["provider_request_id"] = Value::Null;
+        }
+        let mut verified = Vec::new();
+        verify_gallery("style", &fields, PROMPT, &ids, &ids[0], |id, _| {
+            verified.push(id.to_string());
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(verified, ids);
+        fields["reference_manifest"]["items"][0]["generation_record"]["execution"]["receipt"] =
+            json!("");
+        assert!(
+            verify_gallery("style", &fields, PROMPT, &ids, &ids[0], |_, _| panic!(
+                "invalid builtin reached file verifier"
+            ))
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn input_images_and_missing_provider_receipts_fail_before_file_verification() {
+        for field in ["input_image_file_ids", "provider_request_id", "receipt"] {
+            let (mut fields, ids) = fixture();
+            let record = &mut fields["reference_manifest"]["items"][0]["generation_record"];
+            if field == "input_image_file_ids" {
+                record[field] = json!(["reference-image"]);
+            } else {
+                record["execution"][field] = Value::Null;
+            }
+            assert!(
+                verify_gallery("style", &fields, PROMPT, &ids, &ids[0], |_, _| panic!(
+                    "invalid provenance reached file verifier"
+                ))
+                .is_err(),
+                "accepted {field}"
+            );
+        }
     }
 }

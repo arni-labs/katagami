@@ -42,7 +42,7 @@ function rampHexes(ramp: PaletteRamp | undefined): string[] {
 export default async function PaletteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   // id OR slug. The by-key reader 404'd /palettes/komawari-plates while
-  // BRIEF.md and MCP get_palette resolved the same slug. A miss slug stays 404.
+  // BRIEF.md and MCP get_library_entry resolved the same slug. A miss slug stays 404.
   const pal = await getPaletteSystemByIdOrSlug(id);
   if (!pal) notFound();
   // Non-published entries are the curator's queue: a curator (owner|curator,

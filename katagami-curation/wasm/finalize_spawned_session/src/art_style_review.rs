@@ -22,25 +22,15 @@ const PROOF_CATEGORIES: [&str; 4] = [
     "landscape_environment",
 ];
 
-const SOURCE_MEDIA: [&str; 4] = [
-    "documentary photograph",
-    "black-ink line drawing",
-    "neutral synthetic 3d render",
-    "flat vector illustration",
-];
-
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(super) struct VerifiedProofRecord {
     pub category: String,
     pub subject: String,
     pub composition: String,
-    pub source_medium: String,
-    pub source_file_id: String,
-    pub source_sha256: String,
     pub output_file_id: String,
     pub output_sha256: String,
     pub output_prompt_sha256: String,
-    pub provider_request_id: String,
+    pub execution_json: String,
 }
 
 #[derive(Debug)]
@@ -629,10 +619,10 @@ fn score_case(owner_id: &str, scores: &Value) -> Result<f64, VerificationError> 
         if dimension == "medium_material" && score < 2.0 {
             return Err(art_error(
                 owner_id,
-                "art_style_portability_source_medium_preserved",
+                "art_style_portability_material_weak",
                 "portability_report",
                 format!(
-                    "ArtStyle '{owner_id}' portability case did not fully replace the source medium with the target material"
+                    "ArtStyle '{owner_id}' portability case did not fully express the target material"
                 ),
             ));
         }
@@ -671,110 +661,64 @@ fn is_sha256(value: &str) -> bool {
 fn generation_record(
     owner_id: &str,
     value: &Value,
+    model: &Value,
     field: &'static str,
     style_slug: &str,
     prompt: &str,
 ) -> Result<VerifiedProofRecord, VerificationError> {
-    let record = value
-        .get("generation_record")
-        .unwrap_or(&Value::Null);
-    let source = record.get("source").unwrap_or(&Value::Null);
+    let record = value.get("generation_record").unwrap_or(&Value::Null);
     let output = record.get("output").unwrap_or(&Value::Null);
-    let output_has_expected_keys = output
-        .as_object()
-        .map(|object| {
-            (object.len() == 3 || object.len() == 4)
-                && ["file_id", "sha256", "prompt_sha256"]
-                    .iter()
-                    .all(|key| object.contains_key(*key))
-                && object
-                    .keys()
-                    .all(|key| {
-                        ["file_id", "sha256", "prompt_sha256", "provider_request_id"]
-                            .contains(&key.as_str())
-                    })
-        })
-        .unwrap_or(false);
     if !exact_object_keys(
         record,
         &[
             "schema_version",
             "kind",
             "style_slug",
-            "source",
+            "mode",
+            "input_image_file_ids",
+            "prompt",
+            "canonical_prompt_sha256",
+            "execution",
             "output",
         ],
-    ) || !exact_object_keys(
-        source,
-        &["file_id", "sha256"],
-    ) {
-        return Err(art_error(
-            owner_id,
-            "art_style_proof_record_invalid",
-            field,
-            format!(
-                "ArtStyle '{owner_id}' proof generation record has an invalid shape"
-            ),
-        ));
-    }
-    if !output_has_expected_keys {
-        return Err(art_error(
-            owner_id,
-            "art_style_proof_record_invalid",
-            field,
-            format!("ArtStyle '{owner_id}' proof output record has an invalid shape"),
-        ));
-    }
-    let category = text(value, "category");
-    let subject = text(value, "subject");
-    let composition = text(value, "composition");
-    let source_medium = text(value, "source_medium");
-    let source_file_id = text(source, "file_id");
-    let source_sha256 = text(source, "sha256");
-    let output_file_id = text(output, "file_id");
-    let output_sha256 = text(output, "sha256");
-    let output_prompt_sha256 = text(output, "prompt_sha256");
-    let provider_request_id = text(output, "provider_request_id");
-
-    if text(record, "schema_version") != "1"
-        || text(record, "kind") != "art_style_proof"
-        || text(record, "style_slug") != style_slug
-        || !PROOF_CATEGORIES.contains(&category)
-        || subject.is_empty()
-        || composition.is_empty()
-        || !SOURCE_MEDIA.contains(&source_medium)
-        || text(value, "file_id") != output_file_id
-        || text(value, "mode") != "image_edit"
-        || bool_field(value, "style_reference_used")
-        || output_prompt_sha256 != sha256_hex(prompt.trim())
-        || source_file_id.is_empty()
-        || output_file_id.is_empty()
-        || subject.contains(['\n', '\r'])
-        || composition.contains(['\n', '\r'])
-        || !is_sha256(source_sha256)
-        || !is_sha256(output_sha256)
-        || !is_sha256(output_prompt_sha256)
+    ) || !exact_object_keys(output, &["file_id", "sha256", "prompt_sha256"])
     {
         return Err(art_error(
             owner_id,
-            "art_style_proof_record_mismatch",
+            "art_style_proof_record_invalid",
             field,
-            format!(
-                "ArtStyle '{owner_id}' proof record does not bind the exact style, source, prompt, and output file"
-            ),
+            "Prompt-only proof records must use schema v2 with no source-image fields",
         ));
     }
+    let subject = text(value, "subject");
+    let full_prompt = format!("{}\n\nSubject and scene:\n{}", prompt.trim(), subject);
+    if text(record, "schema_version") != "2"
+        || text(record, "kind") != "art_style_proof"
+        || text(record, "style_slug") != style_slug
+        || !PROOF_CATEGORIES.contains(&text(value, "category"))
+        || subject.is_empty()
+        || text(value, "composition").is_empty()
+        || text(value, "mode") != "text_to_image"
+        || value.get("style_reference_used") != Some(&Value::Bool(false))
+        || text(record, "prompt") != full_prompt
+        || text(record, "canonical_prompt_sha256") != sha256_hex(prompt.trim())
+        || text(output, "prompt_sha256") != sha256_hex(&full_prompt)
+        || text(output, "file_id").is_empty()
+        || text(value, "file_id") != text(output, "file_id")
+        || !is_sha256(text(output, "sha256"))
+        || super::art_style_generation::validate_execution(model, record).is_err()
+    {
+        return Err(art_error(owner_id, "art_style_proof_record_mismatch", field,
+            "Proof must bind the exact canonical prompt, subject, model execution and output, with no input images"));
+    }
     Ok(VerifiedProofRecord {
-        category: category.to_string(),
+        category: text(value, "category").to_string(),
         subject: subject.to_string(),
-        composition: composition.to_string(),
-        source_medium: source_medium.to_string(),
-        source_file_id: source_file_id.to_string(),
-        source_sha256: source_sha256.to_string(),
-        output_file_id: output_file_id.to_string(),
-        output_sha256: output_sha256.to_string(),
-        output_prompt_sha256: output_prompt_sha256.to_string(),
-        provider_request_id: provider_request_id.to_string(),
+        composition: text(value, "composition").to_string(),
+        output_file_id: text(output, "file_id").to_string(),
+        output_sha256: text(output, "sha256").to_string(),
+        output_prompt_sha256: text(output, "prompt_sha256").to_string(),
+        execution_json: record["execution"].to_string(),
     })
 }
 
@@ -802,7 +746,7 @@ pub(super) fn verify_portability_report(
         )
     })?;
     if !report.is_object()
-        || !version_is_one(&report)
+        || text(&report, "schema_version") != "2"
         || text(&report, "verdict") != "pass"
         || text(&report, "prompt") != prompt.trim()
         || !bool_field(&report, "blind_evaluation")
@@ -812,7 +756,7 @@ pub(super) fn verify_portability_report(
             "art_style_portability_report_invalid",
             "portability_report",
             format!(
-                "ArtStyle '{owner_id}' portability_report must attest the exact prompt with schema v1, verdict=pass, and blind_evaluation=true"
+                "ArtStyle '{owner_id}' portability_report must attest the exact prompt with schema v2, verdict=pass, and blind_evaluation=true"
             ),
         ));
     }
@@ -838,6 +782,15 @@ pub(super) fn verify_portability_report(
             )
         })?;
 
+    // An unexposed built-in version cannot establish a second model from the
+    // same provider, even if the other invocation exposes its version.
+    if text(&models[0], "provider").eq_ignore_ascii_case(text(&models[1], "provider"))
+        && (models[0]["model"].is_null() || models[1]["model"].is_null())
+    {
+        return Err(art_error(owner_id, "art_style_portability_model_invalid",
+            "portability_report", "Two distinct model identities must be evidenced; an unknown version cannot establish distinctness within one provider"));
+    }
+
     let proof_set: BTreeSet<&str> = proof_ids.iter().map(String::as_str).collect();
     if !matches!(proof_ids.len(), 2 | 4) || proof_set.len() != proof_ids.len() {
         return Err(art_error(
@@ -845,7 +798,7 @@ pub(super) fn verify_portability_report(
             "art_style_portability_matrix_incomplete",
             "proof_shots_file_ids",
             format!(
-                "ArtStyle '{owner_id}' needs exactly two or four unique proofs: two models using the same one or two sources"
+                "ArtStyle '{owner_id}' needs exactly two or four unique proofs: two models using the same one or two subject descriptions"
             ),
         ));
     }
@@ -857,12 +810,12 @@ pub(super) fn verify_portability_report(
             format!("ArtStyle '{owner_id}' has no proof-shot manifest"),
         )
     })?;
-    if text(&proof_manifest, "schema_version") != "3" {
+    if text(&proof_manifest, "schema_version") != "4" {
         return Err(art_error(
             owner_id,
             "art_style_proof_manifest_invalid",
             "proof_shots_manifest",
-            format!("ArtStyle '{owner_id}' proof-shot manifest must use schema v3"),
+            format!("ArtStyle '{owner_id}' proof-shot manifest must use schema v4 (prompt-only; legacy edit proofs cannot authorize a new publication)"),
         ));
     }
     let manifest_items = proof_manifest
@@ -879,8 +832,7 @@ pub(super) fn verify_portability_report(
                 ),
             )
         })?;
-    let mut manifest_records: HashMap<String, ((String, String), VerifiedProofRecord)> =
-        HashMap::new();
+    let mut manifest_records: HashMap<String, (String, VerifiedProofRecord)> = HashMap::new();
     for item in manifest_items {
         if !exact_object_keys(
             item,
@@ -889,7 +841,6 @@ pub(super) fn verify_portability_report(
                 "category",
                 "subject",
                 "composition",
-                "source_medium",
                 "mode",
                 "style_reference_used",
                 "model",
@@ -906,7 +857,12 @@ pub(super) fn verify_portability_report(
             ));
         }
         let file_id = text(item, "file_id");
-        let model = nonempty_model(item.get("model").unwrap_or(&Value::Null)).ok_or_else(|| {
+        let model = super::art_style_generation::validate_execution(
+            item.get("model").unwrap_or(&Value::Null),
+            item.get("generation_record").unwrap_or(&Value::Null),
+        )
+        .ok()
+        .ok_or_else(|| {
             art_error(
                 owner_id,
                 "art_style_portability_model_invalid",
@@ -917,7 +873,7 @@ pub(super) fn verify_portability_report(
         if !proof_set.contains(file_id)
             || manifest_records.contains_key(file_id)
             || bool_field(item, "style_reference_used")
-            || text(item, "mode") != "image_edit"
+            || text(item, "mode") != "text_to_image"
         {
             return Err(art_error(
                 owner_id,
@@ -931,6 +887,7 @@ pub(super) fn verify_portability_report(
         let record = generation_record(
             owner_id,
             item,
+            &item["model"],
             "proof_shots_manifest",
             style_slug,
             prompt,
@@ -941,26 +898,23 @@ pub(super) fn verify_portability_report(
     let mut tested_models = BTreeSet::new();
     let mut used_files = BTreeSet::new();
     let mut verified_records = Vec::new();
-    let mut expected_source_matrix: Option<
-        BTreeSet<(
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-        )>,
-    > = None;
+    let mut expected_source_matrix: Option<BTreeSet<(String, String, String)>> = None;
     for model in models {
-        let model_key = nonempty_model(model).ok_or_else(|| {
-            art_error(
-                owner_id,
-                "art_style_portability_model_invalid",
-                "portability_report",
-                format!("ArtStyle '{owner_id}' portability model lacks provider/model"),
-            )
-        })?;
-        if model_key == evaluator {
+        let model_identity =
+            serde_json::json!({"provider": model["provider"], "model": model["model"]});
+        let first_record = &model["cases"][0]["generation_record"];
+        let model_key =
+            super::art_style_generation::validate_execution(&model_identity, first_record)
+                .ok()
+                .ok_or_else(|| {
+                    art_error(
+                        owner_id,
+                        "art_style_portability_model_invalid",
+                        "portability_report",
+                        format!("ArtStyle '{owner_id}' portability model lacks provider/model"),
+                    )
+                })?;
+        if nonempty_model(model).as_ref() == Some(&evaluator) {
             return Err(art_error(
                 owner_id,
                 "art_style_portability_evaluator_not_blind",
@@ -986,14 +940,13 @@ pub(super) fn verify_portability_report(
                     "art_style_portability_cases_missing",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' needs the same one or two source cases per image model"
+                        "ArtStyle '{owner_id}' needs the same one or two subject cases per image model"
                     ),
                 )
             })?;
         let mut categories = BTreeSet::new();
-        let mut source_media = BTreeSet::new();
         let mut source_matrix = BTreeSet::new();
-        let mut source_ids = BTreeSet::new();
+        let mut subjects = BTreeSet::new();
         let mut model_total = 0.0;
         for case in cases {
             if !exact_object_keys(
@@ -1003,12 +956,11 @@ pub(super) fn verify_portability_report(
                     "category",
                     "subject",
                     "composition",
-                    "source_medium",
                     "mode",
                     "prompt",
                     "style_reference_used",
-                    "content_preserved",
-                    "source_medium_replaced",
+                    "subject_followed",
+                    "style_applied",
                     "generation_record",
                     "scores",
                 ],
@@ -1024,15 +976,15 @@ pub(super) fn verify_portability_report(
             }
             if text(case, "prompt") != prompt.trim()
                 || bool_field(case, "style_reference_used")
-                || !bool_field(case, "content_preserved")
-                || !bool_field(case, "source_medium_replaced")
+                || !bool_field(case, "subject_followed")
+                || !bool_field(case, "style_applied")
             {
                 return Err(art_error(
                     owner_id,
                     "art_style_portability_prompt_changed",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' portability cases must use the exact canonical prompt, preserve subject content, fully replace source medium, and use no style reference"
+                        "ArtStyle '{owner_id}' portability cases must use the exact canonical prompt, follow the subject description, fully apply the target style, and use no style reference"
                     ),
                 ));
             }
@@ -1050,27 +1002,25 @@ pub(super) fn verify_portability_report(
             let subject = text(case, "subject");
             let composition = text(case, "composition");
             let category = text(case, "category");
-            let source_medium = text(case, "source_medium");
             if subject.is_empty()
                 || composition.is_empty()
-                || text(case, "mode") != "image_edit"
+                || text(case, "mode") != "text_to_image"
                 || !PROOF_CATEGORIES.contains(&category)
-                || !SOURCE_MEDIA.contains(&source_medium)
             {
                 return Err(art_error(
                     owner_id,
                     "art_style_portability_case_invalid",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' portability cases need a valid semantic role, subject, composition, source medium, and image-edit mode"
+                        "ArtStyle '{owner_id}' portability cases need a valid semantic role, subject, composition, and text-to-image mode"
                     ),
                 ));
             }
             categories.insert(category.to_string());
-            source_media.insert(source_medium.to_string());
             let record = generation_record(
                 owner_id,
                 case,
+                &model_identity,
                 "portability_report",
                 style_slug,
                 prompt,
@@ -1085,21 +1035,18 @@ pub(super) fn verify_portability_report(
                     ),
                 ));
             }
-            if !source_ids.insert(record.source_file_id.clone()) {
+            if !subjects.insert(record.subject.clone()) {
                 return Err(art_error(
                     owner_id,
-                    "art_style_portability_source_duplicate",
+                    "art_style_portability_subject_duplicate",
                     "portability_report",
-                    format!("ArtStyle '{owner_id}' must use a distinct source file for each case within an image model"),
+                    format!("ArtStyle '{owner_id}' must use a distinct subject description for each case within an image model"),
                 ));
             }
             source_matrix.insert((
                 record.category.clone(),
                 record.subject.clone(),
                 record.composition.clone(),
-                record.source_medium.clone(),
-                record.source_file_id.clone(),
-                record.source_sha256.clone(),
             ));
             let average = score_case(owner_id, case.get("scores").unwrap_or(&Value::Null))?;
             if average < 1.5 {
@@ -1116,7 +1063,6 @@ pub(super) fn verify_portability_report(
             verified_records.push(record);
         }
         if categories.len() != cases.len()
-            || source_media.len() != cases.len()
             || source_matrix.len() != cases.len()
             || model_total / (cases.len() as f64) < 1.5
         {
@@ -1125,7 +1071,7 @@ pub(super) fn verify_portability_report(
                 "art_style_portability_model_below_threshold",
                 "portability_report",
                 format!(
-                    "ArtStyle '{owner_id}' failed the per-model distinct-role, distinct-medium, source, or score threshold"
+                    "ArtStyle '{owner_id}' failed the per-model distinct-role, subject, or score threshold"
                 ),
             ));
         }
@@ -1136,7 +1082,7 @@ pub(super) fn verify_portability_report(
                     "art_style_portability_matrix_mismatch",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' must test the exact same selected sources on both image models"
+                        "ArtStyle '{owner_id}' must test the exact same selected subject descriptions on both image models"
                     ),
                 ));
             }
@@ -1154,7 +1100,7 @@ pub(super) fn verify_portability_report(
             "art_style_portability_matrix_incomplete",
             "portability_report",
             format!(
-                "ArtStyle '{owner_id}' needs two distinct image models using the same one or two sources and a score for every attached proof"
+                "ArtStyle '{owner_id}' needs two distinct image models using the same one or two subject descriptions and a score for every attached proof"
             ),
         ));
     }
@@ -1171,8 +1117,8 @@ mod tests {
 
     const STYLE_SLUG: &str = "archive-ember";
     const TEST_MODELS: [(&str, &str); 2] = [
-        ("fal", "openai/gpt-image-2/edit"),
-        ("other-provider", "independent-image-edit"),
+        ("openai", "gpt-image-2.5"),
+        ("other-provider", "independent-image-generator"),
     ];
     const PROMPT: &str = "Render the supplied subject as a two-ink relief print on fibrous matte paper. Use blunt carved contours and visibly broken edges. Reconstruct people, animals, objects, and environments as simplified interlocking carved masses with compressed proportions and deliberately omitted incidental anatomy. Build volume with sparse directional hatching and broad unprinted highlights. Reserve deep indigo for structural masses and vermilion for small focal accents. Keep a centered, compressed composition with generous bare paper. Add slight ink spread and irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry.";
 
@@ -1190,20 +1136,17 @@ mod tests {
     ];
 
     fn proof_record(provider: &str, model: &str, index: usize, output_file_id: &str) -> Value {
+        let prompt = format!("{}\n\nSubject and scene:\n{}", PROMPT, SUBJECTS[index]);
         json!({
-            "schema_version": "1",
-            "kind": "art_style_proof",
-            "style_slug": STYLE_SLUG,
-            "source": {
-                "file_id": format!("source-file-{index}"),
-                "sha256": sha256_hex(&format!("source-bytes-{index}")),
-            },
-            "output": {
-                "file_id": output_file_id,
+            "schema_version": "2", "kind": "art_style_proof", "style_slug": STYLE_SLUG,
+            "mode": "text_to_image", "input_image_file_ids": [], "prompt": prompt,
+            "canonical_prompt_sha256": sha256_hex(PROMPT),
+            "execution": {"route": "provider", "harness": "codex", "tool": "provider.generate",
+                "receipt": format!("receipt-{provider}-{model}-{index}"), "requested_model": model,
+                "provider_request_id": format!("request-{provider}-{model}-{index}")},
+            "output": {"file_id": output_file_id,
                 "sha256": sha256_hex(&format!("output-bytes-{provider}-{model}-{index}")),
-                "prompt_sha256": sha256_hex(PROMPT),
-                "provider_request_id": format!("request-{provider}-{model}-{index}"),
-            }
+                "prompt_sha256": sha256_hex(&prompt)}
         })
     }
 
@@ -1236,8 +1179,7 @@ mod tests {
                     "category": PROOF_CATEGORIES[index],
                     "subject": SUBJECTS[index],
                     "composition": COMPOSITIONS[index],
-                    "source_medium": SOURCE_MEDIA[index],
-                    "mode": "image_edit",
+                    "mode": "text_to_image",
                     "style_reference_used": false,
                     "model": {"provider": provider, "model": model},
                     "generation_record": record.clone()
@@ -1247,12 +1189,11 @@ mod tests {
                     "category": PROOF_CATEGORIES[index],
                     "subject": SUBJECTS[index],
                     "composition": COMPOSITIONS[index],
-                    "source_medium": SOURCE_MEDIA[index],
-                    "mode": "image_edit",
+                    "mode": "text_to_image",
                     "prompt": PROMPT,
                     "style_reference_used": false,
-                    "content_preserved": true,
-                    "source_medium_replaced": true,
+                    "subject_followed": true,
+                    "style_applied": true,
                     "generation_record": record,
                     "scores": {
                         "medium_material": 2, "marks_edges": 2, "depiction_grammar": 2,
@@ -1289,12 +1230,12 @@ mod tests {
                 "observable_dimensions": dims
             },
             "portability_report": {
-                "schema_version": "1", "verdict": "pass", "prompt": PROMPT,
+                "schema_version": "2", "verdict": "pass", "prompt": PROMPT,
                 "blind_evaluation": true,
                 "evaluator": {"provider": "openai", "model": "vision-reviewer"},
                 "models": models
             },
-            "proof_shots_manifest": {"schema_version": "3", "items": proof_manifest},
+            "proof_shots_manifest": {"schema_version": "4", "items": proof_manifest},
             "proof_ids": proof_ids
         })
     }
@@ -1354,36 +1295,6 @@ mod tests {
         assert_eq!(
             verify_fields(&fields).unwrap_err().code,
             "art_style_portability_cases_missing"
-        );
-    }
-
-    #[test]
-    fn two_case_sets_cannot_relabel_one_source_as_two() {
-        let mut fields = valid_fields();
-        for model in 0..2 {
-            let source = fields["portability_report"]["models"][model]["cases"][0]
-                ["generation_record"]["source"]
-                .clone();
-            fields["portability_report"]["models"][model]["cases"][1]["generation_record"]
-                ["source"] = source.clone();
-            fields["proof_shots_manifest"]["items"][model * 2 + 1]["generation_record"]["source"] =
-                source;
-        }
-        assert_eq!(
-            verify_fields(&fields).unwrap_err().code,
-            "art_style_portability_source_duplicate"
-        );
-    }
-
-    #[test]
-    fn two_case_sets_need_distinct_media() {
-        let mut fields = valid_fields();
-        fields["proof_shots_manifest"]["items"][1]["source_medium"] = json!(SOURCE_MEDIA[0]);
-        fields["portability_report"]["models"][0]["cases"][1]["source_medium"] =
-            json!(SOURCE_MEDIA[0]);
-        assert_eq!(
-            verify_fields(&fields).unwrap_err().code,
-            "art_style_portability_model_below_threshold"
         );
     }
 
@@ -1582,8 +1493,8 @@ mod tests {
     #[test]
     fn every_case_must_fully_apply_depiction_grammar() {
         let mut fields = valid_fields();
-        fields["portability_report"]["models"][0]["cases"][0]["scores"]
-            ["depiction_grammar"] = json!(1);
+        fields["portability_report"]["models"][0]["cases"][0]["scores"]["depiction_grammar"] =
+            json!(1);
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()
@@ -1602,10 +1513,9 @@ mod tests {
     }
 
     #[test]
-    fn preserving_subject_does_not_allow_preserving_source_medium() {
+    fn subject_following_does_not_replace_style_evidence() {
         let mut fields = valid_fields();
-        fields["portability_report"]["models"][0]["cases"][0]["source_medium_replaced"] =
-            json!(false);
+        fields["portability_report"]["models"][0]["cases"][0]["style_applied"] = json!(false);
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()
@@ -1652,7 +1562,7 @@ mod tests {
     }
 
     #[test]
-    fn signed_source_medium_cannot_be_relabelled() {
+    fn legacy_source_fields_are_rejected() {
         let mut fields = valid_fields();
         fields["portability_report"]["models"][1]["cases"][1]["source_medium"] =
             json!("oil painting");
@@ -1676,7 +1586,7 @@ mod tests {
     #[test]
     fn manifest_and_report_generation_records_must_match() {
         let mut fields = valid_fields();
-        fields["proof_shots_manifest"]["items"][0]["generation_record"]["output"]
+        fields["proof_shots_manifest"]["items"][0]["generation_record"]["execution"]
             ["provider_request_id"] = json!("different-request");
         let proof_ids = fields["proof_ids"]
             .as_array()
@@ -1696,9 +1606,9 @@ mod tests {
     }
 
     #[test]
-    fn text_to_image_is_not_a_portability_proof() {
+    fn image_edit_is_not_a_prompt_only_proof() {
         let mut fields = valid_fields();
-        fields["portability_report"]["models"][0]["cases"][0]["mode"] = json!("text_to_image");
+        fields["portability_report"]["models"][0]["cases"][0]["mode"] = json!("image_edit");
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()
@@ -1714,34 +1624,6 @@ mod tests {
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_case_invalid");
-    }
-
-    #[test]
-    fn both_models_must_receive_the_identical_selected_sources() {
-        let mut fields = valid_fields();
-        let manifest_index = 2;
-        let mut record =
-            fields["proof_shots_manifest"]["items"][manifest_index]["generation_record"].clone();
-        record["source"]["file_id"] = json!("different-generated-source");
-        record["source"]["sha256"] = json!(sha256_hex("different-source-bytes"));
-        fields["proof_shots_manifest"]["items"][manifest_index]["generation_record"] =
-            record.clone();
-        fields["portability_report"]["models"][1]["cases"][0]["generation_record"] = record;
-        let proof_ids = fields["proof_ids"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter_map(Value::as_str)
-            .map(str::to_string)
-            .collect::<Vec<_>>();
-        let err = verify_portability_report(
-            "as-1",
-            &fields,
-            text(&fields, "prompt_template"),
-            &proof_ids,
-        )
-        .unwrap_err();
-        assert_eq!(err.code, "art_style_portability_matrix_mismatch");
     }
 
     #[test]
@@ -1786,14 +1668,98 @@ mod tests {
             .filter_map(Value::as_str)
             .map(str::to_string)
             .collect::<Vec<_>>();
-        assert!(
-            verify_portability_report(
-                "as-1",
-                &fields,
-                text(&fields, "prompt_template"),
-                &proof_ids,
-            )
-            .is_ok()
+        assert!(verify_portability_report(
+            "as-1",
+            &fields,
+            text(&fields, "prompt_template"),
+            &proof_ids,
+        )
+        .is_ok());
+    }
+    #[test]
+    fn legacy_edit_report_cannot_authorize_new_publication() {
+        let mut fields = valid_fields();
+        fields["portability_report"]["schema_version"] = json!("1");
+        assert_eq!(
+            verify_fields(&fields).unwrap_err().code,
+            "art_style_portability_report_invalid"
+        );
+        fields["portability_report"]["schema_version"] = json!("2");
+        fields["proof_shots_manifest"]["schema_version"] = json!("3");
+        assert_eq!(
+            verify_fields(&fields).unwrap_err().code,
+            "art_style_proof_manifest_invalid"
+        );
+    }
+
+    #[test]
+    fn input_images_and_unbound_prompt_cannot_be_proof() {
+        for (key, value) in [
+            ("input_image_file_ids", json!(["source-photo"])),
+            ("prompt", json!("A similar but different prompt")),
+            (
+                "canonical_prompt_sha256",
+                json!(sha256_hex("different canonical")),
+            ),
+        ] {
+            let mut fields = valid_fields();
+            fields["proof_shots_manifest"]["items"][0]["generation_record"][key] = value;
+            assert!(verify_fields(&fields).is_err(), "accepted invalid {key}");
+        }
+    }
+
+    #[test]
+    fn same_scene_is_required_on_both_models() {
+        let mut fields = valid_fields();
+        let subject = "a different person by a different window";
+        let prompt = format!("{}\n\nSubject and scene:\n{}", PROMPT, subject);
+        for item in [&mut fields["proof_shots_manifest"]["items"][2]] {
+            item["subject"] = json!(subject);
+            item["generation_record"]["prompt"] = json!(prompt);
+            item["generation_record"]["output"]["prompt_sha256"] = json!(sha256_hex(&prompt));
+        }
+        let record = fields["proof_shots_manifest"]["items"][2]["generation_record"].clone();
+        fields["portability_report"]["models"][1]["cases"][0]["subject"] = json!(subject);
+        fields["portability_report"]["models"][1]["cases"][0]["generation_record"] = record;
+        assert_eq!(
+            verify_fields(&fields).unwrap_err().code,
+            "art_style_portability_matrix_mismatch"
+        );
+    }
+
+    #[test]
+    fn missing_generation_binding_and_model_relabel_fail() {
+        let mut fields = valid_fields();
+        fields["proof_shots_manifest"]["items"][0]["generation_record"]["output"]
+            .as_object_mut()
+            .unwrap()
+            .remove("prompt_sha256");
+        assert_eq!(
+            verify_fields(&fields).unwrap_err().code,
+            "art_style_proof_record_invalid"
+        );
+        let mut fields = valid_fields();
+        fields["proof_shots_manifest"]["items"][0]["model"]["model"] = json!("unrelated-model");
+        assert!(verify_fields(&fields).is_err());
+    }
+    #[test]
+    fn honest_builtin_unknown_can_compare_with_another_provider() {
+        let mut fields = fields_with_case_count(1);
+        let model = json!({"provider": "OpenAI", "model": null});
+        let mut record = fields["proof_shots_manifest"]["items"][0]["generation_record"].clone();
+        record["execution"]["route"] = json!("builtin");
+        record["execution"]["tool"] = json!("image_gen.imagegen");
+        record["execution"]["provider_request_id"] = Value::Null;
+        fields["proof_shots_manifest"]["items"][0]["model"] = model;
+        fields["proof_shots_manifest"]["items"][0]["generation_record"] = record.clone();
+        fields["portability_report"]["models"][0]["provider"] = json!("OpenAI");
+        fields["portability_report"]["models"][0]["model"] = Value::Null;
+        fields["portability_report"]["models"][0]["cases"][0]["generation_record"] = record;
+        assert!(verify_fields(&fields).is_ok());
+        fields["portability_report"]["models"][1]["provider"] = json!("openai");
+        assert_eq!(
+            verify_fields(&fields).unwrap_err().code,
+            "art_style_portability_model_invalid"
         );
     }
 }

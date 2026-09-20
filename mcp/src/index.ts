@@ -1,5 +1,5 @@
-// Katagami MCP server (ARN-152) — the contribution front door at
-// mcp.katagami.ai. Streamable HTTP transport, stateless: every request
+// Retained Katagami MCP adapter (ARN-152). Canonical contribution uses
+// native Temper MCP and the Stack contributor skill. Streamable HTTP transport, stateless: every request
 // carries a bearer token from the katagami.ai authorization server, and
 // each request builds a fresh server+transport pair.
 

@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   STYLE_DNA_QUESTIONS,
   STYLE_DNA_SET,
+  applyRefinement,
+  refineQuestions,
   buildStyleDoc,
   centroid,
   dnaFromAnswers,
@@ -98,4 +100,20 @@ test("a card prints the strongest traits of any dna-v1 answers, and nothing for 
   assert.deepEqual(cardTraits({ style_dna, style_dna_version: "dna-v0/jev-1" }), []);
   assert.deepEqual(cardTraits({ style_dna: "[]", style_dna_version: "dna-v1/x" }), []);
   assert.deepEqual(cardTraits(undefined), []);
+});
+
+test("a change moves only the traits it speaks to, and never out of range", () => {
+  const unchanged = Object.fromEntries(ids.map((id) => [id, { type: "score", score: 1.1 }]));
+  const answers = { ...unchanged, [ids[0]]: { type: "score", score: 2 }, [ids[1]]: { type: "score", score: 0 } };
+  const out = applyRefinement({ ...flat(0.5), [ids[0]]: 0.9 }, answers);
+  assert.equal(out.reading[ids[0]], 1);
+  assert.equal(out.reading[ids[1]], 0);
+  assert.equal(out.reading[ids[2]], 0.5);
+  assert.deepEqual(out.moved.map((m) => m.id), [ids[1], ids[0]]);
+});
+
+test("a change with an unanswered trait refines nothing", () => {
+  const answers = Object.fromEntries(ids.slice(1).map((id) => [id, { type: "score", score: 1 }]));
+  assert.equal(applyRefinement(flat(0.5), answers), null);
+  assert.deepEqual(Object.keys(refineQuestions()), ids);
 });

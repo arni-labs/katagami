@@ -30,6 +30,7 @@ const synthesizePaletteSkillSource = readProjectFile(
 const synthesizeArtStyleSkillSource = readProjectFile(
   "../katagami-curation/agents/curator/skills/synthesize-art-style/SKILL.md",
 );
+const artStyleSpecSource = readProjectFile("../katagami-commons/specs/art_style.ioa.toml");
 const deferredComponentPath = resolve("src/components/deferred-language-cards.tsx");
 
 const violations = [
@@ -247,9 +248,13 @@ if (!/temper\.action\('PaletteSystems',\s*eid,\s*'SetName'/.test(synthesizePalet
   });
 }
 
-if (!/temper\.action\('ArtStyles',\s*eid,\s*'SetName'/.test(synthesizeArtStyleSkillSource)) {
+// The native submission sets the complete definition atomically; the role
+// adapter delegates its procedure instead of duplicating SetName calls.
+const submitArtStyle = artStyleSpecSource.split('name = "SubmitArtStyle"')[1]?.split('[[action]]')[0] ?? "";
+if (!/params = \[[^\]]*"name"/.test(submitArtStyle) ||
+    !synthesizeArtStyleSkillSource.includes("docs/art-style-contribution-contract.md")) {
   violations.push({
-    label: "art-style synthesis skill does not set ArtStyle names before publishing",
+    label: "native art-style submission must carry its name and the role adapter must reference its data contract",
   });
 }
 
