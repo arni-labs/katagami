@@ -33,8 +33,9 @@ export function FamilyFeed({ styles, families, holes, lit, accent, find, onSoon 
       return { id: f.id, label: f.label, ink: INKS[ink.get(f.id) ?? 0], total: f.count, members, soon };
     }).filter((r) => r.members.length > 0) as { id: string; label: string; ink: string; total: number; members: AtlasStyle[]; soon: AtlasHole[] }[];
     const alone = styles.filter((s) => (!s.family || !families.some((f) => f.id === s.family)) && keep(s));
-    // A name search also reaches the directions still to come, wherever they sit.
-    const named = q ? holes.filter((h) => h.name.toLowerCase().includes(q)).slice(0, 12) : [];
+    // A name search also reaches the directions still to come, wherever they sit;
+    // not under a pick, which is about made work a direction cannot match.
+    const named = q && !lit ? holes.filter((h) => h.name.toLowerCase().includes(q)).slice(0, 12) : [];
     if (named.length > 0) out.push({ id: "soon", label: "Coming soon", ink: "var(--sakura)", total: named.length, members: [], soon: named });
     if (alone.length > 0) out.push({ id: "alone", label: "On their own", ink: "var(--muted-foreground)", total: alone.length, members: alone, soon: [] });
     return out;
