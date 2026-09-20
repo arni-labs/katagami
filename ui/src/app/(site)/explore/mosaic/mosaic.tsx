@@ -147,6 +147,7 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
   const cam = useRef({ x: 0, y: 0, vx: 0, vy: 0, px: -1, py: -1, run: 0, drag: null as null | { x: number; y: number; t: number; far: number }, pinch: 0 });
   const calm = useRef(false);
   useEffect(() => { const q = window.matchMedia("(prefers-reduced-motion: reduce)"); const read = () => { calm.current = q.matches; }; read(); q.addEventListener("change", read); return () => q.removeEventListener("change", read); }, []);
+  const winRef = useRef({ c0: 0, c1: 0, r0: 0, r1: 0 });
   const glare = useRef<HTMLDivElement | null>(null);
   const held = useRef(new Map<string, HTMLElement>());
   const lit_ = useRef(new Set<string>());
@@ -158,7 +159,8 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
     if (!el || size.w === 0) return;
     el.style.transform = `translate3d(${k.x}px, ${k.y}px, 0)`;
     // One glare for the whole sheet, sliding at a fraction of the pan so it reads as light, not as print.
-    if (glare.current) glare.current.style.backgroundPosition = `${50 + ((k.x * 0.045) % 100)}% ${50 + ((k.y * 0.045) % 100)}%`;
+    // Moved by transform alone (the compositor's job, no repaint), wrapping within the pattern's repeat.
+    if (glare.current) glare.current.style.transform = `translate3d(${((k.x * 0.35) % (size.w * 1.5)).toFixed(1)}px, ${((k.y * 0.2) % (size.h * 1.5)).toFixed(1)}px, 0)`;
     // Only the cards round the pointer lean to it and take its highlight; the rest lie flat.
     const near = new Set<string>();
     if (k.px >= 0 && zoomRef.current > 0) {
@@ -175,7 +177,8 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
     for (const key of lit_.current) if (!near.has(key)) held.current.get(key)?.classList.remove("lit-on");
     lit_.current = near;
     const c0 = Math.floor(-k.x / stepX) - 1, r0 = Math.floor(-k.y / stepY) - 1, c1 = c0 + Math.ceil(size.w / stepX) + 2, r1 = r0 + Math.ceil(size.h / stepY) + 2;
-    setWin((was) => (was.c0 === c0 && was.c1 === c1 && was.r0 === r0 && was.r1 === r1 ? was : { c0, c1, r0, r1 }));
+    const now = winRef.current;
+    if (now.c0 !== c0 || now.c1 !== c1 || now.r0 !== r0 || now.r1 !== r1) { winRef.current = { c0, c1, r0, r1 }; setWin({ c0, c1, r0, r1 }); }
   }, [size, stepX, stepY]);
   const coast = useCallback(() => {
     const k = cam.current;
@@ -331,7 +334,6 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
         <button type="button" onClick={() => zoomTo(zoom + 1)} disabled={zoom === 2} aria-label="Closer" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">+</button>
         <button type="button" onClick={() => zoomTo(zoom - 1)} disabled={zoom === 0} aria-label="Further" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">−</button>
       </div>
-      <p className={`pointer-events-none absolute right-3 top-3 z-20 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/70 max-md:hidden md:right-6 ${glass}`}><span className="text-foreground">{styles.length}</span> styles · {holes.length} to come</p>
 
       {style && open ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => setOpen(null)} /> : null}
       <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={lit ? lit.size : null} />

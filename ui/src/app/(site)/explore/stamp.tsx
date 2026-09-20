@@ -21,12 +21,15 @@ function retryThenHide(e: React.SyntheticEvent<HTMLImageElement>) {
 // ---- the paper ----------------------------------------------------------------
 // A stamp's paper is one small drawing: a sheet with a row of half-round bites out of every side, evenly
 // spaced so each corner keeps a full tooth, lying on its own soft shadow. It is drawn as an SVG and used as
-// a background image, so a sheet of hundreds shares one decoded picture per size: no mask, no filter and no
-// shadow to composite per stamp. The drawing is larger than the stamp by PAD all round, to hold the shadow.
+// a background image, so a sheet of hundreds shares one picture per size: no mask, no filter and no shadow to
+// composite per stamp. An SVG with a blur in it is drawn afresh wherever it is used, which shows as lag when
+// panning, so each size is rendered once to a bitmap and every stamp of that size is switched to it through one
+// CSS variable on the root (no re-render). The drawing is larger than the stamp by PAD all round, to hold the shadow.
 const PAD = 12;
 const papers = new Map<string, string>();
+/** Returns `var(--paper-…)`; the variable holds the SVG at first and the bitmap once it is ready. */
 function paper(w: number, h: number, flat: boolean, tone: string): string {
-  const key = `${w}x${h}${flat ? "f" : ""}${tone}`, had = papers.get(key);
+  const key = `--paper-${w}x${h}${flat ? "f" : ""}${tone.replace(/\W/g, "")}`, had = papers.get(key);
   if (had) return had;
   const pitch = Math.max(6.5, Math.min(13, w / 10.5));
   const side = (len: number) => { const n = Math.max(4, Math.round(len / pitch)); return { n, step: len / n }; };
@@ -45,9 +48,20 @@ function paper(w: number, h: number, flat: boolean, tone: string): string {
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${W}' height='${H}' viewBox='${-PAD} ${-PAD} ${W} ${H}'>` +
     (flat ? "" : `<filter id='s' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='${blur.toFixed(1)}'/></filter><path d='${d}' transform='translate(0 ${drop.toFixed(1)})' fill='rgb(24,28,40)' opacity='.42' filter='url(%23s)'/>`) +
     `<path d='${d}' fill='${tone}'/><path d='${d}' fill='none' stroke='rgba(60,48,30,.16)' stroke-width='.75'/></svg>`;
-  const url = `url("data:image/svg+xml;utf8,${svg.replace(/#/g, "%23")}")`;
-  papers.set(key, url);
-  return url;
+  const data = `data:image/svg+xml;utf8,${svg.replace(/#/g, "%23")}`, ref = `var(${key})`;
+  papers.set(key, ref);
+  if (typeof document === "undefined") return ref;
+  const root = document.documentElement;
+  root.style.setProperty(key, `url("${data}")`);
+  const img = new Image();
+  img.onload = () => {
+    const scale = Math.min(3, Math.ceil(window.devicePixelRatio || 1)), c = document.createElement("canvas");
+    c.width = W * scale; c.height = H * scale;
+    c.getContext("2d")?.drawImage(img, 0, 0, c.width, c.height);
+    c.toBlob((blob) => { if (blob) root.style.setProperty(key, `url("${URL.createObjectURL(blob)}")`); });
+  };
+  img.src = data;
+  return ref;
 }
 
 /** A perforated stamp carrying a style's picture: paper with a bitten edge, an even margin, the picture in a window with a hairline of shade inside it, and (when there is room) the name set small and spaced along the foot. */
@@ -63,7 +77,7 @@ export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = fa
   return (
     <span className={`stamp relative block ${lit ? "lit" : ""}`} style={{ ...(lit ? { ["--cx" as string]: lit.x, ["--cy" as string]: lit.y } : null), width: w, height: h }}>
       <span aria-hidden className="stamp-paper absolute" style={{ inset: -PAD, backgroundImage: paper(w, h, flat, soon ? "%23f3ede0" : "%23f7f2e6") }} />
-      <span aria-hidden className="stamp-grain" style={{ inset: Math.ceil(w * 0.03) }} />
+      {w >= 70 ? <span aria-hidden className="stamp-grain" style={{ inset: Math.ceil(w * 0.03) }} /> : null /* too small to see, and one layer fewer on a sheet of hundreds */}
       <span className="stamp-window absolute overflow-hidden [&_img]:object-cover" style={{ left: edge, right: edge, top: edge, bottom: edge + foot, background: soon ? undefined : ink ?? "var(--muted)" }}>
         {veil > 0 && !soon ? <span aria-hidden className="absolute inset-0 z-[1]" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))`, transition: "opacity 200ms" }} /> : null}
         {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : src && fast ? (

@@ -1681,9 +1681,8 @@
 /* A stamp (explore/stamp.tsx). Its paper, bitten edge and shadow are one SVG background drawn a little larger
    than the stamp; the picture sits in a window with a hairline of shade inside it, as ink meets paper. */
 .stamp-paper { background-repeat: no-repeat; background-size: 100% 100%; pointer-events: none; }
-.stamp-window { box-shadow: inset 0 0 0 0.5px rgba(30, 24, 12, 0.35), inset 0 1px 3px rgba(30, 24, 12, 0.22); }
-.stamp-window > img, .stamp-window > span { z-index: 0; }
-.stamp-window::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 0.5px rgba(30, 24, 12, 0.4), inset 0 1px 3px rgba(30, 24, 12, 0.25); z-index: 2; }
+/* One hairline where ink meets paper. An outline, not inset shadows: shadows inside hundreds of windows repaint as the sheet moves. */
+.stamp-window { outline: 0.5px solid rgba(30, 24, 12, 0.32); outline-offset: -0.5px; }
 
 /* The mosaic: a stamp slides to its new place when the sheet is re-sorted, and its
    inner layer swells toward the pointer. */
@@ -1752,7 +1751,7 @@
    back when the light moves off. The whole sheet shares one glare that slides as you pan: light for hundreds
    of cards at the cost of one layer. */
 .canvas-cell > .stamp { transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1); }
-.canvas-glare { position: absolute; inset: -20%; pointer-events: none; z-index: 6; background: linear-gradient(115deg, rgba(255,255,255,0) 36%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 64%); background-size: 220% 220%; will-change: background-position; }
+.canvas-glare { position: absolute; left: -100%; top: -100%; width: 300%; height: 300%; pointer-events: none; z-index: 6; background: repeating-linear-gradient(115deg, rgba(255,255,255,0) 0, rgba(255,255,255,0) 30%, rgba(255,255,255,0.18) 38%, rgba(255,255,255,0) 46%, rgba(255,255,255,0) 50%); will-change: transform; }
 .dark .canvas-glare { opacity: 0.45; }
 
 /* The canvas: a cell arrives with a small settle, and the opened card rises over a veil of its own ink. */
