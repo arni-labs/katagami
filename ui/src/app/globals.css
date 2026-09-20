@@ -1617,6 +1617,11 @@
 .atlas-pop {
   animation: atlas-pop 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+/* A tile still waiting its turn in the bloom arrives at once when the keyboard
+   reaches it: nothing focusable stays invisible. */
+.atlas-pop:focus-within {
+  animation-delay: 0ms !important;
+}
 .atlas-card {
   transition: transform 180ms ease-out, opacity 200ms;
 }
