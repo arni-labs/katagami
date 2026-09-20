@@ -66,16 +66,11 @@ export function FamilyField({ points, radius, alpha, inks }: { points: FieldPoin
     if (!el) return;
     const gl = el.getContext("webgl", { premultipliedAlpha: true, antialias: false, alpha: true });
     if (!gl) return; // no WebGL: the map simply has no grounds
-    const splat = program(gl, SPLAT_VS, SPLAT_FS);
-    const draw = program(gl, DRAW_VS, DRAW_FS);
-    if (!splat || !draw) return;
-    const css = getComputedStyle(document.documentElement);
-    const ink = inks.map((name) => rgbOf(css.getPropertyValue(name).trim() || "#888")) as [number, number, number][];
-    const quad = gl.createBuffer()!;
-    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
-    kit.current = { gl, splat, draw, fbo: gl.createFramebuffer()!, tex: gl.createTexture()!, quad, splats: gl.createBuffer()!, w: 0, h: 0, ink };
 
+    const readInks = () => {
+      const css = getComputedStyle(document.documentElement);
+      return inks.map((name) => rgbOf(css.getPropertyValue(name).trim() || "#888")) as [number, number, number][];
+    };
     const size = () => {
       const k = kit.current;
       if (!k) return;
@@ -92,17 +87,37 @@ export function FamilyField({ points, radius, alpha, inks }: { points: FieldPoin
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, k.tex, 0);
       paint();
     };
+    // Everything the GPU holds, built here so a restored context can build it again.
+    const setup = () => {
+      const splat = program(gl, SPLAT_VS, SPLAT_FS);
+      const draw = program(gl, DRAW_VS, DRAW_FS);
+      if (!splat || !draw) return;
+      const quad = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+      kit.current = { gl, splat, draw, fbo: gl.createFramebuffer()!, tex: gl.createTexture()!, quad, splats: gl.createBuffer()!, w: 0, h: 0, ink: readInks() };
+      size();
+    };
+
     const observer = new ResizeObserver(size);
     observer.observe(el);
     const lost = (e: Event) => { e.preventDefault(); kit.current = null; };
+    const restored = () => setup();
     el.addEventListener("webglcontextlost", lost);
-    size();
+    el.addEventListener("webglcontextrestored", restored);
+    // The inks are theme tokens: day and night print in different values.
+    const theme = new MutationObserver(() => { if (kit.current) { kit.current.ink = readInks(); paint(); } });
+    theme.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme", "style"] });
+    setup();
     return () => {
       observer.disconnect();
+      theme.disconnect();
       el.removeEventListener("webglcontextlost", lost);
+      el.removeEventListener("webglcontextrestored", restored);
       cancelAnimationFrame(frame.current);
+      // The context is left for the browser to collect: forcing its loss here
+      // would hand a dead context to a remount of the same canvas.
       kit.current = null;
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

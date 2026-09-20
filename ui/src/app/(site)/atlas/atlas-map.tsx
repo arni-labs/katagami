@@ -128,6 +128,10 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   const [owner, setOwner] = useState(false);
   const framed = useRef(false);
   const [narrow, setNarrow] = useState(false);
+  // The viewport's size as state: which cards are mounted depends on it, so a
+  // rotation or a window resize has to re-render, not wait for the next pan.
+  const [view, setView] = useState({ w: 1440, h: 900 });
+  const sizeWatch = useRef<ResizeObserver | null>(null);
   const cardPx = narrow ? CARD_PX_NARROW : CARD_PX_WIDE;
 
   // The encyclopedia is the owner's for now: everyone sees a direction, only the owner can open its cell.
@@ -313,7 +317,17 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   const attach = useCallback((el: HTMLDivElement | null) => {
     viewportRef.current = el;
     guardWheel(el);
-    if (el) setNarrow(el.clientWidth < 640);
+    sizeWatch.current?.disconnect();
+    sizeWatch.current = null;
+    if (el) {
+      const measure = () => {
+        setNarrow(el.clientWidth < 640);
+        setView((was) => (was.w === el.clientWidth && was.h === el.clientHeight ? was : { w: el.clientWidth, h: el.clientHeight }));
+      };
+      measure();
+      sizeWatch.current = new ResizeObserver(measure);
+      sizeWatch.current.observe(el);
+    }
     if (el && !framed.current && styles.length > 0) {
       framed.current = true;
       fitAll();
@@ -435,14 +449,18 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   // down. While the camera glides, both ends of the flight count as on screen.
   const restCamera = useRef(camera);
   useEffect(() => { if (!animate) restCamera.current = camera; }, [animate, camera]);
-  const vw = viewportRef.current?.clientWidth ?? 1440;
-  const vh = viewportRef.current?.clientHeight ?? 900;
+  const vw = view.w;
+  const vh = view.h;
   const cardW = TILE_W * camera.k * factor;
   const onScreen = (item: { id: string; x: number; y: number }) => {
     const n = shown.nudge.get(item.id);
     const wx = item.x * PAPER + (n?.x ?? 0), wy = item.y * PAPER + (n?.y ?? 0);
     const margin = cardW * 1.5 + 80;
-    return [camera, ...(animate ? [restCamera.current] : [])].some((cam) => {
+    // A glide travels: the cards it passes over are on screen too, so the path
+    // from where the camera rested to where it is going is sampled along its way.
+    const from = restCamera.current;
+    const path = animate ? [0, 0.25, 0.5, 0.75].map((t) => ({ x: from.x + (camera.x - from.x) * t, y: from.y + (camera.y - from.y) * t, k: from.k + (camera.k - from.k) * t })) : [];
+    return [camera, ...path].some((cam) => {
       const sx = cam.x + wx * cam.k, sy = cam.y + wy * cam.k;
       return sx > -margin && sx < vw + margin && sy > -margin && sy < vh + margin;
     });
