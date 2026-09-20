@@ -451,7 +451,7 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   // that, arrivals are only a breath apart.
   const bloomed = useRef(false);
   useEffect(() => { const t = window.setTimeout(() => { bloomed.current = true; }, 1400); return () => window.clearTimeout(t); }, []);
-  const delayOf = (item: { x: number; y: number }, i: number) => (bloomed.current ? Math.min(i * 4, 160) : Math.round(Math.hypot(item.x - 0.5, item.y - 0.5) * 1100));
+  const delayOf = (item: { x: number; y: number }, i: number) => (bloomed.current ? Math.min(i * 4, 160) : Math.min(520, Math.round(Math.hypot(item.x - 0.5, item.y - 0.5) * 900)));
   // A family's ground: a soft blob of one ink under where most of its cards sit
   // (the spread, not the extremes — one far-flung member must not flood the
   // map), with the family's name at its head. Names are for the far view; up
