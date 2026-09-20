@@ -233,7 +233,8 @@ function withUsageTracking(server: McpServer): void {
     });
   };
 }
-function ok(data: unknown) {
+function ok(raw: unknown) {
+  const data = publicKinds(raw);
   return {
     content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
     ...(data && typeof data === "object" && !Array.isArray(data) ? { structuredContent: data as Record<string, unknown> } : {}),
@@ -294,10 +295,10 @@ const INSTRUCTIONS = `Katagami is a curated library of complete visual styles: d
 How to use it:
 - Someone describes a product, a mood or a brief: call ask_library. It judges fit, returns pictures, and says how it read the sentence. To adjust ("quieter", "less corporate"), call ask_library again with the returned \`reading\` and \`changes\` plus \`refine\` — do not re-ask from scratch.
 - Someone wants a whole look at once: call compose_kit for a language, palette and art style that belong together, with a build brief.
-- Someone names a style, tag, family or medium: call the search_* tool for that kind. describe_catalog lists the families, mediums and tags that exist.
-- To build with a design language: get_design_md gives the URL to hand a coding agent; get_tokens gives Tailwind or CSS variables; get_design_language has every rule. Honour the tokens exactly.
-- To generate images in an art style: get_art_style returns the prompt template. Use it verbatim, then add the subject.
-- After building a page in a language: check_against_language lists what breaks the language, worst first. Fix those before handing over.
+- Someone names a style, tag, family or medium: call search_library with that kind. describe_library lists the families, mediums and tags that exist.
+- To build with a design language: get_design_md gives the URL to hand a coding agent; get_design_tokens gives Tailwind or CSS variables; get_library_entry has every rule. Honour the tokens exactly.
+- To generate images in an art style: get_library_entry returns the prompt template. Use it verbatim, then add the subject.
+- After building a page in a language: check_page_against_language lists what breaks the language, worst first. Fix those before handing over.
 
 Show people the picture and the katagami.ai link for anything you recommend. whoami says whether this connection sees the visitor shelf or the full library; results never include styles the caller may not see.`;
 // A miss means different things per tier: on the sample tier the design may
@@ -331,7 +332,7 @@ function argKeysOf(args: unknown): string | undefined {
 }
 
 // Agents reach for the field name search HANDED them. Search results carry
-// `id` (lib/catalog.ts toRow), so `get_art_style({id})` is the natural next
+// `id` (lib/catalog.ts toRow), so `get_library_entry({id})` is the natural next
 // call — and it used to be rejected by the SDK before our handler ran, which
 // is how 8 of one real user's 26 get_* calls failed in a single session
 // (ARN-514). Accept the three names an agent will actually try. All optional
@@ -342,15 +343,37 @@ function argKeysOf(args: unknown): string | undefined {
 // a caller reaching for the entity-set name — `design_language` — got a bare
 // SDK rejection. Naming the values in the description is the same fix as the
 // identifier aliases, one field over.
+// The kinds as the outside reads them. Inside, lib/catalog.ts says "language";
+// out here that word alone is ambiguous, so it is spelled out. Translated at
+// this boundary in both directions, so every `kind` a response carries is a
+// value this schema accepts back.
+const KIND_IN = { design_language: "language", palette: "palette", art_style: "art_style" } as const;
+type PublicKind = keyof typeof KIND_IN;
 const kindArg = z
-  .enum(["language", "palette", "art_style"])
+  .enum(["design_language", "palette", "art_style"])
   .describe(
-    'Which kind of entry: "language", "palette" or "art_style" — the same values search results and get_* responses carry in their own `kind` field.',
+    'Which kind of library entry: "design_language", "palette" or "art_style" — the same values every result carries in its own `kind` field.',
   );
+function publicKinds(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(publicKinds);
+  if (!v || typeof v !== "object") return v;
+  // A map keyed by kind (describe_library's counts, a kit's three parts) is renamed the same way.
+  const keyedByKind = "language" in v && "art_style" in v;
+  return Object.fromEntries(
+    Object.entries(v as Record<string, unknown>).map(([k, x]) => [
+      keyedByKind && k === "language" ? "design_language" : k,
+      k === "kind" && x === "language" ? "design_language" : publicKinds(x),
+    ]),
+  );
+}
+function wrongFacet(kind: PublicKind, problems: string[]) {
+  const text = JSON.stringify({ error: "facet_does_not_apply", message: `${problems.join("; ")}. You searched kind "${kind}".` }, null, 2);
+  return { content: [{ type: "text" as const, text }], isError: true };
+}
 
 // `.nullish()`, not `.optional()`: clients that materialize every declared
 // property send the unused aliases as JSON null. Rejecting those would refuse
-// get_art_style({id_or_slug: "…", id: null, slug: null}) — a call carrying a
+// get_library_entry({id_or_slug: "…", id: null, slug: null}) — a call carrying a
 // perfectly good identifier, and one that worked before these keys existed.
 const idArg = z
   .string()
@@ -412,9 +435,9 @@ const baseHandler = createMcpHandler(
     withUsageTracking(server);
     // --- discovery ---------------------------------------------------------
     server.registerTool(
-      "describe_catalog",
+      "describe_library",
       {
-        title: "Describe the catalog",
+        title: "Describe the library",
         annotations: READS,
         description:
           "Call this FIRST. Returns Katagami's three content kinds (design languages, palette systems, art styles) with live counts, the families you can browse (with counts), the art-style mediums, common tags per kind, and which facets each kind supports. This is how you learn what you can search by.",
@@ -430,10 +453,10 @@ const baseHandler = createMcpHandler(
         title: "Ask the library",
         annotations: READS,
         description:
-          "Find styles for a product, mood or brief. Describe what is being designed in one sentence and get the design languages and art styles that fit it, judged against each style's description rather than matched on keywords, with thumbnails. Returns `results` (best fit first: `fit` 0..1, strongest `traits`, `url`, `thumbnail_url`), `strange` (styles unlike the rest of the library that still fit — for when something unexpected is wanted), how the sentence was read (`wants`, `avoids`), and `reading`. To adjust an answer — \"quieter\", \"warmer, less corporate\" — call again with the same `query`, the returned `reading` and `changes`, and the adjustment in `refine`: the reading is moved rather than re-read, and `moved` says which traits went where. Use this before search_* whenever there is a brief rather than a name or tag. Palettes are not judged here yet; use search_palettes.",
+          "Find styles for a product, mood or brief. Describe what is being designed in one sentence and get the design languages and art styles that fit it, judged against each style's description rather than matched on keywords, with thumbnails. Returns `results` (best fit first: `fit` 0..1, strongest `traits`, `url`, `thumbnail_url`), `strange` (styles unlike the rest of the library that still fit — for when something unexpected is wanted), how the sentence was read (`wants`, `avoids`), and `reading`. To adjust an answer — \"quieter\", \"warmer, less corporate\" — call again with the same `query`, the returned `reading` and `changes`, and the adjustment in `refine`: the reading is moved rather than re-read, and `moved` says which traits went where. Use this before search_library whenever there is a brief rather than a name or tag. Palettes are not judged here; compose_kit chooses one, and search_library finds them by name or tag.",
         inputSchema: {
           query: z.string().min(8).max(400).describe("One sentence: what the product is and who it is for"),
-          kind: z.enum(["language", "art_style"]).optional().describe("Omit to look through both"),
+          kind: z.enum(["design_language", "art_style"]).optional().describe("Omit to look through both"),
           limit: z.number().int().min(1).max(20).optional().describe("How many results (default 8)"),
           refine: z.string().min(2).max(400).optional().describe("A change to the previous answer, e.g. \"quieter and warmer\". Pass `reading` from that answer with it."),
           reading: z.record(z.string(), z.number()).optional().describe("The `reading` object from a previous ask_library answer, passed back unchanged"),
@@ -446,7 +469,7 @@ const baseHandler = createMcpHandler(
         if (!mayStart("mcp-ask", spenderOf(extra), tier)) return tooMany();
         const { want, ...answer } = await askLibrary(tier, {
           query: a.query,
-          kind: a.kind,
+          kind: a.kind && KIND_IN[a.kind],
           limit: a.limit,
           want: a.reading,
           refine: a.refine,
@@ -462,7 +485,7 @@ const baseHandler = createMcpHandler(
         title: "Compose a kit",
         annotations: READS,
         description:
-          "Get a complete starting point for a product in one call: a design language (UI tokens and rules), a palette system and an art style (for imagery), each judged to fit the product and judged to belong together. Returns up to three `kits`, one per language — the last one `surprising` when the library holds an unusual style that still fits — each with the three parts (`url`, `thumbnail_url`, `fit`), `belongs_together` and `fits_product` (0..1), and a `brief_url` — the build brief for that exact combination, ready to hand to a coding agent. Use this when someone wants a whole look; use ask_library or the search_* tools to choose one kind at a time, then compose the same URLs yourself.",
+          "Get a complete starting point for a product in one call: a design language (UI tokens and rules), a palette system and an art style (for imagery), each judged to fit the product and judged to belong together. Returns up to three `kits`, one per language — the last one `surprising` when the library holds an unusual style that still fits — each with its three parts — `design_language`, `palette`, `art_style` — (`url`, `thumbnail_url`, `fit`), `belongs_together` and `fits_product` (0..1), and a `brief_url` — the build brief for that exact combination, ready to hand to a coding agent. Use this when someone wants a whole look; use ask_library or search_library to choose one kind at a time, then compose the same URLs yourself.",
         inputSchema: {
           query: z.string().min(8).max(400).describe("One sentence: what the product is and who it is for"),
           limit: z.number().int().min(1).max(4).optional().describe("How many kits (default 3)"),
@@ -479,7 +502,7 @@ const baseHandler = createMcpHandler(
     );
 
     server.registerTool(
-      "check_against_language",
+      "check_page_against_language",
       {
         title: "Check a page against a design language",
         annotations: READS,
@@ -500,43 +523,47 @@ const baseHandler = createMcpHandler(
       },
     );
 
-    // --- design languages --------------------------------------------------
+    // --- search and read, any kind --------------------------------------------
     server.registerTool(
-      "search_design_languages",
+      "search_library",
       {
-        title: "Search design languages",
+        title: "Search the library",
         annotations: READS,
         description:
-          "Search complete design systems (tokens, rules, layout, philosophy). Facets: family, taxonomy, tag (names from describe_catalog), plus free-text query. Each result carries its facets back so you can refine.",
+          "Search one kind of library entry by name, tag or facet — use this when someone names a style, a tag, a family or a medium (for a brief or a mood, use ask_library). `kind` chooses what to search: design_language (complete UI design systems: tokens, rules, layout, philosophy), palette (colour systems: signature colours, ramps, semantic roles) or art_style (image and illustration styles with prompt recipes). `query` matches name, slug and tags. Facets narrow it: `tag` and `taxonomy` for every kind, `family` for design_language only, `medium` for art_style only — describe_library lists the values that exist. Each result carries `id`, `name`, `tags`, `url`, `thumbnail_url` and its facets; pass `id` to get_library_entry for the full entry. `next_cursor` pages.",
         inputSchema: {
-          query: z.string().optional(),
-          family: z.string().optional().describe("A family name from describe_catalog"),
-          taxonomy: z.string().optional(),
-          tag: z.string().optional(),
-          limit: z.number().int().min(1).max(100).optional(),
+          kind: kindArg,
+          query: z.string().optional().describe("Matches name, slug and tags, case-insensitively"),
+          tag: z.string().optional().describe("A tag from describe_library"),
+          taxonomy: z.string().optional().describe("A taxonomy name"),
+          family: z.string().optional().describe("design_language only: a family name from describe_library"),
+          medium: z.string().optional().describe("art_style only: illustration, photography, print, painting, 3d, collage or mixed"),
+          limit: z.number().int().min(1).max(100).optional().describe("How many results (default 20)"),
           cursor: z.number().int().min(0).optional().describe("`next_cursor` from the previous page"),
           images: searchPicturesArg,
         },
       },
-      async ({ images, ...a }, extra) => {
-        const found = await searchDesigns("language", tierOf(extra), a);
+      async ({ images, kind, ...a }, extra) => {
+        const misplaced = [a.family && kind !== "design_language" && "`family` applies to design_language only", a.medium && kind !== "art_style" && "`medium` applies to art_style only"].filter(Boolean);
+        if (misplaced.length) return wrongFacet(kind, misplaced as string[]);
+        const found = await searchDesigns(KIND_IN[kind], tierOf(extra), a);
         return okWithPictures(found, found.results, images === true);
       },
     );
     server.registerTool(
-      "get_design_language",
+      "get_library_entry",
       {
-        title: "Get a design language",
+        title: "Get a library entry",
         annotations: READS,
         description:
-          "Full spec of one design language: tokens (color/type/spacing/radii/shadows/motion), rules, layout principles, philosophy, guidance, plus its gallery and DESIGN.md URLs.",
-        inputSchema: { ...ID_ALIASES },
+          "The full content of one library entry, by the `id` or slug a search or ask result gave you. For a design_language: tokens (colour, type, spacing, radii, shadows, motion), rules, layout principles, philosophy and guidance, with its gallery and DESIGN.md URLs. For a palette: signature colours, neutrals, semantic roles, ramps and guidance. For an art_style: medium, prompt template, slot recipes, negative prompt and guidance — everything needed to generate images in the style; use the prompt template verbatim and add the subject.",
+        inputSchema: { kind: kindArg, ...ID_ALIASES },
       },
       async (a, extra) => {
         const tier = tierOf(extra);
         const id = idOf(a);
         if (!id) return missingId();
-        const d = await getDesign("language", id, tier);
+        const d = await getDesign(KIND_IN[a.kind], id, tier);
         return d ? ok(d) : gone(tier);
       },
     );
@@ -546,7 +573,7 @@ const baseHandler = createMcpHandler(
         title: "Get DESIGN.md",
         annotations: READS,
         description:
-          "The portable DESIGN.md for a design language (Google's format) — the URL to drop straight into a coding agent's working directory so it builds in that style.",
+          "The URL of the portable DESIGN.md for a design language (Google's format): the one file to put in a coding agent's working directory so it builds in that language. Design languages only.",
         inputSchema: { ...ID_ALIASES },
       },
       async (a, extra) => {
@@ -558,123 +585,40 @@ const baseHandler = createMcpHandler(
       },
     );
     server.registerTool(
-      "get_tokens",
+      "get_design_tokens",
       {
         title: "Get design tokens",
         annotations: READS,
         description:
-          "Just the design tokens for a language (or palette/art_style), optionally emitted as a ready-to-paste Tailwind config or CSS variables.",
+          "Only the design tokens of an entry — colours, type, spacing, radii — as JSON, a ready-to-paste Tailwind config, or CSS variables. `kind` defaults to design_language; a palette or art_style returns the tokens it has.",
         inputSchema: {
           kind: kindArg.optional(),
           ...ID_ALIASES,
-          format: z.enum(["json", "tailwind", "css"]).optional(),
+          format: z.enum(["json", "tailwind", "css"]).optional().describe("Default json"),
         },
       },
       async (a, extra) => {
         const tier = tierOf(extra);
         const id = idOf(a);
         if (!id) return missingId();
-        const d = await getTokens(a.kind ?? "language", id, tier, a.format ?? "json");
+        const d = await getTokens(KIND_IN[a.kind ?? "design_language"], id, tier, a.format ?? "json");
         return d ? ok(d) : gone(tier);
       },
     );
-
-    // --- palettes ----------------------------------------------------------
     server.registerTool(
-      "search_palettes",
-      {
-        title: "Search palette systems",
-        annotations: READS,
-        description:
-          "Search color systems (signature colors, ramps, semantic roles, proof scenes). Facets: taxonomy, tag, free-text query.",
-        inputSchema: {
-          query: z.string().optional(),
-          taxonomy: z.string().optional(),
-          tag: z.string().optional(),
-          limit: z.number().int().min(1).max(100).optional(),
-          cursor: z.number().int().min(0).optional().describe("`next_cursor` from the previous page"),
-          images: searchPicturesArg,
-        },
-      },
-      async ({ images, ...a }, extra) => {
-        const found = await searchDesigns("palette", tierOf(extra), a);
-        return okWithPictures(found, found.results, images === true);
-      },
-    );
-    server.registerTool(
-      "get_palette",
-      {
-        title: "Get a palette system",
-        annotations: READS,
-        description:
-          "Full spec of one palette system: signature colors, neutrals, semantic roles, ramps, tokens, guidance.",
-        inputSchema: { ...ID_ALIASES },
-      },
-      async (a, extra) => {
-        const tier = tierOf(extra);
-        const id = idOf(a);
-        if (!id) return missingId();
-        const d = await getDesign("palette", id, tier);
-        return d ? ok(d) : gone(tier);
-      },
-    );
-
-    // --- art styles --------------------------------------------------------
-    server.registerTool(
-      "search_art_styles",
-      {
-        title: "Search art styles",
-        annotations: READS,
-        description:
-          "Search image / illustration styles for image-generation. Facets: medium (illustration/photography/print/painting/3d/collage/mixed), tag, taxonomy, free-text query.",
-        inputSchema: {
-          query: z.string().optional(),
-          medium: z.string().optional(),
-          tag: z.string().optional(),
-          taxonomy: z.string().optional(),
-          limit: z.number().int().min(1).max(100).optional(),
-          cursor: z.number().int().min(0).optional().describe("`next_cursor` from the previous page"),
-          images: searchPicturesArg,
-        },
-      },
-      async ({ images, ...a }, extra) => {
-        const found = await searchDesigns("art_style", tierOf(extra), a);
-        return okWithPictures(found, found.results, images === true);
-      },
-    );
-    server.registerTool(
-      "get_art_style",
-      {
-        title: "Get an art style",
-        annotations: READS,
-        description:
-          "Full spec of one art style: its medium, prompt template, slot recipes, negative prompt, guidance, tags — everything an image-gen agent needs to render in-style.",
-        inputSchema: { ...ID_ALIASES },
-      },
-      async (a, extra) => {
-        const tier = tierOf(extra);
-        const id = idOf(a);
-        if (!id) return missingId();
-        const d = await getDesign("art_style", id, tier);
-        return d ? ok(d) : gone(tier);
-      },
-    );
-
-    // --- any kind ----------------------------------------------------------
-    server.registerTool(
-      "get_embodiment",
+      "get_reference_page",
       {
         title: "Get the rendered reference page",
         annotations: READS,
         description:
-          "The URL of the rendered reference page for a language/palette/art_style — open it to see the style across real UI elements before using it.",
+          "The URL of an entry's rendered reference page: the design language, palette or art style shown across real interface elements. Open it, or give it to the person, to see the entry in use before choosing it.",
         inputSchema: { kind: kindArg, ...ID_ALIASES },
       },
       async (a, extra) => {
         const tier = tierOf(extra);
         const id = idOf(a);
         if (!id) return missingId();
-        const d = await getEmbodiment(a.kind, id, tier);
+        const d = await getEmbodiment(KIND_IN[a.kind], id, tier);
         return d ? ok(d) : gone(tier);
       },
     );

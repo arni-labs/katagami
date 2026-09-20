@@ -11,7 +11,7 @@ export const maxDuration = 60;
 /**
  * POST /api/check — { language: <id or slug>, page: <HTML source, CSS included> }
  * returns the scorecard of that page against that design language (see
- * checkAgainstLanguage in lib/catalog.ts; the MCP tool check_against_language is
+ * checkAgainstLanguage in lib/catalog.ts; the MCP tool check_page_against_language is
  * the same call). Anonymous callers may check against visitor-shelf languages.
  */
 export async function POST(request: Request) {

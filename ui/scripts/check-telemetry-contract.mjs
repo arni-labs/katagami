@@ -560,7 +560,12 @@ const required = [
   [
     "the kind values are named in the schema, not left to be guessed",
     mcp,
-    /the same values search results and get_\* responses carry/,
+    /"design_language", "palette" or "art_style" — the same values every result carries in its own `kind` field/,
+  ],
+  [
+    "a `kind` a response carries is one the schema accepts back",
+    mcp,
+    /function ok\(raw: unknown\) \{\s*const data = publicKinds\(raw\);/,
   ],
   [
     "identifier aliases accept JSON null, not only absence",
