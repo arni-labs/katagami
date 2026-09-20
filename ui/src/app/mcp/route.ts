@@ -10,6 +10,7 @@ import { callerOf, mayStart, TOO_MANY } from "@/lib/spend-guard";
 import {
   describeCatalog,
   askLibrary,
+  composeKit,
   checkAgainstLanguage,
   searchDesigns,
   getDesign,
@@ -287,6 +288,7 @@ const INSTRUCTIONS = `Katagami is a curated library of complete visual styles: d
 
 How to use it:
 - Someone describes a product, a mood or a brief: call ask_library. It judges fit, returns pictures, and says how it read the sentence. To adjust ("quieter", "less corporate"), call ask_library again with the returned \`reading\` and \`changes\` plus \`refine\` — do not re-ask from scratch.
+- Someone wants a whole look at once: call compose_kit for a language, palette and art style that belong together, with a build brief.
 - Someone names a style, tag, family or medium: call the search_* tool for that kind. describe_catalog lists the families, mediums and tags that exist.
 - To build with a design language: get_design_md gives the URL to hand a coding agent; get_tokens gives Tailwind or CSS variables; get_design_language has every rule. Honour the tokens exactly.
 - To generate images in an art style: get_art_style returns the prompt template. Use it verbatim, then add the subject.
@@ -445,6 +447,28 @@ const baseHandler = createMcpHandler(
           changes: a.changes,
         });
         return okWithPictures({ ...answer, reading: want }, answer.results, a.images !== false);
+      },
+    );
+
+    server.registerTool(
+      "compose_kit",
+      {
+        title: "Compose a kit",
+        annotations: READS,
+        description:
+          "Get a complete starting point for a product in one call: a design language (UI tokens and rules), a palette system and an art style (for imagery), each judged to fit the product and judged to belong together. Returns up to three `kits`, one per language, each with the three parts (`url`, `thumbnail_url`, `fit`), `belongs_together` and `fits_product` (0..1), and a `brief_url` — the build brief for that exact combination, ready to hand to a coding agent. Use this when someone wants a whole look; use ask_library or the search_* tools to choose one kind at a time, then compose the same URLs yourself.",
+        inputSchema: {
+          query: z.string().min(8).max(400).describe("One sentence: what the product is and who it is for"),
+          limit: z.number().int().min(1).max(4).optional().describe("How many kits (default 3)"),
+          images: picturesArg,
+        },
+      },
+      async (a, extra) => {
+        const tier = tierOf(extra);
+        if (!mayStart("mcp-kit", spenderOf(extra), tier)) return tooMany();
+        const kits = await composeKit(tier, a);
+        const first = kits.kits[0];
+        return okWithPictures(kits, first ? [first.language, first.palette, first.art_style] : [], a.images !== false);
       },
     );
 
