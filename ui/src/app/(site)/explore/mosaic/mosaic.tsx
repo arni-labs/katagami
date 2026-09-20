@@ -5,7 +5,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { STYLE_DNA_QUESTIONS } from "@/lib/style-dna.mjs";
 import type { AtlasHole, AtlasStyle } from "@/lib/catalog";
-import { AskDock, fitWord, hueOf, useAsk, useScreen, type Family, type Fit } from "../shared";
+import { AskDock, fitWord, hueOf, useAsk, useScreen, type Family, type Fit, type Kinds, type Word } from "../shared";
 import { flow } from "../river/course";
 import { Stamp, quick } from "../stamp";
 
@@ -42,39 +42,48 @@ function warm(src: string | null | undefined, width: 750 | 1080) {
   const img = new Image(); img.decoding = "async"; img.src = quick(src, width);
 }
 
-type CellProps = { c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; mark: "" | "fit" | "strange"; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
+type CellProps = { c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
 // One stamp on the sheet, keyed by its slot in a recycling pool (see Sheet): when the window slides, the stamp
 // that left one edge is handed the place that arrived at the other, which is an update, not a mount. Memoised on plain values, so when the window of visible cells slides by a row
 // only the new row is drawn: the stamps already there are left alone.
-const CellView = memo(function CellView({ c, r, cell, w, h, stepX, stepY, dim, mark, hold, onOpen }: CellProps) {
+const CellView = memo(function CellView({ c, r, cell, w, h, stepX, stepY, dim, hold, onOpen }: CellProps) {
   if (!cell) return null;
   const x = c * stepX, y = r * stepY, key = `${c},${r}`;
   if (cell.kind === "soon") return <span ref={(el) => hold(key, el)} title={`${cell.h.name}: coming soon`} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.25 : 0.8 }}><Stamp src={null} ink={null} w={w} h={h} label={w > 66 ? "Soon" : undefined} soon /></span>;
   const s = cell.s;
   return (
-    <button ref={(el) => hold(key, el)} type="button" onPointerEnter={(e) => { if (e.pointerType === "mouse") warm(s.thumbnail_url, 1080); }} onPointerDown={() => warm(s.thumbnail_url, w < 60 ? 750 : window.innerWidth < 768 ? 750 : 1080)} onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, outline: mark ? `2px solid var(${mark === "strange" ? "--sakura" : "--ramune"})` : undefined, outlineOffset: 3 }}>
+    <button ref={(el) => hold(key, el)} type="button" onPointerEnter={(e) => { if (e.pointerType === "mouse") warm(s.thumbnail_url, 1080); }} onPointerDown={() => warm(s.thumbnail_url, w < 60 ? 750 : window.innerWidth < 768 ? 750 : 1080)} onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, }}>
       <Stamp src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} fast={w > 120 ? 384 : w > 70 ? 256 : 128} />
     </button>
   );
 });
 
-type SheetProps = { hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; fits: Map<string, Fit> | null; onOpen: (c: number, r: number) => void };
-const Sheet = memo(function Sheet({ hold, cells, w, h, stepX, stepY, lit, fits, onOpen }: SheetProps) {
+type SheetProps = { hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
+const Sheet = memo(function Sheet({ hold, cells, w, h, stepX, stepY, lit, onOpen }: SheetProps) {
   return (
     <>
       {cells.map(({ c, r, cell }) => {
-        const id = cell?.kind === "style" ? cell.s.id : "", fit = id ? fits?.get(id) : undefined;
-        return <CellView key={`${mod(c, 64)},${mod(r, 48)}`} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} mark={fit ? (fit.strange ? "strange" : "fit") : ""} hold={hold} onOpen={onOpen} />;
+        const id = cell?.kind === "style" ? cell.s.id : "";
+        return <CellView key={`${mod(c, 64)},${mod(r, 48)}`} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} hold={hold} onOpen={onOpen} />;
       })}
     </>
   );
 });
 
-export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[] }) {
+export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[] }) {
   const screen = useScreen();
   const phone = screen === "phone";
   const box = useRef<HTMLDivElement | null>(null);
   const surface = useRef<HTMLDivElement | null>(null);
+  // How much of the top the controls and the sentence take, for whatever is laid out beneath them.
+  const head = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = head.current, root = box.current;
+    if (!el || !root) return;
+    const watch = new ResizeObserver(() => root.style.setProperty("--head", `${Math.round(el.getBoundingClientRect().height)}px`));
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, [screen]);
   const layer = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [zoom, setZoom] = useState(1);
@@ -83,6 +92,10 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
   const [open, setOpen] = useState<{ c: number; r: number } | null>(null);
   const [hue, setHue] = useState("");
   const ask = useAsk();
+  // Design languages and art styles, both by default; pressing one turns it off or on, and the last one on stays on.
+  const [kinds, setKinds] = useState<Kinds>({ language: true, art_style: true });
+  const [tray, setTray] = useState(false);
+  const styles = useMemo(() => all.filter((s) => kinds[s.kind]), [all, kinds]);
   const byId = useMemo(() => new Map(styles.map((s) => [s.id, s])), [styles]);
   const familyOf = useMemo(() => new Map(families.map((f) => [f.id, f])), [families]);
   const w = SIZES[phone ? "phone" : "desk"][zoom], h = Math.round(w * RATIO), stepX = w + GAP, stepY = h + GAP;
@@ -99,7 +112,7 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
 
   const topFit = ask.fits ? [...ask.fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank)[0]?.[0] : undefined;
   const [seenFit, setSeenFit] = useState<string | undefined>(undefined);
-  if (seenFit !== topFit) { setSeenFit(topFit); setMode(topFit ? "fit" : mode === "fit" ? "colour" : mode); }
+  if (seenFit !== topFit) { setSeenFit(topFit); setMode(topFit ? "fit" : mode === "fit" ? "colour" : mode); setTray(Boolean(topFit)); }
 
   // ---- the world: one wrapping grid, filled according to the sort ------------
   const world = useMemo(() => {
@@ -312,23 +325,34 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
     for (let step = 1; step <= world.cols; step++) { const c = open.c + by * step; if (cellAt(c, open.r)?.kind === "style") { bring(c, open.r); setOpen({ c, r: open.r }); return; } }
   }, [open, world, cellAt, bring]);
 
-  const tab = (value: Mode, label: string, off = false) => <button type="button" disabled={off} aria-pressed={mode === value} onClick={() => setMode(value)} className={`cursor-pointer px-3 py-1.5 text-[12.5px] disabled:cursor-default disabled:opacity-40 ${mode === value ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"}`}>{label}</button>;
+  const tab = (value: Mode, label: string, off = false) => <button type="button" disabled={off} aria-pressed={mode === value} onClick={() => setMode(value)} className={`shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 text-[12.5px] disabled:cursor-default disabled:opacity-40 ${mode === value ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"}`}>{label}</button>;
   const glass = "bg-background/70 shadow-[0_8px_30px_-12px_rgba(30,35,45,0.4)] backdrop-blur-xl backdrop-saturate-150";
 
   if (!screen) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
   return (
-    <div ref={box} onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} style={{ background: GROUND }} className={`relative h-[calc(100dvh-65px)] w-full select-none overflow-hidden`}>
+    <div ref={box} data-canvas onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} style={{ background: GROUND }} className={`relative h-[calc(100dvh-65px)] w-full select-none overflow-hidden`}>
       <h1 className="sr-only">Explore the library</h1>
       <div role="application" aria-label="The sheet. Drag or use the arrow keys to move across it; plus and minus change how much you see." tabIndex={0} onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} onKeyDown={onKey} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={(e) => { if (e.pointerType === "mouse") { cam.current.px = -1; cam.current.py = -1; paint(); } }} ref={surface}
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">
         <div ref={layer} className="absolute left-0 top-0 will-change-transform">
-          <Sheet hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={lit} fits={ask.fits} onOpen={openCell} />
+          <Sheet hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={lit} onOpen={openCell} />
         </div>
         <div ref={glare} aria-hidden className="canvas-glare" />
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex items-center justify-center gap-2 px-3">
-        <div role="group" aria-label="Sort the sheet" className={`pointer-events-auto flex ${glass}`}>{tab("colour", "By colour")}{tab("family", "By family")}{tab("fit", "By fit", !topFit)}</div>
+      <div ref={head} className="pointer-events-none absolute inset-x-0 top-2 z-[35] flex flex-col items-center gap-2 px-2 md:top-3 md:px-3">
+        <div className="pointer-events-auto flex max-w-full items-center gap-2 overflow-x-auto [scrollbar-width:none] md:justify-center">
+          <div role="group" aria-label="Show" className={`flex shrink-0 ${glass}`}>
+            {([["language", "Design languages"], ["art_style", "Art styles"]] as const).map(([k, label]) => (
+              <button key={k} type="button" aria-pressed={kinds[k]} onClick={() => setKinds((now) => { const next = { ...now, [k]: !now[k] }; return next.language || next.art_style ? next : { language: k !== "language", art_style: k !== "art_style" }; })}
+                className={`flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-[12.5px] ${kinds[k] ? "text-foreground" : "text-foreground/40"}`}>
+                <span aria-hidden className="inline-block h-2 w-2" style={{ background: kinds[k] ? "var(--foreground)" : "transparent", boxShadow: "inset 0 0 0 1.5px currentColor" }} />{label}
+              </button>
+            ))}
+          </div>
+          <div role="group" aria-label="Sort the sheet" className={`flex shrink-0 ${glass}`}>{tab("colour", "By colour")}{tab("family", "By family")}{tab("fit", "By fit", !topFit)}</div>
+        </div>
+        {ask.words ? <QueryLine words={ask.words} busy={ask.state === "asking"} moved={ask.moved} phone={phone} glass={glass} onRefine={(say) => void ask.refine(say, kinds)} onClear={() => { ask.clear(); setTray(false); }} onShow={topFit ? () => setTray(true) : undefined} /> : null}
       </div>
       <div className={`absolute bottom-[8.5rem] left-3 z-20 flex flex-col md:bottom-6 md:left-6 ${glass}`}>
         <button type="button" onClick={() => zoomTo(zoom + 1)} disabled={zoom === 2} aria-label="Closer" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">+</button>
@@ -336,7 +360,62 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
       </div>
 
       {style && open ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => setOpen(null)} /> : null}
-      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={lit ? lit.size : null} />
+      {tray && ask.fits && !open ? <Tray fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
+      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={lit ? lit.size : null} kinds={kinds} quiet />
+    </div>
+  );
+}
+
+const MARK: Record<string, string> = { what: "var(--yuzu)", who: "var(--sakura)", feel: "var(--ramune)" };
+const CHANGES = ["warmer", "quieter", "bolder", "more playful", "darker", "more editorial"];
+
+/** The asker's own words, set large, with the telling ones under a highlighter: what it is, who it is for, how it
+ *  should feel. Neighbouring words with the same job share one stroke. Beneath, the answer can be refined in words. */
+function QueryLine({ words, busy, moved, phone, glass, onRefine, onClear, onShow }: { words: Word[]; busy: boolean; moved: { trait: string; from: number; to: number }[]; phone: boolean; glass: string; onRefine: (say: string) => void; onClear: () => void; onShow?: () => void }) {
+  const [say, setSay] = useState("");
+  // Runs of words that share a role, so a phrase is marked as one.
+  const runs: { role: Word["role"]; text: string }[] = [];
+  for (const w of words) { const last = runs[runs.length - 1]; if (last && last.role === w.role) last.text += ` ${w.text}`; else runs.push({ role: w.role, text: w.text }); }
+  return (
+    <div className={`query-line pointer-events-auto flex w-full max-w-[60rem] flex-col items-center gap-2 px-3 py-2.5 text-center md:px-8 md:py-5 ${glass}`}>
+      <p aria-live="polite" className="font-display font-bold leading-[1.18] tracking-[-0.03em]" style={{ fontSize: phone ? (words.length > 9 ? 17 : 21) : words.length > 14 ? 30 : words.length > 7 ? 40 : 52, opacity: busy ? 0.75 : 1 }}>
+        {runs.map((run, i) => <span key={i}>{i > 0 ? " " : ""}{run.role ? <mark className="query-mark" style={{ ["--mark" as string]: MARK[run.role] }}>{run.text}</mark> : run.text}</span>)}
+      </p>
+      <div className="flex max-w-full items-center gap-1.5 overflow-x-auto [scrollbar-width:none] md:flex-wrap md:justify-center [&>*]:shrink-0 [&>*]:whitespace-nowrap">
+        {moved.slice(0, phone ? 3 : 5).map((mv) => <span key={mv.trait} className="bg-foreground px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.12em] text-background">{mv.to > mv.from ? "+" : "−"} {mv.trait}</span>)}
+        {CHANGES.map((c) => <button key={c} type="button" disabled={busy} onClick={() => onRefine(c)} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[12.5px] hover:bg-[color-mix(in_srgb,var(--foreground)_13%,transparent)] disabled:opacity-40">{c}</button>)}
+        <form onSubmit={(e) => { e.preventDefault(); if (say.trim()) { onRefine(say); setSay(""); } }} className="flex">
+          <label htmlFor="refine" className="sr-only">Refine the answer</label>
+          <input id="refine" value={say} onChange={(e) => setSay(e.target.value)} maxLength={120} autoComplete="off" placeholder="refine in your words" className="w-[10.5rem] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[16px] outline-none placeholder:text-foreground/45 md:text-[12.5px]" />
+        </form>
+        {onShow ? <button type="button" onClick={onShow} className="cursor-pointer px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/60 hover:text-foreground">Results</button> : null}
+        <button type="button" onClick={onClear} className="cursor-pointer px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/60 hover:text-foreground">Clear</button>
+      </div>
+    </div>
+  );
+}
+
+/** The answer, brought to the middle: the fitting styles as large stamps that land one after another over the
+ *  quietened sheet. No coloured rules; how well each fits is said in small type under its name. */
+function Tray({ fits, byId, judging, phone, onOpen, onClose }: { fits: Map<string, Fit>; byId: Map<string, AtlasStyle>; judging: boolean; phone: boolean; onOpen: (id: string) => void; onClose: () => void }) {
+  const hand = [...fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank).slice(0, phone ? 8 : 10);
+  // Two rows on a desk, one swiping row on a phone, sized to the room between the sentence and the ask.
+  const headH = Number.parseFloat(getComputedStyle(document.querySelector("[data-canvas]") ?? document.body).getPropertyValue("--head")) || 170;
+  const room = window.innerHeight - 65 - headH - 20 - 128 - 56;
+  const w = Math.max(96, Math.min(phone ? 200 : 184, Math.round((phone ? room - 30 : room / 2 - 40) / RATIO))), h = Math.round(w * RATIO);
+  return (
+    <div className="viewer-veil absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-[color-mix(in_srgb,var(--background)_60%,transparent)] px-3 pb-32 backdrop-blur-md" style={{ paddingTop: "calc(var(--head, 170px) + 20px)" }} onClick={onClose}>
+      <ul onClick={(e) => e.stopPropagation()} className={phone ? "flex w-full snap-x snap-mandatory gap-4 overflow-x-auto px-8 py-4 [scrollbar-width:none]" : "flex max-w-[64rem] flex-wrap items-start justify-center gap-x-5 gap-y-5"}>
+        {hand.map(([id, fit], i) => { const s = byId.get(id)!; return (
+          <li key={id} className="tray-card shrink-0 snap-center" style={{ animationDelay: `${i * 55}ms`, ["--tilt" as string]: `${((i * 37) % 7) - 3}deg` }}>
+            <button type="button" onClick={() => onOpen(id)} aria-label={s.name} className="block cursor-pointer text-center">
+              <Stamp src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={s.name} fast={384} />
+              <span className="mt-2 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/65">{fit.strange ? "A wild card" : fitWord(fit, judging)}</span>
+            </button>
+          </li>
+        ); })}
+      </ul>
+      <button type="button" onClick={onClose} className="shrink-0 cursor-pointer bg-foreground px-5 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-background">See them on the sheet</button>
     </div>
   );
 }

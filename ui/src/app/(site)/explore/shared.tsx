@@ -44,29 +44,43 @@ export function useScreen(): "phone" | "desk" | null {
 }
 
 /** Ask in two steps, as /ask does: the trait match at once, then the judged fit. */
+export type Word = { text: string; role: "what" | "who" | "feel" | null };
+export type Moved = { trait: string; from: number; to: number };
+export type Kinds = { language: boolean; art_style: boolean };
+
+/** Ask in two steps, as /ask does: the trait match at once, then the judged fit. Alongside, the sentence is read
+ *  word by word (what it is, who it is for, how it should feel) so it can be set back with the telling words marked.
+ *  An answer can then be refined: a change such as "warmer, quieter" moves the reading instead of starting again. */
 export function useAsk() {
   const [query, setQuery] = useState("");
   const [state, setState] = useState<"idle" | "asking" | "error">("idle");
   const [error, setError] = useState("");
   const [answer, setAnswer] = useState<Answer | null>(null);
+  const [words, setWords] = useState<Word[] | null>(null);
+  const [moved, setMoved] = useState<Moved[]>([]);
+  const [changes, setChanges] = useState("");
   const turn = useRef(0);
-  const ask = useCallback(async (text: string) => {
-    const q = text.trim();
-    if (q.length < 2) return; // any word will do
-    const mine = ++turn.current;
-    setState("asking"); setError("");
+  const kindOf = (kinds?: Kinds): Record<string, string> => (kinds && kinds.language !== kinds.art_style ? { kind: kinds.language ? "language" : "art_style" } : {});
+
+  const run = useCallback(async (mine: number, q: string, body: Record<string, unknown> | null, kinds?: Kinds) => {
     try {
-      const first = await fetch(`/api/ask?${new URLSearchParams({ q, k: "10", stage: "match" })}`);
-      const matched = await first.json().catch(() => null);
+      let reading = body;
+      if (!reading) {
+        const first = await fetch(`/api/ask?${new URLSearchParams({ q, k: "12", stage: "match", ...kindOf(kinds) })}`);
+        const matched = await first.json().catch(() => null);
+        if (mine !== turn.current) return;
+        if (!first.ok || !matched) throw new Error(matched?.error ?? "Asking failed. Try again in a moment.");
+        setAnswer(matched as Answer);
+        if (matched.results.length === 0) { setState("idle"); return; }
+        reading = { want: matched.want };
+      }
+      const second = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q, k: 12, ...kindOf(kinds), ...reading }) });
+      const judged = await second.json().catch(() => null);
       if (mine !== turn.current) return;
-      if (!first.ok || !matched) throw new Error(matched?.error ?? "Asking failed. Try again in a moment.");
-      setAnswer(matched as Answer);
-      if (matched.results.length === 0) { setState("idle"); return; }
-      const second = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q, k: 10, want: matched.want }) });
-      const body = await second.json().catch(() => null);
-      if (mine !== turn.current) return;
-      if (!second.ok || !body) throw new Error(body?.error ?? "Asking failed. Try again in a moment.");
-      setAnswer(body as Answer);
+      if (!second.ok || !judged) throw new Error(judged?.error ?? "Asking failed. Try again in a moment.");
+      setAnswer(judged as Answer);
+      if (Array.isArray(judged.moved)) setMoved(judged.moved as Moved[]);
+      if (typeof judged.changes === "string") setChanges(judged.changes);
       setState("idle");
     } catch (err) {
       if (mine !== turn.current) return;
@@ -74,7 +88,27 @@ export function useAsk() {
       setError(err instanceof Error ? err.message : "Asking failed.");
     }
   }, []);
-  const clear = useCallback(() => { turn.current++; setAnswer(null); setQuery(""); setState("idle"); setError(""); }, []);
+
+  const ask = useCallback(async (text: string, kinds?: Kinds) => {
+    const q = text.trim();
+    if (q.length < 2) return; // any word will do
+    const mine = ++turn.current;
+    setState("asking"); setError(""); setMoved([]); setChanges("");
+    setWords(q.split(/\s+/).map((w) => ({ text: w, role: null }))); // plain at once; marked when the reading comes back
+    void fetch(`/api/ask?${new URLSearchParams({ q, stage: "words" })}`).then((r) => (r.ok ? r.json() : null)).then((got) => { if (mine === turn.current && Array.isArray(got?.words)) setWords(got.words as Word[]); }).catch(() => undefined);
+    await run(mine, q, null, kinds);
+  }, [run]);
+
+  /** Move the current reading by a change in words, keeping every earlier change in mind. */
+  const refine = useCallback(async (change: string, kinds?: Kinds) => {
+    const say = change.trim();
+    if (!answer?.want || say.length < 2) return;
+    const mine = ++turn.current;
+    setState("asking"); setError("");
+    await run(mine, answer.query, { want: answer.want, refine: say, ...(changes ? { changes } : {}) }, kinds);
+  }, [answer, changes, run]);
+
+  const clear = useCallback(() => { turn.current++; setAnswer(null); setWords(null); setMoved([]); setChanges(""); setQuery(""); setState("idle"); setError(""); }, []);
   const fits = useMemo(() => {
     if (!answer) return null;
     const out = new Map<string, Fit>();
@@ -82,12 +116,12 @@ export function useAsk() {
     answer.strange.forEach((c, i) => out.set(c.id, { fit: c.fit, strange: true, rank: answer.results.length + i }));
     return out;
   }, [answer]);
-  return { query, setQuery, state, error, answer, fits, ask, clear };
+  return { query, setQuery, state, error, answer, fits, words, moved, changes, ask, refine, clear };
 }
 
 /** The ask, docked under the thumb. An ask and a colour are two ways to light the library, and the newer one wins: a field, the nine hues, and the answers as chips to fly to. */
-export function AskDock({ ask, hue, onHue, onGo, byId, lit }: { ask: ReturnType<typeof useAsk>; hue: string; onHue: (h: string) => void; onGo: (id: string) => void; byId: Map<string, AtlasStyle>; lit: number | null }) {
-  const found = ask.fits ? [...ask.fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank) : [];
+export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false }: { ask: ReturnType<typeof useAsk>; hue: string; onHue: (h: string) => void; onGo: (id: string) => void; byId: Map<string, AtlasStyle>; lit: number | null; kinds?: Kinds; /** The view shows the answer itself: no chips here. */ quiet?: boolean }) {
+  const found = quiet ? [] : ask.fits ? [...ask.fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank) : [];
   return (
     // Absolute, not fixed: the site's page wrapper is transformed, so "fixed" would mean the page, not the screen.
     <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center px-3">
@@ -105,7 +139,7 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit }: { ask: ReturnType<
           </ul>
         ) : null}
         {ask.state === "error" ? <p role="alert" className="px-1 text-[12.5px] text-[var(--beni)]">{ask.error}</p> : null}
-        <form onSubmit={(e) => { e.preventDefault(); onHue(""); void ask.ask(ask.query); }} className="flex items-stretch gap-2">
+        <form onSubmit={(e) => { e.preventDefault(); onHue(""); void ask.ask(ask.query, kinds); }} className="flex items-stretch gap-2">
           <label htmlFor="explore-ask" className="sr-only">What are you making?</label>
           <input id="explore-ask" value={ask.query} onChange={(e) => ask.setQuery(e.target.value)} maxLength={400} autoComplete="off" placeholder="Ask anything: a word, a mood, a project" className="min-w-0 flex-1 bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2.5 text-[16px] outline-none placeholder:text-muted-foreground md:text-[14px]" />
           <button type="submit" disabled={ask.state === "asking"} className="shrink-0 cursor-pointer bg-foreground px-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-background disabled:opacity-50">{ask.state === "asking" ? "Reading" : "Ask"}</button>

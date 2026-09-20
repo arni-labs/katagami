@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { askConcepts, askLibrary } from "@/lib/catalog";
 import { hasFullGalleryAccess } from "@/lib/entity-visibility";
-import { JevUnavailableError } from "@/lib/jev.mjs";
+import { JevUnavailableError, askJev, noul } from "@/lib/jev.mjs";
 import { trackServerEvent } from "@/lib/server-telemetry";
 import { STYLE_DNA_QUESTIONS } from "@/lib/style-dna.mjs";
 import { callerOf, mayStart, TOO_MANY } from "@/lib/spend-guard";
@@ -164,8 +164,49 @@ async function concepts(request: Request, query: string) {
   }
 }
 
+// ---- ?stage=words: what each word of the sentence is doing ---------------------
+// For setting the asker's own words back to them with the telling ones marked. One Jev call, a noul per word per
+// role: does this word say what is being made, who it is for, or how it should look and feel? A word that does
+// none of those (the grammar between them) is left plain. Cached like the rest; a failure is an empty answer,
+// because an unmarked sentence is still a sentence.
+const ROLES = [
+  ["what", "is part of the name of the thing being made (the product, document or object itself)"],
+  ["who", "is part of the description of who or where it is for: its audience, customer, place, organisation or community"],
+  ["feel", "describes how it should look or feel: a mood, quality, style, colour, material or era"],
+] as const;
+// Jev reads a phrase as a whole, so the grammar inside one scores with it ("for a small island": all "who").
+// These never carry a mark themselves; the page joins marked neighbours into one stroke.
+const GLUE = new Set("a an the and or but for of to in on at by with from that which who is are be it its this these those feels feel looks look like as so very really kind sort".split(" "));
+const recentWords = new Map<string, { at: number; body: { words: { text: string; role: string | null }[] } }>();
+async function words(request: Request, query: string) {
+  const key = normalise(query), hit = recentWords.get(key);
+  if (hit && Date.now() - hit.at < RECENT_MS) return NextResponse.json(hit.body, { headers: { "Cache-Control": "no-store" } });
+  const parts = query.split(/\s+/).filter(Boolean).slice(0, 40);
+  const plain = { words: parts.map((text) => ({ text, role: null as string | null })) };
+  const tier = (await hasFullGalleryAccess()) ? "full" : "sample";
+  if (!mayStart("ask-words", callerOf(request), tier)) return NextResponse.json(plain, { headers: { "Cache-Control": "no-store" } });
+  try {
+    const questions = Object.fromEntries(parts.flatMap((text, i) => ROLES.map(([role, says]) => [`w${i}_${role}`, noul(`The word "${text.replace(/["\\]/g, "")}" (word ${i + 1} of the sentence) ${says}.`)])));
+    const { answers } = await askJev(`A request to a design library.\nThe sentence: ${query}`, questions, { timeoutMs: 8000, retries: 1 });
+    const body = { words: parts.map((text, i) => {
+      // The strongest role, if it is strong at all; little words ("a", "for", "that") score low on every one.
+      const best = ROLES.map(([role]) => ({ role, n: Number((answers[`w${i}_${role}`] as { noul?: number } | undefined)?.noul ?? 0) })).sort((a, b) => b.n - a.n)[0];
+      return { text, role: best.n >= 0.55 && !GLUE.has(text.toLowerCase().replace(/[^a-z]/g, "")) ? best.role : null };
+    }) };
+    recentWords.set(key, { at: Date.now(), body });
+    if (recentWords.size > 400) recentWords.delete(recentWords.keys().next().value as string);
+    return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
+  } catch {
+    return NextResponse.json(plain, { headers: { "Cache-Control": "no-store" } });
+  }
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  if (url.searchParams.get("stage") === "words") {
+    const q = (url.searchParams.get("q") ?? "").trim().slice(0, 400);
+    return q.length < 2 ? NextResponse.json({ error: "missing 'q'" }, { status: 400 }) : words(request, q);
+  }
   if (url.searchParams.get("stage") === "concepts") {
     const q = (url.searchParams.get("q") ?? "").trim();
     return q.length < 2 ? NextResponse.json({ error: "missing 'q'" }, { status: 400 }) : concepts(request, q);

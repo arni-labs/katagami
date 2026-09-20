@@ -31,23 +31,25 @@ const papers = new Map<string, string>();
 function paper(w: number, h: number, flat: boolean, tone: string): string {
   const key = `--paper-${w}x${h}${flat ? "f" : ""}${tone.replace(/\W/g, "")}`, had = papers.get(key);
   if (had) return had;
-  const pitch = Math.max(6.5, Math.min(13, w / 10.5));
-  const side = (len: number) => { const n = Math.max(4, Math.round(len / pitch)); return { n, step: len / n }; };
-  const top = side(w), left = side(h), r = Math.min(top.step, left.step) * 0.29;
-  // Clockwise round the sheet; each bite is a half circle cut inward, centred between two teeth.
-  let d = `M0 0`;
-  for (let i = 0; i < top.n; i++) { const c = (i + 0.5) * top.step; d += `H${(c - r).toFixed(2)}A${r.toFixed(2)} ${r.toFixed(2)} 0 0 0 ${(c + r).toFixed(2)} 0`; }
-  d += `H${w}`;
-  for (let i = 0; i < left.n; i++) { const c = (i + 0.5) * left.step; d += `V${(c - r).toFixed(2)}A${r.toFixed(2)} ${r.toFixed(2)} 0 0 0 ${w} ${(c + r).toFixed(2)}`; }
-  d += `V${h}`;
-  for (let i = top.n - 1; i >= 0; i--) { const c = (i + 0.5) * top.step; d += `H${(c + r).toFixed(2)}A${r.toFixed(2)} ${r.toFixed(2)} 0 0 0 ${(c - r).toFixed(2)} ${h}`; }
-  d += `H0`;
-  for (let i = left.n - 1; i >= 0; i--) { const c = (i + 0.5) * left.step; d += `V${(c + r).toFixed(2)}A${r.toFixed(2)} ${r.toFixed(2)} 0 0 0 0 ${(c - r).toFixed(2)}`; }
-  d += `Z`;
-  const W = w + PAD * 2, H = h + PAD * 2, blur = Math.max(1.6, w / 42), drop = Math.max(1.5, w / 36);
+  const pitch = Math.max(5.5, Math.min(11, w / 13));
+  const side = (len: number) => { const n = Math.max(5, Math.round(len / pitch)); return { n, step: len / n }; };
+  const top = side(w), left = side(h), r = Math.min(top.step, left.step) * 0.3;
+  // Clockwise round the sheet. A row of holes was punched along every edge of the sheet this stamp was torn from,
+  // and one falls on each corner: so a corner is a quarter bite, and between corners the bites are half rounds.
+  const f = (n: number) => n.toFixed(2), arc = (x: number, y: number) => `A${f(r)} ${f(r)} 0 0 0 ${f(x)} ${f(y)}`;
+  let d = `M${f(r)} 0`;
+  for (let i = 1; i < top.n; i++) d += `H${f(i * top.step - r)}${arc(i * top.step + r, 0)}`;
+  d += `H${f(w - r)}${arc(w, r)}`;
+  for (let i = 1; i < left.n; i++) d += `V${f(i * left.step - r)}${arc(w, i * left.step + r)}`;
+  d += `V${f(h - r)}${arc(w - r, h)}`;
+  for (let i = top.n - 1; i >= 1; i--) d += `H${f(i * top.step + r)}${arc(i * top.step - r, h)}`;
+  d += `H${f(r)}${arc(0, h - r)}`;
+  for (let i = left.n - 1; i >= 1; i--) d += `V${f(i * left.step + r)}${arc(0, i * left.step - r)}`;
+  d += `V${f(r)}${arc(r, 0)}Z`;
+  const W = w + PAD * 2, H = h + PAD * 2, blur = Math.max(1.4, w / 50), drop = Math.max(1.2, w / 48);
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${W}' height='${H}' viewBox='${-PAD} ${-PAD} ${W} ${H}'>` +
-    (flat ? "" : `<filter id='s' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='${blur.toFixed(1)}'/></filter><path d='${d}' transform='translate(0 ${drop.toFixed(1)})' fill='rgb(24,28,40)' opacity='.42' filter='url(%23s)'/>`) +
-    `<path d='${d}' fill='${tone}'/><path d='${d}' fill='none' stroke='rgba(60,48,30,.16)' stroke-width='.75'/></svg>`;
+    (flat ? "" : `<filter id='s' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='${blur.toFixed(1)}'/></filter><path d='${d}' transform='translate(0 ${drop.toFixed(1)})' fill='rgb(24,28,40)' opacity='.26' filter='url(%23s)'/>`) +
+    `<path d='${d}' fill='${tone}'/></svg>`;
   const data = `data:image/svg+xml;utf8,${svg.replace(/#/g, "%23")}`, ref = `var(${key})`;
   papers.set(key, ref);
   if (typeof document === "undefined") return ref;
@@ -57,7 +59,21 @@ function paper(w: number, h: number, flat: boolean, tone: string): string {
   img.onload = () => {
     const scale = Math.min(3, Math.ceil(window.devicePixelRatio || 1)), c = document.createElement("canvas");
     c.width = W * scale; c.height = H * scale;
-    c.getContext("2d")?.drawImage(img, 0, 0, c.width, c.height);
+    const g = c.getContext("2d");
+    if (!g) return;
+    g.drawImage(img, 0, 0, c.width, c.height);
+    // A little tooth, baked in and kept to the paper itself ("source-atop"): nothing lies over the bites, and a
+    // stamp needs no separate grain layer.
+    const grain = document.createElement("canvas"); grain.width = grain.height = 96;
+    const gg = grain.getContext("2d");
+    if (gg) {
+      const px = gg.createImageData(96, 96);
+      for (let i = 0; i < px.data.length; i += 4) { const v = Math.random(); px.data[i] = px.data[i + 1] = px.data[i + 2] = v > 0.5 ? 255 : 40; px.data[i + 3] = Math.abs(v - 0.5) * 22; }
+      gg.putImageData(px, 0, 0);
+      g.globalCompositeOperation = "source-atop";
+      g.fillStyle = g.createPattern(grain, "repeat") ?? "transparent";
+      g.fillRect(0, 0, c.width, c.height);
+    }
     c.toBlob((blob) => { if (blob) root.style.setProperty(key, `url("${URL.createObjectURL(blob)}")`); });
   };
   img.src = data;
@@ -73,11 +89,10 @@ export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = fa
       {veil > 0 ? <span aria-hidden className="absolute inset-0" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))` }} /> : null}
     </span>
   );
-  const edge = Math.max(5, Math.round(w * 0.085)), foot = label ? Math.max(11, Math.round(h * (h > 300 ? 0.085 : 0.115))) : 0;
+  const edge = Math.max(5, Math.round(w * 0.075)), foot = label ? Math.max(10, Math.round(h * (h > 300 ? 0.075 : 0.105))) : 0;
   return (
-    <span className={`stamp relative block ${lit ? "lit" : ""}`} style={{ ...(lit ? { ["--cx" as string]: lit.x, ["--cy" as string]: lit.y } : null), width: w, height: h }}>
-      <span aria-hidden className="stamp-paper absolute" style={{ inset: -PAD, backgroundImage: paper(w, h, flat, soon ? "%23f3ede0" : "%23f7f2e6") }} />
-      {w >= 70 ? <span aria-hidden className="stamp-grain" style={{ inset: Math.ceil(w * 0.03) }} /> : null /* too small to see, and one layer fewer on a sheet of hundreds */}
+    <span className={`stamp relative block ${lit ? "lit" : ""}`} style={{ ["--bite" as string]: `${edge}px`, ...(lit ? { ["--cx" as string]: lit.x, ["--cy" as string]: lit.y } : null), width: w, height: h }}>
+      <span aria-hidden className="stamp-paper absolute" style={{ inset: -PAD, backgroundImage: paper(w, h, flat, soon ? "%23f3f1ec" : "%23fbfaf7") }} />
       <span className="stamp-window absolute overflow-hidden [&_img]:object-cover" style={{ left: edge, right: edge, top: edge, bottom: edge + foot, background: soon ? undefined : ink ?? "var(--muted)" }}>
         {veil > 0 && !soon ? <span aria-hidden className="absolute inset-0 z-[1]" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))`, transition: "opacity 200ms" }} /> : null}
         {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : src && fast ? (
@@ -86,8 +101,8 @@ export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = fa
         ) : src ? <GalleryImage src={src} alt="" sizes={sizes} className="object-cover" /> : null}
       </span>
       {label ? (
-        <span className="absolute flex items-center justify-between gap-1 font-mono uppercase text-[#1b1a17]" style={{ left: edge, right: edge, bottom: Math.round(edge * 0.62), height: foot, fontSize: Math.max(6.5, Math.min(15, foot * 0.56)), letterSpacing: "0.09em", lineHeight: 1 }}>
-          <span className="truncate font-bold">{label}</span>
+        <span className="absolute flex items-center justify-between gap-1 font-mono uppercase text-[#22211e]" style={{ left: edge, right: edge, bottom: Math.round(edge * 0.55), height: foot, fontSize: Math.max(6.5, Math.min(14, foot * 0.52)), letterSpacing: "0.1em", lineHeight: 1 }}>
+          <span className="truncate font-medium">{label}</span>
           {value ? <span className="shrink-0 font-bold">{value}</span> : null}
         </span>
       ) : null}
