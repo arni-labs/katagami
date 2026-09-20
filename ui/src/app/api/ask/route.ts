@@ -17,7 +17,7 @@ export const maxDuration = 60;
  * lib/catalog.ts). Anonymous callers are matched against the visitor shelf,
  * signed-in callers against the full library — the same gate as /api/search.
  *
- *   ?q=<sentence>                 required, 8..400 characters
+ *   ?q=<sentence>                 required, 2..400 characters: a word will do
  *   ?kind=language|art_style      optional — omit for both
  *   ?k=<1..20>                    optional — how many results (default 8)
  *   ?stage=concepts               optional — the encyclopedia's directions for the sentence,
@@ -46,7 +46,7 @@ type Ask = { query: string; kind?: "language" | "art_style"; limit?: number; sta
 
 function parse(input: { q?: unknown; kind?: unknown; k?: unknown; stage?: unknown; want?: unknown }): Ask | { error: string } {
   const query = typeof input.q === "string" ? input.q.trim() : "";
-  if (query.length < 8) return { error: "missing 'q' — describe the product in a sentence (at least 8 characters)" };
+  if (query.length < 2) return { error: "missing 'q' — a word or a sentence about what you are making" };
   if (input.kind != null && input.kind !== "" && input.kind !== "language" && input.kind !== "art_style") {
     return { error: `unknown kind '${String(input.kind)}' — use language or art_style, or omit for both` };
   }
@@ -159,7 +159,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   if (url.searchParams.get("stage") === "concepts") {
     const q = (url.searchParams.get("q") ?? "").trim();
-    return q.length < 8 ? NextResponse.json({ error: "missing 'q'" }, { status: 400 }) : concepts(request, q);
+    return q.length < 2 ? NextResponse.json({ error: "missing 'q'" }, { status: 400 }) : concepts(request, q);
   }
   const ask = parse(Object.fromEntries(url.searchParams));
   return "error" in ask ? NextResponse.json(ask, { status: 400 }) : answer(request, ask);

@@ -842,6 +842,21 @@ export type AtlasStyle = {
 
 export type AtlasHole = { id: string; name: string; description: string; x: number; y: number };
 
+/** The picture a style is shown by on the atlas and the explore views. Many art-style thumbnails were made by
+ *  forcing a square or tall reference into 600×400, which stretches it; the first reference image is the
+ *  undistorted original, and the optimizer sizes it down just the same. */
+function atlasPicture(kind: "language" | "art_style", f: Record<string, unknown>): string | null {
+  if (kind === "art_style") {
+    try {
+      const ids: unknown = JSON.parse(str(f.reference_image_file_ids) || "[]");
+      if (Array.isArray(ids) && typeof ids[0] === "string" && /^fl-[0-9a-f-]+$/.test(ids[0])) return `/api/file/${ids[0]}`;
+    } catch {
+      // fall through to the thumbnail
+    }
+  }
+  return str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null;
+}
+
 export async function libraryAtlas(tier: Tier) {
   const kinds = ["language", "art_style"] as const;
   const rowSets = await Promise.all(kinds.map((k) => visibleRows(k, tier)));
@@ -890,7 +905,7 @@ export async function libraryAtlas(tier: Tier) {
       kind,
       name: str(f.name),
       href: `/${PATH[kind]}/${row.entity_id}`,
-      thumbnail_url: str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null,
+      thumbnail_url: atlasPicture(kind, f),
       x: Number.parseFloat(str(f.atlas_x)),
       y: Number.parseFloat(str(f.atlas_y)),
       traits: str(f.style_traits).trim().split(/\s+/).filter(Boolean),

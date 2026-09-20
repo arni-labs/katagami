@@ -24,6 +24,7 @@ const TRAIT = new Map(STYLE_DNA_QUESTIONS.map((q) => [q.id, q.label]));
 const SIZES = { phone: [46, 74, 112], desk: [58, 96, 148] };
 const RATIO = 1.2, GAP = 10;
 const GROUND = "color-mix(in srgb, var(--foreground) 13%, var(--background))"; // what the sheet lies on, and so the colour of a stamp's holes
+const HUE_ANGLE: Record<string, number> = { red: 0, orange: 28, yellow: 52, green: 120, teal: 172, blue: 222, violet: 275, pink: 325 };
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 const tone = (ink: string | null) => {
   if (!ink) return { h: 0, s: 0, l: 0.6 };
@@ -64,6 +65,7 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
   const screen = useScreen();
   const phone = screen === "phone";
   const box = useRef<HTMLDivElement | null>(null);
+  const surface = useRef<HTMLDivElement | null>(null);
   const layer = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [zoom, setZoom] = useState(1);
@@ -71,7 +73,6 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
   const [win, setWin] = useState({ c0: 0, c1: 0, r0: 0, r1: 0 });
   const [open, setOpen] = useState<{ c: number; r: number } | null>(null);
   const [hue, setHue] = useState("");
-  const [moved, setMoved] = useState(false);
   const ask = useAsk();
   const byId = useMemo(() => new Map(styles.map((s) => [s.id, s])), [styles]);
   const familyOf = useMemo(() => new Map(families.map((f) => [f.id, f])), [families]);
@@ -96,7 +97,16 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
     const n = styles.length, cols = Math.max(4, Math.ceil(Math.sqrt(n * 1.5))), rows = Math.max(3, Math.ceil(n / cols));
     const grid: Cell[] = Array.from({ length: cols * rows }, () => null);
     const put = (c: number, r: number, s: AtlasStyle) => { grid[r * cols + c] = { kind: "style", s }; };
-    if (mode === "colour") {
+    const bloom = (order: AtlasStyle[]) => {
+      const spots = Array.from({ length: cols * rows }, (_, k) => ({ c: k % cols, r: Math.floor(k / cols) })).sort((a, b) => Math.hypot(a.c - (cols - 1) / 2, (a.r - (rows - 1) / 2) * RATIO) - Math.hypot(b.c - (cols - 1) / 2, (b.r - (rows - 1) / 2) * RATIO));
+      order.forEach((s, i) => { const at = spots[i]; if (at) put(at.c, at.r, s); });
+    };
+    if (hue && !ask.fits) {
+      // A picked colour gathers in the middle, its most saturated first; the rest ring it by how far their hue is from it.
+      const want = HUE_ANGLE[hue], all = styles.map((s) => ({ s, t: tone(s.ink), mine: hueOf(s.ink) === hue }));
+      const far = (h: number) => (want === undefined ? 0 : Math.min(Math.abs(h - want), 360 - Math.abs(h - want)));
+      bloom(all.sort((a, b) => Number(b.mine) - Number(a.mine) || (a.mine ? b.t.s - a.t.s : (a.t.s < 0.22 ? 400 : far(a.t.h)) - (b.t.s < 0.22 ? 400 : far(b.t.h)))).map((v) => v.s));
+    } else if (mode === "colour") {
       // Columns run through the hues, each from light to dark; the greys close the sheet.
       const all = styles.map((s) => ({ s, t: tone(s.ink) }));
       const ordered = [...all.filter((x) => x.t.s >= 0.22).sort((a, b) => ((a.t.h + 30) % 360) - ((b.t.h + 30) % 360)), ...all.filter((x) => x.t.s < 0.22).sort((a, b) => b.t.l - a.t.l)];
@@ -107,8 +117,7 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
       // The fits bloom from the middle, best first; the rest follow by how near they sit to the best on the atlas.
       const lead = topFit ? byId.get(topFit) : undefined;
       const rank = (s: AtlasStyle) => ask.fits?.get(s.id)?.rank ?? 1000 + (lead ? Math.hypot(s.x - lead.x, s.y - lead.y) * 1000 : 0);
-      const spots = Array.from({ length: cols * rows }, (_, k) => ({ c: k % cols, r: Math.floor(k / cols) })).sort((a, b) => Math.hypot(a.c - (cols - 1) / 2, (a.r - (rows - 1) / 2) * RATIO) - Math.hypot(b.c - (cols - 1) / 2, (b.r - (rows - 1) / 2) * RATIO));
-      [...styles].sort((a, b) => rank(a) - rank(b)).forEach((s, i) => { const at = spots[i]; if (at) put(at.c, at.r, s); });
+      bloom([...styles].sort((p, q) => rank(p) - rank(q)));
     }
     // What the library has not made yet fills the places left over.
     let k = 0;
@@ -116,7 +125,7 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
     const where = new Map<string, { c: number; r: number }>();
     grid.forEach((cell, i) => { if (cell?.kind === "style") where.set(cell.s.id, { c: i % cols, r: Math.floor(i / cols) }); });
     return { cols, rows, grid, where };
-  }, [styles, families, holes, mode, ask.fits, topFit, byId]);
+  }, [styles, families, holes, mode, hue, ask.fits, topFit, byId]);
   const cellAt = useCallback((c: number, r: number) => world.grid[mod(r, world.rows) * world.cols + mod(c, world.cols)], [world]);
 
   const lit = useMemo(() => {
@@ -189,11 +198,11 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
   // A new sort or a new answer brings its centre (or its best fit) into view.
   const led = useRef("");
   useEffect(() => {
-    const key = `${mode}|${topFit ?? ""}`;
+    const key = `${mode}|${topFit ?? ""}|${hue}`;
     if (led.current === key || size.w === 0) return;
     const f = requestAnimationFrame(() => { led.current = key; const at = topFit && mode === "fit" ? world.where.get(topFit) : undefined; bring(at?.c ?? Math.floor(world.cols / 2), at?.r ?? Math.floor(world.rows / 2)); });
     return () => cancelAnimationFrame(f);
-  }, [mode, topFit, size.w, world, bring]);
+  }, [mode, topFit, hue, size.w, world, bring]);
 
   const zoomTo = useCallback((next: number, ax = size.w / 2, ay = size.h / 2) => {
     const z = Math.max(0, Math.min(2, next));
@@ -228,7 +237,7 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
       const now = performance.now(), dt = Math.max(1, now - k.drag.t), dx = p.x - k.drag.x, dy = p.y - k.drag.y;
       k.x += dx; k.y += dy; k.vx = k.vx * 0.5 + (dx / dt) * 8; k.vy = k.vy * 0.5 + (dy / dt) * 8;
       k.drag = { x: p.x, y: p.y, t: now, far: k.drag.far + Math.abs(dx) + Math.abs(dy) };
-      if (k.drag.far > 6) { e.currentTarget.setPointerCapture(e.pointerId); if (!moved) setMoved(true); }
+      if (k.drag.far > 6) e.currentTarget.setPointerCapture(e.pointerId);
     }
     if (!queued.current) queued.current = requestAnimationFrame(() => { queued.current = 0; paint(); }); // once a frame, however many events arrive
   };
@@ -242,13 +251,29 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
     if (e.pointerType !== "mouse") { k.px = -1; k.py = -1; }
     coast();
   };
-  const onWheel = (e: React.WheelEvent) => {
-    const k = cam.current, p = at(e);
-    if (e.ctrlKey) { if (Math.abs(e.deltaY) > 2) zoomTo(zoom + (e.deltaY < 0 ? 1 : -1), p.x, p.y); return; }
-    k.x -= e.deltaX; k.y -= e.deltaY;
-    if (!moved) setMoved(true);
-    paint();
-  };
+  // The canvas is the page: the document does not scroll under it (so the site's footer is simply never reached
+  // here), and the wheel belongs to the canvas. React's wheel listener is passive and cannot say so, hence a native one.
+  const wheel = useRef<(e: WheelEvent) => void>(() => undefined);
+  useEffect(() => {
+    wheel.current = (e: WheelEvent) => {
+      e.preventDefault();
+      const k = cam.current, r = (box.current as HTMLDivElement).getBoundingClientRect(), p = { x: e.clientX - r.left, y: e.clientY - r.top };
+      if (e.ctrlKey) { if (Math.abs(e.deltaY) > 2) zoomTo(zoom + (e.deltaY < 0 ? 1 : -1), p.x, p.y); return; } // a trackpad pinch arrives as ctrl+wheel
+      const unit = e.deltaMode === 1 ? 32 : 1; // a mouse wheel counts in lines
+      k.x -= e.deltaX * unit; k.y -= e.deltaY * unit;
+      if (!queued.current) queued.current = requestAnimationFrame(() => { queued.current = 0; paint(); });
+    };
+  }, [zoom, zoomTo, paint]);
+  useEffect(() => {
+    const el = surface.current, root = document.documentElement;
+    if (!el) return;
+    const on = (e: WheelEvent) => wheel.current(e);
+    el.addEventListener("wheel", on, { passive: false });
+    const before = { overflow: root.style.overflow, overscroll: root.style.overscrollBehavior };
+    root.style.overflow = "hidden"; root.style.overscrollBehavior = "none";
+    window.scrollTo(0, 0);
+    return () => { el.removeEventListener("wheel", on); root.style.overflow = before.overflow; root.style.overscrollBehavior = before.overscroll; };
+  }, [screen]);
   const onKey = (e: React.KeyboardEvent) => {
     const by = { ArrowLeft: [1, 0], ArrowRight: [-1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
     if (by) { e.preventDefault(); if (calm.current) { cam.current.x += by[0] * stepX; cam.current.y += by[1] * stepY; paint(); } else { cam.current.vx = by[0] * stepX * 0.07; cam.current.vy = by[1] * stepY * 0.07; coast(); } }
@@ -276,7 +301,7 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
   return (
     <div ref={box} style={{ background: GROUND }} className={`relative h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full select-none overflow-hidden md:h-[calc(100dvh-65px)]`}>
       <h1 className="sr-only">Explore the library</h1>
-      <div role="application" aria-label="The sheet. Drag or use the arrow keys to move across it; plus and minus change how much you see." tabIndex={0} onKeyDown={onKey} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={(e) => { if (e.pointerType === "mouse") { cam.current.px = -1; cam.current.py = -1; paint(); } }} onWheel={onWheel}
+      <div role="application" aria-label="The sheet. Drag or use the arrow keys to move across it; plus and minus change how much you see." tabIndex={0} onKeyDown={onKey} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={(e) => { if (e.pointerType === "mouse") { cam.current.px = -1; cam.current.py = -1; paint(); } }} ref={surface}
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">
         <div ref={layer} className="absolute left-0 top-0 will-change-transform">
           <Sheet hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={lit} fits={ask.fits} onOpen={openCell} />
@@ -292,7 +317,6 @@ export function Mosaic({ styles, families, holes }: { styles: AtlasStyle[]; fami
         <button type="button" onClick={() => zoomTo(zoom - 1)} disabled={zoom === 0} aria-label="Further" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">−</button>
       </div>
       <p className={`pointer-events-none absolute right-3 top-3 z-20 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/70 max-md:hidden md:right-6 ${glass}`}><span className="text-foreground">{styles.length}</span> styles · {holes.length} to come</p>
-      {!moved ? <p aria-hidden className={`pointer-events-none absolute inset-x-0 top-14 z-20 mx-auto w-fit px-3 py-1.5 text-[12.5px] text-foreground/75 ${glass}`}>{phone ? "Drag anywhere · pinch to see more" : "Drag or scroll anywhere · it never ends"}</p> : null}
 
       {style && open ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => setOpen(null)} /> : null}
       <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={lit ? lit.size : null} />
