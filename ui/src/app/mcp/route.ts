@@ -5,10 +5,12 @@ import { verifyReadBearer, readMcpAuthInfo, whoamiFromAuth } from "@/lib/catalog
 import { clampRejectionReason } from "@/lib/catalog-auth-core.mjs";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
 import { trackMcpToolCall, trackServerEvent } from "@/lib/server-telemetry";
-import { mayStart, TOO_MANY } from "@/lib/spend-guard";
+import { AsyncLocalStorage } from "node:async_hooks";
+import { callerOf, mayStart, TOO_MANY } from "@/lib/spend-guard";
 import {
   describeCatalog,
   askLibrary,
+  composeKit,
   checkAgainstLanguage,
   searchDesigns,
   getDesign,
@@ -232,8 +234,72 @@ function withUsageTracking(server: McpServer): void {
   };
 }
 function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+    ...(data && typeof data === "object" && !Array.isArray(data) ? { structuredContent: data as Record<string, unknown> } : {}),
+  };
 }
+
+// A style is a picture before it is a description, and an assistant answering a
+// person should be able to show one. The first few cards' thumbnails ride along
+// as image content; every thumbnail stays in the JSON as `thumbnail_url` for a
+// host that would rather fetch its own. A picture that is slow, large or missing
+// is left out — the answer never waits on it or fails for it.
+const PICTURES = 3;
+const PICTURE_MAX_BYTES = 400_000;
+const PICTURE_TIMEOUT_MS = 2_500;
+type Pictured = { name?: string; thumbnail_url?: string | null };
+
+async function picture(card: Pictured) {
+  const url = card.thumbnail_url;
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(PICTURE_TIMEOUT_MS) });
+    const mimeType = (res.headers.get("content-type") ?? "").split(";")[0].trim();
+    if (!res.ok || !/^image\/(png|jpeg|webp|gif)$/.test(mimeType)) return null;
+    const bytes = await res.arrayBuffer();
+    if (bytes.byteLength === 0 || bytes.byteLength > PICTURE_MAX_BYTES) return null;
+    return [
+      { type: "text" as const, text: card.name ?? "" },
+      { type: "image" as const, data: Buffer.from(bytes).toString("base64"), mimeType },
+    ];
+  } catch {
+    return null;
+  }
+}
+
+async function okWithPictures(data: unknown, cards: Pictured[], wanted: boolean) {
+  const base = ok(data);
+  if (!wanted) return base;
+  const pictures = (await Promise.all(cards.slice(0, PICTURES).map(picture))).flatMap((p) => p ?? []);
+  return { ...base, content: [...base.content, ...pictures] };
+}
+
+// Every tool here reads. None writes to the commons, to the caller's account or
+// to anything outside Katagami, and asking twice gives the same kind of answer.
+const READS = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const;
+
+const picturesArg = z
+  .boolean()
+  .optional()
+  .describe("Attach thumbnails of the first three results as images (default true). Pass false when only the JSON is needed.");
+// A search is often a lookup on the way to something else, so its pictures are asked for.
+const searchPicturesArg = z
+  .boolean()
+  .optional()
+  .describe("Pass true to attach thumbnails of the first three results as images. Every result carries `thumbnail_url` either way.");
+
+const INSTRUCTIONS = `Katagami is a curated library of complete visual styles: design languages (tokens, rules, layout, a DESIGN.md), palette systems and art styles (prompt recipes for image generation). Everything here is read-only.
+
+How to use it:
+- Someone describes a product, a mood or a brief: call ask_library. It judges fit, returns pictures, and says how it read the sentence. To adjust ("quieter", "less corporate"), call ask_library again with the returned \`reading\` and \`changes\` plus \`refine\` — do not re-ask from scratch.
+- Someone wants a whole look at once: call compose_kit for a language, palette and art style that belong together, with a build brief.
+- Someone names a style, tag, family or medium: call the search_* tool for that kind. describe_catalog lists the families, mediums and tags that exist.
+- To build with a design language: get_design_md gives the URL to hand a coding agent; get_tokens gives Tailwind or CSS variables; get_design_language has every rule. Honour the tokens exactly.
+- To generate images in an art style: get_art_style returns the prompt template. Use it verbatim, then add the subject.
+- After building a page in a language: check_against_language lists what breaks the language, worst first. Fix those before handing over.
+
+Show people the picture and the katagami.ai link for anything you recommend. whoami says whether this connection sees the visitor shelf or the full library; results never include styles the caller may not see.`;
 // A miss means different things per tier: on the sample tier the design may
 // simply be outside the anonymous portion (sign in), but a full-tier caller has
 // the whole catalog, so a miss is a genuine not-found — never tell them to sign in.
@@ -252,6 +318,7 @@ function gone(tier: Tier) {
 const KNOWN_ARG_KEYS = new Set([
   "id_or_slug", "id", "slug", "kind", "format", "query", "medium", "tag",
   "taxonomy", "family", "limit", "cursor", "color", "role", "page",
+  "refine", "reading", "changes", "images",
 ]);
 function argKeysOf(args: unknown): string | undefined {
   if (!args || typeof args !== "object") return "(none)";
@@ -315,8 +382,10 @@ const MISSING_ID_TEXT = JSON.stringify(
 /** Who is spending a paid model call: the signed-in person, so one caller's loop cannot rate-limit everyone else. */
 function spenderOf(extra: unknown): string {
   const who = authOf(extra)?.extra;
-  return who?.sub || who?.email || "mcp";
+  return who?.sub || who?.email || openCaller.getStore() || "mcp";
 }
+/** On the open door nobody is signed in, so the spender is the address — otherwise every anonymous caller would share one allowance. */
+const openCaller = new AsyncLocalStorage<string>();
 
 function tooMany() {
   return { content: [{ type: "text" as const, text: JSON.stringify({ error: "rate_limited", message: TOO_MANY }) }], isError: true };
@@ -346,6 +415,7 @@ const baseHandler = createMcpHandler(
       "describe_catalog",
       {
         title: "Describe the catalog",
+        annotations: READS,
         description:
           "Call this FIRST. Returns Katagami's three content kinds (design languages, palette systems, art styles) with live counts, the families you can browse (with counts), the art-style mediums, common tags per kind, and which facets each kind supports. This is how you learn what you can search by.",
         inputSchema: {},
@@ -358,18 +428,53 @@ const baseHandler = createMcpHandler(
       "ask_library",
       {
         title: "Ask the library",
+        annotations: READS,
         description:
-          "Describe the product you are designing in one sentence and get the design languages and art styles that fit it, judged against each style's description rather than matched on keywords. Returns `results` (best fit first, each with `fit` 0..1 and its strongest `traits`), `strange` (styles unlike the rest of the library that were still judged a fit — worth a look when you want something unexpected), and how the sentence was read (`wants`, `avoids`). Use this before search_* when you have a brief rather than a name or tag.",
+          "Find styles for a product, mood or brief. Describe what is being designed in one sentence and get the design languages and art styles that fit it, judged against each style's description rather than matched on keywords, with thumbnails. Returns `results` (best fit first: `fit` 0..1, strongest `traits`, `url`, `thumbnail_url`), `strange` (styles unlike the rest of the library that still fit — for when something unexpected is wanted), how the sentence was read (`wants`, `avoids`), and `reading`. To adjust an answer — \"quieter\", \"warmer, less corporate\" — call again with the same `query`, the returned `reading` and `changes`, and the adjustment in `refine`: the reading is moved rather than re-read, and `moved` says which traits went where. Use this before search_* whenever there is a brief rather than a name or tag. Palettes are not judged here yet; use search_palettes.",
         inputSchema: {
           query: z.string().min(8).max(400).describe("One sentence: what the product is and who it is for"),
           kind: z.enum(["language", "art_style"]).optional().describe("Omit to look through both"),
-          limit: z.number().int().min(1).max(20).optional(),
+          limit: z.number().int().min(1).max(20).optional().describe("How many results (default 8)"),
+          refine: z.string().min(2).max(400).optional().describe("A change to the previous answer, e.g. \"quieter and warmer\". Pass `reading` from that answer with it."),
+          reading: z.record(z.string(), z.number()).optional().describe("The `reading` object from a previous ask_library answer, passed back unchanged"),
+          changes: z.string().max(400).optional().describe("The `changes` string from a previous answer, passed back unchanged"),
+          images: picturesArg,
         },
       },
       async (a, extra) => {
         const tier = tierOf(extra);
         if (!mayStart("mcp-ask", spenderOf(extra), tier)) return tooMany();
-        return ok(await askLibrary(tier, a));
+        const { want, ...answer } = await askLibrary(tier, {
+          query: a.query,
+          kind: a.kind,
+          limit: a.limit,
+          want: a.reading,
+          refine: a.refine,
+          changes: a.changes,
+        });
+        return okWithPictures({ ...answer, reading: want }, answer.results, a.images !== false);
+      },
+    );
+
+    server.registerTool(
+      "compose_kit",
+      {
+        title: "Compose a kit",
+        annotations: READS,
+        description:
+          "Get a complete starting point for a product in one call: a design language (UI tokens and rules), a palette system and an art style (for imagery), each judged to fit the product and judged to belong together. Returns up to three `kits`, one per language — the last one `surprising` when the library holds an unusual style that still fits — each with the three parts (`url`, `thumbnail_url`, `fit`), `belongs_together` and `fits_product` (0..1), and a `brief_url` — the build brief for that exact combination, ready to hand to a coding agent. Use this when someone wants a whole look; use ask_library or the search_* tools to choose one kind at a time, then compose the same URLs yourself.",
+        inputSchema: {
+          query: z.string().min(8).max(400).describe("One sentence: what the product is and who it is for"),
+          limit: z.number().int().min(1).max(4).optional().describe("How many kits (default 3)"),
+          images: picturesArg,
+        },
+      },
+      async (a, extra) => {
+        const tier = tierOf(extra);
+        if (!mayStart("mcp-kit", spenderOf(extra), tier)) return tooMany();
+        const kits = await composeKit(tier, a);
+        const first = kits.kits[0];
+        return okWithPictures(kits, first ? [first.language, first.palette, first.art_style] : [], a.images !== false);
       },
     );
 
@@ -377,6 +482,7 @@ const baseHandler = createMcpHandler(
       "check_against_language",
       {
         title: "Check a page against a design language",
+        annotations: READS,
         description:
           "After building a page with a Katagami design language, pass the language and the page's source (HTML with its CSS) to get a scorecard: exact checks of colours, typefaces and corner radii against the language's tokens, and each of the language's rules, do's and don'ts judged against the page (pass / unclear / fail, worst first). Use it to find what to fix before you hand the page over. It reads source, not pixels, so include the CSS.",
         inputSchema: {
@@ -399,6 +505,7 @@ const baseHandler = createMcpHandler(
       "search_design_languages",
       {
         title: "Search design languages",
+        annotations: READS,
         description:
           "Search complete design systems (tokens, rules, layout, philosophy). Facets: family, taxonomy, tag (names from describe_catalog), plus free-text query. Each result carries its facets back so you can refine.",
         inputSchema: {
@@ -407,16 +514,20 @@ const baseHandler = createMcpHandler(
           taxonomy: z.string().optional(),
           tag: z.string().optional(),
           limit: z.number().int().min(1).max(100).optional(),
-          cursor: z.number().int().min(0).optional(),
+          cursor: z.number().int().min(0).optional().describe("`next_cursor` from the previous page"),
+          images: searchPicturesArg,
         },
       },
-      async (a, extra) =>
-        ok(await searchDesigns("language", tierOf(extra), a)),
+      async ({ images, ...a }, extra) => {
+        const found = await searchDesigns("language", tierOf(extra), a);
+        return okWithPictures(found, found.results, images === true);
+      },
     );
     server.registerTool(
       "get_design_language",
       {
         title: "Get a design language",
+        annotations: READS,
         description:
           "Full spec of one design language: tokens (color/type/spacing/radii/shadows/motion), rules, layout principles, philosophy, guidance, plus its gallery and DESIGN.md URLs.",
         inputSchema: { ...ID_ALIASES },
@@ -433,6 +544,7 @@ const baseHandler = createMcpHandler(
       "get_design_md",
       {
         title: "Get DESIGN.md",
+        annotations: READS,
         description:
           "The portable DESIGN.md for a design language (Google's format) — the URL to drop straight into a coding agent's working directory so it builds in that style.",
         inputSchema: { ...ID_ALIASES },
@@ -449,6 +561,7 @@ const baseHandler = createMcpHandler(
       "get_tokens",
       {
         title: "Get design tokens",
+        annotations: READS,
         description:
           "Just the design tokens for a language (or palette/art_style), optionally emitted as a ready-to-paste Tailwind config or CSS variables.",
         inputSchema: {
@@ -471,6 +584,7 @@ const baseHandler = createMcpHandler(
       "search_palettes",
       {
         title: "Search palette systems",
+        annotations: READS,
         description:
           "Search color systems (signature colors, ramps, semantic roles, proof scenes). Facets: taxonomy, tag, free-text query.",
         inputSchema: {
@@ -478,15 +592,20 @@ const baseHandler = createMcpHandler(
           taxonomy: z.string().optional(),
           tag: z.string().optional(),
           limit: z.number().int().min(1).max(100).optional(),
-          cursor: z.number().int().min(0).optional(),
+          cursor: z.number().int().min(0).optional().describe("`next_cursor` from the previous page"),
+          images: searchPicturesArg,
         },
       },
-      async (a, extra) => ok(await searchDesigns("palette", tierOf(extra), a)),
+      async ({ images, ...a }, extra) => {
+        const found = await searchDesigns("palette", tierOf(extra), a);
+        return okWithPictures(found, found.results, images === true);
+      },
     );
     server.registerTool(
       "get_palette",
       {
         title: "Get a palette system",
+        annotations: READS,
         description:
           "Full spec of one palette system: signature colors, neutrals, semantic roles, ramps, tokens, guidance.",
         inputSchema: { ...ID_ALIASES },
@@ -505,6 +624,7 @@ const baseHandler = createMcpHandler(
       "search_art_styles",
       {
         title: "Search art styles",
+        annotations: READS,
         description:
           "Search image / illustration styles for image-generation. Facets: medium (illustration/photography/print/painting/3d/collage/mixed), tag, taxonomy, free-text query.",
         inputSchema: {
@@ -513,15 +633,20 @@ const baseHandler = createMcpHandler(
           tag: z.string().optional(),
           taxonomy: z.string().optional(),
           limit: z.number().int().min(1).max(100).optional(),
-          cursor: z.number().int().min(0).optional(),
+          cursor: z.number().int().min(0).optional().describe("`next_cursor` from the previous page"),
+          images: searchPicturesArg,
         },
       },
-      async (a, extra) => ok(await searchDesigns("art_style", tierOf(extra), a)),
+      async ({ images, ...a }, extra) => {
+        const found = await searchDesigns("art_style", tierOf(extra), a);
+        return okWithPictures(found, found.results, images === true);
+      },
     );
     server.registerTool(
       "get_art_style",
       {
         title: "Get an art style",
+        annotations: READS,
         description:
           "Full spec of one art style: its medium, prompt template, slot recipes, negative prompt, guidance, tags — everything an image-gen agent needs to render in-style.",
         inputSchema: { ...ID_ALIASES },
@@ -540,6 +665,7 @@ const baseHandler = createMcpHandler(
       "get_embodiment",
       {
         title: "Get the rendered reference page",
+        annotations: READS,
         description:
           "The URL of the rendered reference page for a language/palette/art_style — open it to see the style across real UI elements before using it.",
         inputSchema: { kind: kindArg, ...ID_ALIASES },
@@ -556,13 +682,14 @@ const baseHandler = createMcpHandler(
       "whoami",
       {
         title: "Who am I / my access",
+        annotations: READS,
         description: "Shows your access tier (sample vs full) and how to unlock the full catalog.",
         inputSchema: {},
       },
       async (_args, extra) => ok(whoamiFromAuth(authOf(extra))),
     );
   },
-  { serverInfo: { name: "katagami", version: "0.1.0" } },
+  { serverInfo: { name: "katagami", version: "1.0.0" }, instructions: INSTRUCTIONS },
 );
 
 // Required auth: no/invalid token → 401 + WWW-Authenticate (the connect card).
@@ -626,6 +753,25 @@ function withAuthChallengeCount(
 }
 const trackedHandler = withAuthChallengeCount(handler);
 
+// The open door (/mcp/open, rewritten here with ?door=open): the same server and
+// tools with no identity at all, so every call is answered from the visitor shelf
+// — exactly what a signed-out person sees on the website, through the same gate
+// in lib/catalog.ts. A bearer sent here is dropped, not verified: this door never
+// grants more than the shelf, and a host that wants the full library connects to
+// /mcp, where the 401 starts the sign-in. Asking directly for /mcp?door=open is
+// the same request and gets the same answer.
+function isOpenDoor(req: Request): boolean {
+  const url = new URL(req.url);
+  return url.searchParams.get("door") === "open" || url.pathname.replace(/\/+$/, "").endsWith("/mcp/open");
+}
+async function openDoor(req: Request): Promise<Response> {
+  const headers = new Headers(req.headers);
+  headers.delete("authorization");
+  const body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer();
+  return openCaller.run(`open:${callerOf(req)}`, () => baseHandler(new Request(req.url, { method: req.method, headers, body })));
+}
+const door = (req: Request) => (isOpenDoor(req) ? openDoor(req) : trackedHandler(req));
+
 // A human pasting the MCP URL into a browser sends a plain-HTML GET; a real
 // MCP client opening the optional SSE stream MUST send
 // `Accept: text/event-stream` (Streamable HTTP spec), and POST/DELETE — the
@@ -636,7 +782,7 @@ async function get(req: Request): Promise<Response> {
   if (!accept.toLowerCase().includes("text/event-stream")) {
     return new Response(null, { status: 302, headers: { Location: "/connect" } });
   }
-  return trackedHandler(req);
+  return door(req);
 }
 
-export { get as GET, trackedHandler as POST, trackedHandler as DELETE };
+export { get as GET, door as POST, door as DELETE };

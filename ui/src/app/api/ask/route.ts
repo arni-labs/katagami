@@ -28,6 +28,11 @@ export const maxDuration = 60;
  * POST the same fields as JSON, plus `want` from a stage=match answer, to get the
  * judged fit without paying for the reading twice. The page does exactly that, so
  * results are on screen after one call and settle after the second.
+ *
+ * To refine an answer instead of asking again, POST `want` with `refine` — a change
+ * such as "quieter, warmer". The reading is moved, not re-read, and comes back as
+ * `want` with `moved` (which traits went where) and `changes` (every change so far);
+ * hand `changes` back with the next call so the fit is judged with them in mind.
  */
 
 // An answer costs two model calls, so the route spends them once: the same
@@ -42,9 +47,9 @@ const RECENT_MAX = 500;
 
 const normalise = (q: string) => q.toLowerCase().replace(/\s+/g, " ").replace(/[\s.!?…]+$/u, "");
 
-type Ask = { query: string; kind?: "language" | "art_style"; limit?: number; stage?: "match"; want?: Record<string, number> };
+type Ask = { query: string; kind?: "language" | "art_style"; limit?: number; stage?: "match"; want?: Record<string, number>; refine?: string; changes?: string };
 
-function parse(input: { q?: unknown; kind?: unknown; k?: unknown; stage?: unknown; want?: unknown }): Ask | { error: string } {
+function parse(input: { q?: unknown; kind?: unknown; k?: unknown; stage?: unknown; want?: unknown; refine?: unknown; changes?: unknown }): Ask | { error: string } {
   const query = typeof input.q === "string" ? input.q.trim() : "";
   if (query.length < 8) return { error: "missing 'q' — describe the product in a sentence (at least 8 characters)" };
   if (input.kind != null && input.kind !== "" && input.kind !== "language" && input.kind !== "art_style") {
@@ -57,8 +62,12 @@ function parse(input: { q?: unknown; kind?: unknown; k?: unknown; stage?: unknow
     limit: Number.isFinite(kRaw) ? Math.min(Math.max(kRaw, 1), 20) : undefined,
     stage: input.stage === "match" ? "match" : undefined,
     want: wholeReading(input.want),
+    refine: shortText(input.refine),
+    changes: shortText(input.changes),
   };
 }
+
+const shortText = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 400) : undefined);
 
 /** A reading is accepted only whole and in range; anything else is no reading, and the ask is an ordinary one. */
 function wholeReading(value: unknown): Record<string, number> | undefined {
@@ -79,7 +88,7 @@ async function answer(request: Request, ask: Ask) {
   // page's own second step is reused when the sentence is asked again, and a
   // forged reading can only ever answer someone who sends the same forgery.
   const reading = ask.want ? STYLE_DNA_QUESTIONS.map((q) => Math.round((ask.want?.[q.id] ?? 0) * 1000)).join(",") : "";
-  const key = JSON.stringify([tier, ask.kind ?? "", ask.limit ?? "", ask.stage ?? "", normalise(ask.query), reading]);
+  const key = JSON.stringify([tier, ask.kind ?? "", ask.limit ?? "", ask.stage ?? "", normalise(ask.query), reading, normalise(ask.refine ?? ""), normalise(ask.changes ?? "")]);
   const hit = recent.get(key);
   if (hit && Date.now() - hit.at < RECENT_MS) {
     return NextResponse.json(hit.body, { headers: { "Cache-Control": "no-store" } });
@@ -91,7 +100,7 @@ async function answer(request: Request, ask: Ask) {
     if (!pending) {
       // The fit stage of an answer already begun is the second half of one ask
       // and costs one model call, so it draws on its own allowance.
-      if (!mayStart(ask.want ? "ask-fit" : "ask", callerOf(request), tier)) {
+      if (!mayStart(ask.want && !ask.refine ? "ask-fit" : "ask", callerOf(request), tier)) {
         return NextResponse.json(
           { error: TOO_MANY },
           { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },

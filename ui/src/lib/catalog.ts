@@ -11,6 +11,8 @@ import {
   storedDna,
   topTraits,
   wantQuestions,
+  refineQuestions,
+  applyRefinement,
   dnaFromAnswers,
   STYLE_DNA_QUESTIONS,
   type StyleDna,
@@ -167,6 +169,7 @@ function summary(kind: Kind, r: Row) {
     // reads its own visibility.
     shown_to_visitors: isShownToVisitors(r),
     url: `${GALLERY}/${PATH[kind]}/${r.entity_id}`,
+    thumbnail_url: str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null,
     ...(kind === "language"
       ? { design_md_url: `${GALLERY}/language/${r.entity_id}/DESIGN.md` }
       : {}),
@@ -383,6 +386,10 @@ export type AskArgs = {
   stage?: "match";
   /** The sentence's reading from a "match" answer, so the fit stage does not pay for it twice. */
   want?: Record<string, number>;
+  /** A change to the reading — "quieter, warmer" — asked instead of re-reading the sentence. */
+  refine?: string;
+  /** Changes already folded into `want` by earlier refinements, so the fit is judged with them in mind. */
+  changes?: string;
 };
 
 const ASK_MAX_QUERY = 400;
@@ -394,10 +401,8 @@ const FIT_LEVELS = ["wrong for it", "could work", "strong fit"];
 const ASK_JEV = { timeoutMs: 6_000, retries: 1 };
 
 function askCard(kind: Kind, r: Row, dna: StyleDna) {
-  const f = r.fields ?? {};
   return {
     ...summary(kind, r),
-    thumbnail_url: str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null,
     traits: topTraits(dna).map((t) => t.label),
   };
 }
@@ -469,9 +474,16 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   const wantStarted = Date.now();
   // A reading handed back by the caller is used only if it is whole and in range.
   const given = a.want && STYLE_DNA_QUESTIONS.every((q) => typeof a.want?.[q.id] === "number" && a.want[q.id] >= 0 && a.want[q.id] <= 1) ? (a.want as StyleDna) : null;
-  const want = given ?? dnaFromAnswers((await askJev(`Product: ${query}`, wantQuestions(), ASK_JEV)).answers);
+  const read = given ?? dnaFromAnswers((await askJev(`Product: ${query}`, wantQuestions(), ASK_JEV)).answers);
+  if (!read) throw new JevUnavailableError("Jev left a question about the product unanswered");
+  const change = a.refine?.trim().slice(0, ASK_MAX_QUERY);
+  const refined = change ? applyRefinement(read, (await askJev(`Change asked for: ${change}`, refineQuestions(), ASK_JEV)).answers) : null;
+  if (change && !refined) throw new JevUnavailableError("Jev left a question about the change unanswered");
+  const want = refined?.reading ?? read;
+  const moved = (refined?.moved ?? []).slice(0, 8).map((m) => ({ trait: m.label, from: m.from, to: m.to }));
+  // Handed back whole on the next call, so it must fit the field it comes back in: the newest changes are kept.
+  const changes = [a.changes?.trim(), change].filter(Boolean).join("; ").slice(-ASK_MAX_QUERY);
   const wantMs = Date.now() - wantStarted;
-  if (!want) throw new JevUnavailableError("Jev left a question about the product unanswered");
 
   const crowd = centroid(pool.map((p) => p.dna));
   const ranked = pool
@@ -490,7 +502,7 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
       return names.has(name) ? false : Boolean(names.add(name));
     });
     return {
-      query, tier, model: JEV_MODEL, considered: pool.length, unread, provisional: true, want,
+      query, tier, model: JEV_MODEL, considered: pool.length, unread, provisional: true, want, changes, moved,
       timings_ms: { read: readMs, want: wantMs, fit: 0 }, wants, avoids,
       results: first.slice(0, limit).map((p) => ({ ...askCard(p.kind, p.row, p.dna), fit: null, match: round(p.match) })),
       strange: [],
@@ -507,7 +519,7 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
 
   const fitStarted = Date.now();
   const fitRes = await askJev(
-    `Product: ${query}`,
+    changes ? `Product: ${query}\nThe design should also be: ${changes}` : `Product: ${query}`,
     Object.fromEntries(
       judged.map((p, i) => [
         `s${i}`,
@@ -554,11 +566,137 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     unread,
     timings_ms: { read: readMs, want: wantMs, fit: fitMs },
     provisional: false,
+    want,
+    changes,
+    moved,
     wants,
     avoids,
     results: results.map(out),
     strange: strange.map(out),
     note: tierNote,
+  };
+}
+
+// --- compose a kit: a language, a palette and an art style that belong together
+//
+// The studio already renders any language x palette x art style and writes the
+// brief for it; what it never did was choose. Asking chooses the languages and
+// art styles. Palettes carry no style DNA, and there are few enough of them to
+// be read outright: one Jev call scores every visible palette against the
+// sentence. A last call asks, for every pair among the finalists, whether the
+// two belong to the same visual world — a kit is ranked by how well each part
+// fits the product and how well the three sit together. Five model calls: the
+// sentence is read once, then three fits side by side, then the pairings.
+
+const KIT_FINALISTS = 4;
+const KIT_JEV = { timeoutMs: 8_000, retries: 1 };
+
+function paletteDoc(r: Row): string {
+  const f = r.fields ?? {};
+  const flat = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v));
+  return [
+    `palette: ${str(f.name)}`,
+    jsonArr(f.tags).length ? `qualities: ${jsonArr(f.tags).join(", ")}` : "",
+    str(f.mood) && `mood: ${str(f.mood).slice(0, 200)}`,
+    flat(f.signature) && `signature colours: ${flat(f.signature).slice(0, 300)}`,
+    str(f.usage_guidance) && `use: ${str(f.usage_guidance).slice(0, 200)}`,
+  ].filter(Boolean).join("\n");
+}
+
+export async function composeKit(tier: Tier, a: { query: string; limit?: number }) {
+  const query = a.query.trim().slice(0, ASK_MAX_QUERY);
+  const limit = Math.min(Math.max(a.limit ?? 3, 1), KIT_FINALISTS);
+  const started = Date.now();
+  const norm = (n: number | undefined) => Math.min(1, Math.max(0, (n ?? 0) / (FIT_LEVELS.length - 1)));
+
+  const palettesFit = async () => {
+    const rows = await visibleRows("palette", tier);
+    if (rows.length === 0) return [];
+    const res = await askJev(
+      `Product: ${query}`,
+      Object.fromEntries(rows.map((r, i) => [`p${i}`, score(`How well would this colour palette serve the product?\n${paletteDoc(r)}`, FIT_LEVELS)])),
+      KIT_JEV,
+    );
+    return rows
+      .map((r, i) => ({ row: r, doc: paletteDoc(r), fit: norm(res.answers[`p${i}`]?.score) }))
+      .sort((x, y) => y.fit - x.fit)
+      .slice(0, KIT_FINALISTS);
+  };
+  const want = dnaFromAnswers((await askJev(`Product: ${query}`, wantQuestions(), KIT_JEV)).answers);
+  if (!want) throw new JevUnavailableError("Jev left a question about the product unanswered");
+  const [langs, arts, pals] = await Promise.all([
+    askLibrary(tier, { query, kind: "language", limit: KIT_FINALISTS, want }),
+    askLibrary(tier, { query, kind: "art_style", limit: KIT_FINALISTS, want }),
+    palettesFit(),
+  ]);
+  // The last language finalist is a strange one when Ask found any: a style unlike
+  // the rest of the library that was still judged a fit, so one kit can surprise.
+  const odd = langs.strange[0];
+  const L = odd ? [...langs.results.slice(0, KIT_FINALISTS - 1), odd] : langs.results;
+  const A = arts.results, P = pals;
+  if (L.length === 0 || A.length === 0 || P.length === 0) {
+    return { query, tier, kits: [], note: "Not enough styles in view to compose a kit: a kit needs a design language, a palette and an art style." };
+  }
+
+  // What the pair judge reads of each finalist: enough to picture it, no more.
+  const pool = await askPool();
+  const docOf = (id: string) => pool.styles.find((s) => s.row.entity_id === id)?.doc.slice(0, 400) ?? "";
+  const state = [
+    `Product: ${query}`,
+    ...L.map((l, i) => `[L${i}] ${docOf(l.id)}`),
+    ...P.map((p, i) => `[P${i}] ${p.doc}`),
+    ...A.map((x, i) => `[A${i}] ${docOf(x.id)}`),
+  ].join("\n\n");
+  const pairs: string[] = [];
+  for (let i = 0; i < L.length; i++) for (let j = 0; j < P.length; j++) pairs.push(`L${i}P${j}`);
+  for (let i = 0; i < L.length; i++) for (let j = 0; j < A.length; j++) pairs.push(`L${i}A${j}`);
+  for (let i = 0; i < P.length; i++) for (let j = 0; j < A.length; j++) pairs.push(`P${i}A${j}`);
+  const together = await askJev(
+    state,
+    Object.fromEntries(pairs.map((k) => [k, noul(`[${k.slice(0, 2)}] and [${k.slice(2)}] belong to the same visual world: used together on one product they would look like one considered design, not two.`)])),
+    KIT_JEV,
+  );
+  const pair = (k: string) => {
+    const n = together.answers[k]?.noul;
+    if (typeof n !== "number" || !Number.isFinite(n)) throw new JevUnavailableError("Jev left a pairing unjudged");
+    return n;
+  };
+
+  const trios = [];
+  for (let i = 0; i < L.length; i++) for (let j = 0; j < P.length; j++) for (let k = 0; k < A.length; k++) {
+    const belongs = (pair(`L${i}P${j}`) + pair(`L${i}A${k}`) + pair(`P${j}A${k}`)) / 3;
+    const fits = ((L[i].fit ?? 0) + P[j].fit + (A[k].fit ?? 0)) / 3;
+    trios.push({ i, j, k, belongs, fits, rank: belongs * fits });
+  }
+  trios.sort((x, y) => y.rank - x.rank);
+  // One kit per language: three kits that differ only in palette are one idea thrice.
+  const usedLang = new Set<number>();
+  const perLang = trios.filter((t) => (usedLang.has(t.i) ? false : Boolean(usedLang.add(t.i))));
+  const isOdd = (t: { i: number }) => Boolean(odd) && t.i === L.length - 1;
+  const chosen = perLang.slice(0, limit);
+  // With room for more than one kit, the last place goes to the surprising one.
+  const surprise = perLang.find(isOdd);
+  if (surprise && limit > 1 && !chosen.includes(surprise)) chosen[chosen.length - 1] = surprise;
+  const round = (n: number) => Math.round(n * 100) / 100;
+  return {
+    query,
+    tier,
+    model: together.model,
+    timings_ms: { total: Date.now() - started },
+    kits: chosen.map((t) => {
+      const l = L[t.i], p = P[t.j], x = A[t.k];
+      const q = `ui=${encodeURIComponent(l.id)}&palette=${encodeURIComponent(p.row.entity_id)}&art=${encodeURIComponent(x.id)}`;
+      return {
+        surprising: isOdd(t),
+        belongs_together: round(t.belongs),
+        fits_product: round(t.fits),
+        language: l,
+        palette: { ...summary("palette", p.row), fit: round(p.fit) },
+        art_style: x,
+        brief_url: `${GALLERY}/studio/BRIEF.md?${q}`,
+      };
+    }),
+    note: "Each kit is a design language, a palette and an art style judged to fit the product and to belong together. A kit marked `surprising` is built on a language unlike the rest of the library that was still judged a fit — offer it as the unexpected option. brief_url is the build brief for that exact combination. To pick the parts yourself, search each kind and compose the same URLs.",
   };
 }
 
