@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["127.0.0.1"],
+  // Dev only. KATAGAMI_DEV_ORIGINS (comma-separated hosts) lets a phone on the same network load the dev
+  // server's scripts, e.g. KATAGAMI_DEV_ORIGINS=10.1.32.238 to review on a real device.
+  allowedDevOrigins: ["127.0.0.1", ...(process.env.KATAGAMI_DEV_ORIGINS ?? "").split(",").map((h) => h.trim()).filter(Boolean)],
   // transformers.js (taste embeddings) ships native/onnx assets that must
   // not be bundled — load it from node_modules at runtime.
   serverExternalPackages: ["@xenova/transformers"],
