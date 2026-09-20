@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
-import { GalleryImage } from "@/components/gallery-image";
+import { FitPicture } from "./fit-picture";
 import { Marker } from "@/components/page-hero";
 import { usePanZoom, usePrefersReducedMotion } from "@/components/encyclopedia/use-pan-zoom";
 import type { AtlasHole, AtlasStyle } from "@/lib/catalog";
@@ -29,8 +29,11 @@ const NAMED_AT = 104; // screen pixels of tile width from which it carries its n
 const CARD_GAP = 10;
 const NAME_ROOM = 30; // screen pixels kept clear above a family's lead card for its name
 // Past the zoom where every card has room (about 0.94) cards grow with the paper:
-// that is the closer look. The zoom stops where a card is about 210px wide.
+// that is the closer look. The zoom stops at MAX_ZOOM; a card stops growing sooner (CARD_PX_MAX).
 const MAX_ZOOM = 1.6;
+const CARD_PX_MAX = 148; // a tile never grows past this on screen: zooming further buys room between tiles, not bigger type
+// How much a tile is counter-scaled at zoom k, so that on screen it is never smaller than `floor` nor larger than CARD_PX_MAX.
+const tileScale = (k: number, floor: number) => Math.min(CARD_PX_MAX, Math.max(floor, TILE_W * k)) / (TILE_W * k);
 const TRUE_SIZE_ZOOM = NAMED_AT / 132 + 0.04; // close enough that tiles are at their true size and carry names
 
 // A pan or zoom changes the camera sixty times a second. A tile depends on none
@@ -52,14 +55,12 @@ const Tile = memo(function Tile({ style: s, named, dim, rank, pressed, hidden, m
         onClick={() => onOpen(s)}
         aria-label={`${s.name}, ${s.kind === "language" ? "design language" : "art style"}${hidden > 0 ? `, with ${hidden} more behind it` : ""}`}
         aria-pressed={hidden > 0 ? undefined : pressed}
-        className={`atlas-card group/tile relative block w-full cursor-pointer p-0 text-left ${named ? "sticker-card" : "shadow-[0_1px_2px_rgba(30,35,45,0.18),0_6px_16px_-10px_rgba(30,35,45,0.5)]"}`}
+        className={`atlas-card group/tile relative mx-auto block w-fit max-w-full cursor-pointer p-0 text-left ${named ? "sticker-card" : "shadow-[0_1px_2px_rgba(30,35,45,0.18),0_6px_16px_-10px_rgba(30,35,45,0.5)]"}`}
         style={{ opacity: dim ? 0.18 : 1, boxShadow: hidden > 0 ? (named ? "6px 6px 0 0 color-mix(in srgb, var(--foreground) 7%, var(--card)), 12px 12px 0 0 color-mix(in srgb, var(--foreground) 4%, var(--card)), var(--shadow-card)" : "4px 4px 0 0 color-mix(in srgb, var(--foreground) 9%, var(--card)), 8px 8px 0 0 color-mix(in srgb, var(--foreground) 5%, var(--card))") : undefined }}
       >
-        <span className="relative block w-full overflow-hidden bg-muted [&_img]:object-cover [&_img]:object-top" style={{ height: TILE_H }}>
-          {s.thumbnail_url ? <GalleryImage src={s.thumbnail_url} alt="" sizes="160px" className="object-cover" /> : null}
-        </span>
+        <FitPicture src={s.thumbnail_url} height={TILE_H} maxWidth={TILE_W} />
         {named ? (
-          <span className="block truncate px-2 pb-1.5 pt-1.5 font-display text-[14.5px] font-bold leading-tight tracking-[-0.01em]">{s.name}</span>
+          <span className="block max-w-full truncate px-1.5 pb-1 pt-1 font-display text-[12.5px] font-bold leading-tight tracking-[-0.01em]" style={{ width: 0, minWidth: "100%" }}>{s.name}</span>
         ) : (
           // A picture-only tile says its name when pointed at or focused.
           <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 whitespace-nowrap bg-foreground px-2 py-1 font-display text-[13px] font-bold text-background opacity-0 transition-opacity group-hover/tile:opacity-100 group-focus-visible/tile:opacity-100 motion-reduce:transition-none">{s.name}</span>
@@ -165,16 +166,13 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     if (!focusHole) return [];
     return [...styles].sort((a, b) => Math.hypot(a.x - focusHole.x, a.y - focusHole.y) - Math.hypot(b.x - focusHole.x, b.y - focusHole.y)).slice(0, 5);
   }, [focusHole, styles]);
-  const focusLit = useMemo(() => {
-    if (focus) return new Set([focus.id, ...focus.neighbors.map((n) => n.id)]);
-    if (focusHole) return new Set([focusHole.id, ...holeNear.map((s) => s.id)]);
-    return null;
-  }, [focus, focusHole, holeNear]);
-  // What stays bright: the focused item's circle, else whatever the host lit.
+  // Opening a card lights nothing else. The most-alike styles are Jev's judgment
+  // and a flat map cannot keep all of them close (about seven in ten are), so
+  // lines from a card to "nearest" styles across the map read as a mistake. They
+  // are a list in the sheet instead; the map says nearness only as distance.
+  // The only thing that lights the map is a host's set (an answer, a pick).
   const hostLit = host?.lit ?? null;
-  // A host's lit set (an answer) stays lit when one of its cards is opened; the
-  // focus circle lights the map only when the host has lit nothing.
-  const lit = hostLit ?? focusLit;
+  const lit = hostLit;
   // The style least like the focused one that is still on the map: the far shore.
   const farthest = useMemo(() => {
     if (!focus) return null;
@@ -218,10 +216,13 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   const step = Math.round(Math.log(Math.max(camera.k, 0.01)) / Math.log(1.18));
   const shown = useMemo(() => {
     const k = 1.18 ** step;
-    const f = Math.max(1, cardPx / (TILE_W * k));
-    const w = (TILE_W * f + CARD_GAP / k) / PAPER;
-    const namedStep = TILE_W * k * f >= NAMED_AT;
-    const h = ((TILE_H + (namedStep ? 30 : 0)) * f + CARD_GAP / k) / PAPER;
+    // Room is measured at the far-out edge of this step, where tiles take the most
+    // paper, so nothing touches anywhere within the step, not only at its middle.
+    const kLow = 1.18 ** (step - 0.5);
+    const f = tileScale(kLow, cardPx);
+    const w = (TILE_W * f + CARD_GAP / kLow) / PAPER;
+    const namedStep = TILE_W * k * tileScale(k, cardPx) >= NAMED_AT;
+    const h = ((TILE_H + (namedStep ? 30 : 0)) * f + CARD_GAP / kLow) / PAPER;
     const spots: { id: string; x: number; top: number; bottom: number }[] = [];
     const placed: AtlasStyle[] = [];
     const soon: AtlasHole[] = [];
@@ -232,7 +233,7 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     // seated first and, where two collide, fanned rather than hidden. A large
     // lit set (a colour, a question) only gets first call on the room.
     const fewLit = hostLit && hostLit.size <= 24 ? hostLit : null;
-    const forced = new Set([...(hostLit ? (focusId ? [focusId] : []) : focusLit ?? []), ...(fewLit ?? [])]);
+    const forced = new Set([...(focusId ? [focusId] : []), ...(fewLit ?? [])]);
     const first = hostLit ?? new Set<string>();
     const nameRoom = NAME_ROOM / k / PAPER;
     const take = (item: { id: string; x: number; y: number }) => {
@@ -285,7 +286,7 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
       for (const m of movers) if (m.x !== m.x0 || m.y !== m.y0) nudge.set(m.id, { x: (m.x - m.x0) * PAPER, y: (m.y - m.y0) * PAPER });
     }
     return { placed, soon, tucked, nudge };
-  }, [step, order, styles, holes, kind, focusLit, hostLit, focusId, cardPx]);
+  }, [step, order, styles, holes, kind, hostLit, focusId, cardPx]);
 
   // A card that loses its room leaves over a moment rather than vanishing.
   const lastShown = useRef<{ styles: AtlasStyle[]; holes: AtlasHole[] }>({ styles: [], holes: [] });
@@ -311,6 +312,8 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   // The host's chrome, read at the moment of framing (it moves: a phone sheet has snap points).
   const hostInsets = useRef(host?.insets);
   useEffect(() => { hostInsets.current = host?.insets; }, [host?.insets]);
+  const ownSheetRef = useRef(host?.ownSheet !== false);
+  useEffect(() => { ownSheetRef.current = host?.ownSheet !== false; }, [host?.ownSheet]);
   const fitAll = useCallback(() => {
     const el = viewportRef.current;
     if (!el || styles.length === 0) return;
@@ -384,7 +387,8 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     setFocusId(item.id);
     const el = viewportRef.current;
     const wide = el ? el.clientWidth >= 640 : true;
-    const own = hostInsets.current;
+    // A narrow map that draws its own sheet keeps the item clear of it, whatever room a host asked for.
+    const own = !wide && ownSheetRef.current ? undefined : hostInsets.current;
     const screen = !el
       ? undefined
       : own
@@ -435,6 +439,14 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     };
     return () => { if (host.apiRef) host.apiRef.current = null; };
   }, [host?.apiRef, frame, focusOn, fitAll, byId, holeById]);
+  // A map that opens with something already lit (a phone switching from its list
+  // to the map, a layout change mid-answer) opens on it, not on the whole paper.
+  const openedOn = useRef(false);
+  useEffect(() => {
+    if (openedOn.current) return;
+    openedOn.current = true;
+    if (hostLit && hostLit.size > 0) frame([...hostLit].slice(0, 60));
+  }, [hostLit, frame]);
   const onHostFocus = host?.onFocus;
   useEffect(() => { onHostFocus?.(focusId); }, [focusId, onHostFocus]);
 
@@ -445,8 +457,8 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     return all.filter((i) => i.name.toLowerCase().includes(q)).sort((a, b) => Number(b.name.toLowerCase().startsWith(q)) - Number(a.name.toLowerCase().startsWith(q)) || a.name.localeCompare(b.name)).slice(0, 6);
   }, [find, styles, holes]);
 
-  const factor = Math.max(1, cardPx / (TILE_W * camera.k));
-  const named = TILE_W * (1.18 ** step) * Math.max(1, cardPx / (TILE_W * 1.18 ** step)) >= NAMED_AT;
+  const factor = tileScale(camera.k, cardPx);
+  const named = TILE_W * (1.18 ** step) * tileScale(1.18 ** step, cardPx) >= NAMED_AT;
   // The first tiles arrive as a bloom from the middle of the map outward; after
   // that, arrivals are only a breath apart.
   const bloomed = useRef(false);
@@ -467,11 +479,31 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     return ink;
   }, [families]);
   const grounds = families;
-  const nameOpacity = camera.k >= TRUE_SIZE_ZOOM ? 0.45 : 1;
   // Far out the grounds are the map's colour; close in they sit behind many more
   // cards, so they thin a little as the paper grows.
-  const fieldAlpha = Math.min(0.26, Math.max(0.16, 0.3 - camera.k * 0.14));
+  // A tint, not a colour field: enough to see where a family lies, never enough
+  // to compete with the pictures.
+  const fieldAlpha = Math.min(0.15, Math.max(0.09, 0.17 - camera.k * 0.07));
   const placedIds = useMemo(() => new Set(shown.placed.map((s) => s.id)), [shown]);
+  // A label stands over its family's first tile on the paper (its lead when that
+  // is out), so every tinted ground says what it groups. Labels never pile up:
+  // where two would touch, the larger family keeps its label and the other waits
+  // for a closer zoom.
+  const familyChips = useMemo(() => {
+    const k = 1.18 ** (step - 0.5); // the far-out edge of the step, where labels sit closest
+    const kept: { g: Family; anchor: AtlasStyle; x: number; y: number; w: number }[] = [];
+    for (const g of [...grounds].sort((a, b) => b.count - a.count)) {
+      const anchor = (placedIds.has(g.lead) ? byId.get(g.lead) : undefined) ?? shown.placed.find((s) => s.family === g.id);
+      if (!anchor) continue;
+      const n = shown.nudge.get(anchor.id);
+      const x = (anchor.x * PAPER + (n?.x ?? 0)) * k;
+      const y = (anchor.y * PAPER + (n?.y ?? 0)) * k;
+      const w = (g.label.length + String(g.count).length + 1) * 7.6 + 30;
+      if (kept.some((o) => Math.abs(o.x - x) < (o.w + w) / 2 + 6 && Math.abs(o.y - y) < 24)) continue;
+      kept.push({ g, anchor, x, y, w });
+    }
+    return kept;
+  }, [grounds, placedIds, byId, shown, step]);
 
   // Only what is on screen is in the document. Zoomed in, the paper holds nine
   // hundred cards and their pictures; mounting them all is what brought phones
@@ -518,13 +550,6 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
     );
   }
 
-  const lines = hostLit
-    ? []
-    : focus
-    ? focus.neighbors.flatMap((n) => { const to = byId.get(n.id); return to ? [{ id: n.id, from: focus, to, weight: n.similarity }] : []; })
-    : focusHole
-      ? holeNear.map((to) => ({ id: to.id, from: focusHole, to, weight: 0.5 }))
-      : [];
   const sheetOpen = Boolean(focus || focusHole);
 
   return (
@@ -562,10 +587,6 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
           className="absolute left-0 top-0 h-0 w-0"
           style={{ ["--f" as string]: factor, transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.k})`, transformOrigin: "0 0", transition: animate && !reduced ? "transform 520ms cubic-bezier(0.22, 1, 0.36, 1)" : undefined, willChange: "transform" }}
         >
-          {lines.map((l) => {
-            const x1 = l.from.x * PAPER, y1 = l.from.y * PAPER, x2 = l.to.x * PAPER, y2 = l.to.y * PAPER;
-            return <span key={`line-${l.id}`} aria-hidden className="pointer-events-none absolute origin-left bg-[var(--ramune)]" style={{ left: x1, top: y1, width: Math.hypot(x2 - x1, y2 - y1), height: 2 / camera.k, opacity: 0.25 + l.weight * 0.6, transform: `rotate(${Math.atan2(y2 - y1, x2 - x1)}rad)` }} />;
-          })}
           {seenHoles.map((h, i) => (
             <HoleTile key={h.id} hole={h} named={named} dim={Boolean(lit && !lit.has(h.id))} raised={Boolean(lit?.has(h.id))} pressed={focusId === h.id} nudgeX={shown.nudge.get(h.id)?.x ?? 0} nudgeY={shown.nudge.get(h.id)?.y ?? 0} still={reduced} delay={delayOf(h, i)} leaving={false} onOpen={open} />
           ))}
@@ -576,16 +597,16 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
               <Tile key={s.id} style={s} named={named} dim={Boolean(lit && !lit.has(s.id))} rank={focusId === s.id ? 4 : lit?.has(s.id) ? 3 : order.leads.has(s.id) ? 2 : 1} pressed={focusId === s.id} hidden={hostLit ? 0 : tucked} nudgeX={shown.nudge.get(s.id)?.x ?? 0} nudgeY={shown.nudge.get(s.id)?.y ?? 0} mark={host?.accent?.has(s.id) ? "strange" : hostLit?.has(s.id) ? "fit" : ""} still={reduced} delay={delayOf(s, i)} leaving={false} onOpen={open} />
             );
           })}
-          {grounds.map((g) => {
-            const lead = byId.get(g.lead);
-            if (!lead || !placedIds.has(lead.id)) return null;
+          {familyChips.map(({ g, anchor }) => {
+            const n = shown.nudge.get(anchor.id);
             return (
-              <span key={`name-${g.id}`} className="atlas-family-name pointer-events-none absolute z-[5] whitespace-nowrap font-display font-bold tracking-[-0.02em] text-foreground" style={{ left: lead.x * PAPER, top: lead.y * PAPER - TILE_H / 2, // The card grows about a point 42% down its 115px height, so its top edge
-                // rises 48px for every unit of scale; the name rides that edge.
-                // The name keeps one size on screen whatever the tiles do; it rides the
-                // top edge of its lead tile, which rises as the tile is counter-scaled.
-                transform: `translate(-50%, calc(-100% - 6px * var(--f) - ${named ? 48 : 35}px * (var(--f) - 1)))`, fontSize: 14 / camera.k, opacity: lit ? 0.12 : nameOpacity, transition: reduced ? undefined : "opacity 300ms" }}>
+              <span key={`name-${g.id}`} className="pointer-events-none absolute z-[5] flex items-center gap-1.5 whitespace-nowrap bg-background/90 px-1.5 py-0.5 font-mono font-bold uppercase tracking-[0.12em] text-foreground" style={{ left: anchor.x * PAPER + (n?.x ?? 0), top: anchor.y * PAPER - TILE_H / 2 + (n?.y ?? 0),
+                // One size on screen whatever the tiles do; it rides the top edge of
+                // its tile, which rises as the tile is counter-scaled.
+                transform: `translate(-50%, calc(-100% - 5px * var(--f) - ${named ? 48 : 35}px * (var(--f) - 1)))`, fontSize: 10 / camera.k, gap: 5 / camera.k, padding: `${2 / camera.k}px ${5 / camera.k}px`, opacity: lit ? 0.15 : 1, transition: reduced ? undefined : "opacity 300ms" }}>
+                <span aria-hidden className="inline-block rounded-full" style={{ width: 7 / camera.k, height: 7 / camera.k, background: ["var(--sakura)", "var(--ramune)", "var(--yuzu)"][inkOf.get(g.id) ?? 0] }} />
                 {g.label}
+                <span className="font-normal text-muted-foreground">{g.count}</span>
               </span>
             );
           })}
@@ -596,7 +617,7 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
       {/* Top bar: on a phone a band of paper across the top; on a wide screen it floats over the map's corner. A host page draws its own. */}
       {host?.ownChrome === false ? null : (
         <>
-      <div className={`absolute inset-x-0 top-0 z-10 bg-background px-4 pb-3 pt-3 shadow-[0_1px_0_rgba(30,35,45,0.05)] sm:inset-x-auto sm:left-6 sm:top-6 sm:w-[22rem] sm:p-4 sm:shadow-[var(--shadow-card)] ${sheetOpen ? "max-sm:hidden" : ""}`}>
+      <div className={`absolute inset-x-0 top-0 z-10 bg-background px-4 pb-3 pt-3 shadow-[0_1px_0_rgba(30,35,45,0.05)] sm:inset-x-auto sm:left-6 sm:top-6 sm:w-[19rem] sm:p-3 sm:shadow-[var(--shadow-card)] ${sheetOpen ? "max-sm:hidden" : ""}`}>
         <h1 className="sr-only">The atlas</h1>
         <div className="relative">
           <label htmlFor="atlas-find" className="sr-only">Find a style or a direction on the map</label>
@@ -609,13 +630,13 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
             onKeyDown={(e) => { if (e.key === "Enter" && found[0]) { focusOn(found[0]); setFind(""); e.currentTarget.blur(); } }}
             placeholder="Find on the map"
             autoComplete="off"
-            className="sticker-card w-full py-2.5 pl-9 pr-3 text-[16px] outline-none placeholder:text-muted-foreground focus-visible:shadow-[var(--shadow-card-hover)]"
+            className="sticker-card w-full py-2 pl-9 pr-3 text-[16px] sm:text-[14px] outline-none placeholder:text-muted-foreground focus-visible:shadow-[var(--shadow-card-hover)]"
           />
           {found.length > 0 ? (
             <ul className="sticker-card absolute inset-x-0 top-full z-20 mt-1 bg-background py-1">
               {found.map((item) => (
                 <li key={item.id}>
-                  <button type="button" onClick={() => { focusOn(item); setFind(""); }} className="flex w-full cursor-pointer items-baseline justify-between gap-3 px-3 py-2 text-left text-[16px] hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
+                  <button type="button" onClick={() => { focusOn(item); setFind(""); }} className="flex w-full cursor-pointer items-baseline justify-between gap-3 px-3 py-2 text-left text-[16px] sm:text-[14px] hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
                     <span className="truncate">{item.name}</span>
                     {item.soon ? <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--sakura)]">coming soon</span> : null}
                   </button>
@@ -626,66 +647,67 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
         </div>
         <div role="group" aria-label="Show" className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible">
           {KINDS.filter(([value]) => value !== "soon" || holes.length > 0).map(([value, label]) => (
-            <button key={value} type="button" aria-pressed={kind === value} onClick={() => setKind(value)} className={`sticker-card shrink-0 cursor-pointer px-3 py-1.5 text-[14.5px] ${kind === value ? "bg-[var(--yuzu)] text-black" : ""}`}>{label}</button>
+            <button key={value} type="button" aria-pressed={kind === value} onClick={() => setKind(value)} className={`sticker-card shrink-0 cursor-pointer px-3 py-1.5 text-[13px] ${kind === value ? "bg-[var(--yuzu)] text-black" : ""}`}>{label}</button>
           ))}
-          {sample ? <Link href="/signin" className="ink-underline shrink-0 self-center px-1 text-[14.5px] sm:hidden">Sign in for all</Link> : null}
+          {sample ? <Link href="/signin" className="ink-underline shrink-0 self-center px-1 text-[13px] sm:hidden">Sign in for all</Link> : null}
         </div>
       </div>
         </>
       )}
 
       <div className={`absolute left-4 z-10 flex flex-col gap-2 sm:left-8 ${(sheetOpen && host?.ownSheet !== false) || host?.ownSheet === false ? "max-sm:hidden" : ""}`} style={{ bottom: 24 + (host?.insets?.bottom ?? 0), left: host?.insets?.left ? host.insets.left + 16 : undefined }}>
-        <button type="button" onClick={() => zoomStep(1)} aria-label="Zoom in" className="sticker-card h-11 w-11 cursor-pointer text-[20px]">+</button>
-        <button type="button" onClick={() => zoomStep(-1)} aria-label="Zoom out" className="sticker-card h-11 w-11 cursor-pointer text-[20px]">−</button>
-        <button type="button" onClick={() => { setFocusId(null); fitAll(); }} aria-label="Fit the whole map" className="sticker-card h-11 cursor-pointer px-3 font-mono text-[11px] font-bold uppercase tracking-[0.16em]">Fit</button>
+        <button type="button" onClick={() => zoomStep(1)} aria-label="Zoom in" className="sticker-card h-11 w-11 cursor-pointer text-[18px] sm:h-9 sm:w-9">+</button>
+        <button type="button" onClick={() => zoomStep(-1)} aria-label="Zoom out" className="sticker-card h-11 w-11 cursor-pointer text-[18px] sm:h-9 sm:w-9">−</button>
+        <button type="button" onClick={() => { setFocusId(null); fitAll(); }} aria-label="Fit the whole map" className="sticker-card h-11 cursor-pointer px-3 font-mono text-[10px] sm:h-9 font-bold uppercase tracking-[0.16em]">Fit</button>
       </div>
 
       {host?.ownChrome !== false ? (
         <p aria-hidden className={`pointer-events-none absolute right-5 top-5 z-10 bg-background/90 px-3 py-2 text-right font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground max-sm:hidden ${sheetOpen ? "hidden" : ""}`}>
-          <span className="block font-display text-[22px] font-bold normal-case tracking-[-0.02em] text-foreground">{styles.length}</span>
+          <span className="block font-display text-[17px] font-bold normal-case tracking-[-0.02em] text-foreground">{styles.length}</span>
           styles · {families.length} families{holes.length > 0 ? ` · ${holes.length} to come` : ""}
         </p>
       ) : null}
-      <p aria-hidden className={`pointer-events-none absolute inset-x-0 z-10 text-center text-[14.5px] text-muted-foreground transition-opacity duration-500 motion-reduce:transition-none ${touched || sheetOpen ? "opacity-0" : "opacity-100"}`} style={{ bottom: 22 + (host?.insets?.bottom ?? 0) }}>
+      <p aria-hidden className={`pointer-events-none absolute inset-x-0 z-10 text-center text-[13px] text-muted-foreground transition-opacity duration-500 motion-reduce:transition-none ${touched || sheetOpen ? "opacity-0" : "opacity-100"}`} style={{ bottom: 22 + (host?.insets?.bottom ?? 0) }}>
         Drag to explore · {narrow ? "pinch" : "scroll"} to zoom
       </p>
       {sample && host?.ownChrome !== false ? (
-        <p className={`absolute bottom-6 right-4 z-10 bg-background/90 px-3 py-2 text-[14.5px] text-muted-foreground max-sm:hidden sm:right-8`}>
+        <p className={`absolute bottom-6 right-4 z-10 bg-background/90 px-3 py-2 text-[13px] text-muted-foreground max-sm:hidden sm:right-8`}>
           This is the visitor shelf — <Link href="/signin" className="ink-underline text-foreground">sign in for all</Link>
         </p>
       ) : null}
 
       {(focus || focusHole) && host?.ownSheet !== false ? (
-        <aside aria-label={(focus ?? focusHole)!.name} className="atlas-sheet absolute inset-x-0 bottom-0 z-20 max-h-[48%] overflow-y-auto bg-background px-5 pb-8 pt-7 shadow-[var(--shadow-card-hover)] sm:inset-x-auto sm:bottom-auto sm:right-6 sm:top-6 sm:max-h-[calc(100%-48px)] sm:w-[340px]" style={{ overscrollBehavior: "contain" }}>
+        <aside aria-label={(focus ?? focusHole)!.name} className="atlas-sheet absolute inset-x-0 bottom-0 z-20 max-h-[48%] overflow-y-auto bg-background px-5 pb-6 pt-5 shadow-[var(--shadow-card-hover)] sm:inset-x-auto sm:bottom-auto sm:right-6 sm:top-6 sm:max-h-[calc(100%-48px)] sm:w-[300px]" style={{ overscrollBehavior: "contain" }}>
           <button type="button" onClick={() => setFocusId(null)} aria-label="Close" className="absolute right-3 top-3 cursor-pointer p-2 text-muted-foreground hover:text-foreground"><X size={18} /></button>
           {focus ? (
             <>
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{focus.kind === "language" ? "Design language" : "Art style"}</p>
-              <h2 className="mt-2 pr-8 font-display text-[24px] font-bold leading-tight tracking-[-0.02em]">{focus.name}</h2>
+              <h2 className="mt-2 pr-8 font-display text-[19px] font-bold leading-tight tracking-[-0.02em]">{focus.name}</h2>
               <Link href={focus.href} className="mt-4 inline-block bg-foreground px-5 py-2.5 font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-background">Open</Link>
-              <h3 className="mt-8 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Nearest</h3>
-              {focus.neighbors.length === 0 ? <p className="mt-3 text-[17px] text-muted-foreground">Nothing in view is close to this one.</p> : (
-                <ul className="mt-3 flex flex-col gap-2.5">
-                  {focus.neighbors.map((n) => { const s = byId.get(n.id); return s ? <li key={n.id}><button type="button" onClick={() => focusOn(s)} className="ink-underline cursor-pointer text-left text-[17px]">{s.name}</button></li> : null; })}
+              <h3 className="mt-5 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Most alike</h3>
+              <p className="mt-1 text-[12.5px] leading-snug text-muted-foreground">By judgment, so not always next door on the map. Pick one to fly there.</p>
+              {focus.neighbors.length === 0 ? <p className="mt-3 text-[14px] text-muted-foreground">Nothing in view is close to this one.</p> : (
+                <ul className="mt-3 flex flex-col gap-1.5">
+                  {focus.neighbors.map((n) => { const s = byId.get(n.id); return s ? <li key={n.id}><button type="button" onClick={() => focusOn(s)} className="ink-underline cursor-pointer text-left text-[14px]">{s.name}</button></li> : null; })}
                 </ul>
               )}
               {farthest && farthest.id !== focus.id ? (
                 <>
-                  <h3 className="mt-8 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Farthest from it</h3>
-                  <button type="button" onClick={() => focusOn(farthest)} className="ink-underline mt-3 cursor-pointer text-left text-[17px]">{farthest.name}</button>
+                  <h3 className="mt-5 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Least like it</h3>
+                  <button type="button" onClick={() => focusOn(farthest)} className="ink-underline mt-3 cursor-pointer text-left text-[14px]">{farthest.name}</button>
                 </>
               ) : null}
             </>
           ) : focusHole ? (
             <>
               <p className="inline-block -rotate-2 bg-[var(--sakura)] px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-white">Coming soon</p>
-              <h2 className="mt-3 pr-8 font-display text-[24px] font-bold leading-tight tracking-[-0.02em]">{focusHole.name}</h2>
-              <p className="mt-3 text-[17px] leading-relaxed text-muted-foreground">{focusHole.description}</p>
-              <p className="mt-4 text-[14.5px] leading-snug text-muted-foreground">A direction the encyclopedia names. Nothing in the library has been made for it yet.</p>
-              {owner ? <Link href={`/encyclopedia?cell=${encodeURIComponent(focusHole.id)}`} className="ink-underline mt-4 inline-block text-[17px]">Open in the encyclopedia</Link> : null}
+              <h2 className="mt-3 pr-8 font-display text-[19px] font-bold leading-tight tracking-[-0.02em]">{focusHole.name}</h2>
+              <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">{focusHole.description}</p>
+              <p className="mt-4 text-[13px] leading-snug text-muted-foreground">A direction the encyclopedia names. Nothing in the library has been made for it yet.</p>
+              {owner ? <Link href={`/encyclopedia?cell=${encodeURIComponent(focusHole.id)}`} className="ink-underline mt-4 inline-block text-[14px]">Open in the encyclopedia</Link> : null}
               <h3 className="mt-8 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Nearest made work</h3>
-              <ul className="mt-3 flex flex-col gap-2.5">
-                {holeNear.map((s) => <li key={s.id}><button type="button" onClick={() => focusOn(s)} className="ink-underline cursor-pointer text-left text-[17px]">{s.name}</button></li>)}
+              <ul className="mt-3 flex flex-col gap-1.5">
+                {holeNear.map((s) => <li key={s.id}><button type="button" onClick={() => focusOn(s)} className="ink-underline cursor-pointer text-left text-[14px]">{s.name}</button></li>)}
               </ul>
             </>
           ) : null}
