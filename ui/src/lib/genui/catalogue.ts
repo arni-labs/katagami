@@ -60,7 +60,7 @@ export const COMPONENT_TEXT: Record<Component, string> = {
 
 // Each archetype has a fixed order of slots. `always` components are on every
 // screen of that shape; the rest are included when Jev judges the screen needs
-// them. Order is the catalogue's, never the model's.
+// them. Order on the page is ORDER, the catalogue's, never the model's.
 export const SLOTS: Record<Archetype, { always: Component[]; optional: Component[] }> = {
   landing: { always: ["hero", "cta"], optional: ["notice", "stats", "cards", "steps", "form"] },
   form: { always: ["form"], optional: ["notice", "steps", "hero", "cards"] },
@@ -68,6 +68,7 @@ export const SLOTS: Record<Archetype, { always: Component[]; optional: Component
   list: { always: ["table"], optional: ["notice", "stats", "cards"] },
   settings: { always: ["settings"], optional: ["notice", "steps", "form"] },
 };
+const ORDER: Component[] = ["notice", "hero", "steps", "stats", "form", "settings", "table", "cards", "cta"];
 
 // A screen carries at most this many components: an embodiment, not a component gallery.
 export const MAX_COMPONENTS = 5;
@@ -228,9 +229,7 @@ export function composePlan(answers: Answers): ScreenPlan {
   const slots = SLOTS[archetype];
   const wanted = slots.optional.filter((c) => noul(`c_${c}`) >= NEEDS_AT).sort((x, y) => noul(`c_${y}`) - noul(`c_${x}`));
   const chosen = new Set<Component>([...slots.always, ...wanted.slice(0, MAX_COMPONENTS - slots.always.length)]);
-  // The catalogue's order for this archetype, not the score's.
-  const order = [...slots.always, ...slots.optional];
-  const components = order.filter((c) => chosen.has(c));
+  const components = ORDER.filter((c) => chosen.has(c));
   const level = (k: string, n: number) => Math.min(n - 1, Math.max(0, Math.round(num(answers[k]?.score, (n - 1) / 2))));
   return {
     archetype,
@@ -260,7 +259,7 @@ export function fallbackPlan(brief: string): ScreenPlan {
   const table: TableKind = has("order", "shop") ? "orders" : has("bank", "finance", "transaction") ? "transactions" : has("member", "team", "user") ? "members" : has("ticket", "support") ? "tickets" : "appointments";
   return {
     archetype,
-    components: [...SLOTS[archetype].always, ...(archetype === "landing" ? (["cards"] as Component[]) : [])],
+    components: ORDER.filter((c) => SLOTS[archetype].always.includes(c) || (archetype === "landing" && c === "cards")),
     density: archetype === "dashboard" || archetype === "list" ? "compact" : "comfortable",
     emphasis: archetype === "landing" ? "bold" : "balanced",
     form,

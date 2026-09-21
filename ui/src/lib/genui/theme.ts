@@ -16,6 +16,8 @@ export type ScreenTheme = {
     surface: string;
     surface2: string;
     text: string;
+    /** Text on a surface: some languages print light text on a dark ground but dark ink on their cards. */
+    onSurface: string;
     muted: string;
     border: string;
     accent: string;
@@ -59,6 +61,15 @@ function parseTokens(raw: unknown): Rec {
   return rec(raw);
 }
 
+/** Light or dark, by sRGB luminance; a colour that is not a hex (rgba, oklch) is taken as light. */
+function isLight(color: string): boolean {
+  const m = color.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (!m) return true;
+  const h = m[1].length === 3 ? m[1].split("").map((c) => c + c).join("") : m[1];
+  const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(h.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.45;
+}
+
 /** The first key present, trying both spellings the library uses (accent_2 / accent-2). */
 function pick(from: Rec, keys: string[]): string {
   for (const k of keys) {
@@ -90,6 +101,10 @@ export function themeFromTokens(id: string, name: string, raw: unknown): ScreenT
   const text = role("text", ["text", "foreground", "ink"], () => readableTextColor(bg, "#111111"));
   const surface = role("surface", ["surface", "card", "panel", "surface_solid"], () => bg);
   const surface2 = role("surface2", ["surface_2", "surface_raised", "surface_alt", "recess"], () => surface);
+  // Ink on a card: the language's own on-surface token, else its text if that
+  // reads on the surface, else its background (a dark ground on a light card is
+  // that language's ink), and only then a computed black or white.
+  const onSurface = role("onSurface", ["on_surface", "surface_text", "ink"], () => (isLight(surface) === isLight(text) ? (isLight(surface) !== isLight(bg) ? bg : readableTextColor(surface, "#111111")) : text));
   const accent = role("accent", ["accent", "primary"], () => text);
   const onAccent = role("onAccent", ["on_accent", "on-accent", "accent_ink"], () => readableTextColor(accent));
   const accent2 = role("accent2", ["accent_2", "secondary", "accent_soft", "accent_3"], () => accent);
@@ -121,7 +136,7 @@ export function themeFromTokens(id: string, name: string, raw: unknown): ScreenT
   return {
     id,
     name,
-    colors: { bg, surface, surface2, text, muted, border, accent, onAccent, accent2, success, warning, error },
+    colors: { bg, surface, surface2, text, onSurface, muted, border, accent, onAccent, accent2, success, warning, error },
     radii,
     type: {
       body: body || "system-ui",
@@ -150,6 +165,7 @@ export function themeVars(theme: ScreenTheme): Record<string, string> {
     "--g-surface": c.surface,
     "--g-surface2": c.surface2,
     "--g-text": c.text,
+    "--g-on-surface": c.onSurface,
     "--g-muted": c.muted,
     "--g-border": c.border,
     "--g-accent": c.accent,
