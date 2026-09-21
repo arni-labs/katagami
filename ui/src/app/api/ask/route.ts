@@ -33,6 +33,10 @@ export const maxDuration = 60;
  * such as "quieter, warmer". The reading is moved, not re-read, and comes back as
  * `want` with `moved` (which traits went where) and `changes` (every change so far);
  * hand `changes` back with the next call so the fit is judged with them in mind.
+ * A refinement belongs to ONE call: send it with stage=match, then ask for the fit
+ * with the moved `want` and `changes` and no `refine`, or it is applied twice.
+ * `like` (a style's id or slug) starts from that style's own reading instead of the
+ * sentence's, and leaves the style out of its own results.
  */
 
 // An answer costs two model calls, so the route spends them once: the same
@@ -47,9 +51,9 @@ const RECENT_MAX = 500;
 
 const normalise = (q: string) => q.toLowerCase().replace(/\s+/g, " ").replace(/[\s.!?…]+$/u, "");
 
-type Ask = { query: string; kind?: "language" | "art_style"; limit?: number; stage?: "match"; want?: Record<string, number>; refine?: string; changes?: string };
+type Ask = { query: string; kind?: "language" | "art_style"; limit?: number; stage?: "match"; want?: Record<string, number>; refine?: string; changes?: string; like?: string };
 
-function parse(input: { q?: unknown; kind?: unknown; k?: unknown; stage?: unknown; want?: unknown; refine?: unknown; changes?: unknown }): Ask | { error: string } {
+function parse(input: { q?: unknown; kind?: unknown; k?: unknown; stage?: unknown; want?: unknown; refine?: unknown; changes?: unknown; like?: unknown }): Ask | { error: string } {
   const query = typeof input.q === "string" ? input.q.trim() : "";
   if (query.length < 2) return { error: "missing 'q' — a word or a sentence about what you are making" };
   if (input.kind != null && input.kind !== "" && input.kind !== "language" && input.kind !== "art_style") {
@@ -64,6 +68,7 @@ function parse(input: { q?: unknown; kind?: unknown; k?: unknown; stage?: unknow
     want: wholeReading(input.want),
     refine: shortText(input.refine),
     changes: shortText(input.changes),
+    like: shortText(input.like)?.slice(0, 120),
   };
 }
 
@@ -88,7 +93,7 @@ async function answer(request: Request, ask: Ask) {
   // page's own second step is reused when the sentence is asked again, and a
   // forged reading can only ever answer someone who sends the same forgery.
   const reading = ask.want ? STYLE_DNA_QUESTIONS.map((q) => Math.round((ask.want?.[q.id] ?? 0) * 1000)).join(",") : "";
-  const key = JSON.stringify([tier, ask.kind ?? "", ask.limit ?? "", ask.stage ?? "", normalise(ask.query), reading, normalise(ask.refine ?? ""), normalise(ask.changes ?? "")]);
+  const key = JSON.stringify([tier, ask.kind ?? "", ask.limit ?? "", ask.stage ?? "", normalise(ask.query), reading, normalise(ask.refine ?? ""), normalise(ask.changes ?? ""), ask.like ?? ""]);
   const hit = recent.get(key);
   if (hit && Date.now() - hit.at < RECENT_MS) {
     return NextResponse.json(hit.body, { headers: { "Cache-Control": "no-store" } });
