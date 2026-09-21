@@ -22,13 +22,16 @@ type Mode = "colour" | "family" | "fit" | "trait" | "plot";
 type Axes = { x: string; y?: string; reverse?: boolean; labels: string[] };
 const TRAIT_AT = new Map(STYLE_DNA_QUESTIONS.map((q, i) => [q.id, i]));
 const valueOf = (s: AtlasStyle, trait: string) => (s.dna ? (s.dna[TRAIT_AT.get(trait) ?? -1] ?? 50) : 50);
-type Cell = { kind: "style"; s: AtlasStyle } | { kind: "soon"; h: AtlasHole } | null;
+type Cell = { kind: "style"; s: AtlasStyle } | { kind: "ghost"; n: number } | null;
 
 const TRAIT = new Map(STYLE_DNA_QUESTIONS.map((q) => [q.id, q.label]));
 // How wide a stamp is *is* the zoom, and it is one number anywhere between the ends rather than three stops. The
 // gap and the stride are shares of that width, so the sheet has the same shape at every size — which is what lets
 // a zoom be a scale on one layer instead of a new size for every stamp. A sheet opens at `mid`, nearer on a phone.
 const SPAN = { phone: { mid: 74, max: 216 }, desk: { mid: 96, max: 256 } };
+// The tones a held-back card is washed in. Chosen by position so a sheet of them says how much there is and nothing
+// about what any of it is.
+const GHOST_INK = ["#d9d6cf", "#dcdad4", "#d3d0c9", "#e0ddd6", "#d6d3cc"];
 const RATIO = 1.2, GAP_R = 10 / 96; // the gap at the size a sheet opens at is the 10px it always was
 const SX = 1 + GAP_R, SY = RATIO + GAP_R; // one stamp's stride across and down, as a share of its width
 // How far out you can go: far enough to take the library in at once, but never so far that the sheet is thousands
@@ -74,16 +77,22 @@ function warm(src: string | null | undefined, width: 750 | 1080) {
   const img = new Image(); img.decoding = "async"; img.src = quick(src, width);
 }
 
-type CellProps = { eager: boolean; c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
+type CellProps = { onGhost: () => void; eager: boolean; c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
 // One stamp on the sheet, keyed by its slot in a recycling pool (see Sheet): when the window slides, the stamp
 // that left one edge is handed the place that arrived at the other, which is an update, not a mount. Memoised on plain values, so when the window of visible cells slides by a row
 // only the new row is drawn: the stamps already there are left alone.
-const CellView = memo(function CellView({ eager, c, r, cell, w, h, stepX, stepY, dim, hold, onOpen }: CellProps) {
+const CellView = memo(function CellView({ onGhost, eager, c, r, cell, w, h, stepX, stepY, dim, hold, onOpen }: CellProps) {
   if (!cell) return null;
   const x = c * stepX, y = r * stepY, key = `${c},${r}`;
-  // A gap in the library is a place with a name: a sheet of cards all reading "Soon" looks like a fault rather
-  // than like work still to come.
-  if (cell.kind === "soon") return <span ref={(el) => hold(key, el)} title={`${cell.h.name} — ${cell.h.description}`} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.25 : 0.8 }}><Card src={null} ink={null} w={w} h={h} label={w > 66 ? cell.h.name : undefined} value={w > 120 ? "soon" : undefined} soon /></span>;
+  // A style a visitor is not being shown keeps a place on the sheet without giving anything away: paper and a wash
+  // of neutral ink picked by where the card sits, never by the style. Pressing one is the only thing that asks.
+  if (cell.kind === "ghost") return (
+    <span ref={(el) => hold(key, el)} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.12 : 1 }}>
+      <button type="button" onClick={onGhost} aria-label="Sign in to see this one" className="kghost block cursor-pointer">
+        <Card src={null} ink={GHOST_INK[cell.n % GHOST_INK.length]} w={w} h={h} />
+      </button>
+    </span>
+  );
   const s = cell.s;
   return (
     <button ref={(el) => hold(key, el)} type="button" onPointerEnter={(e) => { if (e.pointerType === "mouse") warm(s.picture, 1080); }} onPointerDown={() => warm(s.picture, w < 60 ? 750 : window.innerWidth < 768 ? 750 : 1080)} onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, }}>
@@ -92,20 +101,20 @@ const CellView = memo(function CellView({ eager, c, r, cell, w, h, stepX, stepY,
   );
 });
 
-type SheetProps = { eager: Set<string>; hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
-const Sheet = memo(function Sheet({ eager, hold, cells, w, h, stepX, stepY, lit, onOpen }: SheetProps) {
+type SheetProps = { onGhost: () => void; eager: Set<string>; hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
+const Sheet = memo(function Sheet({ onGhost, eager, hold, cells, w, h, stepX, stepY, lit, onOpen }: SheetProps) {
   return (
     <>
       {cells.map(({ c, r, cell }) => {
         const id = cell?.kind === "style" ? cell.s.id : "";
         // The pool is wider than any window the sheet allows (see CROWD), so no two places on screen share a slot.
-        return <CellView key={`${mod(c, 128)},${mod(r, 96)}`} eager={eager.has(`${c},${r}`)} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} hold={hold} onOpen={onOpen} />;
+        return <CellView key={`${mod(c, 128)},${mod(r, 96)}`} onGhost={onGhost} eager={eager.has(`${c},${r}`)} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} hold={hold} onOpen={onOpen} />;
       })}
     </>
   );
 });
 
-export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[]; /** How many styles the whole library holds, when this sheet is only part of it. */ whole: number | null }) {
+export function Mosaic({ styles: all, families, whole }: { styles: AtlasStyle[]; families: Family[]; holes?: AtlasHole[]; /** How many styles the whole library holds, when this sheet is only part of it. */ whole: number | null }) {
   const screen = useScreen();
   const phone = screen === "phone";
   const box = useRef<HTMLDivElement | null>(null);
@@ -207,13 +216,25 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
       const rank = (s: AtlasStyle) => ask.fits?.get(s.id)?.rank ?? 1000 + (lead ? Math.hypot(s.x - lead.x, s.y - lead.y) * 1000 : 0);
       bloom([...styles].sort((p, q) => rank(p) - rank(q)));
     }
-    // What the library has not made yet fills the places left over.
-    let k = 0;
-    if (mode !== "plot") for (let i = 0; i < grid.length; i++) if (!grid[i] && holes.length > 0) grid[i] = { kind: "soon", h: holes[k++ % holes.length] };
+    // A visitor sees part of the library. What they are shown keeps the arrangement it was given, set in the middle
+    // of a sheet as large as the whole library, and the styles they are not shown hold the places around it. The
+    // sheet then no longer starts over before they have seen how much there is.
+    const unseen = Math.max(0, (whole ?? 0) - styles.length);
+    let outCols = cols, outRows = rows, out = grid;
+    if (unseen > 0) {
+      const total = cols * rows + unseen;
+      outCols = Math.max(cols + 4, Math.ceil(Math.sqrt(total * 1.5)));
+      outRows = Math.max(rows + 4, Math.ceil(total / outCols));
+      const left = Math.floor((outCols - cols) / 2), top = Math.floor((outRows - rows) / 2);
+      out = Array.from({ length: outCols * outRows }, (_, i) => {
+        const c = i % outCols - left, r = Math.floor(i / outCols) - top;
+        return c >= 0 && c < cols && r >= 0 && r < rows ? grid[r * cols + c] : { kind: "ghost", n: i };
+      });
+    }
     const where = new Map<string, { c: number; r: number }>();
-    grid.forEach((cell, i) => { if (cell?.kind === "style") where.set(cell.s.id, { c: i % cols, r: Math.floor(i / cols) }); });
-    return { cols, rows, grid, where };
-  }, [styles, families, holes, mode, hue, ask.fits, topFit, byId, axes]);
+    out.forEach((cell, i) => { if (cell?.kind === "style") where.set(cell.s.id, { c: i % outCols, r: Math.floor(i / outCols) }); });
+    return { cols: outCols, rows: outRows, grid: out, where };
+  }, [styles, families, whole, mode, hue, ask.fits, topFit, byId, axes]);
   const cellAt = useCallback((c: number, r: number) => world.grid[mod(r, world.rows) * world.cols + mod(c, world.cols)], [world]);
 
   const lit = useMemo(() => {
@@ -516,6 +537,8 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
   // What was last done is said about the wall, so an open card hides the line rather than forgetting it: the wall is
   // still arranged that way behind the card, and Undo, which the line carries, has to come back when the card closes.
   const [did, setDid] = useState<string[]>([]);
+  const [gate, setGate] = useState(false);
+  const openGate = useCallback(() => setGate(true), []);
   const [verdict, setVerdict] = useState<{ id: string; q: string; suits: number; helps: string[]; hurts: string[] } | null>(null);
   // The shortlist outlives the question: it is kept on this device.
   const [pins, setPins] = useState<string[]>([]);
@@ -609,7 +632,7 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">
         {/* The sheet's own corner is what the scale grows from, so a stamp's place on it is its place times the width. */}
         <div ref={layer} style={{ transformOrigin: "0 0" }} className="absolute left-0 top-0 will-change-transform">
-          <Sheet eager={eager} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} />
+          <Sheet onGhost={openGate} eager={eager} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} />
         </div>
         <div ref={glare} aria-hidden className="canvas-glare" />
       </div>
@@ -633,17 +656,17 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
         <button type="button" onClick={() => glide(cam.current.cw / STOP)} disabled={ends.far} aria-label="Further" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">−</button>
       </div>
 
-      {/* The sheet a visitor is given is part of the library, and a wall that does not say so reads as the whole
-          of it. One slip in the sheet's own language, gone the moment there is something else to read. */}
+      {/* The one place the sheet says it is partial. It opens the same thing a blank card does. */}
       {whole !== null && !open && !ask.answer && !pair ? (
         <div className="pointer-events-none absolute inset-x-0 z-[36] flex justify-center px-3" style={{ bottom: "calc(var(--dock-h, 150px) + 10px)" }}>
-          <Link href="/signin" className="kcard pointer-events-auto flex items-center gap-2.5 bg-background/92 px-3.5 py-2 backdrop-blur-xl" style={{ ["--bite" as string]: "6px" }}>
+          <button type="button" onClick={openGate} className="kcard pointer-events-auto flex cursor-pointer items-center gap-2.5 bg-background/92 px-3.5 py-2 backdrop-blur-xl" style={{ ["--bite" as string]: "6px" }}>
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/55">{styles.length} of {whole}</span>
             <span aria-hidden className="h-3 w-px bg-foreground/15" />
-            <span className="text-[12.5px] font-semibold">Sign in for the rest of the library</span>
-          </Link>
+            <span className="text-[12.5px] font-semibold">Sign in to turn the blank ones over</span>
+          </button>
         </div>
       ) : null}
+      {gate && whole !== null ? <Gate shown={styles.length} whole={whole} onClose={() => setGate(false)} /> : null}
       {style ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => { setOpen(null); setVerdict(null); setAside([]); }} verdict={verdict && verdict.id === style.id ? verdict : null} pinned={pins.includes(style.id)} onPin={() => (pins.includes(style.id) ? unpin(style.id) : pin([style.id]))} /> : null}
       {axes && (mode === "trait" || mode === "plot") ? (
         <p className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${glass}`} style={{ top: "calc(var(--head, 60px) + 14px)" }}>
@@ -765,6 +788,42 @@ function useShapes(pictures: string[], spare: string | null) {
 
 // Prints dropped on a table: where each one lands (its centre, as a share of the table), how wide it is (as a share
 // of the table's width), how it is turned, and which lies on top. The first picture leads; the rest overlap its edges.
+/** The only thing on the sheet that asks a visitor for anything, opened from a blank card or from the line that
+ *  counts them: a sheet up from the bottom on a phone, a card in the middle on a desk. */
+function Gate({ shown, whole, onClose }: { shown: number; whole: number; onClose: () => void }) {
+  const box = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { onClose(); return; }
+      // The keyboard stays inside while it is up, so tabbing cannot wander back onto the sheet behind it.
+      if (e.key !== "Tab" || !box.current) return;
+      const able = box.current.querySelectorAll<HTMLElement>("a[href], button:not([disabled])");
+      if (able.length === 0) return;
+      const first = able[0], last = able[able.length - 1];
+      if (e.shiftKey ? document.activeElement === first : document.activeElement === last) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+    };
+    document.addEventListener("keydown", key);
+    box.current?.querySelector<HTMLElement>("a[href]")?.focus();
+    return () => document.removeEventListener("keydown", key);
+  }, [onClose]);
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Sign in to see the whole library" onClick={onClose}
+      className="absolute inset-0 z-[60] flex items-end justify-center bg-[color-mix(in_srgb,var(--foreground)_28%,transparent)] px-3 pb-3 backdrop-blur-md sm:items-center sm:pb-0">
+      <div ref={box} onClick={(e) => e.stopPropagation()} className="gate-card w-full max-w-[26rem] bg-background px-6 pb-6 pt-8 shadow-[0_24px_70px_-24px_rgba(20,24,34,0.55)] sm:px-8 sm:pb-8 sm:pt-10">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/45">{shown} of {whole} shown</p>
+        <h2 className="mt-3 font-display text-[30px] font-bold leading-[1.05] tracking-[-0.03em] sm:text-[36px]">
+          The blank cards are the <span className="gate-mark">other {whole - shown}</span>
+        </h2>
+        <p className="mt-4 text-[16px] leading-relaxed text-foreground/65">Each one is a design language or an art style with its own pictures, tokens and rules. Signing in turns them over.</p>
+        <div className="mt-7 flex flex-col gap-2 sm:flex-row">
+          <Link href="/signin" className="flex-1 bg-foreground px-6 py-4 text-center font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-background">Sign in with Google</Link>
+          <button type="button" onClick={onClose} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-5 py-4 font-mono text-[11px] uppercase tracking-[0.16em] text-foreground/70 hover:text-foreground">Keep looking</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const TABLE: { x: number; y: number; s: number; r: number; z: number }[][] = [
   [{ x: 0.5, y: 0.5, s: 0.62, r: -1.5, z: 1 }],
   [{ x: 0.37, y: 0.47, s: 0.54, r: -3, z: 1 }, { x: 0.74, y: 0.6, s: 0.4, r: 4.5, z: 2 }],
