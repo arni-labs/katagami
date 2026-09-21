@@ -29,11 +29,12 @@ The frontend is the only thing on Vercel. The backend (entity store, agent runti
 
 ### After a production deploy: warm the card images
 
-The image optimizer's cache does not survive a deploy, and a card picture is a multi-megabyte
-original, so its first resize costs 400–900 ms against ~60 ms once warm. A phone opening
-`/explore/mosaic` asks for about seventy at once: cold, the view takes about fifteen seconds to fill;
-warm, under three. Nothing runs this automatically — run it by hand after a deploy that changed the
-site, and after the library grows:
+A card picture is a multi-megabyte original, so the optimizer's first resize of one costs 400–900 ms
+against ~60 ms once warm. A phone opening `/explore/mosaic` asks for about seventy at once: cold, the
+view takes about fifteen seconds to fill; warm, under three. The cache is not guaranteed across a
+deploy (a measured one kept 452 of 457, an earlier one kept almost none), and the library grows, so
+nothing here can be assumed warm. Nothing runs this automatically — run it by hand after a deploy
+that changed the site, and after the library grows:
 
 ```sh
 cd ui && TEMPER_API_URL=… TEMPER_API_KEY=… npm run warm-images
