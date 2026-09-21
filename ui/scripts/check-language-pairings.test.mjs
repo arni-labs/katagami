@@ -10,7 +10,7 @@ async function check(languages, styles) {
   });
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   try {
-    const child=spawn(process.execPath,[new URL('./check-language-pairings.mjs',import.meta.url).pathname],{
+    const child=spawn(process.execPath,[new URL('./audit-language-pairings.mjs',import.meta.url).pathname],{
       env:{...process.env,TEMPER_API_URL:`http://127.0.0.1:${server.address().port}`,TEMPER_API_KEY:'local-fixture'},
     });
     let output='';child.stdout.on('data',chunk=>{output+=chunk});child.stderr.on('data',chunk=>{output+=chunk});
