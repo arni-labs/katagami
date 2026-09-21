@@ -1808,7 +1808,7 @@
 
 /* The asked sentence, set large: a marked phrase sits on a swipe of highlighter across the lower part of the line
    (a hard-stopped fill, not a fade), and wraps cleanly when the phrase breaks over two lines. */
-.query-mark { color: inherit; padding: 0 0.12em; background-image: linear-gradient(transparent 46%, color-mix(in srgb, var(--mark) 72%, transparent) 46%, color-mix(in srgb, var(--mark) 72%, transparent) 92%, transparent 92%); background-repeat: no-repeat; background-size: 0% 100%; -webkit-box-decoration-break: clone; box-decoration-break: clone; animation: query-swipe 300ms cubic-bezier(0.32, 0.8, 0.4, 1) both; }
+.query-mark { color: inherit; background-color: transparent; padding: 0 0.12em; margin: 0 -0.12em; background-image: linear-gradient(transparent 46%, color-mix(in srgb, var(--mark) 72%, transparent) 46%, color-mix(in srgb, var(--mark) 72%, transparent) 92%, transparent 92%); background-repeat: no-repeat; background-size: 0% 100%; -webkit-box-decoration-break: clone; box-decoration-break: clone; animation: query-swipe 300ms cubic-bezier(0.32, 0.8, 0.4, 1) both; }
 /* A mark is drawn on the way a highlighter is drawn on: one stroke, left to right, the next a moment behind. */
 @keyframes query-swipe { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
 /* A change arrives as its own chip, so taking it back is one press on the thing you said. */
