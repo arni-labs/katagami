@@ -31,6 +31,7 @@ export function CopyButton({
   text,
   label,
   variant = "outline",
+  className,
   artifact,
   languageId,
   languageName,
@@ -39,6 +40,9 @@ export function CopyButton({
   text: string;
   label: string;
   variant?: "outline" | "ink";
+  /** Replaces the variant's classes outright, for the rare page where the copy
+   *  IS the page and the standard chip is too small to be the thing you press. */
+  className?: string;
   /** What is being copied, for analytics (falls back to `label`). */
   artifact?: string;
   languageId?: string;
@@ -49,7 +53,7 @@ export function CopyButton({
   return (
     <button
       type="button"
-      className={variant === "ink" ? KX_BTN_INK : KX_BTN_PAPER}
+      className={className ?? (variant === "ink" ? KX_BTN_INK : KX_BTN_PAPER)}
       onClick={async () => {
         const didCopy = await copyText(text);
         if (!didCopy) return;
