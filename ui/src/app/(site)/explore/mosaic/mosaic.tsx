@@ -28,8 +28,9 @@ const TRAIT = new Map(STYLE_DNA_QUESTIONS.map((q) => [q.id, q.label]));
 const SIZES = { phone: [46, 74, 112], desk: [58, 96, 148] };
 const RATIO = 1.2, GAP = 10;
 // Every card short of the opened entry draws from the same resize. A picture is then fetched and shrunk once for
-// the whole page: the canvas at any zoom, the results and the trays all read the one warm copy.
-const NEAR = 256;
+// the whole page: the canvas at any zoom, the results and the trays all read the one warm copy. 384 is the width
+// the largest of them wanted anyway: a 148px card on a 2x screen, or a 112px one on a phone's 3x.
+const NEAR = 384;
 const GROUND = "color-mix(in srgb, var(--foreground) 15%, var(--background))"; // the desk the stamps lie on
 const HUE_ANGLE: Record<string, number> = { red: 0, orange: 28, yellow: 52, green: 120, teal: 172, blue: 222, violet: 275, pink: 325 };
 /** A steady four-figure number for an entry, for the skins that print a code. */

@@ -41,7 +41,7 @@ export function Card(props: CardProps) {
     <span className="absolute overflow-hidden" style={{ left: f.x, right: f.x, top: f.top, bottom: f.foot, background: soon ? undefined : ink ?? "var(--muted)", ...(under ? { backgroundImage: `url("${under}")`, backgroundSize: "cover", backgroundPosition: "center" } : null) }}>
       {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img key={src} src={fast ? quick(src, fast) : quick(src, 256)} alt="" loading={eager || (fast && fast > 384) ? "eager" : "lazy"} fetchPriority={eager ? "high" : "low"} decoding="async" draggable={false} onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} className="absolute inset-0 h-full w-full object-cover" />
+        <img key={src} src={fast ? quick(src, fast) : quick(src, 256)} alt="" loading={eager || (fast && fast > 384) ? "eager" : "lazy"} fetchPriority={eager || (fast && fast > 384) ? "high" : "low"} decoding="async" draggable={false} onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} className="absolute inset-0 h-full w-full object-cover" />
       ) : null}
     </span>
   );

@@ -11,13 +11,16 @@
 //
 // Env: TEMPER_API_URL (or NEXT_PUBLIC_TEMPER_API_URL), TEMPER_API_KEY, TEMPER_TENANT (default "default").
 //      SITE (default https://katagami.ai) is the deployment to warm.
-//      WIDTH (default 256) must match NEAR in explore/mosaic/mosaic.tsx.
+//      WIDTH (default 384) must match NEAR in explore/mosaic/mosaic.tsx.
 
 const API = (process.env.TEMPER_API_URL || process.env.NEXT_PUBLIC_TEMPER_API_URL || "").replace(/\/+$/, "");
 const KEY = process.env.TEMPER_API_KEY;
 if (!API || !KEY) { console.error("missing env TEMPER_API_URL / TEMPER_API_KEY"); process.exit(2); }
 const SITE = (process.env.SITE || "https://katagami.ai").replace(/\/+$/, "");
-const WIDTH = Number(process.env.WIDTH || 256);
+const WIDTH = Number(process.env.WIDTH || 384);
+// The optimizer keeps a separate copy per format it negotiates, so a warm pass has to ask the way a browser asks:
+// fetch's own `Accept: */*` warms the JPEG nobody is served.
+const ACCEPT = { Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8" };
 const H = { "X-Tenant-Id": process.env.TEMPER_TENANT || "default", Authorization: `Bearer ${KEY}` };
 
 async function collectAll(path) {
@@ -64,7 +67,7 @@ let done = 0, warm = 0, failed = 0;
 await Promise.all(Array.from({ length: 8 }, async () => {
   for (let url = queue.pop(); url; url = queue.pop()) {
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(60000) });
+      const res = await fetch(url, { headers: ACCEPT, signal: AbortSignal.timeout(60000) });
       await res.arrayBuffer();
       if (!res.ok) { failed++; console.error(`  ${res.status} ${url}`); }
       else if ((res.headers.get("x-vercel-cache") || "").includes("HIT")) warm++;

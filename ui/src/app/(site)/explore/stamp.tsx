@@ -104,7 +104,7 @@ export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = fa
         {veil > 0 && !soon ? <span aria-hidden className="absolute inset-0 z-[1]" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))`, transition: "opacity 200ms" }} /> : null}
         {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : src && fast ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={src} src={quick(src, fast)} alt="" loading={eager || (fast && fast > 384) ? "eager" : "lazy"} fetchPriority={eager ? "high" : "low"} decoding="async" draggable={false} onError={retryThenHide} onLoad={onShape ? (e) => { const i = e.currentTarget; if (i.naturalWidth > 0) onShape(i.naturalWidth / i.naturalHeight); } : undefined} className="absolute inset-0 h-full w-full object-cover" />
+          <img key={src} src={quick(src, fast)} alt="" loading={eager || (fast && fast > 384) ? "eager" : "lazy"} fetchPriority={eager || (fast && fast > 384) ? "high" : "low"} decoding="async" draggable={false} onError={retryThenHide} onLoad={onShape ? (e) => { const i = e.currentTarget; if (i.naturalWidth > 0) onShape(i.naturalWidth / i.naturalHeight); } : undefined} className="absolute inset-0 h-full w-full object-cover" />
         ) : src ? <GalleryImage src={src} alt="" sizes={sizes} className="object-cover" /> : null}
       </span>
       {label ? (
