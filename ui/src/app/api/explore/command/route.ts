@@ -25,7 +25,7 @@ export const maxDuration = 30;
  *   zoom     closer / further
  *   skin     change what the cards are made of
  *   reset    clear everything
- *   cannot   something this screen cannot do: the page says so, and searches for it instead
+ *   cannot   something this screen cannot do: the page says so (and, with nothing open, searches for it instead)
  *   arrange  order the wall along a measured trait ("dark to light", "quietest to loudest", "by how 70s it feels")
  *   plot     two traits against each other, as the wall's two axes
  *   narrow   keep only those with a trait ("only the dark ones"), of the answer on screen or of the whole wall
@@ -34,6 +34,11 @@ export const maxDuration = 30;
  *
  * Names are found in code against what this caller may see (never by the model), so a command cannot name or reveal
  * a style off the caller's shelf. Several actions may come back at once ("only art styles, by family, zoomed out").
+ *
+ * With `open` set, one style fills the screen and the box beside it asks about that one: judge it, gather what is
+ * like it, pin it. Anything else typed there is either a plainly described product — a real new question, and the
+ * page closes the card for it — or something this screen has no answer for, which comes back as `cannot` rather
+ * than quietly turning into a library search the person did not ask for.
  */
 const HUES = ["red", "orange", "yellow", "green", "teal", "blue", "violet", "pink", "neutral"] as const;
 const SKINS = { stamp: "postage stamps", stencil: "cut paper stencils", swatch: "paint swatches or colour chips", proof: "risograph print proofs" } as const;
@@ -100,7 +105,9 @@ export async function GET(request: Request) {
   let scores: Record<string, number> = {};
   let error: string | undefined;
   try {
-    const { answers } = await askJev(`Someone is using a visual library of design styles, shown as a wall of cards they can filter, sort, zoom and restyle. ${hasAnswer ? "Results for an earlier question are on screen. " : ""}They type into its command bar: ${q}`, { ...Object.fromEntries(Object.entries(Q).map(([k, says]) => [k, noul(says)])), ...Object.fromEntries(TRAITS.map((t) => [`trait_${t.id}`, noul(`Their words mention or point at this quality of a visual style: ${t.style}`)])) }, { timeoutMs: 7000, retries: 1 });
+    // The reader used to be told nothing about a card being open, so it scored "would this suit a bank?" as if the
+    // question were floating free. It is the one fact that changes what the words most likely mean.
+    const { answers } = await askJev(`Someone is using a visual library of design styles, shown as a wall of cards they can filter, sort, zoom and restyle. ${hasAnswer ? "Results for an earlier question are on screen. " : ""}${open ? "One single style is open and fills the screen; the box they are typing into sits beside it. " : ""}They type into its command bar: ${q}`, { ...Object.fromEntries(Object.entries(Q).map(([k, says]) => [k, noul(says)])), ...Object.fromEntries(TRAITS.map((t) => [`trait_${t.id}`, noul(`Their words mention or point at this quality of a visual style: ${t.style}`)])) }, { timeoutMs: 7000, retries: 1 });
     scores = Object.fromEntries(Object.keys(answers).map((k) => [k, Number((answers[k] as { noul?: number } | undefined)?.noul ?? 0)]));
   } catch (err) {
     console.error("explore command: Jev unavailable", err);
@@ -115,7 +122,11 @@ export async function GET(request: Request) {
   const loose = /^\s*(from\s+)?\w+\s+to\s+\w+\s*$|\bby how\b|\b(sort|order|arrange)/i.test(q);
   const traits = TRAITS.map((t) => ({ id: t.id, label: t.label, n: raw(`trait_${t.id}`) })).filter((t) => t.n >= (loose ? 0.4 : 0.6)).sort((a, b) => b.n - a.n);
   const actions: Action[] = [];
-  if (open && raw("judge") >= 0.6) {
+  // Judging is asked with a pointer at the card — "would this suit…", "is it any good for…". A bare description of
+  // something being made points at nothing on screen, so it stays a new question however it scores, and the page
+  // puts the card away for it. That line is the phrase's shape, which is plainer here than any score.
+  const points = /\b(this|it|these|those|that)\b/i.test(q) || /^\s*(would|does|do|could|will|is|are|can|should|any good)\b/i.test(q);
+  if (open && points && raw("judge") >= 0.6) {
     const verdict = await judgeStyleFor(tier, openKind, open, q).catch(() => null);
     if (verdict) return NextResponse.json({ q, tier, actions: [{ do: "judge", id: open, ...verdict }], named: [], timings_ms: { jev: Date.now() - started } }, { headers: { "Cache-Control": "no-store" } });
   }
@@ -153,6 +164,10 @@ export async function GET(request: Request) {
     if (named.length >= 2 && at("compare") >= 0.5) actions.push({ do: "compare", ids: named.map((n) => n.id), names: named.map((n) => n.name) });
     else if (named.length >= 1 && at("like") >= 0.5) actions.push({ do: "like", id: named[0].id, name: named[0].name });
     else if (actions.length === 0 && raw("cannot") >= 0.75 && raw("cannot") > raw("question")) actions.push({ do: "cannot", q });
+    // Beside an open card, the words are about that card. What could not be placed among the card's own answers is
+    // a fresh library search only when it plainly describes something being made; anything else is something this
+    // screen has no answer for, and saying so beats handing back a style nobody asked about.
+    else if (actions.length === 0 && open) actions.push(raw("question") >= sure ? { do: "ask", q } : { do: "cannot", q });
     else if (actions.length === 0) actions.push(hasAnswer && at("refine") >= sure && at("refine") > at("question") ? { do: "refine", say: q } : { do: "ask", q });
   }
   return NextResponse.json({ q, tier, actions, named, timings_ms: { jev: Date.now() - started }, ...(error ? { error } : {}) }, { headers: { "Cache-Control": "no-store" } });
