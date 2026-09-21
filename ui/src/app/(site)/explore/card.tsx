@@ -16,7 +16,7 @@ export type Skin = (typeof SKINS)[number];
 export const SKIN_NAME: Record<Skin, string> = { stamp: "Stamp", stencil: "Stencil", swatch: "Swatch", proof: "Riso proof" };
 export const SkinContext = createContext<Skin>("stamp");
 
-type CardProps = { src: string | null; ink: string | null; w: number; h: number; label?: string; value?: string; soon?: boolean; lit?: { x: number; y: number }; fast?: 128 | 256 | 384 | 750 | 1080; under?: string; /** `w`/`h` are the picture's size; the card is built round it. */ windowed?: boolean; /** A steady number for this entry, for skins that print one. */ code?: string; /** Fetch this one at once, ahead of the rest. */ eager?: boolean };
+type CardProps = { src: string | null; ink: string | null; w: number; h: number; label?: string; value?: string; soon?: boolean; lit?: { x: number; y: number }; fast?: 128 | 256 | 384 | 750 | 1080; under?: string; /** `w`/`h` are the picture's size; the card is built round it. */ windowed?: boolean; /** A steady number for this entry, for skins that print one. */ code?: string; /** Fetch this one at once, ahead of the rest. */ eager?: boolean; /** A second picture to draw if the first one is gone from the store. */ spare?: string | null };
 
 /** What each skin puts round the picture: margins, and the height of the band that carries the name. Margins stop growing, so a large card is a large picture, not a large frame. */
 function frame(skin: Skin, w: number, label: boolean) {
@@ -32,7 +32,7 @@ function frame(skin: Skin, w: number, label: boolean) {
 export function Card(props: CardProps) {
   const skin = useContext(SkinContext);
   if (skin === "stamp") return <Stamp {...props} />;
-  const { src, ink, label, value, soon = false, lit, fast, under, windowed = false, code, eager = false } = props;
+  const { src, ink, label, value, soon = false, lit, fast, under, windowed = false, code, eager = false, spare } = props;
   let { w, h } = props;
   const f = frame(skin, w, Boolean(label));
   if (windowed) { w = Math.round(w) + f.x * 2; h = Math.round(h) + f.top + f.foot; }
@@ -41,7 +41,7 @@ export function Card(props: CardProps) {
     <span className="absolute overflow-hidden" style={{ left: f.x, right: f.x, top: f.top, bottom: f.foot, background: soon ? undefined : ink ?? "var(--muted)", ...(under ? { backgroundImage: `url("${under}")`, backgroundSize: "cover", backgroundPosition: "center" } : null) }}>
       {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img key={src} src={fast ? quick(src, fast) : quick(src, 256)} alt="" loading={eager || (fast && fast > 384) ? "eager" : "lazy"} fetchPriority={eager || (fast && fast > 384) ? "high" : "low"} decoding="async" draggable={false} onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} className="absolute inset-0 h-full w-full object-cover" />
+        <img key={src} src={fast ? quick(src, fast) : quick(src, 256)} alt="" loading={eager || (fast && fast > 384) ? "eager" : "lazy"} fetchPriority={eager || (fast && fast > 384) ? "high" : "low"} decoding="async" draggable={false} data-spare={spare && fast ? quick(spare, fast) : undefined} onError={(e) => { const i = e.currentTarget; const s = i.dataset.spare; if (s && !i.dataset.spared) { i.dataset.spared = "1"; i.src = s; return; } i.style.visibility = "hidden"; }} className="absolute inset-0 h-full w-full object-cover" />
       ) : null}
     </span>
   );
