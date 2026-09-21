@@ -19,9 +19,24 @@ const nextConfig: NextConfig = {
     "/api/taste/embed": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
     "/api/taste/vectors": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
     "/api/search": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
-    "/": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
+    "/gallery": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
     "/palettes": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
     "/art-styles": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
+  },
+  // The sheet at "/" is the library now. These index pages each showed a slice
+  // of it and are no longer offered to anyone: the code stays in the tree (a
+  // reader finds it where its route used to be) and the address keeps working
+  // for old links and bookmarks by landing on the sheet. Temporary on purpose —
+  // a 308 would be cached in browsers for years, and this is a product call
+  // that may well be taken back. Only the bare index redirects: every detail
+  // page under these prefixes (/palettes/<id>, /art-styles/<id>, /studio/BRIEF.md)
+  // is untouched, because the sheet's own "Open" button points at them.
+  async redirects() {
+    return ["/gallery", "/ask", "/atlas", "/palettes", "/art-styles", "/studio"].map((source) => ({
+      source,
+      destination: "/",
+      permanent: false,
+    }));
   },
   // The read MCP has two doors on one server: /mcp requires a bearer (the 401 is
   // what lets a host draw its connect card) and /mcp/open never asks for one and

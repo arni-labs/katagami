@@ -98,7 +98,7 @@ export function PhoneAtlas({ styles, families, holes, sample, lit, accent, top, 
     <button type="button" aria-pressed={view === value} onClick={() => { setWanted(null); setView(value); }} className={`cursor-pointer px-3 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] ${view === value ? "bg-foreground text-background" : "text-muted-foreground"}`}>{label}</button>
   );
   return (
-    <div className="flex h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full flex-col overflow-hidden">
+    <div className="flex h-[calc(100dvh-var(--site-header))] w-full flex-col overflow-hidden">
       <div className="z-10 max-h-[60%] shrink-0 overflow-y-auto bg-background px-4 pb-2 pt-3 shadow-[0_1px_0_rgba(30,35,45,0.06)]">
         <h1 className="sr-only">{title}</h1>
         {top}

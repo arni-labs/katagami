@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
-import { MobileNav } from "@/components/mobile-nav";
 import { MobileMenu } from "@/components/mobile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
@@ -22,7 +21,7 @@ export default function SiteLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex min-h-full w-full max-w-full flex-col overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+    <div className="flex min-h-full w-full max-w-full flex-col overflow-x-hidden">
       <header className="relative max-w-full overflow-x-clip bg-background/80 backdrop-blur-sm">
         <nav className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:h-16 sm:gap-6 md:gap-8">
           <Link
@@ -176,7 +175,6 @@ export default function SiteLayout({
           </div>
         </div>
       </footer>
-      <MobileNav />
       <CommandPalette />
       <ScrollReveal />
     </div>

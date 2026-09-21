@@ -553,7 +553,7 @@ export function AtlasMap({ styles, families, holes, unplaced, sample, host }: { 
   const sheetOpen = Boolean(focus || focusHole);
 
   return (
-    <div className={host?.fill ? "relative h-full w-full overflow-hidden" : "relative h-[calc(100dvh-65px-4rem-env(safe-area-inset-bottom))] w-full overflow-hidden md:h-[calc(100dvh-65px)]"}>
+    <div className={host?.fill ? "relative h-full w-full overflow-hidden" : "relative h-[calc(100dvh-var(--site-header))] w-full overflow-hidden"}>
       {/* The grounds are drawn in screen space from the camera the state holds,
           which during a glide is already the destination while the paper is
           still travelling: so they sit the flight out and return on arrival. */}

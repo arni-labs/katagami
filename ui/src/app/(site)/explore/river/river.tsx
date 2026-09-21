@@ -189,9 +189,9 @@ export function River({ styles, families }: { styles: AtlasStyle[]; families: Fa
   const open = openId ? byId.get(openId) ?? null : null;
   const name = named ? byId.get(named) : null, nameAt = named && lay ? lay.slots[spot.get(named) ?? 0] : null;
 
-  if (!screen) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
+  if (!screen) return <div className="h-[calc(100dvh-var(--site-header))] w-full" aria-busy="true" />;
   return (
-    <div className="relative h-[calc(100dvh-65px)] w-full overflow-hidden">
+    <div className="relative h-[calc(100dvh-var(--site-header))] w-full overflow-hidden">
       <h1 className="sr-only">Explore the library</h1>
       <div ref={scroller} id="river" onScroll={ride} className="h-full w-full overflow-y-auto overflow-x-hidden pr-5 md:pr-8" style={{ overscrollBehavior: "contain" }}
         onPointerMove={(e) => { if (e.pointerType !== "mouse" || !scroller.current) return; const r = scroller.current.getBoundingClientRect(); swell(e.clientX - r.left, e.clientY - r.top + scroller.current.scrollTop); }}

@@ -212,11 +212,12 @@ assert.match(
   "language detail clicks must paint a shell immediately",
 );
 
-const homepage = readFileSync(resolve("src/app/(site)/page.tsx"), "utf8");
+// The hero this was written against moved to /gallery when the sheet took "/".
+const galleryPage = readFileSync(resolve("src/app/(site)/gallery/page.tsx"), "utf8");
 assert.doesNotMatch(
-  homepage,
+  galleryPage,
   /Browse gallery/,
-  "the homepage hero no longer carries a Browse gallery button",
+  "the gallery hero no longer carries a Browse gallery button",
 );
 
 const laneItems = readFileSync(resolve("src/lib/lane-items.ts"), "utf8");

@@ -138,6 +138,11 @@
   --chart-4: var(--teal);
   --chart-5: var(--sumire);
   --radius: 0.375rem;                          /* 6px — clearly rectangular */
+  /* How much of the viewport the site header eats: the nav row plus its 1px
+     perforation. A full-screen canvas subtracts this instead of hard-coding
+     the desktop number and coming up eight pixels short on a phone. Keep it
+     equal to the nav's own `h-14 sm:h-16` in (site)/layout.tsx. */
+  --site-header: 57px;
   --sidebar: var(--washi);
   --sidebar-foreground: var(--sumi);
   --sidebar-primary: var(--sumi);
@@ -146,6 +151,12 @@
   --sidebar-accent-foreground: var(--sumi);
   --sidebar-border: oklch(0.9 0.006 260);
   --sidebar-ring: var(--ramune);
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --site-header: 65px;
+  }
 }
 
 .dark {
