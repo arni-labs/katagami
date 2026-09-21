@@ -4,7 +4,7 @@
 # (illustration / photography / painting / print / 3d / collage), one portable
 # paste-ready PromptTemplate made of observable aesthetic facts, per-slot
 # SubjectRecipes (hero -> wide scene, empty-state -> single object, avatar ->
-# portrait), optional ReferenceImages (examples only), and ProofShots rendered
+# portrait), five ReferenceImages (four OpenAI and one xAI), and ProofShots rendered
 # from the same prompt without style references.
 #
 # Generation is delegated downstream: Katagami stores one aesthetic prompt.
@@ -277,7 +277,7 @@ effect = [
   { type = "set_bool", var = "has_portability_evidence", value = "false" }
 ]
 params = ["name", "slug", "medium", "prompt_template", "slot_recipes", "guidance", "reference_image_file_ids", "reference_manifest", "proof_shots_file_ids", "proof_shots_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "source_basis", "prompt_review", "portability_report", "tags", "direction_id", "curator_notes"]
-hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/one paste-ready observable prompt/slot_recipes/guidance + prompt-only comparison outputs from at least two distinct image model identities, with optional extra gallery outputs in reference_manifest schema version 3 + thumbnail + lineage + model provenance + credits + source_basis + independent prompt_review + portability_report + direction_id. Katagami does not generate submission images. Leaves the entity in Draft. The finalizer validates the reports, files, and hashes, internally attests them, and alone may mark quality/publish. Files must already be Locked."
+hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/one paste-ready observable prompt/slot_recipes/guidance + prompt-only comparison outputs from at least two distinct image model identities, with five gallery outputs (four OpenAI and one xAI) in reference_manifest schema version 3; comparison files may also be gallery images; strongest first and its File is the thumbnail + thumbnail + lineage + model provenance + credits + source_basis + independent prompt_review + portability_report + direction_id. Katagami does not generate submission images. Leaves the entity in Draft. The finalizer validates the reports, files, and hashes, internally attests them, and alone may mark quality/publish. Files must already be Locked."
 
 
 # The engine binds verification to this submitted entity. Contributors do not
@@ -348,7 +348,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_reference_images", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "has_source_basis_review", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["reference_image_file_ids", "reference_manifest"]
-hint = "Attach optional ordered gallery File ids plus reference_manifest schema version 3. No fixed count or image-model allocation is required. With no extras, the comparison proofs themselves are sufficient and one can be the thumbnail. Each supplied extra must have distinct Locked file bytes, prompt hashes and a genuine generation record version 2. Built-in Codex/Grok records may leave unexposed model versions/request IDs null with a real harness tool receipt; provider records require exact model and request IDs. Requested models never masquerade as observed IDs. Add further examples later through supported revision operations."
+hint = "Attach five ordered gallery File ids plus reference_manifest schema version 3: four OpenAI images and one xAI image, strongest first and its File as thumbnail. The comparison proof files may also be gallery files. Each image must have distinct Locked file bytes, prompt hashes and a genuine generation record version 2. Built-in Codex/Grok records may leave unexposed model versions/request IDs null with a real harness tool receipt; provider records require exact model and request IDs. Requested models never masquerade as observed IDs. Add further examples later through supported revision operations."
 
 # --- Actions: Proof Shots (canonical subjects rendered in-style) ---
 
@@ -358,7 +358,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_proof_shots", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "has_source_basis_review", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }, { type = "set_bool", var = "has_portability_evidence", value = "false" }]
 params = ["proof_shots_file_ids", "proof_shots_manifest"]
-hint = "Attach prompt-only comparison shots from at least two distinct image model identities. One fresh subject rendered independently by two models is sufficient; more models or matched subjects are optional. No named model, six-image gallery or extra example set is a publication prerequisite. Use proof manifest version 4, generation records version 2 and portability report version 2. Render the unchanged canonical prompt plus Subject and scene text, with mode text_to_image and no input images. Choose roles from human portrait, non-human living subject, still-life/object, and landscape/environment; vary roles when adding subjects. Every record binds the exact Locked output file, byte hash, prompt hash and genuine harness/provider receipt. Independent blind scoring must confirm subject_followed and style_applied, with medium/material and depiction grammar scoring 2/2. Katagami validates evidence but never invokes an image provider."
+hint = "Attach prompt-only comparison shots from at least two distinct image model identities. One fresh subject rendered independently by two models is sufficient; more models or matched subjects are optional. The five-image gallery may reuse these proof outputs. Use proof manifest version 4, generation records version 2 and portability report version 2. Render the unchanged canonical prompt plus Subject and scene text, with mode text_to_image and no input images. Choose roles from human portrait, non-human living subject, still-life/object, and landscape/environment; vary roles when adding subjects. Every record binds the exact Locked output file, byte hash, prompt hash and genuine harness/provider receipt. Independent blind scoring must confirm subject_followed and style_applied, with medium/material and depiction grammar scoring 2/2. Katagami validates evidence but never invokes an image provider."
 
 # --- Actions: Thumbnail / Public Assets ---
 
@@ -518,7 +518,7 @@ kind = "input"
 from = ["Draft"]
 to = "UnderReview"
 guard = [{ type = "is_true", var = "has_medium" }, { type = "is_true", var = "has_prompt_template" }, { type = "is_true", var = "has_proof_shots" }, { type = "is_true", var = "has_thumbnail" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
-hint = "Curation-service callback after the WASM finalizer verifies every proof file, generation chain, and report. Requires medium, one portable prompt, at least two proof shots from at least two distinct models, and a Ready/Locked thumbnail. Cedar denies contributors. Extra gallery images are optional and validated when supplied; a comparison image may be the thumbnail. Proof readiness stays in WASM, which streams and hashes every Locked output; no source images are accepted."
+hint = "Curation-service callback after the WASM finalizer verifies every proof file, generation chain, and report. Requires medium, one portable prompt, at least two proof shots from at least two distinct models, and a Ready/Locked thumbnail. Cedar denies contributors. Five gallery images (four OpenAI and one xAI) are required and validated; the first gallery File is the thumbnail. Proof readiness stays in WASM, which streams and hashes every Locked output; no source images are accepted."
 
 [[action]]
 name = "Publish"

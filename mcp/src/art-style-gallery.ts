@@ -35,7 +35,10 @@ export const artStyleGalleryImages = z.array(z.object({
       (route === "provider" && (model === null || provider_request_id === null)) ||
       (route === "builtin" && !((harness === "codex" && provider === "OpenAI") || (harness === "grok" && provider === "xAI"))))
     context.addIssue({ code: z.ZodIssueCode.custom, message: "Gallery execution must record the actual route, requested model and available provenance" });
-}));
+})).length(5).refine(images =>
+  images.filter(image => image.model.provider === "OpenAI").length === 4 &&
+  images.filter(image => image.model.provider === "xAI").length === 1,
+  "Gallery requires four OpenAI images and one xAI image");
 
 /** Validate bindings before creating or mutating a Draft, then preserve the
  * full records for the independent finalizer's locked-file verification. */
@@ -47,12 +50,13 @@ export function gallerySubmissionFields(
   proofFileIds: string[] = [],
 ) {
   const digest = (value: string) => createHash("sha256").update(value).digest("hex");
+  artStyleGalleryImages.parse(images);
   const ids = images.map(image => image.file_id);
   const hashes = images.map(image => image.generation_record.output.sha256);
   if (new Set(ids).size !== images.length || new Set(hashes).size !== images.length)
     throw new Error("Gallery file IDs and output hashes must be unique");
-  if (![...ids, ...proofFileIds].includes(thumbnailFileId))
-    throw new Error("thumbnail_file_id must identify a gallery or proof image");
+  if (ids[0] !== thumbnailFileId)
+    throw new Error("thumbnail_file_id must identify the first gallery image");
   for (const image of images) {
     const record = image.generation_record;
     const prompt = `${canonicalPrompt}\n\nSubject and scene:\n${image.subject}`;

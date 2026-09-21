@@ -446,15 +446,15 @@ export function buildServer(auth: AuthInfo): McpServer {
           .describe(
             "At least two distinct image models × the same fresh subject descriptions, generated from text alone. Import outputs and bind exact bytes, canonical prompt hash and full prompt hash in each generation_record. No input images or style-reference images.",
           ),
-        gallery_images: artStyleGalleryImages.optional().default([]).describe(
-          "Optional additional gallery images using any actual image models. Each prompt is the canonical prompt plus \n\nSubject and scene:\n and its subject. These are separate from portability proof shots.",
+        gallery_images: artStyleGalleryImages.describe(
+          "Five gallery images: four OpenAI and one xAI, strongest first. Each prompt is the canonical prompt plus \n\nSubject and scene:\n and its subject. The same actual files may also serve as portability proof shots.",
         ),
         thumbnail_file_id: z
           .string()
           .min(1)
           .optional()
           .describe(
-            "A gallery or proof image file_id; defaults to the first gallery image, or first proof when no extras are supplied",
+            "The first gallery image file_id; defaults to the first gallery image",
           ),
         source_basis: z
           .record(z.string(), z.unknown())

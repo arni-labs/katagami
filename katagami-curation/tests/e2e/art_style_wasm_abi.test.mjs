@@ -117,7 +117,7 @@ test('compiled WASM validates prompt-only fixture and requests completion after 
   assert.equal(result.action, 'FinalizeCompletion', JSON.stringify(result));
   assert.ok(actions.some(action => action.path.endsWith('/Temper.AttachArtStyleReview')));
   assert.ok(actions.some(action => action.path.endsWith('/Temper.Publish')));
-  assert.equal(new Set(reads).size, 10);
+  assert.equal(new Set(reads).size, 9);
 });
 
 test('compiled WASM accepts honest built-in gallery provenance', () => {
@@ -151,16 +151,25 @@ function minimalComparison(fields) {
   for (const model of fields.portability_report.models) model.cases = model.cases.slice(0, 1);
   fields.proof_shots_file_ids = fields.portability_report.models.map(model => model.cases[0].file_id);
   fields.proof_shots_manifest.items = fields.proof_shots_manifest.items.filter(item => fields.proof_shots_file_ids.includes(item.file_id));
-  fields.reference_image_file_ids = [];
-  delete fields.reference_manifest;
-  fields.thumbnail_file_id = fields.proof_shots_file_ids[0];
 }
 
-test('two compared model outputs suffice without a separate gallery', () => {
+test('two compared model outputs suffice alongside the five-image gallery', () => {
   const { result, actions, reads } = execute(minimalComparison);
   assert.equal(result.action, 'FinalizeCompletion', JSON.stringify(result));
   assert.ok(actions.some(action => action.path.endsWith('/Temper.Publish')));
-  assert.equal(new Set(reads).size, 2);
+  assert.equal(new Set(reads).size, 7);
+});
+
+test('missing gallery cannot publish even with passing two-model proof', () => {
+  const { result, actions } = execute(fields => {
+    minimalComparison(fields);
+    fields.reference_image_file_ids = [];
+    delete fields.reference_manifest;
+    fields.thumbnail_file_id = fields.proof_shots_file_ids[0];
+  });
+  assert.equal(result.action, 'Fail');
+  assert.equal(JSON.parse(result.params.error_message).code, 'art_style_gallery_invalid');
+  assert.deepEqual(actions, []);
 });
 
 test('one model cannot publish even with a real thumbnail', () => {
@@ -177,9 +186,7 @@ test('one model cannot publish even with a real thumbnail', () => {
 
 test('thumbnail must belong to the validated comparison or gallery', () => {
   const { result, actions } = execute(fields => {
-    const oldThumbnail = fields.thumbnail_file_id;
-    minimalComparison(fields);
-    fields.thumbnail_file_id = oldThumbnail;
+    fields.thumbnail_file_id = "unrelated-file";
   });
   assert.equal(result.action, 'Fail');
   assert.equal(JSON.parse(result.params.error_message).code, 'art_style_thumbnail_unbound');
