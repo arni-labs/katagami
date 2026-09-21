@@ -1,0 +1,87 @@
+version: 0.1
+status: agent_authored_draft_not_frozen
+interpretation: Source conventions are not proven necessary conditions of perceived identity.
+galley:
+  source_sha256: b98da4436f2a6e909342e210a8215138868f148dce89d1504669aa8b70eb23c5
+  entries:
+    - id: typography_roles
+      source: 'DESIGN.md:81-94'
+      scope: text_role
+      value: {editorial_display: Cormorant Garamond, work_text: IBM Plex Sans, proof_label: IBM Plex Mono}
+      status: source_convention
+      enforcement: guidance_exact_font_check_requires_editable_artifact
+    - id: verdict_colour
+      source: 'DESIGN.md:72-74'
+      scope: verdict_only
+      value: {on_press: '#00AEEF', hold: '#F6E800', recut: '#FF3B1F'}
+      status: source_convention
+      enforcement: symbolic_role_contract_in_demo
+    - id: material_and_marks
+      source: 'DESIGN.md:65-77,112-117,134-140'
+      scope: visual_treatment
+      value: [white_field, restricted_paper_grouping, square_geometry, crop_marks, rectangular_accent_marks]
+      status: source_convention
+      enforcement: descriptive_guidance_not_aesthetic_proof
+    - id: attached_annotation
+      source: 'DESIGN.md:116; calibration G-C/G-D'
+      scope: annotation_presentation
+      value: {source: edge_overlapping_scrap, tested_alternative: shared_keyed_strip}
+      status: user_accepts_both_tested_images
+      enforcement: neither_is_a_necessary_identity_test
+    - id: annotation_ownership
+      source: agent_proposed_task_semantics
+      scope: transformation
+      value: Moving a note to an index retains its intended item through a unique key.
+      status: authored_contract_not_extracted_art_theory
+      enforcement: smt_two_item_model
+    - id: asymmetry_and_space
+      source: 'DESIGN.md:100,150'
+      scope: composition_tendency
+      value: Asymmetry; at least half white or paper negative space.
+      status: explicit_source_norm_identity_necessity_unestablished
+      enforcement: retain_as_guidance_report_task_conflicts
+    - id: example_layout
+      source: 'DESIGN.md:100-104,118'
+      scope: implementation_recipe
+      value: 1440px / 12 columns / 96px rail and responsive arrangements
+      status: source_recipe_not_universal_identity
+      enforcement: not_mandatory_for_new_task
+aya:
+  source_sha256: e411bd18690edd1c5f551fbae098acd966f143ffbd1786e214181d9ecca9faf6
+  entries:
+    - id: type_roles
+      source: 'DESIGN.md:203-227'
+      scope: text_role
+      value: {display: light_condensed_serif, labels: Fragment_Mono, prose: Iowan, display_and_labels: uppercase}
+      status: source_convention
+      enforcement: generation_guidance
+    - id: material
+      source: 'DESIGN.md:184-187,199,247'
+      scope: visual_treatment
+      value: [washi_fibres, charcoal_solid_areas, ink_words, no_ui_shadow]
+      status: source_convention
+      enforcement: descriptive_guidance
+    - id: colour_roles
+      source: 'DESIGN.md:174-180,195'
+      scope: named_ui_role_not_colour_in_isolation
+      value: Indigo active; vermilion done/graph KR/error; olive abandoned/digest graph; state words have their own ink/indigo treatment.
+      status: source_convention
+      enforcement: disambiguate_role_before_any_solver_encoding
+    - id: active_arc
+      source: 'DESIGN.md:197; calibration A-C/A-D'
+      scope: emphasis_presentation
+      value: {source: one_active_arc, tested_alternative: repeated_arcs_with_equal_emphasis}
+      status: user_accepts_both_images_coupled_changes_prevent_single_factor_inference
+      enforcement: not_a_necessary_identity_test
+    - id: branch_and_rows
+      source: 'DESIGN.md:231-241'
+      scope: page_recipe
+      value: Standup coordinates, goal rows, branch placement; sign-in has a different branch placement.
+      status: page_specific_not_universal_identity
+      enforcement: not_mandatory_for_evidence_workspace
+    - id: evidence_ownership
+      source: agent_proposed_new_brief
+      scope: task_semantics
+      value: Every observation retains its source; disagreement must not become an agreed conclusion during regrouping.
+      status: candidate_contract_pending_brief_alignment
+      enforcement: not_yet_encoded
