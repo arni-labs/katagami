@@ -101,7 +101,13 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
   const [zoom, setZoom] = useState(1);
   const [mode, setMode] = useState<Mode>("colour");
   const [win, setWin] = useState({ c0: 0, c1: 0, r0: 0, r1: 0 });
-  const [open, setOpen] = useState<{ c: number; r: number } | null>(null);
+  // The opened card is held by which style it is, never by the place it was sitting in. A place is not an identity
+  // here: the sheet re-sorts under an open card (a new answer, another ordering, a kind switched off) and whoever
+  // lands on those coordinates would become the card, which is how asking a card a question used to hand back a
+  // different style.
+  const [open, setOpen] = useState<string | null>(null);
+  // What was just said back about the open card, kept apart from the wall's own line so neither answers for the other.
+  const [aside, setAside] = useState<string[]>([]);
   const [hue, setHue] = useState("");
   const ask = useAsk();
   // Design languages and art styles, both by default; pressing one turns it off or on, and the last one on stays on.
@@ -264,7 +270,7 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
     k.vx = dx * 0.064; k.vy = dy * 0.064; // what a 0.94 decay carries just that far
     coast();
   }, [size, stepX, stepY, world, coast, paint]);
-  const goTo = useCallback((id: string) => { const at = world.where.get(id); if (at) { bring(at.c, at.r); setOpen(at); } }, [world, bring]);
+  const goTo = useCallback((id: string) => { const at = world.where.get(id); if (at) { bring(at.c, at.r); setOpen(id); setAside([]); } }, [world, bring]);
   // A new sort or a new answer brings its centre (or its best fit) into view.
   const led = useRef("");
   useEffect(() => {
@@ -369,18 +375,20 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
       .slice(0, 12)
       .map((x) => x.key));
   }, [win, cells]);
-  const openCell = useCallback((c: number, r: number) => { if (!dragged.current) setOpen({ c, r }); }, []);
+  // A place that is still to be filled is a label, not an entry: opening one left the page believing a card was up.
+  const openCell = useCallback((c: number, r: number) => { if (dragged.current) return; const cell = cellAt(c, r); if (cell?.kind === "style") { setOpen(cell.s.id); setAside([]); } }, [cellAt]);
 
-  // The opened card, and its neighbours along the row for the arrows and the swipe.
-  const shown = open ? cellAt(open.c, open.r) : null, style = shown?.kind === "style" ? shown.s : null;
+  // The opened card, and where it currently sits for the arrows and the swipe.
+  const style = open ? byAny.get(open) ?? null : null;
+  const spot = open ? world.where.get(open) : undefined;
   useEffect(() => {
-    if (!open) return;
-    for (const by of [-1, 1]) for (let step = 1; step <= world.cols; step++) { const cell = cellAt(open.c + by * step, open.r); if (cell?.kind === "style") { warm(cell.s.picture, phone ? 750 : 1080); break; } }
-  }, [open, world, cellAt, phone]);
+    if (!spot) return;
+    for (const by of [-1, 1]) for (let step = 1; step <= world.cols; step++) { const cell = cellAt(spot.c + by * step, spot.r); if (cell?.kind === "style") { warm(cell.s.picture, phone ? 750 : 1080); break; } }
+  }, [spot, world, cellAt, phone]);
   const turn = useCallback((by: number) => {
-    if (!open) return;
-    for (let step = 1; step <= world.cols; step++) { const c = open.c + by * step; if (cellAt(c, open.r)?.kind === "style") { bring(c, open.r); setOpen({ c, r: open.r }); return; } }
-  }, [open, world, cellAt, bring]);
+    if (!spot) return;
+    for (let step = 1; step <= world.cols; step++) { const c = spot.c + by * step; const cell = cellAt(c, spot.r); if (cell?.kind === "style") { bring(c, spot.r); setOpen(cell.s.id); return; } }
+  }, [spot, world, cellAt, bring]);
 
   // ---- operated in words ------------------------------------------------------
   // What is typed is first read as what the person wants this screen to do (api/explore/command): it may be an
@@ -402,7 +410,7 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
   const reset = useCallback(() => {
     commandTurn.current++;
     before.current = null; setCanUndo(false);
-    setDid([]); setPair(null); setAxes(null); setNarrow(null); setMode("colour"); setVerdict(null); setOpen(null); setTray(false);
+    setDid([]); setAside([]); setPair(null); setAxes(null); setNarrow(null); setMode("colour"); setVerdict(null); setOpen(null); setTray(false);
   }, []);
   const undo = () => { const b = before.current; if (!b) return; commandTurn.current++; /* a reading still on its way must not re-apply what was just undone */ setKinds(b.kinds); setMode(b.mode); setHue(b.hue); pickSkin(b.skin); setZoom(b.zoom); setPair(b.pair); setAxes(b.axes); setNarrow(b.narrow); before.current = null; setCanUndo(false); setDid(["Undone"]); };
   const [pair, setPair] = useState<string[] | null>(null);
@@ -416,16 +424,18 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
     if (!open && !ask.answer && !operates && q.split(/\s+/).length >= 3) { before.current = null; setCanUndo(false); setPair(null); setHue(""); setDid([]); void ask.ask(q, kinds); return; }
     // With an answer on screen, a short change with none of the operating words is a refinement: straight to it.
     if (!open && ask.answer && !operates && q.split(/\s+/).length <= 6 && !/\b(app|site|website|dashboard|page|brand|poster|for an?|for the)\b/i.test(q)) { setTray(true); setDid(["Refined"]); void ask.refine(q, kinds); return; }
-    setDid(["…"]);
+    const openId = open ?? "";
+    // The wall's line and the card's line are separate: with a card up, what is said back is said about the card.
+    const say = openId ? setAside : setDid;
+    say(["…"]);
     before.current = { kinds, mode, hue, skin, zoom, pair, axes, narrow };
     setCanUndo(true);
     const ranked = ask.fits ? [...ask.fits.entries()].filter(([id]) => byAny.has(id)).sort((a, b) => a[1].rank - b[1].rank).map(([id]) => id) : [];
-    const openStyle = open ? cellAt(open.c, open.r) : null, openId = openStyle?.kind === "style" ? openStyle.s.id : "";
     // Words that point at the screen ("this", "the top two") are resolved here, where the screen is known.
     const count = ({ one: 1, two: 2, three: 3, four: 4, five: 5 } as Record<string, number>)[(q.toLowerCase().match(/\b(one|two|three|four|five)\b/) ?? [])[1] ?? ""] ?? 0;
-    if (/\bcompare\b/i.test(q) && /\btop\b/i.test(q) && ranked.length >= 2) { setPair(ranked.slice(0, Math.max(2, Math.min(3, count || 2)))); setTray(false); setDid([`Comparing the top ${Math.max(2, Math.min(3, count || 2))}`]); ask.setQuery(""); return; }
-    if (openId && /\b(more )?like (this|it)\b/i.test(q)) { const from = byAny.get(openId)!; setOpen(null); ask.setQuery(`like ${from.name}`); void ask.ask(`something like ${from.name}: ${from.traits.slice(0, 8).join(", ")}`, kinds); setDid([`Like ${from.name}`]); return; }
-    if (openId && /\bpin (this|it)\b/i.test(q)) { pin([openId]); setDid(["Pinned"]); ask.setQuery(""); return; }
+    if (/\bcompare\b/i.test(q) && /\btop\b/i.test(q) && ranked.length >= 2) { setPair(ranked.slice(0, Math.max(2, Math.min(3, count || 2)))); setTray(false); setOpen(null); setAside([]); setDid([`Comparing the top ${Math.max(2, Math.min(3, count || 2))}`]); ask.setQuery(""); return; }
+    if (openId && /\b(more )?like (this|it)\b/i.test(q)) { const from = byAny.get(openId)!; setOpen(null); setAside([]); ask.setQuery(`like ${from.name}`); void ask.ask(`something like ${from.name}: ${from.traits.slice(0, 8).join(", ")}`, kinds); setDid([`Like ${from.name}`]); return; }
+    if (openId && /\bpin (this|it)\b/i.test(q)) { pin([openId]); setAside(["Pinned"]); ask.setQuery(""); return; }
     let actions: { do: string; [k: string]: unknown }[] = [{ do: "ask", q }];
     try {
       const res = await fetch(`/api/explore/command?${new URLSearchParams({ q, answer: ask.answer ? "1" : "0", ...(openId ? { open: openId, kind: byAny.get(openId)?.kind ?? "language" } : {}) })}`);
@@ -435,15 +445,18 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
     if (mine !== commandTurn.current) return;
     const said: string[] = [];
     let nextKinds = kinds;
+    // An open card is put away on purpose, by whatever replaces it with a new answer, and never as a side effect.
+    let put = false;
+    const putAway = () => { if (openId) { setOpen(null); setVerdict(null); setAside([]); put = true; } };
     for (const a of actions) {
-      if (a.do === "reset") { ask.clear(); setHue(""); setPair(null); setAxes(null); setNarrow(null); setTray(false); setKinds({ language: true, art_style: true }); setMode("colour"); said.push("Cleared"); }
+      if (a.do === "reset") { putAway(); ask.clear(); setHue(""); setPair(null); setAxes(null); setNarrow(null); setTray(false); setKinds({ language: true, art_style: true }); setMode("colour"); said.push("Cleared"); }
       else if (a.do === "kinds") { nextKinds = { language: Boolean(a.language), art_style: Boolean(a.art_style) }; setKinds(nextKinds); said.push(nextKinds.language && nextKinds.art_style ? "Everything" : nextKinds.language ? "Design languages only" : "Art styles only"); }
       else if (a.do === "sort") { setMode(a.by === "family" ? "family" : "colour"); said.push(`Sorted by ${a.by}`); }
       else if (a.do === "colour") { if (ask.answer) ask.clear(); setHue(String(a.hue)); said.push(`${a.hue} gathered`); }
       else if (a.do === "skin") { pickSkin(a.skin as Skin); said.push(`Cards: ${SKIN_NAME[a.skin as Skin]}`); }
       else if (a.do === "zoom") { zoomTo(zoom + Number(a.by)); said.push(Number(a.by) > 0 ? "Closer" : "Further"); }
-      else if (a.do === "compare") { nextKinds = { language: true, art_style: true }; setKinds(nextKinds); setPair(a.ids as string[]); setTray(false); said.push(`Comparing ${(a.names as string[]).join(" and ")}`); }
-      else if (a.do === "like") { const from = byAny.get(String(a.id)); if (from) { nextKinds = { language: true, art_style: true }; setKinds(nextKinds); setPair(null); ask.setQuery(`like ${from.name}`); void ask.ask(`something like ${from.name}: ${from.traits.slice(0, 8).join(", ")}`, nextKinds); said.push(`Like ${from.name}`); } }
+      else if (a.do === "compare") { putAway(); nextKinds = { language: true, art_style: true }; setKinds(nextKinds); setPair(a.ids as string[]); setTray(false); said.push(`Comparing ${(a.names as string[]).join(" and ")}`); }
+      else if (a.do === "like") { const from = byAny.get(String(a.id)); if (from) { putAway(); nextKinds = { language: true, art_style: true }; setKinds(nextKinds); setPair(null); ask.setQuery(`like ${from.name}`); void ask.ask(`something like ${from.name}: ${from.traits.slice(0, 8).join(", ")}`, nextKinds); said.push(`Like ${from.name}`); } }
       else if (a.do === "arrange") { setAxes({ x: String(a.trait), reverse: Boolean(a.reverse), labels: [String(a.label)] }); setMode("trait"); setTray(false); setPair(null); said.push(`Arranged by ${a.label}`); }
       else if (a.do === "plot") { setAxes({ x: String(a.x), y: String(a.y), labels: a.labels as string[] }); setMode("plot"); setTray(false); setPair(null); said.push(`${(a.labels as string[])[0]} against ${(a.labels as string[])[1]}`); }
       else if (a.do === "narrow") {
@@ -455,12 +468,15 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
       else if (a.do === "pin") { const ids = openId ? [openId] : ranked.slice(0, Number(a.n) || 3); if (ids.length > 0) { pin(ids); said.push(`Pinned ${ids.length}`); } else said.push("Nothing to pin yet"); }
       else if (a.do === "judge") { setVerdict({ id: String(a.id), q, suits: Number(a.suits), helps: (a.helps as string[]) ?? [], hurts: (a.hurts as string[]) ?? [] }); said.push("Judged"); }
       else if (a.do === "refine") { void ask.refine(String(a.say), nextKinds); said.push("Refined"); }
+      // Nothing placed. Beside an open card that is an honest dead end, and the card stays where it is: a search
+      // run here would close over the very thing the question was about and answer with somebody else.
+      else if (a.do === "cannot" && openId) { said.push("Not something this one can answer"); ask.setQuery(""); }
       else if (a.do === "cannot") { said.push("Can't do that here"); said.push("Searched the library for it instead"); setPair(null); setHue(""); void ask.ask(q, nextKinds); }
-      else { setPair(null); setHue(""); void ask.ask(q, nextKinds); }
+      else { putAway(); setPair(null); setHue(""); void ask.ask(q, nextKinds); if (openId) said.push("Searched the library"); }
     }
-    setDid(said);
+    if (openId && !put) setAside(said); else { setAside([]); setDid(said); }
     if (said.length > 0 && !actions.some((a) => ["ask", "refine", "like"].includes(a.do))) ask.setQuery("");
-  }, [ask, kinds, byAny, zoom, zoomTo, mode, hue, skin, pair, axes, narrow, litNow, styles, byId, open, cellAt, pin]);
+  }, [ask, kinds, byAny, zoom, zoomTo, mode, hue, skin, pair, axes, narrow, litNow, styles, byId, open, pin]);
 
   const tab = (value: Mode, label: string, off = false) => <button type="button" disabled={off} aria-pressed={mode === value} onClick={() => { setAxes(null); setMode(value); }} className={`shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 text-[12.5px] disabled:cursor-default disabled:opacity-40 ${mode === value ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"}`}>{label}</button>;
   const glass = "bg-background/70 shadow-[0_8px_30px_-12px_rgba(30,35,45,0.4)] backdrop-blur-xl backdrop-saturate-150";
@@ -508,7 +524,7 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
           </Link>
         </div>
       ) : null}
-      {style && open ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => { setOpen(null); setVerdict(null); }} verdict={verdict && verdict.id === style.id ? verdict : null} pinned={pins.includes(style.id)} onPin={() => (pins.includes(style.id) ? unpin(style.id) : pin([style.id]))} /> : null}
+      {style ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => { setOpen(null); setVerdict(null); setAside([]); }} verdict={verdict && verdict.id === style.id ? verdict : null} pinned={pins.includes(style.id)} onPin={() => (pins.includes(style.id) ? unpin(style.id) : pin([style.id]))} /> : null}
       {axes && (mode === "trait" || mode === "plot") ? (
         <p className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${glass}`} style={{ top: "calc(var(--head, 60px) + 14px)" }}>
           {mode === "plot" ? <>{axes.labels[0]} → <span className="mx-1.5 opacity-40">·</span> {axes.labels[1]} ↑</> : <>{axes.reverse ? "most" : "least"} {axes.labels[0]} → {axes.reverse ? "least" : "most"}</>}
@@ -547,7 +563,7 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
         </div>
       ) : null}
       {tray && ask.fits && !open && !pair ? <Tray want={ask.answer?.want ?? null} fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
-      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet compact={phone && Boolean(open)} onSubmit={command} note={open ? [] : did} onUndo={canUndo && !open ? undo : undefined} onClear={reset} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "quieter", "less corporate", "only the dark ones"] : ["a calm booking app for an island ferry", "dark to light", "only the dark ones"]} />
+      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet compact={phone && Boolean(open)} card={Boolean(open)} onSubmit={command} note={open ? aside : did} onUndo={canUndo && !open ? undo : undefined} onClear={reset} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "quieter", "less corporate", "only the dark ones"] : ["a calm booking app for an island ferry", "dark to light", "only the dark ones"]} />
     </div>
     </SkinContext.Provider>
   );
