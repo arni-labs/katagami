@@ -27,6 +27,9 @@ type Cell = { kind: "style"; s: AtlasStyle } | { kind: "soon"; h: AtlasHole } | 
 const TRAIT = new Map(STYLE_DNA_QUESTIONS.map((q) => [q.id, q.label]));
 const SIZES = { phone: [46, 74, 112], desk: [58, 96, 148] };
 const RATIO = 1.2, GAP = 10;
+// Every card short of the opened entry draws from the same resize. A picture is then fetched and shrunk once for
+// the whole page: the canvas at any zoom, the results and the trays all read the one warm copy.
+const NEAR = 256;
 const GROUND = "color-mix(in srgb, var(--foreground) 15%, var(--background))"; // the desk the stamps lie on
 const HUE_ANGLE: Record<string, number> = { red: 0, orange: 28, yellow: 52, green: 120, teal: 172, blue: 222, violet: 275, pink: 325 };
 /** A steady four-figure number for an entry, for the skins that print a code. */
@@ -48,29 +51,29 @@ function warm(src: string | null | undefined, width: 750 | 1080) {
   const img = new Image(); img.decoding = "async"; img.src = quick(src, width);
 }
 
-type CellProps = { c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
+type CellProps = { eager: boolean; c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
 // One stamp on the sheet, keyed by its slot in a recycling pool (see Sheet): when the window slides, the stamp
 // that left one edge is handed the place that arrived at the other, which is an update, not a mount. Memoised on plain values, so when the window of visible cells slides by a row
 // only the new row is drawn: the stamps already there are left alone.
-const CellView = memo(function CellView({ c, r, cell, w, h, stepX, stepY, dim, hold, onOpen }: CellProps) {
+const CellView = memo(function CellView({ eager, c, r, cell, w, h, stepX, stepY, dim, hold, onOpen }: CellProps) {
   if (!cell) return null;
   const x = c * stepX, y = r * stepY, key = `${c},${r}`;
   if (cell.kind === "soon") return <span ref={(el) => hold(key, el)} title={`${cell.h.name}: coming soon`} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.25 : 0.8 }}><Card src={null} ink={null} w={w} h={h} label={w > 66 ? "Soon" : undefined} soon /></span>;
   const s = cell.s;
   return (
     <button ref={(el) => hold(key, el)} type="button" onPointerEnter={(e) => { if (e.pointerType === "mouse") warm(s.picture, 1080); }} onPointerDown={() => warm(s.picture, w < 60 ? 750 : window.innerWidth < 768 ? 750 : 1080)} onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, }}>
-      <Card src={s.picture} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} code={codeOf(s.id)} fast={w > 120 ? 384 : w > 70 ? 256 : 128} />
+      <Card src={s.picture} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} code={codeOf(s.id)} fast={NEAR} eager={eager} />
     </button>
   );
 });
 
-type SheetProps = { hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
-const Sheet = memo(function Sheet({ hold, cells, w, h, stepX, stepY, lit, onOpen }: SheetProps) {
+type SheetProps = { eager: Set<string>; hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
+const Sheet = memo(function Sheet({ eager, hold, cells, w, h, stepX, stepY, lit, onOpen }: SheetProps) {
   return (
     <>
       {cells.map(({ c, r, cell }) => {
         const id = cell?.kind === "style" ? cell.s.id : "";
-        return <CellView key={`${mod(c, 64)},${mod(r, 48)}`} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} hold={hold} onOpen={onOpen} />;
+        return <CellView key={`${mod(c, 64)},${mod(r, 48)}`} eager={eager.has(`${c},${r}`)} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} hold={hold} onOpen={onOpen} />;
       })}
     </>
   );
@@ -340,6 +343,14 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
     else if (e.key === "+" || e.key === "=") zoomTo(zoom + 1); else if (e.key === "-") zoomTo(zoom - 1);
   };
 
+  // The middle of the screen is asked for first and without waiting its turn, so the view fills from the centre out
+  // rather than all at once; the rest follow as the browser gets to them.
+  const eager = useMemo(() => {
+    const cx = (win.c0 + win.c1) / 2, cy = (win.r0 + win.r1) / 2;
+    const all: { key: string; d: number }[] = [];
+    for (let r = win.r0; r <= win.r1; r++) for (let c = win.c0; c <= win.c1; c++) all.push({ key: `${c},${r}`, d: Math.hypot(c - cx, (r - cy) * RATIO) });
+    return new Set(all.sort((a, b) => a.d - b.d).slice(0, 12).map((x) => x.key));
+  }, [win]);
   const cells = useMemo(() => {
     const out: { c: number; r: number; cell: Cell }[] = [];
     for (let r = win.r0; r <= win.r1; r++) for (let c = win.c0; c <= win.c1; c++) out.push({ c, r, cell: cellAt(c, r) });
@@ -363,6 +374,8 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
   // ordinary question, or it may be "only art styles, by family, zoomed out", "compare Hertz and Lido", "more like
   // Reticle", "make them slides". The page performs the actions it is handed; it has no other interface for them.
   const [did, setDid] = useState<string[]>([]);
+  // What was last done is said about the wall; opening a card changes the subject, so the line goes.
+  useEffect(() => { if (open) setDid([]); }, [open]);
   const [verdict, setVerdict] = useState<{ id: string; q: string; suits: number; helps: string[]; hurts: string[] } | null>(null);
   // The shortlist outlives the question: it is kept on this device.
   const [pins, setPins] = useState<string[]>([]);
@@ -437,7 +450,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
       <div role="application" aria-label="The sheet. Drag or use the arrow keys to move across it; plus and minus change how much you see." tabIndex={0} onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} onKeyDown={onKey} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={(e) => { if (e.pointerType === "mouse") { cam.current.px = -1; cam.current.py = -1; paint(); } }} ref={surface}
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">
         <div ref={layer} className="absolute left-0 top-0 will-change-transform">
-          <Sheet hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} />
+          <Sheet eager={eager} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} />
         </div>
         <div ref={glare} aria-hidden className="canvas-glare" />
       </div>
@@ -465,7 +478,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
       {style && open ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => { setOpen(null); setVerdict(null); }} verdict={verdict && verdict.id === style.id ? verdict : null} pinned={pins.includes(style.id)} onPin={() => (pins.includes(style.id) ? unpin(style.id) : pin([style.id]))} /> : null}
       {axes && (mode === "trait" || mode === "plot") ? (
         <p className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${glass}`} style={{ top: "calc(var(--head, 60px) + 14px)" }}>
-          {mode === "plot" ? <>← less {axes.labels[0]} · more → <span className="mx-2 opacity-40">|</span> ↓ less {axes.labels[1]} · more ↑</> : <>{axes.reverse ? "most" : "least"} {axes.labels[0]} ← → {axes.reverse ? "least" : "most"}</>}
+          {mode === "plot" ? <>{axes.labels[0]} → <span className="mx-1.5 opacity-40">·</span> {axes.labels[1]} ↑</> : <>{axes.reverse ? "most" : "least"} {axes.labels[0]} → {axes.reverse ? "least" : "most"}</>}
         </p>
       ) : null}
       {pins.length > 0 && !open ? (
@@ -473,7 +486,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
           <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-foreground/60">Shortlist {pins.length}</p>
           {pins.map((id) => { const s = byAny.get(id); return s ? (
             <div key={id} className="group relative">
-              <button type="button" onClick={() => goTo(id)} aria-label={s.name} title={s.name} className="block cursor-pointer"><Card src={s.picture} ink={s.ink} w={72} h={72} fast={128} /></button>
+              <button type="button" onClick={() => goTo(id)} aria-label={s.name} title={s.name} className="block cursor-pointer"><Card src={s.picture} ink={s.ink} w={72} h={72} fast={NEAR} /></button>
               <button type="button" onClick={() => unpin(id)} aria-label={`Remove ${s.name}`} className="absolute -right-1 -top-1 cursor-pointer bg-foreground px-1 text-[10px] leading-4 text-background opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">×</button>
             </div>
           ) : null; })}
@@ -530,7 +543,7 @@ function Tray({ fits, byId, judging, phone, want, onOpen, onClose }: { want: Rec
         {hand.map(([id, fit], i) => { const s = byId.get(id)!; return (
           <li key={id} className="tray-card shrink-0 snap-center" style={{ animationDelay: `${i * 55}ms`, ["--tilt" as string]: `${((i * 37) % 7) - 3}deg` }}>
             <button type="button" onClick={() => onOpen(id)} aria-label={s.name} className="block cursor-pointer text-center">
-              <Card src={s.picture} ink={s.ink} w={w} h={h} label={s.name} code={codeOf(s.id)} fast={384} />
+              <Card src={s.picture} ink={s.ink} w={w} h={h} label={s.name} code={codeOf(s.id)} fast={NEAR} />
               <span className="mt-2 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/65">{fit.strange ? "A wild card" : fitWord(fit, judging)}</span>
               {/* Why: what was asked for that this one measurably has. */}
               {want ? <span className="mx-auto mt-0.5 block truncate text-[11.5px] text-foreground/60" style={{ maxWidth: w }}>{STYLE_DNA_QUESTIONS.filter((q) => (want[q.id] ?? 0) >= 0.62 && valueOf(s, q.id) >= 58).sort((a, b) => (want[b.id] ?? 0) - (want[a.id] ?? 0)).slice(0, 3).map((q) => q.label).join(" · ")}</span> : null}
@@ -644,7 +657,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
       {phone && main ? (
         // A phone shows one picture at a time, as one large stamp carrying the entry's name.
         <Link href={style.href} onClick={(e) => e.stopPropagation()} aria-label={`Open ${style.name}`} className="lit-big book-open block shrink-0 outline-none">
-          <Card key={main} src={main} ink={style.ink} w={roomW} h={Math.min(roomH, roomW / (shapes[main] ?? 1.5))} windowed label={style.name} value={pictures.length > 1 ? `${at + 1}/${pictures.length}` : undefined} fast={750} under={quick(main, 256)} lit={{ x: 0, y: 0 }} />
+          <Card key={main} src={main} ink={style.ink} w={roomW} h={Math.min(roomH, roomW / (shapes[main] ?? 1.5))} windowed label={style.name} value={pictures.length > 1 ? `${at + 1}/${pictures.length}` : undefined} fast={750} under={quick(main, NEAR)} lit={{ x: 0, y: 0 }} />
         </Link>
       ) : null}
       {phone ? null : (
@@ -653,7 +666,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
           const at = placed[i];
           return (
             <Link key={p} href={style.href} aria-label={`Open ${style.name}`} className="collage-print absolute block outline-none" style={{ left: at.left, top: at.top, zIndex: at.z, ["--tilt" as string]: `${at.r}deg`, animationDelay: `${i * 80}ms` }}>
-              <Card src={p} ink={style.ink} w={at.w} h={at.h} windowed fast={phone ? 750 : i === 0 ? 1080 : 750} under={quick(p, 256)} lit={{ x: at.left - roomW / 2, y: at.top - roomH / 2 }} />
+              <Card src={p} ink={style.ink} w={at.w} h={at.h} windowed fast={phone ? 750 : i === 0 ? 1080 : 750} under={quick(p, NEAR)} lit={{ x: at.left - roomW / 2, y: at.top - roomH / 2 }} />
             </Link>
           );
         })}
@@ -664,7 +677,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
         <ul onClick={(e) => e.stopPropagation()} className="flex max-w-full shrink-0 items-end gap-3 overflow-x-auto px-2 pb-2 pt-1 [scrollbar-width:none]">
           {pictures.map((p, i) => (
             <li key={p} className="shrink-0">
-              <button type="button" onClick={() => setAt(i)} aria-label={`Picture ${i + 1} of ${pictures.length}`} aria-pressed={i === at} className="block cursor-pointer" style={{ opacity: i === at ? 1 : 0.65 }}><Card src={p} ink={style.ink} w={54} h={54} fast={128} /></button>
+              <button type="button" onClick={() => setAt(i)} aria-label={`Picture ${i + 1} of ${pictures.length}`} aria-pressed={i === at} className="block cursor-pointer" style={{ opacity: i === at ? 1 : 0.65 }}><Card src={p} ink={style.ink} w={54} h={54} fast={NEAR} /></button>
             </li>
           ))}
         </ul>
