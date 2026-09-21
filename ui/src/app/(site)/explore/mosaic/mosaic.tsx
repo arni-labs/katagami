@@ -369,19 +369,19 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
   useEffect(() => { try { const saved = JSON.parse(localStorage.getItem("katagami-shortlist") ?? "[]"); if (Array.isArray(saved)) requestAnimationFrame(() => setPins(saved.filter((x) => typeof x === "string").slice(0, 24))); } catch { /* none kept */ } }, []);
   const pin = useCallback((ids: string[]) => setPins((now) => { const next = [...new Set([...now, ...ids])].slice(0, 24); try { localStorage.setItem("katagami-shortlist", JSON.stringify(next)); } catch { /* private window */ } return next; }), []);
   const unpin = useCallback((id: string) => setPins((now) => { const next = now.filter((x) => x !== id); try { localStorage.setItem("katagami-shortlist", JSON.stringify(next)); } catch { /* private window */ } return next; }), []);
+  const commandTurn = useRef(0);
   // One step back: what the screen was before the last thing typed.
   const before = useRef<null | { kinds: Kinds; mode: Mode; hue: string; skin: Skin; zoom: number; pair: string[] | null; axes: Axes | null; narrow: { trait: string; label: string } | null }>(null);
   const [canUndo, setCanUndo] = useState(false);
-  const undo = () => { const b = before.current; if (!b) return; setKinds(b.kinds); setMode(b.mode); setHue(b.hue); pickSkin(b.skin); setZoom(b.zoom); setPair(b.pair); setAxes(b.axes); setNarrow(b.narrow); before.current = null; setCanUndo(false); setDid(["Undone"]); };
+  const undo = () => { const b = before.current; if (!b) return; commandTurn.current++; /* a reading still on its way must not re-apply what was just undone */ setKinds(b.kinds); setMode(b.mode); setHue(b.hue); pickSkin(b.skin); setZoom(b.zoom); setPair(b.pair); setAxes(b.axes); setNarrow(b.narrow); before.current = null; setCanUndo(false); setDid(["Undone"]); };
   const [pair, setPair] = useState<string[] | null>(null);
-  const commandTurn = useRef(0);
   const command = useCallback(async (text: string) => {
     const q = text.trim();
     if (q.length < 2) return;
     const mine = ++commandTurn.current; // a reading that comes back after a newer command was typed is dropped
     // A described product needs no reading: a long sentence with none of the words that operate the screen goes
     // straight to the search, so the common case costs one step, not two.
-    const operates = /\b(only|just|sort|sorted|order|arrange|compare|like|pin|zoom|bigger|smaller|closer|further|against|versus|vs|undo|reset|clear|start over|cards?|stamps?|swatch|stencil|proof|everything|all)\b|\b\w+ to \w+\b/i.test(q);
+    const operates = /\b(only|just|sort|sorted|order|arrange|compare|like|pin|zoom|bigger|smaller|closer|further|against|versus|vs|undo|reset|clear|start over|cards?|stamps?|swatch|stencil|proof|everything|all)\b/i.test(q) || /^\s*(from\s+)?\w+\s+to\s+\w+\s*$/i.test(q);
     if (!open && !ask.answer && !operates && q.split(/\s+/).length >= 3) { before.current = null; setCanUndo(false); setPair(null); setHue(""); setDid([]); void ask.ask(q, kinds); return; }
     setDid(["…"]);
     before.current = { kinds, mode, hue, skin, zoom, pair, axes, narrow };
@@ -588,7 +588,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
   const copy = async () => {
     setCopied("copying");
     try {
-      const text = style.kind === "art_style" ? ((await (await fetch(`/api/explore/recipe?id=${encodeURIComponent(style.id)}`)).json()) as { text?: string }).text : await (await fetch(`${style.href}/DESIGN.md`)).text();
+      const text = style.kind === "art_style" ? await fetch(`/api/explore/recipe?id=${encodeURIComponent(style.id)}`).then((r) => (r.ok ? (r.json() as Promise<{ text?: string }>) : { text: "" })).then((j) => j.text) : await fetch(`${style.href}/DESIGN.md`).then((r) => (r.ok ? r.text() : ""));
       if (!text) throw new Error("nothing to copy");
       await navigator.clipboard.writeText(text);
       setCopied("done");
@@ -646,7 +646,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
           const at = placed[i];
           return (
             <Link key={p} href={style.href} aria-label={`Open ${style.name}`} className="collage-print absolute block outline-none" style={{ left: at.left, top: at.top, zIndex: at.z, ["--tilt" as string]: `${at.r}deg`, animationDelay: `${i * 80}ms` }}>
-              <Card src={p} ink={style.ink} w={at.w} h={at.h} windowed fast={phone ? 750 : i === 0 ? 1080 : 750} under={quick(p, 256)} lit={{ x: (at.x - 0.5) * roomW, y: (at.y - 0.5) * roomH }} />
+              <Card src={p} ink={style.ink} w={at.w} h={at.h} windowed fast={phone ? 750 : i === 0 ? 1080 : 750} under={quick(p, 256)} lit={{ x: at.left - roomW / 2, y: at.top - roomH / 2 }} />
             </Link>
           );
         })}

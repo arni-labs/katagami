@@ -112,7 +112,7 @@ export async function GET(request: Request) {
   const at = (k: string) => (k === "question" || k === "refine" || k === "compare" || k === "like" || k === "judge" || k === "reverse" || k === "cannot" || k === "narrow" || k === "arrange" || k === "plot" || k === "pin" || k.startsWith("skin_") || k.startsWith("trait_") || raw(k) > raw("question") ? raw(k) : 0);
   const best = (prefix: string) => Object.keys(Q).filter((k) => k.startsWith(prefix)).sort((a, b) => at(b) - at(a))[0];
   // A phrase shaped like an ordering names its quality loosely ("dark to light"); take the best guess then.
-  const loose = /\b\w+\s+to\s+\w+\b|\bby how\b|\b(sort|order|arrange)/i.test(q);
+  const loose = /^\s*(from\s+)?\w+\s+to\s+\w+\s*$|\bby how\b|\b(sort|order|arrange)/i.test(q);
   const traits = TRAITS.map((t) => ({ id: t.id, label: t.label, n: raw(`trait_${t.id}`) })).filter((t) => t.n >= (loose ? 0.4 : 0.6)).sort((a, b) => b.n - a.n);
   const actions: Action[] = [];
   if (open && raw("judge") >= 0.6) {
@@ -135,7 +135,7 @@ export async function GET(request: Request) {
     // bare change ("warmer") is a refinement, not an ordering; "only/just the … ones" is always a narrowing.
     const onlyThe = /\b(only|just)\b/i.test(q) && !/\b(art styles?|design languages?|languages)\b/i.test(q);
     // The shape of the phrase is a plainer signal than any score: "X to Y" and "by how …" order, "against" plots.
-    const ordering = /\b\w+\s+to\s+\w+\b|\b(sort|sorted|order|ordered|arrange|arranged)\b|\bby how\b/i.test(q), plotting = /\b(against|versus|vs\.?)\b/i.test(q);
+    const ordering = /^\s*(from\s+)?\w+\s+to\s+\w+\s*$|\b(sort|sorted|order|ordered|arrange|arranged)\b|\bby how\b/i.test(q), plotting = /\b(against|versus|vs\.?)\b/i.test(q);
     const refining = !ordering && !plotting && hasAnswer && raw("refine") >= sure && raw("refine") >= Math.max(raw("arrange"), raw("plot")) && !onlyThe;
     if (refining) { /* falls through to refine below */ }
     else if (plotting) {
