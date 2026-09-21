@@ -966,6 +966,8 @@ export type AtlasStyle = {
   name: string;
   href: string;
   thumbnail_url: string | null;
+  /** The picture the explore canvas shows a style by: an art style's first reference (its thumbnail is often a stretched copy), else the thumbnail. The atlas keeps `thumbnail_url`. */
+  picture: string | null;
   /** Every picture the entry has to show, the main one first (a language's landing and embodiment; an art style's references). */
   pictures: string[];
   x: number;
@@ -1062,7 +1064,8 @@ export async function libraryAtlas(tier: Tier) {
       kind,
       name: str(f.name),
       href: `/${PATH[kind]}/${row.entity_id}`,
-      thumbnail_url: atlasPicture(kind, f),
+      thumbnail_url: str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null,
+      picture: atlasPicture(kind, f),
       pictures: atlasPictures(kind, f),
       x: Number.parseFloat(str(f.atlas_x)),
       y: Number.parseFloat(str(f.atlas_y)),

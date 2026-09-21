@@ -98,7 +98,7 @@ export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = fa
   const { edge, foot } = frameOf(w, h, Boolean(label));
   if (windowed) { w = Math.round(w) + edge * 2; h = Math.round(h) + edge * 2 + foot; }
   return (
-    <span className={`stamp relative block ${lit ? "lit" : ""}`} style={{ ["--bite" as string]: `${edge}px`, ...(lit ? { ["--cx" as string]: lit.x, ["--cy" as string]: lit.y } : null), width: w, height: h }}>
+    <span className={`kstamp relative block ${lit ? "lit" : ""}`} style={{ ["--bite" as string]: `${edge}px`, ...(lit ? { ["--cx" as string]: lit.x, ["--cy" as string]: lit.y } : null), width: w, height: h }}>
       <span aria-hidden className="stamp-paper absolute" style={{ inset: -PAD, backgroundImage: paper(w, h, flat, soon ? "%23f3f1ec" : "%23fbfaf7") }} />
       <span className="stamp-window absolute overflow-hidden [&_img]:object-cover" style={{ left: edge, right: edge, top: edge, bottom: edge + foot, background: soon ? undefined : ink ?? "var(--muted)", ...(under ? { backgroundImage: `url("${under}")`, backgroundSize: "cover", backgroundPosition: "center" } : null) }}>
         {veil > 0 && !soon ? <span aria-hidden className="absolute inset-0 z-[1]" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))`, transition: "opacity 200ms" }} /> : null}

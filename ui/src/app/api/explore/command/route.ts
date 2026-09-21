@@ -91,7 +91,8 @@ export async function GET(request: Request) {
     const { answers } = await askJev(`Someone is using a visual library of design styles, shown as a wall of cards they can filter, sort, zoom and restyle. ${hasAnswer ? "Results for an earlier question are on screen. " : ""}They type into its command bar: ${q}`, { ...Object.fromEntries(Object.entries(Q).map(([k, says]) => [k, noul(says)])), ...Object.fromEntries(TRAITS.map((t) => [`trait_${t.id}`, noul(`Their words mention or point at this quality of a visual style: ${t.style}`)])) }, { timeoutMs: 7000, retries: 1 });
     scores = Object.fromEntries(Object.keys(answers).map((k) => [k, Number((answers[k] as { noul?: number } | undefined)?.noul ?? 0)]));
   } catch (err) {
-    error = err instanceof Error ? err.message : String(err);
+    console.error("explore command: Jev unavailable", err);
+    error = "The reader is unavailable; treated as a question."; // the upstream message stays in the log
   }
 
   const raw = (k: string) => scores[k] ?? 0, sure = 0.62;

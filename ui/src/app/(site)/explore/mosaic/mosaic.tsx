@@ -58,8 +58,8 @@ const CellView = memo(function CellView({ c, r, cell, w, h, stepX, stepY, dim, h
   if (cell.kind === "soon") return <span ref={(el) => hold(key, el)} title={`${cell.h.name}: coming soon`} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.25 : 0.8 }}><Card src={null} ink={null} w={w} h={h} label={w > 66 ? "Soon" : undefined} soon /></span>;
   const s = cell.s;
   return (
-    <button ref={(el) => hold(key, el)} type="button" onPointerEnter={(e) => { if (e.pointerType === "mouse") warm(s.thumbnail_url, 1080); }} onPointerDown={() => warm(s.thumbnail_url, w < 60 ? 750 : window.innerWidth < 768 ? 750 : 1080)} onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, }}>
-      <Card src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} code={codeOf(s.id)} fast={w > 120 ? 384 : w > 70 ? 256 : 128} />
+    <button ref={(el) => hold(key, el)} type="button" onPointerEnter={(e) => { if (e.pointerType === "mouse") warm(s.picture, 1080); }} onPointerDown={() => warm(s.picture, w < 60 ? 750 : window.innerWidth < 768 ? 750 : 1080)} onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, }}>
+      <Card src={s.picture} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} code={codeOf(s.id)} fast={w > 120 ? 384 : w > 70 ? 256 : 128} />
     </button>
   );
 });
@@ -351,7 +351,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
   const shown = open ? cellAt(open.c, open.r) : null, style = shown?.kind === "style" ? shown.s : null;
   useEffect(() => {
     if (!open) return;
-    for (const by of [-1, 1]) for (let step = 1; step <= world.cols; step++) { const cell = cellAt(open.c + by * step, open.r); if (cell?.kind === "style") { warm(cell.s.thumbnail_url, phone ? 750 : 1080); break; } }
+    for (const by of [-1, 1]) for (let step = 1; step <= world.cols; step++) { const cell = cellAt(open.c + by * step, open.r); if (cell?.kind === "style") { warm(cell.s.picture, phone ? 750 : 1080); break; } }
   }, [open, world, cellAt, phone]);
   const turn = useCallback((by: number) => {
     if (!open) return;
@@ -463,7 +463,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
           <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-foreground/60">Shortlist {pins.length}</p>
           {pins.map((id) => { const s = byAny.get(id); return s ? (
             <div key={id} className="group relative">
-              <button type="button" onClick={() => goTo(id)} aria-label={s.name} title={s.name} className="block cursor-pointer"><Card src={s.thumbnail_url} ink={s.ink} w={72} h={72} fast={128} /></button>
+              <button type="button" onClick={() => goTo(id)} aria-label={s.name} title={s.name} className="block cursor-pointer"><Card src={s.picture} ink={s.ink} w={72} h={72} fast={128} /></button>
               <button type="button" onClick={() => unpin(id)} aria-label={`Remove ${s.name}`} className="absolute -right-1 -top-1 cursor-pointer bg-foreground px-1 text-[10px] leading-4 text-background opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">×</button>
             </div>
           ) : null; })}
@@ -490,7 +490,7 @@ function Compare({ ids, byId, familyOf, phone, onOpen, onClose }: { ids: string[
       <ul onClick={(e) => e.stopPropagation()} className="flex items-start justify-center gap-4 md:gap-10">
         {styles.map((s, i) => (
           <li key={s.id} className="tray-card flex flex-col items-center gap-2 text-center" style={{ animationDelay: `${i * 90}ms`, ["--tilt" as string]: `${i % 2 ? 1.5 : -1.5}deg`, width: w + 40 }}>
-            <button type="button" onClick={() => onOpen(s.id)} aria-label={s.name} className="block cursor-pointer"><Card src={s.thumbnail_url} ink={s.ink} w={w} h={h} windowed label={s.name} code={codeOf(s.id)} fast={750} /></button>
+            <button type="button" onClick={() => onOpen(s.id)} aria-label={s.name} className="block cursor-pointer"><Card src={s.picture} ink={s.ink} w={w} h={h} windowed label={s.name} code={codeOf(s.id)} fast={750} /></button>
             <p className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/60">{s.kind === "language" ? "Design language" : "Art style"}{s.family && familyOf.get(s.family) ? ` · ${familyOf.get(s.family)!.label}` : ""}</p>
             <p className="text-[13px] leading-snug text-foreground/80"><span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/55">Its own </span>{s.traits.filter((t) => !shared.includes(t)).slice(0, 5).map((t) => TRAIT_LABEL.get(t) ?? t).join(" · ") || "—"}</p>
           </li>
@@ -515,7 +515,7 @@ function Tray({ fits, byId, judging, phone, onOpen, onClose }: { fits: Map<strin
         {hand.map(([id, fit], i) => { const s = byId.get(id)!; return (
           <li key={id} className="tray-card shrink-0 snap-center" style={{ animationDelay: `${i * 55}ms`, ["--tilt" as string]: `${((i * 37) % 7) - 3}deg` }}>
             <button type="button" onClick={() => onOpen(id)} aria-label={s.name} className="block cursor-pointer text-center">
-              <Card src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={s.name} code={codeOf(s.id)} fast={384} />
+              <Card src={s.picture} ink={s.ink} w={w} h={h} label={s.name} code={codeOf(s.id)} fast={384} />
               <span className="mt-2 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/65">{fit.strange ? "A wild card" : fitWord(fit, judging)}</span>
             </button>
           </li>
@@ -565,7 +565,7 @@ function scatter(ratios: number[], width: number, height: number) {
 function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, pinned, onPin }: { style: AtlasStyle; family: Family | null; fit: Fit | null; judging: boolean; phone: boolean; onTurn: (by: number) => void; onClose: () => void; verdict: { q: string; suits: number; helps: string[]; hurts: string[] } | null; pinned: boolean; onPin: () => void }) {
   const root = useRef<HTMLDivElement | null>(null);
   const swipe = useRef<{ x: number } | null>(null);
-  const pictures = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.thumbnail_url ? [style.thumbnail_url] : []), [style]);
+  const pictures = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.picture ? [style.picture] : []), [style]);
   const [at, setAt] = useState(0);
   const shapes = useShapes(pictures);
   const main = pictures[at] ?? null, big = phone ? 750 : 1080;
