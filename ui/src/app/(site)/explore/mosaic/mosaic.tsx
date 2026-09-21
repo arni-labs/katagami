@@ -104,6 +104,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
   const pickSkin = (s: Skin) => { setSkin(s); const url = new URL(window.location.href); if (s === "stamp") url.searchParams.delete("skin"); else url.searchParams.set("skin", s); window.history.replaceState(null, "", url); };
   const styles = useMemo(() => all.filter((s) => kinds[s.kind]), [all, kinds]);
   const byId = useMemo(() => new Map(styles.map((s) => [s.id, s])), [styles]);
+  const byAny = useMemo(() => new Map(all.map((s) => [s.id, s])), [all]); // a style named in words is found whatever the filter
   const familyOf = useMemo(() => new Map(families.map((f) => [f.id, f])), [families]);
   const w = SIZES[phone ? "phone" : "desk"][zoom], h = Math.round(w * RATIO), stepX = w + GAP, stepY = h + GAP;
 
@@ -332,6 +333,40 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
     for (let step = 1; step <= world.cols; step++) { const c = open.c + by * step; if (cellAt(c, open.r)?.kind === "style") { bring(c, open.r); setOpen({ c, r: open.r }); return; } }
   }, [open, world, cellAt, bring]);
 
+  // ---- operated in words ------------------------------------------------------
+  // What is typed is first read as what the person wants this screen to do (api/explore/command): it may be an
+  // ordinary question, or it may be "only art styles, by family, zoomed out", "compare Hertz and Lido", "more like
+  // Reticle", "make them slides". The page performs the actions it is handed; it has no other interface for them.
+  const [did, setDid] = useState<string[]>([]);
+  const [pair, setPair] = useState<string[] | null>(null);
+  const command = useCallback(async (text: string) => {
+    const q = text.trim();
+    if (q.length < 2) return;
+    setDid(["Reading…"]);
+    let actions: { do: string; [k: string]: unknown }[] = [{ do: "ask", q }];
+    try {
+      const res = await fetch(`/api/explore/command?${new URLSearchParams({ q, answer: ask.answer ? "1" : "0" })}`);
+      const body = await res.json();
+      if (res.ok && Array.isArray(body.actions) && body.actions.length > 0) actions = body.actions;
+    } catch { /* the ordinary question is the fallback */ }
+    const said: string[] = [];
+    let nextKinds = kinds;
+    for (const a of actions) {
+      if (a.do === "reset") { ask.clear(); setHue(""); setPair(null); setTray(false); setKinds({ language: true, art_style: true }); setMode("colour"); said.push("Cleared"); }
+      else if (a.do === "kinds") { nextKinds = { language: Boolean(a.language), art_style: Boolean(a.art_style) }; setKinds(nextKinds); said.push(nextKinds.language && nextKinds.art_style ? "Everything" : nextKinds.language ? "Design languages only" : "Art styles only"); }
+      else if (a.do === "sort") { setMode(a.by === "family" ? "family" : "colour"); said.push(`Sorted by ${a.by}`); }
+      else if (a.do === "colour") { if (ask.answer) ask.clear(); setHue(String(a.hue)); said.push(`${a.hue} gathered`); }
+      else if (a.do === "skin") { pickSkin(a.skin as Skin); said.push(`Cards: ${SKIN_NAME[a.skin as Skin]}`); }
+      else if (a.do === "zoom") { zoomTo(zoom + Number(a.by)); said.push(Number(a.by) > 0 ? "Closer" : "Further"); }
+      else if (a.do === "compare") { nextKinds = { language: true, art_style: true }; setKinds(nextKinds); setPair(a.ids as string[]); setTray(false); said.push(`Comparing ${(a.names as string[]).join(" and ")}`); }
+      else if (a.do === "like") { const from = byAny.get(String(a.id)); if (from) { nextKinds = { language: true, art_style: true }; setKinds(nextKinds); setPair(null); ask.setQuery(`like ${from.name}`); void ask.ask(`something like ${from.name}: ${from.traits.slice(0, 8).join(", ")}`, nextKinds); said.push(`Like ${from.name}`); } }
+      else if (a.do === "refine") { void ask.refine(String(a.say), nextKinds); said.push("Refined"); }
+      else { setPair(null); setHue(""); void ask.ask(q, nextKinds); }
+    }
+    setDid(said);
+    if (said.length > 0 && !actions.some((a) => ["ask", "refine", "like"].includes(a.do))) ask.setQuery("");
+  }, [ask, kinds, byAny, zoom, zoomTo]);
+
   const tab = (value: Mode, label: string, off = false) => <button type="button" disabled={off} aria-pressed={mode === value} onClick={() => setMode(value)} className={`shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 text-[12.5px] disabled:cursor-default disabled:opacity-40 ${mode === value ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"}`}>{label}</button>;
   const glass = "bg-background/70 shadow-[0_8px_30px_-12px_rgba(30,35,45,0.4)] backdrop-blur-xl backdrop-saturate-150";
 
@@ -369,10 +404,34 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
       </div>
 
       {style && open ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => setOpen(null)} /> : null}
-      {tray && ask.fits && !open ? <Tray fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
-      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={lit ? lit.size : null} kinds={kinds} quiet />
+      {pair ? <Compare ids={pair} byId={byAny} familyOf={familyOf} phone={phone} onOpen={(id) => { setPair(null); goTo(id); }} onClose={() => setPair(null)} /> : null}
+      {tray && ask.fits && !open && !pair ? <Tray fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
+      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={lit ? lit.size : null} kinds={kinds} quiet onSubmit={command} note={did} />
     </div>
     </SkinContext.Provider>
+  );
+}
+
+const TRAIT_LABEL = new Map(STYLE_DNA_QUESTIONS.map((q) => [q.id, q.label]));
+
+/** Styles named in a sentence, set side by side: what they share, and what is each one's own. */
+function Compare({ ids, byId, familyOf, phone, onOpen, onClose }: { ids: string[]; byId: Map<string, AtlasStyle>; familyOf: Map<string, Family>; phone: boolean; onOpen: (id: string) => void; onClose: () => void }) {
+  const styles = ids.map((id) => byId.get(id)).filter((s): s is AtlasStyle => Boolean(s)).slice(0, phone ? 2 : 3);
+  const shared = styles.length > 1 ? styles[0].traits.filter((t) => styles.every((s) => s.traits.includes(t))) : [];
+  const w = phone ? 150 : 300, h = Math.round(w * 0.72);
+  return (
+    <div className="viewer-veil absolute inset-0 z-30 flex flex-col items-center justify-center gap-5 overflow-y-auto bg-[color-mix(in_srgb,var(--background)_70%,transparent)] px-3 backdrop-blur-md" style={{ paddingTop: "calc(var(--head, 60px) + 16px)", paddingBottom: "calc(var(--dock-h, 150px) + 12px)" }} onClick={onClose}>
+      {shared.length > 0 ? <p onClick={(e) => e.stopPropagation()} className="max-w-xl text-center text-[13.5px] text-foreground/75"><span className="font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/55">Both </span>{shared.slice(0, 6).map((t) => TRAIT_LABEL.get(t) ?? t).join(" · ")}</p> : null}
+      <ul onClick={(e) => e.stopPropagation()} className="flex items-start justify-center gap-4 md:gap-10">
+        {styles.map((s, i) => (
+          <li key={s.id} className="tray-card flex flex-col items-center gap-2 text-center" style={{ animationDelay: `${i * 90}ms`, ["--tilt" as string]: `${i % 2 ? 1.5 : -1.5}deg`, width: w + 40 }}>
+            <button type="button" onClick={() => onOpen(s.id)} aria-label={s.name} className="block cursor-pointer"><Card src={s.thumbnail_url} ink={s.ink} w={w} h={h} windowed label={s.name} code={codeOf(s.id)} fast={750} /></button>
+            <p className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/60">{s.kind === "language" ? "Design language" : "Art style"}{s.family && familyOf.get(s.family) ? ` · ${familyOf.get(s.family)!.label}` : ""}</p>
+            <p className="text-[13px] leading-snug text-foreground/80"><span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/55">Its own </span>{s.traits.filter((t) => !shared.includes(t)).slice(0, 5).map((t) => TRAIT_LABEL.get(t) ?? t).join(" · ") || "—"}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
