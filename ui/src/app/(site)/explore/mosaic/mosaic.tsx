@@ -191,8 +191,14 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
   // "only the dark ones": of what is lit, or of the whole wall when nothing is.
   const litNow = useMemo(() => {
     if (!narrow) return lit;
-    const has = (id: string) => { const s = byId.get(id); return Boolean(s && valueOf(s, narrow.trait) >= 58); };
-    return new Set((lit ? [...lit] : styles.map((s) => s.id)).filter(has));
+    const from = lit ? [...lit] : styles.map((s) => s.id);
+    const of = (id: string) => { const s = byId.get(id); return s ? valueOf(s, narrow.trait) : -1; };
+    const kept = from.filter((id) => byId.has(id) && of(id) >= 58);
+    // Asking for only the dark ones of ten warm answers used to leave an empty wall, which says nothing and looks
+    // broken. There is always an answer nearest to what was asked for: when too few clear the mark, the darkest of
+    // what is there stands in, in order.
+    if (kept.length >= 4) return new Set(kept);
+    return new Set([...from].filter((id) => byId.has(id)).sort((x, y) => of(y) - of(x)).slice(0, Math.min(8, from.length)));
   }, [lit, narrow, byId, styles]);
 
   // ---- the camera: an offset that never stops at an edge, and a light ---------
@@ -393,6 +399,11 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
   // One step back: what the screen was before the last thing typed.
   const before = useRef<null | { kinds: Kinds; mode: Mode; hue: string; skin: Skin; zoom: number; pair: string[] | null; axes: Axes | null; narrow: { trait: string; label: string } | null }>(null);
   const [canUndo, setCanUndo] = useState(false);
+  const reset = useCallback(() => {
+    commandTurn.current++;
+    before.current = null; setCanUndo(false);
+    setDid([]); setPair(null); setAxes(null); setNarrow(null); setMode("colour"); setVerdict(null); setOpen(null); setTray(false);
+  }, []);
   const undo = () => { const b = before.current; if (!b) return; commandTurn.current++; /* a reading still on its way must not re-apply what was just undone */ setKinds(b.kinds); setMode(b.mode); setHue(b.hue); pickSkin(b.skin); setZoom(b.zoom); setPair(b.pair); setAxes(b.axes); setNarrow(b.narrow); before.current = null; setCanUndo(false); setDid(["Undone"]); };
   const [pair, setPair] = useState<string[] | null>(null);
   const command = useCallback(async (text: string) => {
@@ -435,7 +446,12 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
       else if (a.do === "like") { const from = byAny.get(String(a.id)); if (from) { nextKinds = { language: true, art_style: true }; setKinds(nextKinds); setPair(null); ask.setQuery(`like ${from.name}`); void ask.ask(`something like ${from.name}: ${from.traits.slice(0, 8).join(", ")}`, nextKinds); said.push(`Like ${from.name}`); } }
       else if (a.do === "arrange") { setAxes({ x: String(a.trait), reverse: Boolean(a.reverse), labels: [String(a.label)] }); setMode("trait"); setTray(false); setPair(null); said.push(`Arranged by ${a.label}`); }
       else if (a.do === "plot") { setAxes({ x: String(a.x), y: String(a.y), labels: a.labels as string[] }); setMode("plot"); setTray(false); setPair(null); said.push(`${(a.labels as string[])[0]} against ${(a.labels as string[])[1]}`); }
-      else if (a.do === "narrow") { setNarrow({ trait: String(a.trait), label: String(a.label) }); setTray(false); said.push(`Only ${a.label}`); }
+      else if (a.do === "narrow") {
+        const trait = String(a.trait), from = litNow ? [...litNow] : styles.map((s) => s.id);
+        const enough = from.filter((id) => { const s = byId.get(id); return s ? valueOf(s, trait) >= 58 : false; }).length >= 4;
+        setNarrow({ trait, label: String(a.label) }); setTray(false);
+        said.push(enough ? `Only ${a.label}` : `Nearest to ${a.label}`);
+      }
       else if (a.do === "pin") { const ids = openId ? [openId] : ranked.slice(0, Number(a.n) || 3); if (ids.length > 0) { pin(ids); said.push(`Pinned ${ids.length}`); } else said.push("Nothing to pin yet"); }
       else if (a.do === "judge") { setVerdict({ id: String(a.id), q, suits: Number(a.suits), helps: (a.helps as string[]) ?? [], hurts: (a.hurts as string[]) ?? [] }); said.push("Judged"); }
       else if (a.do === "refine") { void ask.refine(String(a.say), nextKinds); said.push("Refined"); }
@@ -444,7 +460,7 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
     }
     setDid(said);
     if (said.length > 0 && !actions.some((a) => ["ask", "refine", "like"].includes(a.do))) ask.setQuery("");
-  }, [ask, kinds, byAny, zoom, zoomTo, mode, hue, skin, pair, axes, narrow, open, cellAt, pin]);
+  }, [ask, kinds, byAny, zoom, zoomTo, mode, hue, skin, pair, axes, narrow, litNow, styles, byId, open, cellAt, pin]);
 
   const tab = (value: Mode, label: string, off = false) => <button type="button" disabled={off} aria-pressed={mode === value} onClick={() => { setAxes(null); setMode(value); }} className={`shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 text-[12.5px] disabled:cursor-default disabled:opacity-40 ${mode === value ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"}`}>{label}</button>;
   const glass = "bg-background/70 shadow-[0_8px_30px_-12px_rgba(30,35,45,0.4)] backdrop-blur-xl backdrop-saturate-150";
@@ -512,11 +528,26 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
       {pair ? <Compare ids={pair} byId={byAny} familyOf={familyOf} phone={phone} onOpen={(id) => { setPair(null); goTo(id); }} onClose={() => setPair(null)} /> : null}
       {ask.state === "asking" && !ask.fits && !open && !pair ? (
         <div aria-hidden className="viewer-veil absolute inset-0 z-30 flex items-center justify-center bg-[color-mix(in_srgb,var(--background)_60%,transparent)] px-3 backdrop-blur-md" style={{ paddingTop: "calc(var(--head, 60px) + 16px)", paddingBottom: "calc(var(--dock-h, 150px) + 12px)" }}>
-          <ul className="flex max-w-[64rem] flex-wrap justify-center gap-5">{Array.from({ length: phone ? 2 : 10 }, (_, i) => <li key={i} className="waiting-card bg-[color-mix(in_srgb,var(--foreground)_8%,var(--background))]" style={{ width: phone ? 150 : 176, height: phone ? 180 : 211, animationDelay: `${i * 70}ms` }} />)}</ul>
+          {/* The wait is a sheet being franked: blank stamps laid down one after another, each taking the postmark
+              as it lands, over and over until the answer comes back. */}
+          <div className="flex flex-col items-center gap-7">
+            <ul className="flex items-end" style={{ gap: phone ? 10 : 16 }}>
+              {Array.from({ length: phone ? 3 : 5 }, (_, i) => (
+                <li key={i} className="franking relative" style={{ animationDelay: `${i * 260}ms`, ["--turn" as string]: `${((i % 3) - 1) * 2.4}deg` }}>
+                  <Card src={null} ink="color-mix(in srgb, var(--foreground) 7%, var(--background))" w={phone ? 74 : 104} h={phone ? 89 : 125} />
+                  <svg aria-hidden viewBox="0 0 100 100" className="postmark absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: phone ? 54 : 76, animationDelay: `${i * 260 + 150}ms` }}>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--foreground)" strokeWidth="5" strokeDasharray="7 9" strokeLinecap="round" />
+                    <circle cx="50" cy="50" r="27" fill="none" stroke="var(--foreground)" strokeWidth="3.5" />
+                  </svg>
+                </li>
+              ))}
+            </ul>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/45">Reading the library</p>
+          </div>
         </div>
       ) : null}
       {tray && ask.fits && !open && !pair ? <Tray want={ask.answer?.want ?? null} fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
-      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet compact={phone && Boolean(open)} onSubmit={command} note={open ? [] : did} onUndo={canUndo && !open ? undo : undefined} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "only the dark ones", "compare the top two", "pin these three"] : ["a calm booking app for an island ferry", "dark to light", "playful against dense"]} />
+      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet compact={phone && Boolean(open)} onSubmit={command} note={open ? [] : did} onUndo={canUndo && !open ? undo : undefined} onClear={reset} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "quieter", "less corporate", "only the dark ones"] : ["a calm booking app for an island ferry", "dark to light", "only the dark ones"]} />
     </div>
     </SkinContext.Provider>
   );
