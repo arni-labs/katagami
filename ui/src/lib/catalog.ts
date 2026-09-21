@@ -393,6 +393,9 @@ export type AskArgs = {
   like?: string;
   /** Changes already folded into `want` by earlier refinements, so the fit is judged with them in mind. */
   changes?: string;
+  /** Also return every style the fit judge saw. For scripts/ask-eval.mjs, which cannot measure
+   *  what the shortlist drops from outside. The route only ever sets it under its own env gate. */
+  debug?: boolean;
 };
 
 const ASK_MAX_QUERY = 400;
@@ -544,7 +547,7 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
       throw new JevUnavailableError("Jev left a style's fit unscored");
     }
     // Jev's score is the expected level index (0..2); normalise to 0..1.
-    return { ...p, fit: Math.min(1, Math.max(0, fit / (FIT_LEVELS.length - 1))) };
+    return { ...p, band: i < shortlist.length ? "dna" : "outsider", fit: Math.min(1, Math.max(0, fit / (FIT_LEVELS.length - 1))) };
   });
 
   // One card per name: the library holds a few same-named siblings.
@@ -580,6 +583,9 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     avoids,
     results: results.map(out),
     strange: strange.map(out),
+    ...(a.debug
+      ? { judged: scored.map((p) => ({ id: p.row.entity_id, name: str(p.row.fields?.name), band: p.band, match: round(p.match), fit: round(p.fit), doc: p.doc })) }
+      : {}),
     note: tierNote,
   };
 }
