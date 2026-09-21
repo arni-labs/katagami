@@ -560,7 +560,15 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
       seen.add(name);
       return true;
     });
-  const results = unique.slice(0, limit);
+  // Ten cards all reading "strong fit" tell a reader nothing about the range they have been handed, and a library
+  // of this size nearly always holds something further off that is worth a look. When the whole top is judged a
+  // strong fit, the last two places go to the best of the band below it, which says "could work" on its own card
+  // and is honest about being a longer reach.
+  const top = unique.slice(0, limit);
+  const nearby = unique.slice(limit).filter((p) => p.fit >= 0.5 && p.fit < 0.8);
+  const results = top.length === limit && top.every((p) => p.fit >= 0.8) && nearby.length > 0
+    ? [...top.slice(0, limit - Math.min(2, nearby.length)), ...nearby.slice(0, Math.min(2, nearby.length))]
+    : top;
   const shown = new Set(results.map((p) => p.row.entity_id));
   const strange = unique
     .filter((p) => !shown.has(p.row.entity_id) && p.fit >= 0.4)
