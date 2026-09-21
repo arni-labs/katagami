@@ -16,6 +16,7 @@ forbid(
     Action::"AttachStyleDna",
     Action::"AttachTasteVector",
     Action::"AttachVerifiedThumbnail",
+    Action::"AttachVisualDescription",
     Action::"IncrementFork",
     Action::"IncrementUsage",
     Action::"MarkQualityPassed",
