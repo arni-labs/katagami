@@ -719,7 +719,7 @@ async function resolve(kind: Kind, idOrSlug: string, tier: Tier): Promise<Row | 
 export const NEEDS_SIGN_IN = {
   error: "not_available_on_sample_tier",
   message:
-    "This design isn't in the anonymous sample. Sign in with Google to unlock the full catalog (see whoami).",
+    "This entry isn't in the anonymous sample. Sign in with Google to unlock the full catalog (see whoami).",
 };
 
 export const NOT_FOUND = {
@@ -799,16 +799,35 @@ export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format
   const colors = (tokens.colors ?? {}) as Record<string, string>;
   const radii = (tokens.radii ?? {}) as Record<string, string>;
   const typo = (tokens.typography ?? {}) as Record<string, string>;
+  // The exports carry what the language HAS. They used to emit colours, radii and
+  // two font families and silently drop the rest, so an agent told "here are the
+  // tokens" built with no shadows, no spacing scale, no mono face and no webfont
+  // link — and then failed the language's own lint. Every group the language
+  // stores is emitted; one it does not have simply does not appear.
+  const spacing = (tokens.spacing ?? {}) as Record<string, unknown>;
+  const shadows = (tokens.shadows ?? {}) as Record<string, unknown>;
+  const motion = (tokens.motion ?? {}) as Record<string, unknown>;
+  const scale = ((typo as Record<string, unknown>).scale ?? {}) as Record<string, unknown>;
+  const fontsUrl = typeof typo.google_fonts_url === "string" ? typo.google_fonts_url : null;
+  const flat = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
+  const vars = (prefix: string, group: Record<string, unknown>) =>
+    Object.entries(group ?? {}).flatMap(([k, v]) => (flat(v) ? [`  --${prefix}-${k}: ${flat(v)};`] : []));
   if (format === "css") {
-    const lines = [
+    const body = [
       ":root {",
-      ...Object.entries(colors).map(([k, v]) => `  --color-${k}: ${v};`),
-      ...Object.entries(radii).map(([k, v]) => `  --radius-${k}: ${v};`),
+      ...vars("color", colors as Record<string, unknown>),
+      ...vars("radius", radii as Record<string, unknown>),
+      ...vars("space", spacing),
+      ...vars("shadow", shadows),
+      ...vars("motion", motion),
+      ...vars("text", scale),
       typo.body_font ? `  --font-body: ${typo.body_font};` : "",
       typo.heading_font ? `  --font-heading: ${typo.heading_font};` : "",
+      typo.mono_font ? `  --font-mono: ${typo.mono_font};` : "",
       "}",
     ].filter(Boolean);
-    return { format, css: lines.join("\n") };
+    const css = (fontsUrl ? [`@import url("${fontsUrl}");`, ""] : []).concat(body).join("\n");
+    return { format, css, fonts_url: fontsUrl };
   }
   // tailwind
   const config = {
@@ -821,10 +840,13 @@ export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format
           ...(typo.body_font ? { body: [typo.body_font] } : {}),
           ...(typo.mono_font ? { mono: [typo.mono_font] } : {}),
         },
+        ...(Object.keys(spacing).length ? { spacing } : {}),
+        ...(Object.keys(shadows).length ? { boxShadow: shadows } : {}),
+        ...(Object.keys(scale).length ? { fontSize: scale } : {}),
       },
     },
   };
-  return { format, tailwind_config: config };
+  return { format, tailwind_config: config, fonts_url: fontsUrl };
 }
 
 // --- ask the encyclopedia: directions, made or not ----------------------------
