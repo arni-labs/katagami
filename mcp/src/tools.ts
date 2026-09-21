@@ -443,21 +443,18 @@ export function buildServer(auth: AuthInfo): McpServer {
         proof_shots: z
           .array(artStyleProofInput)
           .min(2)
-          .max(4)
-          .refine((items) => items.length === 2 || items.length === 4, {
-            message: "Provide two or four proofs: one or two matched subject descriptions on each of two models",
-          })
           .describe(
-            "Two distinct image models × the same one or two fresh subject descriptions, generated from text alone. Import outputs and bind exact bytes, canonical prompt hash and full prompt hash in each generation_record. No input images or style-reference images.",
+            "At least two distinct image models × the same fresh subject descriptions, generated from text alone. Import outputs and bind exact bytes, canonical prompt hash and full prompt hash in each generation_record. No input images or style-reference images.",
           ),
-        gallery_images: artStyleGalleryImages.describe(
-          "Six distinct gallery images: four GPT Image 2.5, one Grok Image, and one Nano Banana. Each prompt is the canonical prompt plus \n\nSubject and scene:\n and its subject. These are separate from portability proof shots.",
+        gallery_images: artStyleGalleryImages.optional().default([]).describe(
+          "Optional additional gallery images using any actual image models. Each prompt is the canonical prompt plus \n\nSubject and scene:\n and its subject. These are separate from portability proof shots.",
         ),
         thumbnail_file_id: z
           .string()
           .min(1)
+          .optional()
           .describe(
-            "The first gallery image file_id; order the gallery with its strongest image first",
+            "A gallery or proof image file_id; defaults to the first gallery image, or first proof when no extras are supplied",
           ),
         source_basis: z
           .record(z.string(), z.unknown())
@@ -491,7 +488,7 @@ export function buildServer(auth: AuthInfo): McpServer {
                 })
                 .passthrough(),
             )
-            .length(2),
+            .min(2),
         }),
         credits: z
           .array(
@@ -509,13 +506,13 @@ export function buildServer(auth: AuthInfo): McpServer {
     async (a) => {
       const set = KINDS.art_style.set;
       const proofIds = a.proof_shots.map((proof) => proof.file_id);
+      const thumbId = a.thumbnail_file_id ?? a.gallery_images[0]?.file_id ?? proofIds[0];
       let galleryFields;
       try {
-        galleryFields = gallerySubmissionFields(a.gallery_images, a.slug, a.prompt_template, a.thumbnail_file_id);
+        galleryFields = gallerySubmissionFields(a.gallery_images, a.slug, a.prompt_template, thumbId, proofIds);
       } catch (error) {
         return fail(error instanceof Error ? error.message : "Invalid gallery evidence");
       }
-      const thumbId = a.thumbnail_file_id;
       if (a.entity_id) {
         const draft = await getEntity(id, set, a.entity_id);
         if (!draft) return fail(`Draft '${a.entity_id}' does not exist.`);

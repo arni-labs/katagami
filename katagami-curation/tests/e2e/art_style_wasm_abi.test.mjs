@@ -146,3 +146,42 @@ for (const [name, mutate, code] of [
 });
 
 console.log(`WASM SHA-256 ${createHash('sha256').update(wasmBytes).digest('hex')}; local ABI fixtures only, no live publication`);
+
+function minimalComparison(fields) {
+  for (const model of fields.portability_report.models) model.cases = model.cases.slice(0, 1);
+  fields.proof_shots_file_ids = fields.portability_report.models.map(model => model.cases[0].file_id);
+  fields.proof_shots_manifest.items = fields.proof_shots_manifest.items.filter(item => fields.proof_shots_file_ids.includes(item.file_id));
+  fields.reference_image_file_ids = [];
+  delete fields.reference_manifest;
+  fields.thumbnail_file_id = fields.proof_shots_file_ids[0];
+}
+
+test('two compared model outputs suffice without a separate gallery', () => {
+  const { result, actions, reads } = execute(minimalComparison);
+  assert.equal(result.action, 'FinalizeCompletion', JSON.stringify(result));
+  assert.ok(actions.some(action => action.path.endsWith('/Temper.Publish')));
+  assert.equal(new Set(reads).size, 2);
+});
+
+test('one model cannot publish even with a real thumbnail', () => {
+  const { result, actions } = execute(fields => {
+    minimalComparison(fields);
+    fields.portability_report.models.pop();
+    fields.proof_shots_file_ids.pop();
+    fields.proof_shots_manifest.items.pop();
+  });
+  assert.equal(result.action, 'Fail');
+  assert.equal(JSON.parse(result.params.error_message).code, 'art_style_portability_models_missing');
+  assert.deepEqual(actions, []);
+});
+
+test('thumbnail must belong to the validated comparison or gallery', () => {
+  const { result, actions } = execute(fields => {
+    const oldThumbnail = fields.thumbnail_file_id;
+    minimalComparison(fields);
+    fields.thumbnail_file_id = oldThumbnail;
+  });
+  assert.equal(result.action, 'Fail');
+  assert.equal(JSON.parse(result.params.error_message).code, 'art_style_thumbnail_unbound');
+  assert.deepEqual(actions, []);
+});

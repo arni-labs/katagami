@@ -32,17 +32,16 @@ test("six gallery images retain all files and complete records independently of 
   assert.deepEqual(result.reference_image_file_ids, fixture().map(i => i.file_id));
   assert.deepEqual(JSON.parse(result.reference_manifest), { schema_version: "3", items: fixture() });
 });
-test("exact count, model identities, strict records, and required request IDs", () => {
-  assert.throws(() => submit(fixture().slice(0, 5)));
+test("optional counts, strict records, and required request IDs", () => {
+  assert.equal(submit(fixture().slice(0, 1)).reference_image_file_ids.length, 1);
   for (const mutate of [
-    (a: ReturnType<typeof fixture>) => { a[0].model = a[4].model; },
-    (a: ReturnType<typeof fixture>) => { a[0].model.provider = "Unknown"; },
+    (a: ReturnType<typeof fixture>) => { a[0].model.provider = ""; },
     (a: ReturnType<typeof fixture>) => { a[0].generation_record.execution.provider_request_id = ""; },
     (a: ReturnType<typeof fixture>) => { a[0].generation_record.output.sha256 = "A".repeat(64); },
     (a: ReturnType<typeof fixture>) => { Object.assign(a[0], { unexpected: true }); },
   ]) { const a = fixture(); mutate(a); assert.throws(() => submit(a)); }
 });
-test("reject duplicate files or bytes, inconsistent prompt bindings and non-first thumbnails", () => {
+test("reject duplicate files or bytes, inconsistent prompt bindings and unknown thumbnails", () => {
   for (const mutate of [
     (a: ReturnType<typeof fixture>) => { a[1].file_id = a[0].file_id; },
     (a: ReturnType<typeof fixture>) => { a[1].generation_record.output.sha256 = a[0].generation_record.output.sha256; },
@@ -52,7 +51,7 @@ test("reject duplicate files or bytes, inconsistent prompt bindings and non-firs
     (a: ReturnType<typeof fixture>) => { a[0].generation_record.canonical_prompt_sha256 = hash("wrong"); },
     (a: ReturnType<typeof fixture>) => { a[0].generation_record.output.prompt_sha256 = hash("wrong"); },
   ]) { const a = fixture(); mutate(a); assert.throws(() => submit(a)); }
-  assert.throws(() => submit(fixture(), "file-1"));
+  assert.equal(submit(fixture(), "file-1").reference_image_file_ids.length, 6);
   assert.throws(() => submit(fixture(), "proof-file"));
 });
 
@@ -93,7 +92,7 @@ test("MCP submit forwards the six-image manifest and keeps the two-model proof s
       model_provenance: { style: { model: "author", provider: "test" }, source: { model: "source", provider: "test" }, images: proofs.map(p => p.model) },
       credits: [{ name: "Comic traditions", kind: "tradition" }],
     };
-    const invalid = await client.callTool({ name: "submit_art_style", arguments: { ...args, thumbnail_file_id: "proof-0" } });
+    const invalid = await client.callTool({ name: "submit_art_style", arguments: { ...args, thumbnail_file_id: "missing" } });
     assert.equal(invalid.isError, true);
     assert.equal(Boolean(submitted), false, "invalid gallery must not mutate a draft");
     const result = await client.callTool({ name: "submit_art_style", arguments: args });
@@ -103,6 +102,14 @@ test("MCP submit forwards the six-image manifest and keeps the two-model proof s
     assert.deepEqual(submitted?.proof_shots_file_ids, ["proof-0", "proof-1"]);
     assert.deepEqual(JSON.parse(String(submitted?.proof_shots_manifest)), { schema_version: "4", items: proofs });
     assert.equal(submitted?.thumbnail_file_id, "file-0");
+    const { gallery_images, thumbnail_file_id, ...minimal } = args;
+    submitted = undefined;
+    const minimalResult = await client.callTool({ name: "submit_art_style", arguments: minimal });
+    assert.ok(!minimalResult.isError, JSON.stringify(minimalResult));
+    const minimalSubmission = submitted as Record<string, unknown> | undefined;
+    assert.deepEqual(minimalSubmission?.reference_image_file_ids, []);
+    assert.equal(minimalSubmission?.thumbnail_file_id, "proof-0");
+    assert.deepEqual(JSON.parse(String(minimalSubmission?.reference_manifest)).items, []);
     const inputImageProofs = proofs.map((proof, i) => i === 0 ? {
       ...proof, generation_record: { ...proof.generation_record, input_image_file_ids: ["source-image"] },
     } : proof);
@@ -147,6 +154,16 @@ test("prompt-only gallery rejects inputs, missing receipts and invented provider
     (a: ReturnType<typeof fixture>) => { a[0].generation_record.input_image_file_ids = ["source-image"]; },
     (a: ReturnType<typeof fixture>) => { a[0].generation_record.execution.receipt = ""; },
     (a: ReturnType<typeof fixture>) => { a[0].model.model = null; },
-    (a: ReturnType<typeof fixture>) => { a[0].generation_record.execution.requested_model = "different-model"; },
+
   ]) { const a = fixture(); mutate(a); assert.throws(() => submit(a)); }
+});
+
+test("optional gallery supports arbitrary actual models and a proof thumbnail", () => {
+  const images = fixture().slice(0, 1);
+  images[0].model = { provider: "Independent provider", model: "actual-model-v7" };
+  images[0].generation_record.execution.requested_model = "actual-model-v7";
+  const result = gallerySubmissionFields(artStyleGalleryImages.parse(images), "morrow-ink", canonical, "proof-0", ["proof-0", "proof-1"]);
+  assert.equal(result.reference_image_file_ids.length, 1);
+  assert.deepEqual(gallerySubmissionFields([], "morrow-ink", canonical, "proof-0", ["proof-0", "proof-1"]).reference_image_file_ids, []);
+  assert.throws(() => gallerySubmissionFields([], "morrow-ink", canonical, "missing", ["proof-0", "proof-1"]));
 });

@@ -3173,6 +3173,12 @@ fn verify_synthesized_art_styles(
         }
         let thumbnail_file_id = required_string_field(id, &lane_fields, "thumbnail_file_id")?;
 
+        if !reference_ids.contains(&thumbnail_file_id) && !proof_ids.contains(&thumbnail_file_id) {
+            return Err(VerificationError::new("art_style_thumbnail_unbound",
+                "The thumbnail must be one of the verified comparison or optional gallery images")
+                .entity("ArtStyle", id).field("thumbnail_file_id"));
+        }
+
         art_style_gallery::verify_gallery(
             id,
             &lane_fields,
@@ -3611,11 +3617,11 @@ fn verify_art_style_proof_record_files(
             "proof_output",
         )?;
     }
-    if !matches!(verified_outputs.len(), 2 | 4) {
+    if verified_outputs.len() < 2 {
         return Err(VerificationError::new(
             "art_style_proof_file_matrix_incomplete",
             format!(
-                "ArtStyle '{owner_id}' prompt-only proof records must resolve to two or four unique immutable outputs"
+                "ArtStyle '{owner_id}' prompt-only proof records must resolve to at least two unique immutable outputs"
             ),
         )
         .entity("ArtStyle", owner_id)

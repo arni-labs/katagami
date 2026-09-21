@@ -32,23 +32,27 @@ pub(super) fn verify_gallery(
     fields: &Value,
     canonical_prompt: &str,
     reference_ids: &[String],
-    thumbnail_id: &str,
+    _thumbnail_id: &str,
     mut verify_file: impl FnMut(&str, &str) -> Result<(), VerificationError>,
 ) -> Result<(), VerificationError> {
     let invalid = || {
         VerificationError::new(
         "art_style_gallery_invalid",
-        format!("ArtStyle '{owner_id}' requires six unique, prompt-bound gallery images: four GPT Image 2.5, one Grok Image, and one Nano Banana; reference order and first-image thumbnail must match"),
+        format!("ArtStyle '{owner_id}' requires optional gallery images to have unique, ordered references and complete prompt-bound provenance"),
     ).entity("ArtStyle", owner_id).field("reference_manifest")
     };
-    let manifest = lane_json_value(fields, "reference_manifest").ok_or_else(invalid)?;
+    let manifest = match lane_json_value(fields, "reference_manifest") {
+        Some(manifest) => manifest,
+        None if reference_ids.is_empty() && fields.get("reference_manifest").is_none_or(|v| v.is_null() || v == "") => return Ok(()),
+        None => return Err(invalid()),
+    };
     if !object_has_keys(&manifest, &["schema_version", "items"])
         || manifest["schema_version"] != "3"
     {
         return Err(invalid());
     }
     let items = manifest["items"].as_array().ok_or_else(invalid)?;
-    if items.len() != 6 || reference_ids.len() != 6 || thumbnail_id != reference_ids[0] {
+    if items.len() != reference_ids.len() {
         return Err(invalid());
     }
     let slug = text(&fields["slug"]);
@@ -58,7 +62,6 @@ pub(super) fn verify_gallery(
     let canonical_hash = hash(canonical_prompt);
     let mut ids = BTreeSet::new();
     let mut hashes = BTreeSet::new();
-    let mut models = [0; 3];
     for (index, item) in items.iter().enumerate() {
         if !object_has_keys(item, &["file_id", "subject", "model", "generation_record"])
             || !object_has_keys(&item["model"], &["provider", "model"])
@@ -75,44 +78,7 @@ pub(super) fn verify_gallery(
         {
             return Err(invalid());
         }
-        let execution = &item["generation_record"]["execution"];
         validate_execution(&item["model"], &item["generation_record"]).map_err(|_| invalid())?;
-        let model = item["model"]["model"].as_str();
-        let requested = text(&execution["requested_model"]);
-        match (text(&item["model"]["provider"]), requested) {
-            ("OpenAI", "GPT Image 2.5")
-                if model.is_none_or(|m| {
-                    matches!(
-                        m,
-                        "gpt-image-2.5"
-                            | "openai/gpt-image-2.5/sunburst/text-to-image"
-                            | "openai/gpt-image-2.5/flare/text-to-image"
-                    )
-                }) =>
-            {
-                models[0] += 1
-            }
-            ("xAI", "Grok Image")
-                if model.is_none_or(|m| {
-                    matches!(
-                        m,
-                        "grok-imagine-image"
-                            | "grok-imagine-image-v2"
-                            | "xai/grok-imagine-image/v2.0/text-to-image"
-                    )
-                }) =>
-            {
-                models[1] += 1
-            }
-            ("Google", "Nano Banana")
-                if model.is_some_and(|m| {
-                    matches!(m, "fal-ai/nano-banana-pro" | "gemini-3-pro-image-preview")
-                }) =>
-            {
-                models[2] += 1
-            }
-            _ => return Err(invalid()),
-        }
         let record = &item["generation_record"];
         let output = &record["output"];
         if !object_has_keys(
@@ -146,9 +112,6 @@ pub(super) fn verify_gallery(
         {
             return Err(invalid());
         }
-    }
-    if models != [4, 1, 1] {
-        return Err(invalid());
     }
     for item in items {
         verify_file(
@@ -193,6 +156,21 @@ mod tests {
     }
 
     #[test]
+    fn no_extras_and_arbitrary_single_extra_are_valid() {
+        verify_gallery("style", &json!({"slug":"morrow-ink"}), PROMPT, &[], "proof-0", |_, _| panic!()).unwrap();
+        verify_gallery("style", &json!({"slug":"morrow-ink","reference_manifest":{"schema_version":"3","items":[]}}), PROMPT, &[], "proof-0", |_, _| panic!()).unwrap();
+        let (mut fields, mut ids) = fixture();
+        fields["reference_manifest"]["items"].as_array_mut().unwrap().truncate(1);
+        ids.truncate(1);
+        fields["reference_manifest"]["items"][0]["model"] = json!({"provider":"Independent provider","model":"actual-v7"});
+        let mut checked = 0;
+        verify_gallery("style", &fields, PROMPT, &ids, "proof-0", |_, _| { checked += 1; Ok(()) }).unwrap();
+        assert_eq!(checked, 1);
+        fields["reference_manifest"]["items"][0]["generation_record"]["prompt"] = json!("tampered");
+        assert!(verify_gallery("style", &fields, PROMPT, &ids, "proof-0", |_, _| panic!()).is_err());
+    }
+
+    #[test]
     fn six_gallery_records_verify_every_exact_file_and_hash() {
         let (mut fields, ids) = fixture();
         // Actual persisted manifests are JSON strings, while parsed objects also work.
@@ -223,11 +201,7 @@ mod tests {
             |f| f["reference_manifest"]["schema_version"] = json!("1"),
             |f| f["reference_manifest"]["extra"] = json!(true),
             |f| f["reference_manifest"]["items"][0]["extra"] = json!(true),
-            |f| f["reference_manifest"]["items"][0]["model"]["provider"] = json!("wrong"),
-            |f| {
-                f["reference_manifest"]["items"][0]["model"] =
-                    f["reference_manifest"]["items"][4]["model"].clone()
-            },
+            |f| f["reference_manifest"]["items"][0]["model"]["provider"] = json!(""),
             |f| f["reference_manifest"]["items"][1]["file_id"] = json!("file-0"),
             |f| {
                 f["reference_manifest"]["items"][1]["generation_record"]["output"]["sha256"] =
@@ -271,7 +245,6 @@ mod tests {
             );
         }
         let (fields, mut ids) = fixture();
-        assert!(verify_gallery("style", &fields, PROMPT, &ids, &ids[1], |_, _| panic!()).is_err());
         ids.swap(1, 2);
         assert!(verify_gallery("style", &fields, PROMPT, &ids, &ids[0], |_, _| panic!()).is_err());
     }

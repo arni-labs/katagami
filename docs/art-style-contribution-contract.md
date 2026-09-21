@@ -39,23 +39,17 @@ The uppercase values above describe required data; they are not valid evidence. 
 
 `execution` has exactly the six keys shown. All text fields are nonempty. A `builtin` route accepts Codex/OpenAI or Grok/xAI, with a real tool receipt and nullable model/request ID. Claude invoking an authenticated, actually image-capable Codex CLI records the executed `codex` harness and real CLI receipt. A `provider` route requires the exact model ID and real provider request ID as well as the receipt. Fal is one possible provider tool, not a required provenance format. Never invent missing metadata.
 
-## Six-image display gallery
+## Optional display examples
 
-`reference_manifest` is `{ "schema_version": "3", "items": [...] }`. Each item has exactly `file_id`, `subject`, `model`, and `generation_record`; the record kind is `art_style_gallery`. The ordered `reference_image_file_ids` list must match all six items, and its first File must equal `thumbnail_file_id`. All six Files must be Locked with distinct IDs and bytes verified by the finalizer.
+Publication requires a genuine prompt-only comparison on at least two distinct image models. The minimum is **one subject rendered by two models: two images total**. No particular provider, image model, six-image allocation or extra gallery set is required. The same comparison outputs appear on the style page, and one may be the thumbnail. More models and examples are optional and can be added later through supported revision operations.
 
-The standing mix is four requested **GPT Image 2.5**, one **Grok Image**, and one **Nano Banana**, with varied subjects and compositions. The model fields accepted for these slots are:
+For this session, use Codex built-in image generation and the authenticated Grok CLI's built-in Imagine generation. Do not generate Nano Banana or other provider examples merely to fill old slots. Model identity still records actual exposed facts; neither CLI's chat-model version is the image-model version.
 
-| Provider | Requested model | Actual exposed IDs, or allowed unknown |
-| --- | --- | --- |
-| OpenAI | GPT Image 2.5 | `gpt-image-2.5`, `openai/gpt-image-2.5/sunburst/text-to-image`, `openai/gpt-image-2.5/flare/text-to-image`; null only on the built-in route |
-| xAI | Grok Image | `grok-imagine-image`, `grok-imagine-image-v2`, `xai/grok-imagine-image/v2.0/text-to-image`; null only on the built-in route |
-| Google | Nano Banana | `fal-ai/nano-banana-pro`, `gemini-3-pro-image-preview` |
-
-These are contract identities, not a promise that every harness exposes every model. An unknown built-in version establishes its provider and receipt, not a verified GPT Image 2.5 version. Report an unavailable required model honestly. Gallery outputs are display examples; they are never inputs to another model's portability test.
+`reference_image_file_ids` may be empty and `reference_manifest` absent, or `{ "schema_version": "3", "items": [] }`. If additional gallery examples are supplied, each item has exactly `file_id`, `subject`, `model`, and `generation_record`; its kind is `art_style_gallery`. All items must match the ordered reference IDs, with distinct Locked files and bytes verified by the finalizer. Any genuine model identity supported by the execution contract is accepted; there is no model-name allowlist. The thumbnail must belong to the verified comparison or optional gallery, not an unrelated File.
 
 ## Compact prompt-only portability proof
 
-Use one or two fresh subject descriptions rendered independently by two distinct image-model identities: two or four outputs total. The same canonical prompt and same selected subject/composition pairs must appear on both models. Choose categories from `human_portrait`, `nonhuman_living`, `still_life_object`, and `landscape_environment`. Two subjects use distinct categories. Do not expand this automatically into an eight-image matrix or reuse recurring catalog test subjects.
+Use at least one fresh subject description rendered independently by at least two distinct image-model identities. One matched pair is sufficient; additional models and subjects are optional. The same canonical prompt and same selected subject/composition pairs must appear on every tested model. Choose categories from `human_portrait`, `nonhuman_living`, `still_life_object`, and `landscape_environment`. Vary categories when useful; do not require extra subjects merely to fill categories. Do not expand this automatically into an eight-image matrix or reuse recurring catalog test subjects.
 
 `proof_shots_manifest` is `{ "schema_version": "4", "items": [...] }`. Each item contains exactly:
 
@@ -66,7 +60,7 @@ Use one or two fresh subject descriptions rendered independently by two distinct
 
 `proof_shots_file_ids` matches all manifest outputs. Every output must be Locked; the finalizer streams and hashes its actual bytes. There are no source Files. Provider/model identity comparisons normalize case and surrounding whitespace. An unknown version cannot establish a second model from the same provider, even if the other invocation exposes an ID.
 
-`portability_report` contains `schema_version: "2"`, `verdict: "pass"`, the exact canonical `prompt`, `blind_evaluation: true`, an actual `evaluator` provider/model, and exactly two `models`. Each model contains `provider`, nullable `model`, and one or two `cases` matching the manifest. A case contains exactly `file_id`, `category`, `subject`, `composition`, `mode`, `prompt` (canonical only), `style_reference_used: false`, `subject_followed: true`, `style_applied: true`, `generation_record`, and `scores`.
+`portability_report` contains `schema_version: "2"`, `verdict: "pass"`, the exact canonical `prompt`, `blind_evaluation: true`, an actual `evaluator` provider/model, and at least two `models`. Each model contains `provider`, nullable `model`, and the same nonempty set of `cases` matching the manifest. A case contains exactly `file_id`, `category`, `subject`, `composition`, `mode`, `prompt` (canonical only), `style_reference_used: false`, `subject_followed: true`, `style_applied: true`, `generation_record`, and `scores`.
 
 Score eight dimensions from 0 to 2: `medium_material`, `marks_edges`, `depiction_grammar`, `tonal_shading`, `color_roles`, `composition`, `signature_details`, and `exclusions`. Every dimension must score at least 1; medium/material and depiction grammar must score 2. Each case and each model must average at least 1.5. The blind evaluator must actually inspect the outputs and differ from the tested image models. Do not write passing review claims without performing the review.
 
