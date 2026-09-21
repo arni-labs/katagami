@@ -78,5 +78,7 @@ await Promise.all(Array.from({ length: 8 }, async () => {
 
 console.log(`${total} pictures at w=${WIDTH}: ${warm} already warm, ${failed} failed`);
 // A picture the file proxy cannot serve is a broken reference in the data, not a reason to fail the deploy;
-// a wholesale failure is.
+// a wholesale failure is. No pictures at all means the library read found nothing, which is a failure that would
+// otherwise read as a clean run.
+if (total === 0) { console.error("no published pictures found; nothing was warmed"); process.exit(1); }
 process.exit(failed > total * 0.15 ? 1 : 0);

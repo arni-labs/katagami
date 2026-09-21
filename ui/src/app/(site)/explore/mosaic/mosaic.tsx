@@ -344,19 +344,23 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
     else if (e.key === "+" || e.key === "=") zoomTo(zoom + 1); else if (e.key === "-") zoomTo(zoom - 1);
   };
 
-  // The middle of the screen is asked for first and without waiting its turn, so the view fills from the centre out
-  // rather than all at once; the rest follow as the browser gets to them.
-  const eager = useMemo(() => {
-    const cx = (win.c0 + win.c1) / 2, cy = (win.r0 + win.r1) / 2;
-    const all: { key: string; d: number }[] = [];
-    for (let r = win.r0; r <= win.r1; r++) for (let c = win.c0; c <= win.c1; c++) all.push({ key: `${c},${r}`, d: Math.hypot(c - cx, (r - cy) * RATIO) });
-    return new Set(all.sort((a, b) => a.d - b.d).slice(0, 12).map((x) => x.key));
-  }, [win]);
   const cells = useMemo(() => {
     const out: { c: number; r: number; cell: Cell }[] = [];
     for (let r = win.r0; r <= win.r1; r++) for (let c = win.c0; c <= win.c1; c++) out.push({ c, r, cell: cellAt(c, r) });
     return out;
   }, [win, cellAt]);
+  // The middle of the screen is asked for first and without waiting its turn, so the view fills from the centre out
+  // rather than all at once; the rest follow as the browser gets to them. Only places that carry a picture are
+  // counted: a plot leaves most of its grid empty, and an empty place would otherwise spend one of the twelve.
+  const eager = useMemo(() => {
+    const cx = (win.c0 + win.c1) / 2, cy = (win.r0 + win.r1) / 2;
+    return new Set(cells
+      .filter(({ cell }) => cell?.kind === "style" && cell.s.picture)
+      .map(({ c, r }) => ({ key: `${c},${r}`, d: Math.hypot(c - cx, (r - cy) * RATIO) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 12)
+      .map((x) => x.key));
+  }, [win, cells]);
   const openCell = useCallback((c: number, r: number) => { if (!dragged.current) setOpen({ c, r }); }, []);
 
   // The opened card, and its neighbours along the row for the arrows and the swipe.
@@ -374,9 +378,9 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
   // What is typed is first read as what the person wants this screen to do (api/explore/command): it may be an
   // ordinary question, or it may be "only art styles, by family, zoomed out", "compare Hertz and Lido", "more like
   // Reticle", "make them slides". The page performs the actions it is handed; it has no other interface for them.
+  // What was last done is said about the wall, so an open card hides the line rather than forgetting it: the wall is
+  // still arranged that way behind the card, and Undo, which the line carries, has to come back when the card closes.
   const [did, setDid] = useState<string[]>([]);
-  // What was last done is said about the wall; opening a card changes the subject, so the line goes.
-  useEffect(() => { if (open) setDid([]); }, [open]);
   const [verdict, setVerdict] = useState<{ id: string; q: string; suits: number; helps: string[]; hurts: string[] } | null>(null);
   // The shortlist outlives the question: it is kept on this device.
   const [pins, setPins] = useState<string[]>([]);
@@ -500,7 +504,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
         </div>
       ) : null}
       {tray && ask.fits && !open && !pair ? <Tray want={ask.answer?.want ?? null} fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
-      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet onSubmit={command} note={did} onUndo={canUndo ? undo : undefined} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "only the dark ones", "compare the top two", "pin these three"] : ["a calm booking app for an island ferry", "dark to light", "playful against dense"]} />
+      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet onSubmit={command} note={open ? [] : did} onUndo={canUndo && !open ? undo : undefined} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "only the dark ones", "compare the top two", "pin these three"] : ["a calm booking app for an island ferry", "dark to light", "playful against dense"]} />
     </div>
     </SkinContext.Provider>
   );

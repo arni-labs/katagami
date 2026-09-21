@@ -27,6 +27,22 @@ The frontend is the only thing on Vercel. The backend (entity store, agent runti
 - **Connected repo:** `arni-labs/katagami` (via Vercel GitHub App)
 - **Deployment Protection:** off — production and preview URLs are publicly viewable
 
+### After a production deploy: warm the card images
+
+The image optimizer's cache does not survive a deploy, and a card picture is a multi-megabyte
+original, so its first resize costs 400–900 ms against ~60 ms once warm. A phone opening
+`/explore/mosaic` asks for about seventy at once: cold, the view takes about fifteen seconds to fill;
+warm, under three. Nothing runs this automatically — run it by hand after a deploy that changed the
+site, and after the library grows:
+
+```sh
+cd ui && TEMPER_API_URL=… TEMPER_API_KEY=… npm run warm-images
+```
+
+It asks for every published style's card picture once, at the width the cards draw from, the way a
+browser asks (the optimizer keeps a separate copy per format it negotiates). Takes a few minutes. A
+handful of 400s are broken reference files in the data; a wholesale failure exits non-zero.
+
 ### Environment variables
 
 Set in Vercel project settings (Production + Preview):
