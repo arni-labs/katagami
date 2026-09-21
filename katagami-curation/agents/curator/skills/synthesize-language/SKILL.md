@@ -129,6 +129,15 @@ the write before attaching.
 
 ## DESIGN.md — the portable projection
 
+Pair the language with an existing **Published** ArtStyle, or author and publish
+its new style through the canonical Stack contributor procedure before submitting
+the language. `imagery_direction.pairs_with` must contain that style's exact slug,
+and `default_art_style_id` must identify the same Published entity. Resolve duplicate
+slugs explicitly; never select an unreviewed style merely because it is returned
+first. A draft recipe is not publication evidence. Do not invent a missing pair
+or attest its quality yourself. The finalizer verifies the paired style before
+publishing the language.
+
 The DESIGN.md must start with YAML frontmatter containing `version:`,
 `name:`, `description:`, `colors:`, `typography:`, `rounded:`, `spacing:`,
 `components:`, and `art_style:` (name, slug, and `/art-styles/<id>` url of
