@@ -7,7 +7,8 @@ import { STYLE_DNA_QUESTIONS } from "@/lib/style-dna.mjs";
 import type { AtlasHole, AtlasStyle } from "@/lib/catalog";
 import { AskDock, fitWord, hueOf, useAsk, useScreen, type Family, type Fit, type Kinds } from "../shared";
 import { flow } from "../river/course";
-import { Stamp, quick } from "../stamp";
+import { quick } from "../stamp";
+import { Card, SKINS, SKIN_NAME, SkinContext, type Skin } from "../card";
 
 // The library as an endless sheet of stamps. The sheet wraps in both directions,
 // so you can pan for ever and come round again; drag (or scroll) to pan, with
@@ -25,6 +26,8 @@ const SIZES = { phone: [46, 74, 112], desk: [58, 96, 148] };
 const RATIO = 1.2, GAP = 10;
 const GROUND = "color-mix(in srgb, var(--foreground) 15%, var(--background))"; // the desk the stamps lie on
 const HUE_ANGLE: Record<string, number> = { red: 0, orange: 28, yellow: 52, green: 120, teal: 172, blue: 222, violet: 275, pink: 325 };
+/** A steady four-figure number for an entry, for the skins that print a code. */
+const codeOf = (id: string) => { let h = 7; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0; return `KG ${String(h % 10000).padStart(4, "0")}`; };
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 const tone = (ink: string | null) => {
   if (!ink) return { h: 0, s: 0, l: 0.6 };
@@ -49,11 +52,11 @@ type CellProps = { c: number; r: number; cell: Cell; w: number; h: number; stepX
 const CellView = memo(function CellView({ c, r, cell, w, h, stepX, stepY, dim, hold, onOpen }: CellProps) {
   if (!cell) return null;
   const x = c * stepX, y = r * stepY, key = `${c},${r}`;
-  if (cell.kind === "soon") return <span ref={(el) => hold(key, el)} title={`${cell.h.name}: coming soon`} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.25 : 0.8 }}><Stamp src={null} ink={null} w={w} h={h} label={w > 66 ? "Soon" : undefined} soon /></span>;
+  if (cell.kind === "soon") return <span ref={(el) => hold(key, el)} title={`${cell.h.name}: coming soon`} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.25 : 0.8 }}><Card src={null} ink={null} w={w} h={h} label={w > 66 ? "Soon" : undefined} soon /></span>;
   const s = cell.s;
   return (
     <button ref={(el) => hold(key, el)} type="button" onPointerEnter={(e) => { if (e.pointerType === "mouse") warm(s.thumbnail_url, 1080); }} onPointerDown={() => warm(s.thumbnail_url, w < 60 ? 750 : window.innerWidth < 768 ? 750 : 1080)} onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, }}>
-      <Stamp src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} fast={w > 120 ? 384 : w > 70 ? 256 : 128} />
+      <Card src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} code={codeOf(s.id)} fast={w > 120 ? 384 : w > 70 ? 256 : 128} />
     </button>
   );
 });
@@ -95,6 +98,10 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
   // Design languages and art styles, both by default; pressing one turns it off or on, and the last one on stays on.
   const [kinds, setKinds] = useState<Kinds>({ language: true, art_style: true });
   const [tray, setTray] = useState(false);
+  // Which material the cards are made of: six to judge between, kept in the address so each can be linked to.
+  const [skin, setSkin] = useState<Skin>("stamp");
+  useEffect(() => { const s = new URLSearchParams(window.location.search).get("skin"); if (s && (SKINS as readonly string[]).includes(s)) requestAnimationFrame(() => setSkin(s as Skin)); }, []);
+  const pickSkin = (s: Skin) => { setSkin(s); const url = new URL(window.location.href); if (s === "stamp") url.searchParams.delete("skin"); else url.searchParams.set("skin", s); window.history.replaceState(null, "", url); };
   const styles = useMemo(() => all.filter((s) => kinds[s.kind]), [all, kinds]);
   const byId = useMemo(() => new Map(styles.map((s) => [s.id, s])), [styles]);
   const familyOf = useMemo(() => new Map(families.map((f) => [f.id, f])), [families]);
@@ -330,6 +337,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
 
   if (!screen) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
   return (
+    <SkinContext.Provider value={skin}>
     <div ref={box} data-canvas onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} style={{ background: GROUND }} className={`relative h-[calc(100dvh-65px)] w-full select-none overflow-hidden`}>
       <h1 className="sr-only">Explore the library</h1>
       <div role="application" aria-label="The sheet. Drag or use the arrow keys to move across it; plus and minus change how much you see." tabIndex={0} onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} onKeyDown={onKey} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={(e) => { if (e.pointerType === "mouse") { cam.current.px = -1; cam.current.py = -1; paint(); } }} ref={surface}
@@ -351,6 +359,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
             ))}
           </div>
           {topFit && !tray ? <button type="button" onClick={() => setTray(true)} className={`shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 text-[12.5px] ${glass}`}>Results</button> : null}
+          <div role="group" aria-label="Card" className={`flex shrink-0 ${glass}`}>{SKINS.map((s) => <button key={s} type="button" aria-pressed={skin === s} onClick={() => pickSkin(s)} className={`shrink-0 cursor-pointer whitespace-nowrap px-2.5 py-1.5 text-[12.5px] ${skin === s ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"}`}>{SKIN_NAME[s]}</button>)}</div>
           <div role="group" aria-label="Sort the sheet" className={`flex shrink-0 ${glass}`}>{tab("colour", "By colour")}{tab("family", "By family")}{tab("fit", "By fit", !topFit)}</div>
         </div>
       </div>
@@ -363,6 +372,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
       {tray && ask.fits && !open ? <Tray fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
       <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={lit ? lit.size : null} kinds={kinds} quiet />
     </div>
+    </SkinContext.Provider>
   );
 }
 
@@ -381,7 +391,7 @@ function Tray({ fits, byId, judging, phone, onOpen, onClose }: { fits: Map<strin
         {hand.map(([id, fit], i) => { const s = byId.get(id)!; return (
           <li key={id} className="tray-card shrink-0 snap-center" style={{ animationDelay: `${i * 55}ms`, ["--tilt" as string]: `${((i * 37) % 7) - 3}deg` }}>
             <button type="button" onClick={() => onOpen(id)} aria-label={s.name} className="block cursor-pointer text-center">
-              <Stamp src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={s.name} fast={384} />
+              <Card src={s.thumbnail_url} ink={s.ink} w={w} h={h} label={s.name} code={codeOf(s.id)} fast={384} />
               <span className="mt-2 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/65">{fit.strange ? "A wild card" : fitWord(fit, judging)}</span>
             </button>
           </li>
@@ -472,7 +482,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
       {phone && main ? (
         // A phone shows one picture at a time, as one large stamp carrying the entry's name.
         <Link href={style.href} onClick={(e) => e.stopPropagation()} aria-label={`Open ${style.name}`} className="lit-big book-open block shrink-0 outline-none">
-          <Stamp key={main} src={main} ink={style.ink} w={roomW} h={Math.min(roomH, roomW / (shapes[main] ?? 1.5))} windowed label={style.name} value={pictures.length > 1 ? `${at + 1}/${pictures.length}` : undefined} fast={750} under={quick(main, 256)} lit={{ x: 0, y: 0 }} />
+          <Card key={main} src={main} ink={style.ink} w={roomW} h={Math.min(roomH, roomW / (shapes[main] ?? 1.5))} windowed label={style.name} value={pictures.length > 1 ? `${at + 1}/${pictures.length}` : undefined} fast={750} under={quick(main, 256)} lit={{ x: 0, y: 0 }} />
         </Link>
       ) : null}
       {phone ? null : (
@@ -481,7 +491,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
           const at = placed[i];
           return (
             <Link key={p} href={style.href} aria-label={`Open ${style.name}`} className="collage-print absolute block outline-none" style={{ left: at.x * roomW, top: at.y * roomH, zIndex: at.z, ["--tilt" as string]: `${at.r}deg`, animationDelay: `${i * 80}ms` }}>
-              <Stamp src={p} ink={style.ink} w={at.w} h={at.h} windowed fast={phone ? 750 : i === 0 ? 1080 : 750} under={quick(p, 256)} lit={{ x: (at.x - 0.5) * roomW, y: (at.y - 0.5) * roomH }} />
+              <Card src={p} ink={style.ink} w={at.w} h={at.h} windowed fast={phone ? 750 : i === 0 ? 1080 : 750} under={quick(p, 256)} lit={{ x: (at.x - 0.5) * roomW, y: (at.y - 0.5) * roomH }} />
             </Link>
           );
         })}
@@ -492,7 +502,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
         <ul onClick={(e) => e.stopPropagation()} className="flex max-w-full shrink-0 items-end gap-3 overflow-x-auto px-2 pb-2 pt-1 [scrollbar-width:none]">
           {pictures.map((p, i) => (
             <li key={p} className="shrink-0">
-              <button type="button" onClick={() => setAt(i)} aria-label={`Picture ${i + 1} of ${pictures.length}`} aria-pressed={i === at} className="block cursor-pointer" style={{ opacity: i === at ? 1 : 0.65 }}><Stamp src={p} ink={style.ink} w={54} h={54} fast={128} /></button>
+              <button type="button" onClick={() => setAt(i)} aria-label={`Picture ${i + 1} of ${pictures.length}`} aria-pressed={i === at} className="block cursor-pointer" style={{ opacity: i === at ? 1 : 0.65 }}><Card src={p} ink={style.ink} w={54} h={54} fast={128} /></button>
             </li>
           ))}
         </ul>

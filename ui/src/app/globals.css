@@ -1834,3 +1834,14 @@
     transition: none;
   }
 }
+
+/* Card skins for the explore canvas (explore/card.tsx). Each is a flat material with one soft shadow; the
+   light (.lit) is shared with the stamp. */
+.card-stencil { background-color: #4a2a1b; background-image: radial-gradient(rgba(255, 210, 160, 0.07) 1px, transparent 1.2px); background-size: 5px 5px; box-shadow: 0 5px 12px -5px rgba(20, 12, 6, 0.6); }
+/* A run of punched dots, as a katagami komon pattern is: cut, not printed. */
+.card-stencil-dots { background-image: radial-gradient(circle, #f3e6d2 38%, transparent 42%); background-size: 33.4% 100%; opacity: 0.75; }
+.card-swatch { background: #ffffff; box-shadow: 0 5px 12px -5px rgba(20, 25, 40, 0.45); }
+.card-proof { background: #f6f3ea; box-shadow: 0 5px 12px -5px rgba(20, 25, 40, 0.4); }
+.card-proof-cross { background: linear-gradient(#111, #111) center / 100% 1px no-repeat, linear-gradient(#111, #111) center / 1px 100% no-repeat; opacity: 0.7; }
+.card-slide { background: #e9e7e2; border-radius: 3px; box-shadow: 0 5px 12px -5px rgba(20, 25, 40, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.7); }
+.card-specimen { background: #fbfaf6; box-shadow: 0 5px 12px -5px rgba(20, 25, 40, 0.4); }
