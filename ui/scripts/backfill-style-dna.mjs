@@ -21,7 +21,7 @@ import { writeFileSync } from "node:fs";
 import { askJev, JEV_MODEL } from "../src/lib/jev.mjs";
 import { askedQuestions, buildStyleDoc, computedDna, dnaFromAnswers, dnaVersion, storedDna, traitsField } from "../src/lib/style-dna.mjs";
 
-const API = requiredEnv("TEMPER_API_URL").replace(/\/+$/, "");
+const API = requiredEnv("TEMPER_API_URL", "NEXT_PUBLIC_TEMPER_API_URL").replace(/\/+$/, "");
 const KEY = requiredEnv("TEMPER_API_KEY");
 requiredEnv("TYPESAFE_API_KEY");
 const TENANT = process.env.TEMPER_TENANT || "default";
@@ -38,13 +38,12 @@ const SETS = [
   ["art_style", "ArtStyles"],
 ];
 
-function requiredEnv(name) {
-  const v = process.env[name];
-  if (!v) {
-    console.error(`missing env ${name}`);
-    process.exit(2);
-  }
-  return v;
+// The frontend env file names the API the Next way, as scripts/style-inks.mjs
+// already allows for; one env file should run every script here.
+function requiredEnv(...names) {
+  for (const n of names) if (process.env[n]) return process.env[n];
+  console.error(`missing env ${names[0]}`);
+  process.exit(2);
 }
 
 async function collectAll(path) {
