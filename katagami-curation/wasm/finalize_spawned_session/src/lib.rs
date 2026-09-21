@@ -6,7 +6,9 @@ mod art_style_gallery;
 mod art_style_generation;
 mod art_style_review;
 mod facets;
+mod language_art_style;
 mod taste_doc;
+use language_art_style::{select_published_art_style_pair, verify_published_art_style_pair};
 
 const ERROR_CONTRACT: &str = "katagami.finalizer.verification.v1";
 const IMAGE_SNIFF_BYTES: usize = 4096;
@@ -1140,6 +1142,10 @@ fn ensure_language_art_style_paired(
     language: &serde_json::Value,
 ) -> Result<serde_json::Value, VerificationError> {
     let fields = entity_fields(language);
+    let pair_slug = imagery_pairs_with(&fields).ok_or_else(|| {
+        VerificationError::new("missing_art_style_pair_slug", format!("DesignLanguage '{language_id}' must name imagery_direction.pairs_with before publication"))
+            .entity("DesignLanguage", language_id).field("imagery_direction").repairable(true)
+    })?;
     let existing_id = string_field_any(&fields, "default_art_style_id", "");
     if !existing_id.is_empty() {
         let art = load_required_entity(
@@ -1150,18 +1156,7 @@ fn ensure_language_art_style_paired(
             &existing_id,
             "missing_paired_art_style",
         )?;
-        let status = entity_status_value(&art);
-        if status == "Deleted" {
-            return Err(VerificationError::new(
-                "paired_art_style_deleted",
-                format!(
-                    "DesignLanguage '{language_id}' points at deleted ArtStyle '{existing_id}'"
-                ),
-            )
-            .entity("DesignLanguage", language_id)
-            .field("default_art_style_id")
-            .repairable(true));
-        }
+        verify_published_art_style_pair(language_id, &pair_slug, &art)?;
         if entity_bool_any(language, "has_default_art_style") {
             return Ok(language.clone());
         }
@@ -1176,16 +1171,12 @@ fn ensure_language_art_style_paired(
         );
     }
 
-    let hint = imagery_pairs_with(&fields);
-    let resolved = match hint {
-        Some(slug) => resolve_art_style_by_slug(ctx, api_url, headers, &slug)?,
-        None => None,
-    };
+    let resolved = resolve_art_style_by_slug(ctx, api_url, headers, &pair_slug)?;
     let Some(art_id) = resolved else {
         return Err(VerificationError::new(
             "missing_default_art_style",
             format!(
-                "DesignLanguage '{language_id}' has no default_art_style_id and imagery_direction.pairs_with does not match a live ArtStyle. Pair one with SetDefaultArtStyle before SubmitForReview or Publish."
+                "DesignLanguage '{language_id}' has no default_art_style_id and imagery_direction.pairs_with does not match a Published ArtStyle. Publish its paired style before submitting the language."
             ),
         )
         .entity("DesignLanguage", language_id)
@@ -1226,9 +1217,7 @@ fn resolve_art_style_by_slug(
     slug: &str,
 ) -> Result<Option<String>, VerificationError> {
     let encoded = urlencoding_slug(slug);
-    let url = format!(
-        "{api_url}/tdata/ArtStyles?$filter=slug%20eq%20%27{encoded}%27&$top=8"
-    );
+    let url = format!("{api_url}/tdata/ArtStyles?$filter=slug%20eq%20%27{encoded}%27&$top=8");
     let resp = http_call(ctx, "GET", &url, headers, "")?;
     if !(200..300).contains(&resp.status) {
         return Err(VerificationError::new(
@@ -1248,20 +1237,7 @@ fn resolve_art_style_by_slug(
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
-    for row in rows {
-        let status = entity_status_value(&row);
-        if status == "Deleted" {
-            continue;
-        }
-        if let Some(id) = row
-            .get("entity_id")
-            .or_else(|| row.get("Id"))
-            .and_then(|v| v.as_str())
-        {
-            return Ok(Some(id.to_string()));
-        }
-    }
-    Ok(None)
+    select_published_art_style_pair(slug, &rows, parsed.get("@odata.nextLink").is_some())
 }
 
 fn urlencoding_slug(value: &str) -> String {

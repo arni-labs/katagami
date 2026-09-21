@@ -66,6 +66,12 @@ Score eight dimensions from 0 to 2: `medium_material`, `marks_edges`, `depiction
 
 ## Other required evidence and finalization
 
+A design language may be published only with a Published paired ArtStyle. Its
+`imagery_direction.pairs_with` slug and `default_art_style_id` must agree. Use an
+existing Published style, or complete the new style's honest contribution and
+finalization in the same flow before submitting the language. Unpublished, missing
+or ambiguous pairs must not be treated as reviewed imagery recipes.
+
 The style definition includes name, slug, medium, the portable prompt, subject slot recipes, usage guidance, lineage/direction where applicable, actual model provenance, credits and tags. Keep traditions broad and honestly attributed; do not target a living artist by name or disguised description.
 
 `source_basis` and independent `prompt_review` remain schema version 1. The source/rights report names actual checked sources and evidence URLs. The prompt review binds the exact prompt, real independent reviewer identity, reference/subject/source-medium/model/style-name independence, contradictions, revision count and substantive `observable_dimensions` for the eight dimensions. `source_medium_independent` describes the prompt's independence; it does not require source images. Existing finalizer checks for these reports remain authoritative.
