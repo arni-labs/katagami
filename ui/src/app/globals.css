@@ -1844,3 +1844,8 @@
 
 /* Foil reads as a printing effect; on dyed stencil paper only the plain highlight belongs. */
 .card-stencil.lit::before, .lit-on > .card-stencil::before { display: none; }
+
+/* Blank cards hold the places while an answer is on its way, so something happens the instant Enter is pressed. */
+.waiting-card { animation: waiting-card 900ms ease-in-out infinite alternate; }
+@keyframes waiting-card { from { opacity: 0.35; } to { opacity: 0.9; } }
+@media (prefers-reduced-motion: reduce) { .waiting-card { animation: none; opacity: 0.6; } }

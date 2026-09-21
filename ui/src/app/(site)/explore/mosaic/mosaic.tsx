@@ -383,6 +383,8 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
     // straight to the search, so the common case costs one step, not two.
     const operates = /\b(only|just|sort|sorted|order|arrange|compare|like|pin|zoom|bigger|smaller|closer|further|against|versus|vs|undo|reset|clear|start over|cards?|stamps?|swatch|stencil|proof|everything|all)\b/i.test(q) || /^\s*(from\s+)?\w+\s+to\s+\w+\s*$/i.test(q);
     if (!open && !ask.answer && !operates && q.split(/\s+/).length >= 3) { before.current = null; setCanUndo(false); setPair(null); setHue(""); setDid([]); void ask.ask(q, kinds); return; }
+    // With an answer on screen, a short change with none of the operating words is a refinement: straight to it.
+    if (!open && ask.answer && !operates && q.split(/\s+/).length <= 6 && !/\b(app|site|website|dashboard|page|brand|poster|for an?|for the)\b/i.test(q)) { setTray(true); setDid(["Refined"]); void ask.refine(q, kinds); return; }
     setDid(["…"]);
     before.current = { kinds, mode, hue, skin, zoom, pair, axes, narrow };
     setCanUndo(true);
@@ -478,6 +480,11 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
         </aside>
       ) : null}
       {pair ? <Compare ids={pair} byId={byAny} familyOf={familyOf} phone={phone} onOpen={(id) => { setPair(null); goTo(id); }} onClose={() => setPair(null)} /> : null}
+      {ask.state === "asking" && !ask.fits && !open && !pair ? (
+        <div aria-hidden className="viewer-veil absolute inset-0 z-30 flex items-center justify-center bg-[color-mix(in_srgb,var(--background)_60%,transparent)] px-3 backdrop-blur-md" style={{ paddingTop: "calc(var(--head, 60px) + 16px)", paddingBottom: "calc(var(--dock-h, 150px) + 12px)" }}>
+          <ul className="flex max-w-[64rem] flex-wrap justify-center gap-5">{Array.from({ length: phone ? 2 : 10 }, (_, i) => <li key={i} className="waiting-card bg-[color-mix(in_srgb,var(--foreground)_8%,var(--background))]" style={{ width: phone ? 150 : 176, height: phone ? 180 : 211, animationDelay: `${i * 70}ms` }} />)}</ul>
+        </div>
+      ) : null}
       {tray && ask.fits && !open && !pair ? <Tray want={ask.answer?.want ?? null} fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
       <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet onSubmit={command} note={did} onUndo={canUndo ? undo : undefined} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "only the dark ones", "compare the top two", "pin these three"] : ["a calm booking app for an island ferry", "dark to light", "playful against dense"]} />
     </div>
