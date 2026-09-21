@@ -59,6 +59,10 @@ export function useAsk() {
   const [words, setWords] = useState<Word[] | null>(null);
   const [moved, setMoved] = useState<Moved[]>([]);
   const [changes, setChanges] = useState("");
+  // Every change made since the question, each holding what the wall looked like before it. Taking back the last one
+  // is a step back with nothing asked; taking back an earlier one asks again with the rest, because the changes after
+  // it were made against a reading it is no longer standing on.
+  const [chain, setChain] = useState<{ say: string; was: { answer: Answer | null; moved: Moved[]; changes: string } }[]>([]);
   const turn = useRef(0);
   const kindOf = (kinds?: Kinds): Record<string, string> => (kinds && kinds.language !== kinds.art_style ? { kind: kinds.language ? "language" : "art_style" } : {});
 
@@ -94,7 +98,7 @@ export function useAsk() {
     const q = text.trim();
     if (q.length < 2) return; // any word will do
     const mine = ++turn.current;
-    setState("asking"); setError(""); setMoved([]); setChanges("");
+    setState("asking"); setError(""); setMoved([]); setChanges(""); setChain([]);
     setWords(q.split(/\s+/).map((w) => ({ text: w, role: null }))); // plain at once; marked when the reading comes back
     void fetch(`/api/ask?${new URLSearchParams({ q, stage: "words" })}`).then((r) => (r.ok ? r.json() : null)).then((got) => { if (mine === turn.current && Array.isArray(got?.words)) setWords(got.words as Word[]); }).catch(() => undefined);
     await run(mine, q, null, kinds);
@@ -106,6 +110,7 @@ export function useAsk() {
     if (!answer?.want || say.length < 2) return;
     const mine = ++turn.current;
     setState("asking"); setError("");
+    setChain((now) => [...now, { say, was: { answer, moved, changes } }]);
     // Two steps, like the ask: the moved reading and its trait matches at once, then the judged fit over them.
     try {
       const first = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q: answer.query, k: 12, stage: "match", ...kindOf(kinds), want: answer.want, refine: say, ...(changes ? { changes } : {}) }) });
@@ -118,14 +123,36 @@ export function useAsk() {
         const was = { answer, moved, changes };
         const ok = await run(mine, answer.query, { want: moved1.want, ...(moved1.changes ? { changes: moved1.changes } : {}) }, kinds);
         // The judged fit failed: the answer that stood before the change comes back, under the error.
-        if (ok === false && mine === turn.current) { setAnswer(was.answer); setMoved(was.moved); setChanges(was.changes); }
+        if (ok === false && mine === turn.current) { setAnswer(was.answer); setMoved(was.moved); setChanges(was.changes); setChain((now) => now.slice(0, -1)); }
         return;
       }
     } catch { /* fall through to the single step */ }
     await run(mine, answer.query, { want: answer.want, refine: say, ...(changes ? { changes } : {}) }, kinds);
   }, [answer, changes, moved, run]);
 
-  const clear = useCallback(() => { turn.current++; setAnswer(null); setWords(null); setMoved([]); setChanges(""); setQuery(""); setState("idle"); setError(""); }, []);
+  const clear = useCallback(() => { turn.current++; setAnswer(null); setWords(null); setMoved([]); setChanges(""); setChain([]); setQuery(""); setState("idle"); setError(""); }, []);
+
+  /** Take back one change. The last one is a step back to what was there before it; an earlier one is asked again
+   *  with the changes that are left, since what came after it was said about a reading that is going away. */
+  const unrefine = useCallback(async (at: number, kinds?: Kinds) => {
+    const step = chain[at];
+    if (!step) return;
+    if (at === chain.length - 1) {
+      turn.current++;
+      setAnswer(step.was.answer); setMoved(step.was.moved); setChanges(step.was.changes);
+      setChain((now) => now.slice(0, at));
+      setState("idle"); setError("");
+      return;
+    }
+    const first = chain[0];
+    const rest = chain.filter((_, i) => i !== at);
+    if (!first?.was.answer?.want) return;
+    const mine = ++turn.current;
+    setState("asking"); setError("");
+    setChain(rest);
+    const ok = await run(mine, first.was.answer.query, { want: first.was.answer.want, changes: rest.map((s) => s.say).join("; ") }, kinds);
+    if (ok === false && mine === turn.current) setChain(chain);
+  }, [chain, run]);
   const fits = useMemo(() => {
     if (!answer) return null;
     const out = new Map<string, Fit>();
@@ -133,7 +160,7 @@ export function useAsk() {
     answer.strange.forEach((c, i) => out.set(c.id, { fit: c.fit, strange: true, rank: answer.results.length + i }));
     return out;
   }, [answer]);
-  return { query, setQuery, state, error, answer, fits, words, moved, changes, ask, refine, clear };
+  return { query, setQuery, state, error, answer, fits, words, moved, changes, chain, ask, refine, unrefine, clear };
 }
 
 const MARK: Record<string, string> = { what: "var(--yuzu)", who: "var(--sakura)", feel: "var(--ramune)" };
@@ -210,10 +237,17 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
           </ul>
         ) : null}
         {/* One quiet line: what it just did (with a step back), then a few things worth typing now. */}
-        {!compact && ((note && note.length > 0) || (ask.answer && ask.changes) || (hints && hints.length > 0 && fresh)) ? (
+        {!compact && ((note && note.length > 0) || ask.chain.length > 0 || (hints && hints.length > 0 && fresh)) ? (
           <div aria-live="polite" className="flex items-center gap-1.5 overflow-x-auto px-0.5 [scrollbar-width:none] [&>*]:shrink-0 [&>*]:whitespace-nowrap">
             {(note ?? []).map((n) => <span key={n} className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-foreground/80">{n}</span>)}
-            {ask.answer && ask.changes ? <span className="text-[12px] italic text-foreground/55">{ask.changes}</span> : null}
+            {ask.answer && ask.chain.length > 0 ? ask.chain.map((step, i) => (
+              <button key={`${i}-${step.say}`} type="button" onClick={() => void ask.unrefine(i, kinds)} title={`Take back "${step.say}"`}
+                className="refine-chip group flex cursor-pointer items-center gap-1 bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2 py-1 text-[12px] hover:bg-[color-mix(in_srgb,var(--foreground)_12%,transparent)]">
+                {step.say}
+                <span aria-hidden className="text-[13px] leading-none text-foreground/35 group-hover:text-foreground/80">&times;</span>
+                <span className="sr-only">Take this change back</span>
+              </button>
+            )) : null}
             {onUndo && note && note.length > 0 && !note.includes("Undone") ? <button type="button" onClick={onUndo} className="cursor-pointer font-mono text-[10px] uppercase tracking-[0.12em] text-foreground/50 underline underline-offset-2 hover:text-foreground">Undo</button> : null}
             {note && note.length > 0 && hints && hints.length > 0 && fresh ? <span aria-hidden className="mx-1 h-3 w-px bg-foreground/15" /> : null}
             {hints && fresh ? hints.slice(0, 4).map((hint) => <button key={hint} type="button" onClick={() => { sent.current = hint; ask.setQuery(hint); if (onSubmit) onSubmit(hint); else void ask.ask(hint, kinds); }} className="cursor-pointer text-[12.5px] text-foreground/55 underline decoration-foreground/20 underline-offset-[3px] hover:text-foreground">{hint}</button>) : null}
@@ -224,7 +258,7 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
           <label htmlFor="explore-ask" className="sr-only">What are you making?</label>
           <div className="relative min-w-0 flex-1">
             <div aria-hidden className={`pointer-events-none whitespace-pre-wrap break-words px-1 py-1 ${type}`} style={{ minHeight: "1.3em", opacity: busy ? 0.6 : 1 }}>
-              {ask.query ? runs.map((m, i) => (m.role ? <mark key={i} className="query-mark" style={{ ["--mark" as string]: MARK[m.role] }}>{m.piece}</mark> : <span key={i}>{m.piece}</span>)) : <span className="font-normal text-foreground/35">{compact ? "Ask about this one" : "Ask, or tell it what to do: “only art styles, by family”"}</span>}
+              {ask.query ? runs.map((m, i) => (m.role ? <mark key={i} className="query-mark" style={{ ["--mark" as string]: MARK[m.role], animationDelay: `${Math.min(i, 8) * 60}ms` }}>{m.piece}</mark> : <span key={i}>{m.piece}</span>)) : <span className="font-normal text-foreground/35">{compact ? "Ask about this one" : "Ask, or tell it what to do: “only art styles, by family”"}</span>}
               {/* A trailing newline needs something after it to take up a line, as the textarea gives it one. */}
               {ask.query.endsWith("\n") ? " " : null}
             </div>

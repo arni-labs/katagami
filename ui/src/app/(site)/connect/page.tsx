@@ -23,17 +23,9 @@ const COPY_BUTTON =
 export default function ConnectPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-12 sm:pb-20 sm:pt-20">
-      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-        MCP · Streamable HTTP
-      </p>
-      <h1 className="mt-5 font-display text-[38px] font-bold leading-[1.02] tracking-[-0.03em] sm:text-[58px]">
+      <h1 className="font-display text-[38px] font-bold leading-[1.02] tracking-[-0.03em] sm:text-[58px]">
         Give your agent the <Marker color="yuzu">library</Marker>.
       </h1>
-      <p className="mt-5 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
-        Design languages, palettes and art styles, read live by anything that
-        speaks MCP.
-      </p>
-
       <section
         className="mt-12 px-6 pb-7 pt-6 sm:mt-14 sm:px-8 sm:pb-8 sm:pt-7"
         style={{

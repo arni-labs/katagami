@@ -1808,14 +1808,19 @@
 
 /* The asked sentence, set large: a marked phrase sits on a swipe of highlighter across the lower part of the line
    (a hard-stopped fill, not a fade), and wraps cleanly when the phrase breaks over two lines. */
-.query-mark { color: inherit; padding: 0 0.12em; background: linear-gradient(transparent 46%, color-mix(in srgb, var(--mark) 72%, transparent) 46%, color-mix(in srgb, var(--mark) 72%, transparent) 92%, transparent 92%); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.query-mark { color: inherit; padding: 0 0.12em; background-image: linear-gradient(transparent 46%, color-mix(in srgb, var(--mark) 72%, transparent) 46%, color-mix(in srgb, var(--mark) 72%, transparent) 92%, transparent 92%); background-repeat: no-repeat; background-size: 0% 100%; -webkit-box-decoration-break: clone; box-decoration-break: clone; animation: query-swipe 300ms cubic-bezier(0.32, 0.8, 0.4, 1) both; }
+/* A mark is drawn on the way a highlighter is drawn on: one stroke, left to right, the next a moment behind. */
+@keyframes query-swipe { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
+/* A change arrives as its own chip, so taking it back is one press on the thing you said. */
+.refine-chip { animation: chip-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes chip-in { from { opacity: 0; transform: translateY(3px) scale(0.94); } }
 .query-line { animation: canvas-cell-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 /* The answer lands card by card, each from a little above with its own slight turn. */
 .tray-card { animation: tray-land 520ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both; }
 .tray-card > button { transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1); transform: rotate(var(--tilt)); }
 .tray-card > button:hover, .tray-card > button:focus-visible { transform: rotate(0deg) translateY(-6px) scale(1.04); }
 @keyframes tray-land { from { opacity: 0; translate: 0 -46px; scale: 1.25; rotate: calc(var(--tilt) * 3); } }
-@media (prefers-reduced-motion: reduce) { .query-line, .tray-card { animation: none; } .tray-card > button { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .query-line, .tray-card, .refine-chip { animation: none; } .query-mark { animation: none; background-size: 100% 100%; } .tray-card > button { transition: none; } }
 
 /* A large lit card leans less than a small one: the same angle on a big surface reads as a lurch. */
 .lit-big .lit { transform: perspective(1600px) rotateY(clamp(-4.5deg, calc(var(--dx) * 0.012deg), 4.5deg)) rotateX(clamp(-4.5deg, calc(var(--dy) * -0.012deg), 4.5deg)); transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1); }
