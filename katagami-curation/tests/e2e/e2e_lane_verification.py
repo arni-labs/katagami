@@ -5,7 +5,7 @@ Drives the REAL production flow against a locally served Temper with paw-fs +
 katagami-commons + katagami-curation installed and the actual
 finalize_spawned_session WASM registered:
 
-  six Locked gallery Files + two or four prompt-only proof Files
+  five Locked gallery Files + two or four prompt-only proof Files
   -> ArtStyle (SubmitArtStyle, prompt-bound gallery and proofs)
   -> engine-created CurationJob VerifyArtStyleSubmission (fires the finalizer WASM)
   -> assert ArtStyle Published (happy) / job Failed + style unpublished
@@ -314,15 +314,14 @@ def run_art_style_case(
             "scores": {dimension: 2 for dimension in dimensions},
         })
     gallery_ids, gallery_records = [], []
-    for index in range(6):
+    for index in range(5):
         # Different encoded JPEGs, not duplicated gallery bytes. Local fixture
         # receipts are test data only, never production generation evidence.
         payload = jpeg_bytes(index)
         file_id = make_file(f"{label}-gallery-{index}.jpg", payload, "image/jpeg", lock=True)
         provider, model, requested = (
             ("OpenAI", "gpt-image-2.5", "GPT Image 2.5") if index < 4 else
-            ("xAI", "grok-imagine-image", "Grok Image") if index == 4 else
-            ("Google", "gemini-3-pro-image-preview", "Nano Banana")
+            ("xAI", "grok-imagine-image", "Grok Image")
         )
         subject = f"local fixture scene {index}"
         full_prompt = prompt + "\n\nSubject and scene:\n" + subject
