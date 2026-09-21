@@ -74,8 +74,10 @@ export function useAsk() {
         const matched = await first.json().catch(() => null);
         if (mine !== turn.current) return;
         if (!first.ok || !matched) throw new Error(matched?.error ?? "Asking failed. Try again in a moment.");
-        setAnswer(matched as Answer);
-        if (matched.results.length === 0) { setState("idle"); return; }
+        // The first call is the reading and its trait matches; the judged fit comes from the second. Putting the
+        // first one on the wall saved about a third of a second and then shuffled the answer under the reader,
+        // which reads as a fault. Only the reading is kept, and the wall changes once.
+        if (matched.results.length === 0) { setAnswer(matched as Answer); setState("idle"); return; }
         reading = { want: matched.want };
       }
       const second = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q, k: 12, ...kindOf(kinds), ...reading }) });
@@ -170,7 +172,7 @@ const MARK: Record<string, string> = { what: "var(--yuzu)", who: "var(--sakura)"
  *  feel). It is a plain textarea with its text made invisible over a twin that draws the same words with the marks,
  *  so the caret, selection and keyboard are the browser's own. Once there is an answer it can be refined in words
  *  from the same place. An ask and a colour are two ways to light the library, and the newer one wins. */
-export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false, onSubmit, note, onUndo, hints, compact = false }: { ask: ReturnType<typeof useAsk>; hue: string; onHue: (h: string) => void; onGo: (id: string) => void; byId: Map<string, AtlasStyle>; lit: number | null; kinds?: Kinds; /** The view shows the answer itself: no chips here. */ quiet?: boolean; /** The view reads what is typed itself (it may be a command, not a question). */ onSubmit?: (text: string) => void; /** What the view just did, said back in a line. */ note?: string[]; /** Step back from the last thing typed. */ onUndo?: () => void; /** Things worth typing right now, given what is on screen. */ hints?: string[]; /** Something else has the screen: leave only the line to type in. */ compact?: boolean }) {
+export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false, onSubmit, note, onUndo, hints, compact = false, onClear }: { ask: ReturnType<typeof useAsk>; hue: string; onHue: (h: string) => void; onGo: (id: string) => void; byId: Map<string, AtlasStyle>; lit: number | null; kinds?: Kinds; /** The view shows the answer itself: no chips here. */ quiet?: boolean; /** The view reads what is typed itself (it may be a command, not a question). */ onSubmit?: (text: string) => void; /** What the view just did, said back in a line. */ note?: string[]; /** Step back from the last thing typed. */ onUndo?: () => void; /** Things worth typing right now, given what is on screen. */ hints?: string[]; /** Something else has the screen: leave only the line to type in. */ compact?: boolean; /** Put the view back the way it started, alongside clearing the question. */ onClear?: () => void }) {
   const found = quiet ? [] : ask.fits ? [...ask.fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank) : [];
   const dock = useRef<HTMLDivElement | null>(null);
   const [read, setRead] = useState<Word[]>([]);
@@ -277,7 +279,7 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
             ))}
           </div>
           <p aria-live="polite" className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{lit === null ? "" : `${lit} lit`}</p>
-          {lit !== null ? <button type="button" onClick={() => { ask.clear(); onHue(""); setRead([]); }} className="shrink-0 cursor-pointer font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">Clear</button> : null}
+          {lit !== null ? <button type="button" onClick={() => { sent.current = ""; ask.clear(); onHue(""); setRead([]); onClear?.(); }} className="shrink-0 cursor-pointer font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">Clear</button> : null}
         </div>
         )}
       </div>
