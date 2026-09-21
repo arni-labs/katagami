@@ -133,6 +133,25 @@ test("the three palette questions are measured from a language's tokens, not ask
   assert.equal(rationed.single_accent, paper.single_accent);
 });
 
+test("a shade of the accent is the accent, and a tinted neutral is not a colour", () => {
+  const rationed = (colors) => computedDna("language", { tokens: { colors: { bg: "#101010", ...colors } } }).single_accent;
+  // Verdigris' green and teal are eighteen degrees apart and a fixed bin edge
+  // ran between them, so a two-colour palette was read as three.
+  assert.equal(rationed({ accent: "#6FCFA8", accent_2: "#34D8C8" }), rationed({ accent: "#6FCFA8" }));
+  // Shuimo's #6B5F52 is a grey with earth in it, not a third accent.
+  assert.equal(rationed({ accent: "#B83A2D", muted: "#6B5F52" }), rationed({ accent: "#B83A2D" }));
+  // A red at 350 and a red at 10 are one red, across the top of the wheel.
+  assert.equal(rationed({ accent: "#FF0A1E", accent_2: "#FF1E0A" }), rationed({ accent: "#FF0A1E" }));
+  // Quoin really does spend red, blue and chartreuse. v1 called it 0.96.
+  assert.ok(rationed({ accent: "#F23B2E", accent_2: "#0057FF", accent_3: "#C8FF00" }) < 0.3);
+});
+
+test("a mono font is named only when it leads, because nearly every language declares one", () => {
+  const type = { heading_font: "Archivo", body_font: "Inter", mono_font: "IBM Plex Mono" };
+  assert.doesNotMatch(buildStyleDoc("language", { name: "A", tokens: { typography: type } }), /IBM Plex Mono/);
+  assert.match(buildStyleDoc("language", { name: "A", tokens: { typography: { ...type, body_font: "Martian Mono" } } }), /mono IBM Plex Mono/);
+});
+
 test("a row with no palette to measure is asked everything, and so is every art style", () => {
   assert.deepEqual(computedDna("language", { tokens: { colors: { accent: "#FF5B04" } } }), {}, "no ground colour, no measurement");
   assert.deepEqual(computedDna("language", {}), {});

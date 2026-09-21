@@ -449,11 +449,31 @@ const INK_ROLES = ["text", "ink", "foreground", "fg"];
  * its colour is cool, and how many separate hues it actually spends. null when
  * there is no palette to measure.
  */
+/**
+ * How many separate colours a palette really spends. Hues are grouped by how far
+ * apart they are rather than dropped into fixed bins, because a bin edge splits
+ * a family: Verdigris' green #6FCFA8 and its teal #34D8C8 are eighteen degrees
+ * apart and landed either side of one. A tint of the accent is the accent, and
+ * so is the shade next to it.
+ */
+function hueFamilies(hues) {
+  if (hues.length === 0) return 0;
+  const sorted = hues.slice().sort((a, b) => a - b);
+  const groups = [[sorted[0]]];
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] - sorted[i - 1] <= 40) groups[groups.length - 1].push(sorted[i]);
+    else groups.push([sorted[i]]);
+  }
+  // The wheel joins up, so a red at 350° and a red at 10° are one red.
+  if (groups.length > 1 && sorted[0] + 360 - sorted[sorted.length - 1] <= 40) groups[0].push(...groups.pop());
+  return groups.length;
+}
+
 function measurePalette(fields) {
   const colors = record(record(fields?.tokens).colors);
   const ground = GROUND_ROLES.map((r) => rgbOf(colors[r])).find(Boolean);
   if (!ground) return null;
-  const families = new Set();
+  const hues = [];
   let coolWeight = 0;
   let weight = 0;
   for (const [role, value] of Object.entries(colors)) {
@@ -463,16 +483,17 @@ function measurePalette(fields) {
     const { h, s, v } = hsv(c);
     weight += s * v;
     if (h >= 170 && h <= 310) coolWeight += s * v;
-    // A tint of the accent is the accent, so hues are binned wide: a family is a
-    // direction round the wheel, not a shade.
-    if (s >= 0.22 && v >= 0.15) families.add(Math.round(h / 45) % 8);
+    // A warm-tinted neutral is still a neutral: Shuimo's #6B5F52 is a grey with
+    // a hint of earth in it, and counting it as a colour made an ink-wash
+    // language look like it was spending three.
+    if (s >= 0.25 && s * v >= 0.15) hues.push(h);
   }
   return {
     ground: luminance(ground),
     groundHex: text(GROUND_ROLES.map((r) => colors[r]).find((v) => rgbOf(v))),
     ink: (() => { const c = INK_ROLES.map((r) => rgbOf(colors[r])).find(Boolean); return c ? luminance(c) : null; })(),
     cool: weight > 0 ? coolWeight / weight : 0,
-    families: families.size,
+    families: hueFamilies(hues),
   };
 }
 
@@ -542,13 +563,20 @@ export function buildStyleDoc(kind, fields) {
       .slice(0, 10)
       .map(([role, v]) => `${role.replace(/_/g, " ")} ${text(v)}`)
       .join(", ");
-    // Naming the typefaces is the whole of the fix for "serif voice" and "mono
-    // voice": the model knows what Fraunces is, and a hand-kept list of serifs
-    // would be wrong the week the library grows.
+    // Naming the typefaces is the whole of the fix for "serif voice": the model
+    // knows what Fraunces is, and a hand-kept list of serifs would be wrong the
+    // week the library grows.
+    //
+    // The mono face is named only when it leads, and that is not fussiness. 300
+    // of 301 languages declare a mono font and almost none are led by one, so
+    // printing it made the model read every language as mono-voiced: Coriandoli
+    // went from 0.15 to 0.93 on a token that says nothing. Where mono really is
+    // a signature the rules text says so in its own words, which is evidence.
+    const leadFonts = `${text(type.heading_font)} ${text(type.body_font)}`;
     const typeLine = [
       text(type.heading_font) && `headings ${text(type.heading_font)}`,
       text(type.body_font) && `body ${text(type.body_font)}`,
-      text(type.mono_font) && `mono ${text(type.mono_font)}`,
+      /mono(space)?\b/i.test(leadFonts) && text(type.mono_font) && `mono ${text(type.mono_font)}`,
       text(type.base_size) && `at ${text(type.base_size)}`,
       text(type.heading_weight) && `heading weight ${text(type.heading_weight)}`,
       text(type.heading_transform) && text(type.heading_transform) !== "none" && `headings ${text(type.heading_transform)}`,
