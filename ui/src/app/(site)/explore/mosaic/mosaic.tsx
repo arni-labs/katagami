@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { STYLE_DNA_QUESTIONS } from "@/lib/style-dna.mjs";
 import type { AtlasHole, AtlasStyle } from "@/lib/catalog";
 import { AskDock, fitWord, hueOf, useAsk, useScreen, type Family, type Fit, type Kinds } from "../shared";
 import { flow } from "../river/course";
-import { quick } from "../stamp";
+import { paperDrawn, quick } from "../stamp";
 import { Card, SKINS, SKIN_NAME, SkinContext, type Skin } from "../card";
 
 // The library as an endless sheet of stamps. The sheet wraps in both directions,
@@ -25,8 +25,30 @@ const valueOf = (s: AtlasStyle, trait: string) => (s.dna ? (s.dna[TRAIT_AT.get(t
 type Cell = { kind: "style"; s: AtlasStyle } | { kind: "soon"; h: AtlasHole } | null;
 
 const TRAIT = new Map(STYLE_DNA_QUESTIONS.map((q) => [q.id, q.label]));
-const SIZES = { phone: [46, 74, 112], desk: [58, 96, 148] };
-const RATIO = 1.2, GAP = 10;
+// How wide a stamp is *is* the zoom, and it is one number anywhere between the ends rather than three stops. The
+// gap and the stride are shares of that width, so the sheet has the same shape at every size — which is what lets
+// a zoom be a scale on one layer instead of a new size for every stamp. A sheet opens at `mid`, nearer on a phone.
+const SPAN = { phone: { mid: 74, max: 216 }, desk: { mid: 96, max: 256 } };
+const RATIO = 1.2, GAP_R = 10 / 96; // the gap at the size a sheet opens at is the 10px it always was
+const SX = 1 + GAP_R, SY = RATIO + GAP_R; // one stamp's stride across and down, as a share of its width
+// How far out you can go: far enough to take the library in at once, but never so far that the sheet is thousands
+// of stamps. Past a couple of thousand the browser spends longer arranging them than drawing them, which is the
+// lag this screen was fixed for once already.
+const CROWD = 1600;
+const farOf = (phone: boolean, w: number, h: number) => Math.max(phone ? 18 : 20, Math.round(Math.sqrt((w * h) / (CROWD * SX * SY))));
+// The sheet is laid out at one of a ladder of widths and scaled the rest of the way, so a zoom moves one transform
+// rather than re-sizing every stamp — and the stamp paper, which is drawn to a bitmap once per size it is asked
+// for, is drawn once per rung rather than once a frame. A rung is a fifth wider than the one below, so nothing on
+// screen is ever more than about a seventh off the size it was drawn at, which is under what the eye picks up on
+// paper and grain. How much nearer one press of + or − takes you is a stop, about five of them end to end.
+const RUNG = 1.32, STOP = 1.7;
+const rungOf = (cw: number, span: { min: number; max: number }) =>
+  Math.max(span.min, Math.min(span.max, Math.round(span.min * RUNG ** Math.round(Math.log(cw / span.min) / Math.log(RUNG)))));
+// How far the drawn width may stretch off the laid-out one before the sheet is worth re-laying. While the fingers
+// are moving it may stretch a good way further, because re-laying every stamp costs a frame and nobody reads paper
+// grain mid-pinch — what you see then is a picture being sized, which is what it should look like. A moment after
+// the gesture stops it settles onto its rung and comes back crisp.
+const HOLD = { lo: 0.885, hi: 1.13 }, MOVING = { lo: 0.6, hi: 1.7 }, FORCED = { lo: 0.42, hi: 2.4 }, SETTLE = 150;
 // Every card short of the opened entry draws from the same resize. A picture is then fetched and shrunk once for
 // the whole page: the canvas at any zoom, the results and the trays all read the one warm copy. 384 is the width
 // the largest of them wanted anyway: a 148px card on a 2x screen, or a 112px one on a phone's 3x.
@@ -76,7 +98,8 @@ const Sheet = memo(function Sheet({ eager, hold, cells, w, h, stepX, stepY, lit,
     <>
       {cells.map(({ c, r, cell }) => {
         const id = cell?.kind === "style" ? cell.s.id : "";
-        return <CellView key={`${mod(c, 64)},${mod(r, 48)}`} eager={eager.has(`${c},${r}`)} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} hold={hold} onOpen={onOpen} />;
+        // The pool is wider than any window the sheet allows (see CROWD), so no two places on screen share a slot.
+        return <CellView key={`${mod(c, 128)},${mod(r, 96)}`} eager={eager.has(`${c},${r}`)} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} hold={hold} onOpen={onOpen} />;
       })}
     </>
   );
@@ -98,7 +121,10 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
   }, [screen]);
   const layer = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [zoom, setZoom] = useState(1);
+  // The width the sheet is laid out at. What is drawn is the camera's width (cam.cw), which moves freely; this
+  // follows it a rung at a time, and the difference is taken up by a scale on the one layer the stamps sit in.
+  const [rung, setRung] = useState(SPAN.desk.mid);
+  const [ends, setEnds] = useState({ near: false, far: false }); // whether + or − has anywhere left to go
   const [mode, setMode] = useState<Mode>("colour");
   const [win, setWin] = useState({ c0: 0, c1: 0, r0: 0, r1: 0 });
   // The opened card is held by which style it is, never by the place it was sitting in. A place is not an identity
@@ -123,7 +149,8 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
   const byId = useMemo(() => new Map(styles.map((s) => [s.id, s])), [styles]);
   const byAny = useMemo(() => new Map(all.map((s) => [s.id, s])), [all]); // a style named in words is found whatever the filter
   const familyOf = useMemo(() => new Map(families.map((f) => [f.id, f])), [families]);
-  const w = SIZES[phone ? "phone" : "desk"][zoom], h = Math.round(w * RATIO), stepX = w + GAP, stepY = h + GAP;
+  const span = useMemo(() => ({ min: farOf(phone, size.w || 1440, size.h || 900), max: SPAN[phone ? "phone" : "desk"].max }), [phone, size]);
+  const w = rung, h = Math.round(rung * RATIO), stepX = rung * SX, stepY = rung * SY;
 
   useEffect(() => {
     const el = box.current;
@@ -208,42 +235,52 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
   }, [lit, narrow, byId, styles]);
 
   // ---- the camera: an offset that never stops at an edge, and a light ---------
-  const cam = useRef({ x: 0, y: 0, vx: 0, vy: 0, px: -1, py: -1, run: 0, drag: null as null | { x: number; y: number; t: number; far: number }, pinch: 0 });
+  const cam = useRef({ x: 0, y: 0, vx: 0, vy: 0, cw: SPAN.desk.mid, px: -1, py: -1, run: 0, drag: null as null | { x: number; y: number; t: number; far: number }, pinch: 0, mx: 0, my: 0 });
   const calm = useRef(false);
   useEffect(() => { const q = window.matchMedia("(prefers-reduced-motion: reduce)"); const read = () => { calm.current = q.matches; }; read(); q.addEventListener("change", read); return () => q.removeEventListener("change", read); }, []);
   const winRef = useRef({ c0: 0, c1: 0, r0: 0, r1: 0 });
   const glare = useRef<HTMLDivElement | null>(null);
   const held = useRef(new Map<string, HTMLElement>());
   const lit_ = useRef(new Set<string>());
-  const zoomRef = useRef(zoom);
-  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  // What the sheet is laid out at *now*, as opposed to what React has been asked to lay it out at. The two differ
+  // for the frame between asking and the DOM being there, and painting the new scale before the new sizes arrive
+  // would show as a jolt, so the transform follows this and it is only moved once the layout has landed.
+  const lay = useRef({ rung: SPAN.desk.mid, stepX: SPAN.desk.mid * SX, stepY: SPAN.desk.mid * SY });
   const hold = useCallback((key: string, el: HTMLElement | null) => { if (el) held.current.set(key, el); else held.current.delete(key); }, []);
   const paint = useCallback(() => {
-    const k = cam.current, el = layer.current;
+    const k = cam.current, el = layer.current, g = lay.current;
     if (!el || size.w === 0) return;
-    el.style.transform = `translate3d(${k.x}px, ${k.y}px, 0)`;
+    // The stamps are laid out at the rung and taken the rest of the way by this scale, so any width between rungs
+    // costs one transform on one layer: no stamp is re-sized, no paper is re-drawn, nothing re-renders.
+    const f = k.cw / g.rung;
+    el.style.transform = `translate3d(${k.x}px, ${k.y}px, 0) scale(${f.toFixed(4)})`;
     // One glare for the whole sheet, sliding at a fraction of the pan so it reads as light, not as print.
     // Moved by transform alone (the compositor's job, no repaint), wrapping within the pattern's repeat.
     if (glare.current) glare.current.style.transform = `translate3d(${((k.x * 0.35) % (size.w * 1.5)).toFixed(1)}px, ${((k.y * 0.2) % (size.h * 1.5)).toFixed(1)}px, 0)`;
-    // Only the cards round the pointer lean to it and take its highlight; the rest lie flat.
+    // Only the cards round the pointer lean to it and take its highlight; the rest lie flat. Far enough out a stamp
+    // is a tile of ink with nothing to lean, so the light is not looked for at all.
     const near = new Set<string>();
-    if (k.px >= 0 && zoomRef.current > 0) {
-      const lx = k.px - k.x + k.vx * 6, ly = k.py - k.y + k.vy * 6, reach = stepX * 1.7;
-      for (let r = Math.floor((ly - reach) / stepY); r <= Math.floor((ly + reach) / stepY); r++) for (let c = Math.floor((lx - reach) / stepX); c <= Math.floor((lx + reach) / stepX); c++) {
+    if (k.px >= 0 && k.cw >= 30) {
+      // The light is in the sheet's own units, as the cards' places are.
+      const lx = (k.px - k.x + k.vx * 6) / f, ly = (k.py - k.y + k.vy * 6) / f, reach = g.stepX * 1.7;
+      for (let r = Math.floor((ly - reach) / g.stepY); r <= Math.floor((ly + reach) / g.stepY); r++) for (let c = Math.floor((lx - reach) / g.stepX); c <= Math.floor((lx + reach) / g.stepX); c++) {
         const key = `${c},${r}`, card = held.current.get(key);
         if (!card) continue;
         near.add(key);
         card.classList.add("lit-on");
         card.style.setProperty("--lx", lx.toFixed(0)); card.style.setProperty("--ly", ly.toFixed(0));
-        card.style.setProperty("--cx", String(c * stepX + stepX / 2)); card.style.setProperty("--cy", String(r * stepY + stepY / 2));
+        card.style.setProperty("--cx", String(c * g.stepX + g.stepX / 2)); card.style.setProperty("--cy", String(r * g.stepY + g.stepY / 2));
       }
     }
     for (const key of lit_.current) if (!near.has(key)) held.current.get(key)?.classList.remove("lit-on");
     lit_.current = near;
-    const c0 = Math.floor(-k.x / stepX) - 1, r0 = Math.floor(-k.y / stepY) - 1, c1 = c0 + Math.ceil(size.w / stepX) + 2, r1 = r0 + Math.ceil(size.h / stepY) + 2;
+    // Which places are on screen is the one thing the rung cannot change: a stamp's stride on screen is its drawn
+    // width and nothing else, so the window is read straight off that and holds steady as the rung moves under it.
+    const sx = k.cw * SX, sy = k.cw * SY;
+    const c0 = Math.floor(-k.x / sx) - 1, r0 = Math.floor(-k.y / sy) - 1, c1 = c0 + Math.ceil(size.w / sx) + 2, r1 = r0 + Math.ceil(size.h / sy) + 2;
     const now = winRef.current;
     if (now.c0 !== c0 || now.c1 !== c1 || now.r0 !== r0 || now.r1 !== r1) { winRef.current = { c0, c1, r0, r1 }; setWin({ c0, c1, r0, r1 }); }
-  }, [size, stepX, stepY]);
+  }, [size]);
   const coast = useCallback(() => {
     const k = cam.current;
     // Asked for less motion: nothing glides. A flick stops where it was let go; a jump (see bring) lands at once.
@@ -257,19 +294,21 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
     };
     k.run = requestAnimationFrame(step);
   }, [paint]);
-  useEffect(() => { const f = requestAnimationFrame(paint); return () => cancelAnimationFrame(f); }, [paint]);
+  // The transform is written the moment the new sizes are in the DOM and before the browser draws, so the scale
+  // and the layout it is scaling are never a frame out of step.
+  useLayoutEffect(() => { lay.current = { rung, stepX: rung * SX, stepY: rung * SY }; paint(); }, [rung, paint]);
   useEffect(() => { const k = cam.current; return () => cancelAnimationFrame(k.run); }, []);
 
   /** Glide until a cell sits in the middle of the room left by the ask. */
   const bring = useCallback((c: number, r: number) => {
-    const k = cam.current;
+    const k = cam.current, sx = k.cw * SX, sy = k.cw * SY;
     // The nearest copy of that cell on the wrapping sheet.
-    const wantX = size.w / 2 - (c + 0.5) * stepX, wantY = (size.h - 120) / 2 - (r + 0.5) * stepY, spanX = world.cols * stepX, spanY = world.rows * stepY;
+    const wantX = size.w / 2 - (c + 0.5) * sx, wantY = (size.h - 120) / 2 - (r + 0.5) * sy, spanX = world.cols * sx, spanY = world.rows * sy;
     const dx = wantX - k.x - Math.round((wantX - k.x) / spanX) * spanX, dy = wantY - k.y - Math.round((wantY - k.y) / spanY) * spanY;
     if (calm.current) { k.x += dx; k.y += dy; k.vx = 0; k.vy = 0; paint(); return; }
     k.vx = dx * 0.064; k.vy = dy * 0.064; // what a 0.94 decay carries just that far
     coast();
-  }, [size, stepX, stepY, world, coast, paint]);
+  }, [size, world, coast, paint]);
   const goTo = useCallback((id: string) => { const at = world.where.get(id); if (at) { bring(at.c, at.r); setOpen(id); setAside([]); } }, [world, bring]);
   // A new sort or a new answer brings its centre (or its best fit) into view.
   const led = useRef("");
@@ -280,14 +319,86 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
     return () => cancelAnimationFrame(f);
   }, [mode, topFit, hue, axes, size.w, world, bring]);
 
-  const zoomTo = useCallback((next: number, ax = size.w / 2, ay = size.h / 2) => {
-    const z = Math.max(0, Math.min(2, next));
-    if (z === zoom) return;
-    // The point under the pointer stays under it.
-    const k = cam.current, f = (SIZES[phone ? "phone" : "desk"][z] + GAP) / stepX;
-    k.x = ax - (ax - k.x) * f; k.y = ay - (ay - k.y) * f;
-    setZoom(z);
-  }, [zoom, phone, stepX, size]);
+  // A sheet opens at the width it has always opened at, which is nearer on a phone than on a desk.
+  const started = useRef(false);
+  useEffect(() => {
+    if (!screen || started.current) return;
+    started.current = true;
+    const mid = SPAN[phone ? "phone" : "desk"].mid;
+    cam.current.cw = mid; setRung(mid);
+  }, [screen, phone]);
+  // A smaller window cannot hold as much of the sheet: what is drawn comes back inside what this one allows.
+  useEffect(() => {
+    const k = cam.current, cw = Math.max(span.min, Math.min(span.max, k.cw));
+    if (cw === k.cw) return;
+    k.cw = cw; setRung(rungOf(cw, span));
+  }, [span]);
+
+  // The laid-out width follows what is drawn a rung at a time, and only once the scale has stretched far enough off
+  // it to be worth a relayout — and only once that rung's paper has been drawn to a bitmap, because putting a sheet
+  // of stamps on an undrawn paper means rasterising a blurred SVG once per stamp, which is the one thing this
+  // screen already learned not to do. Past FORCED it goes anyway: a stretch that far looks broken.
+  const settling = useRef(0);
+  const follow = useCallback((cw: number, moving: boolean) => {
+    const at = lay.current.rung, want = rungOf(cw, span), off = cw / at;
+    if (want !== at) {
+      const band = moving ? MOVING : HOLD;
+      if (off > FORCED.hi || off < FORCED.lo) setRung(want);
+      else if ((off > band.hi || off < band.lo) && paperDrawn(want, Math.round(want * RATIO))) setRung(want);
+    }
+    window.clearTimeout(settling.current);
+    if (moving) settling.current = window.setTimeout(() => follow(cam.current.cw, false), SETTLE);
+  }, [span]);
+
+  /** Take the sheet to this stamp width, leaving whatever is at (ax, ay) where it is. */
+  const zoomAt = useCallback((next: number, ax = size.w / 2, ay = size.h / 2) => {
+    const k = cam.current, cw = Math.max(span.min, Math.min(span.max, next));
+    if (Math.abs(cw - k.cw) < 0.002) return;
+    // The point under the pointer (or between the fingers) stays under it.
+    const f = cw / k.cw;
+    k.x = ax - (ax - k.x) * f; k.y = ay - (ay - k.y) * f; k.cw = cw;
+    paint();
+    follow(cw, true);
+    setEnds((was) => { const now = { near: cw >= span.max - 0.5, far: cw <= span.min + 0.5 }; return was.near === now.near && was.far === now.far ? was : now; });
+  }, [paint, span, size, follow]);
+  useEffect(() => () => window.clearTimeout(settling.current), []);
+  // Every width the sheet can be laid out at is only a dozen papers, so they are all drawn while nothing else is
+  // going on — nearest to hand first, one to a spare moment. A zoom then never waits on one.
+  useEffect(() => {
+    if (size.w === 0) return;
+    const ladder: number[] = [];
+    for (let v = span.min; ladder.length < 40; v = Math.round(v * RUNG)) { ladder.push(Math.min(v, span.max)); if (v >= span.max) break; }
+    const here = cam.current.cw;
+    ladder.sort((a, b) => Math.abs(a - here) - Math.abs(b - here));
+    let at = 0, id = 0;
+    const draw = () => {
+      const v = ladder[at++];
+      if (v === undefined) return;
+      paperDrawn(v, Math.round(v * RATIO));
+      id = window.requestIdleCallback?.(draw) ?? window.setTimeout(draw, 80);
+    };
+    id = window.requestIdleCallback?.(draw) ?? window.setTimeout(draw, 400);
+    return () => { window.cancelIdleCallback?.(id); window.clearTimeout(id); };
+  }, [span, size.w]);
+
+  // The buttons, the + and − keys and the typed "closer": a stop away, eased, rather than arriving all at once.
+  const zrun = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(zrun.current), []);
+  const glide = useCallback((target: number, ax = size.w / 2, ay = size.h / 2) => {
+    cancelAnimationFrame(zrun.current); zrun.current = 0;
+    const k = cam.current, want = Math.max(span.min, Math.min(span.max, target)), from = k.cw;
+    if (Math.abs(want - from) < 0.01) return;
+    // Asked for less motion: the new width arrives at once, as a flick stops where it was let go.
+    if (calm.current) { zoomAt(want, ax, ay); return; }
+    const t0 = performance.now();
+    const step = () => {
+      const p = Math.min(1, (performance.now() - t0) / 280), e = 1 - (1 - p) ** 3;
+      zoomAt(from * (want / from) ** e, ax, ay); // a share of the width at a time, so the growth reads as even
+      zrun.current = p < 1 ? requestAnimationFrame(step) : 0;
+    };
+    zrun.current = requestAnimationFrame(step);
+  }, [zoomAt, span, size]);
+  const stopGlide = () => { cancelAnimationFrame(zrun.current); zrun.current = 0; };
 
   const queued = useRef(0);
   useEffect(() => () => cancelAnimationFrame(queued.current), []);
@@ -296,8 +407,9 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
   const onDown = (e: React.PointerEvent) => {
     const p = at(e), k = cam.current;
     pts.current.set(e.pointerId, p);
-    if (pts.current.size === 2) { const [a, b] = [...pts.current.values()]; k.pinch = Math.hypot(a.x - b.x, a.y - b.y); k.drag = null; return; }
+    if (pts.current.size === 2) { const [a, b] = [...pts.current.values()]; k.pinch = Math.hypot(a.x - b.x, a.y - b.y); k.mx = (a.x + b.x) / 2; k.my = (a.y + b.y) / 2; k.drag = null; stopGlide(); return; }
     cancelAnimationFrame(k.run); k.run = 0; k.vx = 0; k.vy = 0;
+    stopGlide();
     k.drag = { x: p.x, y: p.y, t: performance.now(), far: 0 };
   };
   const onMove = (e: React.PointerEvent) => {
@@ -305,8 +417,11 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
     k.px = p.x; k.py = p.y;
     if (pts.current.has(e.pointerId)) pts.current.set(e.pointerId, p);
     if (pts.current.size === 2 && k.pinch) {
-      const [a, b] = [...pts.current.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (d > k.pinch * 1.35) { k.pinch = d; zoomTo(zoom + 1, (a.x + b.x) / 2, (a.y + b.y) / 2); } else if (d < k.pinch * 0.74) { k.pinch = d; zoomTo(zoom - 1, (a.x + b.x) / 2, (a.y + b.y) / 2); }
+      // Two fingers size the sheet and move it at once: what is between them stays between them, however they go.
+      const [a, b] = [...pts.current.values()], d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      k.x += mx - k.mx; k.y += my - k.my; k.mx = mx; k.my = my;
+      if (d > 4 && Math.abs(d - k.pinch) > 0.4) { zoomAt(k.cw * (d / k.pinch), mx, my); k.pinch = d; }
+      else if (!queued.current) queued.current = requestAnimationFrame(() => { queued.current = 0; paint(); });
       return;
     }
     if (k.drag) {
@@ -334,12 +449,15 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
     wheel.current = (e: WheelEvent) => {
       e.preventDefault();
       const k = cam.current, r = (box.current as HTMLDivElement).getBoundingClientRect(), p = { x: e.clientX - r.left, y: e.clientY - r.top };
-      if (e.ctrlKey) { if (Math.abs(e.deltaY) > 2) zoomTo(zoom + (e.deltaY < 0 ? 1 : -1), p.x, p.y); return; } // a trackpad pinch arrives as ctrl+wheel
+      // A trackpad pinch arrives as ctrl+wheel, a few counts at a time: each one is a share of the width, so the
+      // sheet grows evenly however far in it already is. A mouse wheel held with ctrl sends a whole notch at once,
+      // hence the cap — a notch should be a step, not a leap.
+      if (e.ctrlKey) { stopGlide(); zoomAt(cam.current.cw * Math.exp(-Math.max(-40, Math.min(40, e.deltaY)) * 0.01), p.x, p.y); return; }
       const unit = e.deltaMode === 1 ? 32 : 1; // a mouse wheel counts in lines
       k.x -= e.deltaX * unit; k.y -= e.deltaY * unit;
       if (!queued.current) queued.current = requestAnimationFrame(() => { queued.current = 0; paint(); });
     };
-  }, [zoom, zoomTo, paint]);
+  }, [zoomAt, paint]);
   useEffect(() => {
     const el = surface.current, root = document.documentElement;
     if (!el) return;
@@ -354,8 +472,9 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
   }, [screen]);
   const onKey = (e: React.KeyboardEvent) => {
     const by = { ArrowLeft: [1, 0], ArrowRight: [-1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
-    if (by) { e.preventDefault(); if (calm.current) { cam.current.x += by[0] * stepX; cam.current.y += by[1] * stepY; paint(); } else { cam.current.vx = by[0] * stepX * 0.07; cam.current.vy = by[1] * stepY * 0.07; coast(); } }
-    else if (e.key === "+" || e.key === "=") zoomTo(zoom + 1); else if (e.key === "-") zoomTo(zoom - 1);
+    const k = cam.current, sx = k.cw * SX, sy = k.cw * SY;
+    if (by) { e.preventDefault(); if (calm.current) { k.x += by[0] * sx; k.y += by[1] * sy; paint(); } else { k.vx = by[0] * sx * 0.07; k.vy = by[1] * sy * 0.07; coast(); } }
+    else if (e.key === "+" || e.key === "=") glide(k.cw * STOP); else if (e.key === "-") glide(k.cw / STOP);
   };
 
   const cells = useMemo(() => {
@@ -405,14 +524,14 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
   const unpin = useCallback((id: string) => setPins((now) => { const next = now.filter((x) => x !== id); try { localStorage.setItem("katagami-shortlist", JSON.stringify(next)); } catch { /* private window */ } return next; }), []);
   const commandTurn = useRef(0);
   // One step back: what the screen was before the last thing typed.
-  const before = useRef<null | { kinds: Kinds; mode: Mode; hue: string; skin: Skin; zoom: number; pair: string[] | null; axes: Axes | null; narrow: { trait: string; label: string } | null }>(null);
+  const before = useRef<null | { kinds: Kinds; mode: Mode; hue: string; skin: Skin; cw: number; pair: string[] | null; axes: Axes | null; narrow: { trait: string; label: string } | null }>(null);
   const [canUndo, setCanUndo] = useState(false);
   const reset = useCallback(() => {
     commandTurn.current++;
     before.current = null; setCanUndo(false);
     setDid([]); setAside([]); setPair(null); setAxes(null); setNarrow(null); setMode("colour"); setVerdict(null); setOpen(null); setTray(false);
   }, []);
-  const undo = () => { const b = before.current; if (!b) return; commandTurn.current++; /* a reading still on its way must not re-apply what was just undone */ setKinds(b.kinds); setMode(b.mode); setHue(b.hue); pickSkin(b.skin); setZoom(b.zoom); setPair(b.pair); setAxes(b.axes); setNarrow(b.narrow); before.current = null; setCanUndo(false); setDid(["Undone"]); };
+  const undo = () => { const b = before.current; if (!b) return; commandTurn.current++; /* a reading still on its way must not re-apply what was just undone */ setKinds(b.kinds); setMode(b.mode); setHue(b.hue); pickSkin(b.skin); glide(b.cw); setPair(b.pair); setAxes(b.axes); setNarrow(b.narrow); before.current = null; setCanUndo(false); setDid(["Undone"]); };
   const [pair, setPair] = useState<string[] | null>(null);
   const command = useCallback(async (text: string) => {
     const q = text.trim();
@@ -428,7 +547,7 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
     // The wall's line and the card's line are separate: with a card up, what is said back is said about the card.
     const say = openId ? setAside : setDid;
     say(["…"]);
-    before.current = { kinds, mode, hue, skin, zoom, pair, axes, narrow };
+    before.current = { kinds, mode, hue, skin, cw: cam.current.cw, pair, axes, narrow };
     setCanUndo(true);
     const ranked = ask.fits ? [...ask.fits.entries()].filter(([id]) => byAny.has(id)).sort((a, b) => a[1].rank - b[1].rank).map(([id]) => id) : [];
     // Words that point at the screen ("this", "the top two") are resolved here, where the screen is known.
@@ -454,7 +573,7 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
       else if (a.do === "sort") { setMode(a.by === "family" ? "family" : "colour"); said.push(`Sorted by ${a.by}`); }
       else if (a.do === "colour") { if (ask.answer) ask.clear(); setHue(String(a.hue)); said.push(`${a.hue} gathered`); }
       else if (a.do === "skin") { pickSkin(a.skin as Skin); said.push(`Cards: ${SKIN_NAME[a.skin as Skin]}`); }
-      else if (a.do === "zoom") { zoomTo(zoom + Number(a.by)); said.push(Number(a.by) > 0 ? "Closer" : "Further"); }
+      else if (a.do === "zoom") { glide(cam.current.cw * STOP ** Number(a.by)); said.push(Number(a.by) > 0 ? "Closer" : "Further"); }
       else if (a.do === "compare") { putAway(); nextKinds = { language: true, art_style: true }; setKinds(nextKinds); setPair(a.ids as string[]); setTray(false); said.push(`Comparing ${(a.names as string[]).join(" and ")}`); }
       else if (a.do === "like") { const from = byAny.get(String(a.id)); if (from) { putAway(); nextKinds = { language: true, art_style: true }; setKinds(nextKinds); setPair(null); ask.setQuery(`like ${from.name}`); void ask.ask(`something like ${from.name}: ${from.traits.slice(0, 8).join(", ")}`, nextKinds); said.push(`Like ${from.name}`); } }
       else if (a.do === "arrange") { setAxes({ x: String(a.trait), reverse: Boolean(a.reverse), labels: [String(a.label)] }); setMode("trait"); setTray(false); setPair(null); said.push(`Arranged by ${a.label}`); }
@@ -476,7 +595,7 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
     }
     if (openId && !put) setAside(said); else { setAside([]); setDid(said); }
     if (said.length > 0 && !actions.some((a) => ["ask", "refine", "like"].includes(a.do))) ask.setQuery("");
-  }, [ask, kinds, byAny, zoom, zoomTo, mode, hue, skin, pair, axes, narrow, litNow, styles, byId, open, pin]);
+  }, [ask, kinds, byAny, glide, mode, hue, skin, pair, axes, narrow, litNow, styles, byId, open, pin]);
 
   const tab = (value: Mode, label: string, off = false) => <button type="button" disabled={off} aria-pressed={mode === value} onClick={() => { setAxes(null); setMode(value); }} className={`shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 text-[12.5px] disabled:cursor-default disabled:opacity-40 ${mode === value ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"}`}>{label}</button>;
   const glass = "bg-background/70 shadow-[0_8px_30px_-12px_rgba(30,35,45,0.4)] backdrop-blur-xl backdrop-saturate-150";
@@ -488,7 +607,8 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
       <h1 className="sr-only">Explore the library</h1>
       <div role="application" aria-label="The sheet. Drag or use the arrow keys to move across it; plus and minus change how much you see." tabIndex={0} onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} onKeyDown={onKey} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={(e) => { if (e.pointerType === "mouse") { cam.current.px = -1; cam.current.py = -1; paint(); } }} ref={surface}
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">
-        <div ref={layer} className="absolute left-0 top-0 will-change-transform">
+        {/* The sheet's own corner is what the scale grows from, so a stamp's place on it is its place times the width. */}
+        <div ref={layer} style={{ transformOrigin: "0 0" }} className="absolute left-0 top-0 will-change-transform">
           <Sheet eager={eager} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} />
         </div>
         <div ref={glare} aria-hidden className="canvas-glare" />
@@ -509,8 +629,8 @@ export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasS
         </div>
       </div>
       <div className={`absolute bottom-[8.5rem] left-3 z-20 flex flex-col md:bottom-6 md:left-6 ${glass}`}>
-        <button type="button" onClick={() => zoomTo(zoom + 1)} disabled={zoom === 2} aria-label="Closer" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">+</button>
-        <button type="button" onClick={() => zoomTo(zoom - 1)} disabled={zoom === 0} aria-label="Further" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">−</button>
+        <button type="button" onClick={() => glide(cam.current.cw * STOP)} disabled={ends.near} aria-label="Closer" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">+</button>
+        <button type="button" onClick={() => glide(cam.current.cw / STOP)} disabled={ends.far} aria-label="Further" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">−</button>
       </div>
 
       {/* The sheet a visitor is given is part of the library, and a wall that does not say so reads as the whole
