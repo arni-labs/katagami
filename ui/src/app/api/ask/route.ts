@@ -44,6 +44,13 @@ export const maxDuration = 60;
 // answered from memory, a second request for a sentence already being answered
 // waits for the first, and one address may only start so many new answers a
 // minute. All of it is per server instance — a floor under abuse, not a wall.
+// A measurement must actually run. With KATAGAMI_ASK_EVAL=1 the same sentence is
+// answered afresh every time and the per-address floor is off, so
+// scripts/ask-eval.mjs measures the pipeline instead of this cache, and can see
+// which styles the fit judge was shown. Only ever set it on a server you started
+// yourself for that purpose.
+const EVAL = process.env.KATAGAMI_ASK_EVAL === "1";
+
 const recent = new Map<string, { at: number; body: unknown }>();
 const inFlight = new Map<string, Promise<Awaited<ReturnType<typeof askLibrary>>>>();
 const RECENT_MS = 10 * 60_000;
@@ -51,9 +58,9 @@ const RECENT_MAX = 500;
 
 const normalise = (q: string) => q.toLowerCase().replace(/\s+/g, " ").replace(/[\s.!?…]+$/u, "");
 
-type Ask = { query: string; kind?: "language" | "art_style"; limit?: number; stage?: "match"; want?: Record<string, number>; refine?: string; changes?: string; like?: string };
+type Ask = { query: string; kind?: "language" | "art_style"; limit?: number; stage?: "match"; want?: Record<string, number>; refine?: string; changes?: string; like?: string; debug?: boolean };
 
-function parse(input: { q?: unknown; kind?: unknown; k?: unknown; stage?: unknown; want?: unknown; refine?: unknown; changes?: unknown; like?: unknown }): Ask | { error: string } {
+function parse(input: { q?: unknown; kind?: unknown; k?: unknown; stage?: unknown; want?: unknown; refine?: unknown; changes?: unknown; like?: unknown; debug?: unknown }): Ask | { error: string } {
   const query = typeof input.q === "string" ? input.q.trim() : "";
   if (query.length < 2) return { error: "missing 'q' — a word or a sentence about what you are making" };
   if (input.kind != null && input.kind !== "" && input.kind !== "language" && input.kind !== "art_style") {
@@ -69,6 +76,7 @@ function parse(input: { q?: unknown; kind?: unknown; k?: unknown; stage?: unknow
     refine: shortText(input.refine),
     changes: shortText(input.changes),
     like: shortText(input.like)?.slice(0, 120),
+    debug: EVAL && input.debug === true ? true : undefined,
   };
 }
 
@@ -94,18 +102,18 @@ async function answer(request: Request, ask: Ask) {
   // forged reading can only ever answer someone who sends the same forgery.
   const reading = ask.want ? STYLE_DNA_QUESTIONS.map((q) => Math.round((ask.want?.[q.id] ?? 0) * 1000)).join(",") : "";
   const key = JSON.stringify([tier, ask.kind ?? "", ask.limit ?? "", ask.stage ?? "", normalise(ask.query), reading, normalise(ask.refine ?? ""), normalise(ask.changes ?? ""), ask.like ?? ""]);
-  const hit = recent.get(key);
+  const hit = EVAL ? undefined : recent.get(key);
   if (hit && Date.now() - hit.at < RECENT_MS) {
     return NextResponse.json(hit.body, { headers: { "Cache-Control": "no-store" } });
   }
 
   const started = Date.now();
   try {
-    let pending = inFlight.get(key);
+    let pending = EVAL ? undefined : inFlight.get(key);
     if (!pending) {
       // The fit stage of an answer already begun is the second half of one ask
       // and costs one model call, so it draws on its own allowance.
-      if (!mayStart(ask.want && !ask.refine ? "ask-fit" : "ask", callerOf(request), tier)) {
+      if (!EVAL && !mayStart(ask.want && !ask.refine ? "ask-fit" : "ask", callerOf(request), tier)) {
         return NextResponse.json(
           { error: TOO_MANY },
           { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
