@@ -1809,3 +1809,28 @@
 /* A large lit card leans less than a small one: the same angle on a big surface reads as a lurch. */
 .lit-big .lit { transform: perspective(1600px) rotateY(clamp(-4.5deg, calc(var(--dx) * 0.012deg), 4.5deg)) rotateX(clamp(-4.5deg, calc(var(--dy) * -0.012deg), 4.5deg)); transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1); }
 @media (prefers-reduced-motion: reduce) { .lit-big .lit { transform: none; } }
+
+/* An opened entry's pictures, dropped like prints on a table: each lands turned a little, from above; the one under
+   the pointer comes to the top and squares up. */
+.collage-print {
+  transform: translate(-50%, -50%) rotate(var(--tilt));
+  animation: collage-land 560ms cubic-bezier(0.2, 0.9, 0.25, 1.12) both;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.collage-print:hover,
+.collage-print:focus-visible {
+  transform: translate(-50%, -50%) rotate(0deg) scale(1.05);
+  z-index: 20 !important;
+}
+@keyframes collage-land {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - 60px)) rotate(calc(var(--tilt) * 3)) scale(1.2);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .collage-print {
+    animation: none;
+    transition: none;
+  }
+}

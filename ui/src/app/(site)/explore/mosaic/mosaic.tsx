@@ -403,15 +403,26 @@ function useShapes(pictures: string[]) {
   return shapes;
 }
 
-/** Pictures of different shapes laid out like prints on a table: two justified rows, the first picture leading,
- *  so the sizes differ as prints on a table do. Returns each picture's window size. */
-function arrange(ratios: number[], width: number, height: number, gap: number): { w: number; h: number; row: number }[] {
-  const rowH = (rs: number[]) => (width - gap * (rs.length - 1)) / rs.reduce((a, b) => a + b, 0);
-  if (ratios.length <= 2) { const h = Math.min(height, rowH(ratios)); return ratios.map((r) => ({ w: h * r, h, row: 0 })); }
-  // One picture leads, alone on its row, until there are so many that the second row would be slivers.
-  const best = ratios.length >= 6 ? 2 : 1;
-  const h1 = rowH(ratios.slice(0, best)), h2 = rowH(ratios.slice(best)), fit = Math.min(1, (height - gap) / (h1 + h2));
-  return ratios.map((r, i) => { const h = (i < best ? h1 : h2) * fit; return { w: h * r, h, row: i < best ? 0 : 1 }; });
+// Prints dropped on a table: where each one lands (its centre, as a share of the table), how wide it is (as a share
+// of the table's width), how it is turned, and which lies on top. The first picture leads; the rest overlap its edges.
+const TABLE: { x: number; y: number; s: number; r: number; z: number }[][] = [
+  [{ x: 0.5, y: 0.5, s: 0.62, r: -1.5, z: 1 }],
+  [{ x: 0.37, y: 0.47, s: 0.54, r: -3, z: 1 }, { x: 0.74, y: 0.6, s: 0.4, r: 4.5, z: 2 }],
+  [{ x: 0.37, y: 0.45, s: 0.52, r: -3, z: 2 }, { x: 0.76, y: 0.32, s: 0.35, r: 5, z: 1 }, { x: 0.7, y: 0.76, s: 0.36, r: -2.5, z: 3 }],
+  [{ x: 0.36, y: 0.44, s: 0.5, r: -3, z: 2 }, { x: 0.75, y: 0.27, s: 0.32, r: 4.5, z: 1 }, { x: 0.82, y: 0.68, s: 0.3, r: -5, z: 3 }, { x: 0.55, y: 0.8, s: 0.29, r: 3, z: 4 }],
+  [{ x: 0.4, y: 0.42, s: 0.48, r: -2.5, z: 3 }, { x: 0.78, y: 0.26, s: 0.3, r: 5, z: 1 }, { x: 0.84, y: 0.68, s: 0.28, r: -5, z: 4 }, { x: 0.57, y: 0.81, s: 0.27, r: 3, z: 5 }, { x: 0.12, y: 0.78, s: 0.24, r: -7, z: 2 }],
+  [{ x: 0.42, y: 0.44, s: 0.46, r: -2.5, z: 3 }, { x: 0.79, y: 0.27, s: 0.28, r: 5, z: 1 }, { x: 0.85, y: 0.7, s: 0.27, r: -5, z: 4 }, { x: 0.58, y: 0.82, s: 0.26, r: 3, z: 5 }, { x: 0.13, y: 0.76, s: 0.24, r: -7, z: 2 }, { x: 0.1, y: 0.24, s: 0.2, r: 6, z: 1 }],
+];
+/** Each picture's window size and place on a table of the given size; tall pictures are narrowed so none towers over the rest. */
+function scatter(ratios: number[], width: number, height: number) {
+  const spots = TABLE[Math.min(ratios.length, TABLE.length) - 1] ?? [];
+  return ratios.slice(0, spots.length).map((ratio, i) => {
+    const spot = spots[i];
+    let w = spot.s * width * Math.min(1, Math.sqrt(ratio / 1.4)), h = w / ratio;
+    const tallest = height * (i === 0 ? 0.86 : 0.5);
+    if (h > tallest) { h = tallest; w = h * ratio; }
+    return { ...spot, w, h };
+  });
 }
 
 /** A stamp opened: the entry's pictures at their own shape, the main one large, on a veil of the entry's ink.
@@ -427,7 +438,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
   // A modal: focus moves in when it opens, stays in while it is open, and goes back where it was when it closes.
   useEffect(() => {
     const before = document.activeElement as HTMLElement | null;
-    root.current?.querySelector<HTMLElement>("a[href]")?.focus({ preventScroll: true });
+    root.current?.querySelector<HTMLElement>("a[data-open]")?.focus({ preventScroll: true });
     return () => before?.focus?.({ preventScroll: true });
   }, []);
   useEffect(() => {
@@ -446,11 +457,11 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
   useEffect(() => { for (const p of pictures.slice(1, 4)) { const img = new Image(); img.src = quick(p, big); } }, [pictures, big]);
 
   // Desk: every picture at once, as stamps of different sizes arranged like prints on a table. Phone: one at a time.
-  const gap = 18, roomW = phone ? window.innerWidth - 56 : Math.min(window.innerWidth * 0.66, 1040), roomH = (window.innerHeight - 65) * (phone ? 0.36 : 0.6);
+  const roomW = phone ? window.innerWidth - 56 : Math.min(window.innerWidth * 0.66, 1040), roomH = (window.innerHeight - 65) * (phone ? 0.44 : 0.6);
   const shown = phone ? (main ? [main] : []) : pictures;
-  const placed = arrange(shown.map((p) => shapes[p] ?? 1.5), roomW, roomH, gap + 28); // + the paper round each window
+  const placed = scatter(shown.map((p) => shapes[p] ?? 1.5), roomW, roomH);
   return (
-    <div ref={root} role="dialog" aria-modal="true" aria-label={style.name} className="viewer-veil absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 overflow-y-auto px-4 py-6 backdrop-blur-2xl backdrop-saturate-150" style={{ background: `color-mix(in srgb, ${style.ink ?? "#888"} 34%, color-mix(in srgb, var(--background) 78%, transparent))` }}
+    <div ref={root} role="dialog" aria-modal="true" aria-label={style.name} className="viewer-veil absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 overflow-y-auto px-4 pb-6 pt-16 backdrop-blur-2xl md:pt-6 backdrop-saturate-150" style={{ background: `color-mix(in srgb, ${style.ink ?? "#888"} 34%, color-mix(in srgb, var(--background) 78%, transparent))` }}
       onClick={onClose} onPointerMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--lx", String(Math.round((e.clientX - r.left - r.width / 2) * 1.6))); e.currentTarget.style.setProperty("--ly", String(Math.round((e.clientY - r.top - r.height * 0.4) * 1.6))); }} onPointerDown={(e) => { swipe.current = { x: e.clientX }; }} onPointerUp={(e) => { const d = swipe.current ? e.clientX - swipe.current.x : 0; swipe.current = null; if (Math.abs(d) > 70) { e.stopPropagation(); onTurn(d < 0 ? 1 : -1); } }}>
       <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 z-10 cursor-pointer bg-background/70 p-2.5 backdrop-blur-md"><X size={18} /></button>
       <button type="button" onClick={(e) => { e.stopPropagation(); onTurn(-1); }} aria-label="Previous" className="absolute left-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer bg-background/70 p-3 backdrop-blur-md max-md:hidden"><ArrowLeft size={18} /></button>
@@ -458,21 +469,24 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
 
       {/* The same stamps as on the sheet, grown: each is cut to its picture's own shape, leans to the pointer and takes
           its light, and is a way into the entry. */}
-      <div onClick={(e) => e.stopPropagation()} className="lit-big flex shrink-0 flex-col items-center" style={{ gap }}>
-        {[0, 1].map((row) => (
-          <div key={row} className="flex items-end justify-center" style={{ gap }}>
-            {shown.map((p, i) => {
-              if (placed[i].row !== row) return null;
-              const lead = i === 0;
-              return (
-                <Link key={p} href={style.href} aria-label={`Open ${style.name}`} className="viewer-print tray-card block shrink-0 outline-none transition-[filter] focus-visible:brightness-105" style={{ animationDelay: `${i * 70}ms`, ["--tilt" as string]: `${lead ? -0.8 : ((i * 37) % 5) - 2}deg`, transform: `rotate(var(--tilt))` }}>
-                  <Stamp src={p} ink={style.ink} w={placed[i].w} h={placed[i].h} windowed label={lead ? style.name : undefined} fast={phone ? 750 : lead ? 1080 : 750} under={quick(p, 256)} lit={{ x: (i - (shown.length - 1) / 2) * 260, y: row * 260 - 80 }} />
-                </Link>
-              );
-            })}
-          </div>
-        ))}
+      {phone && main ? (
+        // A phone shows one picture at a time, as one large stamp carrying the entry's name.
+        <Link href={style.href} onClick={(e) => e.stopPropagation()} aria-label={`Open ${style.name}`} className="lit-big book-open block shrink-0 outline-none">
+          <Stamp key={main} src={main} ink={style.ink} w={roomW} h={Math.min(roomH, roomW / (shapes[main] ?? 1.5))} windowed label={style.name} value={pictures.length > 1 ? `${at + 1}/${pictures.length}` : undefined} fast={750} under={quick(main, 256)} lit={{ x: 0, y: 0 }} />
+        </Link>
+      ) : null}
+      {phone ? null : (
+      <div onClick={(e) => e.stopPropagation()} className="lit-big relative shrink-0" style={{ width: roomW, height: roomH }}>
+        {shown.slice(0, placed.length).map((p, i) => {
+          const at = placed[i];
+          return (
+            <Link key={p} href={style.href} aria-label={`Open ${style.name}`} className="collage-print absolute block outline-none" style={{ left: at.x * roomW, top: at.y * roomH, zIndex: at.z, ["--tilt" as string]: `${at.r}deg`, animationDelay: `${i * 80}ms` }}>
+              <Stamp src={p} ink={style.ink} w={at.w} h={at.h} windowed fast={phone ? 750 : i === 0 ? 1080 : 750} under={quick(p, 256)} lit={{ x: (at.x - 0.5) * roomW, y: (at.y - 0.5) * roomH }} />
+            </Link>
+          );
+        })}
       </div>
+      )}
 
       {phone && pictures.length > 1 ? (
         <ul onClick={(e) => e.stopPropagation()} className="flex max-w-full shrink-0 items-end gap-3 overflow-x-auto px-2 pb-2 pt-1 [scrollbar-width:none]">
@@ -485,12 +499,12 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
       ) : null}
 
       <div onClick={(e) => e.stopPropagation()} className="flex w-full max-w-[460px] shrink-0 flex-col items-center gap-1.5 text-center">
-        <h2 className="font-display text-[24px] font-bold leading-tight tracking-[-0.02em] md:text-[30px]">{style.name}</h2>
+        <h2 className="font-display text-[24px] font-bold leading-tight tracking-[-0.02em] max-md:sr-only md:text-[30px]">{style.name}</h2>
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/70">{style.kind === "language" ? "Design language" : "Art style"}{family ? ` · ${family.label}` : ""}{fit ? <span className="font-bold" style={{ color: fit.strange ? "var(--sakura)" : "var(--ramune)" }}> · {fitWord(fit, judging)}</span> : null}</p>
         {style.traits.length > 0 ? <p className="text-[13.5px] leading-snug text-foreground/75">{style.traits.slice(0, 5).map((t) => TRAIT.get(t) ?? t).join(" · ")}</p> : null}
         <div className="mt-2 flex w-full items-stretch gap-2">
           <button type="button" onClick={() => onTurn(-1)} aria-label="Previous" className="cursor-pointer bg-background/70 px-4 backdrop-blur-md md:hidden"><ArrowLeft size={18} /></button>
-          <Link href={style.href} className="flex-1 bg-foreground px-7 py-4 text-center font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-background">Open {style.kind === "language" ? "language" : "art style"}</Link>
+          <Link href={style.href} data-open className="flex-1 bg-foreground px-7 py-4 text-center font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-background">Open {style.kind === "language" ? "language" : "art style"}</Link>
           <button type="button" onClick={() => onTurn(1)} aria-label="Next" className="cursor-pointer bg-background/70 px-4 backdrop-blur-md md:hidden"><ArrowRight size={18} /></button>
         </div>
       </div>
