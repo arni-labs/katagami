@@ -1865,3 +1865,13 @@
 .waiting-card { animation: waiting-card 900ms ease-in-out infinite alternate; }
 @keyframes waiting-card { from { opacity: 0.35; } to { opacity: 0.9; } }
 @media (prefers-reduced-motion: reduce) { .waiting-card { animation: none; opacity: 0.6; } }
+
+/* A card for a style that is not being shown: paper with the ink washed out of it, and no light on it,
+   so a sheet of them reads as held back rather than as broken. */
+.kghost { opacity: 0.5; filter: saturate(0.25); transition: opacity 180ms, filter 180ms; }
+.kghost:hover, .kghost:focus-visible { opacity: 0.78; filter: saturate(0.4); }
+/* The gate arrives from the edge it is docked to: up from the bottom on a phone, in place on a desk. */
+.gate-card { animation: gate-up 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes gate-up { from { opacity: 0; transform: translateY(18px); } }
+@media (min-width: 640px) { @keyframes gate-up { from { opacity: 0; transform: scale(0.97); } } }
+@media (prefers-reduced-motion: reduce) { .gate-card { animation: none; } .kghost { transition: none; } }
