@@ -68,5 +68,34 @@ export async function fetchVerdict(url, deps = {}) {
       break;
     }
   } catch (error) { verdict = `unreachable (${error.name})`; }
+  // A MediaWiki host may serve its article pages behind a bot challenge while its
+  // api.php still answers. Fandom began 403ing /wiki/<Title> to every user agent,
+  // including a browser one, which would have failed every cell citing it —
+  // including on writes that change no citation at all. The API is the same host
+  // and the same resource, so a 200 there proves the page exists. Only a 403 or
+  // 429 takes this route: a 404 means the page is genuinely gone and stays failed.
+  if (/^HTTP (403|429)$/.test(verdict)) {
+    const api = mediaWikiProbe(url);
+    if (api) {
+      try {
+        const response = await get(api, { method: "GET", redirect: "follow", signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "Mozilla/5.0 (compatible; katagami-encyclopedia-verifier)" } });
+        if (response.ok) {
+          const body = await response.json();
+          const pages = body?.query?.pages ?? {};
+          const found = Object.values(pages).some((p) => p && p.missing === undefined);
+          if (found) return FETCHED;
+        }
+      } catch { /* fall through to the original verdict */ }
+    }
+  }
   return verdict;
+}
+
+/** The api.php query that answers for a `/wiki/<Title>` URL, or null if not one. */
+export function mediaWikiProbe(url) {
+  let parsed;
+  try { parsed = new URL(url); } catch { return null; }
+  const match = parsed.pathname.match(/^\/wiki\/(.+)$/);
+  if (!match) return null;
+  return `${parsed.origin}/api.php?action=query&format=json&titles=${encodeURIComponent(decodeURIComponent(match[1]))}`;
 }
