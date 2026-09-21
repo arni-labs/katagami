@@ -966,6 +966,10 @@ export type AtlasStyle = {
   name: string;
   href: string;
   thumbnail_url: string | null;
+  /** The picture the explore canvas shows a style by: an art style's first reference (its thumbnail is often a stretched copy), else the thumbnail. The atlas keeps `thumbnail_url`. */
+  picture: string | null;
+  /** Every picture the entry has to show, the main one first (a language's landing and embodiment; an art style's references). */
+  pictures: string[];
   x: number;
   y: number;
   family: string | null;
@@ -974,11 +978,43 @@ export type AtlasStyle = {
   traits: string[];
   /** Hue bucket of a language's primary colour; art styles have none. */
   hue: string | null;
+  /** The style's measured DNA, 0..100 per trait in STYLE_DNA_QUESTIONS order (compact: hundreds of styles cross the wire); null if unmeasured by this model. */
+  dna: number[] | null;
   /** The colour the thumbnail reads as from a distance (scripts/style-inks.mjs); null until that has been run for it. */
   ink: string | null;
 };
 
 export type AtlasHole = { id: string; name: string; description: string; x: number; y: number };
+
+/** The picture a style is shown by on the atlas and the explore views. Many art-style thumbnails were made by
+ *  forcing a square or tall reference into 600×400, which stretches it; the first reference image is the
+ *  undistorted original, and the optimizer sizes it down just the same. */
+function atlasPicture(kind: "language" | "art_style", f: Record<string, unknown>): string | null {
+  if (kind === "art_style") {
+    try {
+      const ids: unknown = JSON.parse(str(f.reference_image_file_ids) || "[]");
+      if (Array.isArray(ids) && typeof ids[0] === "string" && /^fl-[0-9a-f-]+$/.test(ids[0])) return `/api/file/${ids[0]}`;
+    } catch {
+      // fall through to the thumbnail
+    }
+  }
+  return str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null;
+}
+
+function atlasPictures(kind: "language" | "art_style", f: Record<string, unknown>): string[] {
+  const out: string[] = [];
+  const add = (url: string) => { const path = url.replace(/^https?:\/\/(www\.)?katagami\.ai/, "").split("?")[0]; if (path && !out.includes(path)) out.push(path); };
+  if (kind === "art_style") {
+    try {
+      const ids: unknown = JSON.parse(str(f.reference_image_file_ids) || "[]");
+      if (Array.isArray(ids)) for (const id of ids.slice(0, 6)) if (typeof id === "string" && /^fl-[0-9a-f-]+$/.test(id)) add(`/api/file/${id}`);
+    } catch {
+      // no references to show
+    }
+  }
+  for (const key of ["landing_thumbnail_asset_url", "thumbnail_asset_url"]) if (kind === "language" || out.length === 0) add(str(f[key]));
+  return out;
+}
 
 export async function libraryAtlas(tier: Tier) {
   const kinds = ["language", "art_style"] as const;
@@ -1029,10 +1065,13 @@ export async function libraryAtlas(tier: Tier) {
       name: str(f.name),
       href: `/${PATH[kind]}/${row.entity_id}`,
       thumbnail_url: str(f.landing_thumbnail_asset_url) || str(f.thumbnail_asset_url) || null,
+      picture: atlasPicture(kind, f),
+      pictures: atlasPictures(kind, f),
       x: Number.parseFloat(str(f.atlas_x)),
       y: Number.parseFloat(str(f.atlas_y)),
       traits: str(f.style_traits).trim().split(/\s+/).filter(Boolean),
       hue: str(f.hue_bucket) || null,
+      dna: (() => { const d = storedDna(f, JEV_MODEL); return d ? STYLE_DNA_QUESTIONS.map((q) => Math.round(((d as Record<string, number>)[q.id] ?? 0) * 100)) : null; })(),
       ink: (styleInks.inks as Record<string, string>)[createHash("sha256").update(row.entity_id).digest("hex").slice(0, 12)] ?? null,
       family: (() => {
         const key = familyKey(str(f.atlas_family));
@@ -1080,6 +1119,25 @@ export async function libraryAtlas(tier: Tier) {
 // measure (colours, typefaces, radii against the tokens) and what needs a look
 // (each rule, do and don't, as one Jev noul over the page source). One Jev call.
 // It reports; it does not gate — a contributor's submission is still reviewed.
+
+/**
+ * "Would this work for a bank?", asked of one style. Jev reads the style's own description and answers how well it
+ * suits the purpose, and which of the style's marked traits help or hurt there. One call; the caller's tier decides
+ * whether the style can be read at all.
+ */
+export async function judgeStyleFor(tier: Tier, kind: "language" | "art_style", idOrSlug: string, purpose: string) {
+  const row = await resolve(kind, idOrSlug, tier);
+  if (!row) return null;
+  const f = row.fields ?? {};
+  const traits = str(f.style_traits).trim().split(/\s+/).filter(Boolean).slice(0, 10);
+  const labelOf = new Map(STYLE_DNA_QUESTIONS.map((q) => [q.id, q.label]));
+  const questions: Record<string, ReturnType<typeof noul>> = { suits: noul(`This style would suit the following well: ${purpose}`) };
+  for (const t of traits) questions[`t_${t}`] = noul(`Being "${labelOf.get(t) ?? t}" is an advantage for the following: ${purpose}`);
+  const { answers } = await askJev(`A visual style in a design library.\n${buildStyleDoc(kind, f).slice(0, 1400)}`, questions, { timeoutMs: 8000, retries: 1 });
+  const n = (k: string) => Number((answers[k] as { noul?: number } | undefined)?.noul ?? 0);
+  const judged = traits.map((t) => ({ trait: labelOf.get(t) ?? t, n: n(`t_${t}`) }));
+  return { name: str(f.name), suits: Math.round(n("suits") * 100) / 100, helps: judged.filter((j) => j.n >= 0.62).sort((a, b) => b.n - a.n).slice(0, 4).map((j) => j.trait), hurts: judged.filter((j) => j.n <= 0.38).sort((a, b) => a.n - b.n).slice(0, 4).map((j) => j.trait) };
+}
 
 export async function checkAgainstLanguage(tier: Tier, idOrSlug: string, page: string) {
   const design = await getDesign("language", idOrSlug, tier);
