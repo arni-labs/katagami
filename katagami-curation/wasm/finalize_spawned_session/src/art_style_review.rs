@@ -772,33 +772,40 @@ pub(super) fn verify_portability_report(
     let models = report
         .get("models")
         .and_then(Value::as_array)
-        .filter(|items| items.len() == 2)
+        .filter(|items| items.len() >= 2)
         .ok_or_else(|| {
             art_error(
                 owner_id,
                 "art_style_portability_models_missing",
                 "portability_report",
-                format!("ArtStyle '{owner_id}' portability report needs exactly two image models"),
+                format!("ArtStyle '{owner_id}' portability report needs at least two distinct image models"),
             )
         })?;
 
     // An unexposed built-in version cannot establish a second model from the
     // same provider, even if the other invocation exposes its version.
-    if text(&models[0], "provider").eq_ignore_ascii_case(text(&models[1], "provider"))
-        && (models[0]["model"].is_null() || models[1]["model"].is_null())
-    {
-        return Err(art_error(owner_id, "art_style_portability_model_invalid",
-            "portability_report", "Two distinct model identities must be evidenced; an unknown version cannot establish distinctness within one provider"));
+    for (index, model) in models.iter().enumerate() {
+        for other in models.iter().skip(index + 1) {
+            if text(model, "provider").eq_ignore_ascii_case(text(other, "provider"))
+                && (model["model"].is_null() || other["model"].is_null())
+            {
+                return Err(art_error(owner_id, "art_style_portability_model_invalid",
+                    "portability_report", "Distinct model identities must be evidenced; an unknown version cannot establish distinctness within one provider"));
+            }
+        }
     }
 
     let proof_set: BTreeSet<&str> = proof_ids.iter().map(String::as_str).collect();
-    if !matches!(proof_ids.len(), 2 | 4) || proof_set.len() != proof_ids.len() {
+    if proof_ids.len() < models.len()
+        || proof_ids.len() % models.len() != 0
+        || proof_set.len() != proof_ids.len()
+    {
         return Err(art_error(
             owner_id,
             "art_style_portability_matrix_incomplete",
             "proof_shots_file_ids",
             format!(
-                "ArtStyle '{owner_id}' needs exactly two or four unique proofs: two models using the same one or two subject descriptions"
+                "ArtStyle '{owner_id}' needs unique proofs for the same subject descriptions on at least two models"
             ),
         ));
     }
@@ -933,18 +940,17 @@ pub(super) fn verify_portability_report(
         let cases = model
             .get("cases")
             .and_then(Value::as_array)
-            .filter(|items| items.len() == proof_ids.len() / 2)
+            .filter(|items| items.len() == proof_ids.len() / models.len())
             .ok_or_else(|| {
                 art_error(
                     owner_id,
                     "art_style_portability_cases_missing",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' needs the same one or two subject cases per image model"
+                        "ArtStyle '{owner_id}' needs the same nonempty subject cases per image model"
                     ),
                 )
             })?;
-        let mut categories = BTreeSet::new();
         let mut source_matrix = BTreeSet::new();
         let mut subjects = BTreeSet::new();
         let mut model_total = 0.0;
@@ -1016,7 +1022,6 @@ pub(super) fn verify_portability_report(
                     ),
                 ));
             }
-            categories.insert(category.to_string());
             let record = generation_record(
                 owner_id,
                 case,
@@ -1062,17 +1067,12 @@ pub(super) fn verify_portability_report(
             model_total += average;
             verified_records.push(record);
         }
-        if categories.len() != cases.len()
-            || source_matrix.len() != cases.len()
-            || model_total / (cases.len() as f64) < 1.5
-        {
+        if source_matrix.len() != cases.len() || model_total / (cases.len() as f64) < 1.5 {
             return Err(art_error(
                 owner_id,
                 "art_style_portability_model_below_threshold",
                 "portability_report",
-                format!(
-                    "ArtStyle '{owner_id}' failed the per-model distinct-role, subject, or score threshold"
-                ),
+                format!("ArtStyle '{owner_id}' failed the per-model subject or score threshold"),
             ));
         }
         if let Some(expected) = &expected_source_matrix {
@@ -1091,7 +1091,7 @@ pub(super) fn verify_portability_report(
         }
     }
 
-    if tested_models.len() != 2
+    if tested_models.len() != models.len()
         || used_files.len() != proof_ids.len()
         || verified_records.len() != proof_ids.len()
     {
@@ -1100,7 +1100,7 @@ pub(super) fn verify_portability_report(
             "art_style_portability_matrix_incomplete",
             "portability_report",
             format!(
-                "ArtStyle '{owner_id}' needs two distinct image models using the same one or two subject descriptions and a score for every attached proof"
+                "ArtStyle '{owner_id}' needs at least two distinct image models using the same subject descriptions and a score for every attached proof"
             ),
         ));
     }
@@ -1116,9 +1116,10 @@ mod tests {
     use serde_json::json;
 
     const STYLE_SLUG: &str = "archive-ember";
-    const TEST_MODELS: [(&str, &str); 2] = [
+    const TEST_MODELS: [(&str, &str); 3] = [
         ("openai", "gpt-image-2.5"),
         ("other-provider", "independent-image-generator"),
+        ("third-provider", "another-image-generator"),
     ];
     const PROMPT: &str = "Render the supplied subject as a two-ink relief print on fibrous matte paper. Use blunt carved contours and visibly broken edges. Reconstruct people, animals, objects, and environments as simplified interlocking carved masses with compressed proportions and deliberately omitted incidental anatomy. Build volume with sparse directional hatching and broad unprinted highlights. Reserve deep indigo for structural masses and vermilion for small focal accents. Keep a centered, compressed composition with generous bare paper. Add slight ink spread and irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry.";
 
@@ -1155,6 +1156,10 @@ mod tests {
     }
 
     fn fields_with_case_count(case_count: usize) -> Value {
+        fields_with_counts(case_count, 2)
+    }
+
+    fn fields_with_counts(case_count: usize, model_count: usize) -> Value {
         let dims = json!({
             "medium_material": "two-ink relief print on fibrous matte paper",
             "marks_edges": "blunt carved contours and visibly broken edges",
@@ -1168,7 +1173,7 @@ mod tests {
         let mut proof_ids = Vec::new();
         let mut proof_manifest = Vec::new();
         let mut models = Vec::new();
-        for (provider, model) in TEST_MODELS {
+        for (provider, model) in TEST_MODELS.into_iter().take(model_count) {
             let mut cases = Vec::new();
             for index in 0..case_count {
                 let file_id = format!("proof-{provider}-{model}-{index}");
@@ -1268,8 +1273,8 @@ mod tests {
     }
 
     #[test]
-    fn one_or_two_cases_per_model_pass() {
-        for count in [1, 2] {
+    fn one_or_more_cases_per_model_pass() {
+        for count in [1, 2, 3, 4] {
             let verified = verify_fields(&fields_with_case_count(count)).unwrap();
             assert_eq!(verified.proof_records.len(), count * 2);
         }
@@ -1277,12 +1282,40 @@ mod tests {
 
     #[test]
     fn unsupported_case_counts_fail() {
-        for count in [0, 3, 4] {
+        for count in [0] {
             assert!(
                 verify_fields(&fields_with_case_count(count)).is_err(),
                 "count {count}"
             );
         }
+    }
+
+    #[test]
+    fn third_model_is_optional_but_supported_and_one_model_is_rejected() {
+        for count in [2, 3] {
+            assert_eq!(
+                verify_fields(&fields_with_counts(1, count))
+                    .unwrap()
+                    .proof_records
+                    .len(),
+                count
+            );
+        }
+        assert_eq!(
+            verify_fields(&fields_with_counts(1, 1)).unwrap_err().code,
+            "art_style_portability_models_missing"
+        );
+    }
+
+    #[test]
+    fn unknown_identity_cannot_hide_as_third_model_from_same_provider() {
+        let mut fields = fields_with_counts(1, 3);
+        fields["portability_report"]["models"][2]["provider"] = json!("OPENAI");
+        fields["portability_report"]["models"][2]["model"] = Value::Null;
+        assert_eq!(
+            verify_fields(&fields).unwrap_err().code,
+            "art_style_portability_model_invalid"
+        );
     }
 
     #[test]
@@ -1627,7 +1660,7 @@ mod tests {
     }
 
     #[test]
-    fn two_case_sets_need_distinct_roles() {
+    fn mismatched_roles_across_models_fail() {
         let mut fields = valid_fields();
         fields["proof_shots_manifest"]["items"][1]["category"] = json!(PROOF_CATEGORIES[0]);
         fields["portability_report"]["models"][0]["cases"][1]["category"] =
@@ -1646,7 +1679,7 @@ mod tests {
             &proof_ids,
         )
         .unwrap_err();
-        assert_eq!(err.code, "art_style_portability_model_below_threshold");
+        assert_eq!(err.code, "art_style_portability_matrix_mismatch");
     }
 
     #[test]

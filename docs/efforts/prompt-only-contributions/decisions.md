@@ -15,3 +15,7 @@
 **Options**: Retain image-edit proof; require matched subject descriptions and canonical text prompts across models.
 **Chose text-only proof because**: It measures the user-requested portable prompt behavior directly.
 **Where**: art_style_review.rs and the contribution contract.
+
+### D3 — Minimum comparison, optional examples
+
+Rita superseded the six-image allocation on 2026-09-21: publication requires a prompt-only comparison from at least two image model identities, with one matched subject sufficient. Additional models/subjects/gallery examples are optional. Proof outputs may provide the thumbnail and visible examples; arbitrary real model identities replace the fixed model list. Codex built-in and authenticated Grok CLI Imagine are the selected generators for this session. Existing published definitions and provenance remain intact.
