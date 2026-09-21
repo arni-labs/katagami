@@ -32,18 +32,17 @@ pub(super) fn verify_gallery(
     fields: &Value,
     canonical_prompt: &str,
     reference_ids: &[String],
-    _thumbnail_id: &str,
+    thumbnail_id: &str,
     mut verify_file: impl FnMut(&str, &str) -> Result<(), VerificationError>,
 ) -> Result<(), VerificationError> {
     let invalid = || {
         VerificationError::new(
         "art_style_gallery_invalid",
-        format!("ArtStyle '{owner_id}' requires optional gallery images to have unique, ordered references and complete prompt-bound provenance"),
+        format!("ArtStyle '{owner_id}' requires five gallery images (four OpenAI and one xAI), strongest first with its File as thumbnail, unique ordered references and complete prompt-bound provenance"),
     ).entity("ArtStyle", owner_id).field("reference_manifest")
     };
     let manifest = match lane_json_value(fields, "reference_manifest") {
         Some(manifest) => manifest,
-        None if reference_ids.is_empty() && fields.get("reference_manifest").is_none_or(|v| v.is_null() || v == "") => return Ok(()),
         None => return Err(invalid()),
     };
     if !object_has_keys(&manifest, &["schema_version", "items"])
@@ -52,7 +51,11 @@ pub(super) fn verify_gallery(
         return Err(invalid());
     }
     let items = manifest["items"].as_array().ok_or_else(invalid)?;
-    if items.len() != reference_ids.len() {
+    if items.len() != 5 || items.len() != reference_ids.len()
+        || reference_ids.first().map(String::as_str) != Some(thumbnail_id)
+        || items.iter().filter(|item| item["model"]["provider"] == "OpenAI").count() != 4
+        || items.iter().filter(|item| item["model"]["provider"] == "xAI").count() != 1
+    {
         return Err(invalid());
     }
     let slug = text(&fields["slug"]);
@@ -129,21 +132,20 @@ mod tests {
 
     const PROMPT: &str = "Soft ink and dimensional faces.";
     fn fixture() -> (Value, Vec<String>) {
-        let items: Vec<Value> = (0..6).map(|i| {
+        let items: Vec<Value> = (0..5).map(|i| {
             let subject = format!("Scene {i}");
             let prompt = format!("{PROMPT}\n\nSubject and scene:\n{subject}");
             let (provider, model) = match i {
                 0 | 2 => ("OpenAI", "openai/gpt-image-2.5/sunburst/text-to-image"),
                 1 | 3 => ("OpenAI", "openai/gpt-image-2.5/flare/text-to-image"),
-                4 => ("xAI", "xai/grok-imagine-image/v2.0/text-to-image"),
-                _ => ("Google", "fal-ai/nano-banana-pro"),
+                _ => ("xAI", "xai/grok-imagine-image/v2.0/text-to-image"),
             };
             json!({"file_id":format!("file-{i}"), "subject":subject,
                 "model":{"provider":provider,"model":model},
                 "generation_record":{"schema_version":"2","kind":"art_style_gallery",
                     "mode":"text_to_image","input_image_file_ids":[],
                     "execution":{"route":"provider","harness":"codex","tool":"fal",
-                        "receipt":format!("request-{i}"),"requested_model":if i<4 {"GPT Image 2.5"} else if i==4 {"Grok Image"} else {"Nano Banana"},
+                        "receipt":format!("request-{i}"),"requested_model":if i<4 {"GPT Image 2.5"} else {"Grok Image"},
                         "provider_request_id":format!("request-{i}")},
                     "style_slug":"morrow-ink","prompt":prompt,"canonical_prompt_sha256":hash(PROMPT),
                     "output":{"file_id":format!("file-{i}"),"sha256":hash(&format!("image-{i}")),
@@ -151,27 +153,28 @@ mod tests {
         }).collect();
         (
             json!({"slug":"morrow-ink","reference_manifest":{"schema_version":"3","items":items}}),
-            (0..6).map(|i| format!("file-{i}")).collect(),
+            (0..5).map(|i| format!("file-{i}")).collect(),
         )
     }
 
     #[test]
-    fn no_extras_and_arbitrary_single_extra_are_valid() {
-        verify_gallery("style", &json!({"slug":"morrow-ink"}), PROMPT, &[], "proof-0", |_, _| panic!()).unwrap();
-        verify_gallery("style", &json!({"slug":"morrow-ink","reference_manifest":{"schema_version":"3","items":[]}}), PROMPT, &[], "proof-0", |_, _| panic!()).unwrap();
-        let (mut fields, mut ids) = fixture();
-        fields["reference_manifest"]["items"].as_array_mut().unwrap().truncate(1);
-        ids.truncate(1);
-        fields["reference_manifest"]["items"][0]["model"] = json!({"provider":"Independent provider","model":"actual-v7"});
-        let mut checked = 0;
-        verify_gallery("style", &fields, PROMPT, &ids, "proof-0", |_, _| { checked += 1; Ok(()) }).unwrap();
-        assert_eq!(checked, 1);
-        fields["reference_manifest"]["items"][0]["generation_record"]["prompt"] = json!("tampered");
-        assert!(verify_gallery("style", &fields, PROMPT, &ids, "proof-0", |_, _| panic!()).is_err());
+    fn rejects_missing_wrong_count_wrong_mix_and_wrong_thumbnail() {
+        assert!(verify_gallery("style", &json!({"slug":"morrow-ink"}), PROMPT, &[], "proof-0", |_, _| panic!()).is_err());
+        for count in [0, 1, 4, 6] {
+            let (mut fields, mut ids) = fixture();
+            let items = fields["reference_manifest"]["items"].as_array_mut().unwrap();
+            if count == 6 { items.push(items[0].clone()); ids.push("extra".into()); }
+            else { items.truncate(count); ids.truncate(count); }
+            assert!(verify_gallery("style", &fields, PROMPT, &ids, "file-0", |_, _| panic!()).is_err());
+        }
+        let (mut fields, ids) = fixture();
+        assert!(verify_gallery("style", &fields, PROMPT, &ids, "file-1", |_, _| panic!()).is_err());
+        fields["reference_manifest"]["items"][4]["model"]["provider"] = json!("OpenAI");
+        assert!(verify_gallery("style", &fields, PROMPT, &ids, "file-0", |_, _| panic!()).is_err());
     }
 
     #[test]
-    fn six_gallery_records_verify_every_exact_file_and_hash() {
+    fn five_gallery_records_verify_every_exact_file_and_hash() {
         let (mut fields, ids) = fixture();
         // Actual persisted manifests are JSON strings, while parsed objects also work.
         fields["reference_manifest"] = Value::String(fields["reference_manifest"].to_string());
@@ -183,7 +186,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             verified,
-            (0..6)
+            (0..5)
                 .map(|i| (format!("file-{i}"), hash(&format!("image-{i}"))))
                 .collect::<Vec<_>>()
         );

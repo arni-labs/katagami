@@ -5,20 +5,19 @@ import { artStyleGalleryImages, gallerySubmissionFields } from "./art-style-gall
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const canonical = "Soft ink and dimensional faces.";
 function fixture() {
-  return Array.from({ length: 6 }, (_, i) => {
+  return Array.from({ length: 5 }, (_, i) => {
     const subject = `Scene ${i}`;
     const prompt = `${canonical}\n\nSubject and scene:\n${subject}`;
     return {
       file_id: `file-${i}`, subject,
       model: i < 4
         ? { provider: "OpenAI", model: `openai/gpt-image-2.5/${i % 2 ? "flare" : "sunburst"}/text-to-image` as string | null }
-        : i === 4 ? { provider: "xAI", model: "xai/grok-imagine-image/v2.0/text-to-image" }
-          : { provider: "Google", model: "fal-ai/nano-banana-pro" },
+        : { provider: "xAI", model: "xai/grok-imagine-image/v2.0/text-to-image" },
       generation_record: { schema_version: "2" as const, kind: "art_style_gallery" as const,
         style_slug: "morrow-ink", prompt, canonical_prompt_sha256: hash(canonical),
         mode: "text_to_image" as const, input_image_file_ids: [] as string[],
         execution: { route: "provider", harness: "codex", tool: "fal",
-          receipt: `request-${i}`, requested_model: i < 4 ? "GPT Image 2.5" : i === 4 ? "Grok Image" : "Nano Banana",
+          receipt: `request-${i}`, requested_model: i < 4 ? "GPT Image 2.5" : "Grok Image",
           provider_request_id: `request-${i}` as string | null },
         output: { file_id: `file-${i}`, sha256: hash(`image-${i}`), prompt_sha256: hash(prompt) } },
     };
@@ -27,13 +26,14 @@ function fixture() {
 function submit(images = fixture(), thumbnail = "file-0") {
   return gallerySubmissionFields(artStyleGalleryImages.parse(images), "morrow-ink", canonical, thumbnail);
 }
-test("six gallery images retain all files and complete records independently of proofs", () => {
+test("five gallery images retain all files and complete records independently of proofs", () => {
   const result = submit();
   assert.deepEqual(result.reference_image_file_ids, fixture().map(i => i.file_id));
   assert.deepEqual(JSON.parse(result.reference_manifest), { schema_version: "3", items: fixture() });
 });
-test("optional counts, strict records, and required request IDs", () => {
-  assert.equal(submit(fixture().slice(0, 1)).reference_image_file_ids.length, 1);
+test("required count and mix, strict records, and required request IDs", () => {
+  for (const count of [0, 1, 4]) assert.throws(() => submit(fixture().slice(0, count)));
+  assert.throws(() => submit([...fixture(), fixture()[0]]));
   for (const mutate of [
     (a: ReturnType<typeof fixture>) => { a[0].model.provider = ""; },
     (a: ReturnType<typeof fixture>) => { a[0].generation_record.execution.provider_request_id = ""; },
@@ -51,11 +51,11 @@ test("reject duplicate files or bytes, inconsistent prompt bindings and unknown 
     (a: ReturnType<typeof fixture>) => { a[0].generation_record.canonical_prompt_sha256 = hash("wrong"); },
     (a: ReturnType<typeof fixture>) => { a[0].generation_record.output.prompt_sha256 = hash("wrong"); },
   ]) { const a = fixture(); mutate(a); assert.throws(() => submit(a)); }
-  assert.equal(submit(fixture(), "file-1").reference_image_file_ids.length, 6);
+  assert.throws(() => submit(fixture(), "file-1"));
   assert.throws(() => submit(fixture(), "proof-file"));
 });
 
-test("MCP submit forwards the six-image manifest and keeps the two-model proof separate", async (t) => {
+test("MCP submit forwards the five-image manifest and keeps the two-model proof separate", async (t) => {
   const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
   const { InMemoryTransport } = await import("@modelcontextprotocol/sdk/inMemory.js");
   const { buildServer } = await import("./tools.js");
@@ -105,11 +105,8 @@ test("MCP submit forwards the six-image manifest and keeps the two-model proof s
     const { gallery_images, thumbnail_file_id, ...minimal } = args;
     submitted = undefined;
     const minimalResult = await client.callTool({ name: "submit_art_style", arguments: minimal });
-    assert.ok(!minimalResult.isError, JSON.stringify(minimalResult));
-    const minimalSubmission = submitted as Record<string, unknown> | undefined;
-    assert.deepEqual(minimalSubmission?.reference_image_file_ids, []);
-    assert.equal(minimalSubmission?.thumbnail_file_id, "proof-0");
-    assert.deepEqual(JSON.parse(String(minimalSubmission?.reference_manifest)).items, []);
+    assert.equal(minimalResult.isError, true);
+    assert.equal(submitted, undefined, "missing gallery must not mutate a draft");
     const inputImageProofs = proofs.map((proof, i) => i === 0 ? {
       ...proof, generation_record: { ...proof.generation_record, input_image_file_ids: ["source-image"] },
     } : proof);
@@ -158,12 +155,12 @@ test("prompt-only gallery rejects inputs, missing receipts and invented provider
   ]) { const a = fixture(); mutate(a); assert.throws(() => submit(a)); }
 });
 
-test("optional gallery supports arbitrary actual models and a proof thumbnail", () => {
-  const images = fixture().slice(0, 1);
-  images[0].model = { provider: "Independent provider", model: "actual-model-v7" };
-  images[0].generation_record.execution.requested_model = "actual-model-v7";
-  const result = gallerySubmissionFields(artStyleGalleryImages.parse(images), "morrow-ink", canonical, "proof-0", ["proof-0", "proof-1"]);
-  assert.equal(result.reference_image_file_ids.length, 1);
-  assert.deepEqual(gallerySubmissionFields([], "morrow-ink", canonical, "proof-0", ["proof-0", "proof-1"]).reference_image_file_ids, []);
-  assert.throws(() => gallerySubmissionFields([], "morrow-ink", canonical, "missing", ["proof-0", "proof-1"]));
+test("gallery requires four OpenAI and one xAI, strongest first as thumbnail", () => {
+  const images = fixture();
+  images[4].model.provider = "Google";
+  assert.throws(() => submit(images));
+  assert.throws(() => gallerySubmissionFields([], "morrow-ink", canonical, "proof-0", ["proof-0"]));
+  const reordered = fixture();
+  reordered.unshift(reordered.pop()!);
+  assert.equal(submit(reordered, "file-4").reference_image_file_ids[0], "file-4");
 });

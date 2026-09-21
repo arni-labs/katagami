@@ -39,13 +39,13 @@ The uppercase values above describe required data; they are not valid evidence. 
 
 `execution` has exactly the six keys shown. All text fields are nonempty. A `builtin` route accepts Codex/OpenAI or Grok/xAI, with a real tool receipt and nullable model/request ID. Claude invoking an authenticated, actually image-capable Codex CLI records the executed `codex` harness and real CLI receipt. A `provider` route requires the exact model ID and real provider request ID as well as the receipt. Fal is one possible provider tool, not a required provenance format. Never invent missing metadata.
 
-## Optional display examples
+## Required gallery
 
-Publication requires a genuine prompt-only comparison on at least two distinct image models. The minimum is **one subject rendered by two models: two images total**. No particular provider, image model, six-image allocation or extra gallery set is required. The same comparison outputs appear on the style page, and one may be the thumbnail. More models and examples are optional and can be added later through supported revision operations.
+Publication requires a genuine prompt-only comparison on at least two distinct image models. The proof minimum is **one subject rendered by two models**. Publication also requires five gallery images: four OpenAI outputs using Codex’s built-in image tool when available and one xAI output using Grok’s image tool when available. The matched proof pair may also be gallery images, so five unique images can satisfy both requirements. Future gallery replacements use supported revisions and retain the five-image allocation.
 
 For this session, use Codex built-in image generation and the authenticated Grok CLI's built-in Imagine generation. Do not generate Nano Banana or other provider examples merely to fill old slots. Model identity still records actual exposed facts; neither CLI's chat-model version is the image-model version.
 
-`reference_image_file_ids` may be empty and `reference_manifest` absent, or `{ "schema_version": "3", "items": [] }`. If additional gallery examples are supplied, each item has exactly `file_id`, `subject`, `model`, and `generation_record`; its kind is `art_style_gallery`. All items must match the ordered reference IDs, with distinct Locked files and bytes verified by the finalizer. Any genuine model identity supported by the execution contract is accepted; there is no model-name allowlist. The thumbnail must belong to the verified comparison or optional gallery, not an unrelated File.
+`reference_image_file_ids` contains five distinct Locked Files. `reference_manifest` is `{ "schema_version": "3", "items": [...] }` with four OpenAI images and one xAI image. Each item has exactly `file_id`, `subject`, `model`, and `generation_record`; its kind is `art_style_gallery`. All items match the ordered reference IDs, with distinct bytes verified by the finalizer. Put the strongest image first and use that File as the thumbnail. Preserve actual exposed model IDs; supported built-in records retain null when the tool does not expose its version. Never infer an image version from the request or chat model. Nano Banana is not a gallery slot.
 
 ## Compact prompt-only portability proof
 
