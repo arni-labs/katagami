@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Palette, Star, UserRound } from "lucide-react";
+import {ArrowLeft} from "lucide-react";
 import { getUser, isAuthConfigured, safeInternalPath } from "@/lib/user-auth";
 import { Marker, PageHero } from "@/components/page-hero";
 import { SectionHeading, StickyNote, WashiTape } from "@/components/scrapbook";
@@ -48,24 +48,13 @@ export default async function SignInPage({
       </Link>
 
       <PageHero
-        eyebrow={
-          <span className="font-mono lowercase tracking-wide">
-            one click, no passwords
-          </span>
-        }
         eyebrowAccent="teal"
         title={
           <>
-            Bring <Marker color="teal">your taste</Marker>
+            Sign in to see the <Marker color="teal">whole library</Marker>
           </>
         }
-        description={
-          <>
-            The gallery is open to everyone. Signing in gives your work a name:
-            mixes you save in the Studio are yours, and your ratings teach the
-            commons what good looks like.
-          </>
-        }
+        description={<>A visitor is shown part of the commons. Signing in opens the rest of it.</>}
       />
 
       <section className="relative">
@@ -113,56 +102,6 @@ export default async function SignInPage({
         </StickyNote>
       </section>
 
-      <section className="relative">
-        <WashiTape color="yuzu" rotate={3} className="-right-3 -top-3" width={94} />
-        <StickyNote className="p-5 sm:p-6">
-          <SectionHeading eyebrow="the account" eyebrowColor="yuzu">
-            <Marker color="yuzu">Three things, nothing else</Marker>
-          </SectionHeading>
-          <div className="mt-5 grid gap-4 sm:grid-cols-3">
-            <PerkCard
-              icon={<Palette className="h-4 w-4" aria-hidden />}
-              title="Save your mixes"
-              body="Keep the language + palette + art style combinations you make in the Remix Studio."
-            />
-            <PerkCard
-              icon={<UserRound className="h-4 w-4" aria-hidden />}
-              title="Your name on your work"
-              body="Saved mixes carry your identity — the first step toward human contributions with credit."
-            />
-            <PerkCard
-              icon={<Star className="h-4 w-4" aria-hidden />}
-              title="Teach the taste loop"
-              body="Rating your mixes feeds the taste signal that curates the whole commons."
-            />
-          </div>
-        </StickyNote>
-      </section>
-    </div>
-  );
-}
-
-function PerkCard({
-  icon,
-  title,
-  body,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div
-      className="bg-background/70 p-4"
-      style={{ boxShadow: "var(--shadow-card)" }}
-    >
-      <div className="flex items-center gap-2 text-[color-mix(in_oklch,var(--teal)_72%,var(--foreground))]">
-        {icon}
-        <h3 className="text-[14px] font-semibold text-foreground">{title}</h3>
-      </div>
-      <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-        {body}
-      </p>
     </div>
   );
 }
