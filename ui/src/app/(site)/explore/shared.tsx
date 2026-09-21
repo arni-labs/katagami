@@ -119,39 +119,95 @@ export function useAsk() {
   return { query, setQuery, state, error, answer, fits, words, moved, changes, ask, refine, clear };
 }
 
-/** The ask, docked under the thumb. An ask and a colour are two ways to light the library, and the newer one wins: a field, the nine hues, and the answers as chips to fly to. */
+const MARK: Record<string, string> = { what: "var(--yuzu)", who: "var(--sakura)", feel: "var(--ramune)" };
+const CHANGES = ["warmer", "quieter", "bolder", "more playful", "darker", "more editorial"];
+
+/** The ask, docked under the thumb, and the sentence is its own display: what is typed is set in the display face
+ *  and, when the typing pauses, the telling words take a highlighter (what it is, who it is for, how it should
+ *  feel). It is a plain textarea with its text made invisible over a twin that draws the same words with the marks,
+ *  so the caret, selection and keyboard are the browser's own. Once there is an answer it can be refined in words
+ *  from the same place. An ask and a colour are two ways to light the library, and the newer one wins. */
 export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false }: { ask: ReturnType<typeof useAsk>; hue: string; onHue: (h: string) => void; onGo: (id: string) => void; byId: Map<string, AtlasStyle>; lit: number | null; kinds?: Kinds; /** The view shows the answer itself: no chips here. */ quiet?: boolean }) {
   const found = quiet ? [] : ask.fits ? [...ask.fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank) : [];
+  const dock = useRef<HTMLDivElement | null>(null);
+  const [read, setRead] = useState<Word[]>([]);
+  const [say, setSay] = useState("");
+  const busy = ask.state === "asking";
+
+  // The words are read when the typing has paused, not on every key; an answer's own reading is used as it is.
+  useEffect(() => {
+    const q = ask.query.trim();
+    if (q.length < 3) return;
+    const wait = window.setTimeout(() => {
+      void fetch(`/api/ask?${new URLSearchParams({ q, stage: "words" })}`).then((r) => (r.ok ? r.json() : null)).then((got) => { if (Array.isArray(got?.words)) setRead(got.words as Word[]); }).catch(() => undefined);
+    }, 700);
+    return () => window.clearTimeout(wait);
+  }, [ask.query]);
+  // A word keeps its mark only while it is still the same word in the same place.
+  const known = ask.words && ask.words.map((w) => w.text).join(" ") === ask.query.trim().split(/\s+/).join(" ") ? ask.words : read;
+  const pieces = ask.query.split(/(\s+)/).filter((s) => s.length > 0);
+  let n = -1;
+  const marked = pieces.map((piece) => { if (/^\s+$/.test(piece)) return { piece, role: null as Word["role"], gap: true }; n++; return { piece, role: known[n]?.text === piece ? known[n].role : null, gap: false }; });
+  // A gap between two words with the same job is marked too, so a phrase is one stroke.
+  marked.forEach((m, i) => { if (m.gap && marked[i - 1]?.role && marked[i - 1]?.role === marked[i + 1]?.role) m.role = marked[i - 1].role; });
+
+  // Neighbours with the same job are drawn as one mark, so the stroke runs unbroken under a phrase.
+  const runs: { piece: string; role: Word["role"] }[] = [];
+  for (const m of marked) { const last = runs[runs.length - 1]; if (last && last.role === m.role) last.piece += m.piece; else runs.push({ piece: m.piece, role: m.role }); }
+
+  // How tall the dock stands, for whatever a view lays out above it.
+  useEffect(() => {
+    const el = dock.current;
+    if (!el) return;
+    const watch = new ResizeObserver(() => document.documentElement.style.setProperty("--dock-h", `${Math.round(el.getBoundingClientRect().height) + 12}px`));
+    watch.observe(el);
+    return () => { watch.disconnect(); document.documentElement.style.removeProperty("--dock-h"); };
+  }, []);
+
+  const type = "font-display text-[19px] font-bold leading-[1.3] tracking-[-0.02em] md:text-[24px]";
   return (
     // Absolute, not fixed: the site's page wrapper is transformed, so "fixed" would mean the page, not the screen.
-    <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center px-3">
-      <div className="pointer-events-auto flex w-full max-w-[34rem] flex-col gap-2 bg-background/95 p-2 shadow-[0_8px_30px_-12px_rgba(30,35,45,0.35)]">
+    <div className="pointer-events-none absolute inset-x-0 bottom-3 z-[36] flex justify-center px-3">
+      <div ref={dock} className="pointer-events-auto flex w-full max-w-[44rem] flex-col gap-2 bg-background/90 p-2.5 shadow-[0_10px_36px_-12px_rgba(30,35,45,0.4)] backdrop-blur-xl backdrop-saturate-150 md:p-3">
         {found.length > 0 ? (
           <ul aria-label="Answers" className="flex gap-1 overflow-x-auto [scrollbar-width:none]">
-            {found.map(([id, f]) => (
-              <li key={id} className="shrink-0">
-                <button type="button" onClick={() => onGo(id)} className="flex cursor-pointer items-center gap-1.5 bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2 py-1.5 text-[12.5px] hover:bg-[color-mix(in_srgb,var(--foreground)_11%,transparent)]">
-                  <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: f.strange ? "var(--sakura)" : "var(--ramune)" }} />
-                  {byId.get(id)?.name}
-                </button>
-              </li>
-            ))}
+            {found.map(([id]) => <li key={id} className="shrink-0"><button type="button" onClick={() => onGo(id)} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2 py-1.5 text-[12.5px] hover:bg-[color-mix(in_srgb,var(--foreground)_11%,transparent)]">{byId.get(id)?.name}</button></li>)}
           </ul>
         ) : null}
+        {ask.answer?.want ? (
+          <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&>*]:shrink-0 [&>*]:whitespace-nowrap">
+            {ask.moved.slice(0, 5).map((mv) => <span key={mv.trait} className="bg-foreground px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.12em] text-background">{mv.to > mv.from ? "+" : "−"} {mv.trait}</span>)}
+            {CHANGES.map((c) => <button key={c} type="button" disabled={busy} onClick={() => void ask.refine(c, kinds)} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[12.5px] hover:bg-[color-mix(in_srgb,var(--foreground)_13%,transparent)] disabled:opacity-40">{c}</button>)}
+            <form onSubmit={(e) => { e.preventDefault(); if (say.trim()) { void ask.refine(say, kinds); setSay(""); } }}>
+              <label htmlFor="refine" className="sr-only">Refine the answer</label>
+              <input id="refine" value={say} onChange={(e) => setSay(e.target.value)} maxLength={120} autoComplete="off" placeholder="refine in your words" className="w-[10.5rem] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[16px] outline-none placeholder:text-foreground/45 md:text-[12.5px]" />
+            </form>
+          </div>
+        ) : null}
         {ask.state === "error" ? <p role="alert" className="px-1 text-[12.5px] text-[var(--beni)]">{ask.error}</p> : null}
-        <form onSubmit={(e) => { e.preventDefault(); onHue(""); void ask.ask(ask.query, kinds); }} className="flex items-stretch gap-2">
+        <form onSubmit={(e) => { e.preventDefault(); onHue(""); void ask.ask(ask.query, kinds); }} className="flex items-end gap-2">
           <label htmlFor="explore-ask" className="sr-only">What are you making?</label>
-          <input id="explore-ask" value={ask.query} onChange={(e) => ask.setQuery(e.target.value)} maxLength={400} autoComplete="off" placeholder="Ask anything: a word, a mood, a project" className="min-w-0 flex-1 bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2.5 text-[16px] outline-none placeholder:text-muted-foreground md:text-[14px]" />
-          <button type="submit" disabled={ask.state === "asking"} className="shrink-0 cursor-pointer bg-foreground px-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-background disabled:opacity-50">{ask.state === "asking" ? "Reading" : "Ask"}</button>
+          <div className="relative min-w-0 flex-1">
+            <div aria-hidden className={`pointer-events-none whitespace-pre-wrap break-words px-1 py-1 ${type}`} style={{ minHeight: "1.3em", opacity: busy ? 0.6 : 1 }}>
+              {ask.query ? runs.map((m, i) => (m.role ? <mark key={i} className="query-mark" style={{ ["--mark" as string]: MARK[m.role] }}>{m.piece}</mark> : <span key={i}>{m.piece}</span>)) : <span className="font-normal text-foreground/35">Ask anything: a word, a mood, a project</span>}
+              {/* A trailing newline needs something after it to take up a line, as the textarea gives it one. */}
+              {ask.query.endsWith("\n") ? " " : null}
+            </div>
+            <textarea id="explore-ask" value={ask.query} rows={1} maxLength={400} autoComplete="off" spellCheck={false} enterKeyHint="search"
+              onChange={(e) => ask.setQuery(e.target.value.replace(/\n/g, " "))}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onHue(""); void ask.ask(ask.query, kinds); } }}
+              className={`absolute inset-0 h-full w-full resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent px-1 py-1 text-transparent caret-[var(--foreground)] outline-none selection:bg-[color-mix(in_srgb,var(--ramune)_35%,transparent)] ${type}`} />
+          </div>
+          <button type="submit" disabled={busy} className="shrink-0 cursor-pointer bg-foreground px-4 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-background disabled:opacity-50">{busy ? "Reading" : "Ask"}</button>
         </form>
         <div className="flex items-center gap-2 px-1">
           <div role="group" aria-label="Colour" className="flex gap-1.5 overflow-x-auto p-0.5 [scrollbar-width:none]">
             {HUES.map(([name, ink]) => (
-              <button key={name} type="button" aria-pressed={hue === name} aria-label={name} title={name} onClick={() => { if (ask.answer || ask.state === "asking") ask.clear(); onHue(hue === name ? "" : name); }} className="h-5 w-5 shrink-0 cursor-pointer rounded-full" style={{ background: ink, boxShadow: hue === name ? "0 0 0 2px var(--background), 0 0 0 4px var(--foreground)" : undefined }} />
+              <button key={name} type="button" aria-pressed={hue === name} aria-label={name} title={name} onClick={() => { if (ask.answer || busy) ask.clear(); onHue(hue === name ? "" : name); }} className="h-5 w-5 shrink-0 cursor-pointer rounded-full" style={{ background: ink, boxShadow: hue === name ? "0 0 0 2px var(--background), 0 0 0 4px var(--foreground)" : undefined }} />
             ))}
           </div>
           <p aria-live="polite" className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{lit === null ? "" : `${lit} lit`}</p>
-          {lit !== null ? <button type="button" onClick={() => { ask.clear(); onHue(""); }} className="shrink-0 cursor-pointer font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">Clear</button> : null}
+          {lit !== null ? <button type="button" onClick={() => { ask.clear(); onHue(""); setRead([]); }} className="shrink-0 cursor-pointer font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">Clear</button> : null}
         </div>
       </div>
     </div>

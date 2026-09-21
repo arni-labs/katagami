@@ -80,8 +80,14 @@ function paper(w: number, h: number, flat: boolean, tone: string): string {
   return ref;
 }
 
+/** A stamp's paper margin and the height of its name band. The margin stops growing at 14px and the band at 30:
+ *  a large stamp is a small stamp's picture made bigger, not its paper. */
+export function frameOf(w: number, h: number, label: boolean) {
+  return { edge: Math.min(14, Math.max(5, Math.round(w * 0.075))), foot: label ? Math.min(30, Math.max(10, Math.round(h * 0.105))) : 0 };
+}
+
 /** A perforated stamp carrying a style's picture: paper with a bitten edge, an even margin, the picture in a window with a hairline of shade inside it, and (when there is room) the name set small and spaced along the foot. */
-export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = false, veil = 0, lit, flat = false, fast }: { src: string | null; ink: string | null; w: number; h: number; label?: string; value?: string; sizes?: string; soon?: boolean; /** 0..1: how much of the picture is hidden under the style's ink (a stamp seen from far away). `--veil` on an ancestor scales it. */ veil?: number; /** Where the stamp's centre is, in the same pixel space as the light (--lx, --ly): makes it a light-reactive card. */ lit?: { x: number; y: number }; /** No shadow: a stamp still on its sheet, touching its neighbours. */ flat?: boolean; /** Draw the picture as a plain <img> at this optimizer width. */ fast?: 128 | 256 | 384 }) {
+export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = false, veil = 0, lit, flat = false, fast, under, onShape, windowed = false }: { src: string | null; ink: string | null; w: number; h: number; label?: string; value?: string; sizes?: string; soon?: boolean; /** 0..1: how much of the picture is hidden under the style's ink (a stamp seen from far away). `--veil` on an ancestor scales it. */ veil?: number; /** Where the stamp's centre is, in the same pixel space as the light (--lx, --ly): makes it a light-reactive card. */ lit?: { x: number; y: number }; /** No shadow: a stamp still on its sheet, touching its neighbours. */ flat?: boolean; /** Draw the picture as a plain <img> at this optimizer width. */ fast?: 128 | 256 | 384 | 750 | 1080; /** A smaller picture already in hand, shown soft until the large one arrives. */ under?: string; /** Told the picture's own shape (width over height) once it has loaded. */ onShape?: (ratio: number) => void; /** `w` and `h` are the picture window's size, and the paper is added round it: for a stamp cut to fit a picture's own shape. */ windowed?: boolean }) {
   // Too small for holes to read as holes: a plain tile of ink and picture.
   if (w < 26) return (
     <span className="relative block overflow-hidden [&_img]:object-cover" style={{ width: w, height: h, background: ink ?? "var(--muted)" }}>
@@ -89,19 +95,20 @@ export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = fa
       {veil > 0 ? <span aria-hidden className="absolute inset-0" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))` }} /> : null}
     </span>
   );
-  const edge = Math.max(5, Math.round(w * 0.075)), foot = label ? Math.max(10, Math.round(h * (h > 300 ? 0.075 : 0.105))) : 0;
+  const { edge, foot } = frameOf(w, h, Boolean(label));
+  if (windowed) { w = Math.round(w) + edge * 2; h = Math.round(h) + edge * 2 + foot; }
   return (
     <span className={`stamp relative block ${lit ? "lit" : ""}`} style={{ ["--bite" as string]: `${edge}px`, ...(lit ? { ["--cx" as string]: lit.x, ["--cy" as string]: lit.y } : null), width: w, height: h }}>
       <span aria-hidden className="stamp-paper absolute" style={{ inset: -PAD, backgroundImage: paper(w, h, flat, soon ? "%23f3f1ec" : "%23fbfaf7") }} />
-      <span className="stamp-window absolute overflow-hidden [&_img]:object-cover" style={{ left: edge, right: edge, top: edge, bottom: edge + foot, background: soon ? undefined : ink ?? "var(--muted)" }}>
+      <span className="stamp-window absolute overflow-hidden [&_img]:object-cover" style={{ left: edge, right: edge, top: edge, bottom: edge + foot, background: soon ? undefined : ink ?? "var(--muted)", ...(under ? { backgroundImage: `url("${under}")`, backgroundSize: "cover", backgroundPosition: "center" } : null) }}>
         {veil > 0 && !soon ? <span aria-hidden className="absolute inset-0 z-[1]" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))`, transition: "opacity 200ms" }} /> : null}
         {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : src && fast ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={src} src={quick(src, fast)} alt="" loading="lazy" decoding="async" draggable={false} onError={retryThenHide} className="absolute inset-0 h-full w-full object-cover" />
+          <img key={src} src={quick(src, fast)} alt="" loading={fast && fast > 384 ? "eager" : "lazy"} decoding="async" draggable={false} onError={retryThenHide} onLoad={onShape ? (e) => { const i = e.currentTarget; if (i.naturalWidth > 0) onShape(i.naturalWidth / i.naturalHeight); } : undefined} className="absolute inset-0 h-full w-full object-cover" />
         ) : src ? <GalleryImage src={src} alt="" sizes={sizes} className="object-cover" /> : null}
       </span>
       {label ? (
-        <span className="absolute flex items-center justify-between gap-1 font-mono uppercase text-[#22211e]" style={{ left: edge, right: edge, bottom: Math.round(edge * 0.55), height: foot, fontSize: Math.max(6.5, Math.min(14, foot * 0.52)), letterSpacing: "0.1em", lineHeight: 1 }}>
+        <span className="absolute flex items-center justify-between gap-1 font-mono uppercase text-[#22211e]" style={{ left: edge, right: edge, bottom: Math.round(edge * 0.55), height: foot, fontSize: Math.max(6.5, Math.min(13, foot * 0.52)), letterSpacing: "0.1em", lineHeight: 1 }}>
           <span className="truncate font-medium">{label}</span>
           {value ? <span className="shrink-0 font-bold">{value}</span> : null}
         </span>

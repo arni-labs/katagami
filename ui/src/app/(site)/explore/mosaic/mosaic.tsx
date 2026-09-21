@@ -5,7 +5,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { STYLE_DNA_QUESTIONS } from "@/lib/style-dna.mjs";
 import type { AtlasHole, AtlasStyle } from "@/lib/catalog";
-import { AskDock, fitWord, hueOf, useAsk, useScreen, type Family, type Fit, type Kinds, type Word } from "../shared";
+import { AskDock, fitWord, hueOf, useAsk, useScreen, type Family, type Fit, type Kinds } from "../shared";
 import { flow } from "../river/course";
 import { Stamp, quick } from "../stamp";
 
@@ -350,9 +350,9 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
               </button>
             ))}
           </div>
+          {topFit && !tray ? <button type="button" onClick={() => setTray(true)} className={`shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 text-[12.5px] ${glass}`}>Results</button> : null}
           <div role="group" aria-label="Sort the sheet" className={`flex shrink-0 ${glass}`}>{tab("colour", "By colour")}{tab("family", "By family")}{tab("fit", "By fit", !topFit)}</div>
         </div>
-        {ask.words ? <QueryLine words={ask.words} busy={ask.state === "asking"} moved={ask.moved} phone={phone} glass={glass} onRefine={(say) => void ask.refine(say, kinds)} onClear={() => { ask.clear(); setTray(false); }} onShow={topFit ? () => setTray(true) : undefined} /> : null}
       </div>
       <div className={`absolute bottom-[8.5rem] left-3 z-20 flex flex-col md:bottom-6 md:left-6 ${glass}`}>
         <button type="button" onClick={() => zoomTo(zoom + 1)} disabled={zoom === 2} aria-label="Closer" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">+</button>
@@ -366,45 +366,17 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
   );
 }
 
-const MARK: Record<string, string> = { what: "var(--yuzu)", who: "var(--sakura)", feel: "var(--ramune)" };
-const CHANGES = ["warmer", "quieter", "bolder", "more playful", "darker", "more editorial"];
-
-/** The asker's own words, set large, with the telling ones under a highlighter: what it is, who it is for, how it
- *  should feel. Neighbouring words with the same job share one stroke. Beneath, the answer can be refined in words. */
-function QueryLine({ words, busy, moved, phone, glass, onRefine, onClear, onShow }: { words: Word[]; busy: boolean; moved: { trait: string; from: number; to: number }[]; phone: boolean; glass: string; onRefine: (say: string) => void; onClear: () => void; onShow?: () => void }) {
-  const [say, setSay] = useState("");
-  // Runs of words that share a role, so a phrase is marked as one.
-  const runs: { role: Word["role"]; text: string }[] = [];
-  for (const w of words) { const last = runs[runs.length - 1]; if (last && last.role === w.role) last.text += ` ${w.text}`; else runs.push({ role: w.role, text: w.text }); }
-  return (
-    <div className={`query-line pointer-events-auto flex w-full max-w-[60rem] flex-col items-center gap-2 px-3 py-2.5 text-center md:px-8 md:py-5 ${glass}`}>
-      <p aria-live="polite" className="font-display font-bold leading-[1.18] tracking-[-0.03em]" style={{ fontSize: phone ? (words.length > 9 ? 17 : 21) : words.length > 14 ? 30 : words.length > 7 ? 40 : 52, opacity: busy ? 0.75 : 1 }}>
-        {runs.map((run, i) => <span key={i}>{i > 0 ? " " : ""}{run.role ? <mark className="query-mark" style={{ ["--mark" as string]: MARK[run.role] }}>{run.text}</mark> : run.text}</span>)}
-      </p>
-      <div className="flex max-w-full items-center gap-1.5 overflow-x-auto [scrollbar-width:none] md:flex-wrap md:justify-center [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-        {moved.slice(0, phone ? 3 : 5).map((mv) => <span key={mv.trait} className="bg-foreground px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.12em] text-background">{mv.to > mv.from ? "+" : "−"} {mv.trait}</span>)}
-        {CHANGES.map((c) => <button key={c} type="button" disabled={busy} onClick={() => onRefine(c)} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[12.5px] hover:bg-[color-mix(in_srgb,var(--foreground)_13%,transparent)] disabled:opacity-40">{c}</button>)}
-        <form onSubmit={(e) => { e.preventDefault(); if (say.trim()) { onRefine(say); setSay(""); } }} className="flex">
-          <label htmlFor="refine" className="sr-only">Refine the answer</label>
-          <input id="refine" value={say} onChange={(e) => setSay(e.target.value)} maxLength={120} autoComplete="off" placeholder="refine in your words" className="w-[10.5rem] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[16px] outline-none placeholder:text-foreground/45 md:text-[12.5px]" />
-        </form>
-        {onShow ? <button type="button" onClick={onShow} className="cursor-pointer px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/60 hover:text-foreground">Results</button> : null}
-        <button type="button" onClick={onClear} className="cursor-pointer px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/60 hover:text-foreground">Clear</button>
-      </div>
-    </div>
-  );
-}
-
 /** The answer, brought to the middle: the fitting styles as large stamps that land one after another over the
  *  quietened sheet. No coloured rules; how well each fits is said in small type under its name. */
 function Tray({ fits, byId, judging, phone, onOpen, onClose }: { fits: Map<string, Fit>; byId: Map<string, AtlasStyle>; judging: boolean; phone: boolean; onOpen: (id: string) => void; onClose: () => void }) {
   const hand = [...fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank).slice(0, phone ? 8 : 10);
   // Two rows on a desk, one swiping row on a phone, sized to the room between the sentence and the ask.
   const headH = Number.parseFloat(getComputedStyle(document.querySelector("[data-canvas]") ?? document.body).getPropertyValue("--head")) || 170;
-  const room = window.innerHeight - 65 - headH - 20 - 128 - 56;
+  const dockH = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dock-h")) || 170;
+  const room = window.innerHeight - 65 - headH - 16 - dockH - 12 - 60;
   const w = Math.max(96, Math.min(phone ? 200 : 184, Math.round((phone ? room - 30 : room / 2 - 40) / RATIO))), h = Math.round(w * RATIO);
   return (
-    <div className="viewer-veil absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-[color-mix(in_srgb,var(--background)_60%,transparent)] px-3 pb-32 backdrop-blur-md" style={{ paddingTop: "calc(var(--head, 170px) + 20px)" }} onClick={onClose}>
+    <div className="viewer-veil absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-[color-mix(in_srgb,var(--background)_60%,transparent)] px-3 backdrop-blur-md" style={{ paddingTop: "calc(var(--head, 60px) + 16px)", paddingBottom: "calc(var(--dock-h, 150px) + 12px)" }} onClick={onClose}>
       <ul onClick={(e) => e.stopPropagation()} className={phone ? "flex w-full snap-x snap-mandatory gap-4 overflow-x-auto px-8 py-4 [scrollbar-width:none]" : "flex max-w-[64rem] flex-wrap items-start justify-center gap-x-5 gap-y-5"}>
         {hand.map(([id, fit], i) => { const s = byId.get(id)!; return (
           <li key={id} className="tray-card shrink-0 snap-center" style={{ animationDelay: `${i * 55}ms`, ["--tilt" as string]: `${((i * 37) % 7) - 3}deg` }}>
@@ -420,6 +392,28 @@ function Tray({ fits, byId, judging, phone, onOpen, onClose }: { fits: Map<strin
   );
 }
 
+/** Each picture's own shape (width over height), read from its small copy, which is usually already in the cache. */
+function useShapes(pictures: string[]) {
+  const [shapes, setShapes] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let live = true;
+    for (const p of pictures) { const img = new Image(); img.onload = () => { if (live && img.naturalWidth > 0) setShapes((now) => (now[p] ? now : { ...now, [p]: img.naturalWidth / img.naturalHeight })); }; img.src = quick(p, 256); }
+    return () => { live = false; };
+  }, [pictures]);
+  return shapes;
+}
+
+/** Pictures of different shapes laid out like prints on a table: two justified rows, the first picture leading,
+ *  so the sizes differ as prints on a table do. Returns each picture's window size. */
+function arrange(ratios: number[], width: number, height: number, gap: number): { w: number; h: number; row: number }[] {
+  const rowH = (rs: number[]) => (width - gap * (rs.length - 1)) / rs.reduce((a, b) => a + b, 0);
+  if (ratios.length <= 2) { const h = Math.min(height, rowH(ratios)); return ratios.map((r) => ({ w: h * r, h, row: 0 })); }
+  // One picture leads, alone on its row, until there are so many that the second row would be slivers.
+  const best = ratios.length >= 6 ? 2 : 1;
+  const h1 = rowH(ratios.slice(0, best)), h2 = rowH(ratios.slice(best)), fit = Math.min(1, (height - gap) / (h1 + h2));
+  return ratios.map((r, i) => { const h = (i < best ? h1 : h2) * fit; return { w: h * r, h, row: i < best ? 0 : 1 }; });
+}
+
 /** A stamp opened: the entry's pictures at their own shape, the main one large, on a veil of the entry's ink.
  *  The picture is the way in (it is a link to the entry's page), as is the wide button under it. What the sheet
  *  already loaded is shown at once, soft, while the large picture arrives over it. */
@@ -428,7 +422,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
   const swipe = useRef<{ x: number } | null>(null);
   const pictures = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.thumbnail_url ? [style.thumbnail_url] : []), [style]);
   const [at, setAt] = useState(0);
-  const [shape, setShape] = useState<number | null>(null);
+  const shapes = useShapes(pictures);
   const main = pictures[at] ?? null, big = phone ? 750 : 1080;
   // A modal: focus moves in when it opens, stays in while it is open, and goes back where it was when it closes.
   useEffect(() => {
@@ -451,33 +445,40 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
   // The other pictures are fetched while the first is looked at, so stepping through them is instant.
   useEffect(() => { for (const p of pictures.slice(1, 4)) { const img = new Image(); img.src = quick(p, big); } }, [pictures, big]);
 
-  // The room for the picture: what is left of the screen after the words and the button; the picture keeps its own shape inside it.
-  const roomW = phone ? window.innerWidth - 32 : Math.min(window.innerWidth * 0.62, 1100), roomH = (window.innerHeight - 65) * (phone ? 0.46 : 0.62);
-  const ratio = shape ?? 1.5, w = Math.round(Math.min(roomW, roomH * ratio)), h = Math.round(w / ratio);
+  // Desk: every picture at once, as stamps of different sizes arranged like prints on a table. Phone: one at a time.
+  const gap = 18, roomW = phone ? window.innerWidth - 56 : Math.min(window.innerWidth * 0.66, 1040), roomH = (window.innerHeight - 65) * (phone ? 0.36 : 0.6);
+  const shown = phone ? (main ? [main] : []) : pictures;
+  const placed = arrange(shown.map((p) => shapes[p] ?? 1.5), roomW, roomH, gap + 28); // + the paper round each window
   return (
     <div ref={root} role="dialog" aria-modal="true" aria-label={style.name} className="viewer-veil absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 overflow-y-auto px-4 py-6 backdrop-blur-2xl backdrop-saturate-150" style={{ background: `color-mix(in srgb, ${style.ink ?? "#888"} 34%, color-mix(in srgb, var(--background) 78%, transparent))` }}
-      onClick={onClose} onPointerDown={(e) => { swipe.current = { x: e.clientX }; }} onPointerUp={(e) => { const d = swipe.current ? e.clientX - swipe.current.x : 0; swipe.current = null; if (Math.abs(d) > 70) { e.stopPropagation(); onTurn(d < 0 ? 1 : -1); } }}>
+      onClick={onClose} onPointerMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--lx", String(Math.round((e.clientX - r.left - r.width / 2) * 1.6))); e.currentTarget.style.setProperty("--ly", String(Math.round((e.clientY - r.top - r.height * 0.4) * 1.6))); }} onPointerDown={(e) => { swipe.current = { x: e.clientX }; }} onPointerUp={(e) => { const d = swipe.current ? e.clientX - swipe.current.x : 0; swipe.current = null; if (Math.abs(d) > 70) { e.stopPropagation(); onTurn(d < 0 ? 1 : -1); } }}>
       <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 z-10 cursor-pointer bg-background/70 p-2.5 backdrop-blur-md"><X size={18} /></button>
       <button type="button" onClick={(e) => { e.stopPropagation(); onTurn(-1); }} aria-label="Previous" className="absolute left-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer bg-background/70 p-3 backdrop-blur-md max-md:hidden"><ArrowLeft size={18} /></button>
       <button type="button" onClick={(e) => { e.stopPropagation(); onTurn(1); }} aria-label="Next" className="absolute right-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer bg-background/70 p-3 backdrop-blur-md max-md:hidden"><ArrowRight size={18} /></button>
 
-      {main ? (
-        <Link href={style.href} onClick={(e) => e.stopPropagation()} aria-label={`Open ${style.name}`} className="viewer-print group relative block shrink-0 bg-[#fbf9f4] p-2 shadow-[0_30px_70px_-24px_rgba(20,25,40,0.6)] md:p-3" style={{ width: w + (phone ? 16 : 24) }}>
-          {/* The small picture the sheet already has, stretched soft, holds the place while the large one loads over it. */}
-          <span className="relative block overflow-hidden" style={{ width: w, height: h, backgroundImage: `url("${quick(main, 256)}")`, backgroundSize: "cover", backgroundColor: style.ink ?? undefined }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img key={main} src={quick(main, big)} alt={style.name} decoding="async" draggable={false} onLoad={(e) => { const i = e.currentTarget; if (i.naturalWidth > 0) setShape(i.naturalWidth / i.naturalHeight); i.style.opacity = "1"; }} className="absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity duration-300" />
-          </span>
-          <span className="pointer-events-none absolute bottom-4 right-4 bg-foreground px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-background opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 max-md:hidden">Open</span>
-        </Link>
-      ) : null}
+      {/* The same stamps as on the sheet, grown: each is cut to its picture's own shape, leans to the pointer and takes
+          its light, and is a way into the entry. */}
+      <div onClick={(e) => e.stopPropagation()} className="lit-big flex shrink-0 flex-col items-center" style={{ gap }}>
+        {[0, 1].map((row) => (
+          <div key={row} className="flex items-end justify-center" style={{ gap }}>
+            {shown.map((p, i) => {
+              if (placed[i].row !== row) return null;
+              const lead = i === 0;
+              return (
+                <Link key={p} href={style.href} aria-label={`Open ${style.name}`} className="viewer-print tray-card block shrink-0 outline-none transition-[filter] focus-visible:brightness-105" style={{ animationDelay: `${i * 70}ms`, ["--tilt" as string]: `${lead ? -0.8 : ((i * 37) % 5) - 2}deg`, transform: `rotate(var(--tilt))` }}>
+                  <Stamp src={p} ink={style.ink} w={placed[i].w} h={placed[i].h} windowed label={lead ? style.name : undefined} fast={phone ? 750 : lead ? 1080 : 750} under={quick(p, 256)} lit={{ x: (i - (shown.length - 1) / 2) * 260, y: row * 260 - 80 }} />
+                </Link>
+              );
+            })}
+          </div>
+        ))}
+      </div>
 
-      {pictures.length > 1 ? (
-        <ul onClick={(e) => e.stopPropagation()} className="flex max-w-full shrink-0 gap-2 overflow-x-auto px-1 [scrollbar-width:none]">
+      {phone && pictures.length > 1 ? (
+        <ul onClick={(e) => e.stopPropagation()} className="flex max-w-full shrink-0 items-end gap-3 overflow-x-auto px-2 pb-2 pt-1 [scrollbar-width:none]">
           {pictures.map((p, i) => (
             <li key={p} className="shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <button type="button" onClick={() => { setShape(null); setAt(i); }} aria-label={`Picture ${i + 1} of ${pictures.length}`} aria-pressed={i === at} className="block cursor-pointer bg-[#fbf9f4] p-1 shadow-[0_6px_14px_-8px_rgba(20,25,40,0.6)]" style={{ opacity: i === at ? 1 : 0.62 }}><img src={quick(p, 128)} alt="" loading="lazy" className="block h-12 w-auto md:h-14" /></button>
+              <button type="button" onClick={() => setAt(i)} aria-label={`Picture ${i + 1} of ${pictures.length}`} aria-pressed={i === at} className="block cursor-pointer" style={{ opacity: i === at ? 1 : 0.65 }}><Stamp src={p} ink={style.ink} w={54} h={54} fast={128} /></button>
             </li>
           ))}
         </ul>
