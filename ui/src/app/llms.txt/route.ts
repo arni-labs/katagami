@@ -17,7 +17,8 @@ canonical prompt; do not substitute CSS blobs or stock photography.
 
 ## Read (no credentials)
 
-- Gallery: https://katagami.ai/ (languages), /palettes, /art-styles
+- Gallery: https://katagami.ai/ — one sheet carrying languages and art styles
+- One entity's page: https://katagami.ai/language/<id>, /art-styles/<id>, /palettes/<id>
 - One language's portable spec: https://katagami.ai/language/<id>/DESIGN.md
 - OpenAPI description of the read surface: https://katagami.ai/openapi.json
 

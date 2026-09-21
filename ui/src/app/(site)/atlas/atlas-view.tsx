@@ -16,6 +16,6 @@ export function AtlasView(props: { styles: AtlasStyle[]; families: Family[]; hol
     window.addEventListener("resize", read);
     return () => window.removeEventListener("resize", read);
   }, []);
-  if (phone === null) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
+  if (phone === null) return <div className="h-[calc(100dvh-var(--site-header))] w-full" aria-busy="true" />;
   return phone ? <PhoneAtlas styles={props.styles} families={props.families} holes={props.holes} sample={props.sample} /> : <AtlasMap {...props} />;
 }

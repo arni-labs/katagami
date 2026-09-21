@@ -4,6 +4,7 @@ import type { PaletteIndexItem } from "@/components/command-palette";
 import { listArtStyles, listDesignLanguages, listPaletteSystems, paletteCore, parseJson } from "@/lib/odata";
 import { featuredIds } from "@/lib/catalog";
 import { isShownToVisitorsRecord } from "@/lib/featured.mjs";
+import { NAV_LINKS } from "@/lib/nav";
 
 interface TokensLite {
   colors?: Record<string, string | undefined>;
@@ -81,28 +82,21 @@ export const buildSearchIndex = unstable_cache(
     // ignore
   }
 
-  for (const page of [
-    { name: "Gallery", href: "/" },
-    { name: "Palettes", href: "/palettes" },
-    { name: "Art Styles", href: "/art-styles" },
-    { name: "Studio", href: "/studio" },
-    { name: "Taxonomy", href: "/taxonomy" },
-    { name: "Model bake-off", href: "/model-bake-off" },
-    // Under Review is the owner's desk — not in the public search index
-    // (owner-gated page + OWNER_NAV_LINKS entry).
-    // Lineage + Compare hidden for now (see lib/nav.ts).
-  ]) {
+  // Search offers the pages the menu offers, read from the one list, so a link
+  // retired from the menu cannot keep a door open here. Owner sections are in
+  // OWNER_NAV_LINKS and deliberately stay out of the public index.
+  for (const page of NAV_LINKS) {
     items.push({
       id: page.href,
       kind: "page",
-      name: page.name,
+      name: page.label,
       href: page.href,
     });
   }
 
     return items;
   },
-  ["site-search-index-v3"],
+  ["site-search-index-v4"],
   { revalidate: 60 },
 );
 

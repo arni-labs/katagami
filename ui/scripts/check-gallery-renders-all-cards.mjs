@@ -5,7 +5,11 @@ function readProjectFile(path) {
   return readFileSync(resolve(path), "utf8");
 }
 
-const pageSource = readProjectFile("src/app/(site)/page.tsx");
+// The card gallery is no longer the front door — "/" is the sheet, and
+// "/gallery" redirects to it (next.config.ts). The page is still in the tree
+// and still under this contract: if it is ever offered again it must come back
+// whole, not as whatever was left after a year of nobody looking.
+const pageSource = readProjectFile("src/app/(site)/gallery/page.tsx");
 const infiniteGalleriesSource = readProjectFile(
   "src/components/infinite-galleries.tsx",
 );

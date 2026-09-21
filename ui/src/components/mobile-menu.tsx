@@ -13,11 +13,12 @@ import { LinkPending } from "@/components/link-pending";
 
 /**
  * Mobile "everything" menu — a slide-in drawer reachable from the header that
- * lists ALL top-level sections (the same as the desktop nav). It complements
- * the bottom tab bar (a 4-item quick-access subset), which it never replaces:
- * the bar stays for the thumb, the drawer covers the rest (Lineage, Compare,
- * Bake-off…). Shown below lg (mobile + tablet); at lg+ the full inline header
- * nav is shown instead, where all the links fit without crowding.
+ * lists ALL top-level sections (the same as the desktop nav), plus the owner's
+ * when the owner is signed in. Shown below lg (mobile + tablet); at lg+ the
+ * full inline header nav is shown instead, where all the links fit without
+ * crowding. There used to be a bottom tab bar beside it; once the public menu
+ * came down to three links the bar was the same three, sitting on top of the
+ * sheet's own controls, so it went.
  */
 export function MobileMenu() {
   const links = useNavLinks();

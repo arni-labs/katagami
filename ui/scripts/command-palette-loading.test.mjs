@@ -39,7 +39,7 @@ test("the site renders its gallery even when catalog and identity reads never re
   const blocked = () => { reads++; return new Promise(() => {}); };
   const placeholder = () => null;
   const components = {
-    "header-nav": "HeaderNav", "mobile-nav": "MobileNav", "mobile-menu": "MobileMenu",
+    "header-nav": "HeaderNav", "mobile-menu": "MobileMenu",
     "theme-toggle": "ThemeToggle", "user-menu": "UserMenu", "scroll-reveal": "ScrollReveal",
   };
   const stubs = {

@@ -234,9 +234,9 @@ export function HalftoneField({ styles, families, holes }: { styles: AtlasStyle[
     return { x: ring.n === 1 ? 0 : Math.cos(a) * ring.at * R, y: ring.n === 1 ? 0 : Math.sin(a) * ring.at * R, h: Math.round(ring.h * (R / 184)) };
   })), [R]);
 
-  if (!screen) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
+  if (!screen) return <div className="h-[calc(100dvh-var(--site-header))] w-full" aria-busy="true" />;
   return (
-    <div ref={box} className="relative h-[calc(100dvh-65px)] w-full select-none overflow-hidden">
+    <div ref={box} className="relative h-[calc(100dvh-var(--site-header))] w-full select-none overflow-hidden">
       <h1 className="sr-only">Explore the library</h1>
       <canvas ref={canvas} aria-hidden className="absolute inset-0 h-full w-full" style={{ width: size.w, height: size.h }} />
       <div role="application" aria-label="The field. Arrow keys move the lens; Enter opens the nearest style." tabIndex={0} onKeyDown={onKey} className="absolute inset-0 touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)]" onPointerMove={onMove} onPointerDown={onDown} onPointerUp={() => { dragging.current = false; }} onPointerCancel={() => { dragging.current = false; }} style={{ cursor: locked ? "default" : "none" }} />

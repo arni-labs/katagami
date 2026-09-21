@@ -138,9 +138,9 @@ export function HalftoneRiver({ styles, families }: { styles: AtlasStyle[]; fami
 
   const open = openId ? byId.get(openId) ?? null : null;
 
-  if (!screen) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
+  if (!screen) return <div className="h-[calc(100dvh-var(--site-header))] w-full" aria-busy="true" />;
   return (
-    <div className="relative h-[calc(100dvh-65px)] w-full overflow-hidden">
+    <div className="relative h-[calc(100dvh-var(--site-header))] w-full overflow-hidden">
       <h1 className="sr-only">Explore the library</h1>
       <div ref={scroller} onScroll={ride} className="h-full w-full overflow-y-auto overflow-x-hidden" style={{ overscrollBehavior: "contain" }}
         onPointerMove={(e) => { if (e.pointerType !== "mouse" || !scroller.current) return; const r = scroller.current.getBoundingClientRect(); look(e.clientX - r.left, e.clientY - r.top + scroller.current.scrollTop); }}>

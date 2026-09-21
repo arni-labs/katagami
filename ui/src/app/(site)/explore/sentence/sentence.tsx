@@ -60,9 +60,9 @@ export function Sentence({ styles, families }: { styles: AtlasStyle[]; families:
   }, [styles, ask.fits, screen]);
 
   const top = shown ? byId.get(shown) ?? null : null, topFit = shown ? ask.fits?.get(shown) ?? null : null;
-  if (!screen) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
+  if (!screen) return <div className="h-[calc(100dvh-var(--site-header))] w-full" aria-busy="true" />;
   return (
-    <div className="relative min-h-[calc(100dvh-65px)] w-full overflow-hidden pb-28">
+    <div className="relative min-h-[calc(100dvh-var(--site-header))] w-full overflow-hidden pb-28">
       <canvas ref={field} aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" />
       <div className="relative mx-auto max-w-[1180px] px-5 pt-8 md:px-10 md:pt-12">
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Explore · <span className="text-foreground">{styles.length}</span> styles</p>

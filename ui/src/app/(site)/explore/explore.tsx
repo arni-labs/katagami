@@ -224,7 +224,7 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
 
   const errorLine = state === "error" ? <p role="alert" className="text-[13px] text-[var(--beni)]">{error}</p> : null;
 
-  if (!measured) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
+  if (!measured) return <div className="h-[calc(100dvh-var(--site-header))] w-full" aria-busy="true" />;
 
   // ---- phone: a list under the thumb, the map one tap away ---------------------
   if (phone) {
@@ -235,7 +235,7 @@ export function Explore({ styles, families, holes, sample }: { styles: AtlasStyl
   const wide = screen === "wide";
   const width = wide ? 384 : 336;
   return (
-    <div className="relative h-[calc(100dvh-65px)] w-full overflow-hidden">
+    <div className="relative h-[calc(100dvh-var(--site-header))] w-full overflow-hidden">
       <AtlasMap key={screen} styles={styles} families={families} holes={holes} unplaced={0} sample={sample} host={{ ownChrome: false, lit, accent, apiRef: api, onFocus: setFocusId, fill: true, insets: { top: 32, right: focusId ? 340 : 40, bottom: 32, left: width + 48 } }} />
       <aside aria-label="Ask" className="absolute left-5 top-5 z-10 flex max-h-[calc(100%-40px)] flex-col gap-3 overflow-y-auto bg-background/95 p-4 shadow-[var(--shadow-card)]" style={{ width, overscrollBehavior: "contain" }}>
         <h1 className="font-display text-[19px] font-bold leading-tight tracking-[-0.02em]">What are you <Marker color="yuzu">making</Marker>?</h1>

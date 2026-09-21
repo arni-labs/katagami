@@ -262,9 +262,8 @@ if [ "$seed_known_break" = 1 ]; then
   echo "    seed did not finish Publish (SubmitForReview 409; recorded platform break)"
 fi
 echo "    Gallery     http://localhost:$UI_PORT/"
-echo "    Palettes    http://localhost:$UI_PORT/palettes"
-echo "    Art Styles  http://localhost:$UI_PORT/art-styles"
-echo "    Studio      http://localhost:$UI_PORT/studio"
+echo "    Bake-off    http://localhost:$UI_PORT/model-bake-off"
+echo "    MCP         http://localhost:$UI_PORT/connect"
 echo "    env         $STACK_ENV"
 echo "    (first hit on each route compiles for a few seconds)"
 echo "    stop with:  PORT=$PORT UI_PORT=$UI_PORT bash scripts/run-local.sh --stop"

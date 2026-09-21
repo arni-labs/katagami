@@ -1,6 +1,5 @@
 // The canonical top-level navigation. One source of truth so the desktop
 // header, the mobile menu drawer, and the search index never drift apart.
-// (The bottom tab bar on mobile is a deliberately shorter quick-access subset.)
 export interface NavLink {
   href: string;
   label: string;
@@ -9,17 +8,15 @@ export interface NavLink {
   owner?: boolean;
 }
 
+// Three doors, and the sheet at "/" is the library itself — the old index
+// pages (Ask, Atlas, Palettes, Art Styles, Studio, the card gallery) are each
+// a partial view of what the sheet already shows, so they redirect to it
+// instead of competing with it. Their code is still in the tree; see the
+// retired-route list in next.config.ts.
 export const NAV_LINKS: NavLink[] = [
   { href: "/", label: "Gallery" },
-  { href: "/ask", label: "Ask" },
-  { href: "/atlas", label: "Atlas" },
-  { href: "/palettes", label: "Palettes" },
-  { href: "/art-styles", label: "Art Styles" },
-  { href: "/studio", label: "Studio" },
   { href: "/model-bake-off", label: "Bake-off" },
   { href: "/connect", label: "MCP" },
-  // Lineage + Compare are hidden from the menu for now (routes still work via
-  // direct URL); re-add here when they're ready to surface again.
 ];
 
 // Owner-only sections: appended to the header/mobile nav after the

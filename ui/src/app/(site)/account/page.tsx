@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, LogOut, Palette } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 import { getUser } from "@/lib/user-auth";
 import { isOwner } from "@/lib/owner";
 import {
@@ -184,26 +184,16 @@ export default async function AccountPage() {
                       {m.rating > 0 ? ` · rated ${m.rating}/5` : " · unrated"}
                     </p>
                   </div>
-                  <Link
-                    href="/studio"
-                    className="shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-[color-mix(in_oklch,var(--teal)_72%,var(--foreground))] transition-colors hover:text-foreground"
-                  >
-                    open in studio →
-                  </Link>
                 </article>
               ))}
             </div>
           ) : (
-            <div className="mt-5 space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Nothing saved yet. Mix a language, a palette, and an art style —
-                then save it here under your name.
-              </p>
-              <Link href="/studio" className={KX_BTN_PAPER}>
-                <Palette className="h-3.5 w-3.5" aria-hidden />
-                open the studio
-              </Link>
-            </div>
+            // The studio made these, and it is not open at the moment, so
+            // there is nowhere to send someone with none saved.
+            <p className="mt-5 text-sm text-muted-foreground">
+              Nothing saved here. Mixes you made in the studio would be listed
+              under your name.
+            </p>
           )}
         </StickyNote>
       </section>
