@@ -36,10 +36,16 @@ function retryThenHide(e: React.SyntheticEvent<HTMLImageElement>) {
 const blurOf = (w: number) => Math.max(1.4, w / 50);
 const dropOf = (w: number) => Math.max(1.2, w / 48);
 const padOf = (w: number) => Math.ceil(blurOf(w) * 3 + dropOf(w) + 2);
+/** Ordinary paper, and the slightly greyer paper a place the library has not filled yet is printed on. */
+const TONE = "%23fbfaf7", TONE_SOON = "%23f3f1ec";
+/** Too small for holes to read as holes: below this a stamp is a plain tile of ink and picture, with no paper. */
+export const TILE = 26;
+const nameOf = (w: number, h: number, flat: boolean, tone: string) => `--paper-${w}x${h}${flat ? "f" : ""}${tone.replace(/\W/g, "")}`;
 const papers = new Map<string, string>();
+const drawn = new Set<string>(); // the papers whose bitmap has arrived, as opposed to still being the SVG
 /** Returns `var(--paper-…)`; the variable holds the SVG at first and the bitmap once it is ready. */
 function paper(w: number, h: number, flat: boolean, tone: string): string {
-  const key = `--paper-${w}x${h}${flat ? "f" : ""}${tone.replace(/\W/g, "")}`, had = papers.get(key);
+  const key = nameOf(w, h, flat, tone), had = papers.get(key);
   if (had) return had;
   const pitch = Math.max(5.5, Math.min(11, w / 13));
   const side = (len: number) => { const n = Math.max(5, Math.round(len / pitch)); return { n, step: len / n }; };
@@ -84,10 +90,21 @@ function paper(w: number, h: number, flat: boolean, tone: string): string {
       g.fillStyle = g.createPattern(grain, "repeat") ?? "transparent";
       g.fillRect(0, 0, c.width, c.height);
     }
-    c.toBlob((blob) => { if (blob) root.style.setProperty(key, `url("${URL.createObjectURL(blob)}")`); });
+    c.toBlob((blob) => { if (!blob) return; root.style.setProperty(key, `url("${URL.createObjectURL(blob)}")`); drawn.add(key); });
   };
   img.src = data;
   return ref;
+}
+
+/** Draw the paper stamps of this size will want, and say whether its bitmap is there yet.
+ *  A canvas that changes the size of every stamp before the bitmap has arrived puts the SVG on screen instead, and
+ *  an SVG with a blur in it is rasterised afresh for every stamp that uses it — which is the lag the bitmap exists
+ *  to avoid, now spread over a whole sheet at once. So a canvas that is about to change size asks here first and
+ *  waits, carrying the difference however it likes until the answer is yes. */
+export function paperDrawn(w: number, h: number) {
+  if (w < TILE) return true; // nothing is drawn at that size anyway
+  paper(w, h, false, TONE); paper(w, h, false, TONE_SOON);
+  return drawn.has(nameOf(w, h, false, TONE)) && drawn.has(nameOf(w, h, false, TONE_SOON));
 }
 
 /** A stamp's paper margin and the height of its name band. The margin stops growing at 14px and the band at 30:
@@ -99,7 +116,7 @@ export function frameOf(w: number, h: number, label: boolean) {
 /** A perforated stamp carrying a style's picture: paper with a bitten edge, an even margin, the picture in a window with a hairline of shade inside it, and (when there is room) the name set small and spaced along the foot. */
 export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = false, veil = 0, lit, flat = false, fast, under, onShape, windowed = false, eager = false, spare }: { src: string | null; ink: string | null; w: number; h: number; label?: string; value?: string; sizes?: string; soon?: boolean; /** 0..1: how much of the picture is hidden under the style's ink (a stamp seen from far away). `--veil` on an ancestor scales it. */ veil?: number; /** Where the stamp's centre is, in the same pixel space as the light (--lx, --ly): makes it a light-reactive card. */ lit?: { x: number; y: number }; /** No shadow: a stamp still on its sheet, touching its neighbours. */ flat?: boolean; /** Draw the picture as a plain <img> at this optimizer width. */ fast?: 128 | 256 | 384 | 750 | 1080; /** A smaller picture already in hand, shown soft until the large one arrives. */ under?: string; /** Told the picture's own shape (width over height) once it has loaded. */ onShape?: (ratio: number) => void; /** `w` and `h` are the picture window's size, and the paper is added round it: for a stamp cut to fit a picture's own shape. */ windowed?: boolean; /** Fetch this one at once, ahead of the rest. */ eager?: boolean; /** A second picture to draw if the first one is gone from the store. */ spare?: string | null }) {
   // Too small for holes to read as holes: a plain tile of ink and picture.
-  if (w < 26) return (
+  if (w < TILE) return (
     <span className="relative block overflow-hidden [&_img]:object-cover" style={{ width: w, height: h, background: ink ?? "var(--muted)" }}>
       {src ? <GalleryImage src={src} alt="" sizes={sizes} className="object-cover" /> : null}
       {veil > 0 ? <span aria-hidden className="absolute inset-0" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))` }} /> : null}
@@ -109,7 +126,7 @@ export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = fa
   if (windowed) { w = Math.round(w) + edge * 2; h = Math.round(h) + edge * 2 + foot; }
   return (
     <span className={`kcard kstamp relative block ${lit ? "lit" : ""}`} style={{ ["--bite" as string]: `${edge}px`, ...(lit ? { ["--cx" as string]: lit.x, ["--cy" as string]: lit.y } : null), width: w, height: h }}>
-      <span aria-hidden className="stamp-paper absolute" style={{ inset: -padOf(w), backgroundImage: paper(w, h, flat, soon ? "%23f3f1ec" : "%23fbfaf7") }} />
+      <span aria-hidden className="stamp-paper absolute" style={{ inset: -padOf(w), backgroundImage: paper(w, h, flat, soon ? TONE_SOON : TONE) }} />
       <span className="stamp-window absolute overflow-hidden [&_img]:object-cover" style={{ left: edge, right: edge, top: edge, bottom: edge + foot, background: soon ? undefined : ink ?? "var(--muted)", ...(under ? { backgroundImage: `url("${under}")`, backgroundSize: "cover", backgroundPosition: "center" } : null) }}>
         {veil > 0 && !soon ? <span aria-hidden className="absolute inset-0 z-[1]" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))`, transition: "opacity 200ms" }} /> : null}
         {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : src && fast ? (
