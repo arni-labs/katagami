@@ -1006,6 +1006,8 @@ function atlasPictures(kind: "language" | "art_style", f: Record<string, unknown
 export async function libraryAtlas(tier: Tier) {
   const kinds = ["language", "art_style"] as const;
   const rowSets = await Promise.all(kinds.map((k) => visibleRows(k, tier)));
+  // How much of the library a visitor is not being shown, so a view can say so rather than look complete.
+  const whole = tier === "full" ? null : (await Promise.all(kinds.map((k) => visibleRows(k, "full")))).reduce((n, rs) => n + rs.length, 0);
   const rows = kinds.flatMap((kind, i) => rowSets[i].map((row) => ({ kind, row })));
 
   // One run's places only: the version most rows carry.
@@ -1097,7 +1099,7 @@ export async function libraryAtlas(tier: Tier) {
   // They belong to one atlas run, so they are drawn only beside that run's places.
   const holes: AtlasHole[] = atlasHoles.atlas_version === version ? atlasHoles.holes.map((h) => ({ id: h.id, name: h.name, description: h.description, x: h.x, y: h.y })) : [];
 
-  return { tier, version, styles, families, holes, unplaced: rows.length - placed.length };
+  return { tier, version, styles, families, holes, whole, unplaced: rows.length - placed.length };
 }
 
 // --- check a page against a language -----------------------------------------

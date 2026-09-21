@@ -59,7 +59,9 @@ type CellProps = { eager: boolean; c: number; r: number; cell: Cell; w: number; 
 const CellView = memo(function CellView({ eager, c, r, cell, w, h, stepX, stepY, dim, hold, onOpen }: CellProps) {
   if (!cell) return null;
   const x = c * stepX, y = r * stepY, key = `${c},${r}`;
-  if (cell.kind === "soon") return <span ref={(el) => hold(key, el)} title={`${cell.h.name}: coming soon`} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.25 : 0.8 }}><Card src={null} ink={null} w={w} h={h} label={w > 66 ? "Soon" : undefined} soon /></span>;
+  // A gap in the library is a place with a name: a sheet of cards all reading "Soon" looks like a fault rather
+  // than like work still to come.
+  if (cell.kind === "soon") return <span ref={(el) => hold(key, el)} title={`${cell.h.name} — ${cell.h.description}`} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.25 : 0.8 }}><Card src={null} ink={null} w={w} h={h} label={w > 66 ? cell.h.name : undefined} value={w > 120 ? "soon" : undefined} soon /></span>;
   const s = cell.s;
   return (
     <button ref={(el) => hold(key, el)} type="button" onPointerEnter={(e) => { if (e.pointerType === "mouse") warm(s.picture, 1080); }} onPointerDown={() => warm(s.picture, w < 60 ? 750 : window.innerWidth < 768 ? 750 : 1080)} onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, }}>
@@ -80,7 +82,7 @@ const Sheet = memo(function Sheet({ eager, hold, cells, w, h, stepX, stepY, lit,
   );
 });
 
-export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[] }) {
+export function Mosaic({ styles: all, families, holes, whole }: { styles: AtlasStyle[]; families: Family[]; holes: AtlasHole[]; /** How many styles the whole library holds, when this sheet is only part of it. */ whole: number | null }) {
   const screen = useScreen();
   const phone = screen === "phone";
   const box = useRef<HTMLDivElement | null>(null);
@@ -471,7 +473,6 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
             ))}
           </div>
           {topFit && !tray ? <button type="button" onClick={() => setTray(true)} className={`shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 text-[12.5px] ${glass}`}>Results</button> : null}
-          <div role="group" aria-label="Card" className={`flex shrink-0 ${glass}`}>{SKINS.map((s) => <button key={s} type="button" aria-pressed={skin === s} onClick={() => pickSkin(s)} className={`shrink-0 cursor-pointer whitespace-nowrap px-2.5 py-1.5 text-[12.5px] ${skin === s ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"}`}>{SKIN_NAME[s]}</button>)}</div>
           <div role="group" aria-label="Sort the sheet" className={`flex shrink-0 ${glass}`}>{tab("colour", "By colour")}{tab("family", "By family")}{tab("fit", "By fit", !topFit)}</div>
         </div>
       </div>
@@ -480,6 +481,17 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
         <button type="button" onClick={() => zoomTo(zoom - 1)} disabled={zoom === 0} aria-label="Further" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">−</button>
       </div>
 
+      {/* The sheet a visitor is given is part of the library, and a wall that does not say so reads as the whole
+          of it. One slip in the sheet's own language, gone the moment there is something else to read. */}
+      {whole !== null && !open && !ask.answer && !pair ? (
+        <div className="pointer-events-none absolute inset-x-0 z-[36] flex justify-center px-3" style={{ bottom: "calc(var(--dock-h, 150px) + 10px)" }}>
+          <Link href="/signin" className="kcard pointer-events-auto flex items-center gap-2.5 bg-background/92 px-3.5 py-2 backdrop-blur-xl" style={{ ["--bite" as string]: "6px" }}>
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/55">{styles.length} of {whole}</span>
+            <span aria-hidden className="h-3 w-px bg-foreground/15" />
+            <span className="text-[12.5px] font-semibold">Sign in for the rest of the library</span>
+          </Link>
+        </div>
+      ) : null}
       {style && open ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => { setOpen(null); setVerdict(null); }} verdict={verdict && verdict.id === style.id ? verdict : null} pinned={pins.includes(style.id)} onPin={() => (pins.includes(style.id) ? unpin(style.id) : pin([style.id]))} /> : null}
       {axes && (mode === "trait" || mode === "plot") ? (
         <p className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${glass}`} style={{ top: "calc(var(--head, 60px) + 14px)" }}>
@@ -564,6 +576,7 @@ function Tray({ fits, byId, judging, phone, want, onOpen, onClose }: { want: Rec
 /** Each picture's own shape (width over height), read from its small copy, which is usually already in the cache. */
 function useShapes(pictures: string[], spare: string | null) {
   const [shapes, setShapes] = useState<Record<string, number>>({});
+  const [dead, setDead] = useState<Set<string>>(() => new Set());
   useEffect(() => {
     let live = true;
     // A picture whose file is gone is measured from the spare the card will actually draw, or the whole entry is
@@ -571,12 +584,16 @@ function useShapes(pictures: string[], spare: string | null) {
     for (const p of pictures) {
       const img = new Image();
       img.onload = () => { if (live && img.naturalWidth > 0) setShapes((now) => (now[p] ? now : { ...now, [p]: img.naturalWidth / img.naturalHeight })); };
-      if (spare) img.onerror = () => { if (live && img.src !== quick(spare, NEAR)) img.src = quick(spare, NEAR); };
+      img.onerror = () => {
+        if (!live) return;
+        setDead((now) => (now.has(p) ? now : new Set(now).add(p)));
+        if (spare && img.src !== quick(spare, NEAR)) img.src = quick(spare, NEAR);
+      };
       img.src = quick(p, NEAR);
     }
     return () => { live = false; };
   }, [pictures, spare]);
-  return shapes;
+  return { shapes, dead };
 }
 
 // Prints dropped on a table: where each one lands (its centre, as a share of the table), how wide it is (as a share
@@ -612,9 +629,17 @@ function scatter(ratios: number[], width: number, height: number) {
 function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, pinned, onPin }: { style: AtlasStyle; family: Family | null; fit: Fit | null; judging: boolean; phone: boolean; onTurn: (by: number) => void; onClose: () => void; verdict: { q: string; suits: number; helps: string[]; hurts: string[] } | null; pinned: boolean; onPin: () => void }) {
   const root = useRef<HTMLDivElement | null>(null);
   const swipe = useRef<{ x: number } | null>(null);
-  const pictures = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.picture ? [style.picture] : []), [style]);
+  const held = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.picture ? [style.picture] : []), [style]);
   const [at, setAt] = useState(0);
-  const shapes = useShapes(pictures, style.thumbnail_url);
+  const { shapes, dead } = useShapes(held, style.thumbnail_url);
+  // A picture whose file is gone draws the entry's thumbnail instead, so an entry whose references are all gone was
+  // four cards of the same picture. Only the pictures that are really there are shown, and the thumbnail stands in
+  // once for all of them rather than once each.
+  const pictures = useMemo(() => {
+    const alive = held.filter((p) => !dead.has(p));
+    if (alive.length > 0) return alive;
+    return style.thumbnail_url ? [style.thumbnail_url] : held.slice(0, 1);
+  }, [held, dead, style.thumbnail_url]);
   // The thing people come for: the art style's prompt, or the language's DESIGN.md, on the clipboard in one press.
   const [copied, setCopied] = useState<"" | "copying" | "done" | "failed">("");
   const copy = async () => {
@@ -627,7 +652,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
     } catch { setCopied("failed"); }
     window.setTimeout(() => setCopied(""), 2200);
   };
-  const main = pictures[at] ?? null, big = phone ? 750 : 1080;
+  const main = pictures[Math.min(at, pictures.length - 1)] ?? null, big = phone ? 750 : 1080;
   // A modal: focus moves in when it opens, stays in while it is open, and goes back where it was when it closes.
   useEffect(() => {
     const before = document.activeElement as HTMLElement | null;

@@ -30,8 +30,12 @@ function retryThenHide(e: React.SyntheticEvent<HTMLImageElement>) {
 // a background image, so a sheet of hundreds shares one picture per size: no mask, no filter and no shadow to
 // composite per stamp. An SVG with a blur in it is drawn afresh wherever it is used, which shows as lag when
 // panning, so each size is rendered once to a bitmap and every stamp of that size is switched to it through one
-// CSS variable on the root (no re-render). The drawing is larger than the stamp by PAD all round, to hold the shadow.
-const PAD = 12;
+// CSS variable on the root (no re-render). The drawing is larger than the stamp all round, to hold the shadow —
+// by enough for it, since the shadow grows with the card and a fixed margin cut a large one off in a straight line
+// instead of letting it fade. A gaussian blur is spent by about three times its deviation.
+const blurOf = (w: number) => Math.max(1.4, w / 50);
+const dropOf = (w: number) => Math.max(1.2, w / 48);
+const padOf = (w: number) => Math.ceil(blurOf(w) * 3 + dropOf(w) + 2);
 const papers = new Map<string, string>();
 /** Returns `var(--paper-…)`; the variable holds the SVG at first and the bitmap once it is ready. */
 function paper(w: number, h: number, flat: boolean, tone: string): string {
@@ -52,7 +56,7 @@ function paper(w: number, h: number, flat: boolean, tone: string): string {
   d += `H${f(r)}${arc(0, h - r)}`;
   for (let i = left.n - 1; i >= 1; i--) d += `V${f(i * left.step + r)}${arc(0, i * left.step - r)}`;
   d += `V${f(r)}${arc(r, 0)}Z`;
-  const W = w + PAD * 2, H = h + PAD * 2, blur = Math.max(1.4, w / 50), drop = Math.max(1.2, w / 48);
+  const PAD = padOf(w), W = w + PAD * 2, H = h + PAD * 2, blur = blurOf(w), drop = dropOf(w);
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${W}' height='${H}' viewBox='${-PAD} ${-PAD} ${W} ${H}'>` +
     (flat ? "" : `<filter id='s' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='${blur.toFixed(1)}'/></filter><path d='${d}' transform='translate(0 ${drop.toFixed(1)})' fill='rgb(24,28,40)' opacity='.26' filter='url(%23s)'/>`) +
     `<path d='${d}' fill='${tone}'/></svg>`;
@@ -105,7 +109,7 @@ export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = fa
   if (windowed) { w = Math.round(w) + edge * 2; h = Math.round(h) + edge * 2 + foot; }
   return (
     <span className={`kcard kstamp relative block ${lit ? "lit" : ""}`} style={{ ["--bite" as string]: `${edge}px`, ...(lit ? { ["--cx" as string]: lit.x, ["--cy" as string]: lit.y } : null), width: w, height: h }}>
-      <span aria-hidden className="stamp-paper absolute" style={{ inset: -PAD, backgroundImage: paper(w, h, flat, soon ? "%23f3f1ec" : "%23fbfaf7") }} />
+      <span aria-hidden className="stamp-paper absolute" style={{ inset: -padOf(w), backgroundImage: paper(w, h, flat, soon ? "%23f3f1ec" : "%23fbfaf7") }} />
       <span className="stamp-window absolute overflow-hidden [&_img]:object-cover" style={{ left: edge, right: edge, top: edge, bottom: edge + foot, background: soon ? undefined : ink ?? "var(--muted)", ...(under ? { backgroundImage: `url("${under}")`, backgroundSize: "cover", backgroundPosition: "center" } : null) }}>
         {veil > 0 && !soon ? <span aria-hidden className="absolute inset-0 z-[1]" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))`, transition: "opacity 200ms" }} /> : null}
         {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : src && fast ? (
