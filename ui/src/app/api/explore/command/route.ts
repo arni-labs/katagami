@@ -25,6 +25,7 @@ export const maxDuration = 30;
  *   zoom     closer / further
  *   skin     change what the cards are made of
  *   reset    clear everything
+ *   cannot   something this screen cannot do: the page says so, and searches for it instead
  *   arrange  order the wall along a measured trait ("dark to light", "quietest to loudest", "by how 70s it feels")
  *   plot     two traits against each other, as the wall's two axes
  *   narrow   keep only those with a trait ("only the dark ones"), of the answer on screen or of the whole wall
@@ -49,6 +50,7 @@ const Q = {
   closer: "They want to zoom in, see things bigger or in more detail.",
   further: "They ask to zoom out, make things smaller, or fit more on the screen at once.",
   reset: "They want to clear, reset or start over.",
+  cannot: "They ask for something a browsing screen cannot do at all, such as emailing, buying, downloading, generating new images or code, or talking about unrelated things.",
   question: "They are describing something they are making, or a quality they want, and are asking the library for styles that fit it.",
   ...Object.fromEntries(HUES.map((h) => [`hue_${h}`, `They want to see styles that are mainly ${h === "neutral" ? "grey, black and white, or neutral" : h} in colour, as a matter of browsing by colour.`])),
   ...Object.fromEntries(Object.entries(SKINS).map(([k, says]) => [`skin_${k}`, `They want the cards on screen to look like ${says}.`])),
@@ -97,7 +99,7 @@ export async function GET(request: Request) {
 
   const raw = (k: string) => scores[k] ?? 0, sure = 0.62;
   // Operating the screen has to be meant more than asking it something: a described product is never a zoom or a sort.
-  const at = (k: string) => (k === "question" || k === "refine" || k === "compare" || k === "like" || k === "judge" || k === "reverse" || k === "narrow" || k === "arrange" || k === "plot" || k === "pin" || k.startsWith("skin_") || k.startsWith("trait_") || raw(k) > raw("question") ? raw(k) : 0);
+  const at = (k: string) => (k === "question" || k === "refine" || k === "compare" || k === "like" || k === "judge" || k === "reverse" || k === "cannot" || k === "narrow" || k === "arrange" || k === "plot" || k === "pin" || k.startsWith("skin_") || k.startsWith("trait_") || raw(k) > raw("question") ? raw(k) : 0);
   const best = (prefix: string) => Object.keys(Q).filter((k) => k.startsWith(prefix)).sort((a, b) => at(b) - at(a))[0];
   // A phrase shaped like an ordering names its quality loosely ("dark to light"); take the best guess then.
   const loose = /\b\w+\s+to\s+\w+\b|\bby how\b|\b(sort|order|arrange)/i.test(q);
@@ -140,6 +142,7 @@ export async function GET(request: Request) {
     // The ones that produce an answer, at most one, and only when the screen was not simply being operated.
     if (named.length >= 2 && at("compare") >= 0.5) actions.push({ do: "compare", ids: named.map((n) => n.id), names: named.map((n) => n.name) });
     else if (named.length >= 1 && at("like") >= 0.5) actions.push({ do: "like", id: named[0].id, name: named[0].name });
+    else if (actions.length === 0 && raw("cannot") >= 0.75 && raw("cannot") > raw("question")) actions.push({ do: "cannot", q });
     else if (actions.length === 0) actions.push(hasAnswer && at("refine") >= sure && at("refine") > at("question") ? { do: "refine", say: q } : { do: "ask", q });
   }
   return NextResponse.json({ q, tier, actions, named, timings_ms: { jev: Date.now() - started }, ...(error ? { error } : {}) }, { headers: { "Cache-Control": "no-store" } });

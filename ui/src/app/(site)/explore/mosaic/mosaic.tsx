@@ -413,7 +413,8 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
       else if (a.do === "pin") { const ids = openId ? [openId] : ranked.slice(0, Number(a.n) || 3); if (ids.length > 0) { pin(ids); said.push(`Pinned ${ids.length}`); } else said.push("Nothing to pin yet"); }
       else if (a.do === "judge") { setVerdict({ id: String(a.id), q, suits: Number(a.suits), helps: (a.helps as string[]) ?? [], hurts: (a.hurts as string[]) ?? [] }); said.push("Judged"); }
       else if (a.do === "refine") { void ask.refine(String(a.say), nextKinds); said.push("Refined"); }
-      else { setPair(null); setHue(""); void ask.ask(q, nextKinds); }
+      else if (a.do === "cannot") { said.push("Can't do that here"); said.push("Searched the library for it instead"); setPair(null); setHue(""); void ask.ask(q, nextKinds); }
+      else { setPair(null); setHue(""); void ask.ask(q, nextKinds); said.push("Read as a search"); }
     }
     setDid(said);
     if (said.length > 0 && !actions.some((a) => ["ask", "refine", "like"].includes(a.do))) ask.setQuery("");
@@ -473,7 +474,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
         </aside>
       ) : null}
       {pair ? <Compare ids={pair} byId={byAny} familyOf={familyOf} phone={phone} onOpen={(id) => { setPair(null); goTo(id); }} onClose={() => setPair(null)} /> : null}
-      {tray && ask.fits && !open && !pair ? <Tray fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
+      {tray && ask.fits && !open && !pair ? <Tray want={ask.answer?.want ?? null} fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
       <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet onSubmit={command} note={did} onUndo={canUndo ? undo : undefined} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["only the dark ones", "compare the top two", "pin these three", "quietest to loudest"] : ["a calm booking app for an island ferry", "dark to light", "playful against dense", "only art styles, by family"]} />
     </div>
     </SkinContext.Provider>
@@ -505,7 +506,7 @@ function Compare({ ids, byId, familyOf, phone, onOpen, onClose }: { ids: string[
 
 /** The answer, brought to the middle: the fitting styles as large stamps that land one after another over the
  *  quietened sheet. No coloured rules; how well each fits is said in small type under its name. */
-function Tray({ fits, byId, judging, phone, onOpen, onClose }: { fits: Map<string, Fit>; byId: Map<string, AtlasStyle>; judging: boolean; phone: boolean; onOpen: (id: string) => void; onClose: () => void }) {
+function Tray({ fits, byId, judging, phone, want, onOpen, onClose }: { want: Record<string, number> | null; fits: Map<string, Fit>; byId: Map<string, AtlasStyle>; judging: boolean; phone: boolean; onOpen: (id: string) => void; onClose: () => void }) {
   const hand = [...fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank).slice(0, phone ? 8 : 10);
   // Two rows on a desk, one swiping row on a phone, sized to the room between the sentence and the ask.
   const headH = Number.parseFloat(getComputedStyle(document.querySelector("[data-canvas]") ?? document.body).getPropertyValue("--head")) || 170;
@@ -520,6 +521,8 @@ function Tray({ fits, byId, judging, phone, onOpen, onClose }: { fits: Map<strin
             <button type="button" onClick={() => onOpen(id)} aria-label={s.name} className="block cursor-pointer text-center">
               <Card src={s.picture} ink={s.ink} w={w} h={h} label={s.name} code={codeOf(s.id)} fast={384} />
               <span className="mt-2 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/65">{fit.strange ? "A wild card" : fitWord(fit, judging)}</span>
+              {/* Why: what was asked for that this one measurably has. */}
+              {want ? <span className="mx-auto mt-0.5 block truncate text-[11.5px] text-foreground/60" style={{ maxWidth: w }}>{STYLE_DNA_QUESTIONS.filter((q) => (want[q.id] ?? 0) >= 0.62 && valueOf(s, q.id) >= 58).sort((a, b) => (want[b.id] ?? 0) - (want[a.id] ?? 0)).slice(0, 3).map((q) => q.label).join(" · ")}</span> : null}
             </button>
           </li>
         ); })}
