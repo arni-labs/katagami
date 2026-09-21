@@ -504,7 +504,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
         </div>
       ) : null}
       {tray && ask.fits && !open && !pair ? <Tray want={ask.answer?.want ?? null} fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
-      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet onSubmit={command} note={open ? [] : did} onUndo={canUndo && !open ? undo : undefined} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "only the dark ones", "compare the top two", "pin these three"] : ["a calm booking app for an island ferry", "dark to light", "playful against dense"]} />
+      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet compact={phone && Boolean(open)} onSubmit={command} note={open ? [] : did} onUndo={canUndo && !open ? undo : undefined} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "only the dark ones", "compare the top two", "pin these three"] : ["a calm booking app for an island ferry", "dark to light", "playful against dense"]} />
     </div>
     </SkinContext.Provider>
   );
@@ -566,7 +566,7 @@ function useShapes(pictures: string[]) {
   const [shapes, setShapes] = useState<Record<string, number>>({});
   useEffect(() => {
     let live = true;
-    for (const p of pictures) { const img = new Image(); img.onload = () => { if (live && img.naturalWidth > 0) setShapes((now) => (now[p] ? now : { ...now, [p]: img.naturalWidth / img.naturalHeight })); }; img.src = quick(p, 256); }
+    for (const p of pictures) { const img = new Image(); img.onload = () => { if (live && img.naturalWidth > 0) setShapes((now) => (now[p] ? now : { ...now, [p]: img.naturalWidth / img.naturalHeight })); }; img.src = quick(p, NEAR); }
     return () => { live = false; };
   }, [pictures]);
   return shapes;
@@ -682,7 +682,9 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
         <ul onClick={(e) => e.stopPropagation()} className="flex max-w-full shrink-0 items-end gap-3 overflow-x-auto px-2 pb-2 pt-1 [scrollbar-width:none]">
           {pictures.map((p, i) => (
             <li key={p} className="shrink-0">
-              <button type="button" onClick={() => setAt(i)} aria-label={`Picture ${i + 1} of ${pictures.length}`} aria-pressed={i === at} className="block cursor-pointer" style={{ opacity: i === at ? 1 : 0.65 }}><Card src={p} ink={style.ink} w={54} h={54} fast={NEAR} /></button>
+              {/* A print in the strip keeps its own shape, as the large one above it does. A square cut a portrait
+                  off at the chin and took the sides off a landscape, which read as damage rather than as a thumbnail. */}
+              <button type="button" onClick={() => setAt(i)} aria-label={`Picture ${i + 1} of ${pictures.length}`} aria-pressed={i === at} className="block cursor-pointer" style={{ opacity: i === at ? 1 : 0.65 }}><Card src={p} ink={style.ink} w={Math.round(54 * Math.min(1.9, Math.max(0.62, shapes[p] ?? 1.5)))} h={54} fast={NEAR} /></button>
             </li>
           ))}
         </ul>
