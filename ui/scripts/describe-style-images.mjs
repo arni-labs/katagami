@@ -220,6 +220,10 @@ async function main() {
         });
       }
       done++;
+      // Written every time, not at the end: this is a pass measured in tens of
+      // minutes, and a dry run that dies at style 140 should not throw away 139
+      // descriptions that were already paid for.
+      if (OUT) writeFileSync(OUT, JSON.stringify(written, null, 1));
       if (done % 10 === 0) console.log(`  … ${done} described, ${Math.round((Date.now() - started) / 1000)}s`);
     } catch (err) {
       failed++;
@@ -227,10 +231,7 @@ async function main() {
     }
   }
 
-  if (OUT) {
-    writeFileSync(OUT, JSON.stringify(written, null, 1));
-    console.log(`wrote ${written.length} descriptions to ${OUT}`);
-  }
+  if (OUT) console.log(`wrote ${written.length} descriptions to ${OUT}`);
   const seconds = (Date.now() - started) / 1000;
   // gpt-4.1-mini, $0.40 in and $1.60 out per million tokens.
   const cost = (inTokens / 1e6) * 0.4 + (outTokens / 1e6) * 1.6;
