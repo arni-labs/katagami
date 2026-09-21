@@ -8,10 +8,11 @@
 // style's own reference images and writes a paragraph of plain visual fact,
 // which lands on the row and is read from there by every later reindex.
 //
-// It also measures the pixels while it has them — the dominant tone of the
-// ground and how much of the colour is cool — so that the two questions a
-// design language answers from its palette tokens, an art style can answer from
-// its pictures instead of guessing.
+// It also measures the pixels while it has them — how light the pictures read
+// and how warm their colour is — and those go into the document beside the
+// paragraph as stated facts. They are deliberately not turned into answers: the
+// tone of a picture is not the ground its work sits on, and a page of dense
+// cross-hatching measures dark while being drawn on white paper.
 //
 // Slow and one-off: a few minutes of image downloads and one vision call each.
 // DRY-RUN by default; pass --apply. Idempotent — a style already described by

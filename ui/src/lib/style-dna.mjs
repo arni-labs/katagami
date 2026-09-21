@@ -383,13 +383,35 @@ const cap = (s, n) => (s.length <= n ? s : s.slice(0, s.lastIndexOf(" ", n) + 1 
 // from the tokens and never asked of a design language. An art style has no
 // tokens, so it is still asked all forty-nine; see computedDna.
 //
-// Everything else stays a judgment, including traits that are nearly
-// measurable. "Serif voice" also says "or otherwise literary and bookish",
-// which no font stack settles; "very high contrast" says "with little in
-// between", which two tokens cannot show, and the library's measured
-// ground-to-text ratio is 12–18 almost everywhere, so it separates nothing.
-// For those the measurement is stated in the document as a fact and the model
-// still answers.
+// Eleven more are nearly measurable and stay judgments, because the half we can
+// measure is not the half the question turns on. Each has its measurement put
+// into the document as a plain fact instead — by measuredLine, by the palette
+// line, or by naming the typefaces — so the model answers from what is there
+// rather than from a philosophy paragraph:
+//
+//   paper_ground, geometric, organic   surfaces.treatment and bg_pattern are
+//                                      free text, 230 distinct values over 272
+//                                      rows, and radius 0 belongs to Swiss
+//                                      rigour and to brutalism alike
+//   serif_voice                        also says "or otherwise literary and
+//                                      bookish", which no font stack settles
+//   mono_voice                         300 of 301 languages declare a mono
+//                                      font; almost none are led by one
+//   condensed_loud                     weight and transform are stored, but
+//                                      "loud" lives in the face, not the tokens
+//   saturated                          says "across large areas", and we hold
+//                                      no areas
+//   earthy                             hue and chroma are measurable, "mineral
+//                                      or natural-pigment" is a character
+//   flat, dimensional                  a 3px 3px 0 printed shadow is flat with
+//                                      an offset, and no rule settles which
+//   high_contrast                      says "with little in between", and the
+//                                      library's measured ground-to-text ratio
+//                                      is 12–18 almost everywhere, so measuring
+//                                      it separates nothing
+//
+// That leaves thirty-five that are judgments outright: what a style depicts,
+// where it comes from, how it feels, what it is for.
 export const COMPUTED_TRAIT_IDS = ["dark_ground", "cool_palette", "single_accent"];
 
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
