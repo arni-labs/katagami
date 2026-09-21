@@ -379,7 +379,11 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
     const q = text.trim();
     if (q.length < 2) return;
     const mine = ++commandTurn.current; // a reading that comes back after a newer command was typed is dropped
-    setDid(["Reading…"]);
+    // A described product needs no reading: a long sentence with none of the words that operate the screen goes
+    // straight to the search, so the common case costs one step, not two.
+    const operates = /\b(only|just|sort|sorted|order|arrange|compare|like|pin|zoom|bigger|smaller|closer|further|against|versus|vs|undo|reset|clear|start over|cards?|stamps?|swatch|stencil|proof|everything|all)\b|\b\w+ to \w+\b/i.test(q);
+    if (!open && !ask.answer && !operates && q.split(/\s+/).length >= 3) { before.current = null; setCanUndo(false); setPair(null); setHue(""); setDid([]); void ask.ask(q, kinds); return; }
+    setDid(["…"]);
     before.current = { kinds, mode, hue, skin, zoom, pair, axes, narrow };
     setCanUndo(true);
     const ranked = ask.fits ? [...ask.fits.entries()].filter(([id]) => byAny.has(id)).sort((a, b) => a[1].rank - b[1].rank).map(([id]) => id) : [];
@@ -414,7 +418,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
       else if (a.do === "judge") { setVerdict({ id: String(a.id), q, suits: Number(a.suits), helps: (a.helps as string[]) ?? [], hurts: (a.hurts as string[]) ?? [] }); said.push("Judged"); }
       else if (a.do === "refine") { void ask.refine(String(a.say), nextKinds); said.push("Refined"); }
       else if (a.do === "cannot") { said.push("Can't do that here"); said.push("Searched the library for it instead"); setPair(null); setHue(""); void ask.ask(q, nextKinds); }
-      else { setPair(null); setHue(""); void ask.ask(q, nextKinds); said.push("Read as a search"); }
+      else { setPair(null); setHue(""); void ask.ask(q, nextKinds); }
     }
     setDid(said);
     if (said.length > 0 && !actions.some((a) => ["ask", "refine", "like"].includes(a.do))) ask.setQuery("");
@@ -475,7 +479,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
       ) : null}
       {pair ? <Compare ids={pair} byId={byAny} familyOf={familyOf} phone={phone} onOpen={(id) => { setPair(null); goTo(id); }} onClose={() => setPair(null)} /> : null}
       {tray && ask.fits && !open && !pair ? <Tray want={ask.answer?.want ?? null} fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
-      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet onSubmit={command} note={did} onUndo={canUndo ? undo : undefined} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["only the dark ones", "compare the top two", "pin these three", "quietest to loudest"] : ["a calm booking app for an island ferry", "dark to light", "playful against dense", "only art styles, by family"]} />
+      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet onSubmit={command} note={did} onUndo={canUndo ? undo : undefined} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "only the dark ones", "compare the top two", "pin these three"] : ["a calm booking app for an island ferry", "dark to light", "playful against dense"]} />
     </div>
     </SkinContext.Provider>
   );
@@ -556,13 +560,18 @@ const TABLE: { x: number; y: number; s: number; r: number; z: number }[][] = [
 /** Each picture's window size and place on a table of the given size; tall pictures are narrowed so none towers over the rest. */
 function scatter(ratios: number[], width: number, height: number) {
   const spots = TABLE[Math.min(ratios.length, TABLE.length) - 1] ?? [];
-  return ratios.slice(0, spots.length).map((ratio, i) => {
+  const laid = ratios.slice(0, spots.length).map((ratio, i) => {
     const spot = spots[i];
     let w = spot.s * width * Math.min(1, Math.sqrt(ratio / 1.4)), h = w / ratio;
     const tallest = height * (i === 0 ? 0.86 : 0.5);
     if (h > tallest) { h = tallest; w = h * ratio; }
-    return { ...spot, w, h };
+    return { ...spot, w, h, cx: spot.x * width, cy: spot.y * height };
   });
+  // Whatever the shapes turned out to be, the whole spread is brought inside the table (with room for the paper
+  // round each print, its turn and its hover), so nothing reaches the name beneath or the header above.
+  const pad = 30, x0 = Math.min(...laid.map((p) => p.cx - p.w / 2)) - pad, x1 = Math.max(...laid.map((p) => p.cx + p.w / 2)) + pad, y0 = Math.min(...laid.map((p) => p.cy - p.h / 2)) - pad, y1 = Math.max(...laid.map((p) => p.cy + p.h / 2)) + pad;
+  const k = Math.min(1, width / (x1 - x0), height / (y1 - y0)), ox = (width - (x1 - x0) * k) / 2 - x0 * k, oy = (height - (y1 - y0) * k) / 2 - y0 * k;
+  return laid.map((p) => ({ ...p, w: p.w * k, h: p.h * k, left: p.cx * k + ox, top: p.cy * k + oy }));
 }
 
 /** A stamp opened: the entry's pictures at their own shape, the main one large, on a veil of the entry's ink.
@@ -574,11 +583,23 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
   const pictures = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.picture ? [style.picture] : []), [style]);
   const [at, setAt] = useState(0);
   const shapes = useShapes(pictures);
+  // The thing people come for: the art style's prompt, or the language's DESIGN.md, on the clipboard in one press.
+  const [copied, setCopied] = useState<"" | "copying" | "done" | "failed">("");
+  const copy = async () => {
+    setCopied("copying");
+    try {
+      const text = style.kind === "art_style" ? ((await (await fetch(`/api/explore/recipe?id=${encodeURIComponent(style.id)}`)).json()) as { text?: string }).text : await (await fetch(`${style.href}/DESIGN.md`)).text();
+      if (!text) throw new Error("nothing to copy");
+      await navigator.clipboard.writeText(text);
+      setCopied("done");
+    } catch { setCopied("failed"); }
+    window.setTimeout(() => setCopied(""), 2200);
+  };
   const main = pictures[at] ?? null, big = phone ? 750 : 1080;
   // A modal: focus moves in when it opens, stays in while it is open, and goes back where it was when it closes.
   useEffect(() => {
     const before = document.activeElement as HTMLElement | null;
-    root.current?.querySelector<HTMLElement>("a[data-open]")?.focus({ preventScroll: true });
+    root.current?.querySelector<HTMLElement>("[data-open]")?.focus({ preventScroll: true });
     return () => before?.focus?.({ preventScroll: true });
   }, []);
   useEffect(() => {
@@ -624,7 +645,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
         {shown.slice(0, placed.length).map((p, i) => {
           const at = placed[i];
           return (
-            <Link key={p} href={style.href} aria-label={`Open ${style.name}`} className="collage-print absolute block outline-none" style={{ left: at.x * roomW, top: at.y * roomH, zIndex: at.z, ["--tilt" as string]: `${at.r}deg`, animationDelay: `${i * 80}ms` }}>
+            <Link key={p} href={style.href} aria-label={`Open ${style.name}`} className="collage-print absolute block outline-none" style={{ left: at.left, top: at.top, zIndex: at.z, ["--tilt" as string]: `${at.r}deg`, animationDelay: `${i * 80}ms` }}>
               <Card src={p} ink={style.ink} w={at.w} h={at.h} windowed fast={phone ? 750 : i === 0 ? 1080 : 750} under={quick(p, 256)} lit={{ x: (at.x - 0.5) * roomW, y: (at.y - 0.5) * roomH }} />
             </Link>
           );
@@ -656,7 +677,8 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
         ) : null}
         <div className="mt-2 flex w-full items-stretch gap-2">
           <button type="button" onClick={() => onTurn(-1)} aria-label="Previous" className="cursor-pointer bg-background/70 px-4 backdrop-blur-md md:hidden"><ArrowLeft size={18} /></button>
-          <Link href={style.href} data-open className="flex-1 bg-foreground px-7 py-4 text-center font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-background">Open {style.kind === "language" ? "language" : "art style"}</Link>
+          <button type="button" data-open onClick={copy} disabled={copied === "copying"} className="flex-1 cursor-pointer bg-foreground px-6 py-4 text-center font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-background disabled:opacity-60">{copied === "done" ? "Copied" : copied === "failed" ? "Could not copy" : style.kind === "art_style" ? "Copy prompt" : "Copy DESIGN.md"}</button>
+          <Link href={style.href} className="flex items-center bg-background/70 px-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur-md hover:bg-background">Open</Link>
           <button type="button" onClick={onPin} aria-pressed={pinned} className="cursor-pointer bg-background/70 px-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur-md">{pinned ? "Pinned" : "Pin"}</button>
           <button type="button" onClick={() => onTurn(1)} aria-label="Next" className="cursor-pointer bg-background/70 px-4 backdrop-blur-md md:hidden"><ArrowRight size={18} /></button>
         </div>

@@ -65,6 +65,16 @@ const Q = {
 const TRAITS = STYLE_DNA_QUESTIONS as { id: string; label: string; style: string }[];
 const NUMBER: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
 
+// The names on a shelf, kept a few minutes: reading the whole library for every command was most of the wait.
+const shelf = new Map<string, { at: number; names: { id: string; name: string }[] }>();
+async function namesOn(tier: "sample" | "full") {
+  const hit = shelf.get(tier);
+  if (hit && Date.now() - hit.at < 5 * 60_000) return hit.names;
+  const names = (await libraryAtlas(tier)).styles.map((s) => ({ id: s.id, name: s.name }));
+  shelf.set(tier, { at: Date.now(), names });
+  return names;
+}
+
 type Action = { do: string; [key: string]: unknown };
 
 export async function GET(request: Request) {
@@ -77,7 +87,7 @@ export async function GET(request: Request) {
   if (!mayStart("explore-command", callerOf(request), tier)) return NextResponse.json({ error: TOO_MANY }, { status: 429, headers: { "Retry-After": "60" } });
 
   // Names in the text, longest first, among the styles this caller can see.
-  const { styles } = await libraryAtlas(tier);
+  const styles = await namesOn(tier);
   const lower = ` ${q.toLowerCase().replace(/[^a-z0-9À-ɏ]+/g, " ")} `;
   const named: { id: string; name: string }[] = [];
   for (const s of [...styles].sort((a, b) => b.name.length - a.name.length)) {
