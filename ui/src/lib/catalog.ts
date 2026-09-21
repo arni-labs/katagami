@@ -388,6 +388,8 @@ export type AskArgs = {
   want?: Record<string, number>;
   /** A change to the reading — "quieter, warmer" — asked instead of re-reading the sentence. */
   refine?: string;
+  /** Start from this style's own DNA instead of reading the sentence: "like this, but…". An id or slug in view. */
+  like?: string;
   /** Changes already folded into `want` by earlier refinements, so the fit is judged with them in mind. */
   changes?: string;
 };
@@ -462,7 +464,8 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   const started = Date.now();
   const all = await askPool();
   const inView = all.styles.filter((p) => (!a.kind || p.kind === a.kind) && (tier === "full" || isShownToVisitors(p.row)));
-  const pool = inView;
+  const likeId = a.like?.trim();
+  const pool = likeId ? inView.filter((p) => p.row.entity_id !== likeId && str(p.row.fields?.slug) !== likeId) : inView;
   // Styles with no DNA yet cannot be told apart by tier without the full rows;
   // the count is of the whole library and is reported only to the full tier.
   const unread = tier === "full" && !a.kind ? all.undescribed : 0;
@@ -474,7 +477,10 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   const wantStarted = Date.now();
   // A reading handed back by the caller is used only if it is whole and in range.
   const given = a.want && STYLE_DNA_QUESTIONS.every((q) => typeof a.want?.[q.id] === "number" && a.want[q.id] >= 0 && a.want[q.id] <= 1) ? (a.want as StyleDna) : null;
-  const read = given ?? dnaFromAnswers((await askJev(`Product: ${query}`, wantQuestions(), ASK_JEV)).answers);
+  // "Like this one": the style's own answers are the reading, and it is left out of its own results.
+  const likeKey = a.like?.trim();
+  const liked = likeKey && !given ? all.styles.find((p) => (tier === "full" || isShownToVisitors(p.row)) && (p.row.entity_id === likeKey || str(p.row.fields?.slug) === likeKey)) : undefined;
+  const read = given ?? liked?.dna ?? dnaFromAnswers((await askJev(`Product: ${query}`, wantQuestions(), ASK_JEV)).answers);
   if (!read) throw new JevUnavailableError("Jev left a question about the product unanswered");
   const change = a.refine?.trim().slice(0, ASK_MAX_QUERY);
   const refined = change ? applyRefinement(read, (await askJev(`Change asked for: ${change}`, refineQuestions(), ASK_JEV)).answers) : null;
