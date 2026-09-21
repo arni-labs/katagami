@@ -11,8 +11,19 @@
 // stored answers mean, so bump STYLE_DNA_SET when you do.
 //
 // Plain .mjs: shared by the Next server, the backfill script and node --test.
+//
+// dna-v2 changes how the answers are got, not what is asked — the forty-nine
+// questions are word for word the ones v1 kept, so a v1 and a v2 reading of the
+// same style are comparable. Three things changed. Three questions are now
+// measured from the stored palette instead of asked, because we hold the
+// palette and a model reading a philosophy paragraph was guessing at it. The
+// document Jev reads carries the fields v1 left out and no longer cuts
+// sentences in half. And an art style's document can carry a description of
+// what its reference pictures actually look like, written by a vision pass,
+// which is the only way that half of the library was ever going to be indexed
+// on how it looks rather than on how it was described.
 
-export const STYLE_DNA_SET = "dna-v1";
+export const STYLE_DNA_SET = "dna-v2";
 
 export const STYLE_DNA_QUESTIONS = [
   {
@@ -333,39 +344,275 @@ const record = (v) => {
   const p = parse(v, null);
   return p && typeof p === "object" && !Array.isArray(p) ? p : {};
 };
-const summaryOf = (v) => {
-  const p = parse(v, null);
-  return p && !Array.isArray(p) && typeof p === "object" ? text(p.summary) : typeof p === "string" ? text(p) : "";
-};
+// The same field is a sentence on one row and a {do, dont} object on the next.
+// v1 read one shape per field and dropped the rest without a trace: 59 of 301
+// languages had no imagery line at all, because their imagery_direction had no
+// summary key, and 16 of 156 art styles had no guidance, because theirs was
+// written as a sentence rather than a list. Flatten whatever is there instead
+// of recognising one shape.
+const SKIP_KEY = /(^|_)(id|ids|url|urls|file_id|file_ids|breakpoints_map|schema_version|generated_at|generator|model|provider|tool)$/i;
+function prose(value, depth = 0) {
+  const v = parse(value, typeof value === "string" ? value : null);
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (typeof v === "string") return v.trim().replace(/\s+/g, " ");
+  if (Array.isArray(v)) return v.map((x) => prose(x, depth + 1)).filter(Boolean).join("; ");
+  if (v && typeof v === "object" && depth <= 2) {
+    return Object.entries(v)
+      .filter(([k]) => !SKIP_KEY.test(k))
+      .map(([k, x]) => {
+        const s = prose(x, depth + 1);
+        return s && depth === 0 ? `${k.replace(/_/g, " ")}: ${s}` : s;
+      })
+      .filter(Boolean)
+      .join("; ");
+  }
+  return "";
+}
+// v1's limits cut 295 of 301 languages off inside a JSON blob mid-layout, to
+// save tokens that cost $0.00005 a row. These are wide enough to hold the
+// library as it is — the longest language document is 5,525 characters, about
+// 1,400 tokens — and they cut on a word boundary when they do have to cut.
+const cap = (s, n) => (s.length <= n ? s : s.slice(0, s.lastIndexOf(" ", n) + 1 || n).trim() + "…");
 
-/** The canonical text Jev reads for one catalog row. kind: "language" | "art_style". */
+// --- the three answers we hold rather than guess ----------------------------
+//
+// A design language stores its whole palette, and three of the questions above
+// ask about nothing but that palette. v1 asked a model to read them out of a
+// philosophy paragraph, and it answered Vane — ground token #F4F3EE, warm paper,
+// its own philosophy saying so — dark-grounded at 0.91. These three are computed
+// from the tokens and never asked of a design language. An art style has no
+// tokens, so it is still asked all forty-nine; see computedDna.
+//
+// Eleven more are nearly measurable and stay judgments, because the half we can
+// measure is not the half the question turns on. Each has its measurement put
+// into the document as a plain fact instead — by measuredLine, by the palette
+// line, or by naming the typefaces — so the model answers from what is there
+// rather than from a philosophy paragraph:
+//
+//   paper_ground, geometric, organic   surfaces.treatment and bg_pattern are
+//                                      free text, 230 distinct values over 272
+//                                      rows, and radius 0 belongs to Swiss
+//                                      rigour and to brutalism alike
+//   serif_voice                        also says "or otherwise literary and
+//                                      bookish", which no font stack settles
+//   mono_voice                         300 of 301 languages declare a mono
+//                                      font; almost none are led by one
+//   condensed_loud                     weight and transform are stored, but
+//                                      "loud" lives in the face, not the tokens
+//   saturated                          says "across large areas", and we hold
+//                                      no areas
+//   earthy                             hue and chroma are measurable, "mineral
+//                                      or natural-pigment" is a character
+//   flat, dimensional                  a 3px 3px 0 printed shadow is flat with
+//                                      an offset, and no rule settles which
+//   high_contrast                      says "with little in between", and the
+//                                      library's measured ground-to-text ratio
+//                                      is 12–18 almost everywhere, so measuring
+//                                      it separates nothing
+//
+// That leaves thirty-five that are judgments outright: what a style depicts,
+// where it comes from, how it feels, what it is for.
+export const COMPUTED_TRAIT_IDS = ["dark_ground", "cool_palette", "single_accent"];
+
+const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+function rgbOf(value) {
+  const s = text(value);
+  if (HEX.test(s)) {
+    const h = s.slice(1);
+    const parts = h.length === 3 ? [...h].map((c) => c + c) : [h.slice(0, 2), h.slice(2, 4), h.slice(4, 6)];
+    return parts.map((p) => parseInt(p, 16));
+  }
+  const m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(s);
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+}
+/** Relative luminance, the sRGB one, so "dark" means dark to an eye and not just low in hex. */
+function luminance([r, g, b]) {
+  const f = (c) => (c / 255 <= 0.03928 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+function hsv([r, g, b]) {
+  const max = Math.max(r, g, b);
+  const d = max - Math.min(r, g, b);
+  const h = d === 0 ? 0 : (max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60;
+  return { h, s: max === 0 ? 0 : d / max, v: max / 255 };
+}
+// Semantic roles are error, success, warning and info. The house contract keeps
+// them a small part of the palette and never a primary, so counting them would
+// make every style look as colourful as every other.
+const SEMANTIC_ROLE = /^(error|success|warning|info|danger|positive|negative|caution)$/i;
+const CARRIED_ROLE = /^on[_-]/i;
+const GROUND_ROLES = ["bg", "background", "ground", "canvas", "paper", "base", "surface", "surface_solid"];
+const INK_ROLES = ["text", "ink", "foreground", "fg"];
+
+/**
+ * What a design language's palette measures: its ground, its ink, how much of
+ * its colour is cool, and how many separate hues it actually spends. null when
+ * there is no palette to measure.
+ */
+/**
+ * How many separate colours a palette really spends. Hues are grouped by how far
+ * apart they are rather than dropped into fixed bins, because a bin edge splits
+ * a family: Verdigris' green #6FCFA8 and its teal #34D8C8 are eighteen degrees
+ * apart and landed either side of one. A tint of the accent is the accent, and
+ * so is the shade next to it.
+ */
+function hueFamilies(hues) {
+  if (hues.length === 0) return 0;
+  const sorted = hues.slice().sort((a, b) => a - b);
+  const groups = [[sorted[0]]];
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] - sorted[i - 1] <= 40) groups[groups.length - 1].push(sorted[i]);
+    else groups.push([sorted[i]]);
+  }
+  // The wheel joins up, so a red at 350° and a red at 10° are one red.
+  if (groups.length > 1 && sorted[0] + 360 - sorted[sorted.length - 1] <= 40) groups[0].push(...groups.pop());
+  return groups.length;
+}
+
+function measurePalette(fields) {
+  const colors = record(record(fields?.tokens).colors);
+  const ground = GROUND_ROLES.map((r) => rgbOf(colors[r])).find(Boolean);
+  if (!ground) return null;
+  const hues = [];
+  let coolWeight = 0;
+  let weight = 0;
+  for (const [role, value] of Object.entries(colors)) {
+    if (SEMANTIC_ROLE.test(role) || CARRIED_ROLE.test(role)) continue;
+    const c = rgbOf(value);
+    if (!c) continue;
+    const { h, s, v } = hsv(c);
+    weight += s * v;
+    if (h >= 170 && h <= 310) coolWeight += s * v;
+    // A warm-tinted neutral is still a neutral: Shuimo's #6B5F52 is a grey with
+    // a hint of earth in it, and counting it as a colour made an ink-wash
+    // language look like it was spending three.
+    if (s >= 0.25 && s * v >= 0.15) hues.push(h);
+  }
+  return {
+    ground: luminance(ground),
+    groundHex: text(GROUND_ROLES.map((r) => colors[r]).find((v) => rgbOf(v))),
+    ink: (() => { const c = INK_ROLES.map((r) => rgbOf(colors[r])).find(Boolean); return c ? luminance(c) : null; })(),
+    cool: weight > 0 ? coolWeight / weight : 0,
+    families: hueFamilies(hues),
+  };
+}
+
+// Below lo it is a no, above hi a yes, and in between the answer moves rather
+// than flipping, so a style that only just misses is not flatly denied.
+const ramp = (v, lo, hi) => Math.min(1, Math.max(0, (v - lo) / (hi - lo)));
+const round3 = (n) => Math.round(Math.min(1, Math.max(0, n)) * 1000) / 1000;
+// One chromatic hue is the whole of "one accent"; two is a scheme, not a ration.
+const RATIONED = [0.6, 0.92, 0.45, 0.2];
+
+/**
+ * The questions this row answers by measurement: { id: 0..1 }, possibly empty.
+ *
+ * Only a design language. An art style has no palette to read, and the tone its
+ * pictures measure is not the same thing as the ground its work sits on — a
+ * page of dense hatching measures dark and is drawn on white paper. That
+ * measurement is worth stating and not worth deciding on, so it goes into the
+ * document as a fact and an art style is still asked all forty-nine.
+ */
+export function computedDna(kind, fields) {
+  const m = kind === "language" ? measurePalette(fields) : null;
+  if (!m) return {};
+  return {
+    dark_ground: round3(1 - ramp(m.ground, 0.08, 0.35)),
+    cool_palette: round3(ramp(m.cool, 0.3, 0.75)),
+    single_accent: RATIONED[Math.min(m.families, RATIONED.length - 1)],
+  };
+}
+
+/** What was measured, in words, for the document: a fact stated beats a fact guessed. */
+function measuredLine(kind, fields) {
+  if (kind === "language") {
+    const m = measurePalette(fields);
+    if (!m) return "";
+    const contrast = m.ink === null ? null : (Math.max(m.ground, m.ink) + 0.05) / (Math.min(m.ground, m.ink) + 0.05);
+    return `measured: ${[
+      m.ground < 0.15 ? "the ground is dark" : m.ground > 0.6 ? "the ground is light" : "the ground is mid-toned",
+      m.groundHex && `ground ${m.groundHex}`,
+      contrast !== null && (contrast >= 14 ? "text reads at full contrast against it" : "text sits at moderate contrast against it"),
+      m.cool >= 0.7 ? "nearly all its colour is cool" : m.cool <= 0.2 ? "its colour is warm" : "its colour is mixed warm and cool",
+      m.families <= 1 ? "it spends one hue" : `it spends ${m.families} separate hues`,
+    ].filter(Boolean).join(", ")}.`;
+  }
+  const seen = record(fields?.visual_description);
+  const tone = Number(seen.tone);
+  if (!Number.isFinite(tone)) return "";
+  const cool = Number(seen.cool_share);
+  return `measured off the pictures: ${[
+    tone < 0.12 ? "they read dark overall" : tone > 0.5 ? "they read light overall" : "they read mid-toned overall",
+    text(seen.tone_hex) && `median tone ${text(seen.tone_hex)}`,
+    Number.isFinite(cool) && (cool >= 0.7 ? "nearly all the colour is cool" : cool <= 0.2 ? "the colour is warm" : "the colour is mixed warm and cool"),
+  ].filter(Boolean).join(", ")}.`;
+}
+
+/** The canonical text Jev reads for one catalog row. kind: "language" | "art_style".
+ *  Ordered so the most identifying lines come first, because the ask pool reads
+ *  only the head of it. */
 export function buildStyleDoc(kind, fields) {
   const f = fields ?? {};
   const tags = list(f.tags).filter((t) => t !== "specimen").join(", ");
   const lines = [];
   if (kind === "language") {
     const colors = record(record(f.tokens).colors);
-    const palette = ["primary", "secondary", "accent", "background", "text"]
-      .filter((role) => text(colors[role]))
-      .map((role) => `${role} ${colors[role]}`)
+    const type = record(record(f.tokens).typography);
+    const palette = Object.entries(colors)
+      .filter(([role, v]) => !SEMANTIC_ROLE.test(role) && rgbOf(v))
+      .slice(0, 10)
+      .map(([role, v]) => `${role.replace(/_/g, " ")} ${text(v)}`)
       .join(", ");
-    const layout = parse(f.layout_principles, null);
+    // Naming the typefaces is the whole of the fix for "serif voice": the model
+    // knows what Fraunces is, and a hand-kept list of serifs would be wrong the
+    // week the library grows.
+    //
+    // The mono face is named only when it leads, and that is not fussiness. 300
+    // of 301 languages declare a mono font and almost none are led by one, so
+    // printing it made the model read every language as mono-voiced: Coriandoli
+    // went from 0.15 to 0.93 on a token that says nothing. Where mono really is
+    // a signature the rules text says so in its own words, which is evidence.
+    const leadFonts = `${text(type.heading_font)} ${text(type.body_font)}`;
+    const typeLine = [
+      text(type.heading_font) && `headings ${text(type.heading_font)}`,
+      text(type.body_font) && `body ${text(type.body_font)}`,
+      /mono(space)?\b/i.test(leadFonts) && text(type.mono_font) && `mono ${text(type.mono_font)}`,
+      text(type.base_size) && `at ${text(type.base_size)}`,
+      text(type.heading_weight) && `heading weight ${text(type.heading_weight)}`,
+      text(type.heading_transform) && text(type.heading_transform) !== "none" && `headings ${text(type.heading_transform)}`,
+    ].filter(Boolean).join(", ");
     lines.push(
       `design language: ${text(f.name)}`,
       tags && `qualities: ${tags}`,
-      summaryOf(f.philosophy),
-      summaryOf(f.imagery_direction) && `imagery: ${summaryOf(f.imagery_direction).slice(0, 300)}`,
-      layout && `layout: ${JSON.stringify(layout).slice(0, 400)}`,
+      measuredLine(kind, f),
+      cap(prose(f.philosophy), 1100),
+      typeLine && `type: ${typeLine}`,
       palette && `palette: ${palette}`,
+      prose(f.imagery_direction) && `imagery: ${cap(prose(f.imagery_direction), 700)}`,
+      prose(f.rules) && `rules: ${cap(prose(f.rules), 900)}`,
+      prose(f.layout_principles) && `layout: ${cap(prose(f.layout_principles), 600)}`,
+      prose(record(f.tokens).surfaces) && `surfaces: ${cap(prose(record(f.tokens).surfaces), 400)}`,
+      prose(record(f.tokens).borders) && `borders: ${cap(prose(record(f.tokens).borders), 300)}`,
+      prose(f.guidance) && `guidance: ${cap(prose(f.guidance), 500)}`,
+      prose(record(f.tokens).motion) && `motion: ${cap(prose(record(f.tokens).motion), 300)}`,
     );
   } else {
-    const dos = list(record(f.guidance).do).slice(0, 3).join(" ").slice(0, 400);
+    const seen = text(record(f.visual_description).looks_like);
+    const subjects = list(record(f.reference_manifest).items?.map?.((i) => i?.subject) ?? []).join("; ");
     lines.push(
       `art style: ${text(f.name)}`,
       tags && `qualities: ${tags}`,
       text(f.medium) && `medium: ${text(f.medium)}`,
-      text(f.prompt_template) && `recipe: ${text(f.prompt_template).slice(0, 500)}`,
-      dos && `do: ${dos}`,
+      // What the pictures look like, not what the recipe claims they will.
+      seen && `looks like: ${cap(seen, 1200)}`,
+      measuredLine(kind, f),
+      text(f.prompt_template) && `recipe: ${cap(text(f.prompt_template), 900)}`,
+      text(f.negative_prompt) && `never: ${cap(text(f.negative_prompt), 300)}`,
+      prose(f.guidance) && `guidance: ${cap(prose(f.guidance), 800)}`,
+      prose(f.slot_recipes) && `used for: ${cap(prose(f.slot_recipes), 500)}`,
+      prose(f.credits) && `tradition: ${cap(prose(f.credits), 400)}`,
+      subjects && `reference subjects: ${cap(subjects, 300)}`,
+      prose(f.engine_hints) && `engines: ${cap(prose(f.engine_hints), 300)}`,
     );
   }
   return lines.filter(Boolean).join("\n");
@@ -375,18 +622,30 @@ export function buildStyleDoc(kind, fields) {
 export function styleQuestions() {
   return Object.fromEntries(STYLE_DNA_QUESTIONS.map((q) => [q.id, { type: "noul", instructions: q.style }]));
 }
-/** Jev fan-out: the same questions turned on a product sentence. */
+/** Jev fan-out: the questions this row does not already answer by measurement. */
+export function askedQuestions(computed) {
+  return Object.fromEntries(
+    STYLE_DNA_QUESTIONS.filter((q) => computed?.[q.id] === undefined).map((q) => [q.id, { type: "noul", instructions: q.style }]),
+  );
+}
+/** Jev fan-out: the same questions turned on a product sentence. A product
+ *  sentence has no palette, so every one of them is asked. */
 export function wantQuestions() {
   return Object.fromEntries(STYLE_DNA_QUESTIONS.map((q) => [q.id, { type: "noul", instructions: q.want }]));
 }
 
-/** Jev answers -> { id: 0..1 } over exactly this question set; null if any is missing. */
-export function dnaFromAnswers(answers) {
+/** Jev answers, plus whatever was measured instead of asked -> { id: 0..1 } over
+ *  exactly this question set; null if a question is neither answered nor measured. */
+export function dnaFromAnswers(answers, computed) {
   const out = {};
   for (const id of IDS) {
+    if (computed?.[id] !== undefined) {
+      out[id] = round3(computed[id]);
+      continue;
+    }
     const n = answers?.[id]?.noul;
     if (typeof n !== "number" || !Number.isFinite(n)) return null;
-    out[id] = Math.round(Math.min(1, Math.max(0, n)) * 1000) / 1000;
+    out[id] = round3(n);
   }
   return out;
 }
@@ -432,10 +691,22 @@ export function applyRefinement(reading, answers) {
 
 export const dnaVersion = (model) => `${STYLE_DNA_SET}/${model}`;
 
-/** Stored fields -> DNA, only when it was asked with this question set by this
- *  model: answers from another model are another instrument's readings. */
+// v2 is written one row at a time and v1 is what the library holds until it is.
+// Both answer the same forty-nine questions, so a v1 reading still describes a
+// style and still matches a product; it is just less well informed. The gallery
+// reads either rather than going blank the moment the set moves, and stops
+// reading v1 when the line below loses it.
+const READABLE_SETS = new Set(["dna-v2", "dna-v1"]);
+const readableSet = (version) => {
+  const slash = version.indexOf("/");
+  return slash > 0 && READABLE_SETS.has(version.slice(0, slash));
+};
+
+/** Stored fields -> DNA, only when it was asked with a question set we still read
+ *  by this model: answers from another model are another instrument's readings. */
 export function storedDna(fields, model) {
-  if (text(fields?.style_dna_version) !== dnaVersion(model)) return null;
+  const version = text(fields?.style_dna_version);
+  if (!readableSet(version) || version.slice(version.indexOf("/") + 1) !== model) return null;
   const p = parse(fields?.style_dna, null);
   if (!p || typeof p !== "object") return null;
   for (const id of IDS) if (typeof p[id] !== "number") return null;
@@ -489,7 +760,7 @@ export function topTraits(dna, n = 5) {
 /** The labels to print on a gallery card, from stored fields of any model's
  *  answers to this question set: a card describes, it does not compare. */
 export function cardTraits(fields, n = 3) {
-  if (!text(fields?.style_dna_version).startsWith(`${STYLE_DNA_SET}/`)) return [];
+  if (!readableSet(text(fields?.style_dna_version))) return [];
   const dna = parse(fields?.style_dna, null);
   if (!dna || typeof dna !== "object" || Array.isArray(dna)) return [];
   return STYLE_DNA_QUESTIONS.filter((q) => typeof dna[q.id] === "number" && dna[q.id] >= TRAIT_AT)
