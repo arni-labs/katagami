@@ -82,8 +82,9 @@ export function useAsk() {
       if (Array.isArray(judged.moved)) setMoved(judged.moved as Moved[]);
       if (typeof judged.changes === "string") setChanges(judged.changes);
       setState("idle");
+      return true;
     } catch (err) {
-      if (mine !== turn.current) return;
+      if (mine !== turn.current) return false;
       setState("error");
       setError(err instanceof Error ? err.message : "Asking failed.");
     }
@@ -114,12 +115,15 @@ export function useAsk() {
         setAnswer(moved1 as Answer);
         if (Array.isArray(moved1.moved)) setMoved(moved1.moved as Moved[]);
         if (typeof moved1.changes === "string") setChanges(moved1.changes);
-        await run(mine, answer.query, { want: moved1.want, ...(moved1.changes ? { changes: moved1.changes } : {}) }, kinds);
+        const was = { answer, moved, changes };
+        const ok = await run(mine, answer.query, { want: moved1.want, ...(moved1.changes ? { changes: moved1.changes } : {}) }, kinds);
+        // The judged fit failed: the answer that stood before the change comes back, under the error.
+        if (ok === false && mine === turn.current) { setAnswer(was.answer); setMoved(was.moved); setChanges(was.changes); }
         return;
       }
     } catch { /* fall through to the single step */ }
     await run(mine, answer.query, { want: answer.want, refine: say, ...(changes ? { changes } : {}) }, kinds);
-  }, [answer, changes, run]);
+  }, [answer, changes, moved, run]);
 
   const clear = useCallback(() => { turn.current++; setAnswer(null); setWords(null); setMoved([]); setChanges(""); setQuery(""); setState("idle"); setError(""); }, []);
   const fits = useMemo(() => {
