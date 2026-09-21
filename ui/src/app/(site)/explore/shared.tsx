@@ -176,12 +176,13 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
         ) : null}
         {ask.answer?.want ? (
           <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-            {ask.moved.slice(0, 5).map((mv) => <span key={mv.trait} className="bg-foreground px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.12em] text-background">{mv.to > mv.from ? "+" : "−"} {mv.trait}</span>)}
-            {CHANGES.map((c) => <button key={c} type="button" disabled={busy} onClick={() => void ask.refine(c, kinds)} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[12.5px] hover:bg-[color-mix(in_srgb,var(--foreground)_13%,transparent)] disabled:opacity-40">{c}</button>)}
+            {/* First in the row, so it is always in reach however many traits have moved. */}
             <form onSubmit={(e) => { e.preventDefault(); if (say.trim()) { void ask.refine(say, kinds); setSay(""); } }}>
               <label htmlFor="refine" className="sr-only">Refine the answer</label>
               <input id="refine" value={say} onChange={(e) => setSay(e.target.value)} maxLength={120} autoComplete="off" placeholder="refine in your words" className="w-[10.5rem] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[16px] outline-none placeholder:text-foreground/45 md:text-[12.5px]" />
             </form>
+            {ask.moved.slice(0, 5).map((mv) => <span key={mv.trait} className="bg-foreground px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.12em] text-background">{mv.to > mv.from ? "+" : "−"} {mv.trait}</span>)}
+            {CHANGES.map((c) => <button key={c} type="button" disabled={busy} onClick={() => void ask.refine(c, kinds)} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[12.5px] hover:bg-[color-mix(in_srgb,var(--foreground)_13%,transparent)] disabled:opacity-40">{c}</button>)}
           </div>
         ) : null}
         {ask.state === "error" ? <p role="alert" className="px-1 text-[12.5px] text-[var(--beni)]">{ask.error}</p> : null}
