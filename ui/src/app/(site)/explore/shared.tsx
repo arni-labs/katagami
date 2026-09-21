@@ -127,7 +127,7 @@ const CHANGES = ["warmer", "quieter", "bolder", "more playful", "darker", "more 
  *  feel). It is a plain textarea with its text made invisible over a twin that draws the same words with the marks,
  *  so the caret, selection and keyboard are the browser's own. Once there is an answer it can be refined in words
  *  from the same place. An ask and a colour are two ways to light the library, and the newer one wins. */
-export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false, onSubmit, note }: { ask: ReturnType<typeof useAsk>; hue: string; onHue: (h: string) => void; onGo: (id: string) => void; byId: Map<string, AtlasStyle>; lit: number | null; kinds?: Kinds; /** The view shows the answer itself: no chips here. */ quiet?: boolean; /** The view reads what is typed itself (it may be a command, not a question). */ onSubmit?: (text: string) => void; /** What the view just did, said back in a line. */ note?: string[] }) {
+export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false, onSubmit, note, onUndo, hints }: { ask: ReturnType<typeof useAsk>; hue: string; onHue: (h: string) => void; onGo: (id: string) => void; byId: Map<string, AtlasStyle>; lit: number | null; kinds?: Kinds; /** The view shows the answer itself: no chips here. */ quiet?: boolean; /** The view reads what is typed itself (it may be a command, not a question). */ onSubmit?: (text: string) => void; /** What the view just did, said back in a line. */ note?: string[]; /** Step back from the last thing typed. */ onUndo?: () => void; /** Things worth typing right now, given what is on screen. */ hints?: string[] }) {
   const found = quiet ? [] : ask.fits ? [...ask.fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank) : [];
   const dock = useRef<HTMLDivElement | null>(null);
   const [read, setRead] = useState<Word[]>([]);
@@ -168,7 +168,7 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
   const type = "font-display text-[19px] font-bold leading-[1.3] tracking-[-0.02em] md:text-[24px]";
   return (
     // Absolute, not fixed: the site's page wrapper is transformed, so "fixed" would mean the page, not the screen.
-    <div className="pointer-events-none absolute inset-x-0 bottom-3 z-[36] flex justify-center px-3">
+    <div className="pointer-events-none absolute inset-x-0 bottom-3 z-[45] flex justify-center px-3">
       <div ref={dock} className="pointer-events-auto flex w-full max-w-[44rem] flex-col gap-2 bg-background/90 p-2.5 shadow-[0_10px_36px_-12px_rgba(30,35,45,0.4)] backdrop-blur-xl backdrop-saturate-150 md:p-3">
         {found.length > 0 ? (
           <ul aria-label="Answers" className="flex gap-1 overflow-x-auto [scrollbar-width:none]">
@@ -186,7 +186,8 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
             {CHANGES.map((c) => <button key={c} type="button" disabled={busy} onClick={() => void ask.refine(c, kinds)} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[12.5px] hover:bg-[color-mix(in_srgb,var(--foreground)_13%,transparent)] disabled:opacity-40">{c}</button>)}
           </div>
         ) : null}
-        {note && note.length > 0 ? <p aria-live="polite" className="flex flex-wrap gap-1.5 px-1">{note.map((n) => <span key={n} className="bg-[color-mix(in_srgb,var(--ramune)_16%,transparent)] px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.12em]">{n}</span>)}</p> : null}
+        {note && note.length > 0 ? <p aria-live="polite" className="flex flex-wrap gap-1.5 px-1">{note.map((n) => <span key={n} className="bg-[color-mix(in_srgb,var(--ramune)_16%,transparent)] px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.12em]">{n}</span>)}{onUndo && !note.includes("Reading…") && !note.includes("Undone") ? <button type="button" onClick={onUndo} className="cursor-pointer px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.12em] text-foreground/60 underline underline-offset-2 hover:text-foreground">Undo</button> : null}</p> : null}
+        {hints && hints.length > 0 && !ask.query ? <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&>*]:shrink-0 [&>*]:whitespace-nowrap"><span className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-foreground/45">Try</span>{hints.map((hint) => <button key={hint} type="button" onClick={() => { ask.setQuery(hint); if (onSubmit) onSubmit(hint); else void ask.ask(hint, kinds); }} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 py-1 text-[12.5px] text-foreground/75 hover:bg-[color-mix(in_srgb,var(--foreground)_12%,transparent)] hover:text-foreground">{hint}</button>)}</div> : null}
         {ask.state === "error" ? <p role="alert" className="px-1 text-[12.5px] text-[var(--beni)]">{ask.error}</p> : null}
         <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex items-end gap-2">
           <label htmlFor="explore-ask" className="sr-only">What are you making?</label>

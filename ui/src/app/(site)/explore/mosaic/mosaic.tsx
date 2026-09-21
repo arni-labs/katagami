@@ -18,7 +18,10 @@ import { Card, SKINS, SKIN_NAME, SkinContext, type Skin } from "../card";
 // answer. Each stamp is a small card that leans toward the light and takes a
 // highlight from it; the light is the pointer, or the way you are moving.
 
-type Mode = "colour" | "family" | "fit";
+type Mode = "colour" | "family" | "fit" | "trait" | "plot";
+type Axes = { x: string; y?: string; reverse?: boolean; labels: string[] };
+const TRAIT_AT = new Map(STYLE_DNA_QUESTIONS.map((q, i) => [q.id, i]));
+const valueOf = (s: AtlasStyle, trait: string) => (s.dna ? (s.dna[TRAIT_AT.get(trait) ?? -1] ?? 50) : 50);
 type Cell = { kind: "style"; s: AtlasStyle } | { kind: "soon"; h: AtlasHole } | null;
 
 const TRAIT = new Map(STYLE_DNA_QUESTIONS.map((q) => [q.id, q.label]));
@@ -98,6 +101,8 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
   // Design languages and art styles, both by default; pressing one turns it off or on, and the last one on stays on.
   const [kinds, setKinds] = useState<Kinds>({ language: true, art_style: true });
   const [tray, setTray] = useState(false);
+  const [axes, setAxes] = useState<Axes | null>(null);
+  const [narrow, setNarrow] = useState<{ trait: string; label: string } | null>(null);
   // Which material the cards are made of: six to judge between, kept in the address so each can be linked to.
   const [skin, setSkin] = useState<Skin>("stamp");
   useEffect(() => { const s = new URLSearchParams(window.location.search).get("skin"); if (s && (SKINS as readonly string[]).includes(s)) requestAnimationFrame(() => setSkin(s as Skin)); }, []);
@@ -141,6 +146,20 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
       const all = styles.map((s) => ({ s, t: tone(s.ink) }));
       const ordered = [...all.filter((x) => x.t.s >= 0.22).sort((a, b) => ((a.t.h + 30) % 360) - ((b.t.h + 30) % 360)), ...all.filter((x) => x.t.s < 0.22).sort((a, b) => b.t.l - a.t.l)];
       for (let c = 0; c * rows < ordered.length; c++) ordered.slice(c * rows, (c + 1) * rows).sort((a, b) => b.t.l - a.t.l).forEach((x, r) => put(c, r, x.s));
+    } else if (mode === "trait" && axes) {
+      // The wall's width is the trait: least at the left, most at the right (or the reverse), a column at a time.
+      const order = [...styles].sort((a, b) => (valueOf(a, axes.x) - valueOf(b, axes.x)) * (axes.reverse ? -1 : 1));
+      const per = Math.ceil(order.length / cols);
+      order.forEach((s, i) => put(Math.min(cols - 1, Math.floor(i / per)), i % per, s));
+    } else if (mode === "plot" && axes?.y) {
+      // Two traits as the wall's two axes. Each style goes to the free place nearest its own point, so none overlap.
+      const taken = new Set<number>();
+      for (const s of [...styles].sort((a, b) => valueOf(b, axes.x) + valueOf(b, axes.y!) - valueOf(a, axes.x) - valueOf(a, axes.y!))) {
+        const tx = (valueOf(s, axes.x) / 100) * (cols - 1), ty = (1 - valueOf(s, axes.y) / 100) * (rows - 1);
+        let bestAt = -1, bestD = Infinity;
+        for (let k = 0; k < cols * rows; k++) { if (taken.has(k)) continue; const d = (k % cols - tx) ** 2 + ((Math.floor(k / cols) - ty) * RATIO) ** 2; if (d < bestD) { bestD = d; bestAt = k; } }
+        if (bestAt >= 0) { taken.add(bestAt); put(bestAt % cols, Math.floor(bestAt / cols), s); }
+      }
     } else if (mode === "family") {
       flow(styles, families).forEach((s, i) => put(i % cols, Math.floor(i / cols), s));
     } else {
@@ -151,11 +170,11 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
     }
     // What the library has not made yet fills the places left over.
     let k = 0;
-    for (let i = 0; i < grid.length; i++) if (!grid[i] && holes.length > 0) grid[i] = { kind: "soon", h: holes[k++ % holes.length] };
+    if (mode !== "plot") for (let i = 0; i < grid.length; i++) if (!grid[i] && holes.length > 0) grid[i] = { kind: "soon", h: holes[k++ % holes.length] };
     const where = new Map<string, { c: number; r: number }>();
     grid.forEach((cell, i) => { if (cell?.kind === "style") where.set(cell.s.id, { c: i % cols, r: Math.floor(i / cols) }); });
     return { cols, rows, grid, where };
-  }, [styles, families, holes, mode, hue, ask.fits, topFit, byId]);
+  }, [styles, families, holes, mode, hue, ask.fits, topFit, byId, axes]);
   const cellAt = useCallback((c: number, r: number) => world.grid[mod(r, world.rows) * world.cols + mod(c, world.cols)], [world]);
 
   const lit = useMemo(() => {
@@ -163,6 +182,12 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
     if (hue) return new Set(styles.filter((s) => hueOf(s.ink) === hue).map((s) => s.id));
     return null;
   }, [ask.fits, hue, styles, byId]);
+  // "only the dark ones": of what is lit, or of the whole wall when nothing is.
+  const litNow = useMemo(() => {
+    if (!narrow) return lit;
+    const has = (id: string) => { const s = byId.get(id); return Boolean(s && valueOf(s, narrow.trait) >= 58); };
+    return new Set((lit ? [...lit] : styles.map((s) => s.id)).filter(has));
+  }, [lit, narrow, byId, styles]);
 
   // ---- the camera: an offset that never stops at an edge, and a light ---------
   const cam = useRef({ x: 0, y: 0, vx: 0, vy: 0, px: -1, py: -1, run: 0, drag: null as null | { x: number; y: number; t: number; far: number }, pinch: 0 });
@@ -231,11 +256,11 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
   // A new sort or a new answer brings its centre (or its best fit) into view.
   const led = useRef("");
   useEffect(() => {
-    const key = `${mode}|${topFit ?? ""}|${hue}`;
+    const key = `${mode}|${topFit ?? ""}|${hue}|${axes?.x ?? ""}${axes?.y ?? ""}${axes?.reverse ? "r" : ""}`;
     if (led.current === key || size.w === 0) return;
     const f = requestAnimationFrame(() => { led.current = key; const at = topFit && mode === "fit" ? world.where.get(topFit) : undefined; bring(at?.c ?? Math.floor(world.cols / 2), at?.r ?? Math.floor(world.rows / 2)); });
     return () => cancelAnimationFrame(f);
-  }, [mode, topFit, hue, size.w, world, bring]);
+  }, [mode, topFit, hue, axes, size.w, world, bring]);
 
   const zoomTo = useCallback((next: number, ax = size.w / 2, ay = size.h / 2) => {
     const z = Math.max(0, Math.min(2, next));
@@ -338,21 +363,40 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
   // ordinary question, or it may be "only art styles, by family, zoomed out", "compare Hertz and Lido", "more like
   // Reticle", "make them slides". The page performs the actions it is handed; it has no other interface for them.
   const [did, setDid] = useState<string[]>([]);
+  const [verdict, setVerdict] = useState<{ id: string; q: string; suits: number; helps: string[]; hurts: string[] } | null>(null);
+  // The shortlist outlives the question: it is kept on this device.
+  const [pins, setPins] = useState<string[]>([]);
+  useEffect(() => { try { const saved = JSON.parse(localStorage.getItem("katagami-shortlist") ?? "[]"); if (Array.isArray(saved)) requestAnimationFrame(() => setPins(saved.filter((x) => typeof x === "string").slice(0, 24))); } catch { /* none kept */ } }, []);
+  const pin = useCallback((ids: string[]) => setPins((now) => { const next = [...new Set([...now, ...ids])].slice(0, 24); try { localStorage.setItem("katagami-shortlist", JSON.stringify(next)); } catch { /* private window */ } return next; }), []);
+  const unpin = useCallback((id: string) => setPins((now) => { const next = now.filter((x) => x !== id); try { localStorage.setItem("katagami-shortlist", JSON.stringify(next)); } catch { /* private window */ } return next; }), []);
+  // One step back: what the screen was before the last thing typed.
+  const before = useRef<null | { kinds: Kinds; mode: Mode; hue: string; skin: Skin; zoom: number; pair: string[] | null; axes: Axes | null; narrow: { trait: string; label: string } | null }>(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const undo = () => { const b = before.current; if (!b) return; setKinds(b.kinds); setMode(b.mode); setHue(b.hue); pickSkin(b.skin); setZoom(b.zoom); setPair(b.pair); setAxes(b.axes); setNarrow(b.narrow); before.current = null; setCanUndo(false); setDid(["Undone"]); };
   const [pair, setPair] = useState<string[] | null>(null);
   const command = useCallback(async (text: string) => {
     const q = text.trim();
     if (q.length < 2) return;
     setDid(["Reading…"]);
+    before.current = { kinds, mode, hue, skin, zoom, pair, axes, narrow };
+    setCanUndo(true);
+    const ranked = ask.fits ? [...ask.fits.entries()].filter(([id]) => byAny.has(id)).sort((a, b) => a[1].rank - b[1].rank).map(([id]) => id) : [];
+    const openStyle = open ? cellAt(open.c, open.r) : null, openId = openStyle?.kind === "style" ? openStyle.s.id : "";
+    // Words that point at the screen ("this", "the top two") are resolved here, where the screen is known.
+    const count = ({ one: 1, two: 2, three: 3, four: 4, five: 5 } as Record<string, number>)[(q.toLowerCase().match(/\b(one|two|three|four|five)\b/) ?? [])[1] ?? ""] ?? 0;
+    if (/\bcompare\b/i.test(q) && /\btop\b/i.test(q) && ranked.length >= 2) { setPair(ranked.slice(0, Math.max(2, Math.min(3, count || 2)))); setTray(false); setDid([`Comparing the top ${Math.max(2, Math.min(3, count || 2))}`]); ask.setQuery(""); return; }
+    if (openId && /\b(more )?like (this|it)\b/i.test(q)) { const from = byAny.get(openId)!; setOpen(null); ask.setQuery(`like ${from.name}`); void ask.ask(`something like ${from.name}: ${from.traits.slice(0, 8).join(", ")}`, kinds); setDid([`Like ${from.name}`]); return; }
+    if (openId && /\bpin (this|it)\b/i.test(q)) { pin([openId]); setDid(["Pinned"]); ask.setQuery(""); return; }
     let actions: { do: string; [k: string]: unknown }[] = [{ do: "ask", q }];
     try {
-      const res = await fetch(`/api/explore/command?${new URLSearchParams({ q, answer: ask.answer ? "1" : "0" })}`);
+      const res = await fetch(`/api/explore/command?${new URLSearchParams({ q, answer: ask.answer ? "1" : "0", ...(openId ? { open: openId, kind: byAny.get(openId)?.kind ?? "language" } : {}) })}`);
       const body = await res.json();
       if (res.ok && Array.isArray(body.actions) && body.actions.length > 0) actions = body.actions;
     } catch { /* the ordinary question is the fallback */ }
     const said: string[] = [];
     let nextKinds = kinds;
     for (const a of actions) {
-      if (a.do === "reset") { ask.clear(); setHue(""); setPair(null); setTray(false); setKinds({ language: true, art_style: true }); setMode("colour"); said.push("Cleared"); }
+      if (a.do === "reset") { ask.clear(); setHue(""); setPair(null); setAxes(null); setNarrow(null); setTray(false); setKinds({ language: true, art_style: true }); setMode("colour"); said.push("Cleared"); }
       else if (a.do === "kinds") { nextKinds = { language: Boolean(a.language), art_style: Boolean(a.art_style) }; setKinds(nextKinds); said.push(nextKinds.language && nextKinds.art_style ? "Everything" : nextKinds.language ? "Design languages only" : "Art styles only"); }
       else if (a.do === "sort") { setMode(a.by === "family" ? "family" : "colour"); said.push(`Sorted by ${a.by}`); }
       else if (a.do === "colour") { if (ask.answer) ask.clear(); setHue(String(a.hue)); said.push(`${a.hue} gathered`); }
@@ -360,14 +404,19 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
       else if (a.do === "zoom") { zoomTo(zoom + Number(a.by)); said.push(Number(a.by) > 0 ? "Closer" : "Further"); }
       else if (a.do === "compare") { nextKinds = { language: true, art_style: true }; setKinds(nextKinds); setPair(a.ids as string[]); setTray(false); said.push(`Comparing ${(a.names as string[]).join(" and ")}`); }
       else if (a.do === "like") { const from = byAny.get(String(a.id)); if (from) { nextKinds = { language: true, art_style: true }; setKinds(nextKinds); setPair(null); ask.setQuery(`like ${from.name}`); void ask.ask(`something like ${from.name}: ${from.traits.slice(0, 8).join(", ")}`, nextKinds); said.push(`Like ${from.name}`); } }
+      else if (a.do === "arrange") { setAxes({ x: String(a.trait), reverse: Boolean(a.reverse), labels: [String(a.label)] }); setMode("trait"); setTray(false); setPair(null); said.push(`Arranged by ${a.label}`); }
+      else if (a.do === "plot") { setAxes({ x: String(a.x), y: String(a.y), labels: a.labels as string[] }); setMode("plot"); setTray(false); setPair(null); said.push(`${(a.labels as string[])[0]} against ${(a.labels as string[])[1]}`); }
+      else if (a.do === "narrow") { setNarrow({ trait: String(a.trait), label: String(a.label) }); setTray(false); said.push(`Only ${a.label}`); }
+      else if (a.do === "pin") { const ids = openId ? [openId] : ranked.slice(0, Number(a.n) || 3); if (ids.length > 0) { pin(ids); said.push(`Pinned ${ids.length}`); } else said.push("Nothing to pin yet"); }
+      else if (a.do === "judge") { setVerdict({ id: String(a.id), q, suits: Number(a.suits), helps: (a.helps as string[]) ?? [], hurts: (a.hurts as string[]) ?? [] }); said.push("Judged"); }
       else if (a.do === "refine") { void ask.refine(String(a.say), nextKinds); said.push("Refined"); }
       else { setPair(null); setHue(""); void ask.ask(q, nextKinds); }
     }
     setDid(said);
     if (said.length > 0 && !actions.some((a) => ["ask", "refine", "like"].includes(a.do))) ask.setQuery("");
-  }, [ask, kinds, byAny, zoom, zoomTo]);
+  }, [ask, kinds, byAny, zoom, zoomTo, mode, hue, skin, pair, axes, narrow, open, cellAt, pin]);
 
-  const tab = (value: Mode, label: string, off = false) => <button type="button" disabled={off} aria-pressed={mode === value} onClick={() => setMode(value)} className={`shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 text-[12.5px] disabled:cursor-default disabled:opacity-40 ${mode === value ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"}`}>{label}</button>;
+  const tab = (value: Mode, label: string, off = false) => <button type="button" disabled={off} aria-pressed={mode === value} onClick={() => { setAxes(null); setMode(value); }} className={`shrink-0 cursor-pointer whitespace-nowrap px-3 py-1.5 text-[12.5px] disabled:cursor-default disabled:opacity-40 ${mode === value ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"}`}>{label}</button>;
   const glass = "bg-background/70 shadow-[0_8px_30px_-12px_rgba(30,35,45,0.4)] backdrop-blur-xl backdrop-saturate-150";
 
   if (!screen) return <div className="h-[calc(100dvh-65px)] w-full" aria-busy="true" />;
@@ -378,7 +427,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
       <div role="application" aria-label="The sheet. Drag or use the arrow keys to move across it; plus and minus change how much you see." tabIndex={0} onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} onKeyDown={onKey} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={(e) => { if (e.pointerType === "mouse") { cam.current.px = -1; cam.current.py = -1; paint(); } }} ref={surface}
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">
         <div ref={layer} className="absolute left-0 top-0 will-change-transform">
-          <Sheet hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={lit} onOpen={openCell} />
+          <Sheet hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} />
         </div>
         <div ref={glare} aria-hidden className="canvas-glare" />
       </div>
@@ -403,10 +452,26 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
         <button type="button" onClick={() => zoomTo(zoom - 1)} disabled={zoom === 0} aria-label="Further" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">−</button>
       </div>
 
-      {style && open ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => setOpen(null)} /> : null}
+      {style && open ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => { setOpen(null); setVerdict(null); }} verdict={verdict && verdict.id === style.id ? verdict : null} pinned={pins.includes(style.id)} onPin={() => (pins.includes(style.id) ? unpin(style.id) : pin([style.id]))} /> : null}
+      {axes && (mode === "trait" || mode === "plot") ? (
+        <p className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${glass}`} style={{ top: "calc(var(--head, 60px) + 14px)" }}>
+          {mode === "plot" ? <>← less {axes.labels[0]} · more → <span className="mx-2 opacity-40">|</span> ↓ less {axes.labels[1]} · more ↑</> : <>{axes.reverse ? "most" : "least"} {axes.labels[0]} ← → {axes.reverse ? "least" : "most"}</>}
+        </p>
+      ) : null}
+      {pins.length > 0 && !open ? (
+        <aside aria-label="Shortlist" className={`absolute right-3 z-[34] flex max-h-[60%] w-[5.5rem] flex-col gap-2 overflow-y-auto p-2 md:right-5 ${glass}`} style={{ top: "calc(var(--head, 60px) + 14px)" }}>
+          <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-foreground/60">Shortlist {pins.length}</p>
+          {pins.map((id) => { const s = byAny.get(id); return s ? (
+            <div key={id} className="group relative">
+              <button type="button" onClick={() => goTo(id)} aria-label={s.name} title={s.name} className="block cursor-pointer"><Card src={s.thumbnail_url} ink={s.ink} w={72} h={72} fast={128} /></button>
+              <button type="button" onClick={() => unpin(id)} aria-label={`Remove ${s.name}`} className="absolute -right-1 -top-1 cursor-pointer bg-foreground px-1 text-[10px] leading-4 text-background opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">×</button>
+            </div>
+          ) : null; })}
+        </aside>
+      ) : null}
       {pair ? <Compare ids={pair} byId={byAny} familyOf={familyOf} phone={phone} onOpen={(id) => { setPair(null); goTo(id); }} onClose={() => setPair(null)} /> : null}
       {tray && ask.fits && !open && !pair ? <Tray fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
-      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={lit ? lit.size : null} kinds={kinds} quiet onSubmit={command} note={did} />
+      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet onSubmit={command} note={did} onUndo={canUndo ? undo : undefined} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["only the dark ones", "compare the top two", "pin these three", "quietest to loudest"] : ["a calm booking app for an island ferry", "dark to light", "playful against dense", "only art styles, by family"]} />
     </div>
     </SkinContext.Provider>
   );
@@ -497,7 +562,7 @@ function scatter(ratios: number[], width: number, height: number) {
 /** A stamp opened: the entry's pictures at their own shape, the main one large, on a veil of the entry's ink.
  *  The picture is the way in (it is a link to the entry's page), as is the wide button under it. What the sheet
  *  already loaded is shown at once, soft, while the large picture arrives over it. */
-function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style: AtlasStyle; family: Family | null; fit: Fit | null; judging: boolean; phone: boolean; onTurn: (by: number) => void; onClose: () => void }) {
+function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, pinned, onPin }: { style: AtlasStyle; family: Family | null; fit: Fit | null; judging: boolean; phone: boolean; onTurn: (by: number) => void; onClose: () => void; verdict: { q: string; suits: number; helps: string[]; hurts: string[] } | null; pinned: boolean; onPin: () => void }) {
   const root = useRef<HTMLDivElement | null>(null);
   const swipe = useRef<{ x: number } | null>(null);
   const pictures = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.thumbnail_url ? [style.thumbnail_url] : []), [style]);
@@ -517,7 +582,8 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
         if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); } else if (!root.current.contains(document.activeElement)) { e.preventDefault(); first?.focus(); }
         return;
       }
-      if (e.key === "Escape") onClose(); else if (e.key === "ArrowRight") onTurn(1); else if (e.key === "ArrowLeft") onTurn(-1);
+      const typing = (e.target as HTMLElement | null)?.tagName === "TEXTAREA" || (e.target as HTMLElement | null)?.tagName === "INPUT";
+      if (e.key === "Escape") onClose(); else if (!typing && e.key === "ArrowRight") onTurn(1); else if (!typing && e.key === "ArrowLeft") onTurn(-1);
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
@@ -526,11 +592,14 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
   useEffect(() => { for (const p of pictures.slice(1, 4)) { const img = new Image(); img.src = quick(p, big); } }, [pictures, big]);
 
   // Desk: every picture at once, as stamps of different sizes arranged like prints on a table. Phone: one at a time.
-  const roomW = phone ? window.innerWidth - 56 : Math.min(window.innerWidth * 0.66, 1040), roomH = (window.innerHeight - 65) * (phone ? 0.44 : 0.6);
+  const roomW0 = phone ? window.innerWidth - 56 : Math.min(window.innerWidth * 0.66, 1040), dockH = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dock-h")) || 170;
+  // What is left between the header and the ask bar, less the name, the traits, a verdict and the button.
+  const roomH = Math.max(200, window.innerHeight - 65 - dockH - (phone ? 250 : 230) - (verdict ? 96 : 0));
+  const roomW = Math.min(roomW0, roomH * 2.1); // a short table is also a narrower one, so the prints keep their proportions
   const shown = phone ? (main ? [main] : []) : pictures;
   const placed = scatter(shown.map((p) => shapes[p] ?? 1.5), roomW, roomH);
   return (
-    <div ref={root} role="dialog" aria-modal="true" aria-label={style.name} className="viewer-veil absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 overflow-y-auto px-4 pb-6 pt-16 backdrop-blur-2xl md:pt-6 backdrop-saturate-150" style={{ background: `color-mix(in srgb, ${style.ink ?? "#888"} 34%, color-mix(in srgb, var(--background) 78%, transparent))` }}
+    <div ref={root} role="dialog" aria-modal="true" aria-label={style.name} className="viewer-veil absolute inset-0 z-40 flex flex-col items-center gap-4 [justify-content:safe_center] overflow-y-auto px-4 pt-16 backdrop-blur-2xl md:pt-6 backdrop-saturate-150" style={{ background: `color-mix(in srgb, ${style.ink ?? "#888"} 34%, color-mix(in srgb, var(--background) 78%, transparent))`, paddingBottom: "calc(var(--dock-h, 150px) + 16px)" }}
       onClick={onClose} onPointerMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--lx", String(Math.round((e.clientX - r.left - r.width / 2) * 1.6))); e.currentTarget.style.setProperty("--ly", String(Math.round((e.clientY - r.top - r.height * 0.4) * 1.6))); }} onPointerDown={(e) => { swipe.current = { x: e.clientX }; }} onPointerUp={(e) => { const d = swipe.current ? e.clientX - swipe.current.x : 0; swipe.current = null; if (Math.abs(d) > 70) { e.stopPropagation(); onTurn(d < 0 ? 1 : -1); } }}>
       <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 z-10 cursor-pointer bg-background/70 p-2.5 backdrop-blur-md"><X size={18} /></button>
       <button type="button" onClick={(e) => { e.stopPropagation(); onTurn(-1); }} aria-label="Previous" className="absolute left-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer bg-background/70 p-3 backdrop-blur-md max-md:hidden"><ArrowLeft size={18} /></button>
@@ -571,9 +640,18 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose }: { style
         <h2 className="font-display text-[24px] font-bold leading-tight tracking-[-0.02em] max-md:sr-only md:text-[30px]">{style.name}</h2>
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/70">{style.kind === "language" ? "Design language" : "Art style"}{family ? ` · ${family.label}` : ""}{fit ? <span className="font-bold" style={{ color: fit.strange ? "var(--sakura)" : "var(--ramune)" }}> · {fitWord(fit, judging)}</span> : null}</p>
         {style.traits.length > 0 ? <p className="text-[13.5px] leading-snug text-foreground/75">{style.traits.slice(0, 5).map((t) => TRAIT.get(t) ?? t).join(" · ")}</p> : null}
+        {verdict ? (
+          <div aria-live="polite" className="mt-1 w-full bg-background/80 px-4 py-3 text-left backdrop-blur-md">
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/60">“{verdict.q}”</p>
+            <p className="mt-1 font-display text-[19px] font-bold tracking-[-0.02em]">{verdict.suits >= 0.72 ? "Yes, a good fit" : verdict.suits >= 0.5 ? "It could work" : verdict.suits >= 0.3 ? "A stretch" : "Probably not"} <span className="font-mono text-[11px] font-normal text-foreground/55">{Math.round(verdict.suits * 100)}</span></p>
+            {verdict.helps.length > 0 ? <p className="mt-1 text-[13px] text-foreground/80"><span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/55">For it </span>{verdict.helps.join(" · ")}</p> : null}
+            {verdict.hurts.length > 0 ? <p className="text-[13px] text-foreground/80"><span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/55">Against </span>{verdict.hurts.join(" · ")}</p> : null}
+          </div>
+        ) : null}
         <div className="mt-2 flex w-full items-stretch gap-2">
           <button type="button" onClick={() => onTurn(-1)} aria-label="Previous" className="cursor-pointer bg-background/70 px-4 backdrop-blur-md md:hidden"><ArrowLeft size={18} /></button>
           <Link href={style.href} data-open className="flex-1 bg-foreground px-7 py-4 text-center font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-background">Open {style.kind === "language" ? "language" : "art style"}</Link>
+          <button type="button" onClick={onPin} aria-pressed={pinned} className="cursor-pointer bg-background/70 px-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur-md">{pinned ? "Pinned" : "Pin"}</button>
           <button type="button" onClick={() => onTurn(1)} aria-label="Next" className="cursor-pointer bg-background/70 px-4 backdrop-blur-md md:hidden"><ArrowRight size={18} /></button>
         </div>
       </div>
