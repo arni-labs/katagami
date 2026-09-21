@@ -440,7 +440,7 @@ const baseHandler = createMcpHandler(
         title: "Describe the library",
         annotations: READS,
         description:
-          "Call this FIRST. Returns Katagami's three content kinds (design languages, palette systems, art styles) with live counts, the families you can browse (with counts), the art-style mediums, common tags per kind, and which facets each kind supports. This is how you learn what you can search by.",
+          "What is in the library, before you search it. Returns Katagami's three content kinds (design languages, palette systems, art styles) with live counts, the families you can browse (with counts), the art-style mediums, common tags per kind, and which facets each kind supports. This is how you learn what you can search by.",
         inputSchema: {},
       },
       async (_args, extra) => ok(await describeCatalog(tierOf(extra))),
@@ -453,7 +453,7 @@ const baseHandler = createMcpHandler(
         title: "Ask the library",
         annotations: READS,
         description:
-          "Find styles for a product, mood or brief. Describe what is being designed in one sentence and get the design languages and art styles that fit it, judged against each style's description rather than matched on keywords, with thumbnails. Returns `results` (best fit first: `fit` 0..1, strongest `traits`, `url`, `thumbnail_url`), `strange` (styles unlike the rest of the library that still fit — for when something unexpected is wanted), how the sentence was read (`wants`, `avoids`), and `reading`. To adjust an answer — \"quieter\", \"warmer, less corporate\" — call again with the same `query`, the returned `reading` and `changes`, and the adjustment in `refine`: the reading is moved rather than re-read, and `moved` says which traits went where. Use this before search_library whenever there is a brief rather than a name or tag. Palettes are not judged here; compose_kit chooses one, and search_library finds them by name or tag.",
+          "Find styles for a product, mood or brief. Describe what is being designed in one sentence and get the design languages and art styles that fit it, judged against each style's description rather than matched on keywords, with thumbnails. Returns `results` (best fit first: `fit` 0..1 — the judged fit, which is what the order follows — plus `match` 0..1, the cruder trait-similarity score the shortlist was drawn with, the strongest `traits`, `url` and `thumbnail_url`), `strange` (styles unlike the rest of the library that still fit — for when something unexpected is wanted), how the sentence was read (`wants`, `avoids`), and `reading`. To adjust an answer — \"quieter\", \"warmer, less corporate\" — call again with the same `query`, the returned `reading` and `changes`, and the adjustment in `refine`: the reading is moved rather than re-read, and `moved` says which traits went where. Use this before search_library whenever there is a brief rather than a name or tag. Palettes are not judged here; compose_kit chooses one, and search_library finds them by name or tag.",
         inputSchema: {
           query: z.string().min(8).max(400).describe("One sentence: what the product is and who it is for"),
           kind: z.enum(["design_language", "art_style"]).optional().describe("Omit to look through both"),
@@ -590,7 +590,7 @@ const baseHandler = createMcpHandler(
         title: "Get design tokens",
         annotations: READS,
         description:
-          "Only the design tokens of an entry — colours, type, spacing, radii — as JSON, a ready-to-paste Tailwind config, or CSS variables. `kind` defaults to design_language; a palette or art_style returns the tokens it has.",
+          "Only the design tokens of an entry, as JSON, a ready-to-paste Tailwind config, or CSS custom properties. Every group the entry stores is exported — colours, radii, spacing, shadows, motion, the type scale and its faces — and `fonts_url` (also an `@import` at the top of the CSS) loads the webfonts. `kind` defaults to design_language.",
         inputSchema: {
           kind: kindArg.optional(),
           ...ID_ALIASES,
@@ -611,7 +611,7 @@ const baseHandler = createMcpHandler(
         title: "Get the rendered reference page",
         annotations: READS,
         description:
-          "The URL of an entry's rendered reference page: the design language, palette or art style shown across real interface elements. Open it, or give it to the person, to see the entry in use before choosing it.",
+          "The URL of an entry's page on katagami.ai, where it is rendered across real interface elements — the same `url` every search and ask result already carries. Give it to the person to look at before they choose. Nothing here is needed to build: that is get_design_md and get_design_tokens.",
         inputSchema: { kind: kindArg, ...ID_ALIASES },
       },
       async (a, extra) => {

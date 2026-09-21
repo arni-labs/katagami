@@ -21,6 +21,7 @@ import { createHash } from "node:crypto";
 import atlasFamilies from "@/data/atlas-families.json";
 import styleInks from "@/data/style-inks.json";
 import atlasHoles from "@/data/atlas-holes.json";
+import { tokensToCss, tokensToTailwind } from "./design-tokens.mjs";
 import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
@@ -725,7 +726,7 @@ async function resolve(kind: Kind, idOrSlug: string, tier: Tier): Promise<Row | 
 export const NEEDS_SIGN_IN = {
   error: "not_available_on_sample_tier",
   message:
-    "This design isn't in the anonymous sample. Sign in with Google to unlock the full catalog (see whoami).",
+    "This entry isn't in the anonymous sample. Sign in with Google to unlock the full catalog (see whoami).",
 };
 
 export const NOT_FOUND = {
@@ -801,36 +802,16 @@ export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format
     tokens = raw as Record<string, unknown>;
   }
   if (format === "json") return { format, tokens };
-
-  const colors = (tokens.colors ?? {}) as Record<string, string>;
-  const radii = (tokens.radii ?? {}) as Record<string, string>;
-  const typo = (tokens.typography ?? {}) as Record<string, string>;
   if (format === "css") {
-    const lines = [
-      ":root {",
-      ...Object.entries(colors).map(([k, v]) => `  --color-${k}: ${v};`),
-      ...Object.entries(radii).map(([k, v]) => `  --radius-${k}: ${v};`),
-      typo.body_font ? `  --font-body: ${typo.body_font};` : "",
-      typo.heading_font ? `  --font-heading: ${typo.heading_font};` : "",
-      "}",
-    ].filter(Boolean);
-    return { format, css: lines.join("\n") };
+    const { css, fontsUrl } = tokensToCss(tokens);
+    return { format, css, fonts_url: fontsUrl };
   }
-  // tailwind
-  const config = {
-    theme: {
-      extend: {
-        colors,
-        borderRadius: radii,
-        fontFamily: {
-          ...(typo.heading_font ? { heading: [typo.heading_font] } : {}),
-          ...(typo.body_font ? { body: [typo.body_font] } : {}),
-          ...(typo.mono_font ? { mono: [typo.mono_font] } : {}),
-        },
-      },
-    },
+  const typo = (tokens.typography ?? {}) as Record<string, unknown>;
+  return {
+    format,
+    tailwind_config: tokensToTailwind(tokens),
+    fonts_url: typeof typo.google_fonts_url === "string" ? typo.google_fonts_url : null,
   };
-  return { format, tailwind_config: config };
 }
 
 // --- ask the encyclopedia: directions, made or not ----------------------------
