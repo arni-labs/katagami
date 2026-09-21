@@ -22,18 +22,12 @@ type CardProps = { src: string | null; ink: string | null; w: number; h: number;
 function frame(skin: Skin, w: number, label: boolean) {
   const cap = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(n)));
   switch (skin) {
-    case "stencil": return { x: cap(w * 0.06, 4, 11), top: cap(w * 0.06, 4, 11), foot: label ? cap(w * 0.17, 12, 28) : cap(w * 0.06, 4, 11) };
-    case "swatch": return { x: 0, top: 0, foot: label ? cap(w * 0.34, 20, 58) : cap(w * 0.12, 8, 18) };
+    case "stencil": return { x: cap(w * 0.07, 5, 13), top: cap(w * 0.07, 5, 13), foot: label ? cap(w * 0.16, 12, 26) : cap(w * 0.07, 5, 13) };
+    case "swatch": return { x: 0, top: 0, foot: label ? cap(w * 0.2, 14, 32) : 0 };
     case "proof": return { x: cap(w * 0.08, 6, 16), top: cap(w * 0.1, 7, 20), foot: label ? cap(w * 0.2, 14, 34) : cap(w * 0.1, 7, 20) };
     default: return { x: 0, top: 0, foot: 0 };
   }
 }
-
-const tints = (ink: string | null) => {
-  const [r, g, b] = [1, 3, 5].map((i) => parseInt((ink ?? "#9ba1a6").slice(i, i + 2), 16));
-  const mix = (t: number, to: number) => `rgb(${[r, g, b].map((v) => Math.round(v + (to - v) * t)).join(",")})`;
-  return [mix(0.55, 255), mix(0.25, 255), mix(0, 0), mix(0.35, 0), mix(0.65, 0)];
-};
 
 export function Card(props: CardProps) {
   const skin = useContext(SkinContext);
@@ -53,33 +47,30 @@ export function Card(props: CardProps) {
   );
   const name = label ? <span className="truncate">{label}</span> : null;
   const litStyle = { ["--bite" as string]: "0px", ...(lit ? { ["--cx" as string]: lit.x, ["--cy" as string]: lit.y } : null) };
-  const shell = `card-${skin} relative block ${lit ? "lit" : ""}`;
+  const shell = `kcard card-${skin} relative block ${lit ? "lit" : ""}`;
 
   if (skin === "stencil") return (
-    // Katagami proper: thin persimmon-tanned paper, a window cut with a fine knife, and the net of silk threads
-    // (itoire) that holds a delicate cut together, laid across the opening.
+    // Katagami proper, kept quiet: flat persimmon-tanned paper, a window cut with a fine knife, one hairline set
+    // just outside the cut as a stencil-cutter's guide, and the name small and widely spaced.
     <span className={shell} style={{ ...litStyle, width: w, height: h }}>
       {picture}
-      <span aria-hidden className="card-stencil-threads absolute" style={{ left: f.x, right: f.x, top: f.top, bottom: f.foot }} />
-      <span aria-hidden className="absolute" style={{ left: f.x, right: f.x, top: f.top, bottom: f.foot, boxShadow: "inset 0 0 0 0.5px rgba(255,232,205,0.5), inset 0 1px 2px rgba(40,18,8,0.35)" }} />
+      <span aria-hidden className="absolute" style={{ left: f.x, right: f.x, top: f.top, bottom: f.foot, boxShadow: "inset 0 1px 2px rgba(30,12,4,0.4)" }} />
+      <span aria-hidden className="absolute" style={{ left: f.x - 3, right: f.x - 3, top: f.top - 3, bottom: f.foot - 3, boxShadow: "inset 0 0 0 0.5px rgba(246,232,214,0.42)" }} />
       {label ? (
-        <span className="absolute flex items-center justify-between gap-2 text-[#f6ead8]" style={{ left: f.x + 1, right: f.x + 1, bottom: 0, height: f.foot }}>
-          <span className="truncate font-mono uppercase" style={{ fontSize: Math.max(6, Math.min(10.5, f.foot * 0.34)), letterSpacing: "0.2em", fontWeight: 400 }}>{label}</span>
-          {value ? <span className="shrink-0 font-mono opacity-70" style={{ fontSize: Math.max(6, f.foot * 0.3) }}>{value}</span> : <span aria-hidden className="card-stencil-komon shrink-0" style={{ width: f.foot * 1.5, height: Math.max(5, f.foot * 0.36) }} />}
+        <span className="absolute flex items-center justify-center gap-2 text-[#f4e8d6]" style={{ left: f.x, right: f.x, bottom: 0, height: f.foot }}>
+          <span className="truncate font-display" style={{ fontSize: Math.max(6.5, Math.min(11.5, f.foot * 0.4)), letterSpacing: "0.16em", fontWeight: 500, textTransform: "uppercase" }}>{label}</span>
+          {value ? <span className="shrink-0 font-mono opacity-60" style={{ fontSize: Math.max(6, f.foot * 0.3) }}>{value}</span> : null}
         </span>
       ) : null}
     </span>
   );
-  if (skin === "swatch") {
-    const chips = tints(ink);
-    return (
-      <span className={shell} style={{ ...litStyle, width: w, height: h }}>
-        {picture}
-        <span className="absolute inset-x-0 flex" style={{ bottom: label ? f.foot * 0.56 : 0, height: label ? f.foot * 0.44 : f.foot }}>{chips.map((c) => <span key={c} className="flex-1" style={{ background: c }} />)}</span>
-        {label ? <span className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 px-[6%] font-semibold text-[#111]" style={{ height: f.foot * 0.56, fontSize: type * 1.05 }}>{name}<span className="shrink-0 font-mono font-normal text-[#111]/55" style={{ fontSize: type * 0.82 }}>{value ?? code}</span></span> : null}
-      </span>
-    );
-  }
+  if (skin === "swatch") return (
+    // A chip: the picture, and its name on white beneath. Nothing else.
+    <span className={shell} style={{ ...litStyle, width: w, height: h }}>
+      {picture}
+      {label ? <span className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 px-[6%] text-[#111]" style={{ height: f.foot, fontSize: type * 1.05 }}><span className="truncate font-semibold">{label}</span>{value ? <span className="shrink-0 font-mono font-normal text-[#111]/55" style={{ fontSize: type * 0.82 }}>{value}</span> : null}</span> : null}
+    </span>
+  );
   if (skin === "proof") return (
     <span className={shell} style={{ ...litStyle, width: w, height: h }}>
       {/* A flat of the style's ink, printed a little out of register behind the picture. */}

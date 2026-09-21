@@ -120,7 +120,6 @@ export function useAsk() {
 }
 
 const MARK: Record<string, string> = { what: "var(--yuzu)", who: "var(--sakura)", feel: "var(--ramune)" };
-const CHANGES = ["warmer", "quieter", "bolder", "more playful", "darker", "more editorial"];
 
 /** The ask, docked under the thumb, and the sentence is its own display: what is typed is set in the display face
  *  and, when the typing pauses, the telling words take a highlighter (what it is, who it is for, how it should
@@ -131,7 +130,6 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
   const found = quiet ? [] : ask.fits ? [...ask.fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank) : [];
   const dock = useRef<HTMLDivElement | null>(null);
   const [read, setRead] = useState<Word[]>([]);
-  const [say, setSay] = useState("");
   const busy = ask.state === "asking";
 
   // The words are read when the typing has paused, not on every key; an answer's own reading is used as it is.
@@ -175,19 +173,15 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
             {found.map(([id]) => <li key={id} className="shrink-0"><button type="button" onClick={() => onGo(id)} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2 py-1.5 text-[12.5px] hover:bg-[color-mix(in_srgb,var(--foreground)_11%,transparent)]">{byId.get(id)?.name}</button></li>)}
           </ul>
         ) : null}
-        {ask.answer?.want ? (
-          <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-            {/* First in the row, so it is always in reach however many traits have moved. */}
-            <form onSubmit={(e) => { e.preventDefault(); if (say.trim()) { void ask.refine(say, kinds); setSay(""); } }}>
-              <label htmlFor="refine" className="sr-only">Refine the answer</label>
-              <input id="refine" value={say} onChange={(e) => setSay(e.target.value)} maxLength={120} autoComplete="off" placeholder="refine in your words" className="w-[10.5rem] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[16px] outline-none placeholder:text-foreground/45 md:text-[12.5px]" />
-            </form>
-            {ask.moved.slice(0, 5).map((mv) => <span key={mv.trait} className="bg-foreground px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.12em] text-background">{mv.to > mv.from ? "+" : "−"} {mv.trait}</span>)}
-            {CHANGES.map((c) => <button key={c} type="button" disabled={busy} onClick={() => void ask.refine(c, kinds)} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2.5 py-1 text-[12.5px] hover:bg-[color-mix(in_srgb,var(--foreground)_13%,transparent)] disabled:opacity-40">{c}</button>)}
+        {/* One quiet line: what it just did (with a step back), then a few things worth typing now. */}
+        {(note && note.length > 0) || (hints && hints.length > 0 && !ask.query) ? (
+          <div aria-live="polite" className="flex items-center gap-1.5 overflow-x-auto px-0.5 [scrollbar-width:none] [&>*]:shrink-0 [&>*]:whitespace-nowrap">
+            {(note ?? []).map((n) => <span key={n} className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-foreground/80">{n}</span>)}
+            {onUndo && note && note.length > 0 && !note.includes("Undone") ? <button type="button" onClick={onUndo} className="cursor-pointer font-mono text-[10px] uppercase tracking-[0.12em] text-foreground/50 underline underline-offset-2 hover:text-foreground">Undo</button> : null}
+            {note && note.length > 0 && hints && hints.length > 0 && !ask.query ? <span aria-hidden className="mx-1 h-3 w-px bg-foreground/15" /> : null}
+            {hints && !ask.query ? hints.slice(0, 4).map((hint) => <button key={hint} type="button" onClick={() => { ask.setQuery(hint); if (onSubmit) onSubmit(hint); else void ask.ask(hint, kinds); }} className="cursor-pointer text-[12.5px] text-foreground/55 underline decoration-foreground/20 underline-offset-[3px] hover:text-foreground">{hint}</button>) : null}
           </div>
         ) : null}
-        {note && note.length > 0 ? <p aria-live="polite" className="flex flex-wrap gap-1.5 px-1">{note.map((n) => <span key={n} className="bg-[color-mix(in_srgb,var(--ramune)_16%,transparent)] px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.12em]">{n}</span>)}{onUndo && !note.includes("Reading…") && !note.includes("Undone") ? <button type="button" onClick={onUndo} className="cursor-pointer px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.12em] text-foreground/60 underline underline-offset-2 hover:text-foreground">Undo</button> : null}</p> : null}
-        {hints && hints.length > 0 && !ask.query ? <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&>*]:shrink-0 [&>*]:whitespace-nowrap"><span className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-foreground/45">Try</span>{hints.map((hint) => <button key={hint} type="button" onClick={() => { ask.setQuery(hint); if (onSubmit) onSubmit(hint); else void ask.ask(hint, kinds); }} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 py-1 text-[12.5px] text-foreground/75 hover:bg-[color-mix(in_srgb,var(--foreground)_12%,transparent)] hover:text-foreground">{hint}</button>)}</div> : null}
         {ask.state === "error" ? <p role="alert" className="px-1 text-[12.5px] text-[var(--beni)]">{ask.error}</p> : null}
         <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex items-end gap-2">
           <label htmlFor="explore-ask" className="sr-only">What are you making?</label>
@@ -202,7 +196,7 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
               className={`absolute inset-0 h-full w-full resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent px-1 py-1 text-transparent caret-[var(--foreground)] outline-none selection:bg-[color-mix(in_srgb,var(--ramune)_35%,transparent)] ${type}`} />
           </div>
-          <button type="submit" disabled={busy} className="shrink-0 cursor-pointer bg-foreground px-4 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-background disabled:opacity-50">{busy ? "Reading" : "Ask"}</button>
+          <button type="submit" disabled={busy} className="shrink-0 cursor-pointer bg-foreground px-4 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-background disabled:opacity-50">{busy ? "…" : "Ask"}</button>
         </form>
         <div className="flex items-center gap-2 px-1">
           <div role="group" aria-label="Colour" className="flex gap-1.5 overflow-x-auto p-0.5 [scrollbar-width:none]">
