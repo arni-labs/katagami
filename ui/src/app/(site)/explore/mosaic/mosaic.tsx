@@ -562,13 +562,20 @@ function Tray({ fits, byId, judging, phone, want, onOpen, onClose }: { want: Rec
 }
 
 /** Each picture's own shape (width over height), read from its small copy, which is usually already in the cache. */
-function useShapes(pictures: string[]) {
+function useShapes(pictures: string[], spare: string | null) {
   const [shapes, setShapes] = useState<Record<string, number>>({});
   useEffect(() => {
     let live = true;
-    for (const p of pictures) { const img = new Image(); img.onload = () => { if (live && img.naturalWidth > 0) setShapes((now) => (now[p] ? now : { ...now, [p]: img.naturalWidth / img.naturalHeight })); }; img.src = quick(p, NEAR); }
+    // A picture whose file is gone is measured from the spare the card will actually draw, or the whole entry is
+    // laid out for a shape nothing on it has.
+    for (const p of pictures) {
+      const img = new Image();
+      img.onload = () => { if (live && img.naturalWidth > 0) setShapes((now) => (now[p] ? now : { ...now, [p]: img.naturalWidth / img.naturalHeight })); };
+      if (spare) img.onerror = () => { if (live && img.src !== quick(spare, NEAR)) img.src = quick(spare, NEAR); };
+      img.src = quick(p, NEAR);
+    }
     return () => { live = false; };
-  }, [pictures]);
+  }, [pictures, spare]);
   return shapes;
 }
 
@@ -607,7 +614,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
   const swipe = useRef<{ x: number } | null>(null);
   const pictures = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.picture ? [style.picture] : []), [style]);
   const [at, setAt] = useState(0);
-  const shapes = useShapes(pictures);
+  const shapes = useShapes(pictures, style.thumbnail_url);
   // The thing people come for: the art style's prompt, or the language's DESIGN.md, on the clipboard in one press.
   const [copied, setCopied] = useState<"" | "copying" | "done" | "failed">("");
   const copy = async () => {

@@ -210,10 +210,10 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
           </ul>
         ) : null}
         {/* One quiet line: what it just did (with a step back), then a few things worth typing now. */}
-        {!compact && ((note && note.length > 0) || ask.changes || (hints && hints.length > 0 && fresh)) ? (
+        {!compact && ((note && note.length > 0) || (ask.answer && ask.changes) || (hints && hints.length > 0 && fresh)) ? (
           <div aria-live="polite" className="flex items-center gap-1.5 overflow-x-auto px-0.5 [scrollbar-width:none] [&>*]:shrink-0 [&>*]:whitespace-nowrap">
             {(note ?? []).map((n) => <span key={n} className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-foreground/80">{n}</span>)}
-            {ask.changes ? <span className="text-[12px] italic text-foreground/55">{ask.changes}</span> : null}
+            {ask.answer && ask.changes ? <span className="text-[12px] italic text-foreground/55">{ask.changes}</span> : null}
             {onUndo && note && note.length > 0 && !note.includes("Undone") ? <button type="button" onClick={onUndo} className="cursor-pointer font-mono text-[10px] uppercase tracking-[0.12em] text-foreground/50 underline underline-offset-2 hover:text-foreground">Undo</button> : null}
             {note && note.length > 0 && hints && hints.length > 0 && fresh ? <span aria-hidden className="mx-1 h-3 w-px bg-foreground/15" /> : null}
             {hints && fresh ? hints.slice(0, 4).map((hint) => <button key={hint} type="button" onClick={() => { sent.current = hint; ask.setQuery(hint); if (onSubmit) onSubmit(hint); else void ask.ask(hint, kinds); }} className="cursor-pointer text-[12.5px] text-foreground/55 underline decoration-foreground/20 underline-offset-[3px] hover:text-foreground">{hint}</button>) : null}
