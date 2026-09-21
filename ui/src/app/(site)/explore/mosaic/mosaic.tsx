@@ -576,6 +576,7 @@ function Tray({ fits, byId, judging, phone, want, onOpen, onClose }: { want: Rec
 /** Each picture's own shape (width over height), read from its small copy, which is usually already in the cache. */
 function useShapes(pictures: string[], spare: string | null) {
   const [shapes, setShapes] = useState<Record<string, number>>({});
+  const [dead, setDead] = useState<Set<string>>(() => new Set());
   useEffect(() => {
     let live = true;
     // A picture whose file is gone is measured from the spare the card will actually draw, or the whole entry is
@@ -583,12 +584,16 @@ function useShapes(pictures: string[], spare: string | null) {
     for (const p of pictures) {
       const img = new Image();
       img.onload = () => { if (live && img.naturalWidth > 0) setShapes((now) => (now[p] ? now : { ...now, [p]: img.naturalWidth / img.naturalHeight })); };
-      if (spare) img.onerror = () => { if (live && img.src !== quick(spare, NEAR)) img.src = quick(spare, NEAR); };
+      img.onerror = () => {
+        if (!live) return;
+        setDead((now) => (now.has(p) ? now : new Set(now).add(p)));
+        if (spare && img.src !== quick(spare, NEAR)) img.src = quick(spare, NEAR);
+      };
       img.src = quick(p, NEAR);
     }
     return () => { live = false; };
   }, [pictures, spare]);
-  return shapes;
+  return { shapes, dead };
 }
 
 // Prints dropped on a table: where each one lands (its centre, as a share of the table), how wide it is (as a share
@@ -624,9 +629,17 @@ function scatter(ratios: number[], width: number, height: number) {
 function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, pinned, onPin }: { style: AtlasStyle; family: Family | null; fit: Fit | null; judging: boolean; phone: boolean; onTurn: (by: number) => void; onClose: () => void; verdict: { q: string; suits: number; helps: string[]; hurts: string[] } | null; pinned: boolean; onPin: () => void }) {
   const root = useRef<HTMLDivElement | null>(null);
   const swipe = useRef<{ x: number } | null>(null);
-  const pictures = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.picture ? [style.picture] : []), [style]);
+  const held = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.picture ? [style.picture] : []), [style]);
   const [at, setAt] = useState(0);
-  const shapes = useShapes(pictures, style.thumbnail_url);
+  const { shapes, dead } = useShapes(held, style.thumbnail_url);
+  // A picture whose file is gone draws the entry's thumbnail instead, so an entry whose references are all gone was
+  // four cards of the same picture. Only the pictures that are really there are shown, and the thumbnail stands in
+  // once for all of them rather than once each.
+  const pictures = useMemo(() => {
+    const alive = held.filter((p) => !dead.has(p));
+    if (alive.length > 0) return alive;
+    return style.thumbnail_url ? [style.thumbnail_url] : held.slice(0, 1);
+  }, [held, dead, style.thumbnail_url]);
   // The thing people come for: the art style's prompt, or the language's DESIGN.md, on the clipboard in one press.
   const [copied, setCopied] = useState<"" | "copying" | "done" | "failed">("");
   const copy = async () => {
@@ -639,7 +652,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
     } catch { setCopied("failed"); }
     window.setTimeout(() => setCopied(""), 2200);
   };
-  const main = pictures[at] ?? null, big = phone ? 750 : 1080;
+  const main = pictures[Math.min(at, pictures.length - 1)] ?? null, big = phone ? 750 : 1080;
   // A modal: focus moves in when it opens, stays in while it is open, and goes back where it was when it closes.
   useEffect(() => {
     const before = document.activeElement as HTMLElement | null;
