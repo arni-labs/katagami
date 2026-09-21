@@ -374,9 +374,11 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
   const [canUndo, setCanUndo] = useState(false);
   const undo = () => { const b = before.current; if (!b) return; setKinds(b.kinds); setMode(b.mode); setHue(b.hue); pickSkin(b.skin); setZoom(b.zoom); setPair(b.pair); setAxes(b.axes); setNarrow(b.narrow); before.current = null; setCanUndo(false); setDid(["Undone"]); };
   const [pair, setPair] = useState<string[] | null>(null);
+  const commandTurn = useRef(0);
   const command = useCallback(async (text: string) => {
     const q = text.trim();
     if (q.length < 2) return;
+    const mine = ++commandTurn.current; // a reading that comes back after a newer command was typed is dropped
     setDid(["Reading…"]);
     before.current = { kinds, mode, hue, skin, zoom, pair, axes, narrow };
     setCanUndo(true);
@@ -393,6 +395,7 @@ export function Mosaic({ styles: all, families, holes }: { styles: AtlasStyle[];
       const body = await res.json();
       if (res.ok && Array.isArray(body.actions) && body.actions.length > 0) actions = body.actions;
     } catch { /* the ordinary question is the fallback */ }
+    if (mine !== commandTurn.current) return;
     const said: string[] = [];
     let nextKinds = kinds;
     for (const a of actions) {
