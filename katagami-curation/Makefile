@@ -23,7 +23,6 @@ test-deps: $(PY) $(DEV_REQUIREMENTS)
 	$(PY) -m pip install --quiet --disable-pip-version-check -r $(DEV_REQUIREMENTS)
 
 test-integration: test-deps
-	$(PY) -m pytest -q tests/test_art_style_attribution_policy.py
 	$(PY) -m unittest discover -s tests -p 'test_*.py'
 
 clean-venv:
