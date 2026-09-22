@@ -747,7 +747,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
           <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-foreground/60">Shortlist {pins.length}</p>
           {pins.map((id) => { const s = byAny.get(id); return s ? (
             <div key={id} className="group relative">
-              <button type="button" onClick={() => goTo(id)} aria-label={s.name} title={s.name} className="block cursor-pointer"><Card src={s.picture} spare={s.thumbnail_url} ink={s.ink} w={72} h={72} fast={NEAR} /></button>
+              <button type="button" onClick={() => goTo(id)} aria-label={s.name} title={s.name} className="block cursor-pointer"><Card src={s.picture} spare={s.thumbnail_url} ink={s.ink} w={72} h={72} fast={phone ? NEAR_PHONE : NEAR} /></button>
               <button type="button" onClick={() => unpin(id)} aria-label={`Remove ${s.name}`} className="absolute -right-1 -top-1 cursor-pointer bg-foreground px-1 text-[10px] leading-4 text-background opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">×</button>
             </div>
           ) : null; })}
@@ -819,7 +819,7 @@ function Tray({ fits, byId, judging, phone, want, onOpen, onClose }: { want: Rec
         {hand.map(([id, fit], i) => { const s = byId.get(id)!; return (
           <li key={id} className="tray-card shrink-0 snap-center" style={{ animationDelay: `${i * 55}ms`, ["--tilt" as string]: `${((i * 37) % 7) - 3}deg` }}>
             <button type="button" onClick={() => onOpen(id)} aria-label={s.name} className="block cursor-pointer text-center">
-              <Card src={s.picture} spare={s.thumbnail_url} ink={s.ink} w={w} h={h} label={s.name} code={codeOf(s.id)} fast={NEAR} />
+              <Card src={s.picture} spare={s.thumbnail_url} ink={s.ink} w={w} h={h} label={s.name} code={codeOf(s.id)} fast={phone ? NEAR_PHONE : NEAR} />
               <span className="mt-2 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-foreground/65">{fit.strange ? "A wild card" : fitWord(fit, judging)}</span>
               {/* Why: what was asked for that this one measurably has. */}
               {want ? <span className="mx-auto mt-0.5 block truncate text-[11.5px] text-foreground/60" style={{ maxWidth: w }}>{STYLE_DNA_QUESTIONS.filter((q) => (want[q.id] ?? 0) >= 0.62 && valueOf(s, q.id) >= 58).sort((a, b) => (want[b.id] ?? 0) - (want[a.id] ?? 0)).slice(0, 3).map((q) => q.label).join(" · ")}</span> : null}
@@ -941,7 +941,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
     } catch { setCopied("failed"); }
     window.setTimeout(() => setCopied(""), 2200);
   };
-  const main = pictures[Math.min(at, pictures.length - 1)] ?? null, big = phone ? 750 : 1080;
+  const main = pictures[Math.min(at, pictures.length - 1)] ?? null, big = phone ? 750 : 1080, near = phone ? NEAR_PHONE : NEAR;
   // A modal: focus moves in when it opens, stays in while it is open, and goes back where it was when it closes.
   useEffect(() => {
     const before = document.activeElement as HTMLElement | null;
@@ -983,7 +983,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
       {phone && main ? (
         // A phone shows one picture at a time, as one large stamp carrying the entry's name.
         <Link href={style.href} onClick={(e) => e.stopPropagation()} aria-label={`Open ${style.name}`} className="lit-big book-open block shrink-0 outline-none">
-          <Card key={main} src={main} spare={style.thumbnail_url} ink={style.ink} w={roomW} h={Math.min(roomH, roomW / (shapes[main] ?? 1.5))} windowed label={style.name} value={pictures.length > 1 ? `${at + 1}/${pictures.length}` : undefined} fast={750} under={quick(main, NEAR)} lit={{ x: 0, y: 0 }} />
+          <Card key={main} src={main} spare={style.thumbnail_url} ink={style.ink} w={roomW} h={Math.min(roomH, roomW / (shapes[main] ?? 1.5))} windowed label={style.name} value={pictures.length > 1 ? `${at + 1}/${pictures.length}` : undefined} fast={750} under={quick(main, near)} lit={{ x: 0, y: 0 }} />
         </Link>
       ) : null}
       {phone ? null : (
@@ -992,7 +992,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
           const at = placed[i];
           return (
             <Link key={p} href={style.href} aria-label={`Open ${style.name}`} className="collage-print absolute block outline-none" style={{ left: at.left, top: at.top, zIndex: at.z, ["--tilt" as string]: `${at.r}deg`, animationDelay: `${i * 80}ms` }}>
-              <Card src={p} spare={style.thumbnail_url} ink={style.ink} w={at.w} h={at.h} windowed fast={phone ? 750 : i === 0 ? 1080 : 750} under={quick(p, NEAR)} lit={{ x: at.left - roomW / 2, y: at.top - roomH / 2 }} />
+              <Card src={p} spare={style.thumbnail_url} ink={style.ink} w={at.w} h={at.h} windowed fast={phone ? 750 : i === 0 ? 1080 : 750} under={quick(p, near)} lit={{ x: at.left - roomW / 2, y: at.top - roomH / 2 }} />
             </Link>
           );
         })}
@@ -1005,7 +1005,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
             <li key={p} className="shrink-0">
               {/* A print in the strip keeps its own shape, as the large one above it does. A square cut a portrait
                   off at the chin and took the sides off a landscape, which read as damage rather than as a thumbnail. */}
-              <button type="button" onClick={() => setAt(i)} aria-label={`Picture ${i + 1} of ${pictures.length}`} aria-pressed={i === at} className="block cursor-pointer" style={{ opacity: i === at ? 1 : 0.65 }}><Card src={p} spare={style.thumbnail_url} ink={style.ink} w={Math.round(54 * Math.min(1.9, Math.max(0.62, shapes[p] ?? 1.5)))} h={54} fast={NEAR} /></button>
+              <button type="button" onClick={() => setAt(i)} aria-label={`Picture ${i + 1} of ${pictures.length}`} aria-pressed={i === at} className="block cursor-pointer" style={{ opacity: i === at ? 1 : 0.65 }}><Card src={p} spare={style.thumbnail_url} ink={style.ink} w={Math.round(54 * Math.min(1.9, Math.max(0.62, shapes[p] ?? 1.5)))} h={54} fast={near} /></button>
             </li>
           ))}
         </ul>
