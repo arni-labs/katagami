@@ -10,10 +10,11 @@ import { Stamp, quick } from "./stamp";
 //   stencil   katagami proper: persimmon-dyed stencil paper with the picture showing through a cut window
 //   swatch    a paint chip: the picture over its inks, with a colour code
 //   proof     a risograph proof: registration crosses, a colour bar, a block of ink out of register
+//   plain     the picture and nothing round it: the quiet sheet's card, its name shown only when pointed at
 
-export const SKINS = ["stamp", "stencil", "swatch", "proof"] as const;
+export const SKINS = ["stamp", "stencil", "swatch", "proof", "plain"] as const;
 export type Skin = (typeof SKINS)[number];
-export const SKIN_NAME: Record<Skin, string> = { stamp: "Stamp", stencil: "Stencil", swatch: "Swatch", proof: "Riso proof" };
+export const SKIN_NAME: Record<Skin, string> = { stamp: "Stamp", stencil: "Stencil", swatch: "Swatch", proof: "Riso proof", plain: "Plain" };
 export const SkinContext = createContext<Skin>("stamp");
 
 type CardProps = { src: string | null; ink: string | null; w: number; h: number; label?: string; value?: string; soon?: boolean; lit?: { x: number; y: number }; fast?: 128 | 256 | 384 | 750 | 1080; under?: string; /** `w`/`h` are the picture's size; the card is built round it. */ windowed?: boolean; /** A steady number for this entry, for skins that print one. */ code?: string; /** On screen: fetch it now rather than when the browser judges it near. */ eager?: boolean; /** Among the first on screen to be fetched. */ first?: boolean; /** A second picture to draw if the first one is gone from the store. */ spare?: string | null };
@@ -38,10 +39,10 @@ export function Card(props: CardProps) {
   if (windowed) { w = Math.round(w) + f.x * 2; h = Math.round(h) + f.top + f.foot; }
   const type = Math.max(6.5, Math.min(13, f.foot * 0.36));
   const picture = (
-    <span className="absolute overflow-hidden" style={{ left: f.x, right: f.x, top: f.top, bottom: f.foot, background: soon ? undefined : ink ?? "var(--muted)", ...(under ? { backgroundImage: `url("${under}")`, backgroundSize: "cover", backgroundPosition: "center" } : null) }}>
+    <span className="absolute overflow-hidden" style={{ left: f.x, right: f.x, top: f.top, bottom: f.foot, background: soon ? undefined : skin === "plain" ? "color-mix(in srgb, var(--foreground) 6%, var(--background))" : ink ?? "var(--muted)", ...(under ? { backgroundImage: `url("${under}")`, backgroundSize: "cover", backgroundPosition: "center" } : null) }}>
       {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img key={src} src={fast ? quick(src, fast) : quick(src, 256)} alt="" loading={eager || (fast && fast > 384) ? "eager" : "lazy"} fetchPriority={first || (fast && fast > 384) ? "high" : eager ? "auto" : "low"} decoding="async" draggable={false} data-spare={spare && fast ? quick(spare, fast) : undefined} onError={(e) => { const i = e.currentTarget; const s = i.dataset.spare; if (s && !i.dataset.spared) { i.dataset.spared = "1"; i.src = s; return; } i.style.visibility = "hidden"; }} className="absolute inset-0 h-full w-full object-cover" />
+        <img key={src} src={fast ? quick(src, fast) : quick(src, 256)} alt="" loading={eager || (fast && fast > 384) ? "eager" : "lazy"} fetchPriority={first || (fast && fast > 384) ? "high" : eager ? "auto" : "low"} decoding="async" draggable={false} onLoad={skin === "plain" ? (e) => { e.currentTarget.dataset.ready = "1"; } : undefined} data-spare={spare && fast ? quick(spare, fast) : undefined} onError={(e) => { const i = e.currentTarget; const s = i.dataset.spare; if (s && !i.dataset.spared) { i.dataset.spared = "1"; i.src = s; return; } i.style.visibility = "hidden"; }} className="absolute inset-0 h-full w-full object-cover" />
       ) : null}
     </span>
   );
@@ -49,6 +50,20 @@ export function Card(props: CardProps) {
   const litStyle = { ["--bite" as string]: "0px", ...(lit ? { ["--cx" as string]: lit.x, ["--cy" as string]: lit.y } : null) };
   const shell = `kcard card-${skin} relative block ${lit ? "lit" : ""}`;
 
+  if (skin === "plain") return (
+    // No paper, no light, no badge: the picture alone. The name waits until it is pointed at, except on a card
+    // opened large, where it is the caption.
+    <span className={`kplain card-plain group/plain relative block`} style={{ width: w, height: h }}>
+      {picture}
+      {label && windowed ? (
+        <span className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 px-0.5 text-[12.5px] text-foreground/75" style={{ height: 0, transform: "translateY(calc(100% + 18px))" }}>
+          <span className="truncate font-medium">{label}</span>{value ? <span className="shrink-0 font-mono text-[11px] text-foreground/55">{value}</span> : null}
+        </span>
+      ) : label ? (
+        <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-background/92 px-2 py-1 text-[12px] font-medium text-foreground opacity-0 transition-opacity duration-200 group-hover/plain:opacity-100">{label}</span>
+      ) : null}
+    </span>
+  );
   if (skin === "stencil") return (
     // Katagami proper, kept quiet: flat persimmon-tanned paper, a window cut with a fine knife, one hairline set
     // just outside the cut as a stencil-cutter's guide, and the name small and widely spaced.
