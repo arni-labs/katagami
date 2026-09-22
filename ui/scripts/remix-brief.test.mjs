@@ -79,9 +79,16 @@ assert.match(brief, /^palette_tokens:\n  signature:/m);
 assert.doesNotMatch(brief, /^palette_tokens:\nslots:/m);
 assert.match(brief, /prompt: "a ceramic teapot, in the style of flat geometric reconstruction, faded coral #a7564b/);
 assert.doesNotMatch(brief.split("## Art style recipe")[0], /\{palette\}|\{subject\}|\{composition\}/);
-assert.equal(brief.split(slotted).length - 1, 1);
-// Every link is absolute, so the brief survives being saved to disk.
-assert.match(brief, /DESIGN\.md: https:\/\/katagami\.test\/language\/en-1\/DESIGN\.md/);
+// The recipe section shows the template with this brief's palette in it and the
+// per-slot placeholders still named; no `{palette}` survives anywhere.
+assert.match(
+  brief,
+  /Canonical aesthetic prompt:\*\* `\{subject\}, in the style of flat geometric reconstruction, faded coral #a7564b, softened teal #527f7d, \{composition\}, filling the frame\.`/,
+);
+assert.doesNotMatch(brief, /\{palette\}/);
+// Every link is absolute, so the brief survives being saved to disk, and the
+// DESIGN.md URL ends its line with no punctuation stuck to it.
+assert.match(brief, /DESIGN\.md: https:\/\/katagami\.test\/language\/en-1\/DESIGN\.md\n/);
 assert.match(brief, /^- https:\/\/katagami\.test\/api\/file\/f-1\?v=2$/m);
 assert.match(brief, /^- https:\/\/assets\.example\.test\/optional\.jpg$/m);
 assert.doesNotMatch(brief, /^- \/|DESIGN\.md: \//m);
@@ -99,7 +106,8 @@ const unrooted = buildRemixBrief({
   composition: { key: "landing", name: "Landing", image_slots: [] },
 });
 assert.match(unrooted, /^palette_tokens: \{\}$/m);
-assert.match(unrooted, /DESIGN\.md: \/language\/en-1\/DESIGN\.md/);
+assert.match(unrooted, /DESIGN\.md: \/language\/en-1\/DESIGN\.md\n/);
+assert.equal(unrooted.split(aesthetic).length - 1, 1, "an unslotted recipe is shown verbatim");
 
 // compose_kit's brief_url carries the composition, and offers exactly the
 // compositions the brief route knows.

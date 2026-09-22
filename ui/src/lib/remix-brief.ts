@@ -190,6 +190,9 @@ export function buildRemixBrief(input: RemixBriefInput): string {
     "---",
   ].join("\n");
 
+  // The recipe is shown with the palette in it (one palette per brief) so no
+  // `{palette}` is left anywhere; the per-slot placeholders stay named.
+  const recipe = artStyle.promptTemplate.trim().replaceAll("{palette}", paletteToPromptString(signature));
   const designMdUrl = language.designMdUrl ? absoluteUrl(language.designMdUrl, origin) : "";
   const referenceUrls = (artStyle.referenceUrls ?? []).map((u) => absoluteUrl(u, origin));
   const refs = referenceUrls.length
@@ -202,7 +205,7 @@ export function buildRemixBrief(input: RemixBriefInput): string {
 **${language.name}** (UI) · **${palette.name}** (palette) · **${artStyle.name}** (art style, ${artStyle.medium})
 
 ## How to build this screen
-1. Apply the UI design language${designMdUrl ? `, see DESIGN.md: ${designMdUrl}` : ""}.
+1. Apply the UI design language.${designMdUrl ? ` DESIGN.md: ${designMdUrl}` : ""}
 2. Theme it with the palette tokens above (signature colours are the accents;
    map neutral and semantic roles to your color variables).
 3. For each slot below, **generate or edit** an image with its resolved prompt:
@@ -211,7 +214,9 @@ export function buildRemixBrief(input: RemixBriefInput): string {
    aesthetic prompt unchanged across models and slots.
 
 ## Art style recipe
-- **Canonical aesthetic prompt:** \`${artStyle.promptTemplate}\`
+- **Canonical aesthetic prompt:** \`${recipe}\`
+- The palette is this brief's, already filled in. \`{subject}\` and \`{composition}\`
+  are per slot and are filled in each slot's prompt above.
 
 ## Optional example images (view only; do not attach as style references)
 ${refs}
