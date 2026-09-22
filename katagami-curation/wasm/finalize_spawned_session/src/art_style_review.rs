@@ -231,15 +231,24 @@ pub(super) fn verify_portable_prompt(
 
     let normalized_name = normalized_words(style_name);
     let normalized_prompt = normalized_words(trimmed);
-    if normalized_name.len() >= 4
-        && format!(" {normalized_prompt} ").contains(&format!(" {normalized_name} "))
-    {
+    // Catalog names can also be ordinary material words (umber, deckle, burin).
+    // Reject explicit name-based instructions here; the independent exact-prompt
+    // review below establishes semantic catalog-name independence.
+    let named_instruction = normalized_prompt == normalized_name
+        || normalized_prompt == format!("use {normalized_name}")
+        || normalized_prompt == format!("apply {normalized_name}")
+        || ["style", "treatment", "aesthetic", "look"]
+            .iter()
+            .any(|suffix| {
+                format!(" {normalized_prompt} ").contains(&format!(" {normalized_name} {suffix} "))
+            });
+    if normalized_name.len() >= 4 && named_instruction {
         return Err(art_error(
             owner_id,
             "art_style_prompt_leaks_catalog_name",
             "prompt_template",
             format!(
-                "ArtStyle '{owner_id}' portable prompt repeats its catalog name '{style_name}' instead of observable aesthetic facts"
+                "ArtStyle '{owner_id}' portable prompt invokes its catalog name '{style_name}' as a style instruction instead of observable aesthetic facts"
             ),
         ));
     }
@@ -484,7 +493,9 @@ pub(super) fn verify_prompt_review(
             owner_id,
             "art_style_prompt_review_loop_invalid",
             "prompt_review",
-            format!("ArtStyle '{owner_id}' prompt review revision_count must be a nonnegative integer"),
+            format!(
+                "ArtStyle '{owner_id}' prompt review revision_count must be a nonnegative integer"
+            ),
         ));
     }
 
@@ -1252,7 +1263,10 @@ mod tests {
         for count in [0, 1, 2, 3, 12] {
             let mut fields = valid_fields();
             fields["prompt_review"]["revision_count"] = json!(count);
-            assert!(verify_prompt_review("as-1", &fields, PROMPT).is_ok(), "count {count}");
+            assert!(
+                verify_prompt_review("as-1", &fields, PROMPT).is_ok(),
+                "count {count}"
+            );
             fields["prompt_review"]["verdict"] = json!("fail");
             assert!(verify_prompt_review("as-1", &fields, PROMPT).is_err());
         }
@@ -1441,6 +1455,27 @@ mod tests {
                 "art_style_prompt_leaks_catalog_name"
             );
         }
+    }
+
+    #[test]
+    fn catalog_words_remain_usable_as_observable_materials() {
+        for (name, prompt) in [
+            ("Deckle", "Show torn deckle edges around the paper sheet."),
+            ("Umber", "Use umber pigment for the dark strokes."),
+            ("Burin", "Cut crisp tapered lines with a burin."),
+            ("Ink Wash", "Build pale tones with diluted ink wash."),
+        ] {
+            assert!(verify_portable_prompt("as-1", name, prompt).is_ok());
+        }
+    }
+
+    #[test]
+    fn a_review_that_depends_on_the_catalog_name_still_fails() {
+        let mut fields = valid_fields();
+        fields["prompt_review"]["style_name_independent"] = json!(false);
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_prompt_review_invalid");
     }
 
     #[test]
