@@ -45,3 +45,42 @@ test('slug matching is exact and explicit ID resolves duplicate Published slugs'
   assert.equal((await check([language('One','Ink')],[art('published','Published')])).code,1);
   assert.equal((await check([language('One','ink')],[art('published','Published'),art('second','Published')])).code,0);
 });
+
+test('missing ID does not hide an existing Published slug',async()=>{
+  const result=await check([language('One','ink','')],[art('published','Published')]);
+  assert.equal(result.code,1);
+  assert.match(result.output,/pair Published:\s+1/);
+  assert.match(result.output,/pair names no entity:\s+0/);
+  assert.match(result.output,/default ID inconsistent:\s+1/);
+});
+test('mismatched ID reports the named unpublished style and counts one language once',async()=>{
+  const result=await check([language('One','ink','other')],[art('draft','Draft'),{entity_id:'other',status:'Published',fields:{slug:'different'}}]);
+  assert.equal(result.code,1);
+  assert.match(result.output,/pair NOT Published:\s+1 languages, 1 distinct art styles/);
+  assert.match(result.output,/pair names no entity:\s+0/);
+  assert.match(result.output,/default ID inconsistent:\s+1/);
+  assert.match(result.output,/FAIL: 1 Published languages/);
+});
+test('a genuinely absent slug is missing even if the ID names another style',async()=>{
+  const result=await check([language('One','absent')],[art('published','Published')]);
+  assert.equal(result.code,1);
+  assert.match(result.output,/pair names no entity:\s+1/);
+  assert.match(result.output,/FAIL: 1 Published languages/);
+});
+test('missing ID does not hide unpublished backlog and duplicate candidates are explicit',async()=>{
+  const result=await check([language('One','ink','')],[art('draft','Draft')]);
+  assert.equal(result.code,1);
+  assert.match(result.output,/pair NOT Published:\s+1 languages, 1 distinct art styles/);
+  assert.match(result.output,/FAIL: 1 Published languages/);
+  const ambiguous=await check([language('One','ink','')],[art('draft','Draft'),art('published','Published')]);
+  assert.equal(ambiguous.code,1);
+  assert.match(ambiguous.output,/pair ambiguous:\s+1/);
+  assert.match(ambiguous.output,/draft \(Draft\).*published \(Published\)/);
+  assert.match(ambiguous.output,/FAIL: 1 Published languages/);
+});
+test('case differences retain slug lookup evidence but fail exact ID consistency',async()=>{
+  const result=await check([language('One','Ink')],[art('published','Published')]);
+  assert.equal(result.code,1);
+  assert.match(result.output,/pair names no entity:\s+0/);
+  assert.match(result.output,/default ID inconsistent:\s+1/);
+});
