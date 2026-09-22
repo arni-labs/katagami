@@ -11,13 +11,14 @@
 //
 // Env: TEMPER_API_URL (or NEXT_PUBLIC_TEMPER_API_URL), TEMPER_API_KEY, TEMPER_TENANT (default "default").
 //      SITE (default https://katagami.ai) is the deployment to warm.
-//      WIDTH (default 384) must match NEAR in explore/mosaic/mosaic.tsx.
+//      WIDTH warms one width only; by default both the desk's 384 and the phone's 256 are warmed.
 
 const API = (process.env.TEMPER_API_URL || process.env.NEXT_PUBLIC_TEMPER_API_URL || "").replace(/\/+$/, "");
 const KEY = process.env.TEMPER_API_KEY;
 if (!API || !KEY) { console.error("missing env TEMPER_API_URL / TEMPER_API_KEY"); process.exit(2); }
 const SITE = (process.env.SITE || "https://katagami.ai").replace(/\/+$/, "");
-const WIDTH = Number(process.env.WIDTH || 384);
+// The desk draws cards from the 384 resize and a phone from the 256 one (NEAR and NEAR_PHONE in mosaic.tsx); both are warmed.
+const WIDTHS = (process.env.WIDTH ? [Number(process.env.WIDTH)] : [384, 256]);
 // The optimizer keeps a separate copy per format it negotiates, so a warm pass has to ask the way a browser asks:
 // fetch's own `Accept: */*` warms the JPEG nobody is served.
 const ACCEPT = { Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8" };
@@ -60,7 +61,7 @@ const rows = (await Promise.all([["DesignLanguages", "language"], ["ArtStyles", 
 
 // Only the first picture of each style is on a card; the rest are in the opened entry, which draws them large.
 const queue = rows.flatMap(({ kind, f }) => picturesOf(kind, f).slice(0, 1))
-  .map((src) => `${SITE}/_next/image?url=${encodeURIComponent(src)}&w=${WIDTH}&q=75`);
+  .flatMap((src) => WIDTHS.map((width) => `${SITE}/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=75`));
 const total = queue.length;
 let done = 0, warm = 0, failed = 0;
 
@@ -76,7 +77,7 @@ await Promise.all(Array.from({ length: 8 }, async () => {
   }
 }));
 
-console.log(`${total} pictures at w=${WIDTH}: ${warm} already warm, ${failed} failed`);
+console.log(`${total} resizes at w=${WIDTHS.join("+")}: ${warm} already warm, ${failed} failed`);
 // A picture the file proxy cannot serve is a broken reference in the data, not a reason to fail the deploy;
 // a wholesale failure is. No pictures at all means the library read found nothing, which is a failure that would
 // otherwise read as a clean run.

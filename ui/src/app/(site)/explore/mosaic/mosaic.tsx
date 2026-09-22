@@ -56,6 +56,8 @@ const HOLD = { lo: 0.885, hi: 1.13 }, MOVING = { lo: 0.6, hi: 1.7 }, FORCED = { 
 // the whole page: the canvas at any zoom, the results and the trays all read the one warm copy. 384 is the width
 // the largest of them wanted anyway: a 148px card on a 2x screen, or a 112px one on a phone's 3x.
 const NEAR = 384;
+// A phone's cards open at 74px, 222 on a 3x screen: a 256 resize is exact there and half the bytes of the desk's.
+const NEAR_PHONE = 256;
 const GROUND = "color-mix(in srgb, var(--foreground) 15%, var(--background))"; // the desk the stamps lie on
 const HUE_ANGLE: Record<string, number> = { red: 0, orange: 28, yellow: 52, green: 120, teal: 172, blue: 222, violet: 275, pink: 325 };
 /** A steady four-figure number for an entry, for the skins that print a code. */
@@ -77,11 +79,11 @@ function warm(src: string | null | undefined, width: 750 | 1080) {
   const img = new Image(); img.decoding = "async"; img.src = quick(src, width);
 }
 
-type CellProps = { onGhost: () => void; eager: boolean; first: boolean; c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
+type CellProps = { onGhost: () => void; eager: boolean; first: boolean; near: 256 | 384; c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
 // One stamp on the sheet, keyed by its slot in a recycling pool (see Sheet): when the window slides, the stamp
 // that left one edge is handed the place that arrived at the other, which is an update, not a mount. Memoised on plain values, so when the window of visible cells slides by a row
 // only the new row is drawn: the stamps already there are left alone.
-const CellView = memo(function CellView({ onGhost, eager, first, c, r, cell, w, h, stepX, stepY, dim, hold, onOpen }: CellProps) {
+const CellView = memo(function CellView({ onGhost, eager, first, near, c, r, cell, w, h, stepX, stepY, dim, hold, onOpen }: CellProps) {
   if (!cell) return null;
   const x = c * stepX, y = r * stepY, key = `${c},${r}`;
   // A style a visitor is not being shown keeps a place on the sheet without giving anything away: paper and a wash
@@ -89,26 +91,26 @@ const CellView = memo(function CellView({ onGhost, eager, first, c, r, cell, w, 
   if (cell.kind === "ghost") return (
     <span ref={(el) => hold(key, el)} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.12 : 1 }}>
       <button type="button" onClick={onGhost} aria-label="Sign in to see this one" className="kghost block cursor-pointer">
-        <Card src={cell.src} ink={GHOST_INK[cell.n % GHOST_INK.length]} w={w} h={h} fast={NEAR} />
+        <Card src={eager && w >= 40 ? cell.src : null} ink={GHOST_INK[cell.n % GHOST_INK.length]} w={w} h={h} fast={near} />
       </button>
     </span>
   );
   const s = cell.s;
   return (
     <button ref={(el) => hold(key, el)} type="button" onPointerEnter={(e) => { if (e.pointerType === "mouse") warm(s.picture, 1080); }} onPointerDown={() => warm(s.picture, w < 60 ? 750 : window.innerWidth < 768 ? 750 : 1080)} onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, }}>
-      <Card src={s.picture} spare={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} code={codeOf(s.id)} fast={NEAR} eager={eager} first={first} />
+      <Card src={eager ? s.picture : null} spare={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} code={codeOf(s.id)} fast={near} eager={eager} first={first} />
     </button>
   );
 });
 
-type SheetProps = { onGhost: () => void; eager: Set<string>; first: Set<string>; hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
-const Sheet = memo(function Sheet({ onGhost, eager, first, hold, cells, w, h, stepX, stepY, lit, onOpen }: SheetProps) {
+type SheetProps = { onGhost: () => void; eager: Set<string>; first: Set<string>; near: 256 | 384; hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
+const Sheet = memo(function Sheet({ onGhost, eager, first, near, hold, cells, w, h, stepX, stepY, lit, onOpen }: SheetProps) {
   return (
     <>
       {cells.map(({ c, r, cell }) => {
         const id = cell?.kind === "style" ? cell.s.id : "";
         // The pool is wider than any window the sheet allows (see CROWD), so no two places on screen share a slot.
-        return <CellView key={`${mod(c, 128)},${mod(r, 96)}`} onGhost={onGhost} eager={eager.has(`${c},${r}`)} first={first.has(`${c},${r}`)} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} hold={hold} onOpen={onOpen} />;
+        return <CellView key={`${mod(c, 128)},${mod(r, 96)}`} onGhost={onGhost} eager={eager.has(`${c},${r}`)} first={first.has(`${c},${r}`)} near={near} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} hold={hold} onOpen={onOpen} />;
       })}
     </>
   );
@@ -366,32 +368,38 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
   useEffect(() => { const k = cam.current; return () => cancelAnimationFrame(k.run); }, []);
 
   /** Glide until a cell sits in the middle of the room left by the ask. */
-  const bring = useCallback((c: number, r: number) => {
+  const bring = useCallback((c: number, r: number, jump = false) => {
     const k = cam.current, sx = k.cw * SX, sy = k.cw * SY;
     // The nearest copy of that cell on the wrapping sheet.
     const wantX = size.w / 2 - (c + 0.5) * sx, wantY = (size.h - 120) / 2 - (r + 0.5) * sy, spanX = world.cols * sx, spanY = world.rows * sy;
     const dx = wantX - k.x - Math.round((wantX - k.x) / spanX) * spanX, dy = wantY - k.y - Math.round((wantY - k.y) / spanY) * spanY;
-    if (calm.current) { k.x += dx; k.y += dy; k.vx = 0; k.vy = 0; paint(); return; }
+    if (calm.current || jump) { k.x += dx; k.y += dy; k.vx = 0; k.vy = 0; paint(); return; }
     k.vx = dx * 0.064; k.vy = dy * 0.064; // what a 0.94 decay carries just that far
     coast();
   }, [size, world, coast, paint]);
   const goTo = useCallback((id: string) => { const at = world.where.get(id); if (at) { bring(at.c, at.r); setOpen(id); setAside([]); } }, [world, bring]);
   // A new sort or a new answer brings its centre (or its best fit) into view.
+  const started = useRef(false);
   const led = useRef("");
+  // The first centring jumps and only then are cells drawn at all. A fresh sheet used to paint at its corner and
+  // coast to its middle, and every cell it crossed on the way asked for its picture: 250 pictures for 96 cards.
+  const [placed, setPlaced] = useState(false);
   useEffect(() => {
     const key = `${mode}|${topFit ?? ""}|${hue}|${axes?.x ?? ""}${axes?.y ?? ""}${axes?.reverse ? "r" : ""}`;
-    if (led.current === key || size.w === 0) return;
-    const f = requestAnimationFrame(() => { led.current = key; const at = topFit && mode === "fit" ? world.where.get(topFit) : undefined; bring(at?.c ?? Math.floor(world.cols / 2), at?.r ?? Math.floor(world.rows / 2)); });
+    if (led.current === key || size.w === 0 || !started.current) return;
+    const first = led.current === "";
+    const f = requestAnimationFrame(() => { led.current = key; const at = topFit && mode === "fit" ? world.where.get(topFit) : undefined; bring(at?.c ?? Math.floor(world.cols / 2), at?.r ?? Math.floor(world.rows / 2), first); if (first) setPlaced(true); });
     return () => cancelAnimationFrame(f);
   }, [mode, topFit, hue, axes, size.w, world, bring]);
 
   // A sheet opens at the width it has always opened at, which is nearer on a phone than on a desk.
-  const started = useRef(false);
   useEffect(() => {
     if (!screen || started.current) return;
     started.current = true;
     const mid = SPAN[phone ? "phone" : "desk"].mid;
     cam.current.cw = mid; setRung(mid);
+    // The rung is known now; the camera is placed on the next frame by the effect above, and cells follow.
+    setSize((s) => ({ ...s }));
   }, [screen, phone]);
   // A smaller window cannot hold as much of the sheet: what is drawn comes back inside what this one allows.
   useEffect(() => {
@@ -543,6 +551,26 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
     else if (e.key === "+" || e.key === "=") glide(k.cw * STOP); else if (e.key === "-") glide(k.cw / STOP);
   };
 
+  // The window that has held still for a moment. Pictures are asked for against this one, so cells a pan merely
+  // crosses never ask, and the ones it stops on ask together, nearest the middle first.
+  const [still, setStill] = useState(win);
+  // A new sort lays new styles under the old window before the camera has moved to the new middle; until it has
+  // come to rest there, nothing is asked for.
+  const stillFor = useRef(world);
+  useEffect(() => {
+    if (stillFor.current !== world) { stillFor.current = world; setStill({ c0: 0, c1: 0, r0: 0, r1: 0 }); }
+    let id = 0;
+    const arm = () => {
+      const k = cam.current, x = k.x, y = k.y;
+      id = window.setTimeout(() => {
+        const k2 = cam.current;
+        // Moved more than half a card since the timer was set, or a finger is still down: not yet.
+        if (k2.drag || Math.hypot(k2.x - x, k2.y - y) > k2.cw / 2) arm(); else setStill(win);
+      }, 90);
+    };
+    arm();
+    return () => window.clearTimeout(id);
+  }, [win, world]);
   const cells = useMemo(() => {
     const out: { c: number; r: number; cell: Cell }[] = [];
     for (let r = win.r0; r <= win.r1; r++) for (let c = win.c0; c <= win.c1; c++) out.push({ c, r, cell: cellAt(c, r) });
@@ -557,12 +585,12 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
   // Of those, the ones nearest the middle go first. Zoomed right out a screen can hold hundreds, and marking every
   // one of them urgent is the same as marking none.
   const { eager, first } = useMemo(() => {
-    const cx = (win.c0 + win.c1) / 2, cy = (win.r0 + win.r1) / 2;
+    const cx = (still.c0 + still.c1) / 2, cy = (still.r0 + still.r1) / 2;
     const on = cells
-      .filter(({ c, r, cell }) => cell?.kind === "style" && cell.s.picture && c > win.c0 && c < win.c1 && r > win.r0 && r < win.r1)
+      .filter(({ c, r, cell }) => ((cell?.kind === "style" && cell.s.picture) || (cell?.kind === "ghost" && cell.src)) && c > still.c0 && c < still.c1 && r > still.r0 && r < still.r1)
       .map(({ c, r }) => ({ key: `${c},${r}`, d: Math.hypot(c - cx, (r - cy) * RATIO) }));
     return { eager: new Set(on.map((x) => x.key)), first: new Set([...on].sort((a, b) => a.d - b.d).slice(0, 24).map((x) => x.key)) };
-  }, [win, cells]);
+  }, [still, cells]);
   // A place that is still to be filled is a label, not an entry: opening one left the page believing a card was up.
   // Where a card was opened from, so the arrows walk on from the place that was pressed. A style can also fill a gap
   // at the sheet's seam, and walking on from its own place instead would jump the reader elsewhere on the sheet.
@@ -683,7 +711,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">
         {/* The sheet's own corner is what the scale grows from, so a stamp's place on it is its place times the width. */}
         <div ref={layer} style={{ transformOrigin: "0 0" }} className="absolute left-0 top-0 will-change-transform">
-          <Sheet onGhost={openGate} eager={eager} first={first} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} />
+          {placed ? <Sheet onGhost={openGate} near={phone ? NEAR_PHONE : NEAR} eager={eager} first={first} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} /> : null}
         </div>
         <div ref={glare} aria-hidden className="canvas-glare" />
       </div>
