@@ -164,6 +164,11 @@ export default function SiteLayout({
               </a>{" "}
               · 2026
             </span>
+            <nav aria-label="Legal" className="flex items-center gap-4">
+              <Link href="/privacy" className="ink-underline">Privacy</Link>
+              <Link href="/terms" className="ink-underline">Terms</Link>
+              <Link href="/support" className="ink-underline">Support</Link>
+            </nav>
             <span className="flex items-center gap-2">
               <span aria-hidden className="flex gap-[2px]">
                 {REGISTRATION_INKS.map((ink) => (
