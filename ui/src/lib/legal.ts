@@ -1,5 +1,5 @@
 // The facts the privacy policy, terms and support page share. One place, so
-// the operator's name or the contact address changes in one edit — e.g. when
+// the operator's name or the contact address changes in one edit, for example when
 // Arni Labs becomes an LLC, or once the support alias is confirmed.
 
 /** Who provides the service. Becomes "Arni Labs LLC" once the LLC exists. */

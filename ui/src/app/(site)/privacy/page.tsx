@@ -4,14 +4,14 @@ import { Contact, LegalPage, List, Section } from "@/components/legal-page";
 import { OPERATOR } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Privacy — Katagami",
+  title: "Privacy · Katagami",
   description: "What Katagami collects, why, who else handles it, and how to have it removed.",
 };
 
 // Written from what the code actually does, not from a template: every claim
 // below was traced to the sign-in, telemetry, MCP and model-call code on
-// 2026-09-22. If one of those changes — a new processor, session replay turned
-// on, a new field stored — this page must change with it.
+// 2026-09-22. If one of those changes (a new processor, session replay turned
+// on, a new field stored), this page must change with it.
 
 export default function PrivacyPage() {
   return (
@@ -28,12 +28,12 @@ export default function PrivacyPage() {
       <Section title="When you sign in">
         <p>
           Sign-in uses Google. From your Google account we receive your account identifier, email address (which must be
-          verified), name and profile picture. We store these on a member record, refreshed each time you sign in, along
+          verified), name and profile picture. We store these in your account record, refreshed each time you sign in, along
           with your role on the site.
         </p>
         <p>
-          A cookie named <code>katagami_user</code> keeps you signed in for up to 30 days. Four short-lived cookies hold
-          the sign-in handshake for ten minutes. Signing out clears them.
+          A cookie keeps you signed in for up to 30 days, and a few short-lived cookies carry the sign-in itself for ten
+          minutes. Signing out clears them.
         </p>
       </Section>
 
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
         <p>
           When you search, the first 100 characters of the search go to Datadog so we can see what people look for. If
           you are signed in, site events carry a pseudonymous identifier derived from your account rather than your
-          name or email. That identifier is not anonymous: we can match it back to your member record.
+          name or email. That identifier is not anonymous: we can match it back to your account.
         </p>
         <p>
           Our servers log which features were used and how long they took. For the library-judging features we log
@@ -73,9 +73,9 @@ export default function PrivacyPage() {
         </p>
         <List
           items={[
-            "Ask the library — the sentence you describe your product with, and any change you ask for afterwards.",
-            "Checking a page against a design language — the page's HTML and CSS source you submit.",
-            "The command bar on the explore page — what you type into it.",
+            "Ask the library: the sentence you describe your product with, and any change you ask for afterwards.",
+            "Checking a page against a design language: the page's HTML and CSS source you submit.",
+            "The command bar on the explore page: what you type into it.",
           ]}
         />
         <p>Don&apos;t put anything private into these features, and don&apos;t submit a page that contains personal data.</p>
@@ -100,20 +100,20 @@ export default function PrivacyPage() {
         <p>These services run Katagami for us and process data only to do that:</p>
         <List
           items={[
-            "Google — sign-in.",
-            "Vercel — hosts the site and keeps request logs.",
-            "Railway — runs the backend that stores the library and member records, with Turso for the database and Cloudflare R2 for files.",
-            "Cloudflare — DNS, and serving published images.",
-            "Datadog — site measurement and server logs.",
-            "Typesafe — judges the text you enter into the features listed above.",
-            "OpenAI and Modal — the curator agents that review and prepare contributed styles.",
+            "Google: sign-in.",
+            "Vercel: hosts the site and keeps request logs.",
+            "Railway: runs the backend that stores the library and account records, with Turso for the database and Cloudflare R2 for files.",
+            "Cloudflare: DNS, and serving published images.",
+            "Datadog: site measurement and server logs.",
+            "Typesafe: judges the text you enter into the features listed above.",
+            "OpenAI and Modal: the curator agents that review and prepare contributed styles.",
           ]}
         />
       </Section>
 
       <Section title="How long we keep it">
         <p>
-          We keep your member record and contributions until you ask us to remove them. Revoked agent grants are kept as
+          We keep your account record and contributions until you ask us to remove them. Revoked agent grants are kept as
           a record that access was withdrawn. Logs and measurement data are kept for as long as each provider above
           retains them.
         </p>

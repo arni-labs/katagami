@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Contact, LegalPage, List, Section } from "@/components/legal-page";
 
 export const metadata: Metadata = {
-  title: "Support — Katagami",
+  title: "Support · Katagami",
   description: "Get help with Katagami, its MCP server, your account, or a style.",
 };
 
@@ -18,10 +18,10 @@ export default function SupportPage() {
         <List
           items={[
             <>
-              <code>https://katagami.ai/mcp</code> — sign in with Google once for the full library.
+              <code>https://katagami.ai/mcp</code>: sign in with Google once for the full library.
             </>,
             <>
-              <code>https://katagami.ai/mcp/open</code> — no sign-in; the same styles a signed-out visitor sees.
+              <code>https://katagami.ai/mcp/open</code>: no sign-in, and the same styles a signed-out visitor sees.
             </>,
           ]}
         />
@@ -35,8 +35,8 @@ export default function SupportPage() {
         <p>
           Revoke a connected agent, or sign out everywhere, from{" "}
           <Link href="/account/agents" className="ink-underline">Account → Agents &amp; access</Link>. To see, correct or
-          delete what we hold about you, contact us — see the{" "}
-          <Link href="/privacy" className="ink-underline">privacy policy</Link>.
+          delete what we hold about you, contact us as the{" "}
+          <Link href="/privacy" className="ink-underline">privacy policy</Link> describes.
         </p>
       </Section>
 
@@ -49,7 +49,7 @@ export default function SupportPage() {
 
       <Section title="Contact">
         <p>
-          Anything else — a bug, a question, an idea: <Contact />. We read everything.
+          Anything else, whether a bug, a question or an idea: <Contact />. We read everything.
         </p>
       </Section>
     </LegalPage>

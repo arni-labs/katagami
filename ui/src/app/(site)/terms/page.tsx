@@ -4,7 +4,7 @@ import { Contact, LegalPage, List, Section } from "@/components/legal-page";
 import { GOVERNING_LAW, OPERATOR } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Terms — Katagami",
+  title: "Terms · Katagami",
   description: "The terms for using Katagami, its library, and its MCP server.",
 };
 
@@ -13,14 +13,14 @@ export default function TermsPage() {
     <LegalPage title="Terms">
       <Section title="The agreement">
         <p>
-          Katagami — the website at katagami.ai and its MCP servers — is operated by {OPERATOR} (&quot;we&quot;). By using
+          Katagami, the website at katagami.ai and its MCP servers, is operated by {OPERATOR} (&quot;we&quot;). By using
           it you agree to these terms. If you don&apos;t agree, please don&apos;t use Katagami.
         </p>
       </Section>
 
       <Section title="What Katagami is">
         <p>
-          A curated library of visual styles — design languages, palette systems and art styles — that people and their
+          A curated library of visual styles (design languages, palette systems and art styles) that people and their
           AI agents can browse, search, apply and check work against. Part of the library is open without an account;
           signing in with Google opens the rest.
         </p>
@@ -50,8 +50,8 @@ export default function TermsPage() {
         <p>
           You keep the rights you have in styles, images and other material you submit. By submitting, you give{" "}
           {OPERATOR} a worldwide, non-exclusive, royalty-free licence to host, review, adapt for display, publish and
-          distribute it through Katagami — including in exports, through the MCP servers, and to other people who use
-          the library — for as long as it is part of Katagami.
+          distribute it through Katagami, including in exports, through the MCP servers and to other people who use
+          the library, for as long as it is part of Katagami.
         </p>
         <p>By submitting, you confirm that:</p>
         <List
