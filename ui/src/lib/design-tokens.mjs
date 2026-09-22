@@ -25,15 +25,42 @@ export function tokenValue(key, value) {
 }
 
 /** One token group as custom properties. A list becomes 1..n; `scale` drops its own name. */
+/** One naming for every language: `accent_2`, `accent 2` and `accentTwo`-style keys all become kebab-case. */
+export const tokenName = (key) =>
+  String(key)
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .replace(/[^A-Za-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+
 export function cssVars(prefix, group) {
   return Object.entries(record(group)).flatMap(([key, value]) => {
+    const name = tokenName(key);
     if (Array.isArray(value)) {
-      const stem = key === "scale" ? "" : `${key}-`;
+      const stem = key === "scale" ? "" : `${name}-`;
       return value.flatMap((step, i) => (flat(step) ? [`  --${prefix}-${stem}${i + 1}: ${flat(step)};`] : []));
     }
     const out = tokenValue(key, value);
-    return out ? [`  --${prefix}-${key}: ${out};`] : [];
+    return out ? [`  --${prefix}-${name}: ${out};`] : [];
   });
+}
+
+// Some languages store a value that leans on a variable the language never
+// defines: Bisque's shadows are "var(--hi)" and "var(--lo-soft)", which exist
+// only inside its own reference page. Pasted as-is those shadows are invalid
+// CSS, so a declaration that references an undefined variable is left out and
+// named in `omitted`, rather than shipped broken.
+function dropUndefinedReferences(lines) {
+  const defined = new Set(lines.map((l) => /^\s*(--[\w-]+)\s*:/.exec(l)?.[1]).filter(Boolean));
+  const kept = [];
+  const omitted = [];
+  for (const line of lines) {
+    const refs = [...line.matchAll(/var\(\s*(--[\w-]+)\s*(,[^)]*)?\)/g)];
+    const missing = refs.filter((m) => !defined.has(m[1]) && !m[2]).map((m) => m[1]);
+    if (missing.length) omitted.push({ token: /^\s*(--[\w-]+)/.exec(line)?.[1] ?? line.trim(), undefined_variables: [...new Set(missing)] });
+    else kept.push(line);
+  }
+  return { kept, omitted };
 }
 
 /** The type metrics, without the faces (which get their own --font-* names). */
@@ -47,12 +74,16 @@ export function typeMetrics(typography) {
 export function tailwindSpacing(spacing) {
   const out = {};
   for (const [key, value] of Object.entries(record(spacing))) {
+    // Numbered steps are prefixed: Tailwind's own spacing.1..96 already
+    // means 0.25rem steps, and a config that reused "5" for 24px silently
+    // changed every p-5 and gap-5 in the project. `p-k-3` is the language's
+    // third step; Tailwind's defaults are left alone.
     if (Array.isArray(value)) {
       value.forEach((step, i) => {
-        if (flat(step)) out[String(i + 1)] = typeof step === "number" ? `${step}px` : String(step);
+        if (flat(step)) out[`k-${i + 1}`] = typeof step === "number" ? `${step}px` : String(step);
       });
     } else if (flat(value)) {
-      out[key] = flat(value);
+      out[`k-${tokenName(key)}`] = flat(value);
     }
   }
   return out;
@@ -63,8 +94,7 @@ export function tokensToCss(tokens) {
   const t = record(tokens);
   const typography = record(t.typography);
   const fontsUrl = typeof typography.google_fonts_url === "string" ? typography.google_fonts_url : null;
-  const body = [
-    ":root {",
+  const declarations = [
     ...cssVars("color", t.colors),
     ...cssVars("radius", t.radii),
     ...cssVars("space", t.spacing),
@@ -75,10 +105,11 @@ export function tokensToCss(tokens) {
     typography.heading_font ? `  --font-heading: ${typography.heading_font};` : "",
     typography.mono_font ? `  --font-mono: ${typography.mono_font};` : "",
     ...cssVars("type", typeMetrics(typography)),
-    "}",
   ].filter(Boolean);
+  const { kept, omitted } = dropUndefinedReferences(declarations);
+  const body = [":root {", ...kept, "}"];
   const css = (fontsUrl ? [`@import url("${fontsUrl}");`, ""] : []).concat(body).join("\n");
-  return { css, fontsUrl };
+  return { css, fontsUrl, omitted };
 }
 
 /** The Tailwind theme extension for a set of tokens. */
@@ -86,7 +117,10 @@ export function tokensToTailwind(tokens) {
   const t = record(tokens);
   const typography = record(t.typography);
   const spacing = tailwindSpacing(t.spacing);
-  const shadows = record(t.shadows);
+  // Shadows that lean on a variable the language never defines are invalid
+  // outside its reference page; leave them out here as the CSS does.
+  const shadows = Object.fromEntries(Object.entries(record(t.shadows)).filter(([, v]) => !/var\(\s*--[\w-]+\s*\)/.test(flat(v)) && tokenValue("shadow", v)));
+  const motion = record(t.motion);
   return {
     theme: {
       extend: {
@@ -99,6 +133,9 @@ export function tokensToTailwind(tokens) {
         },
         ...(Object.keys(spacing).length ? { spacing } : {}),
         ...(Object.keys(shadows).length ? { boxShadow: shadows } : {}),
+        ...(motion.duration ? { transitionDuration: { k: flat(motion.duration) } } : {}),
+        ...(motion.easing && flat(motion.easing).length <= 64 ? { transitionTimingFunction: { k: flat(motion.easing) } } : {}),
+        ...(typography.base_size ? { fontSize: { "k-base": flat(typography.base_size) } } : {}),
       },
     },
   };

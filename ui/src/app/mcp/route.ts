@@ -599,7 +599,7 @@ const baseHandler = createMcpHandler(
         title: "Get design tokens",
         annotations: READS,
         description:
-          "Only the design tokens of an entry, as JSON, a ready-to-paste Tailwind config, or CSS custom properties. Every group the entry stores is exported — colours, radii, spacing, shadows, motion, the type scale and its faces — and `fonts_url` (also an `@import` at the top of the CSS) loads the webfonts. `kind` defaults to design_language.",
+          "Only the design tokens of an entry, as JSON, a ready-to-paste Tailwind config, or CSS custom properties. Every group the entry stores is exported (colours, radii, spacing, shadows, motion, type metrics and faces, and a palette's signature colours, neutrals and ramps), and `fonts_url` (also an `@import` at the top of the CSS) loads the webfonts. Names are kebab-case. A token that depends on a variable the entry never defines is left out and listed in `omitted`. Tailwind spacing steps are prefixed `k-` so Tailwind's own steps keep their meaning. `kind` defaults to design_language.",
         inputSchema: {
           kind: kindArg.optional(),
           ...ID_ALIASES,

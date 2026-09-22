@@ -853,8 +853,8 @@ export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format
   if (kind === "palette" && Object.keys(tokens).length === 0) tokens = paletteTokens(row.fields ?? {});
   if (format === "json") return { format, tokens };
   if (format === "css") {
-    const { css, fontsUrl } = tokensToCss(tokens);
-    return { format, css, fonts_url: fontsUrl };
+    const { css, fontsUrl, omitted } = tokensToCss(tokens);
+    return { format, css, fonts_url: fontsUrl, ...(omitted.length ? { omitted } : {}) };
   }
   const typo = (tokens.typography ?? {}) as Record<string, unknown>;
   return {
