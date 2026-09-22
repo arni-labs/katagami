@@ -110,3 +110,10 @@ test("variables resolve through other variables, honour fallbacks, and a cycle t
   assert.equal(typeof cyclic, "string");
   assert.ok(cyclic.includes("var(--"), "a cycle is left as it was, not looped on");
 });
+
+test("the judge reads resolved values, and every do and don't row has a name", () => {
+  const state = pageState(`<style>:root{--accent:#4f46e5} button{background:var(--accent)}</style>`);
+  assert.ok(state.includes("background:#4f46e5"), state);
+  const rows = judgedChecks({ guidance: { do: ["a", "b"], dont: ["c"] } });
+  assert.deepEqual(rows.map((r) => r.name), ["do 1", "do 2", "don't 1"]);
+});

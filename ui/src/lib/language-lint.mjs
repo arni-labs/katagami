@@ -37,9 +37,12 @@ function strip(text, open, close) {
   }
 }
 
-/** The page as Jev reads it: scripts, comments and data URIs carry no design. */
+/** The page as Jev reads it: scripts, comments and data URIs carry no design,
+ *  and every var(--x) is already its value. QA's broken page set an indigo
+ *  accent behind var(--accent), and the judge, reading only the variable name,
+ *  scored the good and broken pages nearly the same. */
 export function pageState(page) {
-  const source = String(page ?? "").slice(0, PAGE_READ_CHARS);
+  const source = resolveCustomProperties(String(page ?? "").slice(0, PAGE_READ_CHARS));
   return strip(strip(source, "<script", "</script>"), "<!--", "-->")
     .replace(/data:[a-z]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]{0,200000}/gi, "data:…")
     .replace(/[ \t]+/g, " ")
@@ -57,8 +60,10 @@ export function judgedChecks(design) {
     }
   }
   const guidance = isRecord(design?.guidance) ? design.guidance : {};
-  for (const text of strings(guidance.do)) checks.push({ kind: "do", name: "", text: text.trim(), expect: "follows" });
-  for (const text of strings(guidance.dont)) checks.push({ kind: "dont", name: "", text: text.trim(), expect: "breaks" });
+  // A do or don't has no name of its own; number it so every row of the
+  // scorecard can be referred to ("don't 2 failed").
+  strings(guidance.do).forEach((text, i) => checks.push({ kind: "do", name: `do ${i + 1}`, text: text.trim(), expect: "follows" }));
+  strings(guidance.dont).forEach((text, i) => checks.push({ kind: "dont", name: `don't ${i + 1}`, text: text.trim(), expect: "breaks" }));
   return checks;
 }
 
