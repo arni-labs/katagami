@@ -1,0 +1,29 @@
+{
+  "$comment": "Paste-ready values for the Muse Connector Platform form (https://muse.ai/platform, Submit a connector). Keys mirror the form's createConnectorSubmissionAction payload. Limits checked: productName <= 80 chars, companyName <= 120, HTTPS endpoint, http(s) URLs, icon 512x512 PNG <= 256 KiB.",
+  "productName": "Katagami",
+  "companyName": "Arni Labs",
+  "website": "https://katagami.ai",
+  "shortDescription": "A curated library of design languages, palettes and art styles your agent can search, apply and check work against.",
+  "description": "Katagami is a curated library of complete visual styles: design languages (tokens, rules, layout and a portable DESIGN.md), palette systems, and art styles with prompt recipes for image generation. Describe a product and get the styles that fit it, judged by a model rather than matched on keywords, with pictures. Adjust the answer in plain words (quieter, warmer, less corporate). Get a whole kit (a language, a palette and an art style that belong together) with a build brief. Pull a language's tokens as CSS or Tailwind and its DESIGN.md for a coding agent. Generate imagery from an art style's recipe. Check a finished page against the language it claims to follow. Everything is read-only; part of the library is open without an account and the rest opens with Google sign-in.",
+  "useCases": "What should a booking app for a small vet clinic look like? Show me pictures.\nThose are too corporate. Quieter and warmer.\nGive me a complete look for a zine shop: UI, colours and an illustration style.\nFind me risograph art styles and give me the prompt to generate a poster.\nGet the CSS tokens and DESIGN.md for Almanac so I can build a landing page in it.\nHere is my page's HTML. Does it actually follow Almanac?",
+  "acceptsPayments": false,
+  "contactName": "Rita (Arni Labs)",
+  "contactEmail": "info@arnilabs.ai",
+  "connectionType": "MCP",
+  "endpoint": "https://katagami.ai/mcp",
+  "openEndpoint": "https://katagami.ai/mcp/open",
+  "openapi": null,
+  "limits": "Free. No account is needed for the visitor shelf (about 60 design languages, 40 palettes and 70 art styles), served at https://katagami.ai/mcp/open with no sign-in. Google sign-in at https://katagami.ai/mcp opens the full library (about 300 languages). The model-backed tools (ask_library, compose_kit, check_page_against_language) are limited to 6 calls a minute per caller without sign-in and 30 with.",
+  "authMethods": [
+    "OAuth with PKCE"
+  ],
+  "authOther": "Also usable with no authentication at https://katagami.ai/mcp/open (visitor shelf only).",
+  "documentationUrl": "https://katagami.ai/connect",
+  "support": "https://katagami.ai/support",
+  "privacyUrl": "https://katagami.ai/privacy",
+  "productTerms": "https://katagami.ai/terms",
+  "extraNotes": "Read-only MCP over streamable HTTP; every tool is annotated readOnlyHint. OAuth 2.1 with PKCE S256 and dynamic client registration at https://katagami.ai/.well-known/oauth-authorization-server; protected-resource metadata at https://katagami.ai/.well-known/oauth-protected-resource/mcp. Ten tools: describe_library, ask_library, compose_kit, search_library, get_library_entry, get_design_md, get_design_tokens, get_reference_page, check_page_against_language, whoami. Results carry thumbnails as image content and structuredContent. Reviewers can test without an account at https://katagami.ai/mcp/open. Agent instructions: https://github.com/arni-labs/katagami/blob/master/mcp/skills/katagami/SKILL.md",
+  "authorized": false,
+  "termsAccepted": false,
+  "distributionUnderstood": false
+}
