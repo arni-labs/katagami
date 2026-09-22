@@ -246,8 +246,38 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
       // so a repeat lands somewhere else on the sheet instead of beside its twin.
       for (let at = 0; at < out.length; at++) if (!out[at]) out[at] = { kind: "ghost", n: at, src: ghosts.length > 0 ? ghosts[Math.floor(hash(at + 101) * ghosts.length)] : null };
     }
+    // A sort rarely fills its last column or row, and on a sheet that wraps, the places it leaves are a hole where the
+    // sheet meets itself. Each is given a style whose colour is nearest its neighbours', never one already beside it,
+    // so a run of colour carries on through the seam. A plot keeps its empty places: there they mean nothing is there.
+    const echoes = new Set<number>();
+    if (unseen === 0 && mode !== "plot" && styles.length > 4) {
+      const inks = new Map(styles.map((s) => [s.id, tone(s.ink)]));
+      const gap = (a: { h: number; s: number; l: number }, b: { h: number; s: number; l: number }) => {
+        const dh = Math.min(Math.abs(a.h - b.h), 360 - Math.abs(a.h - b.h)) / 180;
+        return dh * Math.min(a.s, b.s) * 2 + Math.abs(a.s - b.s) + Math.abs(a.l - b.l) * 1.5;
+      };
+      const used = new Map<string, number>();
+      for (let at = 0; at < out.length; at++) {
+        if (out[at]) continue;
+        const c = at % outCols, r = Math.floor(at / outCols);
+        const beside = [[c - 1, r], [c + 1, r], [c, r - 1], [c, r + 1], [c - 1, r - 1], [c + 1, r + 1], [c - 1, r + 1], [c + 1, r - 1]]
+          .map(([cc, rr]) => out[((rr + outRows) % outRows) * outCols + ((cc + outCols) % outCols)])
+          .filter((cell): cell is { kind: "style"; s: AtlasStyle } => cell?.kind === "style");
+        if (beside.length === 0) continue;
+        const near = new Set(beside.map((cell) => cell.s.id));
+        const want = beside.map((cell) => inks.get(cell.s.id)!);
+        let best: AtlasStyle | null = null, bestScore = Infinity;
+        for (const s of styles) {
+          if (near.has(s.id)) continue;
+          const score = want.reduce((sum, w) => sum + gap(inks.get(s.id)!, w), 0) / want.length + (used.get(s.id) ?? 0) * 0.4;
+          if (score < bestScore) { bestScore = score; best = s; }
+        }
+        if (best) { out[at] = { kind: "style", s: best }; echoes.add(at); used.set(best.id, (used.get(best.id) ?? 0) + 1); }
+      }
+    }
     const where = new Map<string, { c: number; r: number }>();
-    out.forEach((cell, i) => { if (cell?.kind === "style") where.set(cell.s.id, { c: i % outCols, r: Math.floor(i / outCols) }); });
+    // A style that also fills a gap is found at its own place, not at the gap.
+    out.forEach((cell, i) => { if (cell?.kind === "style" && !echoes.has(i)) where.set(cell.s.id, { c: i % outCols, r: Math.floor(i / outCols) }); });
     return { cols: outCols, rows: outRows, grid: out, where };
   }, [styles, families, whole, ghosts, mode, hue, ask.fits, topFit, byId, axes]);
   const cellAt = useCallback((c: number, r: number) => world.grid[mod(r, world.rows) * world.cols + mod(c, world.cols)], [world]);
