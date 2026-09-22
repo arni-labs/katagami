@@ -22,6 +22,7 @@ import atlasFamilies from "@/data/atlas-families.json";
 import styleInks from "@/data/style-inks.json";
 import atlasHoles from "@/data/atlas-holes.json";
 import { tokensToCss, tokensToTailwind } from "./design-tokens.mjs";
+import { mediumBucket, mediumMatches } from "./art-medium.mjs";
 import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
@@ -268,7 +269,7 @@ export async function describeCatalog(tier: Tier) {
   const mediums = new Map<string, number>();
   for (const a of arts) {
     const m = str(a.fields?.medium);
-    if (m) mediums.set(m, (mediums.get(m) ?? 0) + 1);
+    if (m) mediums.set(mediumBucket(m), (mediums.get(mediumBucket(m)) ?? 0) + 1);
   }
   const topTags = (rows: Row[]) => {
     const c = new Map<string, number>();
@@ -344,8 +345,10 @@ export async function searchDesigns(kind: Kind, tier: Tier, a: SearchArgs) {
     hits = hits.filter((r) => jsonArr(r.fields?.tags).some((x) => x.toLowerCase() === t || x.toLowerCase().includes(t)));
   }
   if (kind === "art_style" && a.medium) {
-    const m = a.medium.toLowerCase();
-    hits = hits.filter((r) => str(r.fields?.medium).toLowerCase() === m);
+    // Stored mediums are free text in 30 spellings; match by broad medium or by
+    // normalised spelling, so "watercolor" also finds "watercolour".
+    const wanted = a.medium;
+    hits = hits.filter((r) => mediumMatches(r.fields?.medium, wanted));
   }
   if (kind === "language" && a.family) {
     const famIds = matchName(taxNames, a.family);
