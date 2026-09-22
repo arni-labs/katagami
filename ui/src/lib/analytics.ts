@@ -98,6 +98,13 @@ export async function initRum(): Promise<void> {
   const applicationId = e.applicationId;
   const clientToken = e.clientToken;
   if (!applicationId || !clientToken) return; // no creds → stay a no-op
+  // The SDK is 150KB and nothing on the page waits for it, so it comes after the page has painted and the browser
+  // has a spare moment, rather than alongside the first pictures on a phone's connection.
+  await new Promise<void>((done) => {
+    const go = () => (typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(() => done(), { timeout: 4000 }) : setTimeout(done, 1500));
+    if (document.readyState === "complete") go(); else window.addEventListener("load", go, { once: true });
+  });
+  if (initialized || starting) return starting ?? undefined;
   starting = (async () => {
     try {
       // Import and session identity in parallel (RumInit starts both). Do not
