@@ -196,6 +196,9 @@ module = "finalize_spawned_session"
 timeout_secs = "300"
 
 [action.triggers.config]
+# Five full-size gallery files and comparison checks exceed the 1b default.
+# Wasmtime 36 measured ~1.38b fuel; retain bounded headroom and the 300s timeout.
+max_fuel = "5000000000"
 temper_api_url = "{secret:temper_api_url}"
 katagami_embed_url = "{secret:katagami_embed_url}"
 katagami_embed_key = "{secret:katagami_embed_key}"
@@ -765,6 +768,9 @@ module = "finalize_spawned_session"
 timeout_secs = "300"
 
 [action.triggers.config]
+# Five full-size gallery files and comparison checks exceed the 1b default.
+# Wasmtime 36 measured ~1.38b fuel; retain bounded headroom and the 300s timeout.
+max_fuel = "5000000000"
 temper_api_url = "{secret:temper_api_url}"
 katagami_embed_url = "{secret:katagami_embed_url}"
 katagami_embed_key = "{secret:katagami_embed_key}"
