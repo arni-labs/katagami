@@ -564,11 +564,14 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
     return { eager: new Set(on.map((x) => x.key)), first: new Set([...on].sort((a, b) => a.d - b.d).slice(0, 24).map((x) => x.key)) };
   }, [win, cells]);
   // A place that is still to be filled is a label, not an entry: opening one left the page believing a card was up.
-  const openCell = useCallback((c: number, r: number) => { if (dragged.current) return; const cell = cellAt(c, r); if (cell?.kind === "style") { setOpen(cell.s.id); setAside([]); } }, [cellAt]);
+  // Where a card was opened from, so the arrows walk on from the place that was pressed. A style can also fill a gap
+  // at the sheet's seam, and walking on from its own place instead would jump the reader elsewhere on the sheet.
+  const [openedAt, setOpenedAt] = useState<{ id: string; c: number; r: number } | null>(null);
+  const openCell = useCallback((c: number, r: number) => { if (dragged.current) return; const cell = cellAt(c, r); if (cell?.kind === "style") { setOpen(cell.s.id); setOpenedAt({ id: cell.s.id, c, r }); setAside([]); } }, [cellAt]);
 
   // The opened card, and where it currently sits for the arrows and the swipe.
   const style = open ? byAny.get(open) ?? null : null;
-  const spot = open ? world.where.get(open) : undefined;
+  const spot = useMemo(() => (open ? (openedAt?.id === open && cellAt(openedAt.c, openedAt.r)?.kind === "style" ? { c: openedAt.c, r: openedAt.r } : world.where.get(open)) : undefined), [open, openedAt, cellAt, world]);
   useEffect(() => {
     if (!spot) return;
     for (const by of [-1, 1]) for (let step = 1; step <= world.cols; step++) { const cell = cellAt(spot.c + by * step, spot.r); if (cell?.kind === "style") { warm(cell.s.picture, phone ? 750 : 1080); break; } }
