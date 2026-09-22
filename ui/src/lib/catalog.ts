@@ -531,9 +531,13 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   const fitRes = await askJev(
     changes ? `Product: ${query}\nThe design should also be: ${changes}` : `Product: ${query}`,
     Object.fromEntries(
-      judged.map((p, i) => [
-        `s${i}`,
-        score(`How well would this style serve the product?\n${p.doc}`, FIT_LEVELS),
+      judged.flatMap((p, i) => [
+        [`s${i}`, score(`How well would this style serve the product?\n${p.doc}`, FIT_LEVELS)],
+        // Fit alone ranked a storybook language made for children first for a
+        // small-business finance dashboard, because it was warm and friendly.
+        // Asked separately, in the same call, whether the style was made for a
+        // different audience or register, so a clash can pull a warm fit down.
+        [`c${i}`, noul(`This style was made for a different kind of product or audience than the one described, so using it here would send the wrong signal, for example a style made for children on a product that handles people's money.\n${p.doc}`)],
       ]),
     ),
     ASK_JEV,
@@ -546,8 +550,12 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     if (typeof fit !== "number" || !Number.isFinite(fit)) {
       throw new JevUnavailableError("Jev left a style's fit unscored");
     }
-    // Jev's score is the expected level index (0..2); normalise to 0..1.
-    return { ...p, band: i < shortlist.length ? "dna" : "outsider", fit: Math.min(1, Math.max(0, fit / (FIT_LEVELS.length - 1))) };
+    // Jev's score is the expected level index (0..2); normalise to 0..1, then
+    // discount by how strongly the style clashes with the product's audience.
+    const clash = fitRes.answers[`c${i}`]?.noul;
+    const judgedFit = Math.min(1, Math.max(0, fit / (FIT_LEVELS.length - 1)));
+    const penalty = typeof clash === "number" && Number.isFinite(clash) ? Math.min(1, Math.max(0, clash)) : 0;
+    return { ...p, band: i < shortlist.length ? "dna" : "outsider", fit: judgedFit * (1 - penalty), clash: penalty };
   });
 
   // One card per name: the library holds a few same-named siblings.

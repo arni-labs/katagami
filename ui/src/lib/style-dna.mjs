@@ -654,8 +654,11 @@ export function dnaFromAnswers(answers, computed) {
 // is asked as an ordinal score — less, unchanged, more — so a nudge that says
 // nothing about a trait leaves it where it was instead of re-reading it.
 const REFINE_LEVELS = ["less of this", "the change says nothing about this", "more of this"];
-/** A score below this distance from "unchanged" is Jev hedging, not a request. */
-export const REFINE_MOVES_AT = 0.3;
+/** A score below this distance from "unchanged" is Jev hedging, not a request.
+ *  At 0.3, "less corporate, warmer" also pulled `high-trust` from 0.88 to 0.41
+ *  on a finance product and "quieter" moved `civic`: traits the change never
+ *  named. A move now needs Jev to lean clearly one way. */
+export const REFINE_MOVES_AT = 0.5;
 /** How far a whole-hearted "more" or "less" carries a trait along 0..1. */
 const REFINE_STEP = 0.5;
 
@@ -664,7 +667,7 @@ export function refineQuestions() {
   return Object.fromEntries(
     STYLE_DNA_QUESTIONS.map((q) => [
       q.id,
-      { type: "score", instructions: `A designer asked for this change to a visual design. What does it ask for on this trait?\nTrait: ${q.style}`, criteria: REFINE_LEVELS },
+      { type: "score", instructions: `A designer asked for this change to a visual design. Does it ask for more or less of this trait? Answer "more" or "less" only if the change names this trait or plainly means it; a trait the change does not speak to is unchanged.\nTrait: ${q.style}`, criteria: REFINE_LEVELS },
     ]),
   );
 }
