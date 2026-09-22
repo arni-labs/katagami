@@ -1895,3 +1895,5 @@
 .card-plain img { opacity: 0; transition: opacity 320ms ease-out; }
 .card-plain img[data-ready] { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .card-plain img { transition: none; } }
+/* A card reached by the keyboard shows its name as a pointed-at one does. */
+:focus-visible > .card-plain .plain-name, :focus-visible .card-plain .plain-name { opacity: 1; }

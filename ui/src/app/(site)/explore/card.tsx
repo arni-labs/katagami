@@ -60,7 +60,7 @@ export function Card(props: CardProps) {
           <span className="truncate font-medium">{label}</span>{value ? <span className="shrink-0 font-mono text-[11px] text-foreground/55">{value}</span> : null}
         </span>
       ) : label ? (
-        <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-background/92 px-2 py-1 text-[12px] font-medium text-foreground opacity-0 transition-opacity duration-200 group-hover/plain:opacity-100">{label}</span>
+        <span aria-hidden className="plain-name pointer-events-none absolute inset-x-0 bottom-0 truncate bg-background/92 px-2 py-1 text-[12px] font-medium text-foreground opacity-0 transition-opacity duration-200 group-hover/plain:opacity-100">{label}</span>
       ) : null}
     </span>
   );
