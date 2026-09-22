@@ -1021,7 +1021,14 @@ export async function libraryAtlas(tier: Tier) {
   const kinds = ["language", "art_style"] as const;
   const rowSets = await Promise.all(kinds.map((k) => visibleRows(k, tier)));
   // How much of the library a visitor is not being shown, so a view can say so rather than look complete.
-  const whole = tier === "full" ? null : (await Promise.all(kinds.map((k) => visibleRows(k, "full")))).reduce((n, rs) => n + rs.length, 0);
+  // A visitor is shown the rest of the library too, greyed out and without names or links: the picture each card
+  // would carry, and nothing else of the entry. This is the owner's call — a visitor should see how much is there.
+  const fullSets = tier === "full" ? null : await Promise.all(kinds.map((k) => visibleRows(k, "full")));
+  const whole = fullSets ? fullSets.reduce((n, rs) => n + rs.length, 0) : null;
+  const shownIds = new Set(rowSets.flat().map((r) => r.entity_id));
+  const ghosts = fullSets
+    ? kinds.flatMap((kind, i) => fullSets[i].filter((r) => !shownIds.has(r.entity_id)).map((r) => atlasPicture(kind, r.fields ?? {}))).filter((p): p is string => Boolean(p))
+    : [];
   const rows = kinds.flatMap((kind, i) => rowSets[i].map((row) => ({ kind, row })));
 
   // One run's places only: the version most rows carry.
@@ -1113,7 +1120,7 @@ export async function libraryAtlas(tier: Tier) {
   // They belong to one atlas run, so they are drawn only beside that run's places.
   const holes: AtlasHole[] = atlasHoles.atlas_version === version ? atlasHoles.holes.map((h) => ({ id: h.id, name: h.name, description: h.description, x: h.x, y: h.y })) : [];
 
-  return { tier, version, styles, families, holes, whole, unplaced: rows.length - placed.length };
+  return { tier, version, styles, families, holes, whole, ghosts, unplaced: rows.length - placed.length };
 }
 
 // --- check a page against a language -----------------------------------------
