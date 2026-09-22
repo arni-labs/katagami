@@ -231,7 +231,9 @@ pub(super) fn verify_portable_prompt(
 
     let normalized_name = normalized_words(style_name);
     let normalized_prompt = normalized_words(trimmed);
-    if normalized_name.len() >= 4 && normalized_prompt.contains(&normalized_name) {
+    if normalized_name.len() >= 4
+        && format!(" {normalized_prompt} ").contains(&format!(" {normalized_name} "))
+    {
         return Err(art_error(
             owner_id,
             "art_style_prompt_leaks_catalog_name",
@@ -1405,6 +1407,39 @@ mod tests {
             "A cat in the style of Somebody",
         ] {
             assert!(verify_portable_prompt("as-1", "Archive Ember", prompt).is_err());
+        }
+    }
+
+    #[test]
+    fn catalog_names_match_complete_words_instead_of_substrings() {
+        for prompt in [
+            "Exclude numbers and lettering.",
+            "Use unnumbered measurement ticks.",
+            "Render a slumbering subject.",
+        ] {
+            assert!(verify_portable_prompt("as-1", "Umber", prompt).is_ok());
+        }
+        assert!(verify_portable_prompt("as-1", "Ink Wash", "A pink washout.").is_ok());
+
+        for prompt in ["Umber treatment", "Use UMBER.", "Apply (umber)"] {
+            assert_eq!(
+                verify_portable_prompt("as-1", "Umber", prompt)
+                    .unwrap_err()
+                    .code,
+                "art_style_prompt_leaks_catalog_name"
+            );
+        }
+        for prompt in [
+            "Archive-Ember treatment",
+            "Apply ARCHIVE\nEMBER",
+            "Archive—Ember",
+        ] {
+            assert_eq!(
+                verify_portable_prompt("as-1", "Archive Ember", prompt)
+                    .unwrap_err()
+                    .code,
+                "art_style_prompt_leaks_catalog_name"
+            );
         }
     }
 
