@@ -59,9 +59,13 @@ const rows = (await Promise.all([["DesignLanguages", "language"], ["ArtStyles", 
   (await collectAll(`${set}?$filter=Status%20eq%20'Published'&$top=500`)).map((r) => ({ kind, f: r.fields ?? {} })))))
   .flat();
 
-// Only the first picture of each style is on a card; the rest are in the opened entry, which draws them large.
-const queue = rows.flatMap(({ kind, f }) => picturesOf(kind, f).slice(0, 1))
-  .flatMap((src) => WIDTHS.map((width) => `${SITE}/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=75`));
+// The first picture of each style is on a card at the sheet's widths. The opened entry draws every picture large:
+// 750 on a phone and for the desk's smaller prints, 1080 for the desk's first print. A cold resize there is the
+// difference between an entry that opens at once and one that opens on its ink and fills in a second later.
+const OPEN = process.env.WIDTH ? [] : [750];
+const OPEN_FIRST = process.env.WIDTH ? [] : [1080];
+const queue = rows.flatMap(({ kind, f }) => picturesOf(kind, f).map((src, i) => ({ src, i })))
+  .flatMap(({ src, i }) => [...(i === 0 ? [...WIDTHS, ...OPEN_FIRST] : []), ...OPEN].map((width) => `${SITE}/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=75`));
 const total = queue.length;
 let done = 0, warm = 0, failed = 0;
 
@@ -77,7 +81,7 @@ await Promise.all(Array.from({ length: 8 }, async () => {
   }
 }));
 
-console.log(`${total} resizes at w=${WIDTHS.join("+")}: ${warm} already warm, ${failed} failed`);
+console.log(`${total} resizes (cards at ${WIDTHS.join("+")}, opened entries at ${[...OPEN, ...OPEN_FIRST].join("+") || "-"}): ${warm} already warm, ${failed} failed`);
 // A picture the file proxy cannot serve is a broken reference in the data, not a reason to fail the deploy;
 // a wholesale failure is. No pictures at all means the library read found nothing, which is a failure that would
 // otherwise read as a clean run.
