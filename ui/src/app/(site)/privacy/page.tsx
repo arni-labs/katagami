@@ -5,143 +5,125 @@ import { OPERATOR } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Privacy · Katagami",
-  description: "What Katagami collects, why, who else handles it, and how to have it removed.",
+  description: "How Katagami collects, uses and shares information, and the choices you have.",
 };
 
-// Written from what the code actually does, not from a template: every claim
-// below was traced to the sign-in, telemetry, MCP and model-call code on
-// 2026-09-22. If one of those changes (a new processor, session replay turned
-// on, a new field stored), this page must change with it.
+// Every statement below was checked against the sign-in, analytics, MCP and
+// model-call code on 2026-09-22. If one of those changes (a new service
+// provider, session recording turned on, a new kind of data stored), this page
+// changes with it.
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy">
-      <Section title="In short">
+    <LegalPage title="Privacy policy">
+      <Section title="About this policy">
         <p>
-          Katagami is operated by {OPERATOR}. You can browse the library without an account. If you sign in, we keep your
-          Google account&apos;s name, email address and picture so we know who you are. We measure how the site is used
-          so we can fix it, and some features send your words to a model provider to be judged. We don&apos;t sell your
-          data and we don&apos;t show ads.
+          This policy explains how {OPERATOR} (&quot;we&quot;, &quot;us&quot;) collects, uses and shares information when
+          you use Katagami, including the website at katagami.ai and its MCP servers (the &quot;service&quot;).
         </p>
       </Section>
 
-      <Section title="When you sign in">
-        <p>
-          Sign-in uses Google. From your Google account we receive your account identifier, email address (which must be
-          verified), name and profile picture. We store these in your account record, refreshed each time you sign in, along
-          with your role on the site.
-        </p>
-        <p>
-          A cookie keeps you signed in for up to 30 days, and a few short-lived cookies carry the sign-in itself for ten
-          minutes. Signing out clears them.
-        </p>
-      </Section>
-
-      <Section title="When you connect an agent">
-        <p>
-          If you connect an AI agent to Katagami through its MCP server, we record the agent client (its name and
-          redirect address), the access it was granted, and when it was used. Access tokens expire after 15 minutes;
-          refresh tokens last until you revoke them. You can revoke any agent, or sign out everywhere, from{" "}
-          <Link href="/account/agents" className="ink-underline">Account → Agents &amp; access</Link>.
-        </p>
-        <p>
-          The no-sign-in address, <code>katagami.ai/mcp/open</code>, collects no account data. Like the rest of the site,
-          it uses your IP address for about a minute to limit how many requests one caller can make.
-        </p>
-      </Section>
-
-      <Section title="How we measure the site">
-        <p>
-          We use Datadog to see how the site is used and where it breaks: pages viewed, clicks, load times, errors. Text
-          you type into forms is masked, and session recording is off. Datadog sets its own cookie to group one visit
-          together.
-        </p>
-        <p>
-          When you search, the first 100 characters of the search go to Datadog so we can see what people look for. If
-          you are signed in, site events carry a pseudonymous identifier derived from your account rather than your
-          name or email. That identifier is not anonymous: we can match it back to your account.
-        </p>
-        <p>
-          Our servers log which features were used and how long they took. For the library-judging features we log
-          timings and counts, never what you asked.
-        </p>
-      </Section>
-
-      <Section title="What you type into the judging features">
-        <p>
-          Some features send your words to Typesafe, whose Jev model judges them against the library:
-        </p>
+      <Section title="Information you give us">
         <List
           items={[
-            "Ask the library: the sentence you describe your product with, and any change you ask for afterwards.",
-            "Checking a page against a design language: the page's HTML and CSS source you submit.",
-            "The command bar on the explore page: what you type into it.",
-          ]}
-        />
-        <p>Don&apos;t put anything private into these features, and don&apos;t submit a page that contains personal data.</p>
-      </Section>
-
-      <Section title="What you contribute">
-        <p>
-          Styles you submit, and remixes you save, are recorded with your account identifier and email address so they
-          are attributed to you. Once a curator publishes a style it is public, including its images. Answers to the
-          feedback form are stored with your account identifier if you were signed in when you sent them.
-        </p>
-      </Section>
-
-      <Section title="Stored in your browser">
-        <p>
-          Some preferences stay in your own browser and never reach us unless a feature sends them: your light or dark
-          theme, a shortlist you build on the explore page, and picks and notes on some comparison pages.
-        </p>
-      </Section>
-
-      <Section title="Who else handles your data">
-        <p>These services run Katagami for us and process data only to do that:</p>
-        <List
-          items={[
-            "Google: sign-in.",
-            "Vercel: hosts the site and keeps request logs.",
-            "Railway: runs the backend that stores the library and account records, with Turso for the database and Cloudflare R2 for files.",
-            "Cloudflare: DNS, and serving published images.",
-            "Datadog: site measurement and server logs.",
-            "Typesafe: judges the text you enter into the features listed above.",
-            "OpenAI and Modal: the curator agents that review and prepare contributed styles.",
+            "Account information. When you sign in with Google, we receive your name, email address, profile picture and Google account identifier. We also store the role we assign your account.",
+            "Content you submit. Styles, images and remixes you contribute, and your answers to our feedback form.",
+            "Text you submit for AI evaluation. Descriptions and refinements you type into Ask the library and the explore page, and page source you submit to be checked against a design language.",
           ]}
         />
       </Section>
 
-      <Section title="How long we keep it">
+      <Section title="Information we collect automatically">
+        <List
+          items={[
+            "Usage information. The pages you view, what you click, the searches you run and any errors you encounter. If you are signed in, we can link this information to your account.",
+            "Device and connection information. Your browser type, device type and IP address.",
+            "Connected agents. When you connect an AI agent through our MCP servers, we record which agent you connected, the access you granted it and how often it is used.",
+          ]}
+        />
+      </Section>
+
+      <Section title="How we use information">
+        <List
+          items={[
+            "To provide the service, including signing you in and recording who contributed each style.",
+            "To evaluate the text and page source you submit and return the results.",
+            "To understand how the service is used, fix problems and improve it.",
+            "To protect the service, including limiting request rates and preventing abuse.",
+            "To respond to your requests and contact you about your account.",
+            "To comply with legal obligations.",
+          ]}
+        />
+      </Section>
+
+      <Section title="How we share information">
+        <p>We do not sell your personal information, and we do not use it for advertising. We share information only as follows:</p>
+        <List
+          items={[
+            "Service providers. Companies that run parts of the service for us: Google for sign-in, Vercel and Railway (with Turso and Cloudflare R2) for hosting and data storage, Cloudflare for network and file delivery, Datadog for analytics and logs, Typesafe for AI evaluation of the text and page source you submit, and OpenAI and Modal for the AI tools that review contributed styles. We share with them only what they need to provide their services to us.",
+            "Public content. Styles you contribute become visible to other users once we approve them.",
+            "Legal reasons. When the law requires it, or to protect the rights and safety of our users, the public or us.",
+            `Business transfers. If ${OPERATOR} is involved in a merger, acquisition or sale of assets, information may be transferred as part of that transaction.`,
+          ]}
+        />
+      </Section>
+
+      <Section title="Cookies and similar technologies">
         <p>
-          We keep your account record and contributions until you ask us to remove them. Revoked agent grants are kept as
-          a record that access was withdrawn. Logs and measurement data are kept for as long as each provider above
-          retains them.
+          We use cookies to keep you signed in and to understand how the service is used, and we keep some preferences,
+          such as your choice of theme, in your browser. You can block or delete cookies in your browser settings, but
+          you will not be able to stay signed in without them. Katagami does not respond to Do Not Track signals.
         </p>
       </Section>
 
-      <Section title="Your choices">
+      <Section title="Data retention">
         <p>
-          You can use most of Katagami without signing in. You can revoke agents and sign out everywhere yourself. To see
-          what we hold about you, correct it, or have your account and contributions deleted, contact us through{" "}
-          <Contact />. We will respond within 30 days.
+          We retain your account information and contributions while your account is active, or until you ask us to
+          delete them. Styles you contributed that we have published may stay in the library after your account is
+          deleted. We retain usage and log data for as long as we need it for the purposes above, and our service
+          providers retain it according to their own retention periods.
+        </p>
+      </Section>
+
+      <Section title="Your rights and choices">
+        <p>
+          Signed-in users can revoke connected agents and sign out of all sessions from{" "}
+          <Link href="/account/agents" className="ink-underline">their account settings</Link>. To access, correct or
+          delete your personal information, contact us <Contact />. We respond to requests within 30 days.
+        </p>
+      </Section>
+
+      <Section title="Security">
+        <p>
+          We use reasonable technical and organizational measures to protect your information, including encrypted
+          connections. No method of transmission or storage is completely secure, so we cannot guarantee absolute
+          security.
+        </p>
+      </Section>
+
+      <Section title="International data transfers">
+        <p>
+          Katagami is operated from the United States. Our service providers may process your information in the United
+          States and in other countries.
         </p>
       </Section>
 
       <Section title="Children">
-        <p>Katagami is not meant for children under 13, and we don&apos;t knowingly collect their data.</p>
-      </Section>
-
-      <Section title="Changes">
         <p>
-          When this policy changes, we update it here and change the date at the top. If a change affects what we do
-          with data you have already given us, we will say so on the site before it takes effect.
+          Katagami is not directed to children under 13, and we do not knowingly collect their personal information. If
+          you believe a child has given us personal information, contact us <Contact /> and we will delete it.
         </p>
       </Section>
 
-      <Section title="Contact">
+      <Section title="Changes to this policy">
         <p>
-          Questions about this policy or your data: <Contact />.
+          We may update this policy. We post changes on this page and update the date at the top. If a change materially
+          affects how we use information you have already given us, we will tell you on the site before it takes effect.
         </p>
+      </Section>
+
+      <Section title="Contact us">
+        <p>For questions or requests about this policy or your information, contact us <Contact />.</p>
       </Section>
     </LegalPage>
   );

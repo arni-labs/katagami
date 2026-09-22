@@ -9,13 +9,12 @@ export const OPERATOR = "Arni Labs";
 export const GOVERNING_LAW = "the State of New Jersey, USA";
 
 /**
- * The address people write to about their data or account. Empty until the
- * arnilabs.ai support alias is confirmed; until then every page points at the
- * feedback form instead, which reaches the same person.
+ * The address people write to about their data or account. If it is ever
+ * emptied, every page falls back to the feedback form.
  */
-export const CONTACT_EMAIL = "";
+export const CONTACT_EMAIL = "info@arnilabs.ai";
 
 export const FEEDBACK_PATH = "/feedback?from=legal";
 
 /** Bump whenever the privacy policy or terms change in substance. */
-export const LEGAL_LAST_UPDATED = "22 September 2026";
+export const LEGAL_LAST_UPDATED = "September 22, 2026";

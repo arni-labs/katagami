@@ -34,11 +34,19 @@ export function List({ items }: { items: ReactNode[] }) {
   );
 }
 
-/** How to reach a person: the support address once it exists, the feedback form until then. */
+/**
+ * How to reach a person, with its own preposition so every sentence reads right
+ * either way: "contact us at support@…" once the address exists, "contact us
+ * through the feedback form" until then.
+ */
 export function Contact() {
   return CONTACT_EMAIL ? (
-    <a href={`mailto:${CONTACT_EMAIL}`} className="ink-underline">{CONTACT_EMAIL}</a>
+    <>
+      at <a href={`mailto:${CONTACT_EMAIL}`} className="ink-underline">{CONTACT_EMAIL}</a>
+    </>
   ) : (
-    <Link href={FEEDBACK_PATH} className="ink-underline">the feedback form</Link>
+    <>
+      through <Link href={FEEDBACK_PATH} className="ink-underline">the feedback form</Link>
+    </>
   );
 }

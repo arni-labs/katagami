@@ -26,7 +26,7 @@ export default function SupportPage() {
           ]}
         />
         <p>
-          If your agent says it can&apos;t reach Katagami, ask it to call <code>whoami</code>: that says which of the two
+          If your agent says it cannot reach Katagami, ask it to call <code>whoami</code>: that says which of the two
           it is connected to.
         </p>
       </Section>
@@ -34,7 +34,7 @@ export default function SupportPage() {
       <Section title="Your account and agents">
         <p>
           Revoke a connected agent, or sign out everywhere, from{" "}
-          <Link href="/account/agents" className="ink-underline">Account → Agents &amp; access</Link>. To see, correct or
+          <Link href="/account/agents" className="ink-underline">your account settings</Link>. To see, correct or
           delete what we hold about you, contact us as the{" "}
           <Link href="/privacy" className="ink-underline">privacy policy</Link> describes.
         </p>
@@ -42,14 +42,14 @@ export default function SupportPage() {
 
       <Section title="A problem with a style">
         <p>
-          If a style is broken, credits someone wrongly, or shouldn&apos;t be in the library, tell us which one and what
+          If a style is broken, credits someone wrongly, or should not be in the library, tell us which one and what
           is wrong. Include its link.
         </p>
       </Section>
 
       <Section title="Contact">
         <p>
-          Anything else, whether a bug, a question or an idea: <Contact />. We read everything.
+          For a bug, a question or an idea, contact us <Contact />. We read everything.
         </p>
       </Section>
     </LegalPage>
