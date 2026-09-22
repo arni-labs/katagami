@@ -140,6 +140,12 @@ export function Prints({ prints, whole, phone }: { prints: Print[]; /** The whol
     else void ask.ask(q, kinds);
   };
   const clear = () => { ask.clear(); setSent(""); };
+  // An answer was judged for the kinds on screen when it was asked. Changing kind with an answer up asks the same
+  // question again for the new kind, rather than filtering an answer that never looked at it.
+  const pick = (k: Show) => {
+    setShow(k);
+    if (ask.answer) void ask.ask(ask.answer.query, { language: k !== "art_style", art_style: k !== "language" });
+  };
 
   const hints = ask.answer ? ["warmer", "quieter"] : ["a calm booking app for an island ferry", "a zine about night markets"];
   const eager = phone ? 8 : 12;
@@ -189,7 +195,7 @@ export function Prints({ prints, whole, phone }: { prints: Print[]; /** The whol
         </form>
         <div role="group" aria-label="Show" className="isolate mt-5 flex flex-wrap gap-x-6 gap-y-2 pl-0.5 text-[15px]">
           {SHOW.map(([k, label]) => (
-            <button key={k} type="button" aria-pressed={show === k} data-active={show === k} onClick={() => setShow(k)} className={`ink-underline cursor-pointer ${show === k ? "text-foreground" : "text-foreground/55 hover:text-foreground"}`}>
+            <button key={k} type="button" aria-pressed={show === k} data-active={show === k} onClick={() => pick(k)} className={`ink-underline cursor-pointer ${show === k ? "text-foreground" : "text-foreground/55 hover:text-foreground"}`}>
               {label}
             </button>
           ))}
