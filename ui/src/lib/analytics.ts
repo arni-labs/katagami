@@ -98,11 +98,13 @@ export async function initRum(): Promise<void> {
   const applicationId = e.applicationId;
   const clientToken = e.clientToken;
   if (!applicationId || !clientToken) return; // no creds → stay a no-op
-  // The SDK is 150KB and nothing on the page waits for it, so it comes after the page has painted and the browser
-  // has a spare moment, rather than alongside the first pictures on a phone's connection.
+  // The SDK is 150KB and nothing on the page waits for it, so it comes once the document is parsed and the browser
+  // has a spare moment, rather than alongside the first pictures on a phone's connection. Not the load event: on a
+  // slow phone that waits for the last picture, and a page can be in use for seconds by then. At most two seconds
+  // of early taps go unrecorded.
   await new Promise<void>((done) => {
-    const go = () => (typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(() => done(), { timeout: 4000 }) : setTimeout(done, 1500));
-    if (document.readyState === "complete") go(); else window.addEventListener("load", go, { once: true });
+    const go = () => (typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(() => done(), { timeout: 2000 }) : setTimeout(done, 800));
+    if (document.readyState !== "loading") go(); else document.addEventListener("DOMContentLoaded", go, { once: true });
   });
   if (initialized || starting) return starting ?? undefined;
   starting = (async () => {

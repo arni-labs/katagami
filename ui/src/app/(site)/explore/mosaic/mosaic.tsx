@@ -554,7 +554,11 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
   // The window that has held still for a moment. Pictures are asked for against this one, so cells a pan merely
   // crosses never ask, and the ones it stops on ask together, nearest the middle first.
   const [still, setStill] = useState(win);
+  // A new sort lays new styles under the old window before the camera has moved to the new middle; until it has
+  // come to rest there, nothing is asked for.
+  const stillFor = useRef(world);
   useEffect(() => {
+    if (stillFor.current !== world) { stillFor.current = world; setStill({ c0: 0, c1: 0, r0: 0, r1: 0 }); }
     let id = 0;
     const arm = () => {
       const k = cam.current, x = k.x, y = k.y;
@@ -566,7 +570,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
     };
     arm();
     return () => window.clearTimeout(id);
-  }, [win]);
+  }, [win, world]);
   const cells = useMemo(() => {
     const out: { c: number; r: number; cell: Cell }[] = [];
     for (let r = win.r0; r <= win.r1; r++) for (let c = win.c0; c <= win.c1; c++) out.push({ c, r, cell: cellAt(c, r) });
