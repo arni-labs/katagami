@@ -188,6 +188,20 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertEqual(job["triggers"][0]["module"], "finalize_spawned_session")
         self.assertIn('"VerificationQueued"', submit)
 
+    def test_art_style_finalizer_fuel_covers_real_gallery_hashing(self) -> None:
+        actions = self._by_name(tomllib.loads(CURATION_JOB_SPEC), "action")
+        art_style_entries = {"VerifyArtStyleSubmission", "CompleteArtStyleSynthesis"}
+        for name, action in actions.items():
+            for trigger in action.get("triggers", []):
+                if trigger.get("module") != "finalize_spawned_session":
+                    continue
+                fuel = trigger.get("config", {}).get("max_fuel")
+                if name in art_style_entries:
+                    self.assertEqual(fuel, "5000000000", name)
+                    self.assertEqual(trigger["timeout_secs"], "300")
+                else:
+                    self.assertIsNone(fuel, name)
+
     def test_state_machine_requires_proof_and_finalizer_verifies_gallery(self):
         actions = self._by_name(self.art, "action")
         for action_name in ["SubmitForReview", "Publish"]:

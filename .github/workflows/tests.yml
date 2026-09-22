@@ -47,6 +47,8 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install Pillow==12.3.0
       - run: node --test katagami-curation/tests/e2e/art_style_wasm_abi.test.mjs
+      - run: python -m unittest tests.test_lane_deep_verification_contract.LaneDeepVerificationContractTests.test_art_style_finalizer_fuel_covers_real_gallery_hashing
+        working-directory: katagami-curation
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --locked
         working-directory: katagami-curation/wasm/finalize_spawned_session
