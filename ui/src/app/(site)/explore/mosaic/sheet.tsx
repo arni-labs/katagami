@@ -8,5 +8,5 @@ import { Mosaic } from "./mosaic";
 export async function MosaicSheet() {
   const tier = (await hasFullGalleryAccess()) ? "full" : "sample";
   const atlas = await libraryAtlas(tier);
-  return <Mosaic styles={atlas.styles} families={atlas.families} holes={atlas.holes} whole={atlas.whole} />;
+  return <Mosaic styles={atlas.styles} families={atlas.families} holes={atlas.holes} whole={atlas.whole} ghosts={atlas.ghosts} />;
 }
