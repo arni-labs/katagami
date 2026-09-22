@@ -521,15 +521,12 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
   // The middle of the screen is asked for first and without waiting its turn, so the view fills from the centre out
   // rather than all at once; the rest follow as the browser gets to them. Only places that carry a picture are
   // counted: a plot leaves most of its grid empty, and an empty place would otherwise spend one of the twelve.
-  const eager = useMemo(() => {
-    const cx = (win.c0 + win.c1) / 2, cy = (win.r0 + win.r1) / 2;
-    return new Set(cells
-      .filter(({ cell }) => cell?.kind === "style" && cell.s.picture)
-      .map(({ c, r }) => ({ key: `${c},${r}`, d: Math.hypot(c - cx, (r - cy) * RATIO) }))
-      .sort((a, b) => a.d - b.d)
-      .slice(0, 12)
-      .map((x) => x.key));
-  }, [win, cells]);
+  // Every card actually on screen is fetched at once, ahead of the rest; only the one-card margin kept round the
+  // screen waits for the browser's own lazy loading. A phone's web view was left to judge, inside a canvas that never
+  // scrolls and is moved by transforms, which pictures were near the view, and it could hold every one of them back.
+  const eager = useMemo(() => new Set(cells
+    .filter(({ c, r, cell }) => cell?.kind === "style" && cell.s.picture && c > win.c0 && c < win.c1 && r > win.r0 && r < win.r1)
+    .map(({ c, r }) => `${c},${r}`)), [win, cells]);
   // A place that is still to be filled is a label, not an entry: opening one left the page believing a card was up.
   const openCell = useCallback((c: number, r: number) => { if (dragged.current) return; const cell = cellAt(c, r); if (cell?.kind === "style") { setOpen(cell.s.id); setAside([]); } }, [cellAt]);
 

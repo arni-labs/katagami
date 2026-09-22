@@ -13,14 +13,18 @@ export const quick = (src: string, width: 128 | 256 | 384 | 750 | 1080) => (canO
 function retryThenHide(e: React.SyntheticEvent<HTMLImageElement>) {
   const img = e.currentTarget;
   const spare = img.dataset.spare;
-  if (!img.dataset.retried) {
-    img.dataset.retried = "1";
-    const again = img.src;
-    window.setTimeout(() => { if (img.isConnected) img.src = `${again}${again.includes("#") ? "" : "#again"}`; }, 1400);
+  // A phone on a patchy connection drops requests in bursts, and one retry was not enough to see it through: a
+  // screenful of cards could give up together and sit on their ink for good. Three tries, further apart each time,
+  // then the spare, and only then the ink.
+  const tries = Number(img.dataset.tries ?? 0);
+  if (tries < 3) {
+    img.dataset.tries = String(tries + 1);
+    const again = (img.dataset.first ??= img.src).split("#")[0];
+    window.setTimeout(() => { if (img.isConnected) img.src = `${again}#try${tries + 1}`; }, 1200 * 2 ** tries);
     img.removeAttribute("src");
     return;
   }
-  if (spare && !img.dataset.spared) { img.dataset.spared = "1"; img.src = spare; return; }
+  if (spare && !img.dataset.spared) { img.dataset.spared = "1"; img.dataset.tries = "0"; img.dataset.first = spare; img.src = spare; return; }
   img.style.visibility = "hidden";
 }
 
