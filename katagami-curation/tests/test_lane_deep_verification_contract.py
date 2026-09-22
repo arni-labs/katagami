@@ -190,7 +190,7 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
 
     def test_art_style_finalizer_fuel_covers_real_gallery_hashing(self) -> None:
         actions = self._by_name(tomllib.loads(CURATION_JOB_SPEC), "action")
-        art_style_entries = {"VerifyArtStyleSubmission", "CompleteArtStyleSynthesis"}
+        art_style_entries = {"VerifyArtStyleSubmission", "RetryArtStyleVerification", "CompleteArtStyleSynthesis"}
         for name, action in actions.items():
             for trigger in action.get("triggers", []):
                 if trigger.get("module") != "finalize_spawned_session":

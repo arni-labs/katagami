@@ -301,6 +301,32 @@ type = "create"
 
 
 [[action]]
+name = "RetryVerification"
+kind = "input"
+from = ["Draft"]
+guard = [{ type = "cross_entity_state", entity_type = "CurationJob", entity_id_source = "verification_job_id", required_status = ["Failed"], required = true }]
+hint = "Retry verification of the existing submitted payload after an infrastructure failure. Reuses the failed verification job; does not author, submit again, attest quality, or publish."
+
+[[action.triggers]]
+name = "retry_existing_art_style_verification"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationJob"
+target_action = "RetryArtStyleVerification"
+
+[action.triggers.params]
+job_type = "synthesize_art_style"
+completion_contract = "typed-v1"
+
+[action.triggers.params_from]
+art_style_ids = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "verification_job_id"
+
+
+[[action]]
 name = "RecordVerificationJob"
 kind = "internal"
 from = ["Draft", "UnderReview", "Published", "Archived"]

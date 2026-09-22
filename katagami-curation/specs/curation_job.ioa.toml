@@ -220,6 +220,37 @@ type = "field"
 field = "art_style_ids"
 
 [[action]]
+name = "RetryArtStyleVerification"
+kind = "internal"
+from = ["Failed"]
+to = "Finalizing"
+params = ["job_type", "art_style_ids", "completion_contract"]
+constraints = [
+  { kind = "param_equals_field", param = "job_type", field = "job_type" },
+  { kind = "param_equals_field", param = "art_style_ids", field = "art_style_ids" },
+  { kind = "param_equals_field", param = "completion_contract", field = "completion_contract" }
+]
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+hint = "Engine-only retry of the same failed contributor verification job. The source ArtStyle supplies its own ID and fixed verification contract; atomic comparisons reject a different job type or artifact before any change. Existing payload and failure history are retained."
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+# Five full-size gallery files and comparison checks exceed the 1b default.
+# Wasmtime 36 measured ~1.38b fuel; retain bounded headroom and the 300s timeout.
+max_fuel = "5000000000"
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+
+[[action]]
 name = "ConfigureAndSubmit"
 kind = "internal"
 from = ["Queued"]
