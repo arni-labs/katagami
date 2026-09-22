@@ -14,7 +14,9 @@
 // Setting them to satisfy this check would be inventing a review, so a
 // violation here is a curation job, never a patch.
 //
-// Exits non-zero when any Published language's pair is not Published.
+// Exits non-zero for unresolved/unpublished pairs or inconsistent explicit IDs.
+// Slug lookup is case-insensitive for backlog discovery; the ID binding must
+// still match the named slug exactly. Duplicate slugs require an explicit ID.
 // Env: TEMPER_API_URL, TEMPER_API_KEY, TEMPER_TENANT (default "default").
 
 const API = requiredEnv("TEMPER_API_URL").replace(/\/+$/, "");
@@ -73,34 +75,67 @@ function parsed(v) {
 
 const [languages, artStyles] = await Promise.all([readAll("DesignLanguages"), readAll("ArtStyles")]);
 const byId = new Map(artStyles.map(row => [row.entity_id, row]));
+const slugKey = (value) => text(value).trim().toLowerCase();
+const bySlug = new Map();
+for (const art of artStyles) {
+  const key = slugKey(art.fields?.slug);
+  if (!key) continue;
+  if (!bySlug.has(key)) bySlug.set(key, []);
+  bySlug.get(key).push(art);
+}
 
 const published = languages.filter((l) => l.status === "Published");
 const unpaired = [];
 const dangling = [];
+const inconsistentIds = [];
+const duplicates = [];
 const notPublished = new Map();
+const violations = new Set();
 let sound = 0;
+let ambiguous = 0;
 
-for (const lang of published) {
+for (const [index, lang] of published.entries()) {
   const name = text(lang.fields?.name);
+  const languageKey = lang.entity_id || index;
   const pairsWith = text(parsed(lang.fields?.imagery_direction)?.pairs_with).trim();
+  const id = text(lang.fields?.default_art_style_id);
+  const explicit = byId.get(id);
+  const idProblem = !id ? "missing default_art_style_id"
+    : !explicit ? `default_art_style_id ${id} names no entity`
+    : text(explicit.fields?.slug) !== pairsWith
+      ? `default_art_style_id ${id} names ${text(explicit.fields?.slug)}, not ${pairsWith || "an explicit pair"}`
+      : null;
+  if (idProblem) {
+    inconsistentIds.push({ language: name, pairsWith, reason: idProblem, shelf: onShelf(lang) });
+    violations.add(languageKey);
+  }
   if (!pairsWith) {
     unpaired.push(name);
+    violations.add(languageKey);
     continue;
   }
-  const id = text(lang.fields?.default_art_style_id);
-  const art = byId.get(id);
-  if (!id || (art && text(art.fields?.slug) !== pairsWith)) {
-    dangling.push({ language: name, pairsWith: `${pairsWith} (missing or mismatched default_art_style_id)`, shelf: onShelf(lang) });
+  const candidates = bySlug.get(slugKey(pairsWith)) || [];
+  if (!candidates.length) {
+    dangling.push({ language: name, pairsWith, shelf: onShelf(lang) });
+    violations.add(languageKey);
     continue;
+  }
+  // An exact explicit binding resolves duplicate slugs. Otherwise preserve all
+  // candidate IDs instead of choosing whichever entity the API returned first.
+  const art = !idProblem ? explicit : candidates.length === 1 ? candidates[0] : null;
+  if (candidates.length > 1) {
+    duplicates.push({ language: name, pairsWith, candidates, resolved: art?.entity_id });
   }
   if (!art) {
-    dangling.push({ language: name, pairsWith, shelf: onShelf(lang) });
+    ambiguous++;
+    violations.add(languageKey);
     continue;
   }
   if (art.status === "Published") {
     sound++;
     continue;
   }
+  violations.add(languageKey);
   if (!notPublished.has(art.entity_id)) notPublished.set(art.entity_id, { art, languages: [], shelf: false });
   const entry = notPublished.get(art.entity_id);
   entry.languages.push(name);
@@ -113,6 +148,9 @@ console.log(`  pair Published:        ${sound}`);
 console.log(`  pair NOT Published:    ${[...notPublished.values()].reduce((n, e) => n + e.languages.length, 0)} languages, ${notPublished.size} distinct art styles`);
 console.log(`  pair names no entity:  ${dangling.length}`);
 console.log(`  no pair named:         ${unpaired.length}`);
+console.log(`  pair ambiguous:        ${ambiguous}`);
+console.log(`  default ID inconsistent: ${inconsistentIds.length}`);
+console.log("Slug publication categories and default-ID errors are independent; the failure total counts each language once.");
 
 if (notPublished.size > 0) {
   const byStatus = {};
@@ -140,9 +178,20 @@ if (dangling.length > 0) {
 }
 if (unpaired.length > 0) console.log(`\nPublished languages naming no pair: ${unpaired.join(", ")}`);
 
-const broken = [...notPublished.values()].reduce((n, entry) => n + entry.languages.length, 0) + dangling.length + unpaired.length;
+if (duplicates.length > 0) {
+  console.log("\nduplicate slug candidates (all IDs; unresolved candidates are not included in publication totals):");
+  for (const d of duplicates) {
+    console.log(`  ${d.language} -> ${d.pairsWith}: ${d.candidates.map(art => `${art.entity_id} (${art.status})`).join(", ")}; ${d.resolved ? `resolved by default ID ${d.resolved}` : "ambiguous, no exact default ID binding"}`);
+  }
+}
+if (inconsistentIds.length > 0) {
+  console.log("\ndefault art-style ID inconsistencies:");
+  for (const d of inconsistentIds) console.log(`  ${d.language}${d.shelf ? " [shelf]" : ""} -> ${d.pairsWith || "(unnamed)"}: ${d.reason}`);
+}
+
+const broken = violations.size;
 if (broken > 0) {
-  console.error(`\nFAIL: ${broken} Published languages have an unpublished, missing, or unnamed art-style pair.`);
+  console.error(`\nFAIL: ${broken} Published languages have an unpublished, missing, unnamed, or ambiguous art-style pair, or an inconsistent default ID.`);
   process.exit(1);
 }
 console.log("\nok: every Published language binds a Published art style.");
