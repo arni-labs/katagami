@@ -70,6 +70,7 @@ export function tokensToCss(tokens) {
     ...cssVars("space", t.spacing),
     ...cssVars("shadow", t.shadows),
     ...cssVars("motion", t.motion),
+    ...Object.entries(record(t.ramps)).flatMap(([name, steps]) => cssVars(`ramp-${name}`, steps)),
     typography.body_font ? `  --font-body: ${typography.body_font};` : "",
     typography.heading_font ? `  --font-heading: ${typography.heading_font};` : "",
     typography.mono_font ? `  --font-mono: ${typography.mono_font};` : "",

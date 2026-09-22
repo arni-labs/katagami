@@ -81,3 +81,8 @@ test("a group the entry does not have simply does not appear, and nothing throws
     assert.ok(typeof tokensToCss(junk).css === "string");
   }
 });
+
+test("a palette's ramps come out as --ramp-<name>-<step>, so a palette export is not empty", () => {
+  const css = tokensToCss({ colors: { bg: "#fff" }, ramps: { accent: { "50": "#fff1e8", "500": "#a7564b" }, moss: { "500": "#69733d" } } }).css;
+  for (const v of ["--ramp-accent-50: #fff1e8;", "--ramp-accent-500: #a7564b;", "--ramp-moss-500: #69733d;"]) assert.ok(css.includes(v), `missing ${v}`);
+});
