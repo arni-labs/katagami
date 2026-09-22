@@ -77,11 +77,11 @@ function warm(src: string | null | undefined, width: 750 | 1080) {
   const img = new Image(); img.decoding = "async"; img.src = quick(src, width);
 }
 
-type CellProps = { onGhost: () => void; eager: boolean; c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
+type CellProps = { onGhost: () => void; eager: boolean; first: boolean; c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
 // One stamp on the sheet, keyed by its slot in a recycling pool (see Sheet): when the window slides, the stamp
 // that left one edge is handed the place that arrived at the other, which is an update, not a mount. Memoised on plain values, so when the window of visible cells slides by a row
 // only the new row is drawn: the stamps already there are left alone.
-const CellView = memo(function CellView({ onGhost, eager, c, r, cell, w, h, stepX, stepY, dim, hold, onOpen }: CellProps) {
+const CellView = memo(function CellView({ onGhost, eager, first, c, r, cell, w, h, stepX, stepY, dim, hold, onOpen }: CellProps) {
   if (!cell) return null;
   const x = c * stepX, y = r * stepY, key = `${c},${r}`;
   // A style a visitor is not being shown keeps a place on the sheet without giving anything away: paper and a wash
@@ -96,19 +96,19 @@ const CellView = memo(function CellView({ onGhost, eager, c, r, cell, w, h, step
   const s = cell.s;
   return (
     <button ref={(el) => hold(key, el)} type="button" onPointerEnter={(e) => { if (e.pointerType === "mouse") warm(s.picture, 1080); }} onPointerDown={() => warm(s.picture, w < 60 ? 750 : window.innerWidth < 768 ? 750 : 1080)} onClick={() => onOpen(c, r)} aria-label={s.name} className="absolute left-0 top-0 block cursor-pointer" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.2 : 1, }}>
-      <Card src={s.picture} spare={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} code={codeOf(s.id)} fast={NEAR} eager={eager} />
+      <Card src={s.picture} spare={s.thumbnail_url} ink={s.ink} w={w} h={h} label={w > 66 ? s.name : undefined} code={codeOf(s.id)} fast={NEAR} eager={eager} first={first} />
     </button>
   );
 });
 
-type SheetProps = { onGhost: () => void; eager: Set<string>; hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
-const Sheet = memo(function Sheet({ onGhost, eager, hold, cells, w, h, stepX, stepY, lit, onOpen }: SheetProps) {
+type SheetProps = { onGhost: () => void; eager: Set<string>; first: Set<string>; hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
+const Sheet = memo(function Sheet({ onGhost, eager, first, hold, cells, w, h, stepX, stepY, lit, onOpen }: SheetProps) {
   return (
     <>
       {cells.map(({ c, r, cell }) => {
         const id = cell?.kind === "style" ? cell.s.id : "";
         // The pool is wider than any window the sheet allows (see CROWD), so no two places on screen share a slot.
-        return <CellView key={`${mod(c, 128)},${mod(r, 96)}`} onGhost={onGhost} eager={eager.has(`${c},${r}`)} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} hold={hold} onOpen={onOpen} />;
+        return <CellView key={`${mod(c, 128)},${mod(r, 96)}`} onGhost={onGhost} eager={eager.has(`${c},${r}`)} first={first.has(`${c},${r}`)} c={c} r={r} cell={cell} w={w} h={h} stepX={stepX} stepY={stepY} dim={Boolean(lit && (!id || !lit.has(id)))} hold={hold} onOpen={onOpen} />;
       })}
     </>
   );
@@ -524,9 +524,15 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
   // Every card actually on screen is fetched at once, ahead of the rest; only the one-card margin kept round the
   // screen waits for the browser's own lazy loading. A phone's web view was left to judge, inside a canvas that never
   // scrolls and is moved by transforms, which pictures were near the view, and it could hold every one of them back.
-  const eager = useMemo(() => new Set(cells
-    .filter(({ c, r, cell }) => cell?.kind === "style" && cell.s.picture && c > win.c0 && c < win.c1 && r > win.r0 && r < win.r1)
-    .map(({ c, r }) => `${c},${r}`)), [win, cells]);
+  // Of those, the ones nearest the middle go first. Zoomed right out a screen can hold hundreds, and marking every
+  // one of them urgent is the same as marking none.
+  const { eager, first } = useMemo(() => {
+    const cx = (win.c0 + win.c1) / 2, cy = (win.r0 + win.r1) / 2;
+    const on = cells
+      .filter(({ c, r, cell }) => cell?.kind === "style" && cell.s.picture && c > win.c0 && c < win.c1 && r > win.r0 && r < win.r1)
+      .map(({ c, r }) => ({ key: `${c},${r}`, d: Math.hypot(c - cx, (r - cy) * RATIO) }));
+    return { eager: new Set(on.map((x) => x.key)), first: new Set([...on].sort((a, b) => a.d - b.d).slice(0, 24).map((x) => x.key)) };
+  }, [win, cells]);
   // A place that is still to be filled is a label, not an entry: opening one left the page believing a card was up.
   const openCell = useCallback((c: number, r: number) => { if (dragged.current) return; const cell = cellAt(c, r); if (cell?.kind === "style") { setOpen(cell.s.id); setAside([]); } }, [cellAt]);
 
@@ -644,7 +650,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">
         {/* The sheet's own corner is what the scale grows from, so a stamp's place on it is its place times the width. */}
         <div ref={layer} style={{ transformOrigin: "0 0" }} className="absolute left-0 top-0 will-change-transform">
-          <Sheet onGhost={openGate} eager={eager} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} />
+          <Sheet onGhost={openGate} eager={eager} first={first} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} />
         </div>
         <div ref={glare} aria-hidden className="canvas-glare" />
       </div>
