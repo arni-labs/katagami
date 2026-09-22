@@ -10,7 +10,7 @@ export const quick = (src: string, width: 128 | 256 | 384 | 750 | 1080) => (canO
  *  then falls back to whatever second picture the card was given (a handful of entries have reference files that
  *  are gone from the store but a perfectly good thumbnail), and only then is hidden, so the card shows its ink
  *  rather than a broken-picture mark. No state: a sheet of hundreds cannot afford a hook per picture. */
-function retryThenHide(e: React.SyntheticEvent<HTMLImageElement>) {
+export function retryThenHide(e: React.SyntheticEvent<HTMLImageElement>) {
   const img = e.currentTarget;
   const spare = img.dataset.spare;
   // A phone on a patchy connection drops requests in bursts, and one retry was not enough to see it through: a
