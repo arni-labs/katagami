@@ -6,7 +6,7 @@ dependencies = [
   "temperpaw/paw-fs@737c0ac23d95b8d412cb4f632c2926b720835eef",
   "temperpaw/paw-agent@c832c1cd0a8bd492436ca2fb93ae86f870eb8209",
   "temperpaw/paw-research@3a35ee25aa4f97430fe09c956412d6a31e15d6bf",
-  "katagami/katagami-commons@0b7f96aa6c653047a47707bf78c78351d7f8d78f",
+  "katagami/katagami-commons@68b09285f9b3df9d921e78fe71edbf11722d7de6",
 ]
 
 # These declarations are REQUIRED — the installer only uploads WASM

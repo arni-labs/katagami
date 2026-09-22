@@ -184,6 +184,28 @@ name = "style_traits"
 type = "string"
 initial = ""
 
+# What this style's own reference images look like, as a JSON object
+# {looks_like, images, tone, tone_hex, cool_share}. An art style is a picture
+# and its row is words about a picture, so the index that reads those words had
+# never seen one; a vision pass reads the images once and writes down what is in
+# them, and every later reindex reads it from here instead of looking again.
+# tone and cool_share are measured off the pixels — how light the pictures read
+# and how warm their colour is — and are stated in the document as facts rather
+# than turned into answers, because the tone of a picture is not the same thing
+# as the ground its work sits on. visual_description_version names the prompt
+# and the vision model, so descriptions written by different ones are never
+# mixed. Written by AttachVisualDescription (scripts/describe-style-images.mjs);
+# empty until looked at. Descriptive only — never a quality judgment.
+[[state]]
+name = "visual_description"
+type = "string"
+initial = ""
+
+[[state]]
+name = "visual_description_version"
+type = "string"
+initial = ""
+
 # Atlas place — where this style sits on the library atlas, a 2D map laid out
 # from Jev's pairwise "same visual idea?" answers over the whole library.
 # atlas_x / atlas_y are 0..1 decimals as strings; atlas_family is the entity id
@@ -377,6 +399,13 @@ kind = "internal"
 from = ["Draft", "UnderReview", "Published"]
 params = ["style_dna", "style_dna_version", "style_traits"]
 hint = "Attach the style DNA: a JSON object of descriptive question id -> probability (0..1) answered by a System One model over this entity's canonical description. style_dna_version identifies the question set and model (e.g. dna-v1/jev-1.13.0) so mixed sets are never compared. style_traits is the flat, filterable list of strongly-answered question ids. Descriptive only — never a quality judgment. Written by the backfill job."
+
+[[action]]
+name = "AttachVisualDescription"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+params = ["visual_description", "visual_description_version"]
+hint = "Attach what this style's reference images look like: a JSON object {looks_like, images, tone, tone_hex, cool_share} written by a vision pass over the style's own reference images, plus the prompt-and-model version that wrote it. The style DNA index reads text only, so this is how an art style is indexed on how it looks rather than on how its recipe describes it. Descriptive only — never a quality judgment. Written by the vision job."
 
 [[action]]
 name = "AttachAtlasPlace"
