@@ -348,7 +348,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_reference_images", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "has_source_basis_review", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["reference_image_file_ids", "reference_manifest"]
-hint = "Attach five ordered gallery File ids plus reference_manifest schema version 3: four OpenAI images and one xAI image, strongest first and its File as thumbnail. The comparison proof files may also be gallery files. Each image must have distinct Locked file bytes, prompt hashes and a genuine generation record version 2. Built-in Codex/Grok records may leave unexposed model versions/request IDs null with a real harness tool receipt; provider records require exact model and request IDs. Requested models never masquerade as observed IDs. Add further examples later through supported revision operations."
+hint = "Attach five ordered gallery File ids plus reference_manifest schema version 3: four OpenAI images and one xAI image, strongest first and its File as thumbnail. The comparison proof files may also be gallery files. Each image must have distinct Locked file bytes, prompt hashes and a genuine generation record version 2. Built-in Codex/Grok records may leave unexposed model versions/request IDs null with a real harness tool receipt; provider records require exact model and request IDs. Requested models never masquerade as observed IDs. Replace or refine examples later through supported revision operations while retaining the five-image allocation."
 
 # --- Actions: Proof Shots (canonical subjects rendered in-style) ---
 
