@@ -473,16 +473,16 @@ pub(super) fn verify_prompt_review(
             format!("ArtStyle '{owner_id}' prompt review contains unresolved contradictions"),
         ));
     }
-    let revision_count = review
+    if review
         .get("revision_count")
         .and_then(Value::as_u64)
-        .unwrap_or(u64::MAX);
-    if revision_count > 1 {
+        .is_none()
+    {
         return Err(art_error(
             owner_id,
             "art_style_prompt_review_loop_invalid",
             "prompt_review",
-            format!("ArtStyle '{owner_id}' prompt review must converge in at most one revision"),
+            format!("ArtStyle '{owner_id}' prompt review revision_count must be a nonnegative integer"),
         ));
     }
 
@@ -1243,6 +1243,22 @@ mod tests {
             "proof_shots_manifest": {"schema_version": "4", "items": proof_manifest},
             "proof_ids": proof_ids
         })
+    }
+
+    #[test]
+    fn honest_revision_history_does_not_disqualify_a_passing_review() {
+        for count in [0, 1, 2, 3, 12] {
+            let mut fields = valid_fields();
+            fields["prompt_review"]["revision_count"] = json!(count);
+            assert!(verify_prompt_review("as-1", &fields, PROMPT).is_ok(), "count {count}");
+            fields["prompt_review"]["verdict"] = json!("fail");
+            assert!(verify_prompt_review("as-1", &fields, PROMPT).is_err());
+        }
+        for count in [Value::Null, json!(-1), json!(1.5), json!("2")] {
+            let mut fields = valid_fields();
+            fields["prompt_review"]["revision_count"] = count;
+            assert!(verify_prompt_review("as-1", &fields, PROMPT).is_err());
+        }
     }
 
     #[test]

@@ -76,4 +76,6 @@ The style definition includes name, slug, medium, the portable prompt, subject s
 
 `source_basis` and independent `prompt_review` remain schema version 1. The source/rights report names actual checked sources and evidence URLs. The prompt review binds the exact prompt, real independent reviewer identity, reference/subject/source-medium/model/style-name independence, contradictions, revision count and substantive `observable_dimensions` for the eight dimensions. `source_medium_independent` describes the prompt's independence; it does not require source images. Existing finalizer checks for these reports remain authoritative.
 
+Record `revision_count` as the actual nonnegative integer number of prompt revisions. Iteration count is history, not a quality threshold: the final prompt still needs a passing independent review with no unresolved contradictions and passing portability evidence.
+
 After submission, read the recorded verification job, its concrete failures, the resulting style state and public asset fields. Only the engine/finalizer may call the quality/publication callbacks. Verify the actual published page and images before reporting completion. Missing provenance, unavailable models or denied operations remain explicit limitations; do not weaken validation or replace evidence to make a job pass.
