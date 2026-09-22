@@ -1890,3 +1890,10 @@
 @media (min-width: 640px) { .gate-card { animation-name: gate-in; } }
 @keyframes gate-in { from { opacity: 0; transform: scale(0.97); } }
 @media (prefers-reduced-motion: reduce) { .gate-card { animation: none; } .kghost { transition: none; } }
+
+/* The quiet sheet's pictures come in softly over a neutral card rather than snapping over a block of ink. */
+.card-plain img { opacity: 0; transition: opacity 320ms ease-out; }
+.card-plain img[data-ready] { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .card-plain img { transition: none; } }
+/* A card reached by the keyboard shows its name as a pointed-at one does. */
+:focus-visible > .card-plain .plain-name, :focus-visible .card-plain .plain-name { opacity: 1; }
