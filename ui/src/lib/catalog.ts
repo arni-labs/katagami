@@ -697,10 +697,12 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number 
   const usedLang = new Set<number>();
   const perLang = trios.filter((t) => (usedLang.has(t.i) ? false : Boolean(usedLang.add(t.i))));
   const isOdd = (t: { i: number }) => Boolean(odd) && t.i === L.length - 1;
-  const chosen = perLang.slice(0, limit);
-  // With room for more than one kit, the last place goes to the surprising one.
+  // With room for more than one kit, the surprising one takes the LAST place,
+  // wherever its score put it: the skill tells agents to offer it as the
+  // unexpected option, so its position has to be predictable.
   const surprise = perLang.find(isOdd);
-  if (surprise && limit > 1 && !chosen.includes(surprise)) chosen[chosen.length - 1] = surprise;
+  const ordinary = perLang.filter((t) => t !== surprise);
+  const chosen = surprise && limit > 1 ? [...ordinary.slice(0, limit - 1), surprise] : perLang.slice(0, limit);
   const round = (n: number) => Math.round(n * 100) / 100;
   return {
     query,
@@ -738,6 +740,12 @@ async function resolve(kind: Kind, idOrSlug: string, tier: Tier): Promise<Row | 
     if (direct && direct.status === "Published") return direct;
   }
   return null;
+}
+
+/** Is there a Published entry with this id or slug at all, whatever the caller may see? */
+export async function existsPublished(kind: Kind, idOrSlug: string): Promise<boolean> {
+  const rows = await readAll(SET[kind], PUBLISHED);
+  return rows.some((r) => rowMatchesIdOrSlug(r, idOrSlug));
 }
 
 export const NEEDS_SIGN_IN = {
@@ -804,6 +812,30 @@ export async function getEmbodiment(kind: Kind, idOrSlug: string, tier: Tier) {
 
 // --- tokens (+ tailwind / css) ----------------------------------------------
 
+function paletteTokens(f: Record<string, unknown>): Record<string, unknown> {
+  const rec = (v: unknown): Record<string, unknown> => {
+    const p = typeof v === "string" ? (() => { try { return JSON.parse(v); } catch { return null; } })() : v;
+    return p && typeof p === "object" && !Array.isArray(p) ? (p as Record<string, unknown>) : {};
+  };
+  const list = (v: unknown): unknown[] => {
+    const p = typeof v === "string" ? (() => { try { return JSON.parse(v); } catch { return null; } })() : v;
+    return Array.isArray(p) ? p : [];
+  };
+  const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const colors: Record<string, string> = {};
+  list(f.signature).forEach((item, i) => {
+    const o = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+    if (typeof o.hex === "string") colors[`signature-${typeof o.name === "string" && o.name ? slug(o.name) : i + 1}`] = o.hex;
+  });
+  for (const [k, v] of Object.entries(rec(f.neutrals))) if (typeof v === "string") colors[k] = v;
+  for (const [k, v] of Object.entries(rec(f.semantic))) if (typeof v === "string") colors[k] = v;
+  const ramps = rec(f.ramps);
+  const out: Record<string, unknown> = {};
+  if (Object.keys(colors).length) out.colors = colors;
+  if (Object.keys(ramps).length) out.ramps = ramps;
+  return out;
+}
+
 export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format: "json" | "tailwind" | "css") {
   const row = await resolve(kind, idOrSlug, tier);
   if (!row) return null;
@@ -818,10 +850,14 @@ export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format
   } else if (raw && typeof raw === "object") {
     tokens = raw as Record<string, unknown>;
   }
+  // A palette keeps its colours in signature / neutrals / semantic / ramps,
+  // not in a `tokens` field, so the export used to come back as ":root {}"
+  // for every palette. Shape them like a language's colour tokens.
+  if (kind === "palette" && Object.keys(tokens).length === 0) tokens = paletteTokens(row.fields ?? {});
   if (format === "json") return { format, tokens };
   if (format === "css") {
-    const { css, fontsUrl } = tokensToCss(tokens);
-    return { format, css, fonts_url: fontsUrl };
+    const { css, fontsUrl, omitted } = tokensToCss(tokens);
+    return { format, css, fonts_url: fontsUrl, ...(omitted.length ? { omitted } : {}) };
   }
   const typo = (tokens.typography ?? {}) as Record<string, unknown>;
   return {

@@ -10,6 +10,7 @@ import { JevUnavailableError } from "@/lib/jev.mjs";
 import { callerOf, mayStart, TOO_MANY } from "@/lib/spend-guard";
 import {
   describeCatalog,
+  existsPublished,
   askLibrary,
   composeKit,
   checkAgainstLanguage,
@@ -327,6 +328,14 @@ function gone(tier: Tier) {
   const body = tier === "full" ? NOT_FOUND : NEEDS_SIGN_IN;
   return { content: [{ type: "text" as const, text: JSON.stringify(body, null, 2) }], isError: true };
 }
+// A miss on the sample tier used to answer "sign in to see it" for a typo as
+// well as for a gated entry, and the skill then had agents tell people an
+// entry existed. Only an id that IS published somewhere gets the sign-in
+// answer; anything else is not found.
+async function goneFor(kind: Kind, idOrSlug: string, tier: Tier) {
+  if (tier === "sample" && !(await existsPublished(kind, idOrSlug))) return gone("full");
+  return gone(tier);
+}
 
 // When the SDK rejects a call we know only THAT the arguments were invalid,
 // not WHICH. That gap cost a real diagnosis: 8 failed get_* calls read as
@@ -545,7 +554,7 @@ const baseHandler = createMcpHandler(
         if (!id) return missingId();
         if (!mayStart("mcp-check", spenderOf(extra), tier)) return tooMany();
         const card = await checkAgainstLanguage(tier, id, a.page);
-        return card ? ok(card) : gone(tier);
+        return card ? ok(card) : await goneFor("language", id, tier);
       },
     );
 
@@ -590,7 +599,7 @@ const baseHandler = createMcpHandler(
         const id = idOf(a);
         if (!id) return missingId();
         const d = await getDesign(KIND_IN[a.kind], id, tier);
-        return d ? ok(d) : gone(tier);
+        return d ? ok(d) : await goneFor(KIND_IN[a.kind], id, tier);
       },
     );
     server.registerTool(
@@ -607,7 +616,7 @@ const baseHandler = createMcpHandler(
         const id = idOf(a);
         if (!id) return missingId();
         const d = await getDesignMd(id, tier);
-        return d ? ok(d) : gone(tier);
+        return d ? ok(d) : await goneFor("language", id, tier);
       },
     );
     server.registerTool(
@@ -616,7 +625,7 @@ const baseHandler = createMcpHandler(
         title: "Get design tokens",
         annotations: READS,
         description:
-          "Only the design tokens of an entry, as JSON, a ready-to-paste Tailwind config, or CSS custom properties. Every group the entry stores is exported — colours, radii, spacing, shadows, motion, the type scale and its faces — and `fonts_url` (also an `@import` at the top of the CSS) loads the webfonts. `kind` defaults to design_language.",
+          "Only the design tokens of an entry, as JSON, a ready-to-paste Tailwind config, or CSS custom properties. Every group the entry stores is exported (colours, radii, spacing, shadows, motion, type metrics and faces, and a palette's signature colours, neutrals and ramps), and `fonts_url` (also an `@import` at the top of the CSS) loads the webfonts. Names are kebab-case. A token that depends on a variable the entry never defines is left out and listed in `omitted`. Tailwind spacing steps are prefixed `k-` so Tailwind's own steps keep their meaning. `kind` defaults to design_language.",
         inputSchema: {
           kind: kindArg.optional(),
           ...ID_ALIASES,
@@ -628,7 +637,7 @@ const baseHandler = createMcpHandler(
         const id = idOf(a);
         if (!id) return missingId();
         const d = await getTokens(KIND_IN[a.kind ?? "design_language"], id, tier, a.format ?? "json");
-        return d ? ok(d) : gone(tier);
+        return d ? ok(d) : await goneFor(KIND_IN[a.kind ?? "design_language"], id, tier);
       },
     );
     server.registerTool(
@@ -645,7 +654,7 @@ const baseHandler = createMcpHandler(
         const id = idOf(a);
         if (!id) return missingId();
         const d = await getEmbodiment(KIND_IN[a.kind], id, tier);
-        return d ? ok(d) : gone(tier);
+        return d ? ok(d) : await goneFor(KIND_IN[a.kind], id, tier);
       },
     );
     server.registerTool(
