@@ -122,14 +122,16 @@ function tidy(text: string): string {
 const DETERMINER = new Set(["a", "an", "the", "one", "each", "every", "this", "that", "its", "their"]);
 const TAKES_PHRASE = new Set([
   "of", "with", "for", "about", "like", "and", "or", "as", "in", "on", "at", "to", "from", "into", "onto",
-  "under", "over", "across", "through", "near", "beside", "around", "behind", "between", "inside",
+  "under", "over", "across", "through", "near", "beside", "around", "behind", "between", "inside", "by",
+  "within", "without", "among", "amid", "against", "toward", "towards", "upon", "via", "beneath", "above",
+  "below", "along", "past", "after", "before", "beyond", "than",
   "suggesting", "showing", "depicting", "featuring",
 ]);
 
 /** The subject set where the recipe put it, without a doubled article. */
 function phraseAfter(before: string, phrase: string): string {
   const words = (before.split(/[,.;:()]/).pop() ?? "").toLowerCase().match(/[a-z'-]+/g) ?? [];
-  for (const word of words.slice(-6).reverse()) {
+  for (const word of words.reverse()) {
     if (TAKES_PHRASE.has(word)) return phrase;
     if (DETERMINER.has(word)) return phrase.replace(/^(a|an|one)\s+/i, "");
   }

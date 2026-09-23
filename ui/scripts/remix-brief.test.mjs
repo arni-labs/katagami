@@ -183,6 +183,15 @@ const phrased = buildRemixBrief({
 assert.match(phrased, /prompt: "Draw a person who uses a ferry booking app, full-frame/);
 assert.match(phrased, /prompt: "a quiet scene set in one object that stands for something a ferry booking app does/);
 assert.match(phrased, /prompt: "one very soft warm glowing wide establishing scene of the world of a ferry booking app/);
+const more = buildRemixBrief({
+  language: { name: "Test UI" },
+  palette,
+  artStyle: { ...embedded, slotRecipes: { avatar: "a portrait painted by {subject}", hero: "one very soft warm glowing radiant lovely {subject}" } },
+  composition: landing,
+  product: "a ferry booking app",
+});
+assert.match(more, /prompt: "a portrait painted by a person who uses a ferry booking app/);
+assert.match(more, /prompt: "one very soft warm glowing radiant lovely wide establishing scene/);
 // A recipe with no `{subject}` of its own follows the concrete subject.
 const dash = buildRemixBrief({ language: { name: "Test UI" }, palette, artStyle: embedded, composition: dashboard });
 assert.match(dash, /^    prompt: "one small object that implies nothing is here yet in the product, a small lonely object on an open field, in the style/m);
