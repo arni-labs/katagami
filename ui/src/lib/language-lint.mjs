@@ -37,9 +37,12 @@ function strip(text, open, close) {
   }
 }
 
-/** The page as Jev reads it: scripts, comments and data URIs carry no design. */
+/** The page as Jev reads it: scripts, comments and data URIs carry no design,
+ *  and every var(--x) is already its value. QA's broken page set an indigo
+ *  accent behind var(--accent), and the judge, reading only the variable name,
+ *  scored the good and broken pages nearly the same. */
 export function pageState(page) {
-  const source = String(page ?? "").slice(0, PAGE_READ_CHARS);
+  const source = resolveCustomProperties(String(page ?? "").slice(0, PAGE_READ_CHARS));
   return strip(strip(source, "<script", "</script>"), "<!--", "-->")
     .replace(/data:[a-z]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]{0,200000}/gi, "data:…")
     .replace(/[ \t]+/g, " ")
@@ -57,8 +60,10 @@ export function judgedChecks(design) {
     }
   }
   const guidance = isRecord(design?.guidance) ? design.guidance : {};
-  for (const text of strings(guidance.do)) checks.push({ kind: "do", name: "", text: text.trim(), expect: "follows" });
-  for (const text of strings(guidance.dont)) checks.push({ kind: "dont", name: "", text: text.trim(), expect: "breaks" });
+  // A do or don't has no name of its own; number it so every row of the
+  // scorecard can be referred to ("don't 2 failed").
+  strings(guidance.do).forEach((text, i) => checks.push({ kind: "do", name: `do ${i + 1}`, text: text.trim(), expect: "follows" }));
+  strings(guidance.dont).forEach((text, i) => checks.push({ kind: "dont", name: `don't ${i + 1}`, text: text.trim(), expect: "breaks" }));
   return checks;
 }
 
@@ -91,14 +96,50 @@ const hex6 = (h) => {
 // A colour, not a fragment: "#fff" after a CSS-ish boundary, never href="#facade",
 // a selector "#add{", or a character reference "&#123456;". Alpha digits are dropped.
 const HEX_COLOUR = /(?<![\w&"'#=/])#([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])(?!\s*\{)/gi;
-// Colours this does not resolve: colour functions, and any colour property set from a variable.
-const OTHER_COLOUR = /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color)\(|(?:color|background|fill|stroke|border|outline|shadow)[a-z-]{0,20}\s*:[^;}<]{0,120}var\(/i;
+// Colours this does not resolve, so their presence caps the verdict at unclear:
+// colour functions, and a colour property whose (resolved) value carries no hex
+// at all, such as a named colour, an unresolved var(), or a gradient keyword.
+const COLOUR_FUNCTION = /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color|color-mix)\(/i;
+const COLOUR_PROPERTY = /(?:^|[;{\s])(?:color|background(?:-color)?|fill|stroke|border(?:-[a-z]+)?-color|outline-color|caret-color|accent-color)\s*:\s*([^;}<]{1,160})/gi;
+const COLOUR_KEYWORDS = /^(?:transparent|currentcolor|inherit|initial|unset|revert|none)$/i;
+function hasUnmeasuredColour(source) {
+  if (COLOUR_FUNCTION.test(source)) return true;
+  for (const m of source.matchAll(COLOUR_PROPERTY)) {
+    const value = m[1].trim();
+    if (!value.includes("#") && !COLOUR_KEYWORDS.test(value)) return true;
+  }
+  return false;
+}
 const clip = (list) => list.slice(0, 8).join(", ").slice(0, 200);
+
+// Real pages set their colours and radii once, in :root, and use var(--x)
+// everywhere else. A checker that only reads literals sees nothing of that
+// page: QA built a page with an indigo accent and an 8px radius behind
+// variables and only the colour was caught. So the declarations are read and
+// every var(--x) is replaced by its value before anything is measured. Bounded
+// passes: a variable defined from another variable resolves; a cycle stops.
+const DECLARATION = /(--[\w-]+)\s*:\s*([^;}]{1,240})/g;
+const VAR_USE = /var\(\s*(--[\w-]+)\s*(?:,\s*([^()]*(?:\([^()]*\)[^()]*)*))?\)/g;
+export function resolveCustomProperties(source) {
+  const declared = new Map();
+  for (const m of source.matchAll(DECLARATION)) if (!declared.has(m[1])) declared.set(m[1], m[2].trim());
+  let out = source;
+  for (let pass = 0; pass < 6 && VAR_USE.test(out); pass++) {
+    VAR_USE.lastIndex = 0;
+    out = out.replace(VAR_USE, (whole, name, fallback) => (declared.has(name) ? declared.get(name) : fallback !== undefined ? fallback : whole));
+  }
+  VAR_USE.lastIndex = 0;
+  return out;
+}
+
+// Families that name a class, not a face; a page may list them after the face.
+const GENERIC_FAMILIES = new Set(["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded", "emoji", "math", "fangsong", "inherit", "initial", "unset", "revert"]);
+const familiesOf = (value) => value.split(",").map((f) => f.trim().replace(/^["']|["']$/g, "").trim()).filter(Boolean);
 
 /** What the code can measure: colours, font families and radii, against the tokens. */
 export function measuredChecks(design, page) {
   const tokens = isRecord(design?.tokens) ? design.tokens : {};
-  const source = String(page ?? "").slice(0, PAGE_READ_CHARS);
+  const source = resolveCustomProperties(String(page ?? "").slice(0, PAGE_READ_CHARS));
   const out = [];
 
   const allowed = new Set(
@@ -111,7 +152,7 @@ export function measuredChecks(design, page) {
     const off = used.filter((c) => !allowed.has(c));
     // Colours written as rgb(), hsl() and the like are not measured here, so
     // their presence caps the verdict at unclear: a pass must mean every colour.
-    const unmeasured = OTHER_COLOUR.test(source);
+    const unmeasured = hasUnmeasuredColour(source);
     out.push({
       check: "colours come from the language's tokens",
       verdict: off.length > 0 ? "fail" : used.length === 0 || unmeasured ? "unclear" : "pass",
@@ -121,20 +162,32 @@ export function measuredChecks(design, page) {
           : used.length === 0
             ? "no hex colours found in the page"
             : unmeasured
-              ? `${used.length} hex colours, all in the tokens; colours set by rgb()/hsl() or a variable were not measured`
+              ? `${used.length} hex colours, all in the tokens; a colour written as rgb()/hsl() or by name was not measured`
               : `${used.length} colours, all in the tokens`,
     });
   }
 
   const typography = isRecord(tokens.typography) ? tokens.typography : {};
-  const fonts = ["heading_font", "body_font", "mono_font"].map((k) => typography[k]).filter((v) => typeof v === "string" && v.trim());
-  if (fonts.length > 0) {
-    const lower = source.toLowerCase();
-    const missing = fonts.filter((f) => !lower.includes(f.toLowerCase()));
+  const stacks = ["heading_font", "body_font", "mono_font"].map((k) => typography[k]).filter((v) => typeof v === "string" && v.trim());
+  if (stacks.length > 0) {
+    // The faces the language names, e.g. "Outfit" out of '"Outfit", system-ui, sans-serif'.
+    const faces = new Set(stacks.flatMap(familiesOf).filter((f) => !GENERIC_FAMILIES.has(f.toLowerCase())).map((f) => f.toLowerCase()));
+    const used = [...new Set([...source.matchAll(/font-family\s*:\s*([^;}"'<]{1,200}|"[^"]*"[^;}<]{0,200})/gi)].flatMap((m) => familiesOf(m[1])).map((f) => f.toLowerCase()))];
+    // A face the language does not have is the breach QA showed slipping
+    // through: Inter on a page that named Fraunces. It fails; the language's
+    // own faces being absent is a weaker signal and stays a fail only when
+    // none of them appears at all.
+    const foreign = used.filter((f) => !GENERIC_FAMILIES.has(f) && !faces.has(f));
+    const present = [...faces].filter((f) => used.includes(f) || source.toLowerCase().includes(f));
     out.push({
-      check: "the language's typefaces are used",
-      verdict: missing.length === 0 ? "pass" : missing.length === fonts.length ? "fail" : "unclear",
-      detail: missing.length === 0 ? clip(fonts) : `not found: ${clip(missing)}`,
+      check: "typefaces are the language's",
+      verdict: foreign.length > 0 ? "fail" : present.length === faces.size ? "pass" : present.length === 0 ? "fail" : "unclear",
+      detail:
+        foreign.length > 0
+          ? `not the language's typefaces: ${clip(foreign)}`
+          : present.length === faces.size
+            ? clip([...faces])
+            : `not found: ${clip([...faces].filter((f) => !present.includes(f)))}`,
     });
   }
 
@@ -147,8 +200,8 @@ export function measuredChecks(design, page) {
     const used = [...new Set([...source.matchAll(/border-radius\s*:\s*([^;}"'<]{1,80})/gi)].flatMap((m) => m[1].trim().split(/\s+/)).map((v) => v.replace(/^0px$/, "0")))];
     const literal = used.filter((v) => /^\d/.test(v));
     const off = literal.filter((v) => !radii.has(v));
-    // A radius given as var(--r) says nothing until the variable is resolved,
-    // which this does not do: only literal lengths can pass or fail.
+    // Variables were resolved above, so a radius set through var(--r) is a
+    // literal here; what remains unmeasured is a radius from a computed value.
     out.push({
       check: "corner radii come from the language's tokens",
       verdict: off.length > 0 ? "fail" : literal.length === 0 ? "unclear" : "pass",
