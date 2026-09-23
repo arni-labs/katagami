@@ -630,6 +630,19 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
 const KIT_FINALISTS = 4;
 const KIT_JEV = { timeoutMs: 8_000, retries: 1 };
 
+/** The slug a design language names as its paired art style, lowercased; "" when it names none. */
+function pairsWithOf(v: unknown): string {
+  let o: unknown = v;
+  if (typeof v === "string") {
+    try {
+      o = JSON.parse(v);
+    } catch {
+      return "";
+    }
+  }
+  return o && typeof o === "object" && !Array.isArray(o) ? str((o as Record<string, unknown>).pairs_with).trim().toLowerCase() : "";
+}
+
 function paletteDoc(r: Row): string {
   const f = r.fields ?? {};
   const flat = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v));
@@ -674,7 +687,25 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number;
   // the rest of the library that was still judged a fit, so one kit can surprise.
   const odd = langs.strange[0];
   const L = odd ? [...langs.results.slice(0, KIT_FINALISTS - 1), odd] : langs.results;
-  const A = arts.results, P = pals;
+  const P = pals;
+  // Every design language was made with an art style (imagery_direction.pairs_with).
+  // Ask alone picks art styles by the product sentence, so for a warm finance
+  // product it offered only storybook styles, and the best-fitting language
+  // (Bisque, 0.93) had nothing it belonged with and was left out of every kit.
+  // Each finalist language's own paired style is a candidate too, carrying the
+  // language's fit, since it was made for exactly that language.
+  type ArtCandidate = (typeof arts.results)[number] & { paired_with?: string };
+  const A: ArtCandidate[] = [...arts.results];
+  const [langRows, artRows] = await Promise.all([visibleRows("language", tier), visibleRows("art_style", tier)]);
+  for (const l of L) {
+    const row = langRows.find((r) => r.entity_id === l.id);
+    const slug = pairsWithOf(row?.fields?.imagery_direction);
+    if (!slug) continue;
+    const art = artRows.find((r) => str(r.fields?.slug).toLowerCase() === slug);
+    if (!art || A.some((x) => x.id === art.entity_id)) continue;
+    const dna = storedDna(art.fields, JEV_MODEL) ?? {};
+    A.push({ ...askCard("art_style", art, dna), fit: l.fit, match: l.match, paired_with: l.id } as ArtCandidate);
+  }
   if (L.length === 0 || A.length === 0 || P.length === 0) {
     return { query, tier, kits: [], note: "Not enough styles in view to compose a kit: a kit needs a design language, a palette and an art style." };
   }
@@ -703,23 +734,44 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number;
     return n;
   };
 
-  const trios = [];
-  for (let i = 0; i < L.length; i++) for (let j = 0; j < P.length; j++) for (let k = 0; k < A.length; k++) {
+  // A kit is anchored on its language: the language is the choice a person
+  // makes, and the palette and art style dress it. So the best-fitting
+  // languages each get a kit, in fit order, and each takes the palette and art
+  // style it belongs with best. Ranking every combination together instead let
+  // a mid-fit language with agreeable partners push the best language out.
+  const trioFor = (i: number, j: number, k: number) => {
     const belongs = (pair(`L${i}P${j}`) + pair(`L${i}A${k}`) + pair(`P${j}A${k}`)) / 3;
     const fits = ((L[i].fit ?? 0) + P[j].fit + (A[k].fit ?? 0)) / 3;
-    trios.push({ i, j, k, belongs, fits, rank: belongs * fits });
-  }
-  trios.sort((x, y) => y.rank - x.rank);
-  // One kit per language: three kits that differ only in palette are one idea thrice.
-  const usedLang = new Set<number>();
-  const perLang = trios.filter((t) => (usedLang.has(t.i) ? false : Boolean(usedLang.add(t.i))));
+    return { i, j, k, belongs, fits, rank: belongs * fits };
+  };
   const isOdd = (t: { i: number }) => Boolean(odd) && t.i === L.length - 1;
-  // With room for more than one kit, the surprising one takes the LAST place,
-  // wherever its score put it: the skill tells agents to offer it as the
-  // unexpected option, so its position has to be predictable.
-  const surprise = perLang.find(isOdd);
-  const ordinary = perLang.filter((t) => t !== surprise);
-  const chosen = surprise && limit > 1 ? [...ordinary.slice(0, limit - 1), surprise] : perLang.slice(0, limit);
+  const order = L.map((_, i) => i)
+    .filter((i) => !(odd && i === L.length - 1))
+    .sort((x, y) => (L[y].fit ?? 0) - (L[x].fit ?? 0));
+  // The surprising language, when there is one and room for it, takes the last place.
+  const anchors = odd && limit > 1 ? [...order.slice(0, limit - 1), L.length - 1] : order.slice(0, limit);
+  // A palette or art style already in an earlier kit costs a little, so three
+  // kits are three looks rather than one look under three names.
+  const REUSED = 0.8;
+  const usedPalettes = new Set<number>();
+  const usedArt = new Set<number>();
+  const chosen = anchors.map((i) => {
+    let best = trioFor(i, 0, 0);
+    let bestScore = -1;
+    for (let j = 0; j < P.length; j++) {
+      for (let k = 0; k < A.length; k++) {
+        const t = trioFor(i, j, k);
+        const s = t.rank * (usedPalettes.has(j) ? REUSED : 1) * (usedArt.has(k) ? REUSED : 1);
+        if (s > bestScore) {
+          best = t;
+          bestScore = s;
+        }
+      }
+    }
+    usedPalettes.add(best.j);
+    usedArt.add(best.k);
+    return best;
+  });
   const round = (n: number) => Math.round(n * 100) / 100;
   return {
     query,
@@ -736,6 +788,7 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number;
         language: l,
         palette: { ...summary("palette", p.row), fit: round(p.fit) },
         art_style: x,
+        ...(x.paired_with === l.id ? { art_style_is_the_languages_own: true } : {}),
         brief_url: `${GALLERY}${path}`,
       };
     }),
