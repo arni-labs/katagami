@@ -171,6 +171,18 @@ const fitted = buildRemixBrief({
 assert.match(fitted, /prompt: "a close head-and-shoulders person who uses a ferry booking app, full-frame, in the style/);
 assert.match(fitted, /prompt: "a single object that stands for something a ferry booking app does centred, in the style/);
 assert.doesNotMatch(fitted, /\b(a|an|one) (a|an|one) /);
+// After a preposition or a bare verb the subject keeps its article; a longer
+// run of adjectives after a determiner still drops it.
+const phrased = buildRemixBrief({
+  language: { name: "Test UI" },
+  palette,
+  artStyle: { ...embedded, slotRecipes: { avatar: "Draw {subject}, full-frame", feature: "a quiet scene set in {subject}", hero: "one very soft warm glowing {subject}" } },
+  composition: landing,
+  product: "a ferry booking app",
+});
+assert.match(phrased, /prompt: "Draw a person who uses a ferry booking app, full-frame/);
+assert.match(phrased, /prompt: "a quiet scene set in one object that stands for something a ferry booking app does/);
+assert.match(phrased, /prompt: "one very soft warm glowing wide establishing scene of the world of a ferry booking app/);
 // A recipe with no `{subject}` of its own follows the concrete subject.
 const dash = buildRemixBrief({ language: { name: "Test UI" }, palette, artStyle: embedded, composition: dashboard });
 assert.match(dash, /^    prompt: "one small object that implies nothing is here yet in the product, a small lonely object on an open field, in the style/m);
