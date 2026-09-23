@@ -21,7 +21,7 @@ import { createHash } from "node:crypto";
 import atlasFamilies from "@/data/atlas-families.json";
 import styleInks from "@/data/style-inks.json";
 import atlasHoles from "@/data/atlas-holes.json";
-import { tokensToCss, tokensToTailwind } from "./design-tokens.mjs";
+import { tokensToCss, tokensToTailwindWithOmitted } from "./design-tokens.mjs";
 import { remixBriefPath } from "./remix-brief";
 import { mediumBucket, mediumMatches } from "./art-medium.mjs";
 import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
@@ -699,9 +699,15 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number;
   const [langRows, artRows] = await Promise.all([visibleRows("language", tier), visibleRows("art_style", tier)]);
   for (const l of L) {
     const row = langRows.find((r) => r.entity_id === l.id);
+    // The exact id first (publishing requires it to be a Published art style);
+    // the slug only for languages that predate it, since slugs can repeat.
+    const exact = str(row?.fields?.default_art_style_id);
     const slug = pairsWithOf(row?.fields?.imagery_direction);
-    if (!slug) continue;
-    const art = artRows.find((r) => str(r.fields?.slug).toLowerCase() === slug);
+    const art = exact
+      ? artRows.find((r) => r.entity_id === exact)
+      : slug
+        ? artRows.find((r) => str(r.fields?.slug).toLowerCase() === slug)
+        : undefined;
     if (!art) continue;
     ownArt.set(l.id, art.entity_id);
     if (A.some((x) => x.id === art.entity_id)) continue;
@@ -937,11 +943,10 @@ export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format
     return { format, css, fonts_url: fontsUrl, ...(omitted.length ? { omitted } : {}) };
   }
   const typo = (tokens.typography ?? {}) as Record<string, unknown>;
-  // The Tailwind config leaves out what the CSS leaves out; say so the same way.
-  const { omitted } = tokensToCss(tokens);
+  const { config, omitted } = tokensToTailwindWithOmitted(tokens);
   return {
     format,
-    tailwind_config: tokensToTailwind(tokens),
+    tailwind_config: config,
     fonts_url: typeof typo.google_fonts_url === "string" ? typo.google_fonts_url : null,
     ...(omitted.length ? { omitted } : {}),
   };

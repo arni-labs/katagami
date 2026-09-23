@@ -6,3 +6,7 @@ export function tokenName(key: string): string;
 export function asLength(value: unknown): string;
 export function tokensToCss(tokens: unknown): { css: string; fontsUrl: string | null; omitted: { token: string; undefined_variables: string[] }[] };
 export function tokensToTailwind(tokens: unknown): { theme: { extend: Record<string, unknown> } };
+export function tokensToTailwindWithOmitted(tokens: unknown): {
+  config: { theme: { extend: Record<string, unknown> } };
+  omitted: { token: string; undefined_variables: string[] }[];
+};

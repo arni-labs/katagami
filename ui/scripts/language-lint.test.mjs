@@ -45,6 +45,10 @@ test("colours, typefaces and radii are measured against the tokens", () => {
   assert.equal(measuredChecks(design, `<style>p{color:rgb(1,2,3);background:#fff}</style>`)[0].verdict, "fail");
   assert.equal(measuredChecks(design, `<style>p{color:rgb(200, 68, 42);background:hsl(0 0% 100%)}</style>`)[0].verdict, "pass");
   assert.equal(measuredChecks(design, `<style>p{color:hsla(210, 50%, 40%, .5)}</style>`)[0].verdict, "fail");
+  // hue units are honoured: 0.5turn is cyan, not red
+  const cyan = { ...design, tokens: { ...design.tokens, colors: { ...design.tokens.colors, cyan: "#00FFFF" } } };
+  assert.equal(measuredChecks(cyan, `<style>p{color:hsl(0.5turn 100% 50%)}</style>`)[0].verdict, "pass");
+  assert.equal(measuredChecks(cyan, `<style>p{color:hsl(3.14159rad 100% 50%)}</style>`)[0].verdict, "pass");
   // pure white and black are neutrals every language may use
   assert.equal(measuredChecks(design, `<style>p{color:#c8442a;background:#ffffff;outline-color:#000}</style>`)[0].verdict, "pass");
   // nor on a variable whose value it never resolves
@@ -73,6 +77,11 @@ test("Tailwind classes are measured like the CSS they stand for", () => {
   // the language's own radius names and arbitrary values resolve through the tokens
   const own = `<div className="rounded-md rounded-none rounded-[9999px] bg-primary">x</div><style>p{font-family:"IBM Plex Sans";color:#c8442a}h1{font-family:"IBM Plex Sans Condensed"}</style>`;
   assert.deepEqual(measuredChecks(design, own).map((c) => c.verdict), ["pass", "pass", "pass"]);
+  // a scalar colour named blue exports bg-blue, so bg-blue-500 is still Tailwind's
+  const blue = { ...design, tokens: { ...design.tokens, colors: { ...design.tokens.colors, blue: "#2244AA" } } };
+  assert.equal(measuredChecks(blue, `<p class="bg-blue-500">x</p><style>p{color:#c8442a}</style>`)[0].verdict, "fail");
+  const ramped = { ...design, tokens: { ...design.tokens, colors: { ...design.tokens.colors, blue: { 500: "#2244AA" } } } };
+  assert.equal(measuredChecks(ramped, `<p class="bg-blue-500">x</p><style>p{color:#c8442a}</style>`)[0].verdict, "pass");
   // a language whose radii are bare numbers (16 means 16px) is not failed for 16px
   const unitless = { ...design, tokens: { ...design.tokens, radii: { card: 16, pill: "9999" } } };
   assert.equal(measuredChecks(unitless, `<style>a{border-radius:16px}b{border-radius:9999px}</style>`)[2].verdict, "pass");

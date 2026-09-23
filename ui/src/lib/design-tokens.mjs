@@ -124,27 +124,37 @@ export function tokensToCss(tokens) {
   return { css, fontsUrl, omitted };
 }
 
-/** The Tailwind theme extension for a set of tokens. */
-export function tokensToTailwind(tokens) {
+/** The Tailwind theme extension for a set of tokens, and what it left out. The
+ *  config defines no CSS variables, so a value that leans on one without a
+ *  fallback (Bisque's shadows are "var(--hi)") would be broken wherever it is
+ *  used; it is left out and named in `omitted`, as the CSS export does. */
+export function tokensToTailwindWithOmitted(tokens) {
   const t = record(tokens);
   const typography = record(t.typography);
-  const spacing = tailwindSpacing(t.spacing);
-  // Shadows that lean on a variable the language never defines are invalid
-  // outside its reference page; leave them out here as the CSS does.
-  const shadows = Object.fromEntries(Object.entries(record(t.shadows)).filter(([, v]) => !/var\(\s*--[\w-]+\s*\)/.test(flat(v)) && tokenValue("shadow", v)));
+  const omitted = [];
+  const keep = (path) => (entry) => {
+    const missing = [...flat(entry[1]).matchAll(/var\(\s*(--[\w-]+)\s*(,[^)]*)?\)/g)].filter((m) => !m[2]).map((m) => m[1]);
+    if (missing.length) omitted.push({ token: `${path}.${entry[0]}`, undefined_variables: [...new Set(missing)] });
+    return missing.length === 0;
+  };
+  const spacing = Object.fromEntries(Object.entries(tailwindSpacing(t.spacing)).filter(keep("spacing")));
+  const shadows = Object.fromEntries(
+    Object.entries(record(t.shadows)).filter(([, v]) => tokenValue("shadow", v)).map(([k, v]) => [tokenName(k), flat(v)]).filter(keep("boxShadow")),
+  );
   const motion = record(t.motion);
   // One naming with the CSS: kebab-case keys, lengths with units, and a
   // palette's ramps as nested colours (bg-ramp-accent-500).
-  const kebab = (group, value = (v) => v) => Object.fromEntries(Object.entries(record(group)).map(([k, v]) => [tokenName(k), value(v)]));
+  const kebab = (group, path, value = (v) => v) =>
+    Object.fromEntries(Object.entries(record(group)).map(([k, v]) => [tokenName(k), value(v)]).filter(keep(path)));
   const colors = {
-    ...kebab(t.colors),
-    ...Object.fromEntries(Object.entries(record(t.ramps)).map(([name, steps]) => [`ramp-${tokenName(name)}`, kebab(steps)])),
+    ...kebab(t.colors, "colors"),
+    ...Object.fromEntries(Object.entries(record(t.ramps)).map(([name, steps]) => [`ramp-${tokenName(name)}`, kebab(steps, `colors.ramp-${tokenName(name)}`)])),
   };
-  return {
+  const config = {
     theme: {
       extend: {
         colors,
-        borderRadius: kebab(t.radii, asLength),
+        borderRadius: kebab(t.radii, "borderRadius", asLength),
         fontFamily: {
           ...(typography.heading_font ? { heading: [typography.heading_font] } : {}),
           ...(typography.body_font ? { body: [typography.body_font] } : {}),
@@ -158,4 +168,10 @@ export function tokensToTailwind(tokens) {
       },
     },
   };
+  return { config, omitted };
+}
+
+/** The Tailwind theme extension for a set of tokens. */
+export function tokensToTailwind(tokens) {
+  return tokensToTailwindWithOmitted(tokens).config;
 }

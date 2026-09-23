@@ -113,7 +113,8 @@ function colourFunctionToHex(fn, args) {
     const [r, g, b] = parts.map((v) => num(v, 255));
     return [r, g, b].some((x) => !Number.isFinite(x)) ? null : `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   }
-  const h = ((parseFloat(parts[0]) % 360) + 360) % 360;
+  const unit = { turn: 360, rad: 180 / Math.PI, grad: 0.9 }[/(turn|rad|grad)$/i.exec(parts[0])?.[1]?.toLowerCase()] ?? 1;
+  const h = (((parseFloat(parts[0]) * unit) % 360) + 360) % 360;
   const sat = num(parts[1], 1), light = num(parts[2], 1);
   if (![h, sat, light].every(Number.isFinite)) return null;
   const k = (n) => (n + h / 30) % 12;
@@ -184,7 +185,13 @@ export function measuredChecks(design, page) {
   const classes = classesOf(source);
   const out = [];
 
-  const colourKeys = new Set(Object.keys(isRecord(tokens.colors) ? tokens.colors : {}).map((k) => k.toLowerCase()));
+  // bg-blue-500 is the language's only if it files a blue with a 500 step;
+  // a scalar "blue" exports bg-blue, not bg-blue-500.
+  const colourSteps = new Map(
+    Object.entries(isRecord(tokens.colors) ? tokens.colors : {})
+      .filter(([, v]) => isRecord(v))
+      .map(([k, v]) => [k.toLowerCase(), new Set(Object.keys(v))]),
+  );
   const tokenHexes = Object.values(isRecord(tokens.colors) ? tokens.colors : {})
     .filter((v) => typeof v === "string" && /^#[0-9a-f]{3,8}$/i.test(v.trim()))
     .map((v) => hex6(v.trim()));
@@ -196,7 +203,7 @@ export function measuredChecks(design, page) {
     const used = [...new Set([...source.matchAll(HEX_COLOUR)].map((m) => hex6(m[1])))];
     const paletteClasses = [...new Set(classes.filter((c) => {
       const m = TW_COLOUR_CLASS.exec(c);
-      return m && !colourKeys.has(m[1]);
+      return m && !colourSteps.get(m[1])?.has(m[2]);
     }))];
     const off = [...used.filter((c) => !allowed.has(c)), ...paletteClasses];
     // Colours written as rgb(), hsl() and the like are not measured here, so

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cssVars, tailwindSpacing, tokenName, tokenValue, tokensToCss, tokensToTailwind, typeMetrics } from "../src/lib/design-tokens.mjs";
+import { cssVars, tailwindSpacing, tokenName, tokenValue, tokensToCss, tokensToTailwind, tokensToTailwindWithOmitted, typeMetrics } from "../src/lib/design-tokens.mjs";
 
 // Quire's real shapes, abridged: this is what languages actually file.
 const TOKENS = {
@@ -98,6 +98,11 @@ test("a token that leans on a variable the language never defines is left out an
   assert.deepEqual(omitted, [{ token: "--shadow-sm", undefined_variables: ["--hi", "--lo-soft"] }]);
   const tw = tokensToTailwind({ shadows: { sm: "0 0 1px var(--hi)", md: "0 1px 0 #000" } }).theme.extend.boxShadow;
   assert.deepEqual(tw, { md: "0 1px 0 #000" });
+  // every group, not only shadows, and the response says what it left out
+  const { config, omitted: left } = tokensToTailwindWithOmitted({ colors: { ink: "var(--paper-ink)", accent: "var(--x, #c00)" }, radii: { card: "var(--r)" }, shadows: { sm: "0 0 1px var(--hi)" } });
+  assert.deepEqual(config.theme.extend.colors, { accent: "var(--x, #c00)" }, "a fallback keeps a value usable");
+  assert.deepEqual(config.theme.extend.borderRadius, {});
+  assert.deepEqual(left.map((o) => o.token).sort(), ["borderRadius.card", "boxShadow.sm", "colors.ink"]);
 });
 
 test("names are kebab-case whatever a language filed them as, so accent_2 and accent-2 match", () => {
