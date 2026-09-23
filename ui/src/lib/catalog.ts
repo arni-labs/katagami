@@ -780,7 +780,7 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number;
     timings_ms: { total: Date.now() - started },
     kits: chosen.map((t) => {
       const l = L[t.i], p = P[t.j], x = A[t.k];
-      const path = remixBriefPath({ ui: l.id, palette: p.row.entity_id, art: x.id, composition: a.composition });
+      const path = remixBriefPath({ ui: l.id, palette: p.row.entity_id, art: x.id, composition: a.composition, product: query });
       return {
         surprising: isOdd(t),
         belongs_together: round(t.belongs),

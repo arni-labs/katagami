@@ -10,7 +10,10 @@
 
 export interface RemixSlot {
   key: string;
+  /** How the picture is framed; it fills the recipe's `{composition}`. */
   subject_hint: string;
+  /** What the picture is of, with `{product}` standing for the product. */
+  subject: string;
   aspect: string;
 }
 
@@ -53,6 +56,9 @@ export interface RemixBriefInput {
     referenceUrls?: string[];
   };
   composition: RemixComposition;
+  /** What the screen is for, in the caller's words ("a ferry booking app").
+   *  Untrusted text: it is flattened to one short line before use. */
+  product?: string | null;
   /** Site origin (no trailing slash). Every relative link in the brief is made
    *  absolute against it so a saved brief still resolves. */
   origin?: string;
@@ -65,9 +71,11 @@ export function remixBriefPath(a: {
   palette: string;
   art: string;
   composition?: string;
+  product?: string;
 }): string {
   const q = new URLSearchParams({ ui: a.ui, palette: a.palette, art: a.art });
   if (a.composition) q.set("composition", a.composition);
+  if (a.product) q.set("product", a.product);
   return `/studio/BRIEF.md?${q.toString()}`;
 }
 
@@ -86,41 +94,85 @@ export function paletteToPromptString(signature: RemixSwatch[] = []): string {
     .join(", ");
 }
 
+const PRODUCT_MAX = 200;
+
+/** A value about to be set into a sentence, without the full stop or comma it
+ *  ends with, so "fresh." set before ", in the style" never reads "fresh.,". */
+function clause(value: string): string {
+  return value.trim().replace(/[\s.,;:!?]+$/, "");
+}
+
+/** Close up the joins a missing value leaves (", ,", ",.", a leading comma). */
+function tidy(text: string): string {
+  return text
+    .replace(/,(\s*,)+/g, ",")
+    .replace(/,\s*(?=[.;:!?]|$)/g, "")
+    .replace(/^\s*,\s*/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/** The product as one plain line: a caller's untrusted text loses line breaks,
+ *  control characters and braces (so it can never read as a placeholder) and
+ *  is capped. */
+export function cleanProduct(raw?: string | null): string {
+  const flat = (raw ?? "").replace(/[\u0000-\u001f\u007f\u2028\u2029{}]/g, " ").replace(/\s+/g, " ");
+  return clause(Array.from(clause(flat)).slice(0, PRODUCT_MAX).join(""));
+}
+
+/** Text shown as-is inside a markdown line: no code span, emphasis, link or
+ *  HTML can start in it. */
+function markdownText(text: string): string {
+  return text.replace(/[\\`*_[\]<>]/g, "\\$&");
+}
+
 /** Fill the recipe's slots. `{subject}` and `{palette}` take the slot's content
- *  and the signature colours; `{composition}` takes the slot's framing. A recipe
- *  without a subject or palette slot gets that fact stated before it instead,
- *  and the recipe text itself is never paraphrased. */
+ *  and the signature colours; `{composition}` takes the slot's framing. A slot
+ *  recipe goes where `{subject}` is and may carry `{subject}` itself; one that
+ *  does not follows the subject. A recipe without a subject or palette slot
+ *  gets that fact stated before it instead, and the recipe text itself is
+ *  never paraphrased. */
 export function resolveSlotPrompt(
   aestheticPrompt: string,
   subject: string,
   signature: RemixSwatch[] = [],
   framing = "",
+  slotRecipe = "",
 ): string {
   const palette = paletteToPromptString(signature);
-  const hasSubject = aestheticPrompt.includes("{subject}");
-  const hasPalette = aestheticPrompt.includes("{palette}");
-  const filled = aestheticPrompt
-    .trim()
-    .replaceAll("{subject}", subject)
-    .replaceAll("{palette}", palette)
-    .replaceAll("{composition}", framing);
-  return [
-    hasSubject ? "" : `Subject/content: ${subject}.`,
-    palette && !hasPalette ? `Palette: ${palette}.` : "",
-    filled,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const content = !slotRecipe.trim()
+    ? subject
+    : slotRecipe.includes("{subject}")
+      ? slotRecipe
+      : `${clause(subject)}, ${slotRecipe}`;
+  const template = aestheticPrompt.trim();
+  const hasSubject = template.includes("{subject}");
+  const text = hasSubject ? template.replaceAll("{subject}", () => clause(content)) : template;
+  const hasPalette = text.includes("{palette}") || (!hasSubject && content.includes("{palette}"));
+  const values: Record<string, string> = { subject, palette, composition: framing };
+  const fill = (s: string) => s.replace(/\{(subject|palette|composition)\}/g, (_, k: string) => clause(values[k]));
+  return tidy(
+    [
+      hasSubject ? "" : `Subject/content: ${fill(clause(content))}.`,
+      palette && !hasPalette ? `Palette: ${palette}.` : "",
+      fill(text),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
 }
 
-function slotSubject(slot: RemixSlot, slotRecipes?: Record<string, string>): string {
-  if (slotRecipes) {
-    // exact key, then family (feature-1 -> feature, testimonial-avatar-1 -> avatar)
-    if (slotRecipes[slot.key]) return `${slotRecipes[slot.key]}`;
-    const family = slot.key.replace(/-?\d+$/, "").replace(/^testimonial-/, "");
-    if (slotRecipes[family]) return slotRecipes[family];
-  }
-  return slot.subject_hint;
+/** The slot's own recipe: exact key, then family (feature-1 -> feature,
+ *  testimonial-avatar-1 -> avatar). */
+function slotRecipe(slot: RemixSlot, slotRecipes?: Record<string, string>): string {
+  if (!slotRecipes) return "";
+  const family = slot.key.replace(/-?\d+$/, "").replace(/^testimonial-/, "");
+  return slotRecipes[slot.key] || slotRecipes[family] || "";
+}
+
+/** What the slot shows, about the product when there is one. */
+function slotSubject(slot: RemixSlot, product: string): string {
+  return slot.subject.replaceAll("{product}", () => product || "the product");
 }
 
 function yamlMap(entries: Record<string, string> | undefined, indent: string): string[] {
@@ -162,11 +214,13 @@ export function paletteTokenLines(palette: RemixPalette): string[] {
 export function buildRemixBrief(input: RemixBriefInput): string {
   const { language, palette, artStyle, composition, origin } = input;
   const signature = palette.signature ?? [];
+  const product = cleanProduct(input.product);
 
   const slotLines = composition.image_slots.map((slot) => {
-    const subject = slotSubject(slot, artStyle.slotRecipes);
+    const subject = slotSubject(slot, product);
     const framing = `${slot.subject_hint}, ${slot.aspect}`;
-    const prompt = resolveSlotPrompt(artStyle.promptTemplate, subject, signature, framing);
+    const recipe = slotRecipe(slot, artStyle.slotRecipes);
+    const prompt = resolveSlotPrompt(artStyle.promptTemplate, subject, signature, framing, recipe);
     return [
       `  - key: ${slot.key}`,
       `    subject: ${JSON.stringify(subject)}`,
@@ -179,6 +233,7 @@ export function buildRemixBrief(input: RemixBriefInput): string {
   const frontMatter = [
     "---",
     "katagami_brief: v1",
+    ...(product ? [`product: ${JSON.stringify(product)}`] : []),
     `ui: { name: ${JSON.stringify(language.name)}, slug: ${JSON.stringify(language.slug ?? "")} }`,
     `palette: { name: ${JSON.stringify(palette.name)} }`,
     `art_style: { name: ${JSON.stringify(artStyle.name)}, medium: ${JSON.stringify(artStyle.medium)} }`,
@@ -192,7 +247,7 @@ export function buildRemixBrief(input: RemixBriefInput): string {
 
   // The recipe is shown with the palette in it (one palette per brief) so no
   // `{palette}` is left anywhere; the per-slot placeholders stay named.
-  const recipe = artStyle.promptTemplate.trim().replaceAll("{palette}", paletteToPromptString(signature));
+  const recipe = tidy(artStyle.promptTemplate.trim().replaceAll("{palette}", () => paletteToPromptString(signature)));
   const designMdUrl = language.designMdUrl ? absoluteUrl(language.designMdUrl, origin) : "";
   const referenceUrls = (artStyle.referenceUrls ?? []).map((u) => absoluteUrl(u, origin));
   const refs = referenceUrls.length
@@ -200,7 +255,7 @@ export function buildRemixBrief(input: RemixBriefInput): string {
     : "_(none attached)_";
 
   const body = `
-# Remix brief: ${composition.name}
+# Remix brief: ${composition.name}${product ? ` for ${markdownText(product)}` : ""}
 
 **${language.name}** (UI) · **${palette.name}** (palette) · **${artStyle.name}** (art style, ${artStyle.medium})
 
