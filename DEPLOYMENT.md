@@ -27,22 +27,26 @@ The frontend is the only thing on Vercel. The backend (entity store, agent runti
 - **Connected repo:** `arni-labs/katagami` (via Vercel GitHub App)
 - **Deployment Protection:** off — production and preview URLs are publicly viewable
 
-### After a production deploy: warm the card images
+### After new styles are published: bake the card images
 
-A card picture is a multi-megabyte original, so the optimizer's first resize of one costs 400–900 ms
-against ~60 ms once warm. A phone opening `/explore/mosaic` asks for about seventy at once: cold, the
-view takes about fifteen seconds to fill; warm, under three. The cache is not guaranteed across a
-deploy (a measured one kept 452 of 457, an earlier one kept almost none), and the library grows, so
-nothing here can be assumed warm. Nothing runs this automatically — run it by hand after a deploy
-that changed the site, and after the library grows:
+Card pictures are multi-megabyte originals. The gallery draws them from small webp resizes (128, 256,
+384, 750 and 1080 wide) made once by `ui/scripts/bake-card-images.mjs` and kept on the asset CDN under
+`https://assets.katagami.ai/published-assets/katagami-cards/`, cached for a year at Cloudflare's edge.
+Vercel's image optimizer is only the fallback: its cache is keyed on each browser's exact `Accept`
+header and did not hold a warmed picture for twenty minutes, so a cold resize (400–900 ms) was what
+most visitors got. A picture not baked yet still works, through the optimizer, just slower.
+
+Run it after new styles are published. It skips pictures already baked, so a re-run bakes only the new
+ones. It needs wrangler logged in to the Cloudflare account that owns the `openpaw-fs-seshendranalla`
+bucket:
 
 ```sh
-cd ui && TEMPER_API_URL=… TEMPER_API_KEY=… npm run warm-images
+cd ui && TEMPER_API_URL=… TEMPER_API_KEY=… npm run bake-images            # --dry-run to count only
 ```
 
-It asks for every published style's card picture once, at the width the cards draw from, the way a
-browser asks (the optimizer keeps a separate copy per format it negotiates). Takes a few minutes. A
-handful of 400s are broken reference files in the data; a wholesale failure exits non-zero.
+A full bake is about 1,400 pictures and 5,000 files, 20 minutes or so. About 20 reference files are gone
+from the store (404); their cards fall back to the style's thumbnail. It exits non-zero if more than 15%
+of originals are unreachable or any upload still fails after retries; run it again to finish.
 
 ### Environment variables
 

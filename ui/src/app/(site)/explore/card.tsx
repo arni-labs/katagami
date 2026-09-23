@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { Stamp, quick } from "./stamp";
+import { Stamp, caughtUp, fallbackOf, markReady, quick, retryThenHide } from "./stamp";
 
 // The card a style is shown as on the explore canvas, in four materials to choose between. Every skin takes the
 // same things (a picture, the style's ink, a size, a name) and answers to light the same way (`.lit`), so the
@@ -33,16 +33,17 @@ function frame(skin: Skin, w: number, label: boolean) {
 export function Card(props: CardProps) {
   const skin = useContext(SkinContext);
   if (skin === "stamp") return <Stamp {...props} />;
-  const { src, ink, label, value, soon = false, lit, fast, under, windowed = false, code, eager = false, first = false, spare } = props;
+  const { src, ink, label, value, soon = false, lit, fast, under, windowed = false, code, eager, first = false, spare } = props;
+  const big = eager === undefined && Boolean(fast && fast > 384);
   let { w, h } = props;
   const f = frame(skin, w, Boolean(label));
   if (windowed) { w = Math.round(w) + f.x * 2; h = Math.round(h) + f.top + f.foot; }
   const type = Math.max(6.5, Math.min(13, f.foot * 0.36));
   const picture = (
-    <span className="absolute overflow-hidden" style={{ left: f.x, right: f.x, top: f.top, bottom: f.foot, background: soon ? undefined : skin === "plain" ? "color-mix(in srgb, var(--foreground) 6%, var(--background))" : ink ?? "var(--muted)", ...(under ? { backgroundImage: `url("${under}")`, backgroundSize: "cover", backgroundPosition: "center" } : null) }}>
+    <span className="kwin absolute overflow-hidden" style={{ left: f.x, right: f.x, top: f.top, bottom: f.foot, background: soon ? undefined : skin === "plain" ? "color-mix(in srgb, var(--foreground) 6%, var(--background))" : ink ?? "var(--muted)", ...(under ? { backgroundImage: `url("${under}")`, backgroundSize: "cover", backgroundPosition: "center" } : null) }}>
       {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img key={src} src={fast ? quick(src, fast) : quick(src, 256)} alt="" loading={eager || (fast && fast > 384) ? "eager" : "lazy"} fetchPriority={first || (fast && fast > 384) ? "high" : eager ? "auto" : "low"} decoding="async" draggable={false} onLoad={skin === "plain" ? (e) => { e.currentTarget.dataset.ready = "1"; } : undefined} data-spare={spare && fast ? quick(spare, fast) : undefined} onError={(e) => { const i = e.currentTarget; const s = i.dataset.spare; if (s && !i.dataset.spared) { i.dataset.spared = "1"; i.src = s; return; } i.style.visibility = "hidden"; }} className="absolute inset-0 h-full w-full object-cover" />
+        <img key={src} src={quick(src, fast ?? 256)} alt="" loading={eager || big ? "eager" : "lazy"} fetchPriority={first || big ? "high" : eager ? "auto" : "low"} decoding="async" draggable={false} onLoad={markReady} data-fallback={fallbackOf(src, fast ?? 256)} data-spare={spare ? quick(spare, fast ?? 256) : undefined} data-spare-fallback={spare ? fallbackOf(spare, fast ?? 256) : undefined} onError={retryThenHide} ref={caughtUp} className="kimg absolute inset-0 h-full w-full object-cover" />
       ) : null}
     </span>
   );

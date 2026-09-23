@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fitWord, useAsk, type Fit, type Kinds } from "../shared";
-import { quick, retryThenHide } from "../stamp";
+import { caughtUp, fallbackOf, markReady, quick, retryThenHide } from "../stamp";
 
 // The library as an ordinary page: pictures at their own proportions in justified rows, a name under each, and one
 // line at the top to ask it something. It scrolls with the browser, so the browser's own lazy loading does the work
@@ -40,13 +40,10 @@ function settle(img: HTMLImageElement) {
   if (!(Math.abs(shape - was) / was < 0.02)) plate.style.setProperty("--r", shape.toFixed(3));
 }
 
-/** A picture that arrived, or failed, before the page came alive has already fired the event that would have
- *  handled it, so it is looked at once when it is attached. A lazy picture not yet asked for has no current source
- *  and is left alone. A stable function, so React calls it on attach and detach only, not on every render. */
-function caughtUp(img: HTMLImageElement | null) {
-  if (!img?.complete || !img.currentSrc) return;
-  if (img.naturalWidth) settle(img);
-  else retryThenHide({ currentTarget: img } as unknown as React.SyntheticEvent<HTMLImageElement>);
+/** The shared catch-up for a picture that loaded or failed before the page came alive, and the plate's shape. */
+function caughtUpPlate(img: HTMLImageElement | null) {
+  caughtUp(img);
+  if (img?.complete && img.naturalWidth) settle(img);
 }
 
 function Plate({ print, fit, judging, width, eager }: { print: Print; fit: Fit | null; judging: boolean; width: 384 | 750; eager: boolean }) {
@@ -57,7 +54,7 @@ function Plate({ print, fit, judging, width, eager }: { print: Print; fit: Fit |
       <Link href={print.href} prefetch={false} className="group block outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ramune)]">
         {/* Until the picture lands its place is a plain light grey: the style's ink, tried first, turned a slow
             screen into a sheet of pastel blocks. */}
-        <span className="relative block w-full overflow-hidden bg-muted [aspect-ratio:var(--r)]">
+        <span className="kwin relative block w-full overflow-hidden bg-muted [aspect-ratio:var(--r)]">
           {print.src ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -67,11 +64,13 @@ function Plate({ print, fit, judging, width, eager }: { print: Print; fit: Fit |
               fetchPriority={eager ? "high" : "auto"}
               decoding="async"
               draggable={false}
+              data-fallback={fallbackOf(print.src, width)}
               data-spare={print.spare ? quick(print.spare, width) : undefined}
+              data-spare-fallback={print.spare ? fallbackOf(print.spare, width) : undefined}
               onError={retryThenHide}
-              onLoad={(e) => settle(e.currentTarget)}
-              ref={caughtUp}
-              className="absolute inset-0 h-full w-full object-cover"
+              onLoad={(e) => { markReady(e); settle(e.currentTarget); }}
+              ref={caughtUpPlate}
+              className="kimg absolute inset-0 h-full w-full object-cover"
             />
           ) : null}
         </span>
