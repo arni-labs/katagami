@@ -12,8 +12,13 @@ const optimized = (src: string, width: Width) => (canOptimizeGallerySrc(src) ? `
 export const quick = (src: string, width: Width) => bakedUrl(src, width) ?? optimized(src, width);
 /** Where a baked picture falls back to if its file is not on the CDN yet (a style published since the last bake). */
 export const fallbackOf = (src: string, width: Width) => (bakedUrl(src, width) ? optimized(src, width) : undefined);
-/** A card's picture is hidden until it has arrived whole, then eases in: nothing half-drawn, no broken-picture mark. */
-export const markReady = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.dataset.ready = "1"; };
+/** A card's picture is hidden until it has arrived whole, then eases in: nothing half-drawn, no broken-picture mark.
+ *  One that had run out of sources and arrives at a new width (after a zoom) is shown again. */
+function ready(img: HTMLImageElement) {
+  img.dataset.ready = "1";
+  if (img.dataset.gone) { delete img.dataset.gone; img.style.visibility = ""; }
+}
+export const markReady = (e: React.SyntheticEvent<HTMLImageElement>) => ready(e.currentTarget);
 
 /** A picture that fails is never shown failing: it is hidden at once and the next address in its chain is tried.
  *  The chain is the picture, then (when the first is a baked file) the optimizer's resize of it, then the card's
@@ -31,7 +36,7 @@ export function retryThenHide(e: React.SyntheticEvent<HTMLImageElement>) {
   delete d.ready;
   const go = (url: string) => { img.src = url; d.mine = img.src.split("#")[0]; };
   const failed = img.src.split("#")[0];
-  if (failed !== d.mine) { d.base = failed; d.link = "0"; d.tries = "0"; }
+  if (failed !== d.mine) { d.base = failed; d.link = "0"; d.tries = "0"; delete d.gone; img.style.visibility = ""; }
   const links = [d.base, d.fallback, d.spare, d.spareFallback];
   let i = Number(d.link);
   const tries = Number(d.tries);
@@ -53,7 +58,7 @@ export function retryThenHide(e: React.SyntheticEvent<HTMLImageElement>) {
  *  and is left alone. A stable function, so React calls it on attach and detach only. */
 export function caughtUp(img: HTMLImageElement | null) {
   if (!img?.complete || !img.currentSrc) return;
-  if (img.naturalWidth) img.dataset.ready = "1";
+  if (img.naturalWidth) ready(img);
   else retryThenHide({ currentTarget: img } as unknown as React.SyntheticEvent<HTMLImageElement>);
 }
 

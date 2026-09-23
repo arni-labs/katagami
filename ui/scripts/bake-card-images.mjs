@@ -99,6 +99,9 @@ await Promise.all(Array.from({ length: 24 }, async () => {
 for (const [key, widths] of missing) todo.push([key, { ...jobs.get(key), widths }]);
 const files = todo.reduce((n, [, j]) => n + j.widths.size, 0);
 console.log(`${jobs.size} pictures, ${jobs.size - todo.length} already baked, ${todo.length} to bake (${files} resizes)`);
+// No pictures at all means the library read found nothing (a wrong tenant or API), which would otherwise read as a
+// finished bake.
+if (jobs.size === 0) { console.error("no published pictures found; nothing was baked"); process.exit(1); }
 if (DRY || todo.length === 0) process.exit(0);
 
 /** An original, asked for up to four times: a run of hundreds drops the odd connection, and a dropped one is not a
@@ -151,7 +154,7 @@ for (let i = 0; i < list.length; i += SLICE) {
   writeFileSync(part, JSON.stringify(slice));
   for (let attempt = 0; ; attempt++) {
     try {
-      execFileSync("npx", ["-y", "wrangler@latest", "r2", "bulk", "put", BUCKET, "--remote", "--concurrency", "5", "--filename", part, "--content-type", "image/webp", "--cache-control", "public, max-age=31536000, immutable"], { stdio: ["ignore", "ignore", "inherit"] });
+      execFileSync("npx", ["-y", "wrangler@4.136.3", "r2", "bulk", "put", BUCKET, "--remote", "--concurrency", "5", "--filename", part, "--content-type", "image/webp", "--cache-control", "public, max-age=31536000, immutable"], { stdio: ["ignore", "ignore", "inherit"] });
       break;
     } catch {
       if (attempt >= 3) { unsent += slice.length; console.error(`  slice ${i}-${i + slice.length} not uploaded`); break; }
