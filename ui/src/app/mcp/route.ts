@@ -316,7 +316,7 @@ How to use it:
 - Someone wants a whole look at once: call compose_kit for a language, palette and art style that belong together, with a build brief.
 - Someone names a style, tag, family or medium: call search_library with that kind. describe_library lists the families, mediums and tags that exist.
 - To build with a design language: get_design_md gives the URL to hand a coding agent; get_design_tokens gives Tailwind or CSS variables; get_library_entry has every rule. Honour the tokens exactly.
-- To generate images in an art style: get_library_entry returns the prompt template. Use it verbatim, then add the subject.
+- To generate images in an art style: get_library_entry returns the prompt template. Fill its {subject}, {palette} and {composition} slots (slot_recipes says what suits each place on a page); where the template has no subject slot, add the subject at the end. Do not paraphrase the recipe.
 - After building a page in a language: check_page_against_language lists what breaks the language, worst first. Fix those before handing over.
 
 Show people the picture and the katagami.ai link for anything you recommend. whoami says whether this connection sees the visitor shelf or the full library; results never include styles the caller may not see.`;
@@ -582,7 +582,7 @@ const baseHandler = createMcpHandler(
         title: "Get a library entry",
         annotations: READS,
         description:
-          "The full content of one library entry, by the `id` or slug a search or ask result gave you. For a design_language: tokens (colour, type, spacing, radii, shadows, motion), rules, layout principles, philosophy and guidance, with its gallery and DESIGN.md URLs. For a palette: signature colours, neutrals, semantic roles, ramps and guidance. For an art_style: medium, prompt template, slot recipes, negative prompt and guidance — everything needed to generate images in the style; use the prompt template verbatim and add the subject.",
+          "The full content of one library entry, by the `id` or slug a search or ask result gave you. For a design_language: tokens (colour, type, spacing, radii, shadows, motion), rules, layout principles, philosophy and guidance, with its gallery and DESIGN.md URLs. For a palette: signature colours, neutrals, semantic roles, ramps and guidance. For an art_style: medium, prompt template, slot recipes, negative prompt and guidance — everything needed to generate images in the style: fill the template's {subject}, {palette} and {composition} slots and do not paraphrase it.",
         inputSchema: { kind: kindArg, ...ID_ALIASES },
       },
       async (a, extra) => {
