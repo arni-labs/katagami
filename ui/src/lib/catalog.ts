@@ -539,11 +539,14 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     Object.fromEntries(
       judged.flatMap((p, i) => [
         [`s${i}`, score(`How well would this style serve the product?\n${p.doc}`, FIT_LEVELS)],
-        // Fit alone ranked a storybook language made for children first for a
-        // small-business finance dashboard, because it was warm and friendly.
-        // Asked separately, in the same call, whether the style was made for a
-        // different audience or register, so a clash can pull a warm fit down.
-        [`c${i}`, noul(`This style was made for a different kind of product or audience than the one described, so using it here would send the wrong signal, for example a style made for children on a product that handles people's money.\n${p.doc}`)],
+        // Fit alone ranked a storybook language first for a small-business
+        // finance dashboard, because it was warm and friendly. So the same call
+        // asks whether the style's tone is wrong for what the product's users
+        // have at stake, and a clash pulls a warm fit down. Asking whether the
+        // style was "made for a different audience" missed Verger, a picture-book
+        // language that says it suits "every workflow" (clash 0.33 on the full
+        // library): the wrong signal is the tone, not who the style names.
+        [`c${i}`, noul(`Used on this product, this style's tone would send the wrong signal: it is too playful, childlike, whimsical, severe, luxurious or raw for what the product does and what its users have at stake, as a picture-book style would be on a product that handles people's money.\n${p.doc}`)],
       ]),
     ),
     ASK_JEV,
