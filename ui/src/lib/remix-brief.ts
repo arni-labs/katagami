@@ -125,6 +125,8 @@ const TAKES_PHRASE = new Set([
   "under", "over", "across", "through", "near", "beside", "around", "behind", "between", "inside", "by",
   "within", "without", "among", "amid", "against", "toward", "towards", "upon", "via", "beneath", "above",
   "below", "along", "past", "after", "before", "beyond", "than",
+  // clause openers and linking verbs: what follows is a new phrase
+  "where", "when", "while", "which", "who", "whose", "because", "but", "if", "until", "once", "is", "are", "was", "were",
   "suggesting", "showing", "depicting", "featuring",
 ]);
 
