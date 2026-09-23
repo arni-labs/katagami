@@ -119,12 +119,14 @@ export async function reportActivityFailure(
 
 // ---- Typed events (the API routes should use) ------------------------------
 
-/** One MCP tool invocation at /mcp. Hash + emit happen inside after() so a
- *  telemetry failure cannot 500 the tool. /mcp requires a bearer — there is
- *  no sample tier on this URL; 401s are counted separately as
- *  mcp_auth_challenge in app/mcp/route.ts so anonymous demand stays visible. */
+/** One MCP tool invocation. Hash + emit happen inside after() so a
+ *  telemetry failure cannot 500 the tool. `tier` is the caller's real tier:
+ *  full on /mcp (which requires a bearer) and sample on /mcp/open, the door
+ *  that serves the visitor shelf with no identity. Bare 401s on /mcp are
+ *  counted separately as mcp_auth_challenge in app/mcp/route.ts. */
 export function trackMcpToolCall(d: {
   tool: string;
+  tier: "full" | "sample";
   outcome: "success" | "error" | "exception";
   durationMs: number;
   sub?: string;
@@ -134,7 +136,7 @@ export function trackMcpToolCall(d: {
    *  a diagnosis of WHICH parameter shape an agent reached for. */
   argKeys?: string;
 }): void {
-  const { tool, outcome, durationMs, sub, errorKind, argKeys } = d;
+  const { tool, tier, outcome, durationMs, sub, errorKind, argKeys } = d;
   const eventAt = new Date(); // request-path time — the post-response task may cross midnight
   runAfter(async () => {
     let userHash: string | undefined;
@@ -158,10 +160,11 @@ export function trackMcpToolCall(d: {
       "mcp_tool_call",
       {
         tool,
-        // Only `full` is reachable on /mcp (required:true). Emit it so
-        // dashboard queries that key on @tier:full stay populated. Never
-        // emit sample — that path is gone; 401s emit mcp_auth_challenge.
-        tier: "full",
+        // The dashboard's distinct-callers tile keys on @tier:full: only a
+        // signed-in caller has a user_hash to count, so sample calls must not
+        // wear that label. They used to, once /mcp/open existed, and every
+        // anonymous QA call read as a signed-in user in trouble.
+        tier,
         outcome,
         duration_ms: durationMs,
         user_hash: userHash,

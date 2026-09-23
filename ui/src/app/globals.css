@@ -1890,3 +1890,16 @@
 @media (min-width: 640px) { .gate-card { animation-name: gate-in; } }
 @keyframes gate-in { from { opacity: 0; transform: scale(0.97); } }
 @media (prefers-reduced-motion: reduce) { .gate-card { animation: none; } .kghost { transition: none; } }
+/* A card reached by the keyboard shows its name as a pointed-at one does. */
+:focus-visible > .card-plain .plain-name, :focus-visible .card-plain .plain-name { opacity: 1; }
+
+/* A card's picture stays hidden until it has arrived whole and then eases in, so nothing is seen half-drawn and
+   no browser's broken-picture mark ever shows while a retry or a fallback is under way. While it is on its way the
+   window breathes slowly under a veil of paper. Not over a window that already shows a smaller copy of the picture
+   (the opened entry's), and not over one whose every source has failed, which is left to its ink. */
+.kimg { opacity: 0; transition: opacity 260ms ease-out; }
+.kimg[data-ready] { opacity: 1; }
+.stamp-window:not([style*="url("]):has(> .kimg:not([data-ready]):not([data-gone]))::after,
+.kwin:not([style*="url("]):has(> .kimg:not([data-ready]):not([data-gone]))::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--background); opacity: 0; animation: kwait 1500ms ease-in-out infinite; }
+@keyframes kwait { 0%, 100% { opacity: 0; } 50% { opacity: 0.22; } }
+@media (prefers-reduced-motion: reduce) { .kimg { transition: none; } .stamp-window::after, .kwin::after { animation: none !important; opacity: 0.12 !important; } }

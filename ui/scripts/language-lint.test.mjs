@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { judgedChecks, judgedQuestions, measuredChecks, pageState, verdictOf, PAGE_MAX_CHARS } from "../src/lib/language-lint.mjs";
+import { judgedChecks, judgedQuestions, measuredChecks, pageState, resolveCustomProperties, verdictOf, PAGE_MAX_CHARS } from "../src/lib/language-lint.mjs";
 
 const design = {
   rules: { composition: "Visible 12-column grid.", empty: " ", odd: 7 },
@@ -66,4 +66,54 @@ test("unclosed comments and scripts cost linear time, not quadratic", () => {
   pageState("<script ".repeat(25_000));
   assert.ok(Date.now() - started < 250, `took ${Date.now() - started}ms`);
   assert.equal(pageState("<p>kept</p><!-- never closed <p>gone</p>"), "<p>kept</p>");
+});
+
+// The shape QA built and the checker missed: everything behind :root variables.
+const BISQUE = {
+  tokens: {
+    colors: { bg: "#efe3d6", text: "#3a2c22", accent: "#c8663d", surface: "#f6ede2" },
+    typography: { body_font: '"Outfit", system-ui, sans-serif', heading_font: '"Fraunces", Georgia, serif', mono_font: '"Spline Sans Mono", ui-monospace, monospace' },
+    radii: { none: "0px", md: "16px", lg: "24px", full: "9999px" },
+  },
+};
+const varPage = (accent, radius, body) => `<style>
+:root { --bg: #efe3d6; --text: #3a2c22; --accent: ${accent}; --r-control: ${radius}; --r-slab: 24px; }
+body { background: var(--bg); color: var(--text); font-family: ${body}; }
+h1 { font-family: "Fraunces", Georgia, serif; }
+code { font-family: "Spline Sans Mono", ui-monospace, monospace; }
+.tile { border-radius: var(--r-slab); }
+button { background: var(--accent); border-radius: var(--r-control); }
+</style>`;
+
+test("a page built on :root variables is measured through them", () => {
+  const good = measuredChecks(BISQUE, varPage("#c8663d", "16px", '"Outfit", system-ui, sans-serif'));
+  assert.deepEqual(good.map((c) => c.verdict), ["pass", "pass", "pass"], JSON.stringify(good));
+  // QA's three planted breaks: an indigo accent, an 8px radius, Inter as the body face.
+  const broken = measuredChecks(BISQUE, varPage("#4f46e5", "8px", '"Inter", Helvetica, sans-serif'));
+  assert.deepEqual(broken.map((c) => c.verdict), ["fail", "fail", "fail"], JSON.stringify(broken));
+  assert.match(broken[0].detail, /#4f46e5/);
+  assert.match(broken[1].detail, /inter/);
+  assert.match(broken[2].detail, /8px/);
+});
+
+test("a typeface the language does not have fails even when the language's faces are also present", () => {
+  const page = varPage("#c8663d", "16px", '"Outfit", sans-serif') + `<style>p{font-family:"Comic Sans MS", cursive}</style>`;
+  const fonts = measuredChecks(BISQUE, page)[1];
+  assert.equal(fonts.verdict, "fail");
+  assert.match(fonts.detail, /comic sans ms/);
+});
+
+test("variables resolve through other variables, honour fallbacks, and a cycle terminates", () => {
+  assert.equal(resolveCustomProperties(":root{--a:#111;--b:var(--a)} p{color:var(--b)}").endsWith("p{color:#111}"), true);
+  assert.equal(resolveCustomProperties("p{color:var(--missing, #222)}"), "p{color:#222}");
+  const cyclic = resolveCustomProperties(":root{--a:var(--b);--b:var(--a)} p{color:var(--a)}");
+  assert.equal(typeof cyclic, "string");
+  assert.ok(cyclic.includes("var(--"), "a cycle is left as it was, not looped on");
+});
+
+test("the judge reads resolved values, and every do and don't row has a name", () => {
+  const state = pageState(`<style>:root{--accent:#4f46e5} button{background:var(--accent)}</style>`);
+  assert.ok(state.includes("background:#4f46e5"), state);
+  const rows = judgedChecks({ guidance: { do: ["a", "b"], dont: ["c"] } });
+  assert.deepEqual(rows.map((r) => r.name), ["do 1", "do 2", "don't 1"]);
 });

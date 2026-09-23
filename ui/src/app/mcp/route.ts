@@ -6,9 +6,11 @@ import { clampRejectionReason } from "@/lib/catalog-auth-core.mjs";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
 import { trackMcpToolCall, trackServerEvent } from "@/lib/server-telemetry";
 import { AsyncLocalStorage } from "node:async_hooks";
+import { JevUnavailableError } from "@/lib/jev.mjs";
 import { callerOf, mayStart, TOO_MANY } from "@/lib/spend-guard";
 import {
   describeCatalog,
+  existsPublished,
   askLibrary,
   composeKit,
   checkAgainstLanguage,
@@ -151,6 +153,7 @@ function withUsageTracking(server: McpServer): void {
         trackMcpToolCall({
           tool: name,
           outcome: result?.isError ? "error" : "success",
+          tier: tierOf(extra),
           durationMs: Date.now() - started,
           sub: authOf(extra)?.extra?.sub,
           errorKind: timedOut
@@ -162,9 +165,24 @@ function withUsageTracking(server: McpServer): void {
         });
         return result;
       } catch (err) {
+        // The judging model being slow or down is an ordinary outcome of a
+        // model-backed tool, not a crash: the agent gets a retryable answer
+        // and telemetry records it by name. Anything else is still ours.
+        if (err instanceof JevUnavailableError) {
+          trackMcpToolCall({
+            tool: name,
+            outcome: "error",
+            tier: tierOf(extra),
+            durationMs: Date.now() - started,
+            sub: authOf(extra)?.extra?.sub,
+            errorKind: "model_unavailable",
+          });
+          return modelUnavailable();
+        }
         trackMcpToolCall({
           tool: name,
           outcome: "exception",
+          tier: tierOf(extra),
           durationMs: Date.now() - started,
           sub: authOf(extra)?.extra?.sub,
           errorKind: err instanceof Error ? err.name : "unknown",
@@ -209,6 +227,7 @@ function withUsageTracking(server: McpServer): void {
           trackMcpToolCall({
             tool,
             outcome: result?.isError ? "error" : "success",
+            tier: tierOf(extra),
             durationMs: Date.now() - started,
             sub: authOf(extra)?.extra?.sub,
             errorKind: result?.isError ? "invalid_arguments" : undefined,
@@ -224,6 +243,7 @@ function withUsageTracking(server: McpServer): void {
           trackMcpToolCall({
             tool,
             outcome: "exception",
+            tier: tierOf(extra),
             durationMs: Date.now() - started,
             sub: authOf(extra)?.extra?.sub,
             errorKind: err instanceof Error ? err.name : "unknown",
@@ -298,7 +318,7 @@ How to use it:
 - Someone wants a whole look at once: call compose_kit for a language, palette and art style that belong together, with a build brief.
 - Someone names a style, tag, family or medium: call search_library with that kind. describe_library lists the families, mediums and tags that exist.
 - To build with a design language: get_design_md gives the URL to hand a coding agent; get_design_tokens gives Tailwind or CSS variables; get_library_entry has every rule. Honour the tokens exactly.
-- To generate images in an art style: get_library_entry returns the prompt template. Use it verbatim, then add the subject.
+- To generate images in an art style: get_library_entry returns the prompt template. Fill its {subject}, {palette} and {composition} slots (slot_recipes says what suits each place on a page); where the template has no subject slot, add the subject at the end. Do not paraphrase the recipe.
 - After building a page in a language: check_page_against_language lists what breaks the language, worst first. Fix those before handing over.
 
 Show people the picture and the katagami.ai link for anything you recommend. whoami says whether this connection sees the visitor shelf or the full library; results never include styles the caller may not see.`;
@@ -308,6 +328,14 @@ Show people the picture and the katagami.ai link for anything you recommend. who
 function gone(tier: Tier) {
   const body = tier === "full" ? NOT_FOUND : NEEDS_SIGN_IN;
   return { content: [{ type: "text" as const, text: JSON.stringify(body, null, 2) }], isError: true };
+}
+// A miss on the sample tier used to answer "sign in to see it" for a typo as
+// well as for a gated entry, and the skill then had agents tell people an
+// entry existed. Only an id that IS published somewhere gets the sign-in
+// answer; anything else is not found.
+async function goneFor(kind: Kind, idOrSlug: string, tier: Tier) {
+  if (tier === "sample" && !(await existsPublished(kind, idOrSlug))) return gone("full");
+  return gone(tier);
 }
 
 // When the SDK rejects a call we know only THAT the arguments were invalid,
@@ -411,6 +439,13 @@ function spenderOf(extra: unknown): string {
 /** On the open door nobody is signed in, so the spender is the address — otherwise every anonymous caller would share one allowance. */
 const openCaller = new AsyncLocalStorage<string>();
 
+function modelUnavailable() {
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify({ error: "model_unavailable", message: "the judging model did not answer in time — try again in a moment" }) }],
+    isError: true,
+  };
+}
+
 function tooMany() {
   return { content: [{ type: "text" as const, text: JSON.stringify({ error: "rate_limited", message: TOO_MANY }) }], isError: true };
 }
@@ -454,7 +489,7 @@ const baseHandler = createMcpHandler(
         title: "Ask the library",
         annotations: READS,
         description:
-          "Find styles for a product, mood or brief. Describe what is being designed in one sentence and get the design languages and art styles that fit it, judged against each style's description rather than matched on keywords, with thumbnails. Returns `results` (best fit first: `fit` 0..1 — the judged fit, which is what the order follows — plus `match` 0..1, the cruder trait-similarity score the shortlist was drawn with, the strongest `traits`, `url` and `thumbnail_url`), `strange` (styles unlike the rest of the library that still fit — for when something unexpected is wanted), how the sentence was read (`wants`, `avoids`), and `reading`. To adjust an answer — \"quieter\", \"warmer, less corporate\" — call again with the same `query`, the returned `reading` and `changes`, and the adjustment in `refine`: the reading is moved rather than re-read, and `moved` says which traits went where. Use this before search_library whenever there is a brief rather than a name or tag. Palettes are not judged here; compose_kit chooses one, and search_library finds them by name or tag.",
+          "Find styles for a product, mood or brief. Describe what is being designed in one sentence and get the design languages and art styles that fit it, judged against each style's description rather than matched on keywords, with thumbnails. Returns `results` (best fit first: `fit` 0..1 — the judged fit, which is what the order follows — plus `match` 0..1, the cruder trait-similarity score the shortlist was drawn with, the strongest `traits`, `url` and `thumbnail_url`, and `clash` 0..1: how strongly the style's intended audience conflicts with the product, which already lowers `fit` when it is clear), `strange` (styles unlike the rest of the library that still fit — for when something unexpected is wanted), how the sentence was read (`wants`, `avoids`), and `reading`. To adjust an answer — \"quieter\", \"warmer, less corporate\" — call again with the same `query`, the returned `reading` and `changes`, and the adjustment in `refine`: the reading is moved rather than re-read, and `moved` says which traits went where. One refinement softens a trait the product strongly needs but does not reverse it; asking again can. Use this before search_library whenever there is a brief rather than a name or tag. Palettes are not judged here; compose_kit chooses one, and search_library finds them by name or tag.",
         inputSchema: {
           query: z.string().min(8).max(400).describe("One sentence: what the product is and who it is for"),
           kind: z.enum(["design_language", "art_style"]).optional().describe("Omit to look through both"),
@@ -526,7 +561,7 @@ const baseHandler = createMcpHandler(
         if (!id) return missingId();
         if (!mayStart("mcp-check", spenderOf(extra), tier)) return tooMany();
         const card = await checkAgainstLanguage(tier, id, a.page);
-        return card ? ok(card) : gone(tier);
+        return card ? ok(card) : await goneFor("language", id, tier);
       },
     );
 
@@ -563,7 +598,7 @@ const baseHandler = createMcpHandler(
         title: "Get a library entry",
         annotations: READS,
         description:
-          "The full content of one library entry, by the `id` or slug a search or ask result gave you. For a design_language: tokens (colour, type, spacing, radii, shadows, motion), rules, layout principles, philosophy and guidance, with its gallery and DESIGN.md URLs. For a palette: signature colours, neutrals, semantic roles, ramps and guidance. For an art_style: medium, prompt template, slot recipes, negative prompt and guidance — everything needed to generate images in the style; use the prompt template verbatim and add the subject.",
+          "The full content of one library entry, by the `id` or slug a search or ask result gave you. For a design_language: tokens (colour, type, spacing, radii, shadows, motion), rules, layout principles, philosophy and guidance, with its gallery and DESIGN.md URLs. For a palette: signature colours, neutrals, semantic roles, ramps and guidance. For an art_style: medium, prompt template, slot recipes, negative prompt and guidance — everything needed to generate images in the style: fill the template's {subject}, {palette} and {composition} slots and do not paraphrase it.",
         inputSchema: { kind: kindArg, ...ID_ALIASES },
       },
       async (a, extra) => {
@@ -571,7 +606,7 @@ const baseHandler = createMcpHandler(
         const id = idOf(a);
         if (!id) return missingId();
         const d = await getDesign(KIND_IN[a.kind], id, tier);
-        return d ? ok(d) : gone(tier);
+        return d ? ok(d) : await goneFor(KIND_IN[a.kind], id, tier);
       },
     );
     server.registerTool(
@@ -588,7 +623,7 @@ const baseHandler = createMcpHandler(
         const id = idOf(a);
         if (!id) return missingId();
         const d = await getDesignMd(id, tier);
-        return d ? ok(d) : gone(tier);
+        return d ? ok(d) : await goneFor("language", id, tier);
       },
     );
     server.registerTool(
@@ -597,7 +632,7 @@ const baseHandler = createMcpHandler(
         title: "Get design tokens",
         annotations: READS,
         description:
-          "Only the design tokens of an entry, as JSON, a ready-to-paste Tailwind config, or CSS custom properties. Every group the entry stores is exported — colours, radii, spacing, shadows, motion, the type scale and its faces — and `fonts_url` (also an `@import` at the top of the CSS) loads the webfonts. `kind` defaults to design_language.",
+          "Only the design tokens of an entry, as JSON, a ready-to-paste Tailwind config, or CSS custom properties. Every group the entry stores is exported (colours, radii, spacing, shadows, motion, type metrics and faces, and a palette's signature colours, neutrals and ramps), and `fonts_url` (also an `@import` at the top of the CSS) loads the webfonts. Names are kebab-case. A token that depends on a variable the entry never defines is left out and listed in `omitted`. Tailwind spacing steps are prefixed `k-` so Tailwind's own steps keep their meaning. `kind` defaults to design_language.",
         inputSchema: {
           kind: kindArg.optional(),
           ...ID_ALIASES,
@@ -609,7 +644,7 @@ const baseHandler = createMcpHandler(
         const id = idOf(a);
         if (!id) return missingId();
         const d = await getTokens(KIND_IN[a.kind ?? "design_language"], id, tier, a.format ?? "json");
-        return d ? ok(d) : gone(tier);
+        return d ? ok(d) : await goneFor(KIND_IN[a.kind ?? "design_language"], id, tier);
       },
     );
     server.registerTool(
@@ -626,7 +661,7 @@ const baseHandler = createMcpHandler(
         const id = idOf(a);
         if (!id) return missingId();
         const d = await getEmbodiment(KIND_IN[a.kind], id, tier);
-        return d ? ok(d) : gone(tier);
+        return d ? ok(d) : await goneFor(KIND_IN[a.kind], id, tier);
       },
     );
     server.registerTool(

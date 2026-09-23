@@ -206,3 +206,14 @@ test("a change with an unanswered trait refines nothing", () => {
   assert.equal(applyRefinement(flat(0.5), answers), null);
   assert.deepEqual(Object.keys(refineQuestions()), ids);
 });
+
+test("one nudge softens a strongly held trait but never flips it; a second nudge can", () => {
+  const unchanged = Object.fromEntries(ids.map((id) => [id, { type: "score", score: 1 }]));
+  const less = { ...unchanged, [ids[0]]: { type: "score", score: 0 } };
+  const first = applyRefinement({ ...flat(0.5), [ids[0]]: 0.87 }, less);
+  assert.equal(first.reading[ids[0]], 0.6, "0.87 pushed hard the other way stops at a lean, not 0.37");
+  const second = applyRefinement(first.reading, less);
+  assert.equal(second.reading[ids[0]], 0.1, "no longer strongly held, so the next nudge moves it across");
+  const weak = applyRefinement({ ...flat(0.5), [ids[0]]: 0.7 }, less);
+  assert.equal(weak.reading[ids[0]], 0.2, "a trait held only weakly moves freely");
+});

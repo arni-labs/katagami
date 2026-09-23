@@ -5,8 +5,8 @@ import { Mosaic } from "./mosaic";
 /** The sheet, loaded for whoever is asking. The front door at "/" and the
  *  address we have been iterating on at "/explore/mosaic" are the same screen,
  *  so they share this rather than each keeping a copy that can drift. */
-export async function MosaicSheet() {
+export async function MosaicSheet({ quiet = false }: { quiet?: boolean } = {}) {
   const tier = (await hasFullGalleryAccess()) ? "full" : "sample";
   const atlas = await libraryAtlas(tier);
-  return <Mosaic styles={atlas.styles} families={atlas.families} holes={atlas.holes} whole={atlas.whole} ghosts={atlas.ghosts} />;
+  return <Mosaic styles={atlas.styles} families={atlas.families} holes={atlas.holes} whole={atlas.whole} ghosts={atlas.ghosts} quiet={quiet} />;
 }

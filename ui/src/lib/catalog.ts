@@ -23,6 +23,7 @@ import styleInks from "@/data/style-inks.json";
 import atlasHoles from "@/data/atlas-holes.json";
 import { tokensToCss, tokensToTailwind } from "./design-tokens.mjs";
 import { remixBriefPath } from "./remix-brief";
+import { mediumBucket, mediumMatches } from "./art-medium.mjs";
 import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
@@ -269,7 +270,7 @@ export async function describeCatalog(tier: Tier) {
   const mediums = new Map<string, number>();
   for (const a of arts) {
     const m = str(a.fields?.medium);
-    if (m) mediums.set(m, (mediums.get(m) ?? 0) + 1);
+    if (m) mediums.set(mediumBucket(m), (mediums.get(mediumBucket(m)) ?? 0) + 1);
   }
   const topTags = (rows: Row[]) => {
     const c = new Map<string, number>();
@@ -345,8 +346,10 @@ export async function searchDesigns(kind: Kind, tier: Tier, a: SearchArgs) {
     hits = hits.filter((r) => jsonArr(r.fields?.tags).some((x) => x.toLowerCase() === t || x.toLowerCase().includes(t)));
   }
   if (kind === "art_style" && a.medium) {
-    const m = a.medium.toLowerCase();
-    hits = hits.filter((r) => str(r.fields?.medium).toLowerCase() === m);
+    // Stored mediums are free text in 30 spellings; match by broad medium or by
+    // normalised spelling, so "watercolor" also finds "watercolour".
+    const wanted = a.medium;
+    hits = hits.filter((r) => mediumMatches(r.fields?.medium, wanted));
   }
   if (kind === "language" && a.family) {
     const famIds = matchName(taxNames, a.family);
@@ -403,6 +406,8 @@ const ASK_MAX_QUERY = 400;
 const ASK_SHORTLIST = 24;
 const ASK_OUTSIDERS = 12;
 const FIT_LEVELS = ["wrong for it", "could work", "strong fit"];
+/** Clash (0..1) below this costs no fit. */
+const CLASH_FROM = 0.35;
 // On a request path a slow Jev is a failed Jev: two calls must finish well
 // inside the route's budget, so each gets one short try and one retry.
 const ASK_JEV = { timeoutMs: 6_000, retries: 1 };
@@ -488,7 +493,7 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   const read = given ?? liked?.dna ?? dnaFromAnswers((await askJev(`Product: ${query}`, wantQuestions(), ASK_JEV)).answers);
   if (!read) throw new JevUnavailableError("Jev left a question about the product unanswered");
   const change = a.refine?.trim().slice(0, ASK_MAX_QUERY);
-  const refined = change ? applyRefinement(read, (await askJev(`Change asked for: ${change}`, refineQuestions(), ASK_JEV)).answers) : null;
+  const refined = change ? applyRefinement(read, (await askJev(`Product: ${query}\nChange asked for: ${change}`, refineQuestions(), ASK_JEV)).answers) : null;
   if (change && !refined) throw new JevUnavailableError("Jev left a question about the change unanswered");
   const want = refined?.reading ?? read;
   const moved = (refined?.moved ?? []).slice(0, 8).map((m) => ({ trait: m.label, from: m.from, to: m.to }));
@@ -532,9 +537,13 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   const fitRes = await askJev(
     changes ? `Product: ${query}\nThe design should also be: ${changes}` : `Product: ${query}`,
     Object.fromEntries(
-      judged.map((p, i) => [
-        `s${i}`,
-        score(`How well would this style serve the product?\n${p.doc}`, FIT_LEVELS),
+      judged.flatMap((p, i) => [
+        [`s${i}`, score(`How well would this style serve the product?\n${p.doc}`, FIT_LEVELS)],
+        // Fit alone ranked a storybook language made for children first for a
+        // small-business finance dashboard, because it was warm and friendly.
+        // Asked separately, in the same call, whether the style was made for a
+        // different audience or register, so a clash can pull a warm fit down.
+        [`c${i}`, noul(`This style was made for a different kind of product or audience than the one described, so using it here would send the wrong signal, for example a style made for children on a product that handles people's money.\n${p.doc}`)],
       ]),
     ),
     ASK_JEV,
@@ -547,8 +556,16 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     if (typeof fit !== "number" || !Number.isFinite(fit)) {
       throw new JevUnavailableError("Jev left a style's fit unscored");
     }
-    // Jev's score is the expected level index (0..2); normalise to 0..1.
-    return { ...p, band: i < shortlist.length ? "dna" : "outsider", fit: Math.min(1, Math.max(0, fit / (FIT_LEVELS.length - 1))) };
+    // Jev's score is the expected level index (0..2); normalise to 0..1, then
+    // discount by how strongly the style clashes with the product's audience.
+    const clash = fitRes.answers[`c${i}`]?.noul;
+    const judgedFit = Math.min(1, Math.max(0, fit / (FIT_LEVELS.length - 1)));
+    // Every style carries some clash; only a clear one should cost fit, or the
+    // whole list sinks and nothing reads as a strong fit. Below CLASH_FROM it
+    // costs nothing; above it, the discount grows to the whole fit at 1.
+    const c = typeof clash === "number" && Number.isFinite(clash) ? Math.min(1, Math.max(0, clash)) : 0;
+    const penalty = Math.max(0, (c - CLASH_FROM) / (1 - CLASH_FROM));
+    return { ...p, band: i < shortlist.length ? "dna" : "outsider", fit: judgedFit * (1 - penalty), clash: c };
   });
 
   // One card per name: the library holds a few same-named siblings.
@@ -576,7 +593,7 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     .sort((x, y) => y.odd - x.odd)
     .slice(0, 3);
 
-  const out = (p: (typeof unique)[number]) => ({ ...askCard(p.kind, p.row, p.dna), fit: round(p.fit), match: round(p.match) });
+  const out = (p: (typeof unique)[number]) => ({ ...askCard(p.kind, p.row, p.dna), fit: round(p.fit), match: round(p.match), clash: round(p.clash) });
   return {
     query,
     tier,
@@ -697,10 +714,12 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number;
   const usedLang = new Set<number>();
   const perLang = trios.filter((t) => (usedLang.has(t.i) ? false : Boolean(usedLang.add(t.i))));
   const isOdd = (t: { i: number }) => Boolean(odd) && t.i === L.length - 1;
-  const chosen = perLang.slice(0, limit);
-  // With room for more than one kit, the last place goes to the surprising one.
+  // With room for more than one kit, the surprising one takes the LAST place,
+  // wherever its score put it: the skill tells agents to offer it as the
+  // unexpected option, so its position has to be predictable.
   const surprise = perLang.find(isOdd);
-  if (surprise && limit > 1 && !chosen.includes(surprise)) chosen[chosen.length - 1] = surprise;
+  const ordinary = perLang.filter((t) => t !== surprise);
+  const chosen = surprise && limit > 1 ? [...ordinary.slice(0, limit - 1), surprise] : perLang.slice(0, limit);
   const round = (n: number) => Math.round(n * 100) / 100;
   return {
     query,
@@ -738,6 +757,12 @@ async function resolve(kind: Kind, idOrSlug: string, tier: Tier): Promise<Row | 
     if (direct && direct.status === "Published") return direct;
   }
   return null;
+}
+
+/** Is there a Published entry with this id or slug at all, whatever the caller may see? */
+export async function existsPublished(kind: Kind, idOrSlug: string): Promise<boolean> {
+  const rows = await readAll(SET[kind], PUBLISHED);
+  return rows.some((r) => rowMatchesIdOrSlug(r, idOrSlug));
 }
 
 export const NEEDS_SIGN_IN = {
@@ -804,6 +829,30 @@ export async function getEmbodiment(kind: Kind, idOrSlug: string, tier: Tier) {
 
 // --- tokens (+ tailwind / css) ----------------------------------------------
 
+function paletteTokens(f: Record<string, unknown>): Record<string, unknown> {
+  const rec = (v: unknown): Record<string, unknown> => {
+    const p = typeof v === "string" ? (() => { try { return JSON.parse(v); } catch { return null; } })() : v;
+    return p && typeof p === "object" && !Array.isArray(p) ? (p as Record<string, unknown>) : {};
+  };
+  const list = (v: unknown): unknown[] => {
+    const p = typeof v === "string" ? (() => { try { return JSON.parse(v); } catch { return null; } })() : v;
+    return Array.isArray(p) ? p : [];
+  };
+  const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const colors: Record<string, string> = {};
+  list(f.signature).forEach((item, i) => {
+    const o = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+    if (typeof o.hex === "string") colors[`signature-${typeof o.name === "string" && o.name ? slug(o.name) : i + 1}`] = o.hex;
+  });
+  for (const [k, v] of Object.entries(rec(f.neutrals))) if (typeof v === "string") colors[k] = v;
+  for (const [k, v] of Object.entries(rec(f.semantic))) if (typeof v === "string") colors[k] = v;
+  const ramps = rec(f.ramps);
+  const out: Record<string, unknown> = {};
+  if (Object.keys(colors).length) out.colors = colors;
+  if (Object.keys(ramps).length) out.ramps = ramps;
+  return out;
+}
+
 export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format: "json" | "tailwind" | "css") {
   const row = await resolve(kind, idOrSlug, tier);
   if (!row) return null;
@@ -818,10 +867,14 @@ export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format
   } else if (raw && typeof raw === "object") {
     tokens = raw as Record<string, unknown>;
   }
+  // A palette keeps its colours in signature / neutrals / semantic / ramps,
+  // not in a `tokens` field, so the export used to come back as ":root {}"
+  // for every palette. Shape them like a language's colour tokens.
+  if (kind === "palette" && Object.keys(tokens).length === 0) tokens = paletteTokens(row.fields ?? {});
   if (format === "json") return { format, tokens };
   if (format === "css") {
-    const { css, fontsUrl } = tokensToCss(tokens);
-    return { format, css, fonts_url: fontsUrl };
+    const { css, fontsUrl, omitted } = tokensToCss(tokens);
+    return { format, css, fonts_url: fontsUrl, ...(omitted.length ? { omitted } : {}) };
   }
   const typo = (tokens.typography ?? {}) as Record<string, unknown>;
   return {

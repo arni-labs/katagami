@@ -34,6 +34,8 @@ const SPAN = { phone: { mid: 74, max: 216 }, desk: { mid: 96, max: 256 } };
 const GHOST_INK = ["#d9d6cf", "#dcdad4", "#d3d0c9", "#e0ddd6", "#d6d3cc"];
 const RATIO = 1.2, GAP_R = 10 / 96; // the gap at the size a sheet opens at is the 10px it always was
 const SX = 1 + GAP_R, SY = RATIO + GAP_R; // one stamp's stride across and down, as a share of its width
+// The quiet sheet leaves nearly three times the room between pictures, so each one reads on its own.
+const QUIET_GAP_R = 28 / 96;
 // How far out you can go: far enough to take the library in at once, but never so far that the sheet is thousands
 // of stamps. Past a couple of thousand the browser spends longer arranging them than drawing them, which is the
 // lag this screen was fixed for once already.
@@ -59,6 +61,7 @@ const NEAR = 384;
 // A phone's cards open at 74px, 222 on a 3x screen: a 256 resize is exact there and half the bytes of the desk's.
 const NEAR_PHONE = 256;
 const GROUND = "color-mix(in srgb, var(--foreground) 15%, var(--background))"; // the desk the stamps lie on
+const QUIET_GROUND = "color-mix(in srgb, var(--foreground) 4%, var(--background))"; // nearly the page itself
 const HUE_ANGLE: Record<string, number> = { red: 0, orange: 28, yellow: 52, green: 120, teal: 172, blue: 222, violet: 275, pink: 325 };
 /** A steady four-figure number for an entry, for the skins that print a code. */
 const codeOf = (id: string) => { let h = 7; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0; return `KG ${String(h % 10000).padStart(4, "0")}`; };
@@ -79,7 +82,7 @@ function warm(src: string | null | undefined, width: 750 | 1080) {
   const img = new Image(); img.decoding = "async"; img.src = quick(src, width);
 }
 
-type CellProps = { onGhost: () => void; eager: boolean; first: boolean; near: 256 | 384; c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
+type CellProps = { onGhost: () => void; eager: boolean; first: boolean; near: 128 | 256 | 384 | 750; c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
 // One stamp on the sheet, keyed by its slot in a recycling pool (see Sheet): when the window slides, the stamp
 // that left one edge is handed the place that arrived at the other, which is an update, not a mount. Memoised on plain values, so when the window of visible cells slides by a row
 // only the new row is drawn: the stamps already there are left alone.
@@ -91,7 +94,7 @@ const CellView = memo(function CellView({ onGhost, eager, first, near, c, r, cel
   if (cell.kind === "ghost") return (
     <span ref={(el) => hold(key, el)} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.12 : 1 }}>
       <button type="button" onClick={onGhost} aria-label="Sign in to see this one" className="kghost block cursor-pointer">
-        <Card src={eager && w >= 40 ? cell.src : null} ink={GHOST_INK[cell.n % GHOST_INK.length]} w={w} h={h} fast={near} />
+        <Card src={eager && w >= 40 ? cell.src : null} ink={GHOST_INK[cell.n % GHOST_INK.length]} w={w} h={h} fast={near} eager={eager} />
       </button>
     </span>
   );
@@ -103,7 +106,7 @@ const CellView = memo(function CellView({ onGhost, eager, first, near, c, r, cel
   );
 });
 
-type SheetProps = { onGhost: () => void; eager: Set<string>; first: Set<string>; near: 256 | 384; hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
+type SheetProps = { onGhost: () => void; eager: Set<string>; first: Set<string>; near: 128 | 256 | 384 | 750; hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
 const Sheet = memo(function Sheet({ onGhost, eager, first, near, hold, cells, w, h, stepX, stepY, lit, onOpen }: SheetProps) {
   return (
     <>
@@ -116,7 +119,9 @@ const Sheet = memo(function Sheet({ onGhost, eager, first, near, hold, cells, w,
   );
 });
 
-export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: AtlasStyle[]; families: Family[]; holes?: AtlasHole[]; /** How many styles the whole library holds, when this sheet is only part of it. */ whole: number | null; /** The pictures of the styles a visitor is not shown, and nothing else of them. */ ghosts?: string[] }) {
+export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = false }: { styles: AtlasStyle[]; families: Family[]; holes?: AtlasHole[]; /** How many styles the whole library holds, when this sheet is only part of it. */ whole: number | null; /** The pictures of the styles a visitor is not shown, and nothing else of them. */ ghosts?: string[]; /** The calmer sheet: plain pictures with room round them, no toolbar, no light, a one-line ask. */ quiet?: boolean }) {
+  // One stride for the life of the sheet; a ref so the camera's callbacks read it without re-binding.
+  const stride = useRef(quiet ? { sx: 1 + QUIET_GAP_R, sy: RATIO + QUIET_GAP_R, flat: true } : { sx: SX, sy: SY, flat: false });
   const screen = useScreen();
   const phone = screen === "phone";
   const box = useRef<HTMLDivElement | null>(null);
@@ -153,7 +158,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
   const [axes, setAxes] = useState<Axes | null>(null);
   const [narrow, setNarrow] = useState<{ trait: string; label: string } | null>(null);
   // Which material the cards are made of: six to judge between, kept in the address so each can be linked to.
-  const [skin, setSkin] = useState<Skin>("stamp");
+  const [skin, setSkin] = useState<Skin>(quiet ? "plain" : "stamp");
   useEffect(() => { const s = new URLSearchParams(window.location.search).get("skin"); if (s && (SKINS as readonly string[]).includes(s)) requestAnimationFrame(() => setSkin(s as Skin)); }, []);
   const pickSkin = (s: Skin) => { setSkin(s); const url = new URL(window.location.href); if (s === "stamp") url.searchParams.delete("skin"); else url.searchParams.set("skin", s); window.history.replaceState(null, "", url); };
   const styles = useMemo(() => all.filter((s) => kinds[s.kind]), [all, kinds]);
@@ -161,7 +166,18 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
   const byAny = useMemo(() => new Map(all.map((s) => [s.id, s])), [all]); // a style named in words is found whatever the filter
   const familyOf = useMemo(() => new Map(families.map((f) => [f.id, f])), [families]);
   const span = useMemo(() => ({ min: farOf(phone, size.w || 1440, size.h || 900), max: SPAN[phone ? "phone" : "desk"].max }), [phone, size]);
-  const w = rung, h = Math.round(rung * RATIO), stepX = rung * SX, stepY = rung * SY;
+  const w = rung, h = Math.round(rung * RATIO), stepX = rung * stride.current.sx, stepY = rung * stride.current.sy;
+  // The resize a card is drawn from follows the size it is drawn at, in device pixels: zoomed out a card is a few
+  // dozen pixels and a 128 file of two kilobytes does; zoomed in, the 750. Never one stretched past a few per cent,
+  // which reads as soft. It changes with the sheet at rest (see `still`), so a pinch through three sizes asks for the
+  // one it stops at, and the picture element is kept as it changes, so the old picture stays until the new arrives.
+  const [dpr, setDpr] = useState(2);
+  useEffect(() => { setDpr(Math.min(3, window.devicePixelRatio || 1)); }, []);
+  const need = w * dpr;
+  const wanted: 128 | 256 | 384 | 750 = need <= 136 ? 128 : need <= 272 ? 256 : need <= 408 ? 384 : 750;
+  const wantedNow = useRef(wanted);
+  useEffect(() => { wantedNow.current = wanted; }, [wanted]);
+  const [cardWidth, setCardWidth] = useState(wanted);
 
   useEffect(() => {
     const el = box.current;
@@ -313,7 +329,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
   // What the sheet is laid out at *now*, as opposed to what React has been asked to lay it out at. The two differ
   // for the frame between asking and the DOM being there, and painting the new scale before the new sizes arrive
   // would show as a jolt, so the transform follows this and it is only moved once the layout has landed.
-  const lay = useRef({ rung: SPAN.desk.mid, stepX: SPAN.desk.mid * SX, stepY: SPAN.desk.mid * SY });
+  const lay = useRef({ rung: SPAN.desk.mid, stepX: SPAN.desk.mid * stride.current.sx, stepY: SPAN.desk.mid * stride.current.sy });
   const hold = useCallback((key: string, el: HTMLElement | null) => { if (el) held.current.set(key, el); else held.current.delete(key); }, []);
   const paint = useCallback(() => {
     const k = cam.current, el = layer.current, g = lay.current;
@@ -328,7 +344,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
     // Only the cards round the pointer lean to it and take its highlight; the rest lie flat. Far enough out a stamp
     // is a tile of ink with nothing to lean, so the light is not looked for at all.
     const near = new Set<string>();
-    if (k.px >= 0 && k.cw >= 30) {
+    if (!stride.current.flat && k.px >= 0 && k.cw >= 30) {
       // The light is in the sheet's own units, as the cards' places are.
       const lx = (k.px - k.x + k.vx * 6) / f, ly = (k.py - k.y + k.vy * 6) / f, reach = g.stepX * 1.7;
       for (let r = Math.floor((ly - reach) / g.stepY); r <= Math.floor((ly + reach) / g.stepY); r++) for (let c = Math.floor((lx - reach) / g.stepX); c <= Math.floor((lx + reach) / g.stepX); c++) {
@@ -344,7 +360,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
     lit_.current = near;
     // Which places are on screen is the one thing the rung cannot change: a stamp's stride on screen is its drawn
     // width and nothing else, so the window is read straight off that and holds steady as the rung moves under it.
-    const sx = k.cw * SX, sy = k.cw * SY;
+    const sx = k.cw * stride.current.sx, sy = k.cw * stride.current.sy;
     const c0 = Math.floor(-k.x / sx) - 1, r0 = Math.floor(-k.y / sy) - 1, c1 = c0 + Math.ceil(size.w / sx) + 2, r1 = r0 + Math.ceil(size.h / sy) + 2;
     const now = winRef.current;
     if (now.c0 !== c0 || now.c1 !== c1 || now.r0 !== r0 || now.r1 !== r1) { winRef.current = { c0, c1, r0, r1 }; setWin({ c0, c1, r0, r1 }); }
@@ -364,12 +380,12 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
   }, [paint]);
   // The transform is written the moment the new sizes are in the DOM and before the browser draws, so the scale
   // and the layout it is scaling are never a frame out of step.
-  useLayoutEffect(() => { lay.current = { rung, stepX: rung * SX, stepY: rung * SY }; paint(); }, [rung, paint]);
+  useLayoutEffect(() => { lay.current = { rung, stepX: rung * stride.current.sx, stepY: rung * stride.current.sy }; paint(); }, [rung, paint]);
   useEffect(() => { const k = cam.current; return () => cancelAnimationFrame(k.run); }, []);
 
   /** Glide until a cell sits in the middle of the room left by the ask. */
   const bring = useCallback((c: number, r: number, jump = false) => {
-    const k = cam.current, sx = k.cw * SX, sy = k.cw * SY;
+    const k = cam.current, sx = k.cw * stride.current.sx, sy = k.cw * stride.current.sy;
     // The nearest copy of that cell on the wrapping sheet.
     const wantX = size.w / 2 - (c + 0.5) * sx, wantY = (size.h - 120) / 2 - (r + 0.5) * sy, spanX = world.cols * sx, spanY = world.rows * sy;
     const dx = wantX - k.x - Math.round((wantX - k.x) / spanX) * spanX, dy = wantY - k.y - Math.round((wantY - k.y) / spanY) * spanY;
@@ -546,7 +562,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
   }, [screen]);
   const onKey = (e: React.KeyboardEvent) => {
     const by = { ArrowLeft: [1, 0], ArrowRight: [-1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
-    const k = cam.current, sx = k.cw * SX, sy = k.cw * SY;
+    const k = cam.current, sx = k.cw * stride.current.sx, sy = k.cw * stride.current.sy;
     if (by) { e.preventDefault(); if (calm.current) { k.x += by[0] * sx; k.y += by[1] * sy; paint(); } else { k.vx = by[0] * sx * 0.07; k.vy = by[1] * sy * 0.07; coast(); } }
     else if (e.key === "+" || e.key === "=") glide(k.cw * STOP); else if (e.key === "-") glide(k.cw / STOP);
   };
@@ -565,7 +581,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
       id = window.setTimeout(() => {
         const k2 = cam.current;
         // Moved more than half a card since the timer was set, or a finger is still down: not yet.
-        if (k2.drag || Math.hypot(k2.x - x, k2.y - y) > k2.cw / 2) arm(); else setStill(win);
+        if (k2.drag || Math.hypot(k2.x - x, k2.y - y) > k2.cw / 2) arm(); else { setStill(win); setCardWidth(wantedNow.current); }
       }, 90);
     };
     arm();
@@ -705,18 +721,19 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
   if (!screen) return <div className="h-[calc(100dvh-var(--site-header))] w-full" aria-busy="true" />;
   return (
     <SkinContext.Provider value={skin}>
-    <div ref={box} data-canvas onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} style={{ background: GROUND }} className={`relative h-[calc(100dvh-var(--site-header))] w-full select-none overflow-hidden`}>
+    <div ref={box} data-canvas onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} style={{ background: quiet ? QUIET_GROUND : GROUND }} className={`relative h-[calc(100dvh-var(--site-header))] w-full select-none overflow-hidden`}>
       <h1 className="sr-only">Explore the library</h1>
       <div role="application" aria-label="The sheet. Drag or use the arrow keys to move across it; plus and minus change how much you see." tabIndex={0} onScroll={(e) => { e.currentTarget.scrollLeft = 0; e.currentTarget.scrollTop = 0; }} onKeyDown={onKey} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={(e) => { if (e.pointerType === "mouse") { cam.current.px = -1; cam.current.py = -1; paint(); } }} ref={surface}
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">
         {/* The sheet's own corner is what the scale grows from, so a stamp's place on it is its place times the width. */}
         <div ref={layer} style={{ transformOrigin: "0 0" }} className="absolute left-0 top-0 will-change-transform">
-          {placed ? <Sheet onGhost={openGate} near={phone ? NEAR_PHONE : NEAR} eager={eager} first={first} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} /> : null}
+          {placed ? <Sheet onGhost={openGate} near={cardWidth} eager={eager} first={first} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} /> : null}
         </div>
-        <div ref={glare} aria-hidden className="canvas-glare" />
+        {quiet ? null : <div ref={glare} aria-hidden className="canvas-glare" />}
       </div>
 
-      <div ref={head} className="pointer-events-none absolute inset-x-0 top-2 z-[35] flex flex-col items-center gap-2 px-2 md:top-3 md:px-3">
+      {/* The quiet sheet keeps no toolbar: sorting and narrowing are said in the ask line ("by family", "only art styles"). */}
+      <div ref={head} hidden={quiet} className="pointer-events-none absolute inset-x-0 top-2 z-[35] flex flex-col items-center gap-2 px-2 md:top-3 md:px-3">
         <div className="pointer-events-auto flex max-w-full items-center gap-2 overflow-x-auto [scrollbar-width:none] md:justify-center">
           <div role="group" aria-label="Show" className={`flex shrink-0 ${glass}`}>
             {([["language", "Design languages"], ["art_style", "Art styles"]] as const).map(([k, label]) => (
@@ -730,7 +747,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
           <div role="group" aria-label="Sort the sheet" className={`flex shrink-0 ${glass}`}>{tab("colour", "By colour")}{tab("family", "By family")}{tab("fit", "By fit", !topFit)}</div>
         </div>
       </div>
-      <div className={`absolute bottom-[8.5rem] left-3 z-20 flex flex-col md:bottom-6 md:left-6 ${glass}`}>
+      <div hidden={quiet} className={`absolute bottom-[8.5rem] left-3 z-20 flex flex-col md:bottom-6 md:left-6 ${glass}`}>
         <button type="button" onClick={() => glide(cam.current.cw * STOP)} disabled={ends.near} aria-label="Closer" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">+</button>
         <button type="button" onClick={() => glide(cam.current.cw / STOP)} disabled={ends.far} aria-label="Further" className="h-10 w-10 cursor-pointer text-[18px] disabled:opacity-30">−</button>
       </div>
@@ -775,7 +792,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [] }: { styles: 
         </div>
       ) : null}
       {tray && ask.fits && !open && !pair ? <Tray want={ask.answer?.want ?? null} fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
-      <AskDock ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet compact={phone && Boolean(open)} card={Boolean(open)} onSubmit={command} note={open ? aside : did} onUndo={canUndo && !open ? undo : undefined} onClear={reset} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "quieter", "less corporate", "only the dark ones"] : ["a calm booking app for an island ferry", "dark to light", "only the dark ones"]} />
+      <AskDock minimal={quiet} ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet compact={phone && Boolean(open)} card={Boolean(open)} onSubmit={command} note={open ? aside : did} onUndo={canUndo && !open ? undo : undefined} onClear={reset} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "quieter", "less corporate", "only the dark ones"] : ["a calm booking app for an island ferry", "dark to light", "only the dark ones"]} />
     </div>
     </SkinContext.Provider>
   );
