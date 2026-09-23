@@ -507,6 +507,7 @@ const required = [
   // which the dashboard reads as a signed-in caller.
   ["every MCP emit carries the caller's real tier", mcp, /^(?![\s\S]*trackMcpToolCall\(\{(?:(?!tier: tierOf\(extra\))[^}])*\}\))[\s\S]*$/],
   ["a judging-model outage is a handled error, not an exception", mcp, /err instanceof JevUnavailableError[\s\S]*errorKind: "model_unavailable"/],
+  ["any other tool failure is counted as an exception and reaches the agent as temporarily_unavailable, not a raw message", mcp, /outcome: "exception"[\s\S]{0,800}return temporarilyUnavailable\(\)/],
   ["MCP wrapper does not hash on the request path", mcp, /^(?![\s\S]*hashPrincipal)[\s\S]*trackMcpToolCall/],
   ["MCP wrapper passes extra.sub into after(), not a precomputed hash", mcp, /sub: authOf\(extra\)\?\.extra\?\.sub/],
   ["AS still exports SCOPE_READ", oauthAs, /export \{[^}]*SCOPE_READ/],

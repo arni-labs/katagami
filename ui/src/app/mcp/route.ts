@@ -187,7 +187,11 @@ function withUsageTracking(server: McpServer): void {
           sub: authOf(extra)?.extra?.sub,
           errorKind: err instanceof Error ? err.name : "unknown",
         });
-        throw err;
+        // The SDK would hand the agent the raw message (a Temper timeout
+        // with its internal URL); it gets a retryable answer, and the log keeps
+        // the detail.
+        console.error(`[mcp] ${name} threw`, err);
+        return temporarilyUnavailable();
       } finally {
         clearTimeout(timer);
       }
@@ -441,7 +445,14 @@ const openCaller = new AsyncLocalStorage<string>();
 
 function modelUnavailable() {
   return {
-    content: [{ type: "text" as const, text: JSON.stringify({ error: "model_unavailable", message: "the judging model did not answer in time — try again in a moment" }) }],
+    content: [{ type: "text" as const, text: JSON.stringify({ error: "model_unavailable", message: "the judging model did not answer in time; try again in a moment" }) }],
+    isError: true,
+  };
+}
+
+function temporarilyUnavailable() {
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify({ error: "temporarily_unavailable", message: "the library did not answer; try again in a moment" }) }],
     isError: true,
   };
 }

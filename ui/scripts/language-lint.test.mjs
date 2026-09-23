@@ -41,8 +41,12 @@ test("colours, typefaces and radii are measured against the tokens", () => {
   // a fragment, a selector and a character reference are not colours
   const notColours = `<a href="#facade">x</a><a href="/p#abc">y</a><style>#add{color:#c8442a}</style>&#123456;`;
   assert.equal(measuredChecks(design, notColours)[0].verdict, "pass");
-  // a page coloured with rgb() cannot pass on its one token hex
-  assert.equal(measuredChecks(design, `<style>p{color:rgb(1,2,3);background:#fff}</style>`)[0].verdict, "unclear");
+  // rgb() and hsl() are measured: an off-token one fails, a token one passes
+  assert.equal(measuredChecks(design, `<style>p{color:rgb(1,2,3);background:#fff}</style>`)[0].verdict, "fail");
+  assert.equal(measuredChecks(design, `<style>p{color:rgb(200, 68, 42);background:hsl(0 0% 100%)}</style>`)[0].verdict, "pass");
+  assert.equal(measuredChecks(design, `<style>p{color:hsla(210, 50%, 40%, .5)}</style>`)[0].verdict, "fail");
+  // pure white and black are neutrals every language may use
+  assert.equal(measuredChecks(design, `<style>p{color:#c8442a;background:#ffffff;outline-color:#000}</style>`)[0].verdict, "pass");
   // nor on a variable whose value it never resolves
   assert.equal(measuredChecks(design, `<style>:root{--rogue:red}p{color:var(--rogue);background:#fff}</style>`)[0].verdict, "unclear");
   // alpha digits are dropped, so an off-token 8-digit hex is still caught
@@ -52,6 +56,26 @@ test("colours, typefaces and radii are measured against the tokens", () => {
   assert.equal(vars.verdict, "unclear");
   assert.ok(vars.detail.length < 240);
   assert.deepEqual(measuredChecks({}, good), [], "no tokens, nothing to measure");
+});
+
+test("Tailwind classes are measured like the CSS they stand for", () => {
+  // a default-palette colour class is never a language token
+  const tw = `<div class="bg-blue-500 text-white hover:text-slate-900/80 rounded-lg font-['Inter']">x</div><style>p{color:#c8442a;font-family:"IBM Plex Sans"}h1{font-family:"IBM Plex Sans Condensed"}</style>`;
+  const [colour, face, radius] = measuredChecks(design, tw);
+  assert.equal(colour.verdict, "fail");
+  assert.match(colour.detail, /bg-blue-500/);
+  assert.match(colour.detail, /text-slate-900/);
+  assert.equal(face.verdict, "fail");
+  assert.match(face.detail, /inter/i);
+  // rounded-lg is Tailwind's 8px, which this language does not have
+  assert.equal(radius.verdict, "fail");
+  assert.match(radius.detail, /8px/);
+  // the language's own radius names and arbitrary values resolve through the tokens
+  const own = `<div className="rounded-md rounded-none rounded-[9999px] bg-primary">x</div><style>p{font-family:"IBM Plex Sans";color:#c8442a}h1{font-family:"IBM Plex Sans Condensed"}</style>`;
+  assert.deepEqual(measuredChecks(design, own).map((c) => c.verdict), ["pass", "pass", "pass"]);
+  // a language whose radii are bare numbers (16 means 16px) is not failed for 16px
+  const unitless = { ...design, tokens: { ...design.tokens, radii: { card: 16, pill: "9999" } } };
+  assert.equal(measuredChecks(unitless, `<style>a{border-radius:16px}b{border-radius:9999px}</style>`)[2].verdict, "pass");
 });
 
 test("the page Jev reads has no scripts, comments or base64, and is capped", () => {

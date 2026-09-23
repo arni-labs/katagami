@@ -99,7 +99,48 @@ const HEX_COLOUR = /(?<![\w&"'#=/])#([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\
 // Colours this does not resolve, so their presence caps the verdict at unclear:
 // colour functions, and a colour property whose (resolved) value carries no hex
 // at all, such as a named colour, an unresolved var(), or a gradient keyword.
-const COLOUR_FUNCTION = /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color|color-mix)\(/i;
+const COLOUR_FUNCTION = /\b(?:oklch|oklab|lab|lch|color|color-mix)\(/i;
+
+// rgb() and hsl() are measured by writing them as hex first; alpha is dropped,
+// as it is for #rrggbbaa. QA's page used rgb(255,0,0) and passed unmeasured.
+const RGB_HSL = /\b(rgba?|hsla?)\(\s*([^()]{1,80})\)/gi;
+const toHex = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+function colourFunctionToHex(fn, args) {
+  const parts = args.split(/[\s,/]+/).filter(Boolean).slice(0, 3);
+  if (parts.length < 3) return null;
+  const num = (v, scale) => (v.endsWith("%") ? (parseFloat(v) / 100) * scale : parseFloat(v));
+  if (/^rgb/i.test(fn)) {
+    const [r, g, b] = parts.map((v) => num(v, 255));
+    return [r, g, b].some((x) => !Number.isFinite(x)) ? null : `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  const h = ((parseFloat(parts[0]) % 360) + 360) % 360;
+  const sat = num(parts[1], 1), light = num(parts[2], 1);
+  if (![h, sat, light].every(Number.isFinite)) return null;
+  const k = (n) => (n + h / 30) % 12;
+  const a = sat * Math.min(light, 1 - light);
+  const f = (n) => light - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return `#${toHex(f(0) * 255)}${toHex(f(8) * 255)}${toHex(f(4) * 255)}`;
+}
+export function colourFunctionsAsHex(source) {
+  return source.replace(RGB_HSL, (whole, fn, args) => colourFunctionToHex(fn, args) ?? whole);
+}
+
+// Tailwind classes carry the same decisions as CSS, and we hand out a Tailwind
+// export, so they are measured too. A default-palette colour class (bg-blue-500)
+// is never a language token; rounded-* and font-['...'] resolve to values.
+const CLASS_ATTR = /\bclass(?:Name)?\s*=\s*(?:"([^"]{1,2000})"|'([^']{1,2000})'|`([^`]{1,2000})`)/g;
+export function classesOf(source) {
+  const out = [];
+  for (const m of source.matchAll(CLASS_ATTR)) {
+    for (const c of (m[1] ?? m[2] ?? m[3]).split(/\s+/)) if (c) out.push(c.replace(/^!/, "").split(":").pop());
+  }
+  return out;
+}
+const TW_PALETTE = "slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose";
+const TW_COLOUR_CLASS = new RegExp(`^(?:bg|text|border(?:-[trblxy])?|ring|ring-offset|fill|stroke|from|via|to|outline|decoration|divide|accent|caret|shadow|placeholder)-(${TW_PALETTE})-(50|[1-9]00|950)(?:\\/\\d+)?$`);
+const TW_RADIUS = { none: "0", sm: "2px", "": "4px", md: "6px", lg: "8px", xl: "12px", "2xl": "16px", "3xl": "24px", full: "9999px" };
+const TW_RADIUS_CLASS = /^rounded(?:-(?:[trbl]|tl|tr|bl|br|s|e|ss|se|es|ee))?(?:-(none|sm|md|lg|xl|2xl|3xl|full|\[[^\]]+\]))?$/;
+const TW_FONT_CLASS = /^font-\[(?:'|")?([^\]'"]+)(?:'|")?\]$/;
 const COLOUR_PROPERTY = /(?:^|[;{\s])(?:color|background(?:-color)?|fill|stroke|border(?:-[a-z]+)?-color|outline-color|caret-color|accent-color)\s*:\s*([^;}<]{1,160})/gi;
 const COLOUR_KEYWORDS = /^(?:transparent|currentcolor|inherit|initial|unset|revert|none)$/i;
 function hasUnmeasuredColour(source) {
@@ -139,17 +180,25 @@ const familiesOf = (value) => value.split(",").map((f) => f.trim().replace(/^["'
 /** What the code can measure: colours, font families and radii, against the tokens. */
 export function measuredChecks(design, page) {
   const tokens = isRecord(design?.tokens) ? design.tokens : {};
-  const source = resolveCustomProperties(String(page ?? "").slice(0, PAGE_READ_CHARS));
+  const source = colourFunctionsAsHex(resolveCustomProperties(String(page ?? "").slice(0, PAGE_READ_CHARS)));
+  const classes = classesOf(source);
   const out = [];
 
-  const allowed = new Set(
-    Object.values(isRecord(tokens.colors) ? tokens.colors : {})
-      .filter((v) => typeof v === "string" && /^#[0-9a-f]{3,8}$/i.test(v.trim()))
-      .map((v) => hex6(v.trim())),
-  );
-  if (allowed.size > 0) {
+  const colourKeys = new Set(Object.keys(isRecord(tokens.colors) ? tokens.colors : {}).map((k) => k.toLowerCase()));
+  const tokenHexes = Object.values(isRecord(tokens.colors) ? tokens.colors : {})
+    .filter((v) => typeof v === "string" && /^#[0-9a-f]{3,8}$/i.test(v.trim()))
+    .map((v) => hex6(v.trim()));
+  // Pure white and black are the house's core neutrals, and languages call for
+  // them in their rules ("a white inset top highlight") without filing them as
+  // tokens; failing them was a false alarm on Shizuku.
+  const allowed = new Set([...tokenHexes, "#ffffff", "#000000"]);
+  if (tokenHexes.length > 0) {
     const used = [...new Set([...source.matchAll(HEX_COLOUR)].map((m) => hex6(m[1])))];
-    const off = used.filter((c) => !allowed.has(c));
+    const paletteClasses = [...new Set(classes.filter((c) => {
+      const m = TW_COLOUR_CLASS.exec(c);
+      return m && !colourKeys.has(m[1]);
+    }))];
+    const off = [...used.filter((c) => !allowed.has(c)), ...paletteClasses];
     // Colours written as rgb(), hsl() and the like are not measured here, so
     // their presence caps the verdict at unclear: a pass must mean every colour.
     const unmeasured = hasUnmeasuredColour(source);
@@ -172,7 +221,12 @@ export function measuredChecks(design, page) {
   if (stacks.length > 0) {
     // The faces the language names, e.g. "Outfit" out of '"Outfit", system-ui, sans-serif'.
     const faces = new Set(stacks.flatMap(familiesOf).filter((f) => !GENERIC_FAMILIES.has(f.toLowerCase())).map((f) => f.toLowerCase()));
-    const used = [...new Set([...source.matchAll(/font-family\s*:\s*([^;}"'<]{1,200}|"[^"]*"[^;}<]{0,200})/gi)].flatMap((m) => familiesOf(m[1])).map((f) => f.toLowerCase()))];
+    const fromCss = [...source.matchAll(/font-family\s*:\s*([^;}"'<]{1,200}|"[^"]*"[^;}<]{0,200})/gi)].flatMap((m) => familiesOf(m[1]));
+    const fromClasses = classes.flatMap((c) => {
+      const m = TW_FONT_CLASS.exec(c);
+      return m ? familiesOf(m[1].replace(/_/g, " ")) : [];
+    });
+    const used = [...new Set([...fromCss, ...fromClasses].map((f) => f.toLowerCase()))];
     // A face the language does not have is the breach QA showed slipping
     // through: Inter on a page that named Fraunces. It fails; the language's
     // own faces being absent is a weaker signal and stays a fail only when
@@ -191,13 +245,30 @@ export function measuredChecks(design, page) {
     });
   }
 
+  // A radius filed as a bare number is pixels ("card": 16 means 16px).
+  const length = (v) => {
+    const x = String(v).trim();
+    return x === "0" || x === "0px" ? "0" : /^\d+(\.\d+)?$/.test(x) ? `${x}px` : x;
+  };
+  const radiusTokens = isRecord(tokens.radii) ? tokens.radii : {};
   const radii = new Set(
-    Object.values(isRecord(tokens.radii) ? tokens.radii : {})
-      .filter((v) => typeof v === "string")
-      .map((v) => v.trim().replace(/^0px$/, "0")),
+    Object.values(radiusTokens)
+      .filter((v) => typeof v === "string" || typeof v === "number")
+      .map(length),
   );
   if (radii.size > 0) {
-    const used = [...new Set([...source.matchAll(/border-radius\s*:\s*([^;}"'<]{1,80})/gi)].flatMap((m) => m[1].trim().split(/\s+/)).map((v) => v.replace(/^0px$/, "0")))];
+    const fromCss = [...source.matchAll(/border-radius\s*:\s*([^;}"'<]{1,80})/gi)].flatMap((m) => m[1].trim().split(/\s+/));
+    // rounded-lg and friends: the language's own radius of that name when it
+    // defines one (the export extends Tailwind's), otherwise Tailwind's default.
+    const fromClasses = classes.flatMap((c) => {
+      const m = TW_RADIUS_CLASS.exec(c);
+      if (!m) return [];
+      const size = m[1] ?? "";
+      if (size.startsWith("[")) return [size.slice(1, -1)];
+      if (size && radiusTokens[size] !== undefined) return [String(radiusTokens[size])];
+      return TW_RADIUS[size] !== undefined ? [TW_RADIUS[size]] : [];
+    });
+    const used = [...new Set([...fromCss, ...fromClasses].map(length))];
     const literal = used.filter((v) => /^\d/.test(v));
     const off = literal.filter((v) => !radii.has(v));
     // Variables were resolved above, so a radius set through var(--r) is a

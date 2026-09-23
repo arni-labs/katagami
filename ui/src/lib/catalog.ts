@@ -694,17 +694,19 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number;
   // (Bisque, 0.93) had nothing it belonged with and was left out of every kit.
   // Each finalist language's own paired style is a candidate too, carrying the
   // language's fit, since it was made for exactly that language.
-  type ArtCandidate = (typeof arts.results)[number] & { paired_with?: string };
-  const A: ArtCandidate[] = [...arts.results];
+  const A = [...arts.results];
+  const ownArt = new Map<string, string>(); // language id -> its own art style's id
   const [langRows, artRows] = await Promise.all([visibleRows("language", tier), visibleRows("art_style", tier)]);
   for (const l of L) {
     const row = langRows.find((r) => r.entity_id === l.id);
     const slug = pairsWithOf(row?.fields?.imagery_direction);
     if (!slug) continue;
     const art = artRows.find((r) => str(r.fields?.slug).toLowerCase() === slug);
-    if (!art || A.some((x) => x.id === art.entity_id)) continue;
+    if (!art) continue;
+    ownArt.set(l.id, art.entity_id);
+    if (A.some((x) => x.id === art.entity_id)) continue;
     const dna = storedDna(art.fields, JEV_MODEL) ?? {};
-    A.push({ ...askCard("art_style", art, dna), fit: l.fit, match: l.match, paired_with: l.id } as ArtCandidate);
+    A.push({ ...askCard("art_style", art, dna), fit: l.fit, match: l.match } as (typeof A)[number]);
   }
   if (L.length === 0 || A.length === 0 || P.length === 0) {
     return { query, tier, kits: [], note: "Not enough styles in view to compose a kit: a kit needs a design language, a palette and an art style." };
@@ -739,8 +741,13 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number;
   // languages each get a kit, in fit order, and each takes the palette and art
   // style it belongs with best. Ranking every combination together instead let
   // a mid-fit language with agreeable partners push the best language out.
+  // A language and the art style it was made with belong together by
+  // construction; the judge, reading 400 characters of each, sometimes said
+  // otherwise (Shizuku's own Aplat lost to Loam), so that pair is not asked.
+  const isOwn = (i: number, k: number) => ownArt.get(L[i].id) === A[k].id;
   const trioFor = (i: number, j: number, k: number) => {
-    const belongs = (pair(`L${i}P${j}`) + pair(`L${i}A${k}`) + pair(`P${j}A${k}`)) / 3;
+    const withArt = isOwn(i, k) ? 1 : pair(`L${i}A${k}`);
+    const belongs = (pair(`L${i}P${j}`) + withArt + pair(`P${j}A${k}`)) / 3;
     const fits = ((L[i].fit ?? 0) + P[j].fit + (A[k].fit ?? 0)) / 3;
     return { i, j, k, belongs, fits, rank: belongs * fits };
   };
@@ -788,7 +795,7 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number;
         language: l,
         palette: { ...summary("palette", p.row), fit: round(p.fit) },
         art_style: x,
-        ...(x.paired_with === l.id ? { art_style_is_the_languages_own: true } : {}),
+        ...(isOwn(t.i, t.k) ? { art_style_is_the_languages_own: true } : {}),
         brief_url: `${GALLERY}${path}`,
       };
     }),
@@ -930,10 +937,13 @@ export async function getTokens(kind: Kind, idOrSlug: string, tier: Tier, format
     return { format, css, fonts_url: fontsUrl, ...(omitted.length ? { omitted } : {}) };
   }
   const typo = (tokens.typography ?? {}) as Record<string, unknown>;
+  // The Tailwind config leaves out what the CSS leaves out; say so the same way.
+  const { omitted } = tokensToCss(tokens);
   return {
     format,
     tailwind_config: tokensToTailwind(tokens),
     fonts_url: typeof typo.google_fonts_url === "string" ? typo.google_fonts_url : null,
+    ...(omitted.length ? { omitted } : {}),
   };
 }
 
