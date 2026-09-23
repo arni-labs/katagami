@@ -6,6 +6,7 @@ import { clampRejectionReason } from "@/lib/catalog-auth-core.mjs";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
 import { trackMcpToolCall, trackServerEvent } from "@/lib/server-telemetry";
 import { AsyncLocalStorage } from "node:async_hooks";
+import { JevUnavailableError } from "@/lib/jev.mjs";
 import { callerOf, mayStart, TOO_MANY } from "@/lib/spend-guard";
 import {
   describeCatalog,
@@ -150,6 +151,7 @@ function withUsageTracking(server: McpServer): void {
         trackMcpToolCall({
           tool: name,
           outcome: result?.isError ? "error" : "success",
+          tier: tierOf(extra),
           durationMs: Date.now() - started,
           sub: authOf(extra)?.extra?.sub,
           errorKind: timedOut
@@ -161,9 +163,24 @@ function withUsageTracking(server: McpServer): void {
         });
         return result;
       } catch (err) {
+        // The judging model being slow or down is an ordinary outcome of a
+        // model-backed tool, not a crash: the agent gets a retryable answer
+        // and telemetry records it by name. Anything else is still ours.
+        if (err instanceof JevUnavailableError) {
+          trackMcpToolCall({
+            tool: name,
+            outcome: "error",
+            tier: tierOf(extra),
+            durationMs: Date.now() - started,
+            sub: authOf(extra)?.extra?.sub,
+            errorKind: "model_unavailable",
+          });
+          return modelUnavailable();
+        }
         trackMcpToolCall({
           tool: name,
           outcome: "exception",
+          tier: tierOf(extra),
           durationMs: Date.now() - started,
           sub: authOf(extra)?.extra?.sub,
           errorKind: err instanceof Error ? err.name : "unknown",
@@ -208,6 +225,7 @@ function withUsageTracking(server: McpServer): void {
           trackMcpToolCall({
             tool,
             outcome: result?.isError ? "error" : "success",
+            tier: tierOf(extra),
             durationMs: Date.now() - started,
             sub: authOf(extra)?.extra?.sub,
             errorKind: result?.isError ? "invalid_arguments" : undefined,
@@ -223,6 +241,7 @@ function withUsageTracking(server: McpServer): void {
           trackMcpToolCall({
             tool,
             outcome: "exception",
+            tier: tierOf(extra),
             durationMs: Date.now() - started,
             sub: authOf(extra)?.extra?.sub,
             errorKind: err instanceof Error ? err.name : "unknown",
@@ -409,6 +428,13 @@ function spenderOf(extra: unknown): string {
 }
 /** On the open door nobody is signed in, so the spender is the address — otherwise every anonymous caller would share one allowance. */
 const openCaller = new AsyncLocalStorage<string>();
+
+function modelUnavailable() {
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify({ error: "model_unavailable", message: "the judging model did not answer in time — try again in a moment" }) }],
+    isError: true,
+  };
+}
 
 function tooMany() {
   return { content: [{ type: "text" as const, text: JSON.stringify({ error: "rate_limited", message: TOO_MANY }) }], isError: true };
