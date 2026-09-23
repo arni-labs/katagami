@@ -159,6 +159,18 @@ const plain = buildRemixBrief({ language: { name: "Test UI" }, palette, artStyle
 assert.match(plain, /^    prompt: "a wide establishing scene of the world of the product as a wide storyboard scene of even-stroke pictograms, dew-fresh, in the style of Almanac, faded coral/m);
 assert.match(plain, /^    prompt: "a single clear pictogram of one object that stands for something the product does, centred, in the style/m);
 assert.match(plain, /^    subject: "a person who uses the product"$/m);
+// After an article or adjective the subject drops its own article; after "of"
+// or at the start it keeps it.
+const fitted = buildRemixBrief({
+  language: { name: "Test UI" },
+  palette,
+  artStyle: { ...embedded, slotRecipes: { avatar: "a close head-and-shoulders {subject}, full-frame", feature: "a single {subject} centred" } },
+  composition: landing,
+  product: "a ferry booking app",
+});
+assert.match(fitted, /prompt: "a close head-and-shoulders person who uses a ferry booking app, full-frame, in the style/);
+assert.match(fitted, /prompt: "a single object that stands for something a ferry booking app does centred, in the style/);
+assert.doesNotMatch(fitted, /\b(a|an|one) (a|an|one) /);
 // A recipe with no `{subject}` of its own follows the concrete subject.
 const dash = buildRemixBrief({ language: { name: "Test UI" }, palette, artStyle: embedded, composition: dashboard });
 assert.match(dash, /^    prompt: "one small object that implies nothing is here yet in the product, a small lonely object on an open field, in the style/m);

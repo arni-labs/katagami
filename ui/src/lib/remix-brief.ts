@@ -112,6 +112,18 @@ function tidy(text: string): string {
     .trim();
 }
 
+// Words after which a recipe's `{subject}` reads as a whole noun phrase ("a
+// pictogram of {subject}"). After any other word it follows an article or an
+// adjective ("a single {subject}"), so the subject's own article is dropped.
+const TAKES_PHRASE = new Set(["of", "suggesting", "showing", "depicting", "featuring", "with", "for", "about", "like", "and", "or"]);
+
+/** A noun phrase set after the text before it: "a head-and-shoulders" takes
+ *  "person who uses...", not "a person who uses...". */
+function phraseAfter(before: string, phrase: string): string {
+  const word = /([a-z-]+)[ \t]+$/i.exec(before)?.[1]?.toLowerCase();
+  return word && !TAKES_PHRASE.has(word) ? phrase.replace(/^(a|an|one)\s+/i, "") : phrase;
+}
+
 /** The product as one plain line: a caller's untrusted text loses line breaks,
  *  control characters and braces (so it can never read as a placeholder) and
  *  is capped. */
@@ -147,10 +159,15 @@ export function resolveSlotPrompt(
       : `${clause(subject)}, ${slotRecipe}`;
   const template = aestheticPrompt.trim();
   const hasSubject = template.includes("{subject}");
-  const text = hasSubject ? template.replaceAll("{subject}", () => clause(content)) : template;
+  const text = hasSubject
+    ? template.replace(/\{subject\}/g, (_, at: number) => phraseAfter(template.slice(0, at), clause(content)))
+    : template;
   const hasPalette = text.includes("{palette}") || (!hasSubject && content.includes("{palette}"));
   const values: Record<string, string> = { subject, palette, composition: framing };
-  const fill = (s: string) => s.replace(/\{(subject|palette|composition)\}/g, (_, k: string) => clause(values[k]));
+  const fill = (s: string) =>
+    s.replace(/\{(subject|palette|composition)\}/g, (_, k: string, at: number) =>
+      k === "subject" ? phraseAfter(s.slice(0, at), clause(subject)) : clause(values[k]),
+    );
   return tidy(
     [
       hasSubject ? "" : `Subject/content: ${fill(clause(content))}.`,
