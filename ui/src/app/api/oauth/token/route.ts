@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   grantById,
-  grantByRefreshHash,
   isAsConfigured,
   issueAccessToken,
   issueRefreshToken,
   mcpResource,
   pkceMatches,
-  sha256Hex,
+  recordGrantUse,
+  resolvePresentedRefresh,
+  rotateRefreshTo,
+  settledRefresh,
   verifyAuthCode,
 } from "@/lib/oauth-as";
+import { trackServerEvent } from "@/lib/server-telemetry";
 
 // OAuth 2.1 token endpoint: authorization_code (+PKCE, mandatory) and
 // rotating refresh_token grants. Every token binds the owning human (sub)
@@ -93,28 +96,74 @@ export async function POST(req: NextRequest) {
   if (grantType === "refresh_token") {
     const presented = params.get("refresh_token") ?? "";
     const clientId = params.get("client_id") ?? "";
-    if (!presented) return err("invalid_request", "refresh_token is required.");
+    // Every outcome is counted: a refresh that fails logs a client out, and
+    // until 2026-09-23 nothing recorded that it happened.
+    const done = (outcome: "rotated" | "converged" | "replayed" | "refused" | "unavailable", reason?: string) =>
+      trackServerEvent("oauth_refresh", { outcome, reason }, outcome === "refused" || outcome === "unavailable" ? "warn" : "info");
+    if (!presented) {
+      done("refused", "missing_token");
+      return err("invalid_request", "refresh_token is required.");
+    }
 
-    const grant = await grantByRefreshHash(await sha256Hex(presented));
-    if (!grant) return err("invalid_grant", "Refresh token is unknown, rotated, or revoked.");
-    if (clientId && grant.clientId !== clientId)
+    let resolved;
+    try {
+      resolved = await resolvePresentedRefresh(presented);
+    } catch {
+      // A backend blip is not a bad token: say so, so the client retries with
+      // the token it holds instead of discarding the sign-in.
+      done("unavailable", "lookup_failed");
+      return err("temporarily_unavailable", "Could not check the refresh token just now; retry shortly.", 503);
+    }
+    if (resolved.kind === "invalid") {
+      done("refused", "unknown_or_expired");
+      return err("invalid_grant", "Refresh token is unknown, revoked, or was replaced too long ago.");
+    }
+    const grant = resolved.grant;
+    if (clientId && grant.clientId !== clientId) {
+      done("refused", "client_mismatch");
       return err("invalid_grant", "client_id does not match the grant.");
+    }
+    let next = resolved.next;
+    if (resolved.kind === "rotate") {
+      try {
+        await rotateRefreshTo(grant.grantId, next);
+      } catch {
+        // Nothing was stored, so the presented token is still current: retrying works.
+        done("unavailable", "rotate_failed");
+        return err("temporarily_unavailable", "Could not rotate the refresh token just now; retry shortly.", 503);
+      }
+      // Another session may have rotated the same token in a different minute
+      // and written last: hand back the successor that was kept.
+      try {
+        next = await settledRefresh(presented, next);
+      } catch {
+        // Could not read back; ours is still the likeliest winner.
+      }
+    }
+    await recordGrantUse(grant.grantId);
 
-    const refreshToken = await issueRefreshToken(grant.grantId);
-    const access = await issueAccessToken(origin, {
-      sub: grant.memberSub,
-      email: grant.memberEmail,
-      name: grant.memberEmail,
-      client_id: grant.clientId,
-      grant_id: grant.grantId,
-      resource: params.get("resource") || mcpResource(),
-    });
+    let access;
+    try {
+      access = await issueAccessToken(origin, {
+        sub: grant.memberSub,
+        email: grant.memberEmail,
+        name: grant.memberEmail,
+        client_id: grant.clientId,
+        grant_id: grant.grantId,
+        resource: params.get("resource") || mcpResource(),
+      });
+    } catch {
+      // The rotation is stored; a retry with the presented token replays to it.
+      done("unavailable", "access_token_failed");
+      return err("temporarily_unavailable", "Could not issue an access token just now; retry shortly.", 503);
+    }
+    done(resolved.kind === "rotate" ? (next === resolved.next ? "rotated" : "converged") : "replayed");
     return NextResponse.json(
       {
         access_token: access.token,
         token_type: "Bearer",
         expires_in: access.expiresIn,
-        refresh_token: refreshToken,
+        refresh_token: next,
         scope: access.scope,
       },
       { headers: CORS },
