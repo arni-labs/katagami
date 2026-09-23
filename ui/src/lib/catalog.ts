@@ -591,8 +591,12 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     ? [...top.slice(0, limit - Math.min(2, nearby.length)), ...nearby.slice(0, Math.min(2, nearby.length))]
     : top;
   const shown = new Set(results.map((p) => p.row.entity_id));
+  // Strange means unusual and still workable: at least "could work" (0.5). At
+  // 0.4 a storybook language judged 0.44 for a finance dashboard became
+  // compose_kit's surprising kit. When nothing unusual is workable, there is
+  // no strange list and no surprising kit.
   const strange = unique
-    .filter((p) => !shown.has(p.row.entity_id) && p.fit >= 0.4)
+    .filter((p) => !shown.has(p.row.entity_id) && p.fit >= 0.5)
     .sort((x, y) => y.odd - x.odd)
     .slice(0, 3);
 
