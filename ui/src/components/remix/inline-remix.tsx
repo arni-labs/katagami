@@ -10,6 +10,7 @@ import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
 import { saveRemix } from "@/app/remix-actions";
 import type { Roles } from "@/lib/remix-theme";
+import type { PaletteCore } from "@/lib/odata";
 import { KX_BTN_INK, KX_BTN_PAPER, KX_LABEL } from "@/lib/katagami-ui";
 import { trackCopy } from "@/lib/analytics";
 
@@ -29,6 +30,9 @@ export interface PaletteOpt {
   id: string;
   name: string;
   roles: Roles;
+  /** The structured colour fields the brief's palette_tokens are built from. */
+  core: PaletteCore;
+  ramps: Record<string, Record<string, string>>;
   swatches: string[];
   mood?: string;
   temperature?: string;
@@ -196,7 +200,7 @@ export function InlineRemix({
     if (!haveAll) return;
     const brief = buildRemixBrief({
       language: { name: lang.name, tokens: safeParse(lang.tokens) },
-      palette: { name: pal.name, roles },
+      palette: { name: pal.name, ...pal.core, ramps: pal.ramps },
       artStyle: {
         name: sel.name,
         medium: sel.medium,
@@ -205,6 +209,7 @@ export function InlineRemix({
         referenceUrls: sel.refs,
       },
       composition: comp,
+      origin: window.location.origin,
     });
     void navigator.clipboard.writeText(brief);
     setCopied(true);

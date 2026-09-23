@@ -1,8 +1,12 @@
-// Composite "remix brief" — the portable artifact a remix produces.
+// Composite "remix brief": the portable artifact a remix produces.
 // Fuses a UI design language + a palette + an art-style recipe + a composition
 // into one document that is BOTH the human "Copy" payload and the agent-fetchable
 // artifact (served by /studio/BRIEF.md). The downstream agent fills the art and
-// builds the screen; Katagami never generates — it specifies.
+// builds the screen; Katagami never generates, it specifies.
+//
+// The brief is self-contained: an agent that saved it to disk must be able to
+// theme from `palette_tokens`, send every slot prompt as-is (no `{palette}` or
+// `{subject}` left to fill), and fetch every link without knowing the site.
 
 export interface RemixSlot {
   key: string;
@@ -17,6 +21,22 @@ export interface RemixComposition {
   image_slots: RemixSlot[];
 }
 
+export interface RemixSwatch {
+  hex: string;
+  name?: string;
+}
+
+/** A PaletteSystem's colour fields as the commons stores them: signature
+ *  swatches, neutral and semantic roles, and named ramps. There is no `tokens`
+ *  field on a palette; the brief derives its tokens from these. */
+export interface RemixPalette {
+  name: string;
+  signature?: RemixSwatch[];
+  neutrals?: Record<string, string>;
+  semantic?: Record<string, string>;
+  ramps?: Record<string, Record<string, string>>;
+}
+
 export interface RemixBriefInput {
   language: {
     name: string;
@@ -24,10 +44,7 @@ export interface RemixBriefInput {
     tokens?: Record<string, unknown> | null;
     designMdUrl?: string;
   };
-  palette: {
-    name: string;
-    roles: Record<string, string>;
-  };
+  palette: RemixPalette;
   artStyle: {
     name: string;
     medium: string;
@@ -36,27 +53,61 @@ export interface RemixBriefInput {
     referenceUrls?: string[];
   };
   composition: RemixComposition;
+  /** Site origin (no trailing slash). Every relative link in the brief is made
+   *  absolute against it so a saved brief still resolves. */
+  origin?: string;
 }
 
-/** Render the palette roles as a compact, prompt-friendly string. */
-export function paletteToPromptString(roles: Record<string, string>): string {
-  return Object.entries(roles)
-    .filter(([, v]) => typeof v === "string" && v)
-    .map(([k, v]) => `${k} ${v}`)
+/** The query path of the agent door for one remix, shared by compose_kit and
+ *  the studio so the two can never disagree on the parameters. */
+export function remixBriefPath(a: {
+  ui: string;
+  palette: string;
+  art: string;
+  composition?: string;
+}): string {
+  const q = new URLSearchParams({ ui: a.ui, palette: a.palette, art: a.art });
+  if (a.composition) q.set("composition", a.composition);
+  return `/studio/BRIEF.md?${q.toString()}`;
+}
+
+/** A relative site link made absolute; an already absolute URL is untouched. */
+export function absoluteUrl(url: string, origin?: string): string {
+  if (!origin || /^[a-z][a-z0-9+.-]*:/i.test(url)) return url;
+  return `${origin.replace(/\/+$/, "")}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+/** The palette's signature colours as a short, prompt-friendly list:
+ *  "faded coral #a7564b, softened teal #527f7d". */
+export function paletteToPromptString(signature: RemixSwatch[] = []): string {
+  return signature
+    .filter((s) => typeof s.hex === "string" && s.hex)
+    .map((s) => (s.name ? `${s.name} ${s.hex}` : s.hex))
     .join(", ");
 }
 
-/** Add content facts before the unchanged canonical aesthetic prompt. */
+/** Fill the recipe's slots. `{subject}` and `{palette}` take the slot's content
+ *  and the signature colours; `{composition}` takes the slot's framing. A recipe
+ *  without a subject or palette slot gets that fact stated before it instead,
+ *  and the recipe text itself is never paraphrased. */
 export function resolveSlotPrompt(
   aestheticPrompt: string,
   subject: string,
-  roles: Record<string, string>,
+  signature: RemixSwatch[] = [],
+  framing = "",
 ): string {
-  const palette = paletteToPromptString(roles);
+  const palette = paletteToPromptString(signature);
+  const hasSubject = aestheticPrompt.includes("{subject}");
+  const hasPalette = aestheticPrompt.includes("{palette}");
+  const filled = aestheticPrompt
+    .trim()
+    .replaceAll("{subject}", subject)
+    .replaceAll("{palette}", palette)
+    .replaceAll("{composition}", framing);
   return [
-    `Subject/content: ${subject}.`,
-    palette ? `Palette roles: ${palette}.` : "",
-    aestheticPrompt.trim(),
+    hasSubject ? "" : `Subject/content: ${subject}.`,
+    palette && !hasPalette ? `Palette: ${palette}.` : "",
+    filled,
   ]
     .filter(Boolean)
     .join(" ");
@@ -72,13 +123,50 @@ function slotSubject(slot: RemixSlot, slotRecipes?: Record<string, string>): str
   return slot.subject_hint;
 }
 
+function yamlMap(entries: Record<string, string> | undefined, indent: string): string[] {
+  return Object.entries(entries ?? {})
+    .filter(([, v]) => typeof v === "string" && v)
+    .map(([k, v]) => `${indent}${JSON.stringify(k)}: ${JSON.stringify(v)}`);
+}
+
+/** `palette_tokens` as YAML lines: signature swatches, then neutral and
+ *  semantic roles, then ramps, each under its own key so an agent can map them
+ *  onto its colour variables. */
+export function paletteTokenLines(palette: RemixPalette): string[] {
+  const lines: string[] = [];
+  const signature = (palette.signature ?? []).filter((s) => s.hex);
+  if (signature.length) {
+    lines.push("  signature:");
+    for (const s of signature) {
+      lines.push(
+        s.name
+          ? `    - { name: ${JSON.stringify(s.name)}, hex: ${JSON.stringify(s.hex)} }`
+          : `    - { hex: ${JSON.stringify(s.hex)} }`,
+      );
+    }
+  }
+  for (const key of ["neutrals", "semantic"] as const) {
+    const rows = yamlMap(palette[key], "    ");
+    if (rows.length) lines.push(`  ${key}:`, ...rows);
+  }
+  const ramps = Object.entries(palette.ramps ?? {}).map(
+    ([name, steps]) => [name, yamlMap(steps, "      ")] as const,
+  ).filter(([, rows]) => rows.length);
+  if (ramps.length) {
+    lines.push("  ramps:");
+    for (const [name, rows] of ramps) lines.push(`    ${JSON.stringify(name)}:`, ...rows);
+  }
+  return lines;
+}
+
 export function buildRemixBrief(input: RemixBriefInput): string {
-  const { language, palette, artStyle, composition } = input;
-  const roles = palette.roles ?? {};
+  const { language, palette, artStyle, composition, origin } = input;
+  const signature = palette.signature ?? [];
 
   const slotLines = composition.image_slots.map((slot) => {
     const subject = slotSubject(slot, artStyle.slotRecipes);
-    const prompt = resolveSlotPrompt(artStyle.promptTemplate, subject, roles);
+    const framing = `${slot.subject_hint}, ${slot.aspect}`;
+    const prompt = resolveSlotPrompt(artStyle.promptTemplate, subject, signature, framing);
     return [
       `  - key: ${slot.key}`,
       `    subject: ${JSON.stringify(subject)}`,
@@ -87,6 +175,7 @@ export function buildRemixBrief(input: RemixBriefInput): string {
     ].join("\n");
   });
 
+  const tokenLines = paletteTokenLines(palette);
   const frontMatter = [
     "---",
     "katagami_brief: v1",
@@ -94,33 +183,40 @@ export function buildRemixBrief(input: RemixBriefInput): string {
     `palette: { name: ${JSON.stringify(palette.name)} }`,
     `art_style: { name: ${JSON.stringify(artStyle.name)}, medium: ${JSON.stringify(artStyle.medium)} }`,
     `composition: ${JSON.stringify(composition.key)}`,
-    "palette_tokens:",
-    ...Object.entries(roles).map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`),
+    tokenLines.length ? "palette_tokens:" : "palette_tokens: {}",
+    ...tokenLines,
     "slots:",
     ...slotLines,
     "---",
   ].join("\n");
 
-  const refs =
-    artStyle.referenceUrls && artStyle.referenceUrls.length
-      ? artStyle.referenceUrls.map((u) => `- ${u}`).join("\n")
-      : "_(none attached)_";
+  // The recipe is shown with the palette in it (one palette per brief) so no
+  // `{palette}` is left anywhere; the per-slot placeholders stay named.
+  const recipe = artStyle.promptTemplate.trim().replaceAll("{palette}", paletteToPromptString(signature));
+  const designMdUrl = language.designMdUrl ? absoluteUrl(language.designMdUrl, origin) : "";
+  const referenceUrls = (artStyle.referenceUrls ?? []).map((u) => absoluteUrl(u, origin));
+  const refs = referenceUrls.length
+    ? referenceUrls.map((u) => `- ${u}`).join("\n")
+    : "_(none attached)_";
 
   const body = `
-# Remix brief — ${composition.name}
+# Remix brief: ${composition.name}
 
 **${language.name}** (UI) · **${palette.name}** (palette) · **${artStyle.name}** (art style, ${artStyle.medium})
 
 ## How to build this screen
-1. Apply the UI design language${language.designMdUrl ? ` — see DESIGN.md: ${language.designMdUrl}` : ""}.
-2. Theme it with the palette tokens above (map roles to your color variables).
-3. For each slot below, **generate or edit** an image with its resolved content
-   facts followed by the exact canonical aesthetic prompt.
+1. Apply the UI design language.${designMdUrl ? ` DESIGN.md: ${designMdUrl}` : ""}
+2. Theme it with the palette tokens above (signature colours are the accents;
+   map neutral and semantic roles to your color variables).
+3. For each slot below, **generate or edit** an image with its resolved prompt:
+   the recipe's slots are already filled with the slot's content and the palette.
 4. Do not use optional example images as style references. Keep the canonical
    aesthetic prompt unchanged across models and slots.
 
 ## Art style recipe
-- **Canonical aesthetic prompt:** \`${artStyle.promptTemplate}\`
+- **Canonical aesthetic prompt:** \`${recipe}\`
+- The palette is this brief's, already filled in. \`{subject}\` and \`{composition}\`
+  are per slot and are filled in each slot's prompt above.
 
 ## Optional example images (view only; do not attach as style references)
 ${refs}

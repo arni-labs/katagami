@@ -24,6 +24,7 @@ import {
   type Kind,
   type Tier,
 } from "@/lib/catalog";
+import { COMPOSITIONS } from "@/lib/remix-compositions";
 
 // The Katagami read MCP (ARN-360), served at /mcp on katagami.ai — the same
 // Next.js app that serves the website, reading the commons through the one
@@ -524,6 +525,12 @@ const baseHandler = createMcpHandler(
         inputSchema: {
           query: z.string().min(8).max(400).describe("One sentence: what the product is and who it is for"),
           limit: z.number().int().min(1).max(4).optional().describe("How many kits (default 3)"),
+          composition: z
+            .enum(COMPOSITIONS.map((c) => c.key) as [string, ...string[]])
+            .optional()
+            .describe(
+              `The kind of screen being built, which sets the image slots in brief_url: ${COMPOSITIONS.map((c) => `${c.key} (${c.description ?? c.name})`).join("; ")}. Default compositions.landing`,
+            ),
           images: picturesArg,
         },
       },

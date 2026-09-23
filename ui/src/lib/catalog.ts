@@ -22,6 +22,7 @@ import atlasFamilies from "@/data/atlas-families.json";
 import styleInks from "@/data/style-inks.json";
 import atlasHoles from "@/data/atlas-holes.json";
 import { tokensToCss, tokensToTailwind } from "./design-tokens.mjs";
+import { remixBriefPath } from "./remix-brief";
 import { mediumBucket, mediumMatches } from "./art-medium.mjs";
 import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
@@ -641,7 +642,9 @@ function paletteDoc(r: Row): string {
   ].filter(Boolean).join("\n");
 }
 
-export async function composeKit(tier: Tier, a: { query: string; limit?: number }) {
+// `composition` is the kind of screen the brief is for (a COMPOSITIONS key);
+// without it the brief is written for a landing page whatever is being built.
+export async function composeKit(tier: Tier, a: { query: string; limit?: number; composition?: string }) {
   const query = a.query.trim().slice(0, ASK_MAX_QUERY);
   const limit = Math.min(Math.max(a.limit ?? 3, 1), KIT_FINALISTS);
   const started = Date.now();
@@ -725,7 +728,7 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number 
     timings_ms: { total: Date.now() - started },
     kits: chosen.map((t) => {
       const l = L[t.i], p = P[t.j], x = A[t.k];
-      const q = `ui=${encodeURIComponent(l.id)}&palette=${encodeURIComponent(p.row.entity_id)}&art=${encodeURIComponent(x.id)}`;
+      const path = remixBriefPath({ ui: l.id, palette: p.row.entity_id, art: x.id, composition: a.composition });
       return {
         surprising: isOdd(t),
         belongs_together: round(t.belongs),
@@ -733,7 +736,7 @@ export async function composeKit(tier: Tier, a: { query: string; limit?: number 
         language: l,
         palette: { ...summary("palette", p.row), fit: round(p.fit) },
         art_style: x,
-        brief_url: `${GALLERY}/studio/BRIEF.md?${q}`,
+        brief_url: `${GALLERY}${path}`,
       };
     }),
     note: "Each kit is a design language, a palette and an art style judged to fit the product and to belong together. A kit marked `surprising` is built on a language unlike the rest of the library that was still judged a fit — offer it as the unexpected option. brief_url is the build brief for that exact combination. To pick the parts yourself, search each kind and compose the same URLs.",

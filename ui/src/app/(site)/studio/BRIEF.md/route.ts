@@ -4,12 +4,14 @@ import {
   getPaletteSystemByIdOrSlug,
   getArtStyleByIdOrSlug,
   getFileUrl,
+  paletteCore,
   parseJson,
 } from "@/lib/odata";
 import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
 import { canViewNonPublished, hasFullGalleryAccess } from "@/lib/entity-visibility";
 import { anonMaySee } from "@/lib/catalog";
+import { siteBaseFromRequest } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -80,9 +82,12 @@ export async function GET(req: NextRequest) {
         tokens: parseJson(lang.fields.tokens),
         designMdUrl: `/language/${lang.entity_id}/DESIGN.md`,
       },
+      // A palette keeps its colours in signature/neutrals/semantic/ramps; there
+      // is no `roles` field, which is how palette_tokens once came out empty.
       palette: {
         name: pal.fields.name ?? "Untitled",
-        roles: (parseJson<Record<string, string>>(pal.fields.roles) ?? {}) as Record<string, string>,
+        ...paletteCore(pal.fields),
+        ramps: parseJson<Record<string, Record<string, string>>>(pal.fields.ramps) ?? {},
       },
       artStyle: {
         name: art.fields.name ?? "Untitled",
@@ -92,6 +97,8 @@ export async function GET(req: NextRequest) {
         referenceUrls: (parseJson<string[]>(art.fields.reference_image_file_ids) ?? []).map(getFileUrl),
       },
       composition,
+      // Links leave the site with the brief, so they cannot stay relative.
+      origin: siteBaseFromRequest(req),
     });
 
     return new Response(brief, {
