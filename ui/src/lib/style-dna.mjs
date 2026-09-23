@@ -654,17 +654,24 @@ export function dnaFromAnswers(answers, computed) {
 // is asked as an ordinal score — less, unchanged, more — so a nudge that says
 // nothing about a trait leaves it where it was instead of re-reading it.
 const REFINE_LEVELS = ["less of this", "the change says nothing about this", "more of this"];
-/** A score below this distance from "unchanged" is Jev hedging, not a request. */
-export const REFINE_MOVES_AT = 0.3;
+/** A score below this distance from "unchanged" is Jev hedging, not a request.
+ *  At 0.3, "less corporate, warmer" also pulled `high-trust` from 0.88 to 0.41
+ *  on a finance product and "quieter" moved `civic`: traits the change never
+ *  named. A move now needs Jev to lean clearly one way. */
+export const REFINE_MOVES_AT = 0.5;
 /** How far a whole-hearted "more" or "less" carries a trait along 0..1. */
 const REFINE_STEP = 0.5;
+/** A trait this far from neutral is strongly held; one nudge cannot cross it over. */
+const STRONGLY_HELD = 0.3;
+/** Where a strongly held trait lands when a nudge pushes against it: still leaning its way. */
+const SOFTENED_TO = 0.1;
 
 /** Jev fan-out: what a change asks for on every trait. */
 export function refineQuestions() {
   return Object.fromEntries(
     STYLE_DNA_QUESTIONS.map((q) => [
       q.id,
-      { type: "score", instructions: `A designer asked for this change to a visual design. What does it ask for on this trait?\nTrait: ${q.style}`, criteria: REFINE_LEVELS },
+      { type: "score", instructions: `A designer asked for this change to a visual design. Does it ask for more or less of this trait? Answer "more" or "less" only if the change names this trait or plainly means it; a trait the change does not speak to is unchanged.\nTrait: ${q.style}`, criteria: REFINE_LEVELS },
     ]),
   );
 }
@@ -681,7 +688,16 @@ export function applyRefinement(reading, answers) {
     if (typeof s !== "number" || !Number.isFinite(s)) return null;
     const ask = Math.min(1, Math.max(-1, s - 1));
     const from = reading[q.id];
-    const to = Math.abs(ask) < REFINE_MOVES_AT ? from : Math.round(Math.min(1, Math.max(0, from + ask * REFINE_STEP)) * 1000) / 1000;
+    let to = Math.abs(ask) < REFINE_MOVES_AT ? from : Math.round(Math.min(1, Math.max(0, from + ask * REFINE_STEP)) * 1000) / 1000;
+    // A nudge softens; it does not reverse what the reading strongly holds.
+    // "Less corporate, warmer" on a finance product flipped high-trust from
+    // 0.87 to 0.40 even with the product in view, because the model reads
+    // "corporate" as "trustworthy". A strongly held trait stays on its side,
+    // softened to a lean; asking again moves it further, since by then it is
+    // no longer strongly held.
+    if (Math.abs(from - 0.5) >= STRONGLY_HELD && Math.sign(to - 0.5) !== Math.sign(from - 0.5)) {
+      to = Math.round((0.5 + Math.sign(from - 0.5) * SOFTENED_TO) * 1000) / 1000;
+    }
     next[q.id] = to;
     if (to !== from) moved.push({ id: q.id, label: q.label, from, to });
   }

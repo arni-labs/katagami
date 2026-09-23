@@ -405,6 +405,8 @@ const ASK_MAX_QUERY = 400;
 const ASK_SHORTLIST = 24;
 const ASK_OUTSIDERS = 12;
 const FIT_LEVELS = ["wrong for it", "could work", "strong fit"];
+/** Clash (0..1) below this costs no fit. */
+const CLASH_FROM = 0.35;
 // On a request path a slow Jev is a failed Jev: two calls must finish well
 // inside the route's budget, so each gets one short try and one retry.
 const ASK_JEV = { timeoutMs: 6_000, retries: 1 };
@@ -490,7 +492,7 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   const read = given ?? liked?.dna ?? dnaFromAnswers((await askJev(`Product: ${query}`, wantQuestions(), ASK_JEV)).answers);
   if (!read) throw new JevUnavailableError("Jev left a question about the product unanswered");
   const change = a.refine?.trim().slice(0, ASK_MAX_QUERY);
-  const refined = change ? applyRefinement(read, (await askJev(`Change asked for: ${change}`, refineQuestions(), ASK_JEV)).answers) : null;
+  const refined = change ? applyRefinement(read, (await askJev(`Product: ${query}\nChange asked for: ${change}`, refineQuestions(), ASK_JEV)).answers) : null;
   if (change && !refined) throw new JevUnavailableError("Jev left a question about the change unanswered");
   const want = refined?.reading ?? read;
   const moved = (refined?.moved ?? []).slice(0, 8).map((m) => ({ trait: m.label, from: m.from, to: m.to }));
@@ -534,9 +536,13 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
   const fitRes = await askJev(
     changes ? `Product: ${query}\nThe design should also be: ${changes}` : `Product: ${query}`,
     Object.fromEntries(
-      judged.map((p, i) => [
-        `s${i}`,
-        score(`How well would this style serve the product?\n${p.doc}`, FIT_LEVELS),
+      judged.flatMap((p, i) => [
+        [`s${i}`, score(`How well would this style serve the product?\n${p.doc}`, FIT_LEVELS)],
+        // Fit alone ranked a storybook language made for children first for a
+        // small-business finance dashboard, because it was warm and friendly.
+        // Asked separately, in the same call, whether the style was made for a
+        // different audience or register, so a clash can pull a warm fit down.
+        [`c${i}`, noul(`This style was made for a different kind of product or audience than the one described, so using it here would send the wrong signal, for example a style made for children on a product that handles people's money.\n${p.doc}`)],
       ]),
     ),
     ASK_JEV,
@@ -549,8 +555,16 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     if (typeof fit !== "number" || !Number.isFinite(fit)) {
       throw new JevUnavailableError("Jev left a style's fit unscored");
     }
-    // Jev's score is the expected level index (0..2); normalise to 0..1.
-    return { ...p, band: i < shortlist.length ? "dna" : "outsider", fit: Math.min(1, Math.max(0, fit / (FIT_LEVELS.length - 1))) };
+    // Jev's score is the expected level index (0..2); normalise to 0..1, then
+    // discount by how strongly the style clashes with the product's audience.
+    const clash = fitRes.answers[`c${i}`]?.noul;
+    const judgedFit = Math.min(1, Math.max(0, fit / (FIT_LEVELS.length - 1)));
+    // Every style carries some clash; only a clear one should cost fit, or the
+    // whole list sinks and nothing reads as a strong fit. Below CLASH_FROM it
+    // costs nothing; above it, the discount grows to the whole fit at 1.
+    const c = typeof clash === "number" && Number.isFinite(clash) ? Math.min(1, Math.max(0, clash)) : 0;
+    const penalty = Math.max(0, (c - CLASH_FROM) / (1 - CLASH_FROM));
+    return { ...p, band: i < shortlist.length ? "dna" : "outsider", fit: judgedFit * (1 - penalty), clash: c };
   });
 
   // One card per name: the library holds a few same-named siblings.
@@ -578,7 +592,7 @@ export async function askLibrary(tier: Tier, a: AskArgs) {
     .sort((x, y) => y.odd - x.odd)
     .slice(0, 3);
 
-  const out = (p: (typeof unique)[number]) => ({ ...askCard(p.kind, p.row, p.dna), fit: round(p.fit), match: round(p.match) });
+  const out = (p: (typeof unique)[number]) => ({ ...askCard(p.kind, p.row, p.dna), fit: round(p.fit), match: round(p.match), clash: round(p.clash) });
   return {
     query,
     tier,
