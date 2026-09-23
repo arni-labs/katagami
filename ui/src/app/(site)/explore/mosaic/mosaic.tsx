@@ -82,7 +82,7 @@ function warm(src: string | null | undefined, width: 750 | 1080) {
   const img = new Image(); img.decoding = "async"; img.src = quick(src, width);
 }
 
-type CellProps = { onGhost: () => void; eager: boolean; first: boolean; near: 256 | 384; c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
+type CellProps = { onGhost: () => void; eager: boolean; first: boolean; near: 128 | 256 | 384 | 750; c: number; r: number; cell: Cell; w: number; h: number; stepX: number; stepY: number; dim: boolean; hold: (key: string, el: HTMLElement | null) => void; onOpen: (c: number, r: number) => void };
 // One stamp on the sheet, keyed by its slot in a recycling pool (see Sheet): when the window slides, the stamp
 // that left one edge is handed the place that arrived at the other, which is an update, not a mount. Memoised on plain values, so when the window of visible cells slides by a row
 // only the new row is drawn: the stamps already there are left alone.
@@ -94,7 +94,7 @@ const CellView = memo(function CellView({ onGhost, eager, first, near, c, r, cel
   if (cell.kind === "ghost") return (
     <span ref={(el) => hold(key, el)} className="absolute left-0 top-0 block" style={{ transform: `translate(${x}px, ${y}px)`, opacity: dim ? 0.12 : 1 }}>
       <button type="button" onClick={onGhost} aria-label="Sign in to see this one" className="kghost block cursor-pointer">
-        <Card src={eager && w >= 40 ? cell.src : null} ink={GHOST_INK[cell.n % GHOST_INK.length]} w={w} h={h} fast={near} />
+        <Card src={eager && w >= 40 ? cell.src : null} ink={GHOST_INK[cell.n % GHOST_INK.length]} w={w} h={h} fast={near} eager={eager} />
       </button>
     </span>
   );
@@ -106,7 +106,7 @@ const CellView = memo(function CellView({ onGhost, eager, first, near, c, r, cel
   );
 });
 
-type SheetProps = { onGhost: () => void; eager: Set<string>; first: Set<string>; near: 256 | 384; hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
+type SheetProps = { onGhost: () => void; eager: Set<string>; first: Set<string>; near: 128 | 256 | 384 | 750; hold: (key: string, el: HTMLElement | null) => void; cells: { c: number; r: number; cell: Cell }[]; w: number; h: number; stepX: number; stepY: number; lit: Set<string> | null; onOpen: (c: number, r: number) => void };
 const Sheet = memo(function Sheet({ onGhost, eager, first, near, hold, cells, w, h, stepX, stepY, lit, onOpen }: SheetProps) {
   return (
     <>
@@ -167,6 +167,17 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
   const familyOf = useMemo(() => new Map(families.map((f) => [f.id, f])), [families]);
   const span = useMemo(() => ({ min: farOf(phone, size.w || 1440, size.h || 900), max: SPAN[phone ? "phone" : "desk"].max }), [phone, size]);
   const w = rung, h = Math.round(rung * RATIO), stepX = rung * stride.current.sx, stepY = rung * stride.current.sy;
+  // The resize a card is drawn from follows the size it is drawn at, in device pixels: zoomed out a card is a few
+  // dozen pixels and a 128 file of two kilobytes does; zoomed in, the 750. Never one stretched past a few per cent,
+  // which reads as soft. It changes with the sheet at rest (see `still`), so a pinch through three sizes asks for the
+  // one it stops at, and the picture element is kept as it changes, so the old picture stays until the new arrives.
+  const [dpr, setDpr] = useState(2);
+  useEffect(() => { setDpr(Math.min(3, window.devicePixelRatio || 1)); }, []);
+  const need = w * dpr;
+  const wanted: 128 | 256 | 384 | 750 = need <= 136 ? 128 : need <= 272 ? 256 : need <= 408 ? 384 : 750;
+  const wantedNow = useRef(wanted);
+  useEffect(() => { wantedNow.current = wanted; }, [wanted]);
+  const [cardWidth, setCardWidth] = useState(wanted);
 
   useEffect(() => {
     const el = box.current;
@@ -570,7 +581,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
       id = window.setTimeout(() => {
         const k2 = cam.current;
         // Moved more than half a card since the timer was set, or a finger is still down: not yet.
-        if (k2.drag || Math.hypot(k2.x - x, k2.y - y) > k2.cw / 2) arm(); else setStill(win);
+        if (k2.drag || Math.hypot(k2.x - x, k2.y - y) > k2.cw / 2) arm(); else { setStill(win); setCardWidth(wantedNow.current); }
       }, 90);
     };
     arm();
@@ -716,7 +727,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
         className="absolute inset-0 cursor-grab touch-none focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--ramune)] active:cursor-grabbing">
         {/* The sheet's own corner is what the scale grows from, so a stamp's place on it is its place times the width. */}
         <div ref={layer} style={{ transformOrigin: "0 0" }} className="absolute left-0 top-0 will-change-transform">
-          {placed ? <Sheet onGhost={openGate} near={phone ? NEAR_PHONE : NEAR} eager={eager} first={first} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} /> : null}
+          {placed ? <Sheet onGhost={openGate} near={cardWidth} eager={eager} first={first} hold={hold} cells={cells} w={w} h={h} stepX={stepX} stepY={stepY} lit={litNow} onOpen={openCell} /> : null}
         </div>
         {quiet ? null : <div ref={glare} aria-hidden className="canvas-glare" />}
       </div>
