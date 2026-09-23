@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cssVars, tailwindSpacing, tokenName, tokenValue, tokensToCss, tokensToTailwind, typeMetrics } from "../src/lib/design-tokens.mjs";
+import { cssVars, tailwindSpacing, tokenName, tokenValue, tokensToCss, tokensToTailwind, tokensToTailwindWithOmitted, typeMetrics } from "../src/lib/design-tokens.mjs";
 
 // Quire's real shapes, abridged: this is what languages actually file.
 const TOKENS = {
@@ -39,8 +39,8 @@ test("a paragraph is not a token: prose keys and long values never become custom
 test("the spacing scale is a list, and a list is emitted as steps rather than dropped", () => {
   assert.deepEqual(cssVars("space", { base: "8px", scale: [4, 8] }), [
     "  --space-base: 8px;",
-    "  --space-1: 4;",
-    "  --space-2: 8;",
+    "  --space-1: 4px;",
+    "  --space-2: 8px;",
   ]);
   // A named list keeps its name; only `scale` is the group's own spine.
   assert.deepEqual(cssVars("shadow", { steps: ["a"] }), ["  --shadow-steps-1: a;"]);
@@ -98,6 +98,11 @@ test("a token that leans on a variable the language never defines is left out an
   assert.deepEqual(omitted, [{ token: "--shadow-sm", undefined_variables: ["--hi", "--lo-soft"] }]);
   const tw = tokensToTailwind({ shadows: { sm: "0 0 1px var(--hi)", md: "0 1px 0 #000" } }).theme.extend.boxShadow;
   assert.deepEqual(tw, { md: "0 1px 0 #000" });
+  // every group, not only shadows, and the response says what it left out
+  const { config, omitted: left } = tokensToTailwindWithOmitted({ colors: { ink: "var(--paper-ink)", accent: "var(--x, #c00)" }, radii: { card: "var(--r)" }, shadows: { sm: "0 0 1px var(--hi)" } });
+  assert.deepEqual(config.theme.extend.colors, { accent: "var(--x, #c00)" }, "a fallback keeps a value usable");
+  assert.deepEqual(config.theme.extend.borderRadius, {});
+  assert.deepEqual(left.map((o) => o.token).sort(), ["borderRadius.card", "boxShadow.sm", "colors.ink"]);
 });
 
 test("names are kebab-case whatever a language filed them as, so accent_2 and accent-2 match", () => {
@@ -109,4 +114,18 @@ test("names are kebab-case whatever a language filed them as, so accent_2 and ac
 test("Tailwind spacing never overwrites Tailwind's own numbered steps", () => {
   const spacing = tokensToTailwind({ spacing: { scale: [4, 8, 12, 16, 24] } }).theme.extend.spacing;
   assert.ok(!("5" in spacing) && spacing["k-5"] === "24px", JSON.stringify(spacing));
+});
+
+test("bare-number lengths get units, so var(--space-4) is valid CSS", () => {
+  const css = tokensToCss({ spacing: { base: 8, scale: [4, 8, 0] }, radii: { card: 16, none: "0", pill: "9999px" } }).css;
+  for (const v of ["--space-base: 8px;", "--space-1: 4px;", "--space-3: 0;", "--radius-card: 16px;", "--radius-none: 0;", "--radius-pill: 9999px;"]) assert.ok(css.includes(v), `missing ${v} in\n${css}`);
+  assert.ok(!/--space-\d+: [1-9]\d*;/.test(css), "no unitless non-zero spacing left");
+});
+
+test("Tailwind uses the same kebab-case names as the CSS, and carries a palette's ramps", () => {
+  const extend = tokensToTailwind({ colors: { accent_2: "#111", on_accent: "#fff" }, radii: { card: 16 }, ramps: { olive_gold: { "500": "#8a7a2a" } } }).theme.extend;
+  assert.deepEqual(Object.keys(extend.colors).sort(), ["accent-2", "on-accent", "ramp-olive-gold"]);
+  assert.deepEqual(extend.colors["ramp-olive-gold"], { "500": "#8a7a2a" });
+  assert.deepEqual(extend.borderRadius, { card: "16px" });
+  assert.ok(tokensToCss({ ramps: { olive_gold: { "500": "#8a7a2a" } } }).css.includes("--ramp-olive-gold-500: #8a7a2a;"));
 });
