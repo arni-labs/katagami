@@ -12,7 +12,9 @@
 const URL = "https://api.typesafe.ai/v1/systemone";
 export const JEV_MODEL = process.env.JEV_MODEL || "jev-1.13.0";
 
-export class JevUnavailableError extends Error {}
+export class JevUnavailableError extends Error {
+  name = "JevUnavailableError";
+}
 
 export const noul = (instructions) => ({ type: "noul", instructions });
 export const score = (instructions, criteria) => ({ type: "score", instructions, criteria });

@@ -1,31 +1,65 @@
 "use client";
 
 import { GalleryImage } from "@/components/gallery-image";
+import { bakedUrl } from "@/lib/baked-image.mjs";
 import { canOptimizeGallerySrc, galleryImageSrc } from "@/lib/gallery-image";
 
-/** The optimizer's URL for a thumbnail, for a plain <img>: a sheet that mounts stamps by the row as it is panned cannot afford a component with state per picture. */
-export const quick = (src: string, width: 128 | 256 | 384 | 750 | 1080) => (canOptimizeGallerySrc(src) ? `/_next/image?url=${encodeURIComponent(galleryImageSrc(src))}&w=${width}&q=75` : src); // 75 is the only quality the production optimizer accepts (next.config sets no `qualities`); the dev server takes any
+type Width = 128 | 256 | 384 | 750 | 1080;
+/** The optimizer's URL for a picture: resized on request, and cold for any browser whose Accept header it has not seen. */
+const optimized = (src: string, width: Width) => (canOptimizeGallerySrc(src) ? `/_next/image?url=${encodeURIComponent(galleryImageSrc(src))}&w=${width}&q=75` : src); // 75 is the only quality the production optimizer accepts (next.config sets no `qualities`); the dev server takes any
+/** A picture at a width, for a plain <img>: the resize baked onto the asset CDN when there is one (src/lib/baked-image.mjs),
+ *  else the optimizer. A sheet that mounts stamps by the row as it is panned cannot afford a component with state per picture. */
+export const quick = (src: string, width: Width) => bakedUrl(src, width) ?? optimized(src, width);
+/** Where a baked picture falls back to if its file is not on the CDN yet (a style published since the last bake). */
+export const fallbackOf = (src: string, width: Width) => (bakedUrl(src, width) ? optimized(src, width) : undefined);
+/** A card's picture is hidden until it has arrived whole, then eases in: nothing half-drawn, no broken-picture mark.
+ *  One that had run out of sources and arrives at a new width (after a zoom) is shown again. */
+function ready(img: HTMLImageElement) {
+  img.dataset.ready = "1";
+  if (img.dataset.gone) { delete img.dataset.gone; img.style.visibility = ""; }
+}
+export const markReady = (e: React.SyntheticEvent<HTMLImageElement>) => ready(e.currentTarget);
 
-/** A picture that fails is asked for once more (a cold optimizer under a burst of requests sometimes times out),
- *  then falls back to whatever second picture the card was given (a handful of entries have reference files that
- *  are gone from the store but a perfectly good thumbnail), and only then is hidden, so the card shows its ink
- *  rather than a broken-picture mark. No state: a sheet of hundreds cannot afford a hook per picture. */
-function retryThenHide(e: React.SyntheticEvent<HTMLImageElement>) {
-  const img = e.currentTarget;
-  const spare = img.dataset.spare;
-  // A phone on a patchy connection drops requests in bursts, and one retry was not enough to see it through: a
-  // screenful of cards could give up together and sit on their ink for good. Three tries, further apart each time,
-  // then the spare, and only then the ink.
-  const tries = Number(img.dataset.tries ?? 0);
-  if (tries < 3) {
-    img.dataset.tries = String(tries + 1);
-    const again = (img.dataset.first ??= img.src).split("#")[0];
-    window.setTimeout(() => { if (img.isConnected) img.src = `${again}#try${tries + 1}`; }, 1200 * 2 ** tries);
+/** A picture that fails is never shown failing: it is hidden at once and the next address in its chain is tried.
+ *  The chain is the picture, then (when the first is a baked file) the optimizer's resize of it, then the card's
+ *  second picture (a handful of entries have reference files that are gone from the store but a perfectly good
+ *  thumbnail) and its optimizer resize, and only then nothing, so the card shows its ink rather than a
+ *  broken-picture mark. A baked file that is missing is not there a second later either, so it goes straight to its
+ *  fallback. A fallback is tried twice (behind a missing baked file the original is usually gone too); a picture
+ *  with no baked file is tried four times, further apart each time, because a phone on a patchy connection drops
+ *  requests in bursts. The chain is read from attributes React sets and never rewrites, and starts again
+ *  whenever React gives the picture a new address (a zoom changes its width). No state: a sheet of hundreds cannot
+ *  afford a hook per picture. */
+export function retryThenHide(e: React.SyntheticEvent<HTMLImageElement>) {
+  const img = e.currentTarget, d = img.dataset;
+  if (!img.getAttribute("src")) return; // between tries, with nothing asked for
+  delete d.ready;
+  const go = (url: string) => { img.src = url; d.mine = img.src.split("#")[0]; };
+  const failed = img.src.split("#")[0];
+  if (failed !== d.mine) { d.base = failed; d.link = "0"; d.tries = "0"; delete d.gone; img.style.visibility = ""; }
+  const links = [d.base, d.fallback, d.spare, d.spareFallback];
+  let i = Number(d.link);
+  const tries = Number(d.tries);
+  if (!(i % 2 === 0 && links[i + 1]) && tries < (i % 2 ? 1 : 3)) {
+    d.tries = String(tries + 1);
+    const again = links[i]!;
     img.removeAttribute("src");
+    window.setTimeout(() => { if (img.isConnected && !img.getAttribute("src")) go(`${again}#try${tries + 1}`); }, 1200 * 2 ** tries);
     return;
   }
-  if (spare && !img.dataset.spared) { img.dataset.spared = "1"; img.dataset.tries = "0"; img.dataset.first = spare; img.src = spare; return; }
+  for (i++; i < links.length && !links[i]; i++);
+  if (i < links.length) { d.link = String(i); d.tries = "0"; go(links[i]!); return; }
+  d.gone = "1";
   img.style.visibility = "hidden";
+}
+
+/** A picture that arrived, or failed, before the page came alive has already fired the event that would have
+ *  handled it, so it is looked at once when it is attached. A lazy picture not yet asked for has no current source
+ *  and is left alone. A stable function, so React calls it on attach and detach only. */
+export function caughtUp(img: HTMLImageElement | null) {
+  if (!img?.complete || !img.currentSrc) return;
+  if (img.naturalWidth) ready(img);
+  else retryThenHide({ currentTarget: img } as unknown as React.SyntheticEvent<HTMLImageElement>);
 }
 
 // ---- the paper ----------------------------------------------------------------
@@ -118,11 +152,18 @@ export function frameOf(w: number, h: number, label: boolean) {
 }
 
 /** A perforated stamp carrying a style's picture: paper with a bitten edge, an even margin, the picture in a window with a hairline of shade inside it, and (when there is room) the name set small and spaced along the foot. */
-export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = false, veil = 0, lit, flat = false, fast, under, onShape, windowed = false, eager = false, first = false, spare }: { src: string | null; ink: string | null; w: number; h: number; label?: string; value?: string; sizes?: string; soon?: boolean; /** 0..1: how much of the picture is hidden under the style's ink (a stamp seen from far away). `--veil` on an ancestor scales it. */ veil?: number; /** Where the stamp's centre is, in the same pixel space as the light (--lx, --ly): makes it a light-reactive card. */ lit?: { x: number; y: number }; /** No shadow: a stamp still on its sheet, touching its neighbours. */ flat?: boolean; /** Draw the picture as a plain <img> at this optimizer width. */ fast?: 128 | 256 | 384 | 750 | 1080; /** A smaller picture already in hand, shown soft until the large one arrives. */ under?: string; /** Told the picture's own shape (width over height) once it has loaded. */ onShape?: (ratio: number) => void; /** `w` and `h` are the picture window's size, and the paper is added round it: for a stamp cut to fit a picture's own shape. */ windowed?: boolean; /** On screen: fetch it now rather than when the browser judges it near. */ eager?: boolean; /** Among the first on screen to be fetched. */ first?: boolean; /** A second picture to draw if the first one is gone from the store. */ spare?: string | null }) {
+export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = false, veil = 0, lit, flat = false, fast, under, onShape, windowed = false, eager, first = false, spare }: { src: string | null; ink: string | null; w: number; h: number; label?: string; value?: string; sizes?: string; soon?: boolean; /** 0..1: how much of the picture is hidden under the style's ink (a stamp seen from far away). `--veil` on an ancestor scales it. */ veil?: number; /** Where the stamp's centre is, in the same pixel space as the light (--lx, --ly): makes it a light-reactive card. */ lit?: { x: number; y: number }; /** No shadow: a stamp still on its sheet, touching its neighbours. */ flat?: boolean; /** Draw the picture as a plain <img> at this optimizer width. */ fast?: 128 | 256 | 384 | 750 | 1080; /** A smaller picture already in hand, shown soft until the large one arrives. */ under?: string; /** Told the picture's own shape (width over height) once it has loaded. */ onShape?: (ratio: number) => void; /** `w` and `h` are the picture window's size, and the paper is added round it: for a stamp cut to fit a picture's own shape. */ windowed?: boolean; /** On screen: fetch it now rather than when the browser judges it near. */ eager?: boolean; /** Among the first on screen to be fetched. */ first?: boolean; /** A second picture to draw if the first one is gone from the store. */ spare?: string | null }) {
+  // A large picture with no say from the sheet is the opened entry's, wanted now; the sheet says for itself, so a
+  // zoomed-in sheet asking for large pictures keeps its own order.
+  const big = eager === undefined && Boolean(fast && fast > 384);
+  const picture = src && fast ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img key={src} src={quick(src, fast)} alt="" loading={eager || big ? "eager" : "lazy"} fetchPriority={first || big ? "high" : eager ? "auto" : "low"} decoding="async" draggable={false} data-fallback={fallbackOf(src, fast)} data-spare={spare ? quick(spare, fast) : undefined} data-spare-fallback={spare ? fallbackOf(spare, fast) : undefined} onError={retryThenHide} ref={caughtUp} onLoad={(e) => { markReady(e); const i = e.currentTarget; if (onShape && i.naturalWidth > 0) onShape(i.naturalWidth / i.naturalHeight); }} className="kimg absolute inset-0 h-full w-full object-cover" />
+  ) : src ? <GalleryImage src={src} alt="" sizes={sizes} className="object-cover" /> : null;
   // Too small for holes to read as holes: a plain tile of ink and picture.
   if (w < TILE) return (
-    <span className="relative block overflow-hidden [&_img]:object-cover" style={{ width: w, height: h, background: ink ?? "var(--muted)" }}>
-      {src ? <GalleryImage src={src} alt="" sizes={sizes} className="object-cover" /> : null}
+    <span className="kwin relative block overflow-hidden [&_img]:object-cover" style={{ width: w, height: h, background: ink ?? "var(--muted)" }}>
+      {picture}
       {veil > 0 ? <span aria-hidden className="absolute inset-0" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))` }} /> : null}
     </span>
   );
@@ -133,10 +174,7 @@ export function Stamp({ src, ink, w, h, label, value, sizes = "160px", soon = fa
       <span aria-hidden className="stamp-paper absolute" style={{ inset: -padOf(w), backgroundImage: paper(w, h, flat, soon ? TONE_SOON : TONE) }} />
       <span className="stamp-window absolute overflow-hidden [&_img]:object-cover" style={{ left: edge, right: edge, top: edge, bottom: edge + foot, background: soon ? undefined : ink ?? "var(--muted)", ...(under ? { backgroundImage: `url("${under}")`, backgroundSize: "cover", backgroundPosition: "center" } : null) }}>
         {veil > 0 && !soon ? <span aria-hidden className="absolute inset-0 z-[1]" style={{ background: ink ?? "var(--muted)", opacity: `calc(${veil} * var(--veil, 1))`, transition: "opacity 200ms" }} /> : null}
-        {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : src && fast ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={src} src={quick(src, fast)} alt="" loading={eager || (fast && fast > 384) ? "eager" : "lazy"} fetchPriority={first || (fast && fast > 384) ? "high" : eager ? "auto" : "low"} decoding="async" draggable={false} data-spare={spare ? quick(spare, fast) : undefined} onError={retryThenHide} onLoad={onShape ? (e) => { const i = e.currentTarget; if (i.naturalWidth > 0) onShape(i.naturalWidth / i.naturalHeight); } : undefined} className="absolute inset-0 h-full w-full object-cover" />
-        ) : src ? <GalleryImage src={src} alt="" sizes={sizes} className="object-cover" /> : null}
+        {soon ? <span aria-hidden className="halftone-wash absolute inset-0" style={{ ["--wash-ink" as string]: "var(--sakura)", opacity: 0.55 }} /> : picture}
       </span>
       {label ? (
         <span className="absolute flex items-center justify-between gap-1 font-mono uppercase text-[#22211e]" style={{ left: edge, right: edge, bottom: Math.round(edge * 0.55), height: foot, fontSize: Math.max(6.5, Math.min(13, foot * 0.52)), letterSpacing: "0.1em", lineHeight: 1 }}>

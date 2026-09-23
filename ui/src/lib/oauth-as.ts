@@ -31,7 +31,12 @@ const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
 const API_KEY = process.env.TEMPER_API_KEY || "";
 
 export const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
-export const AUTH_CODE_TTL_SECONDS = 60;
+// Five minutes, not one. A code is PKCE-bound (redeeming it needs the client's
+// verifier), so a longer life does not make a stolen code usable. At 60 s,
+// anyone finishing sign-in by hand, pasting the callback address from a phone
+// into a remote agent session, ran out of time twice in a row (2026-09-23).
+// RFC 6749 section 4.1.2 recommends at most ten minutes.
+export const AUTH_CODE_TTL_SECONDS = 5 * 60;
 
 /** Scope minted for a token: `read` for the gallery /mcp, `contribute` otherwise. */
 export function scopeForResource(resource: string): string {

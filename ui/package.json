@@ -11,7 +11,7 @@
     "backfill:published-assets": "node scripts/backfill-published-assets.mjs",
     "backfill:taste-vectors": "node scripts/backfill-taste-vectors.mjs",
     "test": "node scripts/run-tests.mjs",
-    "warm-images": "node scripts/warm-card-images.mjs"
+    "bake-images": "node scripts/bake-card-images.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",

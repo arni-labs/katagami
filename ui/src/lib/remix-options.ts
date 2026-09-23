@@ -59,6 +59,8 @@ export function toPaletteOpts(rows: Row[]): PaletteOpt[] {
       id: p.entity_id,
       name: paletteDisplayName(p.fields, core),
       roles,
+      core,
+      ramps: parseJson<Record<string, Record<string, string>>>(p.fields.ramps) ?? {},
       swatches,
       mood: core.mood.summary,
       temperature: core.mood.temperature,

@@ -501,7 +501,12 @@ const required = [
   [" /mcp still uses readMcpAuthInfo", mcp, /readMcpAuthInfo\(bearer, verifyReadBearer\)/],
   [" /mcp still sets resourceUrl", mcp, /resourceUrl:\s*mcpPublicOrigin\(\)/],
   ["MCP tools are auto-instrumented", mcp, /withUsageTracking\(server\)/],
-  ["MCP events carry tool, outcome, duration (no sample tier)", mcp, /trackMcpToolCall\(\{\s*tool: name,\s*outcome/],
+  ["MCP events carry tool, outcome, duration", mcp, /trackMcpToolCall\(\{\s*tool: name,\s*outcome/],
+  // /mcp/open serves the visitor shelf with no identity, so the tier is the
+  // caller's real tier on every emit: a sample call must never wear @tier:full,
+  // which the dashboard reads as a signed-in caller.
+  ["every MCP emit carries the caller's real tier", mcp, /^(?![\s\S]*trackMcpToolCall\(\{(?:(?!tier: tierOf\(extra\))[^}])*\}\))[\s\S]*$/],
+  ["a judging-model outage is a handled error, not an exception", mcp, /err instanceof JevUnavailableError[\s\S]*errorKind: "model_unavailable"/],
   ["MCP wrapper does not hash on the request path", mcp, /^(?![\s\S]*hashPrincipal)[\s\S]*trackMcpToolCall/],
   ["MCP wrapper passes extra.sub into after(), not a precomputed hash", mcp, /sub: authOf\(extra\)\?\.extra\?\.sub/],
   ["AS still exports SCOPE_READ", oauthAs, /export \{[^}]*SCOPE_READ/],
@@ -526,7 +531,7 @@ const required = [
   ["members snapshot cron is scheduled", vercelJson, /\/api\/telemetry\/members/],
   ["runAfter guards next/server after()", telemetry, /export function runAfter/],
   ["hash+emit for MCP tools runs inside runAfter", telemetry, /runAfter\(async \(\) => \{[\s\S]*hashPrincipal/],
-  ["MCP emit stamps @tier:full (dashboard filters match)", telemetry, /tier: "full"/],
+  ["MCP emit stamps the tier it was given", telemetry, /tier: "full" \| "sample";[\s\S]*\btier,\n\s*outcome,/],
   ["telemetry no-ops without credentials", telemetry, /if \(!intake\) return/],
   ["intake fetch is aborted on hang", telemetry, /signal: intakeAbortSignal\(/],
   // Friction visibility (ARN-514): a rejected call must say WHICH argument
@@ -876,11 +881,13 @@ if (/"DD-API-KEY"\s*:\s*clientToken\(\)/.test(telemetry) || /NEXT_PUBLIC_DD_RUM_
   console.log("ok: no RUM client token on the server intake path");
 }
 
-if (/tier:\s*tierOf|tier:\s*"sample"/.test(mcp) || /tier:\s*"sample"/.test(telemetry)) {
-  console.error("MISSING: /mcp telemetry must not emit a dead sample tier");
+// The sample tier is live again: /mcp/open answers with no identity. So the
+// route must never hard-code a tier on an emit; it passes tierOf(extra).
+if (/trackMcpToolCall\(\{[^}]*tier:\s*"(full|sample)"/.test(mcp) || /tier:\s*"full",/.test(telemetry)) {
+  console.error("MISSING: MCP telemetry must emit the caller's tier, never a hard-coded one");
   failed += 1;
 } else {
-  console.log("ok: /mcp telemetry does not emit @tier:sample");
+  console.log("ok: MCP telemetry emits the caller's tier, never a hard-coded one");
 }
 
 if (/anonymous sample vs signed-in full/.test(dashboard)) {

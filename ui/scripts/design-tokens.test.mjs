@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cssVars, tailwindSpacing, tokenValue, tokensToCss, tokensToTailwind, typeMetrics } from "../src/lib/design-tokens.mjs";
+import { cssVars, tailwindSpacing, tokenName, tokenValue, tokensToCss, tokensToTailwind, typeMetrics } from "../src/lib/design-tokens.mjs";
 
 // Quire's real shapes, abridged: this is what languages actually file.
 const TOKENS = {
@@ -44,7 +44,7 @@ test("the spacing scale is a list, and a list is emitted as steps rather than dr
   ]);
   // A named list keeps its name; only `scale` is the group's own spine.
   assert.deepEqual(cssVars("shadow", { steps: ["a"] }), ["  --shadow-steps-1: a;"]);
-  assert.deepEqual(tailwindSpacing({ base: "8px", scale: [4, "8px"] }), { base: "8px", 1: "4px", 2: "8px" });
+  assert.deepEqual(tailwindSpacing({ base: "8px", scale: [4, "8px"] }), { "k-base": "8px", "k-1": "4px", "k-2": "8px" });
 });
 
 test("the type metrics survive, separately from the faces", () => {
@@ -56,7 +56,7 @@ test("the type metrics survive, separately from the faces", () => {
   const { css, fontsUrl } = tokensToCss(TOKENS);
   assert.ok(css.startsWith('@import url("https://fonts.googleapis.com'), "the webfonts load or the type is wrong everywhere");
   assert.equal(fontsUrl, TOKENS.typography.google_fonts_url);
-  for (const expected of ["--font-body: Averia Serif Libre;", "--font-mono: IBM Plex Mono;", "--type-base_size: 17px;", "--type-letter_spacing: -0.02em;"]) {
+  for (const expected of ["--font-body: Averia Serif Libre;", "--font-mono: IBM Plex Mono;", "--type-base-size: 17px;", "--type-letter-spacing: -0.02em;"]) {
     assert.ok(css.includes(expected), `missing ${expected}`);
   }
 });
@@ -67,7 +67,7 @@ test("every group the language stores reaches both exports", () => {
     assert.ok(css.includes(prefix), `${prefix} missing — this is the drop that made "here are the tokens" mean colours and two fonts`);
   }
   const extend = tokensToTailwind(TOKENS).theme.extend;
-  assert.deepEqual(Object.keys(extend).sort(), ["borderRadius", "boxShadow", "colors", "fontFamily", "spacing"]);
+  assert.deepEqual(Object.keys(extend).sort(), ["borderRadius", "boxShadow", "colors", "fontFamily", "fontSize", "spacing", "transitionDuration", "transitionTimingFunction"]);
   assert.deepEqual(extend.fontFamily, { heading: ["Sour Gummy"], body: ["Averia Serif Libre"], mono: ["IBM Plex Mono"] });
 });
 
@@ -80,4 +80,33 @@ test("a group the entry does not have simply does not appear, and nothing throws
   for (const junk of [null, undefined, "", 7, [], { colors: "not-an-object" }]) {
     assert.ok(typeof tokensToCss(junk).css === "string");
   }
+});
+
+test("a palette's ramps come out as --ramp-<name>-<step>, so a palette export is not empty", () => {
+  const css = tokensToCss({ colors: { bg: "#fff" }, ramps: { accent: { "50": "#fff1e8", "500": "#a7564b" }, moss: { "500": "#69733d" } } }).css;
+  for (const v of ["--ramp-accent-50: #fff1e8;", "--ramp-accent-500: #a7564b;", "--ramp-moss-500: #69733d;"]) assert.ok(css.includes(v), `missing ${v}`);
+});
+
+test("a token that leans on a variable the language never defines is left out and named, not shipped broken", () => {
+  const { css, omitted } = tokensToCss({
+    colors: { bg: "#efe3d6" },
+    shadows: { sm: "-4px -4px 9px var(--hi), 4px 4px 11px var(--lo-soft)", md: "0 3px 0 rgba(0,0,0,0.1)", lg: "0 0 4px var(--color-bg)" },
+  });
+  assert.ok(!css.includes("--shadow-sm"), css);
+  assert.ok(css.includes("--shadow-md: 0 3px 0 rgba(0,0,0,0.1);"));
+  assert.ok(css.includes("--shadow-lg: 0 0 4px var(--color-bg);"), "a reference to a variable the export defines stays");
+  assert.deepEqual(omitted, [{ token: "--shadow-sm", undefined_variables: ["--hi", "--lo-soft"] }]);
+  const tw = tokensToTailwind({ shadows: { sm: "0 0 1px var(--hi)", md: "0 1px 0 #000" } }).theme.extend.boxShadow;
+  assert.deepEqual(tw, { md: "0 1px 0 #000" });
+});
+
+test("names are kebab-case whatever a language filed them as, so accent_2 and accent-2 match", () => {
+  assert.equal(tokenName("accent_2"), "accent-2");
+  assert.equal(tokenName("surfaceSolid"), "surface-solid");
+  assert.ok(tokensToCss({ colors: { accent_2: "#111" } }).css.includes("--color-accent-2: #111;"));
+});
+
+test("Tailwind spacing never overwrites Tailwind's own numbered steps", () => {
+  const spacing = tokensToTailwind({ spacing: { scale: [4, 8, 12, 16, 24] } }).theme.extend.spacing;
+  assert.ok(!("5" in spacing) && spacing["k-5"] === "24px", JSON.stringify(spacing));
 });
