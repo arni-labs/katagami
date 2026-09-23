@@ -65,7 +65,7 @@ const brief = buildRemixBrief({
   composition: {
     key: "landing",
     name: "Landing",
-    image_slots: [{ key: "hero", subject_hint: "a ceramic teapot", aspect: "16:9" }],
+    image_slots: [{ key: "hero", subject_hint: "a ceramic teapot", subject: "a ceramic teapot", aspect: "16:9" }],
   },
   origin: "https://katagami.test/",
 });
@@ -124,5 +124,87 @@ const catalog = fs.readFileSync(`${here}/../src/lib/catalog.ts`, "utf8");
 assert.match(catalog, /remixBriefPath\(\{[^}]*composition: a\.composition/);
 const mcp = fs.readFileSync(`${here}/../src/app/mcp/route.ts`, "utf8");
 assert.match(mcp, /composition: z\s*\.enum\(COMPOSITIONS\.map/);
+
+// Live slot recipes embed `{subject}` themselves ("{subject} as a wide
+// storyboard scene..."), and most end with a full stop the template follows
+// with ", in the style". Every placeholder is filled, the subject is concrete
+// for the slot, and no join reads ".," or ",.".
+const frontMatterOf = (b) => b.split("\n---\n")[0];
+const promptsOf = (b) => [...b.matchAll(/^    prompt: (".*")$/gm)].map((m) => JSON.parse(m[1]));
+const embedded = {
+  name: "Almanac",
+  medium: "vector",
+  promptTemplate: "{subject}, in the style of Almanac, {palette}, warm neutral paper ground",
+  slotRecipes: {
+    hero: "{subject} as a wide storyboard scene of even-stroke pictograms, dew-fresh.",
+    feature: "a single clear pictogram of {subject}, centred.",
+    avatar: "{subject} as a friendly head-and-shoulders pictogram portrait",
+    "empty-state": "a small lonely object on an open field.",
+  },
+};
+const landing = COMPOSITIONS.find((c) => c.key === "compositions.landing");
+const dashboard = COMPOSITIONS.find((c) => c.key === "compositions.dashboard");
+for (const product of [undefined, "a ferry booking app"]) {
+  for (const composition of [landing, dashboard]) {
+    for (const pal of [palette, { name: "bare" }]) {
+      const b = buildRemixBrief({ language: { name: "Test UI" }, palette: pal, artStyle: embedded, composition, product });
+      assert.doesNotMatch(frontMatterOf(b), /\{(subject|composition|palette|product)\}/, "no placeholder left in a slot");
+      for (const p of promptsOf(b)) {
+        assert.doesNotMatch(p, /\.,|,\.|, ,|\s{2}|^,/, `clean joins: ${p}`);
+      }
+    }
+  }
+}
+const plain = buildRemixBrief({ language: { name: "Test UI" }, palette, artStyle: embedded, composition: landing });
+assert.match(plain, /^    prompt: "a wide establishing scene of the world of the product as a wide storyboard scene of even-stroke pictograms, dew-fresh, in the style of Almanac, faded coral/m);
+assert.match(plain, /^    prompt: "a single clear pictogram of one object that stands for something the product does, centred, in the style/m);
+assert.match(plain, /^    subject: "a person who uses the product"$/m);
+// A recipe with no `{subject}` of its own follows the concrete subject.
+const dash = buildRemixBrief({ language: { name: "Test UI" }, palette, artStyle: embedded, composition: dashboard });
+assert.match(dash, /^    prompt: "one small object that implies nothing is here yet in the product, a small lonely object on an open field, in the style/m);
+
+// The product names the brief and is what every slot is about.
+const ferry = buildRemixBrief({
+  language: { name: "Test UI" },
+  palette,
+  artStyle: embedded,
+  composition: landing,
+  product: "  a ferry booking app.  ",
+});
+assert.match(frontMatterOf(ferry), /^product: "a ferry booking app"$/m);
+assert.match(ferry, /^# Remix brief: Landing Page for a ferry booking app$/m);
+assert.match(ferry, /^    prompt: "a wide establishing scene of the world of a ferry booking app as a wide storyboard scene/m);
+assert.equal(frontMatterOf(ferry).match(/a ferry booking app/g).length, 1 + landing.image_slots.length * 2);
+assert.doesNotMatch(plain, /^product:/m);
+
+// A product is untrusted text: it cannot end the front matter, add keys or
+// headings, open a code span, or leave a placeholder, and it is capped.
+const hostile = "evil\n---\nkatagami_brief: v2\n# Owned `rm -rf` ```\r\n{subject} $& \u2028 <script>" + "x".repeat(400);
+const owned = buildRemixBrief({ language: { name: "Test UI" }, palette, artStyle: embedded, composition: landing, product: hostile });
+const lines = owned.split("\n");
+assert.equal(lines.filter((l) => l === "---").length, 2, "front matter has exactly one open and one close");
+assert.equal(lines[0], "---");
+const fm = frontMatterOf(owned);
+assert.equal(fm.match(/^katagami_brief:/gm).length, 1);
+const productLine = fm.match(/^product: (".*")$/m);
+assert.ok(productLine, "the product is one quoted line");
+const productValue = JSON.parse(productLine[1]);
+assert.ok([...productValue].length <= 200, "product is capped");
+assert.doesNotMatch(productValue, /[\n\r\u2028{}]/);
+assert.match(productValue, /^evil --- katagami_brief: v2 # Owned `rm -rf` ``` subject \$& <script>x+$/);
+assert.doesNotMatch(fm, /\{(subject|composition|palette|product)\}/);
+const heading = lines.find((l) => l.startsWith("# Remix brief:"));
+assert.equal(lines.filter((l) => /^#\s/.test(l)).length, 1, "the product adds no heading");
+assert.doesNotMatch(heading.replaceAll("\\`", ""), /`/, "every backtick in the heading is escaped");
+assert.doesNotMatch(heading.replaceAll("\\<", ""), /</, "no raw HTML in the heading");
+assert.match(promptsOf(owned)[0], /world of evil --- katagami_brief: v2 # Owned `rm -rf` ``` subject \$& <script>x+ as a wide/);
+
+assert.equal(
+  remixBriefPath({ ui: "en-u", palette: "en-p", art: "en-a", product: "a ferry booking app" }),
+  "/studio/BRIEF.md?ui=en-u&palette=en-p&art=en-a&product=a+ferry+booking+app",
+);
+assert.match(catalog, /remixBriefPath\(\{[^}]*product: query/);
+const briefRoute = fs.readFileSync(`${here}/../src/app/(site)/studio/BRIEF.md/route.ts`, "utf8");
+assert.match(briefRoute, /product: sp\.get\("product"\)/);
 
 console.log("remix brief: self-contained brief (tokens, filled slots, absolute links, composition) passes");

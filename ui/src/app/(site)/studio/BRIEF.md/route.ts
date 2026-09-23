@@ -15,7 +15,7 @@ import { siteBaseFromRequest } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
-// Agent door: GET /studio/BRIEF.md?ui=<id>&palette=<id>&art=<id>&composition=<key>
+// Agent door: GET /studio/BRIEF.md?ui=<id>&palette=<id>&art=<id>&composition=<key>&product=<text>
 // Returns the same composite brief the studio's "Copy" button produces, so an
 // agent can discover lanes via OData, compose a remix, and fetch the brief.
 export async function GET(req: NextRequest) {
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   if (!uiId || !palId || !artId) {
     return new Response(
-      "Missing required query params: ui, palette, art (and optional composition).",
+      "Missing required query params: ui, palette, art (and optional composition, product).",
       { status: 400 },
     );
   }
@@ -97,6 +97,8 @@ export async function GET(req: NextRequest) {
         referenceUrls: (parseJson<string[]>(art.fields.reference_image_file_ids) ?? []).map(getFileUrl),
       },
       composition,
+      // A sentence about the product; buildRemixBrief flattens and caps it.
+      product: sp.get("product"),
       // Links leave the site with the brief, so they cannot stay relative.
       origin: siteBaseFromRequest(req),
     });

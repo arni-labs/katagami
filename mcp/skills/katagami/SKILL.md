@@ -56,17 +56,17 @@ Write the `ask_library` sentence as *what the product is and who it is for*. Do 
 1. `get_design_md` returns `{url}`: **fetch that URL**, put the file in the working directory, and follow it. (Every design-language result already carries the same link as `design_md_url`, so the call is optional.)
 2. `get_design_tokens` with `format: "css"` or `"tailwind"` for the tokens themselves. The export carries every group the language stores: colours, radii, spacing, shadows, motion, the type scale and its faces: plus `fonts_url` for the webfonts, which the CSS also `@import`s at the top. Load it, or the type is wrong everywhere. If the answer has `omitted`, those tokens depend on a variable the language never defined; do not recreate them by guessing. Tailwind spacing uses `k-1`, `k-2` and so on (`p-k-3`), so Tailwind's own `p-3` still means what it always did.
 3. `get_library_entry` for the rules, do's and don'ts. `get_reference_page` is the entry's page on katagami.ai, to look at: not something you build from.
-4. Honour the tokens exactly. Do not add colours, typefaces or corner radii the language does not have, and do not round a value to something nearby. A token that exists is not an instruction to use it: a language whose rules say "no borders" may still export a border colour.
+4. Honour the tokens exactly. Do not add colours, typefaces or corner radii the language does not have, and do not round a value to something nearby. On its own, a language's colours are the only colours. In a kit, the kit's palette replaces the language's colours by design, and the brief's `palette_tokens` are then the only colours; typefaces, radii and spacing still come from the language. A token that exists is not an instruction to use it: a language whose rules say "no borders" may still export a border colour.
 
 ## Generate images in an art style
 
-A design language names its paired art style at `imagery_direction.pairs_with`: a **slug**, which you pass to `get_library_entry` with `kind: "art_style"`. On the open shelf that entry may be refused even though the language is public; the language's own `DESIGN.md` has a "Paired art style" section that usually carries the recipe, and otherwise say it needs sign-in.
+A design language names its paired art style at `imagery_direction.pairs_with`: a **slug**, which you pass to `get_library_entry` with `kind: "art_style"`. On the open shelf that entry may be refused even though the language is public; the language's own `DESIGN.md` has an "## Art Style" section that usually carries the recipe, and otherwise say it needs sign-in.
 
 From the art-style entry:
 
-- `prompt_template` is the recipe. It may contain slots such as `{subject}`, `{palette}` and `{composition}`: **fill the slots**; do not paste the template and append the subject after it. Where the template has no subject slot, add the subject at the end.
+- `prompt_template` is the recipe. It may contain slots such as `{subject}`, `{palette}` and `{composition}`: **fill the slots**; do not paste the template and append the subject after it. Where the template has no subject slot, add the subject at the end. Templates differ: most have no `{composition}`, so fill whichever slots the template and the chosen slot recipe actually contain, and leave no `{...}` behind.
 - `{subject}` is what the picture is of. `{composition}` is how it is framed (a wide establishing scene, a single object with a clear silhouette, a portrait bust). `{palette}` is the colours to print in: take them from the design language the style is paired with, or from the palette in the kit, as a short list of colour names; with neither, leave the palette clause out rather than invent one.
-- `slot_recipes` is keyed by where the picture will sit on a page (hero, feature, avatar, empty-state, illustration) and says what subject and composition suit each place. Use it to fill `{subject}` and `{composition}` for that place; it does not fill `{palette}`.
+- `slot_recipes` is keyed by where the picture will sit on a page (hero, feature, avatar, empty-state, illustration) and describes the picture for that place. It goes where the template's `{subject}` is. A recipe may itself contain `{subject}` ("{subject} as a wide storyboard scene..."): fill that with what the picture is of, something concrete from the product (the product's world for a hero, one object for a feature, a person for an avatar). A recipe without `{subject}` describes framing only, so put the subject in front of it. A recipe rarely fills `{palette}`.
 - `negative_prompt`, if present, goes to the image model as the negative.
 - Some recipes are image-edit instructions ("Discard the source image's…") rather than text-to-image prompts. Read before you send.
 
@@ -80,7 +80,7 @@ Treat the fails as a list of things to fix, worst first, then check again. `uncl
 
 ## Kits
 
-`compose_kit` returns up to three kits: a `design_language`, a `palette` and an `art_style` judged to belong together: each with a `brief_url`: the build brief for that exact combination. Hand that URL to the agent doing the build. To choose the parts yourself, find each with `ask_library` or `search_library` and build the same URL: `https://katagami.ai/studio/BRIEF.md?ui=<design_language id>&palette=<palette id>&art=<art_style id>`.
+`compose_kit` returns up to three kits: a `design_language`, a `palette` and an `art_style` judged to belong together: each with a `brief_url`: the build brief for that exact combination, with every slot prompt filled in. Hand that URL to the agent doing the build. The brief themes the language with the kit's palette. To choose the parts yourself, find each with `ask_library` or `search_library` and build the same URL: `https://katagami.ai/studio/BRIEF.md?ui=<design_language id>&palette=<palette id>&art=<art_style id>`. Add `&product=<a short sentence, URL-encoded>` so the brief names the product and every picture is about it (`compose_kit` adds it for you), and `&composition=compositions.dashboard` (or `compositions.auth-page`, `compositions.error-page`, `compositions.settings-page`) for a screen other than a landing page.
 
 ## Do not
 
