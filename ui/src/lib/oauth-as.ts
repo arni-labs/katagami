@@ -16,6 +16,7 @@ import { createEntity, dispatchAction } from "@/lib/odata-mutations";
 import { readODataCount } from "@/lib/odata-count.mjs";
 import { hashPrincipal } from "@/lib/server-telemetry-core.mjs";
 import { isValidUserHash } from "@/lib/member-activity-core.mjs";
+import { resolveRefresh } from "@/lib/refresh-rotation.mjs";
 import {
   isAllowedRedirectUri,
   readMcpResource,
@@ -392,14 +393,40 @@ export async function grantByRefreshHash(hash: string): Promise<GrantRow | null>
   return active ? toGrant(active) : null;
 }
 
-/** Mint a fresh refresh token and anchor its hash on the grant (rotation). */
+/** Mint the first refresh token of a grant and anchor its hash (code exchange). */
 export async function issueRefreshToken(grantId: string): Promise<string> {
   const token = `krt_${randomToken(48)}`;
+  await rotateRefreshTo(grantId, token);
+  await recordGrantUse(grantId);
+  return token;
+}
+
+/** Anchor `token` as the grant's current refresh token. Storing the same hash twice is harmless. */
+export async function rotateRefreshTo(grantId: string, token: string): Promise<void> {
   await dispatchAction("AgentGrants", grantId, "RotateRefreshToken", {
     refresh_token_hash: await sha256Hex(token),
   });
-  await dispatchAction("AgentGrants", grantId, "RecordUse", {});
-  return token;
+}
+
+/** The "last used" counter on the account page. Best effort: it must never fail
+ *  a token response after the rotation has already been stored, or the client
+ *  keeps a token the grant no longer holds. */
+export async function recordGrantUse(grantId: string): Promise<void> {
+  try {
+    await dispatchAction("AgentGrants", grantId, "RecordUse", {});
+  } catch (err) {
+    console.error("[oauth] RecordUse failed; the token response still goes out", err);
+  }
+}
+
+/** What a presented refresh token means now: current, just replaced (grace), or invalid. See refresh-rotation.mjs. */
+export async function resolvePresentedRefresh(presented: string, nowMs = Date.now()) {
+  return resolveRefresh<GrantRow>({
+    presented,
+    nowMs,
+    secret: process.env.KATAGAMI_AS_PRIVATE_KEY ?? "",
+    findGrantByHash: grantByRefreshHash,
+  });
 }
 
 export async function revokeGrant(grantId: string, reason: string): Promise<void> {

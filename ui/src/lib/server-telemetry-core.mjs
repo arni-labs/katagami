@@ -68,6 +68,9 @@ export const RESERVED_LOG_KEYS = new Set([
 export const EVENT_ATTRS = {
   auth_login: new Set(["registration", "upsert_ok", "user_hash"]),
   auth_login_failed: new Set(["reason"]),
+  // Refresh outcomes carry no identity: whether a client stays signed in is
+  // the question, not who.
+  oauth_refresh: new Set(["outcome", "reason"]),
   // `arg_keys` is the clamped list of argument NAMES a rejected call sent
   // (never values, clamped to KNOWN_ARG_KEYS at the call site in
   // app/mcp/route.ts) — it is what turns "invalid_arguments" into a
