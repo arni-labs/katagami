@@ -9,6 +9,7 @@ import {
   recordGrantUse,
   resolvePresentedRefresh,
   rotateRefreshTo,
+  settledRefresh,
   verifyAuthCode,
 } from "@/lib/oauth-as";
 import { trackServerEvent } from "@/lib/server-telemetry";
@@ -97,8 +98,8 @@ export async function POST(req: NextRequest) {
     const clientId = params.get("client_id") ?? "";
     // Every outcome is counted: a refresh that fails logs a client out, and
     // until 2026-09-23 nothing recorded that it happened.
-    const done = (outcome: "rotated" | "replayed" | "refused" | "unavailable", reason?: string) =>
-      trackServerEvent("oauth_refresh", { outcome, reason }, outcome === "rotated" || outcome === "replayed" ? "info" : "warn");
+    const done = (outcome: "rotated" | "converged" | "replayed" | "refused" | "unavailable", reason?: string) =>
+      trackServerEvent("oauth_refresh", { outcome, reason }, outcome === "refused" || outcome === "unavailable" ? "warn" : "info");
     if (!presented) {
       done("refused", "missing_token");
       return err("invalid_request", "refresh_token is required.");
@@ -122,32 +123,47 @@ export async function POST(req: NextRequest) {
       done("refused", "client_mismatch");
       return err("invalid_grant", "client_id does not match the grant.");
     }
+    let next = resolved.next;
     if (resolved.kind === "rotate") {
       try {
-        await rotateRefreshTo(grant.grantId, resolved.next);
+        await rotateRefreshTo(grant.grantId, next);
       } catch {
         // Nothing was stored, so the presented token is still current: retrying works.
         done("unavailable", "rotate_failed");
         return err("temporarily_unavailable", "Could not rotate the refresh token just now; retry shortly.", 503);
       }
+      // Another session may have rotated the same token in a different minute
+      // and written last: hand back the successor that was kept.
+      try {
+        next = await settledRefresh(presented, next);
+      } catch {
+        // Could not read back; ours is still the likeliest winner.
+      }
     }
     await recordGrantUse(grant.grantId);
 
-    const access = await issueAccessToken(origin, {
-      sub: grant.memberSub,
-      email: grant.memberEmail,
-      name: grant.memberEmail,
-      client_id: grant.clientId,
-      grant_id: grant.grantId,
-      resource: params.get("resource") || mcpResource(),
-    });
-    done(resolved.kind === "rotate" ? "rotated" : "replayed");
+    let access;
+    try {
+      access = await issueAccessToken(origin, {
+        sub: grant.memberSub,
+        email: grant.memberEmail,
+        name: grant.memberEmail,
+        client_id: grant.clientId,
+        grant_id: grant.grantId,
+        resource: params.get("resource") || mcpResource(),
+      });
+    } catch {
+      // The rotation is stored; a retry with the presented token replays to it.
+      done("unavailable", "access_token_failed");
+      return err("temporarily_unavailable", "Could not issue an access token just now; retry shortly.", 503);
+    }
+    done(resolved.kind === "rotate" ? (next === resolved.next ? "rotated" : "converged") : "replayed");
     return NextResponse.json(
       {
         access_token: access.token,
         token_type: "Bearer",
         expires_in: access.expiresIn,
-        refresh_token: resolved.next,
+        refresh_token: next,
         scope: access.scope,
       },
       { headers: CORS },

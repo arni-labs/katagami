@@ -16,7 +16,7 @@ import { createEntity, dispatchAction } from "@/lib/odata-mutations";
 import { readODataCount } from "@/lib/odata-count.mjs";
 import { hashPrincipal } from "@/lib/server-telemetry-core.mjs";
 import { isValidUserHash } from "@/lib/member-activity-core.mjs";
-import { resolveRefresh } from "@/lib/refresh-rotation.mjs";
+import { resolveRefresh, settleRotation } from "@/lib/refresh-rotation.mjs";
 import {
   isAllowedRedirectUri,
   readMcpResource,
@@ -419,14 +419,18 @@ export async function recordGrantUse(grantId: string): Promise<void> {
   }
 }
 
+// The same normalisation signingKey() applies, so every instance derives one key
+// whichever way the environment stored the PEM's line breaks.
+const refreshSecret = () => (process.env.KATAGAMI_AS_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
+
 /** What a presented refresh token means now: current, just replaced (grace), or invalid. See refresh-rotation.mjs. */
 export async function resolvePresentedRefresh(presented: string, nowMs = Date.now()) {
-  return resolveRefresh<GrantRow>({
-    presented,
-    nowMs,
-    secret: process.env.KATAGAMI_AS_PRIVATE_KEY ?? "",
-    findGrantByHash: grantByRefreshHash,
-  });
+  return resolveRefresh<GrantRow>({ presented, nowMs, secret: refreshSecret(), findGrantByHash: grantByRefreshHash });
+}
+
+/** After a rotation is stored, the successor that actually won (see settleRotation). */
+export async function settledRefresh(presented: string, next: string, nowMs = Date.now()) {
+  return settleRotation<GrantRow>({ presented, next, nowMs, secret: refreshSecret(), findGrantByHash: grantByRefreshHash });
 }
 
 export async function revokeGrant(grantId: string, reason: string): Promise<void> {

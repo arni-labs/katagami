@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { GRACE_MINUTES, resolveRefresh, sha256Hex } from "../src/lib/refresh-rotation.mjs";
+import { GRACE_MINUTES, resolveRefresh, settleRotation, sha256Hex } from "../src/lib/refresh-rotation.mjs";
 
 const SECRET = "test-secret";
 const MIN = 60_000;
@@ -19,7 +19,10 @@ function store(initialToken) {
 // The token route, reduced to what rotation does: resolve, then store on rotate.
 async function refresh(s, presented, nowMs, secret = SECRET) {
   const r = await resolveRefresh({ presented, nowMs, secret, findGrantByHash: s.findGrantByHash });
-  if (r.kind === "rotate") await s.rotateTo(r.next);
+  if (r.kind === "rotate") {
+    await s.rotateTo(r.next);
+    r.next = await settleRotation({ presented, next: r.next, nowMs, secret, findGrantByHash: s.findGrantByHash });
+  }
   return r;
 }
 
@@ -74,4 +77,34 @@ test("the successor depends on the server secret", async () => {
   const b = await refresh(s2, "krt_first", 10 * MIN, "secret-b");
   assert.notEqual(a.next, b.next);
   assert.match(a.next, /^krt_[A-Za-z0-9_-]{43}$/);
+});
+
+test("two sessions that rotate the same token in different minutes both end up with the token that was kept", async () => {
+  const s = store("krt_first"); await s.init();
+  // Both read the token as current just either side of a minute boundary.
+  const a = await resolveRefresh({ presented: "krt_first", nowMs: 12 * MIN - 100, secret: SECRET, findGrantByHash: s.findGrantByHash });
+  const b = await resolveRefresh({ presented: "krt_first", nowMs: 12 * MIN + 100, secret: SECRET, findGrantByHash: s.findGrantByHash });
+  assert.notEqual(a.next, b.next);
+  await s.rotateTo(a.next);
+  await s.rotateTo(b.next); // b writes last and wins
+  const aGets = await settleRotation({ presented: "krt_first", next: a.next, nowMs: 12 * MIN + 200, secret: SECRET, findGrantByHash: s.findGrantByHash });
+  const bGets = await settleRotation({ presented: "krt_first", next: b.next, nowMs: 12 * MIN + 200, secret: SECRET, findGrantByHash: s.findGrantByHash });
+  assert.equal(aGets, b.next, "the session whose write was overwritten is handed the kept token");
+  assert.equal(bGets, b.next);
+  assert.equal((await refresh(s, aGets, 30 * MIN)).kind, "rotate", "and it still works at the next refresh");
+});
+
+test("the grace window ends exactly at the start of the third minute after rotation", async () => {
+  const s = store("krt_first"); await s.init();
+  await refresh(s, "krt_first", 12 * MIN - 1); // rotated at 11:59:59.999
+  assert.equal((await refresh(s, "krt_first", 14 * MIN - 1)).kind, "replay");
+  assert.equal((await refresh(s, "krt_first", 14 * MIN)).kind, "invalid");
+});
+
+test("a server whose clock runs a minute ahead of another still finds the successor", async () => {
+  const s = store("krt_first"); await s.init();
+  const fast = await refresh(s, "krt_first", 12 * MIN + 500); // stored in minute 12
+  const slow = await refresh(s, "krt_first", 12 * MIN - 500); // a server still in minute 11
+  assert.equal(slow.kind, "replay");
+  assert.equal(slow.next, fast.next);
 });

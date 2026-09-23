@@ -10,3 +10,10 @@ export function resolveRefresh<G>(a: {
   secret: string;
   findGrantByHash: (hash: string) => Promise<G | null>;
 }): Promise<Resolved<G>>;
+export function settleRotation<G>(a: {
+  presented: string;
+  next: string;
+  nowMs: number;
+  secret: string;
+  findGrantByHash: (hash: string) => Promise<G | null>;
+}): Promise<string>;

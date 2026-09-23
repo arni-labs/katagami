@@ -48,9 +48,26 @@ export async function successorToken(presentedHash, bucket, secret) {
   return `krt_${Buffer.from(mac).toString("base64url")}`;
 }
 
+/** Successors of a token for the minutes it can have been rotated in: one ahead (a
+ *  server whose clock runs early) back to GRACE_MINUTES - 1 behind. */
+async function candidateSuccessors(presentedHash, nowMs, secret) {
+  const bucket = bucketOf(nowMs);
+  const buckets = [bucket + 1];
+  for (let back = 0; back < GRACE_MINUTES; back++) buckets.push(bucket - back);
+  return Promise.all(buckets.map((b) => successorToken(presentedHash, b, secret)));
+}
+
+/** The first candidate token whose hash a grant stores, looked up in parallel. */
+async function firstStored(tokens, findGrantByHash) {
+  const grants = await Promise.all(tokens.map(async (t) => findGrantByHash(await sha256Hex(t))));
+  const i = grants.findIndex(Boolean);
+  return i < 0 ? null : { grant: grants[i], next: tokens[i] };
+}
+
 /**
  * What a presented refresh token means now:
- *  - { kind: "rotate", grant, next }: it is the grant's current token; store `next`.
+ *  - { kind: "rotate", grant, next }: it is the grant's current token; store `next`,
+ *    then call settleRotation.
  *  - { kind: "replay", grant, next }: it was replaced by `next` within the grace
  *    period (another session, or a response that never arrived); hand `next`
  *    back and store nothing.
@@ -59,13 +76,23 @@ export async function successorToken(presentedHash, bucket, secret) {
  */
 export async function resolveRefresh({ presented, nowMs, secret, findGrantByHash }) {
   const presentedHash = await sha256Hex(presented);
-  const bucket = bucketOf(nowMs);
   const current = await findGrantByHash(presentedHash);
-  if (current) return { kind: "rotate", grant: current, next: await successorToken(presentedHash, bucket, secret) };
-  for (let back = 0; back < GRACE_MINUTES; back++) {
-    const next = await successorToken(presentedHash, bucket - back, secret);
-    const grant = await findGrantByHash(await sha256Hex(next));
-    if (grant) return { kind: "replay", grant, next };
-  }
-  return { kind: "invalid" };
+  if (current) return { kind: "rotate", grant: current, next: await successorToken(presentedHash, bucketOf(nowMs), secret) };
+  const stored = await firstStored(await candidateSuccessors(presentedHash, nowMs, secret), findGrantByHash);
+  return stored ? { kind: "replay", ...stored } : { kind: "invalid" };
+}
+
+/**
+ * After storing a rotation, the token to hand back. Two sessions can both read
+ * the same current token and rotate it in different minutes; the later write
+ * wins, and the session whose successor was overwritten must be given the one
+ * that was kept, or it holds a token nothing stores and is logged out on its
+ * next refresh. Returns the stored successor of `presented`, or `next` when
+ * nothing (yet) says otherwise.
+ */
+export async function settleRotation({ presented, next, nowMs, secret, findGrantByHash }) {
+  const presentedHash = await sha256Hex(presented);
+  if (await findGrantByHash(await sha256Hex(next))) return next;
+  const stored = await firstStored(await candidateSuccessors(presentedHash, nowMs, secret), findGrantByHash);
+  return stored ? stored.next : next;
 }
