@@ -57,9 +57,11 @@ function withCurrentShadcnUsage(
       return `${trimmed}\n`;
     }
     const companions = shadcnCompanionFilesLine(`/language/${props.languageId}`);
-    const own = /\n## shadcn\/ui Usage\n[\s\S]*?(?=\n## |\s*$)/;
-    return own.test(trimmed)
-      ? `${trimmed.replace(own, (section) => `${section.trimEnd()}\n\n${companions}\n`).trimEnd()}\n`
+    // Right under the section's heading: finding where the section ends would
+    // misread a "## " line inside one of its code examples.
+    const heading = /\n## shadcn\/ui Usage\n/;
+    return heading.test(trimmed)
+      ? `${trimmed.replace(heading, (h) => `${h}\n${companions}\n`)}\n`
       : `${trimmed}\n\n${companions}\n`;
   }
 
