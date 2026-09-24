@@ -75,6 +75,36 @@ function dropUndefinedReferences(lines) {
   return { kept, omitted };
 }
 
+// A language's own pages name its tokens by their short names (--accent,
+// --border, --bg), and some token values lean on them ("0 0 0 1px
+// var(--border)"). The exports call that colour --color-border, so such a
+// value would read as undefined and be dropped. A short name that is one of
+// the language's own tokens gets that token's value. A name that is not a
+// token (Bisque's --hi) stays, and is still left out and reported.
+export function withOwnReferencesResolved(tokens) {
+  const t = record(tokens);
+  const own = new Map();
+  for (const group of [t.colors, t.radii, t.spacing, t.shadows]) {
+    for (const [key, value] of Object.entries(record(group))) {
+      const v = flat(value);
+      if (!Array.isArray(value) && v && !v.includes("var(") && !own.has(tokenName(key))) own.set(tokenName(key), v);
+    }
+  }
+  if (own.size === 0) return t;
+  const fix = (value) =>
+    typeof value === "string" ? value.replace(/var\(\s*--([\w-]+)\s*\)/g, (whole, name) => own.get(name.toLowerCase()) ?? whole) : value;
+  const each = (group) =>
+    Object.fromEntries(Object.entries(record(group)).map(([k, v]) => [k, Array.isArray(v) ? v.map(fix) : fix(v)]));
+  return {
+    ...t,
+    ...(t.colors ? { colors: each(t.colors) } : {}),
+    ...(t.radii ? { radii: each(t.radii) } : {}),
+    ...(t.spacing ? { spacing: each(t.spacing) } : {}),
+    ...(t.shadows ? { shadows: each(t.shadows) } : {}),
+    ...(t.ramps ? { ramps: Object.fromEntries(Object.entries(record(t.ramps)).map(([k, v]) => [k, each(v)])) } : {}),
+  };
+}
+
 /** The type metrics, without the faces (which get their own --font-* names). */
 export function typeMetrics(typography) {
   return Object.fromEntries(
@@ -103,7 +133,7 @@ export function tailwindSpacing(spacing) {
 
 /** The whole CSS block for a set of tokens. Groups the entry does not have simply do not appear. */
 export function tokensToCss(tokens) {
-  const t = record(tokens);
+  const t = withOwnReferencesResolved(tokens);
   const typography = record(t.typography);
   const fontsUrl = typeof typography.google_fonts_url === "string" ? typography.google_fonts_url : null;
   const declarations = [
@@ -129,7 +159,7 @@ export function tokensToCss(tokens) {
  *  fallback (Bisque's shadows are "var(--hi)") would be broken wherever it is
  *  used; it is left out and named in `omitted`, as the CSS export does. */
 export function tokensToTailwindWithOmitted(tokens) {
-  const t = record(tokens);
+  const t = withOwnReferencesResolved(tokens);
   const typography = record(t.typography);
   const omitted = [];
   const keep = (path) => (entry) => {

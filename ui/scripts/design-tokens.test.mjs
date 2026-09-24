@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cssVars, tailwindSpacing, tokenName, tokenValue, tokensToCss, tokensToTailwind, tokensToTailwindWithOmitted, typeMetrics } from "../src/lib/design-tokens.mjs";
+import { cssVars, tailwindSpacing, tokenName, tokenValue, tokensToCss, tokensToTailwind, tokensToTailwindWithOmitted, typeMetrics, withOwnReferencesResolved } from "../src/lib/design-tokens.mjs";
 
 // Quire's real shapes, abridged: this is what languages actually file.
 const TOKENS = {
@@ -128,4 +128,21 @@ test("Tailwind uses the same kebab-case names as the CSS, and carries a palette'
   assert.deepEqual(extend.colors["ramp-olive-gold"], { "500": "#8a7a2a" });
   assert.deepEqual(extend.borderRadius, { card: "16px" });
   assert.ok(tokensToCss({ ramps: { olive_gold: { "500": "#8a7a2a" } } }).css.includes("--ramp-olive-gold-500: #8a7a2a;"));
+});
+
+test("a token that names another token by its short name gets that token's value", () => {
+  // Oxide, Tideline, Scramble, Fumage and Fabriano write var(--border) and
+  // var(--accent) for their own colours; Bisque's --hi is not a token at all.
+  const tokens = {
+    colors: { border: "#333333", accent: "#C8442A" },
+    shadows: { ring: "0 0 0 1px var(--border)", glow: "0 0 12px var(--accent)", sm: "0 1px 2px var(--hi)", keep: "0 0 1px var(--x, #000)" },
+  };
+  const { css, omitted } = tokensToCss(tokens);
+  assert.ok(css.includes("--shadow-ring: 0 0 0 1px #333333;"));
+  assert.ok(css.includes("--shadow-glow: 0 0 12px #C8442A;"));
+  assert.deepEqual(omitted.map((o) => o.token), ["--shadow-sm"]);
+  const { config, omitted: tw } = tokensToTailwindWithOmitted(tokens);
+  assert.equal(config.theme.extend.boxShadow.ring, "0 0 0 1px #333333");
+  assert.deepEqual(tw.map((o) => o.token), ["boxShadow.sm"]);
+  assert.equal(withOwnReferencesResolved({ colors: { a: "var(--b)", b: "var(--a)" } }).colors.a, "var(--b)", "references between references are left alone");
 });

@@ -98,16 +98,19 @@ const unpaired = [];
 const missing = [];
 for (const lang of languages.filter(onShelf)) {
   const name = text(lang.fields?.name);
+  // The linked id first: slugs repeat (eleven art styles are "overprint"), so a
+  // slug alone can name the wrong one.
+  const pairedId = text(lang.fields?.default_art_style_id);
   const pairsWith = text(parsed(lang.fields?.imagery_direction)?.pairs_with).trim();
-  if (!pairsWith) {
+  if (!pairedId && !pairsWith) {
     unpaired.push(name);
     continue;
   }
-  const art = byKey.get(pairsWith.toLowerCase());
+  const art = (pairedId && byKey.get(pairedId)) || byKey.get(pairsWith.toLowerCase());
   // A pairing naming no published art style is a broken language, not our job
   // to invent; report it.
   if (!art) {
-    missing.push(`${name} -> ${pairsWith}`);
+    missing.push(`${name} -> ${pairsWith || pairedId}`);
     continue;
   }
   if (!onShelf(art) && !wanted.has(art.entity_id)) {
