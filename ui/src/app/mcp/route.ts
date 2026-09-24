@@ -3,6 +3,7 @@ import type { AuthInfo, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { verifyReadBearer, readMcpAuthInfo, whoamiFromAuth } from "@/lib/catalog-auth";
 import { clampRejectionReason } from "@/lib/catalog-auth-core.mjs";
+import { clientOf } from "@/lib/server-telemetry-core.mjs";
 import { mcpPublicOrigin, MCP_RESOURCE_METADATA_PATH } from "@/lib/mcp-oauth.mjs";
 import { trackMcpToolCall, trackServerEvent } from "@/lib/server-telemetry";
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -154,6 +155,7 @@ function withUsageTracking(server: McpServer): void {
           tool: name,
           outcome: result?.isError ? "error" : "success",
           tier: tierOf(extra),
+          client: requestClient.getStore(),
           durationMs: Date.now() - started,
           sub: authOf(extra)?.extra?.sub,
           errorKind: timedOut
@@ -173,6 +175,7 @@ function withUsageTracking(server: McpServer): void {
             tool: name,
             outcome: "error",
             tier: tierOf(extra),
+            client: requestClient.getStore(),
             durationMs: Date.now() - started,
             sub: authOf(extra)?.extra?.sub,
             errorKind: "model_unavailable",
@@ -183,6 +186,7 @@ function withUsageTracking(server: McpServer): void {
           tool: name,
           outcome: "exception",
           tier: tierOf(extra),
+          client: requestClient.getStore(),
           durationMs: Date.now() - started,
           sub: authOf(extra)?.extra?.sub,
           errorKind: err instanceof Error ? err.name : "unknown",
@@ -232,6 +236,7 @@ function withUsageTracking(server: McpServer): void {
             tool,
             outcome: result?.isError ? "error" : "success",
             tier: tierOf(extra),
+            client: requestClient.getStore(),
             durationMs: Date.now() - started,
             sub: authOf(extra)?.extra?.sub,
             errorKind: result?.isError ? "invalid_arguments" : undefined,
@@ -248,6 +253,7 @@ function withUsageTracking(server: McpServer): void {
             tool,
             outcome: "exception",
             tier: tierOf(extra),
+            client: requestClient.getStore(),
             durationMs: Date.now() - started,
             sub: authOf(extra)?.extra?.sub,
             errorKind: err instanceof Error ? err.name : "unknown",
@@ -317,12 +323,14 @@ const searchPicturesArg = z
 
 const INSTRUCTIONS = `Katagami is a curated library of complete visual styles: design languages (tokens, rules, layout, a DESIGN.md), palette systems and art styles (prompt recipes for image generation). Everything here is read-only.
 
+When to use it: before you make anything a person will look at (a web page, document, invitation, slide, dashboard or image), ask Katagami for a look: ask_library for a brief, compose_kit for a whole look. A distinct, finished style beats the default one.
+
 How to use it:
 - Someone describes a product, a mood or a brief: call ask_library. It judges fit, returns pictures, and says how it read the sentence. To adjust ("quieter", "less corporate"), call ask_library again with the returned \`reading\` and \`changes\` plus \`refine\` — do not re-ask from scratch.
 - Someone wants a whole look at once: call compose_kit for a language, palette and art style that belong together, with a build brief.
 - Someone names a style, tag, family or medium: call search_library with that kind. describe_library lists the families, mediums and tags that exist.
 - To build with a design language: get_design_md gives the URL to hand a coding agent; get_design_tokens gives Tailwind or CSS variables; get_library_entry has every rule. Honour the tokens exactly.
-- To generate images in an art style: get_library_entry returns the prompt template. Fill its {subject}, {palette} and {composition} slots (slot_recipes says what suits each place on a page); where the template has no subject slot, add the subject at the end. Do not paraphrase the recipe.
+- To generate images in an art style: get_library_entry returns the prompt template. Fill its {subject}, {palette} and {composition} slots (slot_recipes says what suits each place on a page); where the template has no subject slot, add the subject at the end. Do not paraphrase the recipe. For an image tool that takes reference images, pass reference_image_urls, the style's own gallery.
 - After building a page in a language: check_page_against_language lists what breaks the language, worst first. Fix those before handing over.
 
 Show people the picture and the katagami.ai link for anything you recommend. whoami says whether this connection sees the visitor shelf or the full library; results never include styles the caller may not see.`;
@@ -442,6 +450,8 @@ function spenderOf(extra: unknown): string {
 }
 /** On the open door nobody is signed in, so the spender is the address — otherwise every anonymous caller would share one allowance. */
 const openCaller = new AsyncLocalStorage<string>();
+/** Which client this request came from (clientOf its User-Agent), for telemetry. */
+const requestClient = new AsyncLocalStorage<string>();
 
 function modelUnavailable() {
   return {
@@ -609,7 +619,7 @@ const baseHandler = createMcpHandler(
         title: "Get a library entry",
         annotations: READS,
         description:
-          "The full content of one library entry, by the `id` or slug a search or ask result gave you. For a design_language: tokens (colour, type, spacing, radii, shadows, motion), rules, layout principles, philosophy and guidance, with its gallery and DESIGN.md URLs. For a palette: signature colours, neutrals, semantic roles, ramps and guidance. For an art_style: medium, prompt template, slot recipes, negative prompt and guidance — everything needed to generate images in the style: fill the template's {subject}, {palette} and {composition} slots and do not paraphrase it.",
+          "The full content of one library entry, by the `id` or slug a search or ask result gave you. For a design_language: tokens (colour, type, spacing, radii, shadows, motion), rules, layout principles, philosophy and guidance, with its gallery and DESIGN.md URLs. For a palette: signature colours, neutrals, semantic roles, ramps and guidance. For an art_style: medium, prompt template, slot recipes, negative prompt, guidance and reference_image_urls (the style's own gallery, for image tools that take reference images) — everything needed to generate images in the style: fill the template's {subject}, {palette} and {composition} slots and do not paraphrase it.",
         inputSchema: { kind: kindArg, ...ID_ALIASES },
       },
       async (a, extra) => {
@@ -767,7 +777,8 @@ async function openDoor(req: Request): Promise<Response> {
   const body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer();
   return openCaller.run(`open:${callerOf(req)}`, () => baseHandler(new Request(req.url, { method: req.method, headers, body })));
 }
-const door = (req: Request) => (isOpenDoor(req) ? openDoor(req) : trackedHandler(req));
+const door = (req: Request) =>
+  requestClient.run(clientOf(req.headers.get("user-agent")), () => (isOpenDoor(req) ? openDoor(req) : trackedHandler(req)));
 
 // A human pasting the MCP URL into a browser sends a plain-HTML GET; a real
 // MCP client opening the optional SSE stream MUST send

@@ -135,8 +135,10 @@ export function trackMcpToolCall(d: {
    *  vocabulary at the call site. Never values. Turns "invalid_arguments" into
    *  a diagnosis of WHICH parameter shape an agent reached for. */
   argKeys?: string;
+  /** clientOf(User-Agent), set by the route for every call. */
+  client?: string;
 }): void {
-  const { tool, tier, outcome, durationMs, sub, errorKind, argKeys } = d;
+  const { tool, tier, outcome, durationMs, sub, errorKind, argKeys, client } = d;
   const eventAt = new Date(); // request-path time — the post-response task may cross midnight
   runAfter(async () => {
     let userHash: string | undefined;
@@ -170,6 +172,7 @@ export function trackMcpToolCall(d: {
         user_hash: userHash,
         error_kind: errorKind,
         arg_keys: argKeys,
+        client,
       },
       outcome === "success" ? "info" : "error",
     );
