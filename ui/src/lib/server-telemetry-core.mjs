@@ -75,7 +75,9 @@ export const EVENT_ATTRS = {
   // (never values, clamped to KNOWN_ARG_KEYS at the call site in
   // app/mcp/route.ts) — it is what turns "invalid_arguments" into a
   // diagnosis of which parameter shape an agent reached for.
-  mcp_tool_call: new Set(["tool", "tier", "outcome", "duration_ms", "user_hash", "error_kind", "arg_keys"]),
+  // `client` is the caller's User-Agent product name, clamped by clientOf,
+  // so Muse, Claude Code and QA traffic can be told apart.
+  mcp_tool_call: new Set(["tool", "tier", "outcome", "duration_ms", "user_hash", "error_kind", "arg_keys", "client"]),
   // `reason` is the closed bearer-rejection vocabulary from
   // AUTH_REJECTION_REASONS in catalog-auth-core.mjs (expired | signature |
   // claims | audience | scope | generation | grant_revoked |
@@ -245,3 +247,15 @@ export function logPayload(evt, attributes, status, env = process.env) {
 }
 
 export { SERVICE };
+
+/** Which client made an MCP call, from its User-Agent: the first product
+ *  token ("claude-code/2.1 (...)" -> "claude-code"), lowercased, limited to
+ *  [a-z0-9._-] and 40 characters. A browser reads as "browser"; nothing
+ *  usable reads as "unknown". Never the rest of the header. */
+export function clientOf(userAgent) {
+  const ua = typeof userAgent === "string" ? userAgent.trim() : "";
+  if (!ua) return "unknown";
+  if (/^mozilla\//i.test(ua)) return "browser";
+  const token = ua.split(/[\/\s;(]/)[0].toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 40);
+  return token || "unknown";
+}

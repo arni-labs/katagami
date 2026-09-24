@@ -10,6 +10,7 @@ import { createServer } from "node:http";
 import {
   authorizeCronRequest,
   cleanAttrs,
+  clientOf,
   EVENT_ATTRS,
   hashPrincipal,
   intakeAbortSignal,
@@ -175,6 +176,26 @@ const activityCedar = read(activityCedarLoadedPath);
   assert.equal(cleanAttrs("auth_login_failed", { reason: "x".repeat(500) }).reason.length, 200);
   assert.equal(isForbiddenAttrKey("user_hash"), false);
   console.log("ok: per-event allow-list — undeclared keys (incl. user_name/caller_sub/gmail) never ship");
+}
+
+{
+  // Which client made a call: the User-Agent's product name only, clamped.
+  assert.equal(clientOf("claude-code/2.1.4 (external, cli)"), "claude-code");
+  assert.equal(clientOf("python-httpx/0.27.0"), "python-httpx");
+  assert.equal(clientOf("node"), "node");
+  assert.equal(clientOf("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"), "browser");
+  assert.equal(clientOf(""), "unknown");
+  assert.equal(clientOf(undefined), "unknown");
+  assert.equal(clientOf("<script>alert(1)</script>"), "scriptalert", "markup cannot reach Datadog");
+  assert.equal(clientOf("a@b.c/1.0"), "ab.c", "no email-shaped value survives whole");
+  assert.equal(clientOf("x".repeat(90)).length, 40);
+  assert.equal(cleanAttrs("mcp_tool_call", { tool: "whoami", client: "claude-code" }).client, "claude-code");
+  const route = readFileSync(resolve("src/app/mcp/route.ts"), "utf8");
+  const emits = route.match(/trackMcpToolCall\(\{/g)?.length ?? 0;
+  const withClient = route.match(/trackMcpToolCall\(\{[^}]*?client: requestClient\.getStore\(\),/g)?.length ?? 0;
+  assert.ok(emits > 0 && emits === withClient, `every MCP tool-call emit names its client (${withClient} of ${emits})`);
+  assert.match(route, /requestClient\.run\(clientOf\(req\.headers\.get\("user-agent"\)\)/, "the client is read once per request");
+  console.log("ok: mcp_tool_call carries the client, clamped from the User-Agent");
 }
 
 {
@@ -701,7 +722,7 @@ const required = [
   ["the open door is only the open door: a path or a query flag, nothing broader", mcp,
     /return url\.searchParams\.get\("door"\) === "open" \|\| url\.pathname\.replace\(\/\\\/\+\$\/, ""\)\.endsWith\("\/mcp\/open"\);/],
   ["all /mcp verbs go through the auth-challenge counter", mcp,
-    /const door = \(req: Request\) => \(isOpenDoor\(req\) \? openDoor\(req\) : trackedHandler\(req\)\);[\s\S]*export \{ get as GET, door as POST, door as DELETE \}/],
+    /const door = \(req: Request\) =>[\s\S]{0,160}\(isOpenDoor\(req\) \? openDoor\(req\) : trackedHandler\(req\)\)\);[\s\S]*export \{ get as GET, door as POST, door as DELETE \}/],
   // The rule is that this contract runs on every build, not that prebuild spells
   // its filename. Naming the file was how the rule was written when prebuild held
   // a hand-written list, and that list is what let an unregistered test file go

@@ -25,6 +25,8 @@ import { tokensToCss, tokensToTailwindWithOmitted } from "./design-tokens.mjs";
 import { remixBriefPath } from "./remix-brief";
 import { mediumBucket, mediumMatches } from "./art-medium.mjs";
 import { parseArtStyleProcessList } from "./art-style-process";
+import { artStyleImages } from "./lane-items";
+import { artStyleGallerySources } from "./art-style-prompt-state";
 import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
@@ -888,7 +890,38 @@ export async function getDesign(kind: Kind, idOrSlug: string, tier: Tier) {
     prompt_template: str(f.prompt_template),
     slot_recipes: parse("slot_recipes"),
     negative_prompt: str(f.negative_prompt),
+    reference_image_urls: artStyleReferenceImages(row),
   };
+}
+
+// The images the style's own page shows (its gallery, hero first), as absolute
+// URLs, so an image model that composes from references can use the style.
+function artStyleReferenceImages(row: Row): string[] {
+  const f = (row.fields ?? {}) as Record<string, string | undefined>;
+  const images = artStyleImages(f);
+  const portability = (() => {
+    try {
+      return JSON.parse(f.portability_report ?? "") as { verdict?: string };
+    } catch {
+      return null;
+    }
+  })();
+  const promptVerified =
+    f.has_source_basis_review === "true" &&
+    f.has_prompt_review === "true" &&
+    f.has_portability_evidence === "true" &&
+    portability?.verdict === "pass";
+  const { hero, gallery } = artStyleGallerySources({
+    status: row.status,
+    promptVerified,
+    referenceUrls: images.refs,
+    proofUrls: images.proofs,
+    thumbnailUrl: images.thumb,
+  });
+  return [hero, ...gallery]
+    .filter(Boolean)
+    .map((url) => (url.startsWith("/") ? `${GALLERY}${url}` : url))
+    .slice(0, 12);
 }
 
 export async function getDesignMd(idOrSlug: string, tier: Tier): Promise<{ url: string } | null> {

@@ -13,6 +13,8 @@ Katagami is a curated library of complete visual styles. Three kinds of entry:
 
 The MCP is read-only. Nothing here changes the library or the person's account.
 
+**When to use it:** before you make anything a person will look at (a web page, document, invitation, slide, dashboard or image), ask Katagami for a look: `ask_library` for a brief, `compose_kit` for a whole look. A distinct, finished style beats the default one.
+
 ## Connect
 
 - `https://katagami.ai/mcp`: sign in with Google, the full library.
@@ -68,6 +70,7 @@ From the art-style entry:
 - `{subject}` is what the picture is of. `{composition}` is how it is framed (a wide establishing scene, a single object with a clear silhouette, a portrait bust). `{palette}` is the colours to print in: take them from the design language the style is paired with, or from the palette in the kit, as a short list of colour names; with neither, leave the palette clause out rather than invent one.
 - `slot_recipes` is keyed by where the picture will sit on a page (hero, feature, avatar, empty-state, illustration) and describes the picture for that place. It goes where the template's `{subject}` is. A recipe may itself contain `{subject}` ("{subject} as a wide storyboard scene..."): fill that with what the picture is of, something concrete from the product (the product's world for a hero, one object for a feature, a person for an avatar). A recipe without `{subject}` describes framing only, so put the subject in front of it. A recipe rarely fills `{palette}`.
 - `negative_prompt`, if present, goes to the image model as the negative.
+- `reference_image_urls` is the style's own gallery, hero first. Give it to an image tool that composes from reference images, alongside the filled prompt.
 - Some recipes are image-edit instructions ("Discard the source image's…") rather than text-to-image prompts. Read before you send.
 
 Do not paraphrase a recipe, merge two recipes, or add an artist's name.
