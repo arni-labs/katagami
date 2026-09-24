@@ -2,6 +2,7 @@ import { artStyleModelLabel } from "@/lib/art-style-image-metadata";
 import { notFound } from "next/navigation";
 import { hasCuratorAccess } from "@/lib/owner";
 import Link from "next/link";
+import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import {
   artStyleDisplayName,
@@ -101,27 +102,6 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
     `${name} — Katagami art-style recipe (${medium})\n\n` +
     `PROMPT TEMPLATE\n${promptTemplate}\n\n` +
     `Apply the prompt to the subject in your image or generation request.`;
-
-  const [languages, palettes] = await Promise.all([
-    listDesignLanguages("Status eq 'Published'").catch(() => []),
-    listPaletteSystems().catch(() => []),
-  ]);
-  const artOpts = toArtOpts([art]);
-  let langOpts = toLanguageOpts(languages);
-  let palOpts = toPaletteOpts(palettes);
-
-  // ARN-385: the InlineRemix language + palette pickers embed the full lists. For
-  // a signed-out visitor, withhold the non-featured portion of each — filter the
-  // DATA before it reaches the client component (the fixed art style is this
-  // page's own, already visible to reach here).
-  if (!(await hasFullGalleryAccess())) {
-    const [languageIds, paletteIds] = await Promise.all([
-      featuredIds("language"),
-      featuredIds("palette"),
-    ]);
-    langOpts = langOpts.filter((o) => languageIds.has(o.id));
-    palOpts = palOpts.filter((o) => paletteIds.has(o.id));
-  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:py-10">
@@ -249,19 +229,45 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
           Apply <span className="text-foreground">{name}</span>{" "}to any UI language and swap the palette — the preview takes this style&apos;s hero image.
         </p>
-        {(promptVerified || isPublished) && langOpts.length && palOpts.length && artOpts.length ? (
-          <InlineRemix
-            languages={langOpts}
-            palettes={palOpts}
-            art={artOpts}
-            fixed={{ art: art.entity_id }}
-          />
-        ) : (
-          <div className="sticker-card p-5 text-sm text-muted-foreground">
-            Needs a Published language and palette to remix.
-          </div>
-        )}
+        {/* The pickers need every Published language and palette, which is the
+            slow read on this page. Streamed here, below the visibility checks
+            above, so a missing or off-shelf style still gets its 404 and the
+            rest of the page does not wait for the lists. */}
+        <Suspense fallback={<div className="sticker-card h-40 animate-pulse motion-reduce:animate-none" aria-hidden />}>
+          <ArtStyleRemix art={art} canRemix={promptVerified || isPublished} />
+        </Suspense>
       </section>
+    </div>
+  );
+}
+
+async function ArtStyleRemix({ art, canRemix }: { art: Parameters<typeof toArtOpts>[0][number]; canRemix: boolean }) {
+  const [languages, palettes] = await Promise.all([
+    listDesignLanguages("Status eq 'Published'").catch(() => []),
+    listPaletteSystems().catch(() => []),
+  ]);
+  const artOpts = toArtOpts([art]);
+  let langOpts = toLanguageOpts(languages);
+  let palOpts = toPaletteOpts(palettes);
+
+  // ARN-385: the InlineRemix language + palette pickers embed the full lists. For
+  // a signed-out visitor, withhold the non-featured portion of each — filter the
+  // DATA before it reaches the client component (the fixed art style is this
+  // page's own, already visible to reach here).
+  if (!(await hasFullGalleryAccess())) {
+    const [languageIds, paletteIds] = await Promise.all([
+      featuredIds("language"),
+      featuredIds("palette"),
+    ]);
+    langOpts = langOpts.filter((o) => languageIds.has(o.id));
+    palOpts = palOpts.filter((o) => paletteIds.has(o.id));
+  }
+
+  return canRemix && langOpts.length && palOpts.length && artOpts.length ? (
+    <InlineRemix languages={langOpts} palettes={palOpts} art={artOpts} fixed={{ art: art.entity_id }} />
+  ) : (
+    <div className="sticker-card p-5 text-sm text-muted-foreground">
+      Needs a Published language and palette to remix.
     </div>
   );
 }
