@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { LinkPending } from "@/components/link-pending";
 import { Search } from "lucide-react";
 import { useState } from "react";
 import type { CSSProperties, ReactNode, RefObject } from "react";
@@ -542,10 +543,11 @@ export function InfiniteArtStyles({
             key={a.id}
             href={`/art-styles/${a.id}`}
             prefetch={false}
-            className="group block min-w-0"
+            className="group relative block min-w-0"
             style={CARD_CV}
           >
             <ArtStyleCard art={a} owner={canArchive} />
+            <LinkPending />
           </Link>
         ))}
       </div>
