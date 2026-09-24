@@ -35,9 +35,32 @@ function conventionFile(dir, base) {
 }
 
 const callsNotFound = (source) => /\bnotFound\(\)/.test(source);
-const wrapsChildrenInSuspense = (source) =>
-  // {children} inside one Suspense, not between two sibling ones.
-  /<Suspense\b[^>]*>(?:(?!<\/Suspense>)[\s\S])*?\{\s*children\s*\}/.test(source);
+// {children} while any <Suspense> is open, counting nesting, so an inner
+// boundary before {children} cannot hide the outer one, and siblings do not count.
+const wrapsChildrenInSuspense = (source) => {
+  let depth = 0;
+  // The opening tag's attributes may hold JSX in braces (fallback={<Loading />}).
+  for (const m of source.matchAll(/<Suspense\b(?:[^>{]|\{(?:[^{}]|\{[^{}]*\})*\})*?(\/?)>|<\/Suspense>|\{\s*children\s*\}/g)) {
+    if (m[0].startsWith("</")) depth = Math.max(0, depth - 1);
+    else if (m[0].startsWith("<Suspense")) depth += m[1] ? 0 : 1;
+    else if (depth > 0) return true;
+  }
+  return false;
+};
+
+for (const [source, expected] of [
+  ["<Suspense fallback={<Loading />}>{children}</Suspense>", true],
+  ["<Suspense fallback={<div className={x} />}><main>{children}</main></Suspense>", true],
+  ["<Suspense><Suspense><X /></Suspense>{children}</Suspense>", true],
+  ["<Suspense><A /></Suspense>{children}<Suspense><B /></Suspense>", false],
+  ["<Suspense />{children}", false],
+  ["<main>{children}</main>", false],
+]) {
+  if (wrapsChildrenInSuspense(source) !== expected) {
+    console.error(`check-not-found-status: the Suspense scan is wrong for ${source}`);
+    process.exit(1);
+  }
+}
 
 const violations = [];
 let checked = 0;
