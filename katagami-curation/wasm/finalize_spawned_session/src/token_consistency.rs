@@ -12,12 +12,17 @@
 use regex_lite::Regex;
 use serde_json::Value;
 
-const GROUPS: [(&str, &str); 5] = [
+/// Groups whose values are checked for references.
+const GROUPS: [&str; 5] = ["colors", "radii", "spacing", "shadows", "motion"];
+
+/// Groups a value may refer to, with the prefix the exports give them. The
+/// same list as `referableNames` in ui/src/lib/design-tokens.mjs, so a name
+/// accepted here is one both exports resolve. Motion is not referable.
+const REFERABLE: [(&str, &str); 4] = [
     ("colors", "color"),
     ("radii", "radius"),
     ("spacing", "space"),
     ("shadows", "shadow"),
-    ("motion", "motion"),
 ];
 
 /// One naming for token keys: `accent_2`, `accent 2` and `Accent2` agree.
@@ -42,31 +47,51 @@ fn string_values(value: &Value) -> Vec<String> {
     }
 }
 
-/// Every `var(--x)` without a fallback in a token value must name a token:
-/// by its short name (`--border`, as the language's own pages write it) or by
-/// the exported name (`--color-border`). Returns "group.key -> --x" for each
-/// one that does not.
+fn clean(value: &Value) -> bool {
+    match value {
+        Value::String(s) => !s.trim().is_empty() && !s.contains("var("),
+        Value::Number(_) => true,
+        _ => false,
+    }
+}
+
+/// Every `var(--x)` without a fallback in a token value must name a token the
+/// exports can resolve: a clean scalar colour, radius, spacing or shadow by its
+/// short name (`--border`, as the language's own pages write it) or exported
+/// name (`--color-border`), a step of a list (`--space-2` for `spacing.scale`,
+/// `--space-steps-2` otherwise), or a ramp step. Returns "group.key -> --x"
+/// for each one that does not.
 pub(crate) fn undefined_token_references(tokens: &Value) -> Vec<String> {
     let mut defined = std::collections::HashSet::new();
-    for (group, prefix) in GROUPS {
+    for (group, prefix) in REFERABLE {
         if let Some(map) = tokens.get(group).and_then(Value::as_object) {
             for (key, value) in map {
                 let name = token_name(key);
-                defined.insert(format!("--{name}"));
-                defined.insert(format!("--{prefix}-{name}"));
                 if let Value::Array(items) = value {
-                    for i in 1..=items.len() {
-                        defined.insert(format!("--{prefix}-{i}"));
-                        defined.insert(format!("--{prefix}-{name}-{i}"));
+                    for (i, step) in items.iter().enumerate() {
+                        if clean(step) {
+                            defined.insert(if key == "scale" {
+                                format!("--{prefix}-{}", i + 1)
+                            } else {
+                                format!("--{prefix}-{name}-{}", i + 1)
+                            });
+                        }
                     }
+                } else if clean(value) {
+                    defined.insert(format!("--{name}"));
+                    defined.insert(format!("--{prefix}-{name}"));
                 }
             }
         }
     }
     if let Some(ramps) = tokens.get("ramps").and_then(Value::as_object) {
         for (ramp, steps) in ramps {
-            for step in steps.as_object().map(|m| m.keys().cloned().collect::<Vec<_>>()).unwrap_or_default() {
-                defined.insert(format!("--ramp-{}-{}", token_name(ramp), token_name(&step)));
+            if let Some(steps) = steps.as_object() {
+                for (step, value) in steps {
+                    if clean(value) {
+                        defined.insert(format!("--ramp-{}-{}", token_name(ramp), token_name(step)));
+                    }
+                }
             }
         }
     }
@@ -80,7 +105,7 @@ pub(crate) fn undefined_token_references(tokens: &Value) -> Vec<String> {
             }
         }
     };
-    for (group, _) in GROUPS {
+    for group in GROUPS {
         if let Some(map) = tokens.get(group).and_then(Value::as_object) {
             for (key, value) in map {
                 for text in string_values(value) {
@@ -116,30 +141,43 @@ fn hex6(value: &str) -> Option<String> {
     }
 }
 
-/// The `colors:` map in a DESIGN.md's front matter, name -> hex.
+/// The `colors:` map in a DESIGN.md's front matter, name -> hex. Entries are
+/// the lines indented under `colors:` at the first entry's depth, whatever
+/// that depth is; blank lines and comments are skipped, deeper lines belong
+/// to an entry, and the first line back at `colors:`'s depth ends the map.
 fn design_md_colors(design_md: &str) -> Vec<(String, String)> {
     let text = design_md.replace("\r\n", "\n");
-    let Some(rest) = text.strip_prefix("---\n") else { return Vec::new() };
+    let Some(rest) = text.trim_start_matches('\u{feff}').strip_prefix("---\n") else { return Vec::new() };
     let front = rest.split("\n---").next().unwrap_or("");
+    let indent = |line: &str| line.len() - line.trim_start().len();
     let mut out = Vec::new();
-    let mut inside = false;
+    let mut key_depth: Option<usize> = None;
+    let mut entry_depth: Option<usize> = None;
     for line in front.lines() {
-        if line.trim_end() == "colors:" {
-            inside = true;
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-        if inside {
-            // Entries sit two spaces in; anything less ends the map, anything
-            // more belongs to an entry.
-            if !line.starts_with("  ") {
-                break;
+        match key_depth {
+            None => {
+                if trimmed == "colors:" {
+                    key_depth = Some(indent(line));
+                }
             }
-            if line.starts_with("   ") {
-                continue;
-            }
-            if let Some((name, value)) = line.trim().split_once(':') {
-                if let Some(hex) = hex6(value) {
-                    out.push((token_name(name), hex));
+            Some(depth) => {
+                let here = indent(line);
+                if here <= depth {
+                    break;
+                }
+                let entry = *entry_depth.get_or_insert(here);
+                if here != entry {
+                    continue;
+                }
+                if let Some((name, value)) = trimmed.split_once(':') {
+                    let value = value.split(" #").next().unwrap_or(value);
+                    if let Some(hex) = hex6(value) {
+                        out.push((token_name(name.trim().trim_matches('"').trim_matches('\'')), hex));
+                    }
                 }
             }
         }
@@ -211,6 +249,36 @@ mod tests {
         let short = "---\ncolors:\n  bg: \"#fbf8f1\"\n---\n";
         assert!(design_md_colour_conflicts(short, &tokens).is_empty(), "3- and 6-digit and case agree");
         assert!(design_md_colour_conflicts("# no front matter", &tokens).is_empty());
+        let four = "---\ncolors:\n\n    bg: \"#FBF8F1\"\n    # a comment\n    accent: '#C9E4D2' # mint\ntypography: {}\n---\n";
+        assert_eq!(
+            design_md_colour_conflicts(four, &tokens),
+            vec!["accent: DESIGN.md #c9e4d2, tokens #c2667a".to_string()],
+            "any indentation, blank lines, comments and quotes"
+        );
+    }
+
+    #[test]
+    fn only_names_the_exports_resolve_are_accepted() {
+        let tokens = json!({
+            "spacing": { "pad": 8, "scale": [4, 8] },
+            "motion": { "easing": "ease-out" },
+            "colors": { "ink": "var(--hi)" },
+            "shadows": {
+                "ok": "0 var(--pad) var(--space-2) #000",
+                "motion": "0 0 1px var(--easing)",
+                "scale_name": "0 0 var(--space-scale-2) #000",
+                "chain": "0 0 1px var(--ink)"
+            }
+        });
+        assert_eq!(
+            undefined_token_references(&tokens),
+            vec![
+                "colors.ink -> --hi".to_string(),
+                "shadows.motion -> --easing".to_string(),
+                "shadows.scale_name -> --space-scale-2".to_string(),
+                "shadows.chain -> --ink".to_string(),
+            ]
+        );
     }
 }
 

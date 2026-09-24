@@ -2603,7 +2603,18 @@ fn verify_token_consistency(
     fields: &serde_json::Value,
 ) -> Result<(), VerificationError> {
     let raw = string_field_any(fields, "tokens", "");
-    let tokens: serde_json::Value = serde_json::from_str(&raw).unwrap_or(json!({}));
+    let tokens: serde_json::Value = match serde_json::from_str(&raw) {
+        Ok(value @ serde_json::Value::Object(_)) => value,
+        _ => {
+            return Err(VerificationError::new(
+                "tokens_not_json",
+                format!("DesignLanguage '{language_id}' tokens are not a JSON object, so they cannot be checked"),
+            )
+            .entity("DesignLanguage", language_id)
+            .field("tokens")
+            .repairable(true));
+        }
+    };
     let undefined = token_consistency::undefined_token_references(&tokens);
     if !undefined.is_empty() {
         return Err(VerificationError::new(

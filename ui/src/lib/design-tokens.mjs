@@ -78,21 +78,58 @@ function dropUndefinedReferences(lines) {
 // A language's own pages name its tokens by their short names (--accent,
 // --border, --bg), and some token values lean on them ("0 0 0 1px
 // var(--border)"). The exports call that colour --color-border, so such a
-// value would read as undefined and be dropped. A short name that is one of
-// the language's own tokens gets that token's value. A name that is not a
-// token (Bisque's --hi) stays, and is still left out and reported.
-export function withOwnReferencesResolved(tokens) {
-  const t = record(tokens);
-  const own = new Map();
-  for (const group of [t.colors, t.radii, t.spacing, t.shadows]) {
-    for (const [key, value] of Object.entries(record(group))) {
-      const v = flat(value);
-      if (!Array.isArray(value) && v && !v.includes("var(") && !own.has(tokenName(key))) own.set(tokenName(key), v);
+// value would read as undefined and be dropped. These are the names a token
+// value may use, the same list the finalizer accepts (token_consistency.rs):
+// a clean scalar colour, radius, spacing or shadow by its short or exported
+// name, a spacing or radius step (--space-2), and a ramp step. The CSS export
+// points a short name at the exported variable, so it still follows a palette
+// swap; the Tailwind export, which defines no variables, takes the value
+// itself. A name outside the list (Bisque's --hi) stays, and is reported.
+const REFERABLE = [["colors", "color"], ["radii", "radius"], ["spacing", "space"], ["shadows", "shadow"]];
+
+function referableNames(t) {
+  const names = new Map(); // "--name" -> { value, exported }
+  const put = (name, value, exported) => { if (!names.has(name)) names.set(name, { value, exported }); };
+  for (const [group, prefix] of REFERABLE) {
+    const length = prefix === "radius" || prefix === "space";
+    for (const [key, raw] of Object.entries(record(t[group]))) {
+      const name = tokenName(key);
+      if (Array.isArray(raw)) {
+        raw.forEach((step, i) => {
+          const v = length ? asLength(step) : flat(step);
+          if (v && !v.includes("var(")) put(key === "scale" ? `--${prefix}-${i + 1}` : `--${prefix}-${name}-${i + 1}`, v, true);
+        });
+        continue;
+      }
+      const v = length ? asLength(raw) : flat(raw);
+      if (!v || v.includes("var(")) continue;
+      put(`--${prefix}-${name}`, v, true);
+      put(`--${name}`, v, `--${prefix}-${name}`);
     }
   }
-  if (own.size === 0) return t;
+  for (const [ramp, steps] of Object.entries(record(t.ramps))) {
+    for (const [step, raw] of Object.entries(record(steps))) {
+      const v = flat(raw);
+      if (v && !v.includes("var(")) put(`--ramp-${tokenName(ramp)}-${tokenName(step)}`, v, true);
+    }
+  }
+  return names;
+}
+
+export function withOwnReferencesResolved(tokens, { forCss = false } = {}) {
+  const t = record(tokens);
+  const names = referableNames(t);
+  if (names.size === 0) return t;
   const fix = (value) =>
-    typeof value === "string" ? value.replace(/var\(\s*--([\w-]+)\s*\)/g, (whole, name) => own.get(name.toLowerCase()) ?? whole) : value;
+    typeof value === "string"
+      ? value.replace(/var\(\s*(--[\w-]+)\s*\)/g, (whole, raw) => {
+          const hit = names.get(raw.toLowerCase());
+          if (!hit) return whole;
+          if (!forCss) return hit.value;
+          // In CSS an exported name is already defined; a short one points at it.
+          return hit.exported === true ? whole : `var(${hit.exported})`;
+        })
+      : value;
   const each = (group) =>
     Object.fromEntries(Object.entries(record(group)).map(([k, v]) => [k, Array.isArray(v) ? v.map(fix) : fix(v)]));
   return {
@@ -101,6 +138,7 @@ export function withOwnReferencesResolved(tokens) {
     ...(t.radii ? { radii: each(t.radii) } : {}),
     ...(t.spacing ? { spacing: each(t.spacing) } : {}),
     ...(t.shadows ? { shadows: each(t.shadows) } : {}),
+    ...(t.motion ? { motion: each(t.motion) } : {}),
     ...(t.ramps ? { ramps: Object.fromEntries(Object.entries(record(t.ramps)).map(([k, v]) => [k, each(v)])) } : {}),
   };
 }
@@ -133,7 +171,7 @@ export function tailwindSpacing(spacing) {
 
 /** The whole CSS block for a set of tokens. Groups the entry does not have simply do not appear. */
 export function tokensToCss(tokens) {
-  const t = withOwnReferencesResolved(tokens);
+  const t = withOwnReferencesResolved(tokens, { forCss: true });
   const typography = record(t.typography);
   const fontsUrl = typeof typography.google_fonts_url === "string" ? typography.google_fonts_url : null;
   const declarations = [

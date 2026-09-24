@@ -135,14 +135,26 @@ test("a token that names another token by its short name gets that token's value
   // var(--accent) for their own colours; Bisque's --hi is not a token at all.
   const tokens = {
     colors: { border: "#333333", accent: "#C8442A" },
-    shadows: { ring: "0 0 0 1px var(--border)", glow: "0 0 12px var(--accent)", sm: "0 1px 2px var(--hi)", keep: "0 0 1px var(--x, #000)" },
+    spacing: { pad: 8, scale: [4, 8] },
+    motion: { easing: "ease-out" },
+    shadows: {
+      ring: "0 0 0 1px var(--border)",
+      glow: "0 0 12px var(--color-accent)",
+      lift: "0 var(--pad) var(--space-2) #000",
+      sm: "0 1px 2px var(--hi)",
+      odd: "0 0 1px var(--easing)",
+      keep: "0 0 1px var(--x, #000)",
+    },
   };
   const { css, omitted } = tokensToCss(tokens);
-  assert.ok(css.includes("--shadow-ring: 0 0 0 1px #333333;"));
-  assert.ok(css.includes("--shadow-glow: 0 0 12px #C8442A;"));
-  assert.deepEqual(omitted.map((o) => o.token), ["--shadow-sm"]);
+  assert.ok(css.includes("--shadow-ring: 0 0 0 1px var(--color-border);"), "CSS points a short name at the exported variable");
+  assert.ok(css.includes("--shadow-glow: 0 0 12px var(--color-accent);"), "an exported name stays a variable in CSS");
+  assert.ok(css.includes("--shadow-lift: 0 var(--space-pad) var(--space-2) #000;"));
+  assert.deepEqual(omitted.map((o) => o.token).sort(), ["--shadow-odd", "--shadow-sm"], "motion and page-only names are not referable");
   const { config, omitted: tw } = tokensToTailwindWithOmitted(tokens);
   assert.equal(config.theme.extend.boxShadow.ring, "0 0 0 1px #333333");
-  assert.deepEqual(tw.map((o) => o.token), ["boxShadow.sm"]);
+  assert.equal(config.theme.extend.boxShadow.glow, "0 0 12px #C8442A");
+  assert.equal(config.theme.extend.boxShadow.lift, "0 8px 8px #000", "bare-number spacing keeps its px");
+  assert.deepEqual(tw.map((o) => o.token).sort(), ["boxShadow.odd", "boxShadow.sm"]);
   assert.equal(withOwnReferencesResolved({ colors: { a: "var(--b)", b: "var(--a)" } }).colors.a, "var(--b)", "references between references are left alone");
 });

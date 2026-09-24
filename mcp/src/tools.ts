@@ -698,18 +698,18 @@ export function buildServer(auth: AuthInfo): McpServer {
       // Slugs repeat (eleven art styles are "overprint"), so the first match
       // could be the wrong style. One match, or the id the author names.
       const want = pairsWith.toLowerCase();
+      // By slug only: the finalizer checks pairs_with against the style's slug,
+      // so a display-name match would pass here and fail there.
       const matches = artRows.filter((row) => {
         const status = String(row.status ?? "");
         if (status !== "Published" && status !== "UnderReview") return false;
-        const slug = String(row.fields?.slug ?? "").trim().toLowerCase();
-        const name = String(row.fields?.name ?? "").trim().toLowerCase();
-        return slug === want || name === want;
+        return String(row.fields?.slug ?? "").trim().toLowerCase() === want;
       });
       const pairedArt = a.art_style_id ? matches.find((row) => row.entity_id === a.art_style_id) : matches.length === 1 ? matches[0] : undefined;
       if (!pairedArt) {
         return fail(
           a.art_style_id
-            ? `art_style_id '${a.art_style_id}' is not a Published or UnderReview ArtStyle with the slug or name '${pairsWith}'.`
+            ? `art_style_id '${a.art_style_id}' is not a Published or UnderReview ArtStyle with the slug '${pairsWith}'.`
             : matches.length > 1
               ? `More than one art style is '${pairsWith}' (${matches.map((row) => row.entity_id).join(", ")}). Pass art_style_id to say which.`
               : `No Published or UnderReview ArtStyle matches imagery_direction.pairs_with '${pairsWith}'. Pair a real art style before submit.`,

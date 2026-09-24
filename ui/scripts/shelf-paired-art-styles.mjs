@@ -86,16 +86,17 @@ async function showToVisitors(id) {
 }
 
 const [languages, artStyles] = await Promise.all([readAll("DesignLanguages"), readAll("ArtStyles")]);
-const byKey = new Map();
+
+const bySlug = new Map();
 for (const row of artStyles) {
-  for (const key of [row.entity_id, text(row.fields?.slug).toLowerCase(), text(row.fields?.name).toLowerCase()]) {
-    if (key && !byKey.has(key)) byKey.set(key, row);
-  }
+  const slug = text(row.fields?.slug).toLowerCase();
+  if (slug) bySlug.set(slug, [...(bySlug.get(slug) ?? []), row]);
 }
 
 const wanted = new Map();
 const unpaired = [];
 const missing = [];
+const unsure = [];
 for (const lang of languages.filter(onShelf)) {
   const name = text(lang.fields?.name);
   // The linked id first: slugs repeat (eleven art styles are "overprint"), so a
@@ -106,12 +107,28 @@ for (const lang of languages.filter(onShelf)) {
     unpaired.push(name);
     continue;
   }
-  const art = (pairedId && byKey.get(pairedId)) || byKey.get(pairsWith.toLowerCase());
   // A pairing naming no published art style is a broken language, not our job
-  // to invent; report it.
-  if (!art) {
-    missing.push(`${name} -> ${pairsWith || pairedId}`);
-    continue;
+  // to invent; report it. So is a linked id that disagrees with the slug, or a
+  // slug several styles share: putting a guess on the shelf would show imagery
+  // from a style that is not the language's pair.
+  let art;
+  if (pairedId) {
+    art = artStyles.find((row) => row.entity_id === pairedId);
+    if (!art) {
+      missing.push(`${name} -> ${pairedId} (the linked id names no published art style)`);
+      continue;
+    }
+    if (pairsWith && text(art.fields?.slug).toLowerCase() !== pairsWith.toLowerCase()) {
+      unsure.push(`${name}: linked ${text(art.fields?.slug)}, pairs_with ${pairsWith}`);
+      continue;
+    }
+  } else {
+    const hits = bySlug.get(pairsWith.toLowerCase()) ?? [];
+    if (hits.length !== 1) {
+      (hits.length ? unsure : missing).push(hits.length ? `${name}: ${hits.length} art styles are ${pairsWith}; link one by id` : `${name} -> ${pairsWith}`);
+      continue;
+    }
+    art = hits[0];
   }
   if (!onShelf(art) && !wanted.has(art.entity_id)) {
     wanted.set(art.entity_id, { art, forLanguages: [name] });
@@ -128,6 +145,7 @@ for (const { art, forLanguages } of wanted.values()) {
 }
 if (unpaired.length) console.log(`\n${unpaired.length} shelf language(s) name no pair: ${unpaired.join(", ")}`);
 if (missing.length) console.log(`\n${missing.length} pairing(s) name no published art style:\n  ${missing.join("\n  ")}`);
+if (unsure.length) console.log(`\n${unsure.length} pairing(s) left alone until someone says which style:\n  ${unsure.join("\n  ")}`);
 
 if (!APPLY) process.exit(0);
 
