@@ -256,6 +256,39 @@ pub(super) fn verify_portable_prompt(
     Ok(())
 }
 
+fn historical_attribution_error(
+    owner_id: &str,
+    source: &Value,
+    basis: &Value,
+    prompt: &str,
+) -> Option<VerificationError> {
+    let death_year = source.get("death_year").and_then(Value::as_u64);
+    if source.get("living").and_then(Value::as_bool) != Some(false)
+        || !death_year.is_some_and(|year| (1..=9999).contains(&year))
+        || text(source, "historical_context").is_empty()
+        || !bool_field(source, "attribution_only")
+        || !bool_field(source, "no_individual_style_target")
+        || !bool_field(source, "no_copied_work")
+    {
+        return Some(art_error(
+            owner_id,
+            "art_style_historical_attribution_invalid",
+            "source_basis",
+            format!("ArtStyle '{owner_id}' historical attribution requires documented deceased status, historical context, and independent attribution-only, no-target and no-copy review"),
+        ));
+    }
+    // Attribution is reviewed for this recipe; it grants no rights to copy works.
+    if basis.get("prompt").and_then(Value::as_str) != Some(prompt) {
+        return Some(art_error(
+            owner_id,
+            "art_style_historical_review_prompt_mismatch",
+            "source_basis",
+            format!("ArtStyle '{owner_id}' historical attribution review must bind the exact canonical prompt"),
+        ));
+    }
+    None
+}
+
 pub(super) fn verify_source_basis(
     owner_id: &str,
     fields: &Value,
@@ -328,6 +361,7 @@ pub(super) fn verify_source_basis(
         "licensed_artist",
         "licensed_source",
         "original_synthesis",
+        "historical_attribution",
     ];
     let mut eligible_by_name: HashMap<String, String> = HashMap::new();
     for source in sources {
@@ -362,6 +396,11 @@ pub(super) fn verify_source_basis(
                 ),
             ));
         }
+        if kind == "historical_attribution" {
+            if let Some(error) = historical_attribution_error(owner_id, source, &basis, prompt) {
+                return Err(error);
+            }
+        }
         if kind == "public_domain_artist"
             && (number(source, "death_year").is_none()
                 || text(source, "public_domain_basis").is_empty())
@@ -388,7 +427,12 @@ pub(super) fn verify_source_basis(
                 ),
             ));
         }
-        if kind.ends_with("_artist") && contains_ci(prompt, name) {
+        let names_artist = if kind == "historical_attribution" {
+            contains_word_sequence(&normalized_words(prompt), &normalized_words(name))
+        } else {
+            kind.ends_with("_artist") && contains_ci(prompt, name)
+        };
+        if names_artist {
             return Err(art_error(
                 owner_id,
                 "art_style_prompt_names_artist",
@@ -398,7 +442,18 @@ pub(super) fn verify_source_basis(
                 ),
             ));
         }
-        eligible_by_name.insert(normalized_words(name), kind.to_string());
+        let normalized_name = normalized_words(name);
+        if let Some(previous_kind) = eligible_by_name.get(&normalized_name) {
+            if kind == "historical_attribution" || previous_kind == "historical_attribution" {
+                return Err(art_error(
+                    owner_id,
+                    "art_style_historical_attribution_duplicate",
+                    "source_basis",
+                    format!("ArtStyle '{owner_id}' historical attribution for '{name}' must use one source entry; retain additional citations in that entry"),
+                ));
+            }
+        }
+        eligible_by_name.insert(normalized_name, kind.to_string());
     }
 
     let mut credits = lane_json_value(fields, "credits")
@@ -423,7 +478,7 @@ pub(super) fn verify_source_basis(
         if credit_kind == "artist"
             && !matches!(
                 basis_kind.as_str(),
-                "public_domain_artist" | "licensed_artist"
+                "public_domain_artist" | "licensed_artist" | "historical_attribution"
             )
         {
             return Err(art_error(
@@ -431,7 +486,7 @@ pub(super) fn verify_source_basis(
                 "art_style_artist_credit_ineligible",
                 "source_basis",
                 format!(
-                    "ArtStyle '{owner_id}' artist credit '{name}' is neither public-domain nor licensed"
+                    "ArtStyle '{owner_id}' artist credit '{name}' needs a public-domain, licensed, or reviewed historical-attribution basis"
                 ),
             ));
         }
@@ -1401,6 +1456,148 @@ mod tests {
         let prompt = text(&fields, "prompt_template");
         let err = verify_source_basis("as-1", &fields, prompt).unwrap_err();
         assert_eq!(err.code, "art_style_source_basis_invalid");
+    }
+
+    fn historical_fields() -> Value {
+        let mut fields = valid_fields();
+        fields["credits"] = json!([{"name": "Historical Artist", "kind": "artist"}]);
+        fields["source_basis"]["prompt"] = json!(PROMPT);
+        fields["source_basis"]["sources"] = json!([{
+            "name": "Historical Artist", "kind": "historical_attribution",
+            "living": false, "death_year": 1986,
+            "evidence_url": "https://example.test/artist-biography",
+            "historical_context": "Documented participation in the broad print tradition.",
+            "attribution_only": true, "no_individual_style_target": true,
+            "no_copied_work": true
+        }]);
+        fields
+    }
+
+    #[test]
+    fn historical_attribution_preserves_artist_credit_without_claiming_a_license() {
+        let fields = historical_fields();
+        let basis = verify_source_basis("as-1", &fields, PROMPT).unwrap();
+        assert_eq!(fields["credits"][0]["kind"], "artist");
+        assert!(basis["sources"][0].get("license_url").is_none());
+        assert!(basis["sources"][0].get("public_domain_basis").is_none());
+    }
+
+    #[test]
+    fn historical_attribution_requires_explicit_reviewed_deceased_context() {
+        for key in [
+            "living",
+            "death_year",
+            "historical_context",
+            "attribution_only",
+            "no_individual_style_target",
+            "no_copied_work",
+        ] {
+            let mut fields = historical_fields();
+            fields["source_basis"]["sources"][0]
+                .as_object_mut()
+                .unwrap()
+                .remove(key);
+            assert!(
+                verify_source_basis("as-1", &fields, PROMPT).is_err(),
+                "missing {key}"
+            );
+        }
+        for key in [
+            "attribution_only",
+            "no_individual_style_target",
+            "no_copied_work",
+        ] {
+            let mut fields = historical_fields();
+            fields["source_basis"]["sources"][0][key] = json!(false);
+            assert!(
+                verify_source_basis("as-1", &fields, PROMPT).is_err(),
+                "false {key}"
+            );
+        }
+        for year in [
+            json!(0),
+            json!(-1),
+            json!(1986.5),
+            json!("1986"),
+            json!(10000),
+        ] {
+            let mut fields = historical_fields();
+            fields["source_basis"]["sources"][0]["death_year"] = year;
+            assert!(verify_source_basis("as-1", &fields, PROMPT).is_err());
+        }
+    }
+
+    #[test]
+    fn historical_attribution_cannot_target_an_artist_or_replay_a_different_prompt() {
+        let fields = historical_fields();
+        assert!(verify_source_basis("as-1", &fields, "A different technique.").is_err());
+        let mut fields = historical_fields();
+        fields["source_basis"]["prompt"] = json!("Use Historical Artist contours.");
+        assert_eq!(
+            verify_source_basis("as-1", &fields, "Use Historical Artist contours.")
+                .unwrap_err()
+                .code,
+            "art_style_prompt_names_artist"
+        );
+        fields = historical_fields();
+        fields["source_basis"]["sources"][0]["living"] = json!(true);
+        assert_eq!(
+            verify_source_basis("as-1", &fields, PROMPT)
+                .unwrap_err()
+                .code,
+            "art_style_living_source_unlicensed"
+        );
+        fields = historical_fields();
+        fields["source_basis"]["reviewer"] = fields["model_provenance"]["style"].clone();
+        assert_eq!(
+            verify_source_basis("as-1", &fields, PROMPT)
+                .unwrap_err()
+                .code,
+            "art_style_source_review_not_independent"
+        );
+    }
+
+    #[test]
+    fn historical_artist_name_cannot_hide_behind_spacing_or_punctuation() {
+        for prompt in [
+            "Use HISTORICAL—ARTIST contours.",
+            "Use Historical\nArtist contours.",
+        ] {
+            let mut fields = historical_fields();
+            fields["source_basis"]["sources"][0]["name"] = json!(" historical   artist ");
+            fields["source_basis"]["prompt"] = json!(prompt);
+            assert_eq!(
+                verify_source_basis("as-1", &fields, prompt)
+                    .unwrap_err()
+                    .code,
+                "art_style_prompt_names_artist"
+            );
+        }
+    }
+
+    #[test]
+    fn historical_attribution_rejects_duplicate_or_mixed_kind_name_entries() {
+        for mixed in [false, true] {
+            for reverse in [false, true] {
+                let mut fields = historical_fields();
+                let mut duplicate = fields["source_basis"]["sources"][0].clone();
+                duplicate["name"] = json!(" HISTORICAL   ARTIST ");
+                if mixed {
+                    duplicate["kind"] = json!("tradition");
+                }
+                let sources = fields["source_basis"]["sources"].as_array_mut().unwrap();
+                sources.push(duplicate);
+                if reverse {
+                    sources.reverse();
+                }
+                assert_eq!(
+                    verify_source_basis("as-1", &fields, PROMPT)
+                        .unwrap_err()
+                        .code,
+                    "art_style_historical_attribution_duplicate"
+                );
+            }
+        }
     }
 
     #[test]

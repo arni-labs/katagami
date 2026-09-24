@@ -459,7 +459,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         source_basis: z
           .record(z.string(), z.unknown())
           .describe(
-            "Schema-v1 independent source and rights review; it must check every named person, reject named or hidden living-artist targeting, and attest that the recipe is described at tradition level",
+            "Schema-v1 independent source and rights review; it must check every named person, reject named or hidden living-artist targeting, and attest that the recipe is described at tradition level. Deceased-person historical_attribution entries require documented context and explicit attribution_only/no_individual_style_target/no_copied_work review bound to this exact prompt; attribution grants no copying rights",
           ),
         prompt_review: z
           .record(z.string(), z.unknown())

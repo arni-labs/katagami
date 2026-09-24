@@ -192,3 +192,34 @@ test('thumbnail must belong to the validated comparison or gallery', () => {
   assert.equal(JSON.parse(result.params.error_message).code, 'art_style_thumbnail_unbound');
   assert.deepEqual(actions, []);
 });
+
+function historicalAttribution(fields) {
+  fields.credits = JSON.stringify([{ name: 'Historical Artist', kind: 'artist' }]);
+  fields.source_basis.prompt = fields.prompt_template;
+  fields.source_basis.sources = [{
+    name: 'Historical Artist', kind: 'historical_attribution', living: false, death_year: 1986,
+    evidence_url: 'https://example.test/biography',
+    historical_context: 'Documented participation in the broad print tradition.',
+    attribution_only: true, no_individual_style_target: true, no_copied_work: true,
+  }];
+}
+
+test('compiled WASM accepts reviewed historical attribution without a copying license', () => {
+  const { result, actions } = execute(historicalAttribution);
+  assert.equal(result.action, 'FinalizeCompletion', JSON.stringify(result));
+  assert.ok(actions.some(action => action.path.endsWith('/Temper.AttachArtStyleReview')));
+  assert.ok(actions.some(action => action.path.endsWith('/Temper.Publish')));
+});
+
+for (const [name, mutate, code] of [
+  ['unchecked copied work', fields => { delete fields.source_basis.sources[0].no_copied_work; }, 'art_style_historical_attribution_invalid'],
+  ['individual style target', fields => { fields.source_basis.sources[0].no_individual_style_target = false; }, 'art_style_historical_attribution_invalid'],
+  ['living historical credit', fields => { fields.source_basis.sources[0].living = true; }, 'art_style_living_source_unlicensed'],
+  ['stale historical prompt review', fields => { fields.source_basis.prompt += ' changed'; }, 'art_style_historical_review_prompt_mismatch'],
+  ['duplicate attribution alias', fields => { fields.source_basis.sources.push({ ...fields.source_basis.sources[0], name: ' HISTORICAL   ARTIST ', kind: 'tradition' }); }, 'art_style_historical_attribution_duplicate'],
+]) test(`compiled WASM rejects ${name} before attestations or publication`, () => {
+  const { result, actions } = execute(fields => { historicalAttribution(fields); mutate(fields); });
+  assert.equal(result.action, 'Fail', JSON.stringify(result));
+  assert.equal(JSON.parse(result.params.error_message).code, code);
+  assert.deepEqual(actions, []);
+});
