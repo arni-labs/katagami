@@ -209,6 +209,12 @@ assert.match(
   /<Suspense fallback=\{<CardGridSkeleton/,
   "Art Styles paints a card skeleton inside the page",
 );
+for (const [file, source] of [
+  ["art-styles/page.tsx", artStylesPage],
+  ["infinite-galleries.tsx", readFileSync(resolve("src/components/infinite-galleries.tsx"), "utf8")],
+]) {
+  assert.match(source, /<ArtStyleCard\b[^>]*\/>\s*<LinkPending \/>/, `${file}: an art-style card click shows LinkPending`);
+}
 assert.match(
   readFileSync(resolve("src/components/language-card.tsx"), "utf8"),
   /<TrackedLink\b/,

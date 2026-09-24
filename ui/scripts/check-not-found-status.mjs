@@ -36,7 +36,8 @@ function conventionFile(dir, base) {
 
 const callsNotFound = (source) => /\bnotFound\(\)/.test(source);
 const wrapsChildrenInSuspense = (source) =>
-  /<Suspense\b[\s\S]*?\{\s*children\s*\}[\s\S]*?<\/Suspense>/.test(source);
+  // {children} inside one Suspense, not between two sibling ones.
+  /<Suspense\b[^>]*>(?:(?!<\/Suspense>)[\s\S])*?\{\s*children\s*\}/.test(source);
 
 const violations = [];
 let checked = 0;

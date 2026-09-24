@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { LinkPending } from "@/components/link-pending";
 import { unstable_cache } from "next/cache";
 import { countArtStyles, listArtStyles, pageArtStyles } from "@/lib/odata";
 import { toArtStyleItem } from "@/lib/lane-items";
@@ -88,9 +89,10 @@ async function FeaturedArtStyleShelf() {
                 key={a.id}
                 href={`/art-styles/${a.id}`}
                 prefetch={false}
-                className="group block min-w-0"
+                className="group relative block min-w-0"
               >
                 <ArtStyleCard art={a} />
+                <LinkPending />
               </Link>
             ))}
           </div>
