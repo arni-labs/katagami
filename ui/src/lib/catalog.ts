@@ -24,6 +24,7 @@ import atlasHoles from "@/data/atlas-holes.json";
 import { tokensToCss, tokensToTailwindWithOmitted } from "./design-tokens.mjs";
 import { remixBriefPath } from "./remix-brief";
 import { mediumBucket, mediumMatches } from "./art-medium.mjs";
+import { parseArtStyleProcessList } from "./art-style-process";
 import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
@@ -882,6 +883,8 @@ export async function getDesign(kind: Kind, idOrSlug: string, tier: Tier) {
   return {
     ...base,
     medium: str(f.medium),
+    materials: parseArtStyleProcessList(f.materials),
+    techniques: parseArtStyleProcessList(f.techniques),
     prompt_template: str(f.prompt_template),
     slot_recipes: parse("slot_recipes"),
     negative_prompt: str(f.negative_prompt),

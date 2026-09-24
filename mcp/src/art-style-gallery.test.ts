@@ -60,6 +60,7 @@ test("MCP submit forwards the five-image manifest and keeps the two-model proof 
   const { InMemoryTransport } = await import("@modelcontextprotocol/sdk/inMemory.js");
   const { buildServer } = await import("./tools.js");
   let submitted: Record<string, unknown> | undefined;
+  const currentSubmission = (): Record<string, unknown> | undefined => submitted;
   t.mock.method(globalThis, "fetch", async (_url: unknown, init?: RequestInit) => {
     if (init?.method === "POST") {
       submitted = JSON.parse(String(init.body));
@@ -87,6 +88,7 @@ test("MCP submit forwards the five-image manifest and keeps the two-model proof 
         output: { file_id: `proof-${i}`, sha256: hash(`proof-${i}`), prompt_sha256: hash(`${canonical}\n\nSubject and scene:\nperson`) } },
     }));
     const args = { entity_id: "draft", name: "Morrow Ink", slug: "morrow-ink", medium: "illustration",
+      materials: [" ink ", "paper"], techniques: ["hatching"],
       prompt_template: canonical, slot_recipes: {}, gallery_images: fixture(), proof_shots: proofs,
       thumbnail_file_id: "file-0", source_basis: {}, prompt_review: {}, portability_report: {},
       model_provenance: { style: { model: "author", provider: "test" }, source: { model: "source", provider: "test" }, images: proofs.map(p => p.model) },
@@ -95,6 +97,11 @@ test("MCP submit forwards the five-image manifest and keeps the two-model proof 
     const invalid = await client.callTool({ name: "submit_art_style", arguments: { ...args, thumbnail_file_id: "missing" } });
     assert.equal(invalid.isError, true);
     assert.equal(Boolean(submitted), false, "invalid gallery must not mutate a draft");
+    for (const invalidProcess of [{ materials: [42] }, { techniques: ["  "] }, { materials: "ink" }]) {
+      const invalid = await client.callTool({ name: "submit_art_style", arguments: { ...args, ...invalidProcess } });
+      assert.equal(invalid.isError, true);
+      assert.equal(submitted, undefined, "invalid process metadata must not mutate a draft");
+    }
     const result = await client.callTool({ name: "submit_art_style", arguments: args });
     assert.ok(!result.isError, JSON.stringify(result));
     assert.deepEqual(submitted?.reference_image_file_ids, fixture().map(i => i.file_id));
@@ -102,6 +109,14 @@ test("MCP submit forwards the five-image manifest and keeps the two-model proof 
     assert.deepEqual(submitted?.proof_shots_file_ids, ["proof-0", "proof-1"]);
     assert.deepEqual(JSON.parse(String(submitted?.proof_shots_manifest)), { schema_version: "4", items: proofs });
     assert.equal(submitted?.thumbnail_file_id, "file-0");
+    assert.deepEqual(JSON.parse(String(submitted?.materials)), ["ink", "paper"]);
+    assert.deepEqual(JSON.parse(String(submitted?.techniques)), ["hatching"]);
+    const { materials, techniques, ...legacyArgs } = args;
+    submitted = undefined;
+    const legacyResult = await client.callTool({ name: "submit_art_style", arguments: legacyArgs });
+    assert.ok(!legacyResult.isError, JSON.stringify(legacyResult));
+    assert.equal(currentSubmission()?.materials, "[]");
+    assert.equal(currentSubmission()?.techniques, "[]");
     const { gallery_images, thumbnail_file_id, ...minimal } = args;
     submitted = undefined;
     const minimalResult = await client.callTool({ name: "submit_art_style", arguments: minimal });

@@ -300,6 +300,9 @@
         <Property Name="Version" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <!-- Recipe -->
         <Property Name="Medium" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- JSON string arrays describing the recipe, not image-generation provenance. -->
+        <Property Name="Materials" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Techniques" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="PromptTemplate" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Legacy read compatibility only; new publication stores exclusions inline in PromptTemplate. -->
         <Property Name="NegativePrompt" Type="Edm.String" Nullable="false" DefaultValue="" />
