@@ -9,6 +9,7 @@ import {
 import { siteBaseFromRequest } from "@/lib/site-url";
 import {
   buildShadcnRegistryTheme,
+  shadcnCompanionFilesLine,
   shadcnUsageMarkdown,
 } from "@/lib/shadcn-export";
 
@@ -49,11 +50,19 @@ function withCurrentShadcnUsage(
     }),
   ).trimEnd();
   const trimmed = markdown.trimEnd();
-  if (
-    trimmed.includes("DESIGN.with-shadcn.md") &&
-    trimmed.includes("@/components/ui")
-  ) {
-    return `${trimmed}\n`;
+  // A stored file with its own shadcn section keeps it, text and all; one
+  // written before the contract named the companion files gains that line.
+  if (trimmed.includes("DESIGN.with-shadcn.md") && trimmed.includes("@/components/ui")) {
+    if (["/shadcn.json", "/shadcn-components.md", "/shadcn-shots.json"].every((ref) => trimmed.includes(ref))) {
+      return `${trimmed}\n`;
+    }
+    const companions = shadcnCompanionFilesLine(`/language/${props.languageId}`);
+    // Right under the section's heading: finding where the section ends would
+    // misread a "## " line inside one of its code examples.
+    const heading = /\n## shadcn\/ui Usage\n/;
+    return heading.test(trimmed)
+      ? `${trimmed.replace(heading, (h) => `${h}\n${companions}\n`)}\n`
+      : `${trimmed}\n\n${companions}\n`;
   }
 
   const section = /\n## shadcn\/ui Usage\n[\s\S]*?(?=\n## |\s*$)/;

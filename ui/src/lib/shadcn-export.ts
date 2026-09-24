@@ -463,6 +463,11 @@ export function shadcnCssBlock(theme: ShadcnRegistryTheme): string {
   return `${lines.join("\n")}\n`;
 }
 
+/** The contract's three machine-readable companions of a language's DESIGN.md. */
+export function shadcnCompanionFilesLine(languagePath: string): string {
+  return `Machine-readable companions for automation: \`${languagePath}/shadcn.json\` (registry theme), \`${languagePath}/shadcn-components.md\` (component recipes) and \`${languagePath}/shadcn-shots.json\` (preview shots). The human-facing handoff is still DESIGN.md with shadcn.`;
+}
+
 export function shadcnUsageMarkdown(theme: ShadcnRegistryTheme): string {
   const languagePath = theme.meta.languageId
     ? `/language/${theme.meta.languageId}`
@@ -475,7 +480,9 @@ export function shadcnUsageMarkdown(theme: ShadcnRegistryTheme): string {
     "",
     `DESIGN.md with shadcn: \`${languagePath}/DESIGN.with-shadcn.md\`.`,
     "",
-    "The shadcn page also exposes optional machine-readable files for automation, but the human-facing handoff is DESIGN.md with shadcn.",
+    // The synthesis skill's DESIGN.md contract names these three; the section
+    // every served DESIGN.md carries used to leave them out.
+    shadcnCompanionFilesLine(languagePath),
     "",
     `Install recommended primitives with \`${theme.meta.installCommand}\`.`,
     "",
