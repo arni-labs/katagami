@@ -10,3 +10,4 @@ export function tokensToTailwindWithOmitted(tokens: unknown): {
   config: { theme: { extend: Record<string, unknown> } };
   omitted: { token: string; undefined_variables: string[] }[];
 };
+export function withOwnReferencesResolved(tokens: unknown, options?: { forCss?: boolean }): Record<string, unknown>;

@@ -152,6 +152,16 @@ include the canonical prompt, and say `MUST generate real images`;
 contain at least eight concrete hex color tokens and the production Google
 Fonts URL; and contain no TBD/TODO/placeholder text.
 
+The tokens are the source of truth and DESIGN.md is their export. A `colors:`
+name the tokens also use (`accent`, `bg`, `text`, `muted`) carries that token's
+exact value; add a new name such as `primary` for a role the tokens name
+differently, and never give a token's name to another colour. If a colour must
+change for contrast, change the token and the pages with it, not DESIGN.md
+alone. Every `var(--x)` inside a token value must name another token of this
+language (`var(--border)` or `var(--color-border)`); a variable that exists
+only in the pages' CSS (`--hi`, `--lo`) is written out as its value. The
+finalizer rejects a language that breaks either rule.
+
 Write it to `/tmp/DESIGN.md`, then write and run a no-network
 `katagami-design-md-contract` checker script with `python3` from a script
 FILE that validates exactly the requirements above and prints one JSON

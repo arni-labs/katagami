@@ -8,6 +8,7 @@ mod art_style_review;
 mod facets;
 mod language_art_style;
 mod taste_doc;
+mod token_consistency;
 use language_art_style::{select_published_art_style_pair, verify_published_art_style_pair};
 
 const ERROR_CONTRACT: &str = "katagami.finalizer.verification.v1";
@@ -994,6 +995,7 @@ fn verify_complete_language_artifacts(
             )
         }),
         Box::new(|| verify_design_md_metadata(language_id, &fields)),
+        Box::new(|| verify_token_consistency(ctx, api_url, headers, language_id, &fields)),
         Box::new(|| {
             verify_file_field(
                 ctx,
@@ -2587,6 +2589,62 @@ fn verify_preview_shots_body(
             "shadcn_preview_shots_invalid",
             "shadcn preview-shot file is missing renderable scenes, visualProfile, or component recipes",
         );
+    }
+    Ok(())
+}
+
+/// The tokens name no variable they do not define, and DESIGN.md does not
+/// contradict them. See token_consistency.rs for why.
+fn verify_token_consistency(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    fields: &serde_json::Value,
+) -> Result<(), VerificationError> {
+    let raw = string_field_any(fields, "tokens", "");
+    let tokens: serde_json::Value = match serde_json::from_str(&raw) {
+        Ok(value @ serde_json::Value::Object(_)) => value,
+        _ => {
+            return Err(VerificationError::new(
+                "tokens_not_json",
+                format!("DesignLanguage '{language_id}' tokens are not a JSON object, so they cannot be checked"),
+            )
+            .entity("DesignLanguage", language_id)
+            .field("tokens")
+            .repairable(true));
+        }
+    };
+    let undefined = token_consistency::undefined_token_references(&tokens);
+    if !undefined.is_empty() {
+        return Err(VerificationError::new(
+            "token_undefined_reference",
+            format!(
+                "DesignLanguage '{language_id}' tokens lean on variables no token defines ({}). Write the value itself, or name another token of this language.",
+                undefined.join(", ")
+            ),
+        )
+        .entity("DesignLanguage", language_id)
+        .field("tokens")
+        .repairable(true));
+    }
+    let file_id = string_field_any(fields, "design_md_file_id", "");
+    if file_id.is_empty() {
+        return Ok(());
+    }
+    let design_md = read_file_value(ctx, api_url, headers, &file_id, language_id, "design_md")?;
+    let conflicts = token_consistency::design_md_colour_conflicts(&design_md, &tokens);
+    if !conflicts.is_empty() {
+        return Err(VerificationError::new(
+            "design_md_colour_conflict",
+            format!(
+                "DesignLanguage '{language_id}' DESIGN.md contradicts its tokens ({}). The tokens are the source of truth: a DESIGN.md colour with a token's name must have that token's value; add new names (such as primary) instead of reusing one.",
+                conflicts.join("; ")
+            ),
+        )
+        .entity("DesignLanguage", language_id)
+        .artifact("design_md", &file_id)
+        .repairable(true));
     }
     Ok(())
 }
