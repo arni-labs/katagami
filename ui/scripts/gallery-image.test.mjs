@@ -201,15 +201,23 @@ assert.match(
   /unstable_cache/,
   "the art-style first page is a slim cached card list, not a live 4s collection",
 );
+// Route loading.tsx shells are gone: they flushed HTTP 200 before a detail
+// page's notFound() (check-not-found-status.mjs). The Art Styles grid keeps its
+// skeleton inside the page, and a card click shows LinkPending while it loads.
 assert.match(
-  readFileSync(resolve("src/app/(site)/art-styles/loading.tsx"), "utf8"),
-  /CardGridSkeleton/,
-  "Art Styles nav must paint a shell immediately",
+  artStylesPage,
+  /<Suspense fallback=\{<CardGridSkeleton/,
+  "Art Styles paints a card skeleton inside the page",
 );
 assert.match(
-  readFileSync(resolve("src/app/(site)/language/[id]/loading.tsx"), "utf8"),
-  /LanguageDetailSkeleton/,
-  "language detail clicks must paint a shell immediately",
+  readFileSync(resolve("src/components/language-card.tsx"), "utf8"),
+  /<TrackedLink\b/,
+  "a language card click goes through TrackedLink",
+);
+assert.match(
+  readFileSync(resolve("src/components/tracked-link.tsx"), "utf8"),
+  /<LinkPending\s*\/>/,
+  "TrackedLink shows a pending state the moment it is clicked",
 );
 
 // The hero this was written against moved to /gallery when the sheet took "/".
