@@ -24,6 +24,14 @@ Paste-ready values for Meta's Muse Connector Platform form (https://muse.ai/plat
 | Privacy policy, terms, support | `/privacy`, `/terms`, `/support`, live since 2026-09-22 |
 | Icon | `icon-512.png` |
 
+## Before you submit
+
+1. **Try it in Muse as a custom connector.** In the Muse app, ask it to create a custom connector for `https://katagami.ai/mcp/open`, a remote MCP server over streamable HTTP, no sign-in. Then run the six example prompts in `useCases`. Each was run end to end against production on the signed-out tier on 2026-09-25 (results in PR #416).
+2. **Then sign in once** with `https://katagami.ai/mcp` (OAuth) to see the full library as reviewers who sign in will.
+3. **Fill the form** as below and tick the three attestations yourself.
+
+One decision is still open. Without sign-in, the model-backed tools allow 6 calls a minute per network address. If Muse calls connectors from shared servers, every signed-out Muse user shares that allowance. The listing leads with OAuth, which is per person; the open address is offered so reviewers can test without an account. If Muse users will use the open address at scale, the limit needs a different key first.
+
 ## Testing in Muse before submitting
 
 Muse builds custom connectors itself: in the Muse app, ask it to create a custom connector, give it `https://katagami.ai/mcp/open`, and say it is a remote MCP server over streamable HTTP. That address needs no sign-in, so the whole flow can be tried before the directory review. Then try the example prompts above.

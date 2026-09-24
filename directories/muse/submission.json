@@ -3,9 +3,9 @@
   "productName": "Katagami",
   "companyName": "Arni Labs",
   "website": "https://katagami.ai",
-  "shortDescription": "A curated library of design languages, palettes and art styles your agent can search, apply and check work against.",
-  "description": "Katagami is a curated library of complete visual styles: design languages (tokens, rules, layout and a portable DESIGN.md), palette systems, and art styles with prompt recipes for image generation. Describe a product and get the styles that fit it, judged by a model rather than matched on keywords, with pictures. Adjust the answer in plain words (quieter, warmer, less corporate). Get a whole kit (a language, a palette and an art style that belong together) with a build brief. Pull a language's tokens as CSS or Tailwind and its DESIGN.md for a coding agent. Generate imagery from an art style's recipe. Check a finished page against the language it claims to follow. Everything is read-only; part of the library is open without an account and the rest opens with Google sign-in.",
-  "useCases": "What should a booking app for a small vet clinic look like? Show me pictures.\nThose are too corporate. Quieter and warmer.\nGive me a complete look for a zine shop: UI, colours and an illustration style.\nFind me risograph art styles and give me the prompt to generate a poster.\nGet the CSS tokens and DESIGN.md for Almanac so I can build a landing page in it.\nHere is my page's HTML. Does it actually follow Almanac?",
+  "shortDescription": "Distinctive, curated styles for anything your agent makes: web pages, documents, invitations and images, with a check that keeps pages on style.",
+  "description": "Katagami is a curated library of complete visual styles: design languages (tokens, rules, layout and a portable DESIGN.md), palette systems, and art styles with prompt recipes for image generation. Describe a product and get the styles that fit it, judged by a model rather than matched on keywords, with pictures. Adjust the answer in plain words (quieter, warmer, less corporate). Get a whole kit (a language, a palette and an art style that belong together) with a build brief. Pull a language's tokens as CSS or Tailwind and its DESIGN.md for a coding agent. Generate imagery from an art style's recipe, with its gallery as reference images. Check a finished page against the language it claims to follow. Everything is read-only; part of the library is open without an account and the rest opens with Google sign-in.",
+  "useCases": "Make my garden party invitation look like a risograph print.\nWhat should the one-page site for my plant shop look like? Show me pictures.\nThose feel too corporate. Quieter and warmer.\nSurprise me: an unexpected look for my zine that still works.\nGive me a complete look for my bakery: page, colours and an illustration style.\nMake the bakery page in that style, then check it against the style and fix what's off.",
   "acceptsPayments": false,
   "contactName": "Rita (Arni Labs)",
   "contactEmail": "info@arnilabs.ai",
@@ -13,7 +13,7 @@
   "endpoint": "https://katagami.ai/mcp",
   "openEndpoint": "https://katagami.ai/mcp/open",
   "openapi": null,
-  "limits": "Free. No account is needed for the visitor shelf (about 60 design languages, 40 palettes and 70 art styles), served at https://katagami.ai/mcp/open with no sign-in. Google sign-in at https://katagami.ai/mcp opens the full library (about 300 languages). The model-backed tools (ask_library, compose_kit, check_page_against_language) are limited to 6 calls a minute per caller without sign-in and 30 with.",
+  "limits": "Free. No account is needed for the visitor shelf (about 60 design languages, 40 palettes and 70 art styles), served at https://katagami.ai/mcp/open with no sign-in. Google sign-in at https://katagami.ai/mcp opens the full library (about 300 languages). The model-backed tools (ask_library, compose_kit, check_page_against_language) allow 6 calls a minute per network address without sign-in and 30 per person with sign-in.",
   "authMethods": [
     "OAuth with PKCE"
   ],
