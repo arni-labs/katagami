@@ -9,6 +9,7 @@ import {
 import { siteBaseFromRequest } from "@/lib/site-url";
 import {
   buildShadcnRegistryTheme,
+  shadcnCompanionFilesLine,
   shadcnUsageMarkdown,
 } from "@/lib/shadcn-export";
 
@@ -49,14 +50,17 @@ function withCurrentShadcnUsage(
     }),
   ).trimEnd();
   const trimmed = markdown.trimEnd();
-  // A stored file keeps its own shadcn section only when that section already
-  // names everything the contract asks for; an older one is replaced below.
-  if (
-    ["DESIGN.with-shadcn.md", "@/components/ui", "/shadcn.json", "/shadcn-components.md", "/shadcn-shots.json"].every((ref) =>
-      trimmed.includes(ref),
-    )
-  ) {
-    return `${trimmed}\n`;
+  // A stored file with its own shadcn section keeps it, text and all; one
+  // written before the contract named the companion files gains that line.
+  if (trimmed.includes("DESIGN.with-shadcn.md") && trimmed.includes("@/components/ui")) {
+    if (["/shadcn.json", "/shadcn-components.md", "/shadcn-shots.json"].every((ref) => trimmed.includes(ref))) {
+      return `${trimmed}\n`;
+    }
+    const companions = shadcnCompanionFilesLine(`/language/${props.languageId}`);
+    const own = /\n## shadcn\/ui Usage\n[\s\S]*?(?=\n## |\s*$)/;
+    return own.test(trimmed)
+      ? `${trimmed.replace(own, (section) => `${section.trimEnd()}\n\n${companions}\n`).trimEnd()}\n`
+      : `${trimmed}\n\n${companions}\n`;
   }
 
   const section = /\n## shadcn\/ui Usage\n[\s\S]*?(?=\n## |\s*$)/;

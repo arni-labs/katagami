@@ -20,7 +20,10 @@ const kit = read("src/components/shadcn-kit-section.tsx");
 const usageLines = (() => {
   const start = projection.indexOf("export function shadcnUsageMarkdown");
   const body = projection.slice(projection.indexOf("return [", start), projection.indexOf('].join("\\n")', start));
-  return body.split("\n").filter((line) => !line.trim().startsWith("//")).join("\n");
+  const lines = body.split("\n").filter((line) => !line.trim().startsWith("//")).join("\n");
+  // The line may come from shadcnCompanionFilesLine; read its template too.
+  const helper = projection.slice(projection.indexOf("export function shadcnCompanionFilesLine"), start);
+  return lines.includes("shadcnCompanionFilesLine(") ? `${lines}\n${helper.split("\n").filter((l) => !l.trim().startsWith("//")).join("\n")}` : lines;
 })();
 
 const required = [
@@ -79,7 +82,7 @@ const required = [
   // Read the lines the function returns, comments stripped, so a filename
   // parked in a comment does not count.
   ["the shadcn usage section names shadcn.json, shadcn-components.md and shadcn-shots.json, as the DESIGN.md contract requires", usageLines, /\/shadcn\.json[\s\S]*\/shadcn-components\.md[\s\S]*\/shadcn-shots\.json/],
-  ["a stored DESIGN.md keeps its shadcn section only if it names the companion files", designRoute, /\["DESIGN\.with-shadcn\.md", "@\/components\/ui", "\/shadcn\.json", "\/shadcn-components\.md", "\/shadcn-shots\.json"\]\.every/],
+  ["a stored shadcn section keeps its text and gains the companion files it lacks", designRoute, /\["\/shadcn\.json", "\/shadcn-components\.md", "\/shadcn-shots\.json"\]\.every[\s\S]{0,400}shadcnCompanionFilesLine/],
   ["copy controls include shadcn MD", specActions, /shadcn-md/],
   ["copy controls include DESIGN.md with shadcn", specActions, /with shadcn/],
   ["copy controls explain shadcn projects", specActions, /For shadcn\/ui projects/],
