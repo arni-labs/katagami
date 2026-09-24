@@ -17,6 +17,11 @@ const specPanel = read("src/components/spec-panel.tsx");
 const specActions = read("src/components/spec-actions.tsx");
 const page = read("src/app/(site)/language/[id]/page.tsx");
 const kit = read("src/components/shadcn-kit-section.tsx");
+const usageLines = (() => {
+  const start = projection.indexOf("export function shadcnUsageMarkdown");
+  const body = projection.slice(projection.indexOf("return [", start), projection.indexOf('].join("\\n")', start));
+  return body.split("\n").filter((line) => !line.trim().startsWith("//")).join("\n");
+})();
 
 const required = [
   ["projection builds registry theme", projection, /type:\s*"registry:theme"/],
@@ -71,7 +76,10 @@ const required = [
   ["kit passes stored preview shots", kit, /storedPreviewShots=\{storedShadcnPreviewShots\}/],
   ["kit passes DESIGN.md with shadcn", kit, /shadcnDesignMd=\{shadcnDesignMd\}/],
   ["DESIGN.md includes shadcn usage", specPanel, /shadcnUsageMarkdown/],
-  ["the shadcn usage section names shadcn.json, shadcn-components.md and shadcn-shots.json, as the DESIGN.md contract requires", projection, /function shadcnUsageMarkdown[\s\S]{0,1500}\/shadcn\.json[\s\S]{0,200}\/shadcn-components\.md[\s\S]{0,200}\/shadcn-shots\.json/],
+  // Read the lines the function returns, comments stripped, so a filename
+  // parked in a comment does not count.
+  ["the shadcn usage section names shadcn.json, shadcn-components.md and shadcn-shots.json, as the DESIGN.md contract requires", usageLines, /\/shadcn\.json[\s\S]*\/shadcn-components\.md[\s\S]*\/shadcn-shots\.json/],
+  ["a stored DESIGN.md keeps its shadcn section only if it names the companion files", designRoute, /\["DESIGN\.with-shadcn\.md", "@\/components\/ui", "\/shadcn\.json", "\/shadcn-components\.md", "\/shadcn-shots\.json"\]\.every/],
   ["copy controls include shadcn MD", specActions, /shadcn-md/],
   ["copy controls include DESIGN.md with shadcn", specActions, /with shadcn/],
   ["copy controls explain shadcn projects", specActions, /For shadcn\/ui projects/],

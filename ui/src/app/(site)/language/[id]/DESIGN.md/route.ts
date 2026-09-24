@@ -49,9 +49,12 @@ function withCurrentShadcnUsage(
     }),
   ).trimEnd();
   const trimmed = markdown.trimEnd();
+  // A stored file keeps its own shadcn section only when that section already
+  // names everything the contract asks for; an older one is replaced below.
   if (
-    trimmed.includes("DESIGN.with-shadcn.md") &&
-    trimmed.includes("@/components/ui")
+    ["DESIGN.with-shadcn.md", "@/components/ui", "/shadcn.json", "/shadcn-components.md", "/shadcn-shots.json"].every((ref) =>
+      trimmed.includes(ref),
+    )
   ) {
     return `${trimmed}\n`;
   }
