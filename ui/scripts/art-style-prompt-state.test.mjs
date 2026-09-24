@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { artStyleGallerySources } from "../src/lib/art-style-prompt-state.ts";
+import { artStyleGallerySources, artStyleReferenceUrls } from "../src/lib/art-style-prompt-state.ts";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -82,3 +82,17 @@ assert.equal(
 );
 
 console.log("art-style prompt presentation states: pass");
+
+// reference image URLs: hero first, proxy over CDN, absolute, deduped, capped
+{
+  const cdn = "https://assets.katagami.ai/a.png";
+  const urls = artStyleReferenceUrls(
+    { hero: cdn, gallery: ["/api/file/fl-2", "/api/file/fl-2", "", "https://x.test/c.png"] },
+    { [cdn]: "/api/file/fl-1" },
+    "https://katagami.ai",
+  );
+  assert.deepEqual(urls, ["https://katagami.ai/api/file/fl-1", "https://katagami.ai/api/file/fl-2", "https://x.test/c.png"]);
+  const many = artStyleReferenceUrls({ hero: "/h", gallery: Array.from({ length: 20 }, (_, i) => `/g${i}`) }, {}, "https://k.ai");
+  assert.equal(many.length, 12);
+  assert.equal(many[0], "https://k.ai/h");
+}

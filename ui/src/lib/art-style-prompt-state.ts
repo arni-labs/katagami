@@ -23,3 +23,24 @@ export function artStyleGallerySources({
     .filter((src) => src && src !== hero);
   return { hero, gallery };
 }
+
+/** The images an art style's own page shows, as addresses an image tool can
+ *  fetch: hero first, then the gallery, each on the file proxy when the
+ *  page's CDN copy has one (a CDN copy can 404; the proxy is the source),
+ *  absolute, at most `limit`. */
+export function artStyleReferenceUrls(
+  sources: { hero: string; gallery: string[] },
+  fallbacks: Record<string, string>,
+  origin: string,
+  limit = 12,
+): string[] {
+  const out: string[] = [];
+  for (const url of [sources.hero, ...sources.gallery]) {
+    if (!url) continue;
+    const source = fallbacks[url] || url;
+    const absolute = source.startsWith("/") ? `${origin}${source}` : source;
+    if (!out.includes(absolute)) out.push(absolute);
+    if (out.length === limit) break;
+  }
+  return out;
+}

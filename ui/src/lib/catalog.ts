@@ -26,7 +26,7 @@ import { remixBriefPath } from "./remix-brief";
 import { mediumBucket, mediumMatches } from "./art-medium.mjs";
 import { parseArtStyleProcessList } from "./art-style-process";
 import { artStyleImages } from "./lane-items";
-import { artStyleGallerySources } from "./art-style-prompt-state";
+import { artStyleGallerySources, artStyleReferenceUrls } from "./art-style-prompt-state";
 import { judgedChecks, judgedQuestions, MAX_JUDGED, measuredChecks, pageState, verdictOf } from "./language-lint.mjs";
 
 // The ONE catalog gate (ARN-360). Both the website and the read MCP read the
@@ -918,10 +918,7 @@ function artStyleReferenceImages(row: Row): string[] {
     proofUrls: images.proofs,
     thumbnailUrl: images.thumb,
   });
-  return [hero, ...gallery]
-    .filter(Boolean)
-    .map((url) => (url.startsWith("/") ? `${GALLERY}${url}` : url))
-    .slice(0, 12);
+  return artStyleReferenceUrls({ hero, gallery }, images.fallbacks, GALLERY);
 }
 
 export async function getDesignMd(idOrSlug: string, tier: Tier): Promise<{ url: string } | null> {
