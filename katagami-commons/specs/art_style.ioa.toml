@@ -469,7 +469,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_credits", value = "true" }, { type = "set_bool", var = "has_source_basis_review", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["credits"]
-hint = "Credit every attributable artist, movement, studio, or tradition as JSON [{name,kind,note}]. Artist credits require a matching public-domain or licensed source_basis entry. Published styles must Revise first because changing credits invalidates the rights review."
+hint = "Credit every attributable artist, movement, studio, or tradition as JSON [{name,kind,note}]. Artist credits require a matching public-domain, licensed, or independently reviewed historical_attribution source_basis entry. Historical attribution preserves deceased-person credit without a copying license or individual-style target. Published styles must Revise first because changing credits invalidates the rights review."
 
 [[action]]
 name = "SetModelProvenance"
