@@ -475,7 +475,9 @@ export function shadcnUsageMarkdown(theme: ShadcnRegistryTheme): string {
     "",
     `DESIGN.md with shadcn: \`${languagePath}/DESIGN.with-shadcn.md\`.`,
     "",
-    "The shadcn page also exposes optional machine-readable files for automation, but the human-facing handoff is DESIGN.md with shadcn.",
+    // The synthesis skill's DESIGN.md contract names these three; the section
+    // every served DESIGN.md carries used to leave them out.
+    `Machine-readable companions for automation: \`${languagePath}/shadcn.json\` (registry theme), \`${languagePath}/shadcn-components.md\` (component recipes) and \`${languagePath}/shadcn-shots.json\` (preview shots). The human-facing handoff is still DESIGN.md with shadcn.`,
     "",
     `Install recommended primitives with \`${theme.meta.installCommand}\`.`,
     "",

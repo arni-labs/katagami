@@ -71,6 +71,7 @@ const required = [
   ["kit passes stored preview shots", kit, /storedPreviewShots=\{storedShadcnPreviewShots\}/],
   ["kit passes DESIGN.md with shadcn", kit, /shadcnDesignMd=\{shadcnDesignMd\}/],
   ["DESIGN.md includes shadcn usage", specPanel, /shadcnUsageMarkdown/],
+  ["the shadcn usage section names shadcn.json, shadcn-components.md and shadcn-shots.json, as the DESIGN.md contract requires", projection, /function shadcnUsageMarkdown[\s\S]{0,1500}\/shadcn\.json[\s\S]{0,200}\/shadcn-components\.md[\s\S]{0,200}\/shadcn-shots\.json/],
   ["copy controls include shadcn MD", specActions, /shadcn-md/],
   ["copy controls include DESIGN.md with shadcn", specActions, /with shadcn/],
   ["copy controls explain shadcn projects", specActions, /For shadcn\/ui projects/],
