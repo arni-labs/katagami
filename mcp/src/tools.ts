@@ -430,6 +430,8 @@ export function buildServer(auth: AuthInfo): McpServer {
         name: z.string(),
         slug: z.string().regex(/^[a-z0-9-]+$/),
         medium: z.string().describe("Short medium noun: illustration | photography | painting | print | 3d | collage | mixed"),
+        materials: z.array(z.string().trim().min(1)).default([]).describe("Materials, tools and supports specified by the recipe, e.g. alcohol markers and smooth paper. Do not invent brands or claim generated images were physically manufactured."),
+        techniques: z.array(z.string().trim().min(1)).default([]).describe("Methods specified by the recipe, e.g. layering and stippling; empty when unspecified."),
         prompt_template: z
           .string()
           .trim()
@@ -527,6 +529,8 @@ export function buildServer(auth: AuthInfo): McpServer {
         name: a.name,
         slug: a.slug,
         medium: a.medium,
+        materials: asJsonString(a.materials),
+        techniques: asJsonString(a.techniques),
         prompt_template: a.prompt_template,
         slot_recipes: asJsonString(a.slot_recipes),
         guidance: a.guidance ?? "",

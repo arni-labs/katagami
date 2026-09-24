@@ -23,6 +23,7 @@ import { Credits } from "@/components/credits";
 import { ModelProvenance } from "@/components/model-provenance";
 import { InlineRemix } from "@/components/remix/inline-remix";
 import { artStyleGallerySources } from "@/lib/art-style-prompt-state";
+import { artStyleRecipe, parseArtStyleProcessList } from "@/lib/art-style-process";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,8 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   const name = artStyleDisplayName(f);
   const medium = f.medium ?? "mixed";
   const promptTemplate = f.prompt_template ?? "";
+  const materials = parseArtStyleProcessList(f.materials);
+  const techniques = parseArtStyleProcessList(f.techniques);
   const portability = parseJson<{ verdict?: string }>(f.portability_report);
   const promptVerified =
     f.has_source_basis_review === "true" &&
@@ -98,10 +101,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
     thumbnailUrl: thumb,
   });
 
-  const recipe =
-    `${name} — Katagami art-style recipe (${medium})\n\n` +
-    `PROMPT TEMPLATE\n${promptTemplate}\n\n` +
-    `Apply the prompt to the subject in your image or generation request.`;
+  const recipe = artStyleRecipe({ name, medium, promptTemplate, materials, techniques });
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:py-10">
@@ -174,6 +174,24 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
       <StickyNote className="p-5 sm:p-6">
         <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Prompt template</div>
         <pre className={`overflow-x-auto whitespace-pre-wrap rounded-[3px] p-3 font-mono text-[12px] leading-relaxed text-foreground ${CHIP}`}>{promptTemplate}</pre>
+        {materials.length || techniques.length ? (
+          <div className="mt-4">
+            <dl className="grid gap-4 sm:grid-cols-2">
+              {materials.length ? (
+                <div className="min-w-0">
+                  <dt className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Materials</dt>
+                  <dd className="break-words text-base leading-relaxed">{materials.join(", ")}</dd>
+                </div>
+              ) : null}
+              {techniques.length ? (
+                <div className="min-w-0">
+                  <dt className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Techniques</dt>
+                  <dd className="break-words text-base leading-relaxed">{techniques.join(", ")}</dd>
+                </div>
+              ) : null}
+            </dl>
+          </div>
+        ) : null}
         {Object.keys(slotRecipes).length ? (
           <>
             <div className="mb-2 mt-4 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Slot recipes</div>

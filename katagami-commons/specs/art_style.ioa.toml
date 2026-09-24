@@ -276,8 +276,8 @@ effect = [
   { type = "set_bool", var = "has_prompt_review", value = "false" },
   { type = "set_bool", var = "has_portability_evidence", value = "false" }
 ]
-params = ["name", "slug", "medium", "prompt_template", "slot_recipes", "guidance", "reference_image_file_ids", "reference_manifest", "proof_shots_file_ids", "proof_shots_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "source_basis", "prompt_review", "portability_report", "tags", "direction_id", "curator_notes"]
-hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/one paste-ready observable prompt/slot_recipes/guidance + prompt-only comparison outputs from at least two distinct image model identities, with five gallery outputs (four OpenAI and one xAI) in reference_manifest schema version 3; comparison files may also be gallery images; strongest first and its File is the thumbnail + thumbnail + lineage + model provenance + credits + source_basis + independent prompt_review + portability_report + direction_id. Katagami does not generate submission images. Leaves the entity in Draft. The finalizer validates the reports, files, and hashes, internally attests them, and alone may mark quality/publish. Files must already be Locked."
+params = ["name", "slug", "medium", "materials", "techniques", "prompt_template", "slot_recipes", "guidance", "reference_image_file_ids", "reference_manifest", "proof_shots_file_ids", "proof_shots_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "source_basis", "prompt_review", "portability_report", "tags", "direction_id", "curator_notes"]
+hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/materials/techniques (recipe-supported JSON string arrays)/one paste-ready observable prompt/slot_recipes/guidance + prompt-only comparison outputs from at least two distinct image model identities, with five gallery outputs (four OpenAI and one xAI) in reference_manifest schema version 3; comparison files may also be gallery images; strongest first and its File is the thumbnail + thumbnail + lineage + model provenance + credits + source_basis + independent prompt_review + portability_report + direction_id. Katagami does not generate submission images. Leaves the entity in Draft. The finalizer validates the reports, files, and hashes, internally attests them, and alone may mark quality/publish. Files must already be Locked."
 
 
 # The engine binds verification to this submitted entity. Contributors do not
@@ -448,6 +448,13 @@ params = ["search_blob"]
 hint = "Curation-service callback: attach the precomputed lowercase search blob (name + tags + descriptive fields) so the catalog can be searched case-insensitively server-side under keyset pagination. Cedar denies contributors."
 
 # --- Actions: Classification ---
+
+[[action]]
+name = "SetMaterialsAndTechniques"
+kind = "input"
+from = ["Draft", "UnderReview", "Published", "Archived"]
+params = ["materials", "techniques"]
+hint = "Describe the existing recipe with JSON string arrays: materials (media, tools and supports, e.g. alcohol markers and smooth paper) and techniques (methods, e.g. layering and stippling). Record only what the recipe or retained evidence supports; use [] when unspecified. These are descriptive recipe properties, not claims about physical manufacture of generated images. Do not change the recipe or invent a product brand. This action does not change publication, proof or quality attestations."
 
 [[action]]
 name = "SetTaxonomy"
