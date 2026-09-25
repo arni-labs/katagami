@@ -721,7 +721,12 @@ const baseHandler = createMcpHandler(
         if (!id) return missingId();
         // Art styles carry no tokens, so a kindless lookup skips them.
         const { found } = await firstKind(a.kind, (k) => (k === "art_style" ? Promise.resolve(null) : getTokens(KIND_IN[k], id, tier, a.format ?? "json")));
-        return found ? ok(found) : await goneForAny(a.kind, id, tier, ["design_language", "palette"]);
+        if (found) return ok(found);
+        if ((!a.kind || a.kind === "art_style") && (await existsPublished("art_style", id))) {
+          const text = JSON.stringify({ error: "no_tokens", message: "Art styles carry a prompt recipe and reference images, not design tokens. Use get_library_entry for them." }, null, 2);
+          return { content: [{ type: "text" as const, text }], isError: true };
+        }
+        return await goneForAny(a.kind, id, tier, ["design_language", "palette"]);
       },
     );
     server.registerTool(
