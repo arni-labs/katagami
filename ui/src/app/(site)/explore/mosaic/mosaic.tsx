@@ -757,7 +757,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
       </div>
 
       {gate && whole !== null ? <Gate onClose={() => setGate(false)} /> : null}
-      {style ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => { setOpen(null); setVerdict(null); setAside([]); }} verdict={verdict && verdict.id === style.id ? verdict : null} pinned={pins.includes(style.id)} onPin={() => (pins.includes(style.id) ? unpin(style.id) : pin([style.id]))} /> : null}
+      {style ? <Viewer key={style.id} style={style} family={style.family ? familyOf.get(style.family) ?? null : null} fit={ask.fits?.get(style.id) ?? null} judging={ask.state === "asking"} phone={phone} onTurn={turn} onClose={() => { setOpen(null); setVerdict(null); setAside([]); }} verdict={verdict && verdict.id === style.id ? verdict : null} pinned={pins.includes(style.id)} onPin={() => (pins.includes(style.id) ? unpin(style.id) : pin([style.id]))} note={aside} onLike={() => void command("more like this")} onSuit={(q) => void command(q)} /> : null}
       {axes && (mode === "trait" || mode === "plot") ? (
         <p className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${glass}`} style={{ top: "calc(var(--head, 60px) + 14px)" }}>
           {mode === "plot" ? <>{axes.labels[0]} → <span className="mx-1.5 opacity-40">·</span> {axes.labels[1]} ↑</> : <>{axes.reverse ? "most" : "least"} {axes.labels[0]} → {axes.reverse ? "least" : "most"}</>}
@@ -796,7 +796,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
         </div>
       ) : null}
       {tray && ask.fits && !open && !pair ? <Tray want={ask.answer?.want ?? null} fits={ask.fits} byId={byId} judging={ask.state === "asking"} phone={phone} onOpen={(id) => { setTray(false); goTo(id); }} onClose={() => setTray(false)} /> : null}
-      <AskDock minimal={quiet} ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet compact={phone && Boolean(open)} card={Boolean(open)} onSubmit={command} note={open ? aside : did} onUndo={canUndo && !open ? undo : undefined} onClear={reset} hints={open ? ["would this suit a bank?", "more like this", "pin this"] : ask.answer ? ["warmer", "quieter", "less corporate", "only the dark ones"] : ["a calm booking app for an island ferry", "dark to light", "only the dark ones"]} />
+      {open ? null : <AskDock minimal={quiet} ask={ask} hue={hue} onHue={setHue} onGo={goTo} byId={byId} lit={litNow ? litNow.size : null} kinds={kinds} quiet onSubmit={command} note={did} onUndo={canUndo ? undo : undefined} onClear={reset} hints={ask.answer ? ["warmer", "quieter", "less corporate", "only the dark ones"] : ["a calm booking app for an island ferry", "dark to light", "only the dark ones"]} />}
     </div>
     </SkinContext.Provider>
   );
@@ -936,7 +936,7 @@ function scatter(ratios: number[], width: number, height: number) {
 /** A stamp opened: the entry's pictures at their own shape, the main one large, on a veil of the entry's ink.
  *  The picture is the way in (it is a link to the entry's page), as is the wide button under it. What the sheet
  *  already loaded is shown at once, soft, while the large picture arrives over it. */
-function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, pinned, onPin }: { style: AtlasStyle; family: Family | null; fit: Fit | null; judging: boolean; phone: boolean; onTurn: (by: number) => void; onClose: () => void; verdict: { q: string; suits: number; helps: string[]; hurts: string[] } | null; pinned: boolean; onPin: () => void }) {
+function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, pinned, onPin, note, onLike, onSuit }: { /** What the last thing asked about this one said back ("…" while it is being weighed). */ note: string[]; /** Show the library's styles like this one. */ onLike: () => void; /** Ask whether this one suits something. */ onSuit: (question: string) => void; style: AtlasStyle; family: Family | null; fit: Fit | null; judging: boolean; phone: boolean; onTurn: (by: number) => void; onClose: () => void; verdict: { q: string; suits: number; helps: string[]; hurts: string[] } | null; pinned: boolean; onPin: () => void }) {
   const root = useRef<HTMLDivElement | null>(null);
   const swipe = useRef<{ x: number } | null>(null);
   const held = useMemo(() => (style.pictures.length > 0 ? style.pictures : style.picture ? [style.picture] : []), [style]);
@@ -952,6 +952,16 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
   }, [held, dead, style.thumbnail_url]);
   // The thing people come for: the art style's prompt, or the language's DESIGN.md, on the clipboard in one press.
   const [copied, setCopied] = useState<"" | "copying" | "done" | "failed">("");
+  // "Would it suit…" opens into a line to finish the question in; null while it is a chip.
+  const [suit, setSuit] = useState<string | null>(null);
+  const weighing = note[0] === "…";
+  const said = note.find((n) => n !== "…" && n !== "Judged");
+  const askSuit = () => {
+    const v = (suit ?? "").trim().replace(/\?+$/, "");
+    if (v.length < 2) return;
+    onSuit(/^(would|will|could|can|is|does|how|for)\b/i.test(v) ? `${v}?` : `would this suit ${v}?`);
+    setSuit(null);
+  };
   const copy = async () => {
     setCopied("copying");
     try {
@@ -986,14 +996,14 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
   useEffect(() => { for (const p of pictures.slice(1, 4)) { const img = new Image(); img.src = quick(p, big); } }, [pictures, big]);
 
   // Desk: every picture at once, as stamps of different sizes arranged like prints on a table. Phone: one at a time.
-  const roomW0 = phone ? window.innerWidth - 56 : Math.min(window.innerWidth * 0.66, 1040), dockH = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dock-h")) || 170;
-  // What is left between the header and the ask bar, less the name, the traits, a verdict and the button.
-  const roomH = Math.max(200, window.innerHeight - 65 - dockH - (phone ? 250 : 230) - (verdict ? 96 : 0));
+  const roomW0 = phone ? window.innerWidth - 56 : Math.min(window.innerWidth * 0.66, 1040);
+  // What is left under the header, less the name, the traits, a verdict, the buttons and the chips under them.
+  const roomH = Math.max(200, window.innerHeight - 65 - 24 - (phone ? 300 : 280) - (verdict ? 96 : 0));
   const roomW = Math.min(roomW0, roomH * 2.1); // a short table is also a narrower one, so the prints keep their proportions
   const shown = phone ? (main ? [main] : []) : pictures;
   const placed = scatter(shown.map((p) => shapes[p] ?? 1.5), roomW, roomH);
   return (
-    <div ref={root} role="dialog" aria-modal="true" aria-label={style.name} className="viewer-veil absolute inset-0 z-40 flex flex-col items-center gap-4 [justify-content:safe_center] overflow-y-auto px-4 pt-16 backdrop-blur-2xl md:pt-6 backdrop-saturate-150" style={{ background: `color-mix(in srgb, ${style.ink ?? "#888"} 34%, color-mix(in srgb, var(--background) 78%, transparent))`, paddingBottom: "calc(var(--dock-h, 150px) + 16px)" }}
+    <div ref={root} role="dialog" aria-modal="true" aria-label={style.name} className="viewer-veil absolute inset-0 z-40 flex flex-col items-center gap-4 [justify-content:safe_center] overflow-y-auto px-4 pt-16 backdrop-blur-2xl md:pt-6 backdrop-saturate-150" style={{ background: `color-mix(in srgb, ${style.ink ?? "#888"} 34%, color-mix(in srgb, var(--background) 78%, transparent))`, paddingBottom: 24 }}
       onClick={onClose} onPointerMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--lx", String(Math.round((e.clientX - r.left - r.width / 2) * 1.6))); e.currentTarget.style.setProperty("--ly", String(Math.round((e.clientY - r.top - r.height * 0.4) * 1.6))); }} onPointerDown={(e) => { swipe.current = { x: e.clientX }; }} onPointerUp={(e) => { const d = swipe.current ? e.clientX - swipe.current.x : 0; swipe.current = null; if (Math.abs(d) > 70) { e.stopPropagation(); onTurn(d < 0 ? 1 : -1); } }}>
       <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 z-10 cursor-pointer bg-background/70 p-2.5 backdrop-blur-md"><X size={18} /></button>
       <button type="button" onClick={(e) => { e.stopPropagation(); onTurn(-1); }} aria-label="Previous" className="absolute left-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer bg-background/70 p-3 backdrop-blur-md max-md:hidden"><ArrowLeft size={18} /></button>
@@ -1051,6 +1061,25 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
           <button type="button" onClick={onPin} aria-pressed={pinned} className="cursor-pointer bg-background/70 px-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur-md">{pinned ? "Pinned" : "Pin"}</button>
           <button type="button" onClick={() => onTurn(1)} aria-label="Next" className="cursor-pointer bg-background/70 px-4 backdrop-blur-md md:hidden"><ArrowRight size={18} /></button>
         </div>
+        {/* The two things to do with one style besides taking it: see its like, or ask whether it suits something.
+            Two small chips, not a box to type in; the second opens into a line to finish the question. */}
+        <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5">
+          <button type="button" onClick={onLike} className="card-chip">More like this</button>
+          {suit === null ? (
+            <button type="button" onClick={() => setSuit("")} disabled={weighing} aria-busy={weighing} className="card-chip">{weighing ? "Weighing it up" : "Would it suit…"}</button>
+          ) : (
+            <form onSubmit={(e) => { e.preventDefault(); askSuit(); }} className="card-chip card-chip-field">
+              <label htmlFor="card-suit" className="shrink-0 text-foreground/55">Would it suit</label>
+              <input id="card-suit" autoFocus value={suit} maxLength={120} autoComplete="off" enterKeyHint="send" placeholder="a bank?"
+                onChange={(e) => setSuit(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setSuit(null); } }}
+                onBlur={() => { if (!suit.trim()) setSuit(null); }}
+                className="w-[8.5rem] min-w-0 bg-transparent text-[16px] outline-none placeholder:text-foreground/35 md:text-[13px]" />
+              <button type="submit" aria-label="Ask" className="-my-1 cursor-pointer px-1.5 text-foreground/60 hover:text-foreground"><ArrowRight size={14} /></button>
+            </form>
+          )}
+        </div>
+        {said ? <p aria-live="polite" className="font-mono text-[10px] uppercase tracking-[0.12em] text-foreground/60">{said}</p> : null}
       </div>
     </div>
   );
