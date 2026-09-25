@@ -52,6 +52,8 @@ const required = [
   ["preview rejects non-renderable stored shots", preview, /isRenderableShadcnPreviewShots/],
   ["preview renders shot deck", preview, /ShotPreviewDeck/],
   ["preview exposes artifact source", preview, /data-shadcn-preview-source/],
+  ["a declared motion wins over words in the prose", preview, /\["still", "lift", "lift-rotate"\] as const\)\.find\(\(m\) => m === explicit\.motion\)/],
+  ["a declared density wins over words in the prose", preview, /\["dense", "balanced", "airy"\] as const\)\.find\(\(d\) => d === explicit\.density\)/],
   ["preview distinguishes agent-authored kit", preview, /data-shadcn-agent-kit/],
   ["preview demotes fallback to compatibility panel", preview, /CompatibilityCheckPanel/],
   ["preview consumes visual profile", preview, /visualProfileFromArtifact/],

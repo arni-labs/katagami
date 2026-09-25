@@ -383,16 +383,21 @@ function visualProfileFromArtifact(
       typeof explicit.stickerBadges === "boolean"
         ? explicit.stickerBadges
         : profileKeyword(profileText, ["sticker", "stamp", "ribbon", "label chip", "badge"]),
-    motion: profileKeyword(profileText, ["rotate", "tilt", "one degree"])
-      ? "lift-rotate"
-      : profileKeyword(profileText, ["lift", "spring", "hop"])
-        ? "lift"
-        : "still",
-    density: profileKeyword(profileText, ["dense", "compact", "ledger"])
-      ? "dense"
-      : profileKeyword(profileText, ["airy", "roomy", "wide gutter"])
-        ? "airy"
-        : "balanced",
+    // A declared motion or density wins, as it does for contour, underlay and
+    // grain. Guessing from prose read "never tilted" as tilt and made a still
+    // language's buttons rotate on hover.
+    motion: (["still", "lift", "lift-rotate"] as const).find((m) => m === explicit.motion) ??
+      (profileKeyword(profileText, ["rotate", "tilt", "one degree"])
+        ? "lift-rotate"
+        : profileKeyword(profileText, ["lift", "spring", "hop"])
+          ? "lift"
+          : "still"),
+    density: (["dense", "balanced", "airy"] as const).find((d) => d === explicit.density) ??
+      (profileKeyword(profileText, ["dense", "compact", "ledger"])
+        ? "dense"
+        : profileKeyword(profileText, ["airy", "roomy", "wide gutter"])
+          ? "airy"
+          : "balanced"),
     accents: listFromUnknown(explicit.accents).slice(0, 4),
   };
 }
