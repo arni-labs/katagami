@@ -424,10 +424,10 @@ async function firstKind<T>(kind: PublicKind | undefined, look: (k: PublicKind) 
   return { kind: "design_language", found: null };
 }
 /** A miss with no kind: signed-out callers are told to sign in only if the id exists somewhere. */
-async function goneForAny(kind: PublicKind | undefined, idOrSlug: string, tier: Tier) {
+async function goneForAny(kind: PublicKind | undefined, idOrSlug: string, tier: Tier, kinds: PublicKind[] = KIND_ORDER) {
   if (kind) return goneFor(KIND_IN[kind], idOrSlug, tier);
   if (tier === "sample") {
-    for (const k of KIND_ORDER) if (await existsPublished(KIND_IN[k], idOrSlug)) return gone("sample");
+    for (const k of kinds) if (await existsPublished(KIND_IN[k], idOrSlug)) return gone("sample");
   }
   return gone("full");
 }
@@ -646,14 +646,19 @@ const baseHandler = createMcpHandler(
         // Without a kind, a family means design languages and a medium art styles.
         const k = kind ?? (a.family ? "design_language" : a.medium ? "art_style" : undefined);
         if (!k) {
+          if (a.cursor !== undefined) {
+            const text = JSON.stringify({ error: "cursor_needs_kind", message: "A cursor pages one kind. Pass `kind` with it: each kind's next cursor is in `next_cursor_by_kind`." }, null, 2);
+            return { content: [{ type: "text" as const, text }], isError: true };
+          }
           const per = Math.min(a.limit ?? 8, 20);
           const all = await Promise.all(KIND_ORDER.map((kk) => searchDesigns(KIND_IN[kk], tierOf(extra), { ...a, limit: per, cursor: undefined })));
           const results = all.flatMap((f) => f.results);
           const found = {
             tier: tierOf(extra),
             by_kind: Object.fromEntries(KIND_ORDER.map((kk, i) => [kk, all[i].total_matching])),
+            next_cursor_by_kind: Object.fromEntries(KIND_ORDER.map((kk, i) => [kk, all[i].next_cursor ?? null])),
             results,
-            note: "Searched all three kinds. Pass `kind` to page through one of them.",
+            note: "Searched all three kinds. To see more of one, call again with its `kind` and its cursor from next_cursor_by_kind.",
           };
           return okWithPictures(found, results, images === true);
         }
@@ -716,7 +721,7 @@ const baseHandler = createMcpHandler(
         if (!id) return missingId();
         // Art styles carry no tokens, so a kindless lookup skips them.
         const { found } = await firstKind(a.kind, (k) => (k === "art_style" ? Promise.resolve(null) : getTokens(KIND_IN[k], id, tier, a.format ?? "json")));
-        return found ? ok(found) : await goneForAny(a.kind, id, tier);
+        return found ? ok(found) : await goneForAny(a.kind, id, tier, ["design_language", "palette"]);
       },
     );
     server.registerTool(

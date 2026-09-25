@@ -22,14 +22,16 @@ export function callerOf(request: Request): string {
 export function mayStart(scope: string, who: string, tier: "sample" | "full"): boolean {
   const key = `${scope}:${who}`;
   const now = Date.now();
-  if (tier === "sample") {
-    sampleStarts = sampleStarts.filter((at) => now - at < WINDOW_MS);
-    if (sampleStarts.length >= SAMPLE_CEILING) return false;
-  }
   const mine = (starts.get(key) ?? []).filter((at) => now - at < WINDOW_MS);
   if (mine.length >= PER_WINDOW[tier]) {
     starts.set(key, mine);
     return false;
+  }
+  // Checked after the caller's own allowance, and counted only for a start
+  // that goes ahead, so one address over its limit spends none of it.
+  if (tier === "sample") {
+    sampleStarts = sampleStarts.filter((at) => now - at < WINDOW_MS);
+    if (sampleStarts.length >= SAMPLE_CEILING) return false;
   }
   mine.push(now);
   if (tier === "sample") sampleStarts.push(now);
