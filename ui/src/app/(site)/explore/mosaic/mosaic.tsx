@@ -150,6 +150,8 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
   const [open, setOpen] = useState<string | null>(null);
   // What was just said back about the open card, kept apart from the wall's own line so neither answers for the other.
   const [aside, setAside] = useState<string[]>([]);
+  // Bumped by every command, and by turning to another card: an answer that comes back after either is dropped.
+  const commandTurn = useRef(0);
   const [hue, setHue] = useState("");
   const ask = useAsk();
   // Design languages and art styles, both by default; pressing one turns it off or on, and the last one on stays on.
@@ -626,7 +628,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
   }, [spot, world, cellAt, phone]);
   const turn = useCallback((by: number) => {
     if (!spot) return;
-    for (let step = 1; step <= world.cols; step++) { const c = spot.c + by * step; const cell = cellAt(c, spot.r); if (cell?.kind === "style") { bring(c, spot.r); setOpen(cell.s.id); return; } }
+    for (let step = 1; step <= world.cols; step++) { const c = spot.c + by * step; const cell = cellAt(c, spot.r); if (cell?.kind === "style") { bring(c, spot.r); setOpen(cell.s.id); commandTurn.current++; setAside([]); return; } }
   }, [spot, world, cellAt, bring]);
 
   // ---- operated in words ------------------------------------------------------
@@ -644,7 +646,6 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
   useEffect(() => { try { const saved = JSON.parse(localStorage.getItem("katagami-shortlist") ?? "[]"); if (Array.isArray(saved)) requestAnimationFrame(() => setPins(saved.filter((x) => typeof x === "string").slice(0, 24))); } catch { /* none kept */ } }, []);
   const pin = useCallback((ids: string[]) => setPins((now) => { const next = [...new Set([...now, ...ids])].slice(0, 24); try { localStorage.setItem("katagami-shortlist", JSON.stringify(next)); } catch { /* private window */ } return next; }), []);
   const unpin = useCallback((id: string) => setPins((now) => { const next = now.filter((x) => x !== id); try { localStorage.setItem("katagami-shortlist", JSON.stringify(next)); } catch { /* private window */ } return next; }), []);
-  const commandTurn = useRef(0);
   // One step back: what the screen was before the last thing typed.
   const before = useRef<null | { kinds: Kinds; mode: Mode; hue: string; skin: Skin; cw: number; pair: string[] | null; axes: Axes | null; narrow: { trait: string; label: string } | null }>(null);
   const [canUndo, setCanUndo] = useState(false);
@@ -959,7 +960,8 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
   const askSuit = () => {
     const v = (suit ?? "").trim().replace(/\?+$/, "");
     if (v.length < 2) return;
-    onSuit(/^(would|will|could|can|is|does|how|for)\b/i.test(v) ? `${v}?` : `would this suit ${v}?`);
+    // The field already says "Would it suit", so what is typed is usually only the rest ("a bank", "for a bank").
+    onSuit(/^(would|will|could|can|is|does|how)\b/i.test(v) ? `${v}?` : `would this suit ${v.replace(/^for\s+/i, "")}?`);
     setSuit(null);
   };
   const copy = async () => {
@@ -982,7 +984,7 @@ function Viewer({ style, family, fit, judging, phone, onTurn, onClose, verdict, 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.key === "Tab" && root.current) {
-        const stops = [...root.current.querySelectorAll<HTMLElement>("a[href], button")], first = stops[0], last = stops[stops.length - 1];
+        const stops = [...root.current.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input")], first = stops[0], last = stops[stops.length - 1];
         if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); } else if (!root.current.contains(document.activeElement)) { e.preventDefault(); first?.focus(); }
         return;
       }
