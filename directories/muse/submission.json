@@ -13,7 +13,7 @@
   "endpoint": "https://katagami.ai/mcp",
   "openEndpoint": "https://katagami.ai/mcp/open",
   "openapi": null,
-  "limits": "Free. No account is needed for the visitor shelf (about 60 design languages, 40 palettes and 70 art styles), served at https://katagami.ai/mcp/open with no sign-in. Google sign-in at https://katagami.ai/mcp opens the full library (about 300 languages). The model-backed tools (ask_library, compose_kit, check_page_against_language) allow 6 calls a minute per network address without sign-in and 30 per person with sign-in.",
+  "limits": "Free. No account is needed for the visitor shelf (about 60 design languages, 40 palettes and 70 art styles), served at https://katagami.ai/mcp/open with no sign-in. Google sign-in at https://katagami.ai/mcp opens the full library (about 300 languages). The model-backed tools (ask_library, compose_kit, check_page_against_language) allow 30 calls a minute per person with sign-in, and 30 per network address without it.",
   "authMethods": [
     "OAuth with PKCE"
   ],
