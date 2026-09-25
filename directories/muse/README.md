@@ -30,7 +30,7 @@ Paste-ready values for Meta's Muse Connector Platform form (https://muse.ai/plat
 2. **Then sign in once** with `https://katagami.ai/mcp` (OAuth) to see the full library as reviewers who sign in will.
 3. **Fill the form** as below and tick the three attestations yourself.
 
-The signed-out limit on the model-backed tools is 120 calls a minute per network address, with a shared ceiling of 600 a minute for all signed-out traffic on a server instance. It used to be 6, which Muse users behind shared servers would have had to share.
+The signed-out limit on each model-backed tool is 120 calls a minute per network address, with a shared ceiling of 600 a minute for all signed-out traffic on a server instance. It used to be 6, which Muse users behind shared servers would have had to share.
 
 ## Testing in Muse before submitting
 

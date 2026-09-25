@@ -6,7 +6,8 @@ import "server-only";
 //
 // Signed-out callers were held to 6 a minute per address. An assistant such as
 // Muse calls connectors from shared servers, so all of its signed-out users
-// share one address. An address may now start 120 a minute, and all signed-out
+// share one address. An address may now start 120 a minute on each route (the
+// counter is per scope), and all signed-out
 // traffic on an instance shares a ceiling of 600, which still bounds what an
 // open door can spend (a model call costs a fraction of a cent).
 const WINDOW_MS = 60_000;
