@@ -172,7 +172,7 @@ const MARK: Record<string, string> = { what: "var(--yuzu)", who: "var(--sakura)"
  *  feel). It is a plain textarea with its text made invisible over a twin that draws the same words with the marks,
  *  so the caret, selection and keyboard are the browser's own. Once there is an answer it can be refined in words
  *  from the same place. An ask and a colour are two ways to light the library, and the newer one wins. */
-export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false, onSubmit, note, onUndo, hints, compact = false, card = false, onClear, minimal = false }: { /** One line and a button: suggestions only while the line is in use or an answer is up, no colour row. */ minimal?: boolean; ask: ReturnType<typeof useAsk>; hue: string; onHue: (h: string) => void; onGo: (id: string) => void; byId: Map<string, AtlasStyle>; lit: number | null; kinds?: Kinds; /** The view shows the answer itself: no chips here. */ quiet?: boolean; /** The view reads what is typed itself (it may be a command, not a question). */ onSubmit?: (text: string) => void; /** What the view just did, said back in a line. */ note?: string[]; /** Step back from the last thing typed. */ onUndo?: () => void; /** Things worth typing right now, given what is on screen. */ hints?: string[]; /** Something else has the screen: leave only the line to type in. */ compact?: boolean; /** One style is open, and the box answers about that one: say so rather than inviting anything. */ card?: boolean; /** Put the view back the way it started, alongside clearing the question. */ onClear?: () => void }) {
+export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false, onSubmit, note, onUndo, hints, onClear, minimal = false }: { /** One line and a button: suggestions only while the line is in use or an answer is up, no colour row. */ minimal?: boolean; ask: ReturnType<typeof useAsk>; hue: string; onHue: (h: string) => void; onGo: (id: string) => void; byId: Map<string, AtlasStyle>; lit: number | null; kinds?: Kinds; /** The view shows the answer itself: no chips here. */ quiet?: boolean; /** The view reads what is typed itself (it may be a command, not a question). */ onSubmit?: (text: string) => void; /** What the view just did, said back in a line. */ note?: string[]; /** Step back from the last thing typed. */ onUndo?: () => void; /** Things worth typing right now, given what is on screen. */ hints?: string[]; /** Put the view back the way it started, alongside clearing the question. */ onClear?: () => void }) {
   const found = quiet ? [] : ask.fits ? [...ask.fits.entries()].filter(([id]) => byId.has(id)).sort((a, b) => a[1].rank - b[1].rank) : [];
   const dock = useRef<HTMLDivElement | null>(null);
   const [read, setRead] = useState<Word[]>([]);
@@ -241,13 +241,12 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
             {found.map(([id]) => <li key={id} className="shrink-0"><button type="button" onClick={() => onGo(id)} className="cursor-pointer bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2 py-1.5 text-[12.5px] hover:bg-[color-mix(in_srgb,var(--foreground)_11%,transparent)]">{byId.get(id)?.name}</button></li>)}
           </ul>
         ) : null}
-        {/* One quiet line: what it just did (with a step back), then a few things worth typing now. It stays in
-            compact too — a box that says "ask about this one" and then offers nothing is where people guess. The
-            refinement chips are the exception: they belong to the answer behind the card, not to the card. */}
-        {(note && note.length > 0) || (!compact && ask.chain.length > 0) || (offer && hints && hints.length > 0 && fresh) ? (
+        {/* One quiet line: what it just did (with a step back), the changes made to the answer on screen, each taken
+            back with one press, then a few things worth typing now. */}
+        {(note && note.length > 0) || ask.chain.length > 0 || (offer && hints && hints.length > 0 && fresh) ? (
           <div aria-live="polite" className="flex items-center gap-1.5 overflow-x-auto px-0.5 [scrollbar-width:none] [&>*]:shrink-0 [&>*]:whitespace-nowrap">
             {(note ?? []).map((n) => <span key={n} className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-foreground/80">{n}</span>)}
-            {!compact && ask.answer && ask.chain.length > 0 ? ask.chain.map((step, i) => (
+            {ask.answer && ask.chain.length > 0 ? ask.chain.map((step, i) => (
               <button key={`${i}-${step.say}`} type="button" onClick={() => void ask.unrefine(i, kinds)} title={`Take back "${step.say}"`}
                 className="refine-chip group flex cursor-pointer items-center gap-1 bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-2 py-1 text-[12px] hover:bg-[color-mix(in_srgb,var(--foreground)_12%,transparent)]">
                 {step.say}
@@ -265,7 +264,7 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
           <label htmlFor="explore-ask" className="sr-only">What are you making?</label>
           <div className="relative min-w-0 flex-1">
             <div aria-hidden className={`pointer-events-none whitespace-pre-wrap break-words px-1 py-1 ${type}`} style={{ minHeight: "1.3em", opacity: busy ? 0.6 : 1 }}>
-              {ask.query ? runs.map((m, i) => (m.role ? <mark key={i} className="query-mark" style={{ ["--mark" as string]: MARK[m.role], animationDelay: `${Math.min(i, 8) * 60}ms` }}>{m.piece}</mark> : <span key={i}>{m.piece}</span>)) : <span className="font-normal text-foreground/35">{card ? "Would it suit? More like it? Pin it?" : minimal ? "Describe what you are making" : "Ask, or tell it what to do: “only art styles, by family”"}</span>}
+              {ask.query ? runs.map((m, i) => (m.role ? <mark key={i} className="query-mark" style={{ ["--mark" as string]: MARK[m.role], animationDelay: `${Math.min(i, 8) * 60}ms` }}>{m.piece}</mark> : <span key={i}>{m.piece}</span>)) : <span className="font-normal text-foreground/35">{minimal ? "Describe what you are making" : "Ask, or tell it what to do: “only art styles, by family”"}</span>}
               {/* A trailing newline needs something after it to take up a line, as the textarea gives it one. */}
               {ask.query.endsWith("\n") ? " " : null}
             </div>
@@ -278,7 +277,7 @@ export function AskDock({ ask, hue, onHue, onGo, byId, lit, kinds, quiet = false
           </div>
           <button type="submit" disabled={busy} className="shrink-0 cursor-pointer bg-foreground px-4 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-background disabled:opacity-50">{busy ? "…" : "Ask"}</button>
         </form>
-        {compact || minimal ? null : (
+        {minimal ? null : (
         <div className="flex items-center gap-2 px-1">
           <div role="group" aria-label="Colour" className="flex gap-1.5 overflow-x-auto p-1 [scrollbar-width:none]">
             {HUES.map(([name, ink]) => (
