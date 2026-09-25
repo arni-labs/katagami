@@ -8,7 +8,7 @@ import type { AtlasHole, AtlasStyle } from "@/lib/catalog";
 import { AskDock, fitWord, hueOf, useAsk, useScreen, type Family, type Fit, type Kinds } from "../shared";
 import { flow } from "../river/course";
 import { paperDrawn, quick } from "../stamp";
-import { Card, SKINS, SKIN_NAME, SkinContext, type Skin } from "../card";
+import { Card, DEFAULT_SKIN, SKINS, SKIN_NAME, SkinContext, type Skin } from "../card";
 
 // The library as an endless sheet of stamps. The sheet wraps in both directions,
 // so you can pan for ever and come round again; drag (or scroll) to pan, with
@@ -158,9 +158,10 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
   const [axes, setAxes] = useState<Axes | null>(null);
   const [narrow, setNarrow] = useState<{ trait: string; label: string } | null>(null);
   // Which material the cards are made of: six to judge between, kept in the address so each can be linked to.
-  const [skin, setSkin] = useState<Skin>(quiet ? "plain" : "stamp");
+  const [skin, setSkin] = useState<Skin>(quiet ? "plain" : DEFAULT_SKIN);
+  const stamps = skin === "stamp";
   useEffect(() => { const s = new URLSearchParams(window.location.search).get("skin"); if (s && (SKINS as readonly string[]).includes(s)) requestAnimationFrame(() => setSkin(s as Skin)); }, []);
-  const pickSkin = (s: Skin) => { setSkin(s); const url = new URL(window.location.href); if (s === "stamp") url.searchParams.delete("skin"); else url.searchParams.set("skin", s); window.history.replaceState(null, "", url); };
+  const pickSkin = (s: Skin) => { setSkin(s); const url = new URL(window.location.href); if (s === DEFAULT_SKIN) url.searchParams.delete("skin"); else url.searchParams.set("skin", s); window.history.replaceState(null, "", url); };
   const styles = useMemo(() => all.filter((s) => kinds[s.kind]), [all, kinds]);
   const byId = useMemo(() => new Map(styles.map((s) => [s.id, s])), [styles]);
   const byAny = useMemo(() => new Map(all.map((s) => [s.id, s])), [all]); // a style named in words is found whatever the filter
@@ -428,13 +429,16 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
   // it to be worth a relayout — and only once that rung's paper has been drawn to a bitmap, because putting a sheet
   // of stamps on an undrawn paper means rasterising a blurred SVG once per stamp, which is the one thing this
   // screen already learned not to do. Past FORCED it goes anyway: a stretch that far looks broken.
+  // Only stamps have paper; any other card relays out as soon as the stretch is worth it.
   const settling = useRef(0);
+  const onPaper = useRef(stamps);
+  useEffect(() => { onPaper.current = stamps; }, [stamps]);
   const follow = useCallback((cw: number, moving: boolean) => {
     const at = lay.current.rung, want = rungOf(cw, span), off = cw / at;
     if (want !== at) {
       const band = moving ? MOVING : HOLD;
       if (off > FORCED.hi || off < FORCED.lo) setRung(want);
-      else if ((off > band.hi || off < band.lo) && paperDrawn(want, Math.round(want * RATIO))) setRung(want);
+      else if ((off > band.hi || off < band.lo) && (!onPaper.current || paperDrawn(want, Math.round(want * RATIO)))) setRung(want);
     }
     window.clearTimeout(settling.current);
     if (moving) settling.current = window.setTimeout(() => follow(cam.current.cw, false), SETTLE);
@@ -453,9 +457,9 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
   }, [paint, span, size, follow]);
   useEffect(() => () => window.clearTimeout(settling.current), []);
   // Every width the sheet can be laid out at is only a dozen papers, so they are all drawn while nothing else is
-  // going on — nearest to hand first, one to a spare moment. A zoom then never waits on one.
+  // going on — nearest to hand first, one to a spare moment. A zoom then never waits on one. Stamps only.
   useEffect(() => {
-    if (size.w === 0) return;
+    if (size.w === 0 || !stamps) return;
     const ladder: number[] = [];
     for (let v = span.min; ladder.length < 40; v = Math.round(v * RUNG)) { ladder.push(Math.min(v, span.max)); if (v >= span.max) break; }
     const here = cam.current.cw;
@@ -469,7 +473,7 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
     };
     id = window.requestIdleCallback?.(draw) ?? window.setTimeout(draw, 400);
     return () => { window.cancelIdleCallback?.(id); window.clearTimeout(id); };
-  }, [span, size.w]);
+  }, [span, size.w, stamps]);
 
   // The buttons, the + and − keys and the typed "closer": a stop away, eased, rather than arriving all at once.
   const zrun = useRef(0);
@@ -773,17 +777,17 @@ export function Mosaic({ styles: all, families, whole, ghosts = [], quiet = fals
       {pair ? <Compare ids={pair} byId={byAny} familyOf={familyOf} phone={phone} onOpen={(id) => { setPair(null); goTo(id); }} onClose={() => setPair(null)} /> : null}
       {ask.state === "asking" && !ask.fits && !open && !pair ? (
         <div aria-hidden className="viewer-veil absolute inset-0 z-30 flex items-center justify-center bg-[color-mix(in_srgb,var(--background)_60%,transparent)] px-3 backdrop-blur-md" style={{ paddingTop: "calc(var(--head, 60px) + 16px)", paddingBottom: "calc(var(--dock-h, 150px) + 12px)" }}>
-          {/* The wait is a sheet being franked: blank stamps laid down one after another, each taking the postmark
-              as it lands, over and over until the answer comes back. */}
+          {/* The wait is blank cards laid down one after another, over and over until the answer comes back; as stamps
+              each also takes a postmark as it lands. */}
           <div className="flex flex-col items-center gap-7">
             <ul className="flex items-end" style={{ gap: phone ? 10 : 16 }}>
               {Array.from({ length: phone ? 3 : 5 }, (_, i) => (
                 <li key={i} className="franking relative" style={{ animationDelay: `${i * 260}ms`, ["--turn" as string]: `${((i % 3) - 1) * 2.4}deg` }}>
                   <Card src={null} ink="color-mix(in srgb, var(--foreground) 7%, var(--background))" w={phone ? 74 : 104} h={phone ? 89 : 125} />
-                  <svg aria-hidden viewBox="0 0 100 100" className="postmark absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: phone ? 54 : 76, animationDelay: `${i * 260 + 150}ms` }}>
+                  {stamps ? <svg aria-hidden viewBox="0 0 100 100" className="postmark absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: phone ? 54 : 76, animationDelay: `${i * 260 + 150}ms` }}>
                     <circle cx="50" cy="50" r="40" fill="none" stroke="var(--foreground)" strokeWidth="5" strokeDasharray="7 9" strokeLinecap="round" />
                     <circle cx="50" cy="50" r="27" fill="none" stroke="var(--foreground)" strokeWidth="3.5" />
-                  </svg>
+                  </svg> : null}
                 </li>
               ))}
             </ul>

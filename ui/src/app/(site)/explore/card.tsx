@@ -15,7 +15,9 @@ import { Stamp, caughtUp, fallbackOf, markReady, quick, retryThenHide } from "./
 export const SKINS = ["stamp", "stencil", "swatch", "proof", "plain"] as const;
 export type Skin = (typeof SKINS)[number];
 export const SKIN_NAME: Record<Skin, string> = { stamp: "Stamp", stencil: "Stencil", swatch: "Swatch", proof: "Riso proof", plain: "Plain" };
-export const SkinContext = createContext<Skin>("stamp");
+/** What the gallery is drawn in unless the address asks for another (`?skin=stamp` brings the stamps back). */
+export const DEFAULT_SKIN: Skin = "swatch";
+export const SkinContext = createContext<Skin>(DEFAULT_SKIN);
 
 type CardProps = { src: string | null; ink: string | null; w: number; h: number; label?: string; value?: string; soon?: boolean; lit?: { x: number; y: number }; fast?: 128 | 256 | 384 | 750 | 1080; under?: string; /** `w`/`h` are the picture's size; the card is built round it. */ windowed?: boolean; /** A steady number for this entry, for skins that print one. */ code?: string; /** On screen: fetch it now rather than when the browser judges it near. */ eager?: boolean; /** Among the first on screen to be fetched. */ first?: boolean; /** A second picture to draw if the first one is gone from the store. */ spare?: string | null };
 
