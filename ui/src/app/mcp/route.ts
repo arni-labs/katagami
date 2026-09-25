@@ -658,7 +658,7 @@ const baseHandler = createMcpHandler(
             by_kind: Object.fromEntries(KIND_ORDER.map((kk, i) => [kk, all[i].total_matching])),
             next_cursor_by_kind: Object.fromEntries(KIND_ORDER.map((kk, i) => [kk, all[i].next_cursor ?? null])),
             results,
-            note: "Searched all three kinds. To see more of one, call again with its `kind` and its cursor from next_cursor_by_kind.",
+            note: "Searched all three kinds. To see more of one, call again with the same query and filters, its `kind`, and its cursor from next_cursor_by_kind.",
           };
           return okWithPictures(found, results, images === true);
         }
@@ -723,7 +723,7 @@ const baseHandler = createMcpHandler(
         const { found } = await firstKind(a.kind, (k) => (k === "art_style" ? Promise.resolve(null) : getTokens(KIND_IN[k], id, tier, a.format ?? "json")));
         if (found) return ok(found);
         if ((!a.kind || a.kind === "art_style") && (await existsPublished("art_style", id))) {
-          const text = JSON.stringify({ error: "no_tokens", message: "Art styles carry a prompt recipe and reference images, not design tokens. Use get_library_entry for them." }, null, 2);
+          const text = JSON.stringify({ error: "no_tokens", message: "Art styles carry a prompt recipe and reference images, not design tokens. Use get_library_entry for them (sign in if the style is not on the visitor shelf)." }, null, 2);
           return { content: [{ type: "text" as const, text }], isError: true };
         }
         return await goneForAny(a.kind, id, tier, ["design_language", "palette"]);
