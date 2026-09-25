@@ -6,12 +6,13 @@ import "server-only";
 //
 // Signed-out callers were held to 6 a minute per address. An assistant such as
 // Muse calls connectors from shared servers, so all of its signed-out users
-// would have shared those 6. An address now gets as many as a signed-in person
-// (30), and all signed-out traffic on an instance shares a ceiling (240), which
-// still bounds what an open door can spend.
+// share one address. An address may now start 120 a minute on each route (the
+// counter is per scope), and all signed-out
+// traffic on an instance shares a ceiling of 600, which still bounds what an
+// open door can spend (a model call costs a fraction of a cent).
 const WINDOW_MS = 60_000;
-const PER_WINDOW = { sample: 30, full: 30 } as const;
-const SAMPLE_CEILING = 240;
+const PER_WINDOW = { sample: 120, full: 30 } as const;
+const SAMPLE_CEILING = 600;
 const starts = new Map<string, number[]>();
 let sampleStarts: number[] = [];
 

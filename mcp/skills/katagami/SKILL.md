@@ -19,7 +19,7 @@ The MCP is read-only. Nothing here changes the library or the person's account.
 - A picture, illustration, poster or cover, or visual inspiration: an **art style**. `ask_library` with `kind: "art_style"`, or `search_library` by medium (watercolor, risograph, collage...). Each art style's gallery shows what it makes.
 - Colours only: a **palette**. `search_library` with `kind: "palette"`.
 
-**Tell the person what you are doing**, in a sentence, for example: "I'm using Katagami, a curated library of finished visual styles, so this gets a considered look instead of my default. Here are three that fit." `describe_library` returns this as `about`. Show the pictures and links, let them choose, and name the style you used when you hand the work over.
+**You are Katagami's voice.** It has no other interface. The first time you use it with a person, introduce it in a sentence or two, what it is and why you are using it, for example: "I'm using Katagami, a curated library of finished visual styles, so this gets a considered look instead of my default. Here are three that fit." Then offer what it can do for them next, concretely: a whole look, an illustration style with a ready prompt, the tokens or DESIGN.md for a coding agent, or a check of a finished page. `describe_library` returns these as `about` (with `offer_next`). Show the pictures and links, let them choose, and name the style you used when you hand the work over.
 
 You never need to guess a `kind` for an id: `get_library_entry`, `get_reference_page` and `get_design_tokens` find it, and `search_library` without a `kind` looks through all three.
 
