@@ -134,10 +134,10 @@ The immersive-landing skill §5 "MEASURED FLOORS" is binding for the landing. Co
 64. Warm-paper ground: the page ground at L 0.88 or more, C 0.008 to 0.06, h 50 to 105 (cream, ivory, oat, bone, parchment: #F4EFE4, #FAF7F0, #EDE6D6, #F2E8D5). Use pure white, a real coloured stock at full strength, or a dark ground. `·LD001`
 65. Muted earth accent: an accent in sage (#8A9A82, #9CAF88), olive (#7A7A3A), terracotta or clay (#C4663F, #C07A5A), muted amber, ochre or tan (#B08A55, #C9A26B), dusty blue or slate (#6E86A0), dusty rose or mauve (#C49A9A), or espresso and taupe (#5C4A3D). Score 2 when the lead accent is one, or two accents are. `·LD002`
 66. Nothing at full strength: no accent reaches C 0.17 or 85% of the most chroma sRGB allows at its lightness and hue (vermilion #E34234, cobalt #0047AB and signal yellow #C9A227 do; sage #8A9A82 is at 20%). Every language carries at least one ink at full strength. `·LD003`
-67. Whisper accent: the lead accent is not a full-strength colour and measures under 3:1 against the ground (score 2 under 2.2:1), so it can neither carry a word nor mark a state. `·LD004`
+67. Whisper accent: the lead accent (the `accent` token) is not a full-strength colour and measures under 3:1 against the ground (score 2 under 2.2:1), so it can neither carry a word nor mark a state. `·LD004`
 68. Taupe stack: surface, border and muted are all warm-tinted greys (C 0.008 to 0.06, h 40 to 105). `·LD005`
 69. Stock console: a near-black ground (L under 0.25) with a neon accent (phosphor green, cyan, amber or magenta at full strength) and glow, bloom, phosphor or CRT vocabulary. Five Published languages are called Phosphor. `·LD006`
-70. SaaS violet and gradients: a full-strength indigo or violet accent (h 270 to 310, #6366F1, #8B5CF6), or a gradient on any surface, rail, button or ground. `·LD007`
+70. SaaS violet and gradients: a full-strength indigo or violet accent (h 270 to 310, #6366F1, #8B5CF6), or a colour gradient on any surface, rail, button or ground. A CSS gradient function that draws dots, stripes or grain is texture and scores under rule 79. `·LD007`
 
 ### Type (`tokens.typography` and the rules that use it)
 71. Stock faces: a role set in one of the ten faces the library already over-uses (languages using each, of 301: IBM Plex Mono 116, Space Grotesk 56, Archivo 54, Fraunces 48, Spline Sans Mono 48, Inter 47, Space Mono 40, IBM Plex Sans 37, JetBrains Mono 23, Newsreader 21). Score 1 for one role, 2 for two or more. Take the face from the source: its era, country, printing or signage technology. `·LD008`
@@ -158,7 +158,7 @@ The immersive-landing skill §5 "MEASURED FLOORS" is binding for the landing. Co
 
 ### Words (`name`, `philosophy`, rules prose)
 84. Mood adjectives: the philosophy summary, values and visual character lean on mood words (warm, soft, quiet, calm, editorial, material, luminous, restrained, tactile, considered, crafted): 4 or more per 100 words scores 1, 6 or more scores 2. Name the thing instead: its material, maker, place, date and use. `·LD021`
-85. Personified interface: surfaces that breathe, marks that whisper, diagnostics that apologise, rules that hum. `·LD022`
+85. Personified interface: the language describes its own surfaces as alive: panels that breathe, marks that whisper, rules that hum. "Breathing room" for space is an idiom, and product copy that says sorry in an error message is voice; neither scores. `·LD022`
 86. Stock name: a name another Published language already uses (Phosphor five times, Caliper three), or one from the instrument shelf the library keeps reaching for: Phosphor, Caliper, Reticle, Vernier, Meridian, Folio, Quire, Galley, Broadside, Litmus, Tincture, Gantry, Fathom, Halide, Ledger. `·LD023`
 
 ### Verdict
