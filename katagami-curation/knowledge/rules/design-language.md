@@ -123,3 +123,45 @@ The immersive-landing skill §5 "MEASURED FLOORS" is binding for the landing. Co
 - Embodiment: measure `scrollWidth == viewport` at true-390 (one take shipped 48% horizontal overflow from fixed-width type-specimen rows).
 - Attach*/Set* actions reset entity readiness guards — after your LAST attach, re-arm every false content guard with the ids already on the entity (AttachDesignMd needs the lint params again; AttachShadcn* need file ids + format versions + manifests). Finish UnderReview with all content guards true; `quality_review_passed`/`has_published_assets` stay false — curator-owned, never call MarkQualityPassed/Publish.
 - Landing scroll: native scroll is the base, smooth-scroll libs are enhancement only — prove wheel/touch/CDN-blocked traversal (a curator personally hit an unscrollable page that had passed headless checks).
+
+## LLM defaults: the checkable rubric (2026-09-26), tagged `·LDnnn`
+
+> A language fails when any model given the same brief would have made it. These are the defaults the library itself drifted into (audit of all 301 Published languages, 2026-09-26: 35% sit on cream paper and 41% on near-black; 94% declare a mono face; 84% set a role in one of ten stock faces; 71% build with hairline rules; "warm" appears 288 times in their philosophies).
+> Check every line against the language's own tokens and rules and score it 0 (absent), 1 (present) or 2 (defining or repeated). A pattern scores 0 only when the rules name the real object it comes from and the token takes its value from that object: the green of a real P1 phosphor, the bars of real greenbar computer paper, the pink of a real riso drum. "Warm", "paper", "tactile" and "editorial" are not objects.
+> Colour checks use OKLCH (L lightness 0 to 1, C chroma, h hue in degrees). The hex values are calibration examples.
+
+### Palette (`tokens.colors`)
+64. Warm-paper ground: the page ground at L 0.88 or more, C 0.008 to 0.06, h 50 to 105 (cream, ivory, oat, bone, parchment: #F4EFE4, #FAF7F0, #EDE6D6, #F2E8D5). Use pure white, a real coloured stock at full strength, or a dark ground. `·LD001`
+65. Muted earth accent: an accent in sage (#8A9A82, #9CAF88), olive (#7A7A3A), terracotta or clay (#C4663F, #C07A5A), muted amber, ochre or tan (#B08A55, #C9A26B), dusty blue or slate (#6E86A0), dusty rose or mauve (#C49A9A), or espresso and taupe (#5C4A3D). Score 2 when the lead accent is one, or two accents are. `·LD002`
+66. Nothing at full strength: no accent reaches C 0.17 or 85% of the most chroma sRGB allows at its lightness and hue (vermilion #E34234, cobalt #0047AB and signal yellow #C9A227 do; sage #8A9A82 is at 20%). Every language carries at least one ink at full strength. `·LD003`
+67. Whisper accent: the lead accent (the `accent` token) is not a full-strength colour and measures under 3:1 against the ground (score 2 under 2.2:1), so it can neither carry a word nor mark a state. `·LD004`
+68. Taupe stack: surface, border and muted are all warm-tinted greys (C 0.008 to 0.06, h 40 to 105). `·LD005`
+69. Stock console: a near-black ground (L under 0.25) with a neon accent (phosphor green, cyan, amber or magenta at full strength) and glow, bloom, phosphor or CRT vocabulary. Five Published languages are called Phosphor. `·LD006`
+70. SaaS violet and gradients: a full-strength indigo or violet accent (h 270 to 310, #6366F1, #8B5CF6), or a colour gradient on any surface, rail, button or ground. A CSS gradient function that draws dots, stripes or grain is texture and scores under rule 79. `·LD007`
+
+### Type (`tokens.typography` and the rules that use it)
+71. Stock faces: a role set in one of the ten faces the library already over-uses (languages using each, of 301: IBM Plex Mono 116, Space Grotesk 56, Archivo 54, Fraunces 48, Spline Sans Mono 48, Inter 47, Space Mono 40, IBM Plex Sans 37, JetBrains Mono 23, Newsreader 21). Score 1 for one role, 2 for two or more. Take the face from the source: its era, country, printing or signage technology. `·LD008`
+72. Serif display over mono metadata: a serif display face paired with a mono face for labels and captions. `·LD009`
+73. Tiny tracked caps: labels, eyebrows, kickers or micro-captions set uppercase with open tracking at 10 to 12px, usually in mono. Put the word in the body face at body size, or drop it. `·LD010`
+74. Decorative metadata: codes that mean nothing to the reader, such as episode and seat numbers, serials, coordinates, folios, FIG. and No. marks, timestamps in margins, "marginalia". Keep a code only when the product would really show it. `·LD011`
+75. Mono by reflex: a mono face declared although the source has no terminal, typewriter, receipt printer, ticker or instrument in it. Leave `mono_font` empty when the source has none. `·LD012`
+
+### Structure and ornament (`tokens.borders`, `tokens.surfaces`, `rules`)
+76. Hairline structure: 1px rules, keylines or ruled frames as the main separator, under every header, around every card, between rows. (Rule 10 already bans borders; hairlines are the usual way around it.) Separate with a real material edge, a colour field or space. `·LD013`
+77. Frame marks: corner brackets, crop marks, registration crosses, reticles or tick marks decorating panels. `·LD014`
+78. Chips on everything: status chips, pills, badges, LEDs or status dots attached to most modules. `·LD015`
+79. Faint texture: grain, noise, scanlines, halftone, paper tooth, or a rule or dot field laid at low opacity as seasoning. A texture belongs at full strength when the material is the point, or not at all. `·LD016`
+80. Console furniture: terminal panes, prompts, carets, blinking cursors, readouts and telemetry rows in a language whose subject is not a machine. `·LD017`
+81. SaaS surface kit: soft blurred shadows, rounded floating cards, bento grids, glass or frosted panels. `·LD018`
+82. Sparkle and glint: star, sparkle or glint marks and shimmer. `·LD019`
+83. Stock motion: count-up stats, staggered fade-ups on every section, parallax with ken-burns, pulsing or breathing status dots, hover lift. Take motion from the material instead: ink spreading, a stamp landing, a split-flap turning. This supersedes the stock list in rule 34. `·LD020`
+
+### Words (`name`, `philosophy`, rules prose)
+84. Mood adjectives: the philosophy summary, values and visual character lean on mood words (warm, soft, quiet, calm, editorial, material, luminous, restrained, tactile, considered, crafted): 4 or more per 100 words scores 1, 6 or more scores 2. Name the thing instead: its material, maker, place, date and use. `·LD021`
+85. Personified interface: the language describes its own surfaces as alive: panels that breathe, marks that whisper, rules that hum. "Breathing room" for space is an idiom, and product copy that says sorry in an error message is voice; neither scores. `·LD022`
+86. Stock name: a name another Published language already uses (Phosphor five times, Caliper three), or one from the instrument shelf the library keeps reaching for: Phosphor, Caliper, Reticle, Vernier, Meridian, Folio, Quire, Galley, Broadside, Litmus, Tincture, Gantry, Fathom, Halide, Ledger. `·LD023`
+
+### Verdict
+87. Add the scores. A new or revised language passes at 8 or less. 9 to 15 goes back for repair of every scored line. 16 or more is generic and fails rule 2. `·LD024`
+88. Two combinations fail on sight whatever the total. The warm-editorial default: rule 64, plus 65 or 66, plus 72 or 73. The stock-console default: rule 69 at 2, plus 73, plus 77 or 79. `·LD025`
+89. A repair keeps the language's idea and its one real signature mechanic, and replaces each scored default with something taken from a named real material, object or cultural source, at full contrast. Name the source in the rules and take the colours and faces from it. `·LD026`
