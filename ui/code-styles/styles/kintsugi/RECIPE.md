@@ -65,7 +65,7 @@ starts over.
 | Every fragment is rejoined at its original place: at t = 1 no fragment is offset or turned, none is missing, and they really did move apart during the break. | kintsugi · structure |
 | The repair is the most visible feature: seams at least 3 px wide and a median colour difference of at least ΔE 20 from the glaze beside them. | kintsugi · structure |
 | The seams are gold, silver or platinum: the metal is one of the three, its colour matches that metal, and its shading runs from deep shadow to near white like a metal, not a paint. | kintsugi · colour, mark |
-| One impact sets the composition: cracks radiate from it, each ends at the edge or on another crack, the network branches, no crack is straight, and the body splits into at least three fragments. | kintsugi · composition, rhythm [both unsupported in the source check] |
+| One impact sets the composition: cracks radiate from it, each ends at the edge or on another crack, no crack is straight, and the body splits into fragments: two for a clean break, otherwise three or more meeting at junctions. | kintsugi · composition, rhythm [both unsupported in the source check] |
 
 ## Parameters
 

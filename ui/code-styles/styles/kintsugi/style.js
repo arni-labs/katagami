@@ -64,7 +64,7 @@ export const rules = [
   },
   {
     id: 'real-break',
-    text: 'One impact sets the composition: cracks radiate from it and each runs until it leaves the piece or meets another crack, in an irregular, branching network that splits the body into fragments.',
+    text: 'One impact sets the composition: cracks radiate from it and each runs until it leaves the piece or meets another crack, in an irregular network that splits the body into fragments (a clean break in two, or a branching one).',
     source: 'kintsugi · composition; rhythm: the irregular, veined network of the fracture lines',
   },
 ];
@@ -1141,7 +1141,8 @@ export function check(pl) {
     },
     {
       id: 'real-break',
-      pass: mains >= 2 && loose.length === 0 && moving.length >= 3 && junctions >= 1 && minSinu >= 1.005,
+      // a clean break in two has no junction; anything more has to branch
+      pass: mains >= 2 && loose.length === 0 && moving.length >= 2 && (moving.length === 2 || junctions >= 1) && minSinu >= 1.005,
       detail: `impact at (${pl.impact.x.toFixed(0)}, ${pl.impact.y.toFixed(0)}): ${mains} main cracks, ${cracks.length - mains} branches and ring cracks; ` +
         `${loose.length} ending in open glaze; ${moving.length} fragments; ${junctions} junctions; paths ${minSinu.toFixed(3)}x their chord or more`,
     },

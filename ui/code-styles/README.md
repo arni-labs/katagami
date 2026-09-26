@@ -65,3 +65,6 @@ cd ui && node scripts/code-styles-render.mjs --style kirie --subject cat --t 0.3
 
 Renders the frames in headless Chrome, prints each rule check and whether a second, fresh plan
 draws identical pixels. It exits non-zero if a rule fails or the render is not deterministic.
+
+`node scripts/code-styles-check.mjs` runs every style on every subject, plus settings that must
+break a named rule, and fails if any style drifts. Run it before merging a style change.
