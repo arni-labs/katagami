@@ -22,6 +22,8 @@ const nextConfig: NextConfig = {
     "/gallery": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
     "/palettes": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
     "/art-styles": ["node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**"],
+    // The owner-only code styles are read from disk by their route, so ship the folder with it.
+    "/code-styles/[...path]": ["code-styles/**"],
   },
   // The sheet at "/" is the library now. These index pages each showed a slice
   // of it and are no longer offered to anyone: the code stays in the tree (a

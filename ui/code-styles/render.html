@@ -1,0 +1,59 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Code style render</title>
+<!-- Headless render and check page: ?style=kirie&subject=cat&seed=1&t=0.2,0.5,1&params={} -->
+<body>
+<pre id="out">pending</pre>
+<script type="module">
+import { W, H, loadSubject, digest, canvas } from './runtime/core.js';
+import { defaults } from './runtime/player.js';
+
+const q = new URLSearchParams(location.search);
+const out = document.getElementById('out');
+try {
+  const id = q.get('style');
+  const style = await import(`./styles/${id}/style.js`);
+  const subjectName = q.get('subject') || 'cat';
+  const subject = q.get('text')
+    ? { text: q.get('text'), name: q.get('text') }
+    : { svg: await (await fetch(`./subjects/${subjectName}.svg`)).text(), name: subjectName };
+  const seed = Number(q.get('seed') || 1);
+  const params = { ...defaults(style), ...JSON.parse(q.get('params') || '{}') };
+  const ts = (q.get('t') || '1').split(',').map(Number);
+  const size = Number(q.get('size') || W);
+
+  const s0 = performance.now();
+  const loaded = await loadSubject(subject);
+  const plan = await style.plan({ subject: loaded, params, seed, W, H });
+  const planMs = performance.now() - s0;
+  const checks = style.check ? style.check(plan) : [];
+
+  const frames = [];
+  const c = canvas(size, size);
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  for (const t of ts) {
+    const d0 = performance.now();
+    ctx.setTransform(size / W, 0, 0, size / H, 0, 0);
+    style.draw(ctx, plan, t);
+    const drawMs = performance.now() - d0;
+    const blob = await c.convertToBlob({ type: 'image/png' });
+    const url = await new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+    frames.push({ t, drawMs: Math.round(drawMs), hash: await digest(c), png: url });
+  }
+
+  // determinism: a fresh plan from the same inputs draws the same pixels
+  let deterministic = null;
+  if (q.get('determinism') !== '0') {
+    const again = await style.plan({ subject: await loadSubject(subject), params, seed, W, H });
+    const t = ts[ts.length - 1];
+    ctx.setTransform(size / W, 0, 0, size / H, 0, 0);
+    style.draw(ctx, again, t);
+    deterministic = (await digest(c)) === frames[frames.length - 1].hash;
+  }
+
+  out.textContent = JSON.stringify({ ok: true, style: id, subject: subjectName, seed, planMs: Math.round(planMs), checks, deterministic, frames });
+} catch (e) {
+  out.textContent = JSON.stringify({ ok: false, error: String(e && e.stack || e) });
+}
+</script>
+</body>
