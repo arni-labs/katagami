@@ -11,6 +11,11 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+if (typeof WebSocket === 'undefined') {
+  console.error('code-styles-render needs Node 22 or later (global WebSocket); on Node 20 run it with --experimental-websocket');
+  process.exit(1);
+}
+
 const root = resolve(fileURLToPath(new URL('../code-styles', import.meta.url)));
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((acc, a, i, all) => (a.startsWith('--') ? [...acc, [a.slice(2), all[i + 1]]] : acc), []),

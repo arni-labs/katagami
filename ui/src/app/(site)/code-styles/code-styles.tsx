@@ -144,6 +144,8 @@ export function CodeStyles() {
       }
       playerRef.current = player;
       const sync = () => {
+        setParams({ ...player.state.params });
+        setSeed(player.state.seed);
         setStages(player.state.plan?.stages ?? style.stages);
         setChecks(player.state.checks);
         setBusy(false);

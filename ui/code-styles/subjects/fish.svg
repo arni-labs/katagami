@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <title>Reef fish</title>
+  <g fill="#3a78c9" stroke="#2a1a10" stroke-width="7" stroke-linejoin="round">
+    <path d="M300 250 C330 160 450 120 560 170 C580 210 576 250 556 290 Z"/>
+    <path d="M320 560 C360 640 470 654 546 604 C556 584 550 562 540 540 Z"/>
+    <path d="M600 400 C640 350 690 300 744 276 C718 350 718 450 744 524 C690 500 640 450 600 400 Z"/>
+  </g>
+  <path d="M394 208 L404 240 M458 200 L462 238 M518 190 L512 240 M406 618 L410 582 M474 624 L472 586 M698 326 L654 390 M698 474 L654 410" fill="none" stroke="#8fc0ee" stroke-width="8" stroke-linecap="round"/>
+  <path d="M170 400 C190 290 300 220 420 220 C540 220 610 310 620 400 C610 490 540 580 420 580 C300 580 190 510 170 400 Z" fill="#f39424"/>
+  <path d="M272 259 C286 251 302 244 318 238 C346 330 346 470 318 562 C302 556 286 549 272 541 C300 460 300 340 272 259 Z M470 226 C486 229 501 235 514 242 C540 330 540 470 514 558 C501 565 486 571 470 574 C496 470 496 330 470 226 Z" fill="#fdf8f0" stroke="#2a1a10" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M170 400 C190 290 300 220 420 220 C540 220 610 310 620 400 C610 490 540 580 420 580 C300 580 190 510 170 400 Z" fill="none" stroke="#2a1a10" stroke-width="7"/>
+  <path d="M340 436 C376 404 424 408 448 440 C416 474 366 474 340 436 Z" fill="#f7c23c" stroke="#2a1a10" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="238" cy="362" r="32" fill="#fdf8f0"/>
+  <circle cx="232" cy="364" r="15" fill="#151515"/>
+  <circle cx="238" cy="357" r="5" fill="#ffffff"/>
+  <path d="M176 414 C188 420 200 420 212 414" fill="none" stroke="#2a1a10" stroke-width="6" stroke-linecap="round"/>
+  <g fill="#cfeaf8" stroke="#2a1a10" stroke-width="5">
+    <circle cx="118" cy="300" r="20"/>
+    <circle cx="146" cy="232" r="13"/>
+    <circle cx="104" cy="170" r="24"/>
+  </g>
+  <path d="M96 160 Q100 152 110 152 M112 292 Q116 286 122 286" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+</svg>

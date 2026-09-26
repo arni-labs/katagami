@@ -84,6 +84,7 @@ export async function mount(el, style, opts = {}) {
       cancelAnimationFrame(raf);
       if (reduce) {
         api.seek(1);
+        emit('done', state);
         return api;
       }
       state.playing = true;

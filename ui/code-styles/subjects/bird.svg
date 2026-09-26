@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <title>Songbird on a branch</title>
+  <g transform="translate(0 -28)">
+    <path d="M500 470 C560 520 614 574 668 624 L636 638 L626 666 C578 610 506 558 456 530 Z" fill="#1d3c88" stroke="#2a1a10" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M644 566 C664 500 696 430 738 368" fill="none" stroke="#2a1a10" stroke-width="24" stroke-linecap="round"/>
+    <path d="M644 566 C664 500 696 430 738 368" fill="none" stroke="#5a3620" stroke-width="10" stroke-linecap="round"/>
+    <path d="M44 600 C200 594 400 596 560 572 C650 558 710 534 756 510 C772 504 780 524 766 532 C716 562 650 592 560 608 C400 632 200 638 44 640 C24 640 24 600 44 600 Z" fill="#5a3620" stroke="#2a1a10" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M738 368 C694 344 680 284 704 226 C750 258 764 318 738 368 Z M676 474 C712 456 756 462 784 494 C744 514 702 504 676 474 Z" fill="#5fb34f" stroke="#2a1a10" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M730 350 C720 318 714 288 708 256 M696 478 C720 482 744 488 764 496" fill="none" stroke="#3d8a3a" stroke-width="7" stroke-linecap="round"/>
+    <path d="M196 292 C204 236 262 204 318 208 C380 212 420 256 450 300 C500 360 540 420 548 480 C552 540 500 580 420 584 C330 588 250 540 226 460 C210 410 200 370 196 340 C194 320 194 306 196 292 Z" fill="#f08a3a"/>
+    <path d="M196 292 C204 236 262 204 318 208 C380 212 420 256 450 300 C500 360 540 420 548 480 C500 470 420 420 360 380 C310 350 260 340 230 330 C214 324 204 314 196 300 Z" fill="#4d94e0"/>
+    <path d="M533 535 C512 564 472 581 420 584 C380 586 341 577 309 560 C350 520 460 504 533 535 Z" fill="#fdf8f0"/>
+    <path d="M196 292 C204 236 262 204 318 208 C380 212 420 256 450 300 C500 360 540 420 548 480 C552 540 500 580 420 584 C330 588 250 540 226 460 C210 410 200 370 196 340 C194 320 194 306 196 292 Z" fill="none" stroke="#2a1a10" stroke-width="7"/>
+    <path d="M318 352 C380 318 470 330 520 392 C556 436 584 490 596 540 C552 530 492 506 440 478 C370 440 318 404 318 352 Z" fill="#1d3c88" stroke="#2a1a10" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M350 382 C396 368 446 386 478 420 M430 452 C480 468 528 494 566 520" fill="none" stroke="#9cc8f0" stroke-width="13" stroke-linecap="round"/>
+    <path d="M394 576 L392 602 M434 576 L432 602 M374 610 C380 598 402 596 410 608 M414 610 C420 598 442 596 450 608" fill="none" stroke="#2a1a10" stroke-width="8" stroke-linecap="round"/>
+    <path d="M202 280 L150 304 L202 324 Z" fill="#f4c430" stroke="#2a1a10" stroke-width="6" stroke-linejoin="round"/>
+    <circle cx="266" cy="276" r="30" fill="#fdf8f0"/>
+    <circle cx="262" cy="278" r="16" fill="#151515"/>
+    <circle cx="268" cy="271" r="6" fill="#ffffff"/>
+    <g stroke="#2a1a10" stroke-width="6">
+      <circle cx="132" cy="562" r="25" fill="#f6a5b8"/>
+      <circle cx="168" cy="578" r="25" fill="#f6a5b8"/>
+      <circle cx="156" cy="616" r="25" fill="#f6a5b8"/>
+      <circle cx="112" cy="616" r="25" fill="#f6a5b8"/>
+      <circle cx="98" cy="578" r="25" fill="#f6a5b8"/>
+      <circle cx="133" cy="590" r="15" fill="#f4c430"/>
+    </g>
+  </g>
+</svg>

@@ -227,15 +227,21 @@ export async function plan({ subject, params: p, seed, W, H }) {
     }
   }
 
-  // No diagonal-only touches: they are neither a join nor a clean cut.
-  for (let y = 0; y < gh - 1; y++) {
-    for (let x = 0; x < gw - 1; x++) {
-      const a = y * gw + x, b = a + 1, c = a + gw, d = c + 1;
-      const pa = kind[a] === PAPER, pb = kind[b] === PAPER, pc = kind[c] === PAPER, pd = kind[d] === PAPER;
-      if (pa && pd && !pb && !pc) { kind[b] = PAPER; }
-      else if (pb && pc && !pa && !pd) { kind[a] = PAPER; }
+  // No diagonal-only touches: they are neither a join nor a clean cut. Resolving one can
+  // leave a thin strip, so widen once more afterwards.
+  const untangle = () => {
+    for (let y = 0; y < gh - 1; y++) {
+      for (let x = 0; x < gw - 1; x++) {
+        const a = y * gw + x, b = a + 1, c = a + gw, d = c + 1;
+        const pa = kind[a] === PAPER, pb = kind[b] === PAPER, pc = kind[c] === PAPER, pd = kind[d] === PAPER;
+        if (pa && pd && !pb && !pc) kind[b] = PAPER;
+        else if (pb && pc && !pa && !pd) kind[a] = PAPER;
+      }
     }
-  }
+  };
+  untangle();
+  widen();
+  untangle();
 
   // The pieces that come out: one closed loop per hole, smoothed, in canvas pixels.
   const field = blur(Float32Array.from(isHole()), gw, gh, 1);
@@ -545,9 +551,14 @@ export function live(ctx, pl, { time, pointer }) {
   drawScene(ctx, pl, { d: 1, c: 1, lift: 1, mount: 1, light });
 }
 
-// A click mounts the same cut on the next backing colour.
+// A click mounts the same cut on the next backing colour that still contrasts with the sheet.
 export function press(pl) {
   const opts = params.backing.options;
+  const sheet = hex(pl.params.sheet);
   const i = opts.indexOf(pl.params.backing);
-  return { params: { backing: opts[(i + 1) % opts.length] }, replay: false };
+  for (let k = 1; k <= opts.length; k++) {
+    const next = opts[(i + k) % opts.length];
+    if (contrastRatio(sheet, hex(next)) >= 3) return { params: { backing: next }, replay: false };
+  }
+  return null;
 }

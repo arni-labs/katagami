@@ -1,0 +1,8 @@
+[
+  { "id": "cat", "name": "Cat" },
+  { "id": "bowl", "name": "Bowl" },
+  { "id": "bird", "name": "Bird" },
+  { "id": "landscape", "name": "Landscape" },
+  { "id": "flower", "name": "Flower" },
+  { "id": "fish", "name": "Fish" }
+]

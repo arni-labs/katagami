@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <title>Tea bowl</title>
+  <g transform="translate(400 400) scale(1.1) translate(-400 -444)">
+    <ellipse cx="400" cy="652" rx="268" ry="28" fill="#d9d2c4"/>
+    <path d="M306 596 L302 638 Q400 664 498 638 L494 596 Z" fill="#d08c5a" stroke="#2a1a10" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M150 282 C146 400 196 528 306 590 C364 616 436 616 494 590 C604 528 654 396 650 276 Z" fill="#3a5aa8"/>
+    <path d="M247 545 C264 563 284 578 306 590 C364 616 436 616 494 590 C516 578 536 562 553 545 C530 560 505 552 482 562 C476 580 480 596 470 600 C458 604 452 594 456 580 C458 566 440 560 420 562 C380 566 350 556 320 560 C290 564 266 556 247 545 Z" fill="#d08c5a"/>
+    <path d="M150 282 C150 320 262 350 400 350 C538 350 650 314 650 276 C646 346 596 390 540 398 C508 402 488 404 476 412 C470 436 474 458 478 478 C482 504 442 508 444 482 C446 460 452 436 446 414 C420 404 380 404 340 410 C312 414 304 422 302 438 C300 452 300 460 292 464 C278 470 268 460 272 446 C276 432 272 418 248 406 C196 382 154 344 150 282 Z" fill="#cfe6d8"/>
+    <path d="M192 384 C202 440 226 484 256 514" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="274" cy="532" r="8" fill="#ffffff"/>
+    <path d="M150 282 C146 400 196 528 306 590 C364 616 436 616 494 590 C604 528 654 396 650 276" fill="none" stroke="#2a1a10" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M150 282 C150 320 262 350 400 350 C538 350 650 314 650 276 C650 240 538 212 400 212 C262 212 150 244 150 282 Z" fill="#cfe6d8" stroke="#2a1a10" stroke-width="7"/>
+    <path d="M176 284 C176 310 276 330 400 330 C524 330 624 306 624 280 C624 254 524 234 400 234 C276 234 176 258 176 284 Z" fill="#1f2a55" stroke="#2a1a10" stroke-width="5"/>
+    <ellipse cx="400" cy="302" rx="98" ry="18" fill="#8cc9b0"/>
+    <path d="M530 250 C564 256 590 266 600 282" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+  </g>
+</svg>

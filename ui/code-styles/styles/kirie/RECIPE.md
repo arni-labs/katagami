@@ -19,7 +19,7 @@ practice of paper cutting. Creator: Rita Agafonova (arni.art).
 4. **Mount it on the backing.** The sheet settles and casts a small, close shadow.
 
 Afterwards the light moves and the shadow under the paper moves with it (the pointer is the
-light). A click mounts the same cut on the next backing colour.
+light). A click mounts the same cut on the next backing colour that still contrasts with the sheet.
 
 ## How a subject becomes a cut
 

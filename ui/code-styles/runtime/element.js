@@ -41,7 +41,7 @@ class KatagamiDraw extends HTMLElement {
     if (token !== this.token) return;
     const at = this.getAttribute('at');
     const canvas = this.shadowRoot.querySelector('canvas');
-    this.player = await mount(canvas, style, {
+    const player = await mount(canvas, style, {
       subject,
       seed: Number(this.getAttribute('seed') || 1),
       params: JSON.parse(this.getAttribute('params') || '{}'),
@@ -50,7 +50,12 @@ class KatagamiDraw extends HTMLElement {
       autoplay: at == null,
       at: at == null ? undefined : Number(at),
     });
-    this.dispatchEvent(new CustomEvent('ready', { detail: this.player }));
+    if (token !== this.token) {
+      player.destroy();
+      return;
+    }
+    this.player = player;
+    this.dispatchEvent(new CustomEvent('ready', { detail: player }));
   }
 }
 

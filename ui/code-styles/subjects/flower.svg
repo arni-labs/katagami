@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <title>Poppy</title>
+  <path d="M400 470 C404 560 380 660 394 772" fill="none" stroke="#2a1a10" stroke-width="30" stroke-linecap="round"/>
+  <path d="M400 470 C404 560 380 660 394 772" fill="none" stroke="#86c75c" stroke-width="16" stroke-linecap="round"/>
+  <path d="M394 650 C344 596 268 580 206 552 C234 626 312 664 394 662 Z M390 712 C440 660 516 646 584 628 C548 700 468 728 390 722 Z" fill="#5fae4a" stroke="#2a1a10" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M378 650 C330 628 276 600 234 574 M406 714 C452 690 510 666 560 646" fill="none" stroke="#3d8a3a" stroke-width="7" stroke-linecap="round"/>
+  <g stroke="#2a1a10" stroke-width="7" stroke-linejoin="round">
+    <path d="M400 290 C340 296 250 290 206 240 C170 200 176 140 214 116 C236 90 276 86 300 100 C324 78 364 80 384 104 C404 130 406 200 400 290 Z" fill="#9a1f18"/>
+    <path d="M400 290 C460 296 550 290 594 240 C630 200 624 140 586 116 C564 90 524 86 500 100 C476 78 436 80 416 104 C396 130 394 200 400 290 Z" fill="#9a1f18"/>
+    <path d="M400 290 C330 270 230 280 190 340 C160 386 170 440 210 462 C236 490 286 494 310 474 C346 494 392 470 404 430 C414 390 412 330 400 290 Z" fill="#f25a3c"/>
+    <path d="M400 290 C470 270 570 280 610 340 C640 386 630 440 590 462 C564 490 514 494 490 474 C454 494 408 470 396 430 C386 390 388 330 400 290 Z" fill="#f25a3c"/>
+  </g>
+  <path d="M242 420 C258 396 284 382 314 378 M558 420 C542 396 516 382 486 378" fill="none" stroke="#ffa28a" stroke-width="18" stroke-linecap="round"/>
+  <path d="M236 168 C250 138 282 124 314 130 M564 168 C550 138 518 124 486 130" fill="none" stroke="#ff9a86" stroke-width="20" stroke-linecap="round"/>
+  <g fill="#2a1a10">
+    <circle cx="400" cy="296" r="72"/>
+    <circle cx="472" cy="296" r="13"/><circle cx="462" cy="332" r="13"/><circle cx="436" cy="358" r="13"/><circle cx="400" cy="368" r="13"/><circle cx="364" cy="358" r="13"/><circle cx="338" cy="332" r="13"/><circle cx="328" cy="296" r="13"/><circle cx="338" cy="260" r="13"/><circle cx="364" cy="234" r="13"/><circle cx="400" cy="224" r="13"/><circle cx="436" cy="234" r="13"/><circle cx="462" cy="260" r="13"/>
+  </g>
+  <circle cx="400" cy="296" r="46" fill="#b5d46a"/>
+  <path d="M400 258 L400 334 M362 296 L438 296 M373 269 L427 323 M427 269 L373 323" fill="none" stroke="#2a1a10" stroke-width="9" stroke-linecap="round"/>
+</svg>
